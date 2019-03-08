@@ -15,42 +15,20 @@ struct obj
   int i;
 };
 
-struct obj_initializer
+struct obj_factory
 {
-  obj* operator()(obj* o) { return o; }
+  obj* operator()() { return new obj{}; }
 };
 
 BOOST_AUTO_TEST_CASE(object_pool_test)
 {
   {
-    VW::object_pool<obj, obj_initializer> pool_with_size{50};
+    VW::unbounded_object_pool<obj, obj_factory> pool_with_size{50};
     BOOST_CHECK_EQUAL(pool_with_size.size(), 50);
     BOOST_CHECK_EQUAL(pool_with_size.available(), 50);
   }
 
-  {
-    VW::object_pool<obj, obj_initializer> pool_with_small_chunks{0, 2};
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 0);
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.available(), 0);
-
-    auto o1 = pool_with_small_chunks.get_object();
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 2);
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.available(), 1);
-
-    auto o2 = pool_with_small_chunks.get_object();
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 2);
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.available(), 0);
-
-    auto o3 = pool_with_small_chunks.get_object();
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 4);
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.available(), 1);
-
-    pool_with_small_chunks.return_object(o1);
-    pool_with_small_chunks.return_object(o2);
-    pool_with_small_chunks.return_object(o3);
-  }
-
-  VW::object_pool<obj, obj_initializer> pool{0,1};
+  VW::unbounded_object_pool<obj, obj_factory> pool;
   BOOST_CHECK_EQUAL(pool.size(), 0);
   BOOST_CHECK_EQUAL(pool.empty(), true);
   BOOST_CHECK_EQUAL(pool.available(), 0);

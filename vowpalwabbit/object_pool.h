@@ -5,90 +5,68 @@
 
 namespace VW
 {
-
-// Not thread safe
-template <typename T, typename TInitializer>
+template <typename T>
 struct object_pool
 {
-  object_pool() = default;
-  object_pool(size_t initial_chunk_size, size_t chunk_size = 8)
-    : m_initial_chunk_size(initial_chunk_size),
-    m_chunk_size(chunk_size)
+  virtual void return_object(T*) = 0;
+  virtual T* get_object() = 0;
+  virtual bool empty() const = 0;
+  virtual size_t available() const = 0;
+  virtual size_t size() const = 0;
+  virtual bool is_from_pool(T*) const = 0;
+
+  virtual ~object_pool() {}
+};
+
+// Not thread safe
+template <typename T, typename TFactory>
+struct unbounded_object_pool : object_pool<T>
+{
+  unbounded_object_pool() = default;
+  unbounded_object_pool(size_t initial_size)
   {
-    new_chunk(initial_chunk_size);
+    for (size_t i = 0; i < initial_size; i++)
+    {
+      auto obj = m_factory();
+      m_pool_objects.insert(obj);
+      m_pool.push(std::unique_ptr<T>(obj));
+    }
   }
 
-  void return_object(T* obj)
+  void return_object(T* obj) override
   {
     assert(is_from_pool(obj));
-    m_pool.push(obj);
+    m_pool.push(std::unique_ptr<T>(obj));
   }
 
-  T* get_object()
+  T* get_object() override
   {
+    T* obj;
     if (m_pool.empty())
     {
-      new_chunk(m_chunk_size);
+      obj = m_factory();
+      m_pool_objects.insert(obj);
+    }
+    else
+    {
+      obj = m_pool.front().release();
+      m_pool.pop();
     }
 
-    auto obj = m_pool.front();
-    m_pool.pop();
     return obj;
   }
 
-  bool empty() const { return m_pool.empty(); }
+  bool empty() const override { return m_pool.empty(); }
 
-  size_t available() const { return m_pool.size(); }
+  size_t available() const override { return m_pool.size(); }
 
-  size_t size() const {
-    size_t size = 0;
-    auto num_chunks = m_chunk_bounds.size();
+  size_t size() const override { return m_pool_objects.size(); }
 
-    if(m_chunk_bounds.size() > 0 && m_initial_chunk_size > 0)
-    {
-      size += m_initial_chunk_size;
-      num_chunks--;
-    }
-
-    size += num_chunks * m_chunk_size;
-    return size;
-  }
-
-  bool is_from_pool(T* obj) const {
-    for(auto& bound : m_chunk_bounds)
-    {
-      if(obj >= bound.first && obj <= bound.second)
-      {
-        return true;
-      }
-    }
-
-    return false;
-  }
+  bool is_from_pool(T* obj) const override { return m_pool_objects.count(obj) != 0; }
 
  private:
-  void new_chunk(size_t size)
-  {
-    if(size == 0)
-    {
-      return;
-    }
-
-    m_chunks.push_back(std::unique_ptr<T[]>(new T[size]));
-    auto& chunk = m_chunks.back();
-    m_chunk_bounds.push_back({&chunk[0], &chunk[size - 1]});
-
-    for (size_t i = 0; i < size; i++)
-    {
-      m_pool.push(m_initializer(&chunk[i]));
-    }
-  }
-
-  std::queue<T*> m_pool;
-  std::vector<std::pair<T*, T*>> m_chunk_bounds;
-  std::vector<std::unique_ptr<T[]>> m_chunks;
-  TInitializer m_initializer;
-  size_t m_initial_chunk_size = 0;
-  size_t m_chunk_size = 8;
+  std::queue<std::unique_ptr<T>> m_pool;
+  std::set<T*> m_pool_objects;
+  TFactory m_factory;
 };
 }  // namespace VW

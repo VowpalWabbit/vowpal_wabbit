@@ -29,13 +29,14 @@ license as described in the file LICENSE.
 struct vw;
 struct input_options;
 
-struct example_initializer
+struct example_factory
 {
-  example* operator()(example* ex)
+  example* operator()()
   {
-    memset(&ex->l, 0, sizeof(polylabel));
-    ex->in_use = false;
-    return ex;
+    auto new_example = new example{};
+    memset(&new_example->l, 0, sizeof(polylabel));
+    new_example->in_use = false;
+    return new_example;
   }
 };
 
@@ -60,7 +61,7 @@ struct parser
   v_array<substring> name;
 
   std::mutex pool_lock;
-  VW::object_pool<example, example_initializer> example_pool;
+  VW::unbounded_object_pool<example, example_factory> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
   io_buf* input = nullptr;  // Input source(s)
@@ -100,6 +101,8 @@ struct parser
   bool decision_service_json = false;
   std::shared_ptr<void> jsonp;
 };
+
+// parser* new_parser();
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
 
