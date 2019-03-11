@@ -960,17 +960,6 @@ size_t get_feature_number(example* ec) { return ec->num_features; }
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
 
-void initialize_examples(vw& all)
-{
-  all.p->words = v_init<substring>();
-  all.p->name = v_init<substring>();
-  all.p->parse_name = v_init<substring>();
-  all.p->gram_mask = v_init<size_t>();
-  all.p->ids = v_init<size_t>();
-  all.p->counts = v_init<size_t>();
-  all.p->example_pool = std::move(VW::object_pool<example, example_initializer>{all.p->ring_size, example_initializer{all}});
-}
-
 example* example_initializer::operator()(example* ex)
 {
   memset(&ex->l, 0, sizeof(polylabel));
@@ -989,7 +978,11 @@ example* example_initializer::operator()(example* ex)
 
 void adjust_used_index(vw& all) { /* no longer used */ }
 
-void initialize_parser_datastructures(vw& all) { initialize_examples(all); }
+void initialize_parser_datastructures(vw& all)
+{
+  all.p->example_pool =
+      std::move(VW::object_pool<example, example_initializer>{all.p->ring_size, example_initializer{all}});
+}
 
 namespace VW
 {

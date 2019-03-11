@@ -1301,8 +1301,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"));
     options.add_and_parse(vw_args);
 
-    all.p = new parser{ring_size, all};
-    initialize_parser_datastructures(all);
+    all.p = new parser{ring_size};
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1635,6 +1634,9 @@ vw* initialize(
       cout << options.help();
       exit(0);
     }
+
+    // Setup example pool to init new examples correctly.
+    initialize_parser_datastructures(all);
 
     all.l->init_driver();
 

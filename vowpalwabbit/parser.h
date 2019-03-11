@@ -45,12 +45,20 @@ private:
 
 struct parser
 {
-  parser(size_t ring_size, vw& all)
+  parser(size_t ring_size)
       : ready_parsed_examples{ring_size}, ring_size{ring_size}
   {
     this->input = new io_buf{};
     this->output = new io_buf{};
     this->lp = simple_label;
+
+    // Free parser must still be used for the following fields.
+    this->words = v_init<substring>();
+    this->name = v_init<substring>();
+    this->parse_name = v_init<substring>();
+    this->gram_mask = v_init<size_t>();
+    this->ids = v_init<size_t>();
+    this->counts = v_init<size_t>();
   }
 
   ~parser()
@@ -107,8 +115,6 @@ struct parser
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
 
-bool examples_to_finish();
-
 // only call these from the library form:
 void initialize_parser_datastructures(vw& all);
 
@@ -116,14 +122,11 @@ void initialize_parser_datastructures(vw& all);
 void adjust_used_index(vw& all);
 
 // parser control
-void make_example_available();
 void lock_done(parser& p);
 void set_done(vw& all);
 
 // source control functions
-bool inconsistent_cache(size_t numbits, io_buf& cache);
 void reset_source(vw& all, size_t numbits);
 void finalize_source(parser* source);
 void set_compressed(parser* par);
-void initialize_examples(vw& all);
 void free_parser(vw& all);
