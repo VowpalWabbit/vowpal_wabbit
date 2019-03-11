@@ -35,6 +35,10 @@ struct example_initializer
   {
     memset(&ex->l, 0, sizeof(polylabel));
     ex->in_use = false;
+    ex->passthrough = nullptr;
+    ex->tag = v_init<char>();
+    ex->indices = v_init<namespace_index>();
+    memset(&ex->feature_space, 0, sizeof(ex->feature_space));
     return ex;
   }
 };
