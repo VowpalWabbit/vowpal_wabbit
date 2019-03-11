@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(object_pool_test)
   }
 
   {
-    VW::object_pool<obj, obj_initializer> pool_with_small_chunks{0, 2};
+    VW::object_pool<obj, obj_initializer> pool_with_small_chunks{0, obj_initializer{}, 2};
     BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 0);
     BOOST_CHECK_EQUAL(pool_with_small_chunks.available(), 0);
 
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(object_pool_test)
     pool_with_small_chunks.return_object(o3);
   }
 
-  VW::object_pool<obj, obj_initializer> pool{0,1};
+  VW::object_pool<obj, obj_initializer> pool{0, obj_initializer{}, 1};
   BOOST_CHECK_EQUAL(pool.size(), 0);
   BOOST_CHECK_EQUAL(pool.empty(), true);
   BOOST_CHECK_EQUAL(pool.available(), 0);
