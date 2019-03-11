@@ -1301,7 +1301,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"));
     options.add_and_parse(vw_args);
 
-    all.p = new parser{ring_size};
+    all.p = new parser{ring_size, all};
     initialize_parser_datastructures(all);
 
     option_group_definition update_args("Update options");

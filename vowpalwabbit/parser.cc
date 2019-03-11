@@ -968,6 +968,23 @@ void initialize_examples(vw& all)
   all.p->gram_mask = v_init<size_t>();
   all.p->ids = v_init<size_t>();
   all.p->counts = v_init<size_t>();
+  all.p->example_pool = std::move(VW::object_pool<example, example_initializer>{all.p->ring_size, example_initializer{all}});
+}
+
+example* example_initializer::operator()(example* ex)
+{
+  memset(&ex->l, 0, sizeof(polylabel));
+  ex->in_use = false;
+  ex->passthrough = nullptr;
+  ex->tag = v_init<char>();
+  ex->indices = v_init<namespace_index>();
+  memset(&ex->feature_space, 0, sizeof(ex->feature_space));
+  if (this->all)
+  {
+    VW::setup_example(*this->all, ex);
+  }
+
+  return ex;
 }
 
 void adjust_used_index(vw& all) { /* no longer used */ }

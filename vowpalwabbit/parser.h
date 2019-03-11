@@ -31,22 +31,22 @@ struct input_options;
 
 struct example_initializer
 {
-  example* operator()(example* ex)
-  {
-    memset(&ex->l, 0, sizeof(polylabel));
-    ex->in_use = false;
-    ex->passthrough = nullptr;
-    ex->tag = v_init<char>();
-    ex->indices = v_init<namespace_index>();
-    memset(&ex->feature_space, 0, sizeof(ex->feature_space));
-    return ex;
-  }
+  example_initializer() = default;
+
+  example_initializer(vw& all)
+    : all{&all}
+  {}
+
+  example* operator()(example* ex);
+
+private:
+  vw* all = nullptr;
 };
 
 struct parser
 {
-  parser(size_t ring_size)
-   : example_pool{ring_size}, ready_parsed_examples{ring_size}, ring_size{ring_size}
+  parser(size_t ring_size, vw& all)
+      : ready_parsed_examples{ring_size}, ring_size{ring_size}
   {
     this->input = new io_buf{};
     this->output = new io_buf{};

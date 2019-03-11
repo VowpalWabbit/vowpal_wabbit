@@ -1357,7 +1357,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   if(minibatch2 > all.p->ring_size)
   {
     delete all.p;
-    all.p = new parser{minibatch2};
+    all.p = new parser{minibatch2, all};
   }
 
   ld->v.resize(all.lda * ld->minibatch);

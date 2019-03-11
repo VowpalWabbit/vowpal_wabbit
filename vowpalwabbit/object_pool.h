@@ -11,8 +11,9 @@ template <typename T, typename TInitializer>
 struct object_pool
 {
   object_pool() = default;
-  object_pool(size_t initial_chunk_size, size_t chunk_size = 8)
-    : m_initial_chunk_size(initial_chunk_size),
+  object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
+    : m_initializer(initializer),
+    m_initial_chunk_size(initial_chunk_size),
     m_chunk_size(chunk_size)
   {
     new_chunk(initial_chunk_size);
