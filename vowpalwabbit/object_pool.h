@@ -81,6 +81,9 @@ struct object_pool
 
     for (size_t i = 0; i < size; i++)
     {
+      // TODO fix need to memset to 0
+      memset(&chunk[i], 0, sizeof(T));
+      new (&chunk[i]) T{};
       m_pool.push(m_initializer(&chunk[i]));
     }
   }

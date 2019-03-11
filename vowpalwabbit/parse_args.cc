@@ -1635,9 +1635,6 @@ vw* initialize(
       exit(0);
     }
 
-    // Setup example pool to init new examples correctly.
-    initialize_parser_datastructures(all);
-
     all.l->init_driver();
 
     return &all;

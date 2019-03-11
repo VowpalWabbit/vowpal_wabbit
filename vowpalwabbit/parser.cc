@@ -968,11 +968,6 @@ example* example_initializer::operator()(example* ex)
   ex->tag = v_init<char>();
   ex->indices = v_init<namespace_index>();
   memset(&ex->feature_space, 0, sizeof(ex->feature_space));
-  if (this->all)
-  {
-    VW::setup_example(*this->all, ex);
-  }
-
   return ex;
 }
 
@@ -980,8 +975,6 @@ void adjust_used_index(vw& all) { /* no longer used */ }
 
 void initialize_parser_datastructures(vw& all)
 {
-  all.p->example_pool =
-      std::move(VW::object_pool<example, example_initializer>{all.p->ring_size, example_initializer{all}});
 }
 
 namespace VW
