@@ -729,29 +729,29 @@ class DefaultState : public BaseState<audit>
     if (length > 0 && str[0] == '_')
     {
       // match _label*
-      if (ctx.key_length >= 6 && !strncmp(str, "_label", 6))
+      if (ctx.key_length >= 6 && !strncmp(ctx.key, "_label", 6))
       {
         if (ctx.key_length >= 7 && ctx.key[6] == '_')
           return &ctx.label_single_property_state;
         else if (ctx.key_length == 6)
           return &ctx.label_state;
-        else if (ctx.key_length == 11 && !_stricmp(str, "_labelIndex"))
+        else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex"))
           return &ctx.label_index_state;
         else
         {
-          ctx.error() << "Unsupported key '" << str << "' len: " << length;
+          ctx.error() << "Unsupported key '" << ctx.key << "' len: " << length;
           return nullptr;
         }
       }
 
-      if (ctx.key_length == 5 && !strcmp(str, "_text"))
+      if (ctx.key_length == 5 && !strcmp(ctx.key, "_text"))
         return &ctx.text_state;
 
       // TODO: _multi in _multi...
-      if (ctx.key_length == 6 && !strcmp(str, "_multi"))
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi"))
         return &ctx.multi_state;
 
-      if (ctx.key_length == 3 && !strcmp(str, "_df"))
+      if (ctx.key_length == 3 && !strcmp(ctx.key, "_df"))
         return &ctx.df_state;
 
       if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag"))
@@ -764,14 +764,14 @@ class DefaultState : public BaseState<audit>
         return &ctx.array_uint_state;
       }
 
-      if (ctx.key_length == 2 && str[1] == 'a')
+      if (ctx.key_length == 2 && ctx.key[1] == 'a')
       {
         ctx.array_uint_state.output_array = &ctx.label_object_state.actions;
         ctx.array_uint_state.return_state = this;
         return &ctx.array_uint_state;
       }
 
-      if (ctx.key_length == 2 && str[1] == 'p')
+      if (ctx.key_length == 2 && ctx.key[1] == 'p')
       {
         ctx.array_float_state.output_array = &ctx.label_object_state.probs;
         ctx.array_float_state.return_state = this;
@@ -1329,6 +1329,10 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 template <bool audit>
 struct json_parser
 {
+  json_parser(json_parser_mode mode)
+    : mode{mode}
+  {}
+
   rapidjson::Reader reader;
   VWReaderHandler<audit> handler;
   json_parser_mode mode;
@@ -1375,14 +1379,14 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   }
 
   InsituStringStream ss(line);
-  json_parser<audit> parser;
+  json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
 
-  VWReaderHandler<audit>& handler = parser.handler;
+  VWReaderHandler<audit>& handler = parser->handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
   handler.ctx.SetStartStateToDecisionService(data);
 
   ParseResult result =
-      parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+      parser->reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
 
   if (!result.IsError())
     return;

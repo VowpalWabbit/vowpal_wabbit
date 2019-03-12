@@ -565,17 +565,13 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         {
           all.p->reader = &read_features_json<true>;
           all.p->audit = true;
-          auto parser_context = std::make_shared<json_parser<true>>();
-          parser_context->mode = mode;
-          all.p->jsonp = parser_context;
+          all.p->jsonp = std::make_shared<json_parser<true>>(mode);
         }
         else
         {
           all.p->reader = &read_features_json<false>;
           all.p->audit = false;
-          auto parser_context = std::make_shared<json_parser<false>>();
-          parser_context->mode = mode;
-          all.p->jsonp = parser_context;
+          all.p->jsonp = std::make_shared<json_parser<false>>(mode);
         }
 
         all.p->decision_service_json = input_options.dsjson;
