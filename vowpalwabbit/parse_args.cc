@@ -1268,6 +1268,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push_back(mwt_setup);
   all.reduction_stack.push_back(cb_explore_setup);
   all.reduction_stack.push_back(cb_explore_adf_setup);
+  all.reduction_stack.push_back(CCB::ccb_explore_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(cbifyldf_setup);
   all.reduction_stack.push_back(explore_eval_setup);

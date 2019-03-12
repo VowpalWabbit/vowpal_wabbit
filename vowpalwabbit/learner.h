@@ -22,7 +22,8 @@ enum prediction_type_t
   multiclass,
   multilabels,
   prob,
-  multiclassprobs
+  multiclassprobs,
+  decision_probs
 };
 
 const char* to_string(prediction_type_t prediction_type);

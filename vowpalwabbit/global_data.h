@@ -449,7 +449,8 @@ enum label_type_t
   cb_eval,  // contextual-bandit evaluation
   cs,       // cost-sensitive
   multi,
-  mc
+  mc,
+  ccb       // conditional contextual-bandit
 };
 }
 
