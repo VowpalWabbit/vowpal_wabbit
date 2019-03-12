@@ -410,7 +410,7 @@ ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, cons
   return {action_id, probability};
 }
 
-//<action>:<probability>:<cost>,<action>:<probability>,<action>:<probability>,…
+//<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
 CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
 {
   auto& ccb_outcome = *(new CCB::conditional_contexual_bandit_outcome());
@@ -425,11 +425,11 @@ CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
     THROW("Malformed ccb label");
 
   ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
-  ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
+  ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
 
-  ccb_outcome.cost = float_of_substring(split_colons[2]);
+  ccb_outcome.cost = float_of_substring(split_colons[1]);
   if (nanpattern(ccb_outcome.cost))
-    THROW("error NaN cost: " << split_colons[2]);
+    THROW("error NaN cost: " << split_colons[1]);
 
   split_colons.clear();
 
