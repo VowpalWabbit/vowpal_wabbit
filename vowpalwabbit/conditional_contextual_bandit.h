@@ -6,6 +6,13 @@
 #include "label_parser.h"
 #include "v_array.h"
 #include "action_score.h"
+#include "options.h"
+
+
+namespace LEARNER {
+  template<class T, class E> struct learner;
+  using base_learner = learner<char, char>;
+}
 
 struct vw;
 struct example;
@@ -19,9 +26,6 @@ namespace CCB {
   {
     // The cost of this class
     float cost;
-
-    // The index of the decision for this label, should this be implicit?
-    //uint32_t decision_id;
 
     // Either probability for top action or for all actions in action set.
     // Top action is always in first position.
@@ -43,8 +47,7 @@ namespace CCB {
     v_array<uint32_t> explicit_included_actions;
   };
 
-  extern label_parser ccb_label_parser;
+  LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
 
-  bool ec_is_example_header(example& ec);
-  void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores);
+  extern label_parser ccb_label_parser;
 }
