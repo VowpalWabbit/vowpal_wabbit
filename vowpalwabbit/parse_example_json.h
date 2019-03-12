@@ -1381,6 +1381,12 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   InsituStringStream ss(line);
   json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
 
+  // As long as VW was configured correctly this should not occur.
+  if(parser->mode == json_parser_mode::standard)
+  {
+    THROW("dsjson does not support standard json parser mode.")
+  }
+
   VWReaderHandler<audit>& handler = parser->handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
   handler.ctx.SetStartStateToDecisionService(data);
