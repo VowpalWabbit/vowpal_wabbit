@@ -1208,72 +1208,75 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  LEARNER::base_learner* ret = all.reduction_stack.pop()(options, all);
-  if (ret == nullptr)
+  auto setup_func = all.reduction_stack.top();
+  all.reduction_stack.pop();
+  auto base = setup_func(options, all);
+
+  if (base == nullptr)
     return setup_base(options, all);
   else
-    return ret;
+    return base;
 }
 
 void parse_reductions(options_i& options, vw& all)
 {
   // Base algorithms
-  all.reduction_stack.push_back(GD::setup);
-  all.reduction_stack.push_back(kernel_svm_setup);
-  all.reduction_stack.push_back(ftrl_setup);
-  all.reduction_stack.push_back(svrg_setup);
-  all.reduction_stack.push_back(sender_setup);
-  all.reduction_stack.push_back(gd_mf_setup);
-  all.reduction_stack.push_back(print_setup);
-  all.reduction_stack.push_back(noop_setup);
-  all.reduction_stack.push_back(lda_setup);
-  all.reduction_stack.push_back(bfgs_setup);
-  all.reduction_stack.push_back(OjaNewton_setup);
-  // all.reduction_stack.push_back(VW_CNTK::setup);
+  all.reduction_stack.push(GD::setup);
+  all.reduction_stack.push(kernel_svm_setup);
+  all.reduction_stack.push(ftrl_setup);
+  all.reduction_stack.push(svrg_setup);
+  all.reduction_stack.push(sender_setup);
+  all.reduction_stack.push(gd_mf_setup);
+  all.reduction_stack.push(print_setup);
+  all.reduction_stack.push(noop_setup);
+  all.reduction_stack.push(lda_setup);
+  all.reduction_stack.push(bfgs_setup);
+  all.reduction_stack.push(OjaNewton_setup);
+  // all.reduction_stack.push(VW_CNTK::setup);
 
   // Score Users
-  all.reduction_stack.push_back(baseline_setup);
-  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
-  all.reduction_stack.push_back(active_setup);
-  all.reduction_stack.push_back(active_cover_setup);
-  all.reduction_stack.push_back(confidence_setup);
-  all.reduction_stack.push_back(nn_setup);
-  all.reduction_stack.push_back(mf_setup);
-  all.reduction_stack.push_back(marginal_setup);
-  all.reduction_stack.push_back(autolink_setup);
-  all.reduction_stack.push_back(lrq_setup);
-  all.reduction_stack.push_back(lrqfa_setup);
-  all.reduction_stack.push_back(stagewise_poly_setup);
-  all.reduction_stack.push_back(scorer_setup);
+  all.reduction_stack.push(baseline_setup);
+  all.reduction_stack.push(ExpReplay::expreplay_setup<'b', simple_label>);
+  all.reduction_stack.push(active_setup);
+  all.reduction_stack.push(active_cover_setup);
+  all.reduction_stack.push(confidence_setup);
+  all.reduction_stack.push(nn_setup);
+  all.reduction_stack.push(mf_setup);
+  all.reduction_stack.push(marginal_setup);
+  all.reduction_stack.push(autolink_setup);
+  all.reduction_stack.push(lrq_setup);
+  all.reduction_stack.push(lrqfa_setup);
+  all.reduction_stack.push(stagewise_poly_setup);
+  all.reduction_stack.push(scorer_setup);
   // Reductions
-  all.reduction_stack.push_back(bs_setup);
-  all.reduction_stack.push_back(binary_setup);
+  all.reduction_stack.push(bs_setup);
+  all.reduction_stack.push(binary_setup);
 
-  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
-  all.reduction_stack.push_back(topk_setup);
-  all.reduction_stack.push_back(oaa_setup);
-  all.reduction_stack.push_back(boosting_setup);
-  all.reduction_stack.push_back(ect_setup);
-  all.reduction_stack.push_back(log_multi_setup);
-  all.reduction_stack.push_back(recall_tree_setup);
-  all.reduction_stack.push_back(classweight_setup);
-  all.reduction_stack.push_back(multilabel_oaa_setup);
+  all.reduction_stack.push(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
+  all.reduction_stack.push(topk_setup);
+  all.reduction_stack.push(oaa_setup);
+  all.reduction_stack.push(boosting_setup);
+  all.reduction_stack.push(ect_setup);
+  all.reduction_stack.push(log_multi_setup);
+  all.reduction_stack.push(recall_tree_setup);
+  all.reduction_stack.push(classweight_setup);
+  all.reduction_stack.push(multilabel_oaa_setup);
 
-  all.reduction_stack.push_back(cs_active_setup);
-  all.reduction_stack.push_back(CSOAA::csoaa_setup);
-  all.reduction_stack.push_back(interact_setup);
-  all.reduction_stack.push_back(CSOAA::csldf_setup);
-  all.reduction_stack.push_back(cb_algs_setup);
-  all.reduction_stack.push_back(cb_adf_setup);
-  all.reduction_stack.push_back(mwt_setup);
-  all.reduction_stack.push_back(cb_explore_setup);
-  all.reduction_stack.push_back(cb_explore_adf_setup);
-  all.reduction_stack.push_back(cbify_setup);
-  all.reduction_stack.push_back(cbifyldf_setup);
-  all.reduction_stack.push_back(explore_eval_setup);
-  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
-  all.reduction_stack.push_back(Search::setup);
-  all.reduction_stack.push_back(audit_regressor_setup);
+  all.reduction_stack.push(cs_active_setup);
+  all.reduction_stack.push(CSOAA::csoaa_setup);
+  all.reduction_stack.push(interact_setup);
+  all.reduction_stack.push(CSOAA::csldf_setup);
+  all.reduction_stack.push(cb_algs_setup);
+  all.reduction_stack.push(cb_adf_setup);
+  all.reduction_stack.push(mwt_setup);
+  all.reduction_stack.push(cb_explore_setup);
+  all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(cbify_setup);
+  all.reduction_stack.push(cbifyldf_setup);
+  all.reduction_stack.push(explore_eval_setup);
+  all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
+  all.reduction_stack.push(Search::setup);
+  all.reduction_stack.push(audit_regressor_setup);
 
   all.l = setup_base(options, all);
 }
@@ -1571,7 +1574,7 @@ char** get_argv_from_string(string s, int& argc)
   c[1] = ' ';
   strcpy(c + 2, s.c_str());
   substring ss = {c, c + s.length() + 2};
-  v_array<substring> foo = v_init<substring>();
+  std::vector<substring> foo;
   tokenize(' ', ss, foo);
 
   char** argv = calloc_or_throw<char*>(foo.size());
@@ -1584,7 +1587,6 @@ char** get_argv_from_string(string s, int& argc)
 
   argc = (int)foo.size();
   free(c);
-  foo.delete_v();
   return argv;
 }
 
@@ -1837,7 +1839,6 @@ void finish(vw& all, bool delete_all)
     }
     free(all.sd);
   }
-  all.reduction_stack.delete_v();
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
