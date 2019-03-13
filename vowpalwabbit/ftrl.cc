@@ -26,6 +26,8 @@ struct update_data
   float l1_lambda;
   float l2_lambda;
   float predict;
+  float normalized_squared_norm_x;
+  float normalization;
 };
 
 struct ftrl
@@ -36,6 +38,7 @@ struct ftrl
   struct update_data data;
   size_t no_win_counter;
   size_t early_stop_thres;
+  double total_weight;
 };
 
 struct uncertainty
@@ -49,6 +52,7 @@ struct uncertainty
     score = 0;
   }
 };
+
 
 inline float sign(float w)
 {
@@ -169,7 +173,7 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
 // W_MX 3  maximum absolute value
 // W_WE 4  Wealth
 
-void inner_update_kt_state_and_predict(update_data& d, float x, float& wref)
+void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 {
   float* w = &wref;
 
@@ -177,27 +181,44 @@ void inner_update_kt_state_and_predict(update_data& d, float x, float& wref)
   if (fabs_x > w[W_MX])
     w[W_MX] = fabs_x;
 
-  w[W_XT] = (1+w[W_WE]) * w[W_ZT]/(w[W_MX]*w[W_MX]*(1+w[W_G2]));
+  // KT update
+  //w[W_XT] = (2.0*sqrtf(w[W_G2])+w[W_WE]) * w[W_ZT]/(w[W_MX]*w[W_MX]*(1.0+w[W_G2]));
+
+  // COCOB update without sigmoid
+  w[W_XT] = (8.0+w[W_WE]) * w[W_ZT]/(w[W_MX]*(w[W_MX]+w[W_G2]));
 
   d.predict += w[W_XT] * x;
+  if (w[W_MX]>0)
+    d.normalized_squared_norm_x += x*x/(w[W_MX]*w[W_MX]);
 }
 
-void inner_update_kt_post(update_data& d, float x, float& wref)
+void inner_update_cb_post(update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float gradient = d.update * x;
 
   w[W_ZT] += -gradient;
-  w[W_G2] += 1;
+
+  // KT update
+  //w[W_G2] += 1.0;
+
+  // COCOB update
+  w[W_G2] += fabs(gradient);
+
   w[W_WE] += (-gradient*w[W_XT]);
 }
 
-void update_state_and_predict_kt(ftrl& b, single_learner&, example& ec)
+void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
+  b.data.normalized_squared_norm_x = 0;
 
-  GD::foreach_feature<update_data, inner_update_kt_state_and_predict>(*b.all, ec, b.data);
-  ec.partial_prediction = b.data.predict;
+  GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
+
+  b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
+  b.total_weight += ec.weight;
+
+  ec.partial_prediction = b.data.predict/((float)(b.all->normalized_sum_norm_x/b.total_weight));
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
@@ -228,11 +249,11 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
 }
 
 
-void update_after_prediction_kt(ftrl& b, example& ec)
+void update_after_prediction_cb(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
-  GD::foreach_feature<update_data, inner_update_kt_post>(*b.all, ec, b.data);
+  GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
 }
 
 
@@ -260,15 +281,15 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_pistol(a, ec);
 }
 
-void learn_kt(ftrl& a, single_learner& base, example& ec)
+void learn_cb(ftrl& a, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
   // update state based on the example and predict
-  update_state_and_predict_kt(a, base, ec);
+  update_state_and_predict_cb(a, base, ec);
 
   // update state based on the prediction
-  update_after_prediction_kt(a, ec);
+  update_after_prediction_cb(a, ec);
 }
 
 
@@ -311,17 +332,17 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   auto b = scoped_calloc_or_throw<ftrl>();
   bool ftrl_option = false;
   bool pistol = false;
-  bool kt = false;
+  bool coin = false;
 
   option_group_definition new_options("Follow the Regularized Leader");
   new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("kt", kt).keep().help("KT-based optimizer"))
+      .add(make_option("coin", coin).keep().help("coin betting optimizer"))
       .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
   options.add_and_parse(new_options);
 
-  if (!ftrl_option && !pistol && !kt)
+  if (!ftrl_option && !pistol && !coin)
   {
     return nullptr;
   }
@@ -340,6 +361,8 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   b->all = &all;
   b->no_win_counter = 0;
+  b->all->normalized_sum_norm_x = 0;
+  b->total_weight = 0.;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
@@ -359,10 +382,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     learn_ptr = learn_pistol;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
   }
-  else if (kt)
+  else if (coin)
   {
-    algorithm_name = "KT";
-    learn_ptr = learn_kt;
+    algorithm_name = "Coin Betting";
+    learn_ptr = learn_cb;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
   }
 
