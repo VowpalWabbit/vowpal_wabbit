@@ -8,7 +8,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 import vowpalwabbit.spark.prediction.*;
 
-public class VowpalWabbitNativeTest {
+public class VowpalWabbitNativeIT {
 
     @Test
     public void testSimple1() throws Exception {

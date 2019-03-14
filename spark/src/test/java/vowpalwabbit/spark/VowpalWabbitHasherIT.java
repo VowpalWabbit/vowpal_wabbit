@@ -6,7 +6,7 @@ import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.*;
 import static org.apache.spark.sql.functions.*;
 
-public class VowpalWabbitHasherTest {
+public class VowpalWabbitHasherIT {
 
     @Test
     public void testSimple1() throws Exception {
