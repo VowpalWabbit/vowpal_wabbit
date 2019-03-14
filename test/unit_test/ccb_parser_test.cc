@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
   BOOST_CHECK(label.outcome == nullptr);
   BOOST_CHECK_EQUAL(label.type, CCB::example_type::decision);
 
-  label = parse_label(&p, "ccb decision 1:0.5:1.0 3");
+  label = parse_label(&p, "ccb decision 1:1.0:0.5 3");
   BOOST_CHECK_EQUAL(label.explicit_included_actions.size(), 1);
   BOOST_CHECK_EQUAL(label.explicit_included_actions[0], 3);
   BOOST_CHECK_CLOSE(label.outcome->cost, 1.0f, .0001f);
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
   BOOST_CHECK_CLOSE(label.outcome->probabilities[0].score, .5f, .0001f);
   BOOST_CHECK_EQUAL(label.type, CCB::example_type::decision);
 
-  label = parse_label(&p, "ccb decision 1:0.5:-2.0,2:0.25,3:0.25 3,4");
+  label = parse_label(&p, "ccb decision 1:-2.0:0.5,2:0.25,3:0.25 3,4");
   BOOST_CHECK_EQUAL(label.explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(label.explicit_included_actions[0], 3);
   BOOST_CHECK_EQUAL(label.explicit_included_actions[1], 4);
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
   BOOST_REQUIRE_THROW(parse_label(&p, "other shared"), VW::vw_exception);
   BOOST_REQUIRE_THROW(parse_label(&p, "other"), VW::vw_exception);
   BOOST_REQUIRE_THROW(parse_label(&p, "ccb unknown"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(parse_label(&p, "ccb decision 1:0.5:1.0,4:0.7"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(parse_label(&p, "ccb decision 1:1.0:0.5,4:0.7"), VW::vw_exception);
 }
 
 BOOST_AUTO_TEST_CASE(ccb_cache_label)
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   p.parse_name = v_init<substring>();
 
   auto lp = CCB::ccb_label_parser;
-  auto label = parse_label(&p, "ccb decision 1:0.5:-2.0,2:0.25,3:0.25 3,4");
+  auto label = parse_label(&p, "ccb decision 1:-2.0:0.5,2:0.25,3:0.25 3,4");
 
   lp.cache_label(&label, io);
   io.head = io.space.begin();
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   p.parse_name = v_init<substring>();
   auto lp = CCB::ccb_label_parser;
 
-  auto label = parse_label(&p, "ccb decision 1:0.5:-2.0,2:0.25,3:0.25 3,4");
+  auto label = parse_label(&p, "ccb decision 1:-2.0:0.5,2:0.25,3:0.25 3,4");
 
   CCB::label copied_to;
   lp.default_label(&copied_to);
