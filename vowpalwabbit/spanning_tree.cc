@@ -126,8 +126,12 @@ void SpanningTree::Start()
 
 void SpanningTree::Stop()
 {
-  CLOSESOCK(sock);
   m_stop = true;
+#ifndef _WIN32
+// just close won't unblock the accept
+  shutdown(sock, SHUT_RD);
+#endif
+  CLOSESOCK(sock);
 
   // wait for run to stop
   if (m_future != nullptr)

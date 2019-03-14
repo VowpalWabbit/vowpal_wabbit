@@ -6,8 +6,8 @@ import org.apache.spark.sql.Row;
 import vowpalwabbit.spark.*;
 
 public class LongFeaturizer extends NumericFeaturizer {
-    public LongFeaturizer(int fieldIdx, String fieldName, int namespaceHash, int mask) {
-        super(fieldIdx, fieldName, namespaceHash, mask);
+    public LongFeaturizer(int fieldIdx, String columnName, int namespaceHash, int mask) {
+        super(fieldIdx, columnName, namespaceHash, mask);
     }
 
     protected double getAsDouble(Row r) {

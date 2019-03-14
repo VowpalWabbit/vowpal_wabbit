@@ -1,25 +1,42 @@
+find_package(Java)
 find_package(JNI)
+include(UseJava)
 
 if(JNI_FOUND)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-  set(src_base src/main/c++)
+  set(src_base ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++)
   set(vw_spark_jni_headers
     ${src_base}/jni_spark_vw.h
+    ${src_base}/jni_spark_vw_generated.h
+    ${src_base}/vector_io_buf.h
+    ${src_base}/util.h
   )
 
   set(vw_spark_jni_sources
     ${src_base}/jni_spark_vw.cc
+    ${src_base}/vector_io_buf.cc
+    ${src_base}/jni_spark_cluster.cc
+    ${src_base}/util.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit/spanning_tree.cc
   )
 
+  create_javah(TARGET javaheaders
+    CLASSES
+      vowpalwabbit.spark.VowpalWabbitNative
+      vowpalwabbit.spark.VowpalWabbitExample
+      vowpalwabbit.spark.ClusterSpanningTree
+    CLASSPATH ${CMAKE_CURRENT_SOURCE_DIR}/target/classes
+    OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_spark_vw_generated.h)
+
   add_library(vw_spark_jni SHARED ${vw_spark_jni_headers} ${vw_spark_jni_sources})
+  target_include_directories(vw_spark_jni PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit)
   target_link_libraries(vw_spark_jni PUBLIC vw)
   target_include_directories(vw_spark_jni PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${JNI_INCLUDE_DIRS})
 
   # Ensure target directory exists
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/)
-  add_custom_command(TARGET vw_spark_jni POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_spark_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/
-  )
+  file(MAKE_DIRECTORY target/bin/natives/linux_64)
+  # TODO: support Win/osx 64/32/ ..
+  set_target_properties(vw_spark_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY target/bin/natives/linux_64)
 
   # Replace version number in POM
   configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)

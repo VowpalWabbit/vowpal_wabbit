@@ -98,6 +98,10 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
             else   
                 throw new RuntimeException("Unsupported type: " + fieldType);
 
+            // Glance: seq + map
+            // https://spark.apache.org/docs/2.3.0/api/java/index.html?org/apache/spark/mllib/tree/model/Split.html
+
+
             i++;
 
             // TODO: list types
@@ -109,7 +113,10 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
             // TimestampType
             // getStruct
             // getMap
+            // - Key<String, number/string> -> CogServices
             // getSeq
+            // - List<string> -> Categories <-- spark sql split
+            // - 
         }
 
         UserDefinedFunction mode = udf(

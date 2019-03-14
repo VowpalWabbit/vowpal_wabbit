@@ -29,7 +29,7 @@ public class VowpalWabbitHasherTest {
 
         VowpalWabbitFeaturizer hasher = new VowpalWabbitFeaturizer()
             .setInputCols(new String[] { "category", "value" })
-            .setOutputCol("foo");
+            .setOutputCol("foo"); // serves namespace
 
         Dataset<Row> dfOutput = hasher.transform(df);
 

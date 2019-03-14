@@ -7,13 +7,13 @@ import vowpalwabbit.spark.*;
 
 public class StringFeaturizer implements IFeaturizer, Serializable {
     private int fieldIdx;
-    private String fieldName;
+    private String columnName;
     private int namespaceHash;
     private int mask;
 
-    public StringFeaturizer(int fieldIdx, String fieldName, int namespaceHash, int mask) {
+    public StringFeaturizer(int fieldIdx, String columnName, int namespaceHash, int mask) {
         this.fieldIdx = fieldIdx;
-        this.fieldName = fieldName;
+        this.columnName = columnName;
         this.namespaceHash = namespaceHash;
         this.mask = mask;
     }
@@ -22,7 +22,7 @@ public class StringFeaturizer implements IFeaturizer, Serializable {
         if (r.isNullAt(fieldIdx))
             return;
 
-        indices.add(VowpalWabbitMurmur.hash(fieldName + r.getString(fieldIdx), namespaceHash) & mask);
+        indices.add(VowpalWabbitMurmur.hash(columnName + r.getString(fieldIdx), namespaceHash) & mask);
         values.add(1.0);
     }
 }

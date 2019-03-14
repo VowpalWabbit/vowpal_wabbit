@@ -9,11 +9,11 @@ public abstract class NumericFeaturizer implements IFeaturizer, Serializable {
     protected int fieldIdx;
     private int featureIdx;
 
-    public NumericFeaturizer(int fieldIdx, String fieldName, int namespaceHash, int mask) {
+    public NumericFeaturizer(int fieldIdx, String columnName, int namespaceHash, int mask) {
         this.fieldIdx = fieldIdx;
 
-        // TODO: check if the fieldName is a int? is this even support as column name?
-        this.featureIdx = VowpalWabbitMurmur.hash(fieldName, namespaceHash) & mask;
+        // TODO: check if the columnName is a int? is this even support as column name?
+        this.featureIdx = VowpalWabbitMurmur.hash(columnName, namespaceHash) & mask;
     }
 
     public void featurize(Row r, ArrayList<Integer> indices, ArrayList<Double> values) {

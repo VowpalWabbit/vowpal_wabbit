@@ -83,9 +83,19 @@
             <version>2.3.1</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.scijava</groupId>
+            <artifactId>native-lib-loader</artifactId>
+            <version>2.3.0</version>
+        </dependency>
      </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>target/bin</directory>
+            </resource>
+        </resources>
         <testResources>
             <testResource>
                 <directory>${project.build.directory}</directory>
