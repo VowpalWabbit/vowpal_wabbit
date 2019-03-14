@@ -10,6 +10,7 @@ import org.apache.spark.ml.Transformer;
 import org.apache.spark.ml.param.ParamMap;
 import org.apache.spark.ml.param.StringArrayParam;
 import org.apache.spark.ml.param.Param;
+import org.apache.spark.ml.param.IntParam;
 import org.apache.spark.ml.param.shared.HasOutputCol;
 import org.apache.spark.ml.util.DefaultParamsWritable;
 import org.apache.spark.ml.util.MLReader;
@@ -27,6 +28,9 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
 
     private StringArrayParam inputCols;
     private Param<String> outputCol;
+    private IntParam seed;
+    // TODO: hashAll
+
     private final String uid;
 
     public VowpalWabbitFeaturizer(String uid) {
@@ -35,7 +39,14 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
 
     public VowpalWabbitFeaturizer() {
         this.uid = VowpalWabbitFeaturizer.class.getName() + "_" + UUID.randomUUID().toString();
+
+        // some default values
+        setInputCols(new String[] { "data" });
+        setOutputCol("namespace0");
+        setSeed(0);
     }
+
+    ///// Input Cols
 
     public String[] getInputCols() { return get(this.inputCols).get(); }
 
@@ -45,6 +56,8 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
         return this;
     }
 
+    ///// Output Cols
+
     public String getOutputCol() { return get(this.outputCol).get(); }
 
     public VowpalWabbitFeaturizer setOutputCol(String column) {
@@ -53,7 +66,15 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
         return this;
     }
 
-    // TODO: params (hashAll, seed, bits)
+    ///// Seed
+
+    public int getSeed() { return (int)get(this.seed).get(); }
+
+    public VowpalWabbitFeaturizer setSeed(int value) {
+        this.seed = seed();
+        set(this.seed, value);
+        return this;
+    }
 
     @Override
     public Dataset<Row> transform(Dataset<?> data) {
@@ -62,14 +83,8 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
 
         List<String> inputColsList = Arrays.asList(getInputCols());
 
-        // TODO: hashAll, seed, bits
-        // TODO: add parameters to meta data so the trainer can validate
-        final int numBits = 18;
-        int mask = (1 << numBits) - 1;
-
-        String targetNamespace = getOutputCol();
-        int seed = 0; // TODO
-        int namespaceHash = VowpalWabbitMurmur.hash(targetNamespace, seed);
+        String targetNamespace = this.getOutputCol();
+        int namespaceHash = VowpalWabbitMurmur.hash(targetNamespace, this.getSeed());
 
         final IFeaturizer[] featurizer = new IFeaturizer[inputColsList.size()];
         for (int j = 0, i = 0; j < fields.length; j++) {
@@ -80,21 +95,21 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
 
             DataType fieldType = fields[j].dataType();
             if (fieldType == DataTypes.StringType)
-                featurizer[i] = new StringFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new StringFeaturizer(i, fieldName, namespaceHash);
             else if (fieldType == DataTypes.IntegerType)
-                featurizer[i] = new IntegerFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new IntegerFeaturizer(i, fieldName, namespaceHash);
             else if (fieldType == DataTypes.LongType)
-                featurizer[i] = new LongFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new LongFeaturizer(i, fieldName, namespaceHash);
             else if (fieldType == DataTypes.ShortType)
-                featurizer[i] = new ShortFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new ShortFeaturizer(i, fieldName, namespaceHash);
             else if (fieldType == DataTypes.ByteType)
-                featurizer[i] = new ByteFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new ByteFeaturizer(i, fieldName, namespaceHash);
             else if (fieldType == DataTypes.FloatType)
-                featurizer[i] = new FloatFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new FloatFeaturizer(i, fieldName, namespaceHash);
             else if (fieldType == DataTypes.DoubleType)
-                featurizer[i] = new DoubleFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new DoubleFeaturizer(i, fieldName, namespaceHash);
             else if (fieldType == DataTypes.BooleanType)
-                featurizer[i] = new BooleanFeaturizer(i, fieldName, namespaceHash, mask);
+                featurizer[i] = new BooleanFeaturizer(i, fieldName, namespaceHash);
             else   
                 throw new RuntimeException("Unsupported type: " + fieldType);
 
@@ -127,21 +142,33 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
                 for (IFeaturizer f : featurizer)
                     f.featurize(r, indices, values);
 
+                int maxIndexMask = ((1 << 31) - 1);
+                // TODO: review this, but due to SparseVector limitations we don't support large indices
+                for (int i = 0; i < indices.size(); i++) 
+                    indices.set(i, indices.get(i) & maxIndexMask);
+
                 // need to sort them due to SparseVector restriction
                 int[] sortedIndices = IntStream.range(0, indices.size())
-                    .boxed().sorted((i, j) -> indices.get(i).compareTo(indices.get(j)))
-                    .mapToInt(Integer::intValue).toArray();
+                    .boxed()
+                    .sorted((i, j) -> indices.get(i).compareTo(indices.get(j)))
+                    // filter duplicates indices
+                    // Warning: 
+                    //   - due to SparseVector limitations (which doesn't allow duplicates) we need filter
+                    //   - VW command line allows for duplicate features with different values (just updates twice)
+                    .distinct() // optimized according to https://stackoverflow.com/questions/43806467/java-streams-how-to-do-an-efficient-distinct-and-sort
+                    .mapToInt(Integer::intValue)
+                    .toArray();
 
-                // TODO: maybe need to filter duplicates?
-                int[] indicesArr = new int[indices.size()];
-                double[] valuesArr = new double[values.size()];
+                int[] indicesArr = new int[sortedIndices.length];
+                double[] valuesArr = new double[sortedIndices.length];
 
-                for (int i = 0; i<indices.size(); i++) {
-                    indicesArr[sortedIndices[i]] = indices.get(i);
-                    valuesArr[sortedIndices[i]] = values.get(i);
+                for (int i = 0; i < sortedIndices.length; i++) {
+                    int idx = sortedIndices[i];
+                    indicesArr[i] = indices.get(idx);
+                    valuesArr[i] = values.get(idx);
                 }
 
-                return new SparseVector((int)(1 << numBits), indicesArr, valuesArr);
+                return new SparseVector(maxIndexMask, indicesArr, valuesArr);
             },
             new VectorUDT()
         );
@@ -155,9 +182,10 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
     @Override
     public Transformer copy(ParamMap extra) {
         VowpalWabbitFeaturizer copied = new VowpalWabbitFeaturizer();
-        // TODO:
+       
         copied.setInputCols(this.getInputCols());
         copied.setOutputCol(this.getOutputCol());
+        copied.setSeed(this.getSeed());
 
         return copied;
     }
@@ -192,6 +220,10 @@ public class VowpalWabbitFeaturizer extends Transformer implements Serializable,
 
     public Param<String> outputCol() {
         return new Param<String>(this, "outputCol", "Output column created");
+    }
+
+    public IntParam seed() { 
+        return new IntParam(this, "seed", "The seed used for hashing");
     }
 
     public VowpalWabbitFeaturizer load(String path) {

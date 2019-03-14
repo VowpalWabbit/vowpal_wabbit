@@ -5,9 +5,12 @@ import java.util.ArrayList;
 import org.apache.spark.sql.Row;
 import vowpalwabbit.spark.*;
 
+/**
+ * @author Markus Cozowicz
+ */
 public class LongFeaturizer extends NumericFeaturizer {
-    public LongFeaturizer(int fieldIdx, String columnName, int namespaceHash, int mask) {
-        super(fieldIdx, columnName, namespaceHash, mask);
+    public LongFeaturizer(int fieldIdx, String columnName, int namespaceHash) {
+        super(fieldIdx, columnName, namespaceHash);
     }
 
     protected double getAsDouble(Row r) {

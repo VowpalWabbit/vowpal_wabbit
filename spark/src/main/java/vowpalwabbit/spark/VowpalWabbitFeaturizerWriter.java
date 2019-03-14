@@ -30,11 +30,18 @@ public class VowpalWabbitFeaturizerWriter extends MLWriter implements Serializab
         sparkSession().createDataFrame(listData, Data.class).repartition(1).write().parquet(dataPath);
     }
 
-    // TODO:
     public static class Data implements Serializable {
         private String[] _inputCols;
+        private String _outputCol;
+        private int _seed;
 
         public String[] getInputCols() { return _inputCols; }
         public void setInputCols(String[] inputCols) { _inputCols = inputCols; }
+
+        public String getOutputCol() { return _outputCol; }
+        public void setOutputCol(String value) { _outputCol = value; }
+
+        public int getSeed() { return _seed; }
+        public void setSeed(int value) { _seed = value; }
     }
 }

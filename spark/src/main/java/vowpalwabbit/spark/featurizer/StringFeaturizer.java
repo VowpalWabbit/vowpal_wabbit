@@ -5,24 +5,25 @@ import java.util.ArrayList;
 import org.apache.spark.sql.Row;
 import vowpalwabbit.spark.*;
 
+/**
+ * @author Markus Cozowicz
+ */
 public class StringFeaturizer implements IFeaturizer, Serializable {
-    private int fieldIdx;
-    private String columnName;
-    private int namespaceHash;
-    private int mask;
+    private final int fieldIdx;
+    private final String columnName;
+    private final int namespaceHash;
 
-    public StringFeaturizer(int fieldIdx, String columnName, int namespaceHash, int mask) {
+    public StringFeaturizer(int fieldIdx, String columnName, int namespaceHash) {
         this.fieldIdx = fieldIdx;
         this.columnName = columnName;
         this.namespaceHash = namespaceHash;
-        this.mask = mask;
     }
 
     public void featurize(Row r, ArrayList<Integer> indices, ArrayList<Double> values) {
         if (r.isNullAt(fieldIdx))
             return;
 
-        indices.add(VowpalWabbitMurmur.hash(columnName + r.getString(fieldIdx), namespaceHash) & mask);
+        indices.add(VowpalWabbitMurmur.hash(columnName + r.getString(fieldIdx), namespaceHash));
         values.add(1.0);
     }
 }

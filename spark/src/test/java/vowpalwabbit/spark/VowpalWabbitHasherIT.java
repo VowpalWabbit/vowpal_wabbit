@@ -9,6 +9,14 @@ import static org.apache.spark.sql.functions.*;
 public class VowpalWabbitHasherIT {
 
     @Test
+    public void testSeed() throws Exception {
+        VowpalWabbitFeaturizer hasher = new VowpalWabbitFeaturizer()
+            .setSeed(42);
+
+        assertEquals(42, hasher.getSeed());
+    }
+
+    @Test
     public void testSimple1() throws Exception {
 
         SparkSession spark = SparkSession.builder()

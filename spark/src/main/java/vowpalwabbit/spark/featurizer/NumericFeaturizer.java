@@ -5,15 +5,18 @@ import java.util.ArrayList;
 import org.apache.spark.sql.Row;
 import vowpalwabbit.spark.*;
 
+/**
+ * @author Markus Cozowicz
+ */
 public abstract class NumericFeaturizer implements IFeaturizer, Serializable {
-    protected int fieldIdx;
-    private int featureIdx;
+    protected final int fieldIdx;
+    private final int featureIdx;
 
-    public NumericFeaturizer(int fieldIdx, String columnName, int namespaceHash, int mask) {
+    public NumericFeaturizer(int fieldIdx, String columnName, int namespaceHash) {
         this.fieldIdx = fieldIdx;
 
         // TODO: check if the columnName is a int? is this even support as column name?
-        this.featureIdx = VowpalWabbitMurmur.hash(columnName, namespaceHash) & mask;
+        this.featureIdx = VowpalWabbitMurmur.hash(columnName, namespaceHash);
     }
 
     public void featurize(Row r, ArrayList<Integer> indices, ArrayList<Double> values) {
