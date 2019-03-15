@@ -152,10 +152,10 @@ extern "C" {
 /*
  * Class:     vowpalwabbit_spark_ClusterSpanningTree
  * Method:    create
- * Signature: ()J
+ * Signature: (I)J
  */
 JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_create
-  (JNIEnv *, jclass);
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     vowpalwabbit_spark_ClusterSpanningTree
@@ -179,6 +179,14 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_start
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_stop
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     vowpalwabbit_spark_ClusterSpanningTree
+ * Method:    getPort
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_getPort
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus

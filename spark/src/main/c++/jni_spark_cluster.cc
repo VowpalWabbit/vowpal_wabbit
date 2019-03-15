@@ -3,10 +3,10 @@
 #include "spanning_tree.h"
 
 JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_create
-  (JNIEnv *env, jclass)
+  (JNIEnv *env, jclass, jint port)
 {
   try
-  { return (jlong)new VW::SpanningTree();
+  { return (jlong)new VW::SpanningTree(port);
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);
@@ -44,6 +44,18 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_stop
 
   try
   { tree->Stop();
+  }
+  catch(...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT jint JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_getPort
+  (JNIEnv *env, jobject clusterObj)
+{ auto tree = (VW::SpanningTree*)get_native_pointer(env, clusterObj);
+
+  try
+  { return tree->BoundPort();
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);

@@ -12,17 +12,17 @@ public class ClusterSpanningTree implements Closeable {
         Native.load();
     }
 
-    private static native long create();
+    private static native long create(int port);
     private native void delete();
     public native void start();
     public native void stop();
+    public native int getPort();
 
     private long nativePointer;
 
-    public ClusterSpanningTree() {
-        this.nativePointer = create();
+    public ClusterSpanningTree(int port) {
+        this.nativePointer = create(port);
     }
-
 
     @Override
     final public void close() {

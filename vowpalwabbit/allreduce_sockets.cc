@@ -115,7 +115,6 @@ void AllReduceSockets::all_reduce_init()
   socks.current_master = span_server;
 
   uint32_t master_ip = *((uint32_t*)master->h_addr);
-  int port = 26543;
 
   socket_t master_sock = sock_connect(master_ip, htons(port));
   if (send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))

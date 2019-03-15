@@ -2,15 +2,7 @@ find_package(Java)
 find_package(JNI)
 include(UseJava)
 
-# set(Boost_USE_STATIC_LIBS ON)
-# SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-# SET(BUILD_SHARED_LIBS OFF)
-
 if(JNI_FOUND)
-
-# target_include_directories(vw PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-# target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
-
 
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
   set(src_base ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++)

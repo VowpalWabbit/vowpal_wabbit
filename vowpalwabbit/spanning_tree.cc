@@ -81,7 +81,7 @@ void fail_send(const socket_t fd, const void* buf, const int count)
 
 namespace VW
 {
-SpanningTree::SpanningTree() : m_stop(false), port(26543), m_future(nullptr)
+SpanningTree::SpanningTree(short unsigned int port) : m_stop(false), m_port(port), m_future(nullptr)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -105,6 +105,14 @@ SpanningTree::SpanningTree() : m_stop(false), port(26543), m_future(nullptr)
   address.sin_port = htons(port);
   if (::bind(sock, (sockaddr*)&address, sizeof(address)) < 0)
     THROWERRNO("bind: ");
+
+  sockaddr_in bound_addr;
+  bzero(&bound_addr, sizeof(bound_addr));
+	socklen_t len = sizeof(bound_addr);
+	if (::getsockname(sock, (sockaddr*)&bound_addr, &len) < 0)
+    THROWERRNO("getsockname: ")
+
+	m_port = ntohs(bound_addr.sin_port);
 }
 
 SpanningTree::~SpanningTree()
@@ -112,6 +120,8 @@ SpanningTree::~SpanningTree()
   Stop();
   delete m_future;
 }
+
+short unsigned int SpanningTree::BoundPort() { return m_port; }
 
 void SpanningTree::Start()
 {
@@ -170,39 +180,39 @@ void SpanningTree::Run()
     if (getnameinfo((sockaddr*)&client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0))
       THROWERRNO("getnameinfo: ");
 
-    cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(port) << ") serv=" << servInfo
+    cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << ") serv=" << servInfo
          << endl;
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
     {
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port) << "): nonce read failed, exiting" << endl;
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce read failed, exiting" << endl;
       exit(1);
     }
     else
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port) << "): nonce=" << nonce << endl;
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << endl;
     size_t total = 0;
     if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total))
     {
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port) << "): total node count read failed, exiting"
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total node count read failed, exiting"
            << endl;
       exit(1);
     }
     else
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port) << "): total=" << total << endl;
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << endl;
     size_t id = 0;
     if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id))
     {
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port) << "): node id read failed, exiting" << endl;
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id read failed, exiting" << endl;
       exit(1);
     }
     else
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port) << "): node id=" << id << endl;
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << endl;
 
     int ok = true;
     if (id >= total)
     {
-      cout << dotted_quad << "(" << hostname << ':' << ntohs(port) << "): invalid id=" << id << " >=  " << total << " !"
+      cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total << " !"
            << endl;
       ok = false;
     }
