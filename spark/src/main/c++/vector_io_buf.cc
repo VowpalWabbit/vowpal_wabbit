@@ -1,7 +1,12 @@
 #include "vector_io_buf.h"
 #include <iostream>
 
-vector_io_buf::vector_io_buf() 
+vector_io_buf::vector_io_buf(const char* data, size_t len) : _buffer(data, data + len)
+{ files.push_back(0); 
+  _iterator = _buffer.begin();
+}
+
+vector_io_buf::vector_io_buf()
 { files.push_back(0);
 }
 
@@ -10,12 +15,20 @@ int vector_io_buf::open_file(const char* name, bool stdin_off, int flag)
 }
 
 void vector_io_buf::reset_file(int f)
-{ head = space.begin();
+{ _iterator = _buffer.begin();
+    
+  head = space.begin();
   space.end() = space.begin();
 }
 
 ssize_t vector_io_buf::read_file(int f, void* buf, size_t nbytes)
-{ return 0; // not supported
+{ // make sure we don't go pass the end
+  nbytes = min(_buffer.end() - _iterator, nbytes);
+
+  memcpy(buf, &*_iterator, nbytes);
+  _iterator += nbytes;
+
+  return nbytes;
 }
 
 size_t vector_io_buf::num_files()

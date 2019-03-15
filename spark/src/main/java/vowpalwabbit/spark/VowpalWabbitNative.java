@@ -2,6 +2,9 @@ package vowpalwabbit.spark;
 
 import java.io.Closeable;
 
+/**
+ * @author Markus Cozowicz
+ */
 public class VowpalWabbitNative implements Closeable {
     static {
         Native.load();
@@ -9,9 +12,13 @@ public class VowpalWabbitNative implements Closeable {
 
     private static native long initialize(String args);
 
-    private static native byte[] getModel(long nativePointer);
+    private static native long initializeFromModel(String args, byte[] model);
 
-    private static native void endPass(long nativePointer);
+    public native byte[] getModel();
+
+    public native VowpalWabbitArguments getArguments();
+
+    public native void endPass();
 
     private static native void finish(long nativePointer);
 
@@ -21,20 +28,16 @@ public class VowpalWabbitNative implements Closeable {
         this.nativePointer = initialize(args);
     }
 
+    public VowpalWabbitNative(String args, byte[] model) {
+        this.nativePointer = initializeFromModel(args, model);
+    }
+
     public VowpalWabbitExample createExample() {
         return new VowpalWabbitExample(this.nativePointer, false);
     }
 
     public VowpalWabbitExample createEmptyExample() {
         return new VowpalWabbitExample(this.nativePointer, true);
-    }
-
-    public void endPass() {
-        endPass(this.nativePointer);
-    }
-
-    public byte[] getModel() {
-        return getModel(this.nativePointer);
     }
 
     @Override

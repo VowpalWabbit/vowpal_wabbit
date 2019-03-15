@@ -2,6 +2,8 @@
 #include "vw.h"
 
 // some JNI helper
+
+// properly de-alloc resource also in case of exceptions
 class StringGuard {
     JNIEnv* _env;
     jstring _source;
@@ -13,6 +15,19 @@ public:
     const char* c_str();
 };  
 
+// properly de-alloc resource also in case of exceptions
+class CriticalArrayGuard {
+    JNIEnv* _env;
+    jarray _arr;
+    void* _arr0;
+public:
+    CriticalArrayGuard(JNIEnv *env, jarray arr);
+    ~CriticalArrayGuard();
+
+    void* data();
+};  
+
+// bind VW instance and example together to reduce the number of variables passed around
 class VowpalWabbitExampleWrapper { 
 public:
     vw* _all;
@@ -22,4 +37,3 @@ public:
         : _all(all), _example(example) 
     { }
 };
-

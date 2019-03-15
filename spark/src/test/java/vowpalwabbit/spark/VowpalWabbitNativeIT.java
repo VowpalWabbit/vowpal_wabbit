@@ -5,13 +5,13 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.charset.Charset;
-import java.util.List;
+import java.util.*;
 import vowpalwabbit.spark.prediction.*;
 
 public class VowpalWabbitNativeIT {
 
     @Test
-    public void testSimple1() throws Exception {
+    public void testWrappedVsCommandLine() throws Exception {
         // need to use confidence_after_training as otherwise the numbers don't match up...
         Runtime.getRuntime()
             .exec("../vowpalwabbit/vw --quiet --confidence --confidence_after_training -f target/testSimple1-ref.model -d src/test/resources/test.txt -p target/testSimple1-ref.pred")
@@ -56,5 +56,63 @@ public class VowpalWabbitNativeIT {
 
         // compare model
         assertArrayEquals(model, modelRef);
+    }
+
+    @Test
+    public void testPrediction() throws Exception {
+        byte[] model;
+        float learnPrediction = 0f;
+        try (VowpalWabbitNative vw = new VowpalWabbitNative("--quiet"))
+        {
+            try (VowpalWabbitExample ex = vw.createExample())
+            {
+                for (int i=0;i<10;i++) {
+                    ex.addToNamespaceDense('a',
+                        VowpalWabbitMurmur.hash("a", 0),
+                        new double[] { 1.0, 2.0, 3.0 });
+                    ex.setLabel(i % 2);
+
+                    ex.learn();
+                    ex.clear();
+                }
+
+                vw.endPass();
+            }
+
+            model = vw.getModel();
+
+            try (VowpalWabbitExample ex = vw.createExample())
+            {
+                    ex.addToNamespaceDense('a',
+                        VowpalWabbitMurmur.hash("a", 0),
+                        new double[] { 1.0, 2.0, 3.0 });
+
+                    ex.predict();
+
+                    ScalarPrediction pred = (ScalarPrediction)ex.getPrediction();
+                    learnPrediction = pred.getValue();
+
+                    assertTrue(learnPrediction > 0);
+            }
+        }
+
+        try (VowpalWabbitNative vw = new VowpalWabbitNative("--quiet", model))
+        {
+            VowpalWabbitArguments args = vw.getArguments();
+
+            assertEquals(18, args.getNumBits());
+            assertEquals(0, args.getHashSeed());
+
+            try (VowpalWabbitExample ex = vw.createExample())
+            {
+                ex.addToNamespaceDense('a',
+                    VowpalWabbitMurmur.hash("a", 0),
+                    new double[] { 1.0, 2.0, 3.0 });
+
+                ScalarPrediction pred = (ScalarPrediction)ex.predict();
+
+                assertEquals(learnPrediction, pred.getValue(), 1e-4);
+            }
+        }
     }
 }

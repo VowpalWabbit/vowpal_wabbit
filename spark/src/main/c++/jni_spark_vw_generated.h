@@ -17,19 +17,35 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_initialize
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitNative
+ * Method:    initializeFromModel
+ * Signature: (Ljava/lang/String;[B)J
+ */
+JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_initializeFromModel
+  (JNIEnv *, jclass, jstring, jbyteArray);
+
+/*
+ * Class:     vowpalwabbit_spark_VowpalWabbitNative
  * Method:    getModel
- * Signature: (J)[B
+ * Signature: ()[B
  */
 JNIEXPORT jbyteArray JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_getModel
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     vowpalwabbit_spark_VowpalWabbitNative
+ * Method:    getArguments
+ * Signature: ()Lvowpalwabbit/spark/VowpalWabbitArguments;
+ */
+JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_getArguments
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitNative
  * Method:    endPass
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_endPass
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitNative
@@ -69,66 +85,58 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_finish
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    clear
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_clear
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    addToNamespaceDense
- * Signature: (JCI[D)V
+ * Signature: (CI[D)V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceDense
-  (JNIEnv *, jclass, jlong, jchar, jint, jdoubleArray);
+  (JNIEnv *, jobject, jchar, jint, jdoubleArray);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    addToNamespaceSparse
- * Signature: (JC[I[D)V
+ * Signature: (C[I[D)V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceSparse
-  (JNIEnv *, jclass, jlong, jchar, jintArray, jdoubleArray);
+  (JNIEnv *, jobject, jchar, jintArray, jdoubleArray);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    setLabel
- * Signature: (JF)V
+ * Signature: (FF)V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_setLabel
-  (JNIEnv *, jclass, jlong, jfloat);
-
-/*
- * Class:     vowpalwabbit_spark_VowpalWabbitExample
- * Method:    setLabelWithWeight
- * Signature: (JFF)V
- */
-JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_setLabelWithWeight
-  (JNIEnv *, jclass, jlong, jfloat, jfloat);
+  (JNIEnv *, jobject, jfloat, jfloat);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    learn
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_learn
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    predict
- * Signature: (J)V
+ * Signature: ()Ljava/lang/Object;
  */
-JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_predict
-  (JNIEnv *, jclass, jlong);
+JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_predict
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    getPrediction
- * Signature: (J)Ljava/lang/Object;
+ * Signature: ()Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_getPrediction
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

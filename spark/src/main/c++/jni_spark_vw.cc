@@ -4,6 +4,7 @@
 #include "vector_io_buf.h"
 #include "util.h"
 
+// Guards
 StringGuard::StringGuard(JNIEnv *env, jstring source) : _env(env), _source(source), _cstr(nullptr)
 { _cstr = _env->GetStringUTFChars(source, 0);
 }
@@ -18,6 +19,25 @@ StringGuard::~StringGuard()
 const char* StringGuard::c_str()
 { return _cstr; }
 
+CriticalArrayGuard::CriticalArrayGuard(JNIEnv *env, jarray arr) : _env(env), _arr(arr), _arr0(nullptr)
+{ _arr0 = env->GetPrimitiveArrayCritical(arr, nullptr);
+}
+
+CriticalArrayGuard::~CriticalArrayGuard()
+{ if (_arr0) {
+    _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT);
+  }
+}
+
+void* CriticalArrayGuard::data()
+{ return _arr0; }
+
+// assume that the passed in object has a field "nativePointer" of type long
+jlong get_native_pointer(JNIEnv *env, jobject obj)
+{ jfieldID f = env->GetFieldID(env->GetObjectClass(obj), "nativePointer", "J");
+  return env->GetLongField(obj, f);
+}
+
 // VW 
 JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_initialize
   (JNIEnv *env, jclass, jstring args)
@@ -31,10 +51,31 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_initialize
   }
 }
 
+JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_initializeFromModel
+  (JNIEnv *env, jclass, jstring args, jbyteArray model)
+{ StringGuard g_args(env, args);
+  CriticalArrayGuard modelGuard(env, model);
+
+  try
+  { int size = env->GetArrayLength(model);
+    char* model0 = (char*)modelGuard.data();
+
+    // wrap the model inside a vector
+    vector_io_buf buffer(model0, size);
+
+   return (jlong)VW::initialize(g_args.c_str(), &buffer);
+  }
+  catch(...)
+  { 
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+
 JNIEXPORT jbyteArray JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_getModel
-  (JNIEnv *env, jclass, jlong vwPtr)
-{
-  auto all = (vw*)vwPtr;
+  (JNIEnv *env, jobject vwObj)
+{ auto all = (vw*)get_native_pointer(env, vwObj);
+
   try
   { // save in stl::vector
     vector_io_buf buffer;
@@ -43,6 +84,7 @@ JNIEXPORT jbyteArray JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_getModel
     // copy to Java
     jbyteArray ret = env->NewByteArray(buffer._buffer.size());
     env->SetByteArrayRegion (ret, 0, buffer._buffer.size(), (const jbyte*)&buffer._buffer[0]);
+
     return ret;
   }
   catch(...)
@@ -50,10 +92,21 @@ JNIEXPORT jbyteArray JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_getModel
   }
 }
 
+JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_getArguments
+  (JNIEnv *env, jobject vwObj)
+{ auto all = (vw*)get_native_pointer(env, vwObj);
+
+  jclass clazz = env->FindClass("vowpalwabbit/spark/VowpalWabbitArguments");
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(II)V");
+
+  return env->NewObject(clazz, ctor, 
+      all->num_bits,
+      all->hash_seed);
+}
+
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_endPass
-  (JNIEnv *env, jclass, jlong vwPtr)
-{
-  auto all = (vw*)vwPtr;
+  (JNIEnv *env, jobject vwObj)
+{ auto all = (vw*)get_native_pointer(env, vwObj);
 
   try
   { all->l->end_pass();
@@ -78,6 +131,11 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_finish
 }
 
 // VW Example
+#define INIT_VARS \
+  auto exWrapper = (VowpalWabbitExampleWrapper*)get_native_pointer(env, exampleObj); \
+  vw* all = exWrapper->_all; \
+  example* ex = exWrapper->_example;
+
 JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_initialize
   (JNIEnv *env, jclass, jlong vwPtr, jboolean isEmpty)
 {
@@ -92,8 +150,6 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_initialize
     }
     else 
         all->p->lp.default_label(&ex->l);
-
-    // VW::setup_example(*all, ex); 
 
     return (jlong)new VowpalWabbitExampleWrapper(all, ex);
   }
@@ -119,16 +175,12 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_finish
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_clear
-  (JNIEnv *env, jclass, jlong examplePtr)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
+  (JNIEnv *env, jobject exampleObj)
+{ INIT_VARS
 
   try
   { VW::empty_example(*all, *ex);
     all->p->lp.default_label(&ex->l);
-    // VW::setup_example(*all, ex); 
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);
@@ -144,21 +196,19 @@ void addNamespaceIfNotExists(vw* all, example* ex, char ns)
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceDense
-  (JNIEnv *env, jclass, jlong examplePtr, jchar ns, jint weight_index_base, jdoubleArray values)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
-
+  (JNIEnv *env, jobject exampleObj, jchar ns, jint weight_index_base, jdoubleArray values)
+{ INIT_VARS
 
   try
   { addNamespaceIfNotExists(all, ex, ns);
 
     auto features = ex->feature_space + ns;
 
-    // TODO: need to implement guard to get finally covered
+    CriticalArrayGuard valuesGuard(env, values);
+    double* values0 = (double*)valuesGuard.data();
+
     int size = env->GetArrayLength(values);
-    double* values0 = (double*)env->GetPrimitiveArrayCritical(values, nullptr);
+    int mask = (1 << all->num_bits) - 1;
 
     // pre-allocate
     features->values.resize(features->values.end() - features->values.begin() + size);
@@ -170,11 +220,9 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespac
     { float x = *values_itr;
       if (x != 0)
       { features->values.push_back_unchecked(x);
-        features->indicies.push_back_unchecked(weight_index_base);
+        features->indicies.push_back_unchecked(weight_index_base & mask);
       }
     }
-
-    env->ReleasePrimitiveArrayCritical(values, values0, JNI_ABORT);
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);
@@ -182,21 +230,22 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespac
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceSparse
-  (JNIEnv *env, jclass, jlong examplePtr, jchar ns, jintArray indices, jdoubleArray values)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
+  (JNIEnv *env, jobject exampleObj, jchar ns, jintArray indices, jdoubleArray values)
+{ INIT_VARS
 
   try
   { addNamespaceIfNotExists(all, ex, ns);
 
     auto features = ex->feature_space + ns;
 
-    // TODO: need to implement guard to get finally covered
+    CriticalArrayGuard indicesGuard(env, indices);
+    int* indices0 = (int*)indicesGuard.data();
+
+    CriticalArrayGuard valuesGuard(env, values);
+    double* values0 = (double*)valuesGuard.data();
+
     int size = env->GetArrayLength(indices);
-    int* indices0 = (int*)env->GetPrimitiveArrayCritical(indices, nullptr);
-    double* values0 = (double*)env->GetPrimitiveArrayCritical(values, nullptr);
+    int mask = (1 << all->num_bits) - 1;
 
     // pre-allocate
     features->values.resize(features->values.end() - features->values.begin() + size);
@@ -209,12 +258,9 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespac
     { float x = *values_itr;
       if (x != 0)
       { features->values.push_back_unchecked(x);
-        features->indicies.push_back_unchecked(*indices_itr);
+        features->indicies.push_back_unchecked(*indices_itr & mask);
       }
     }
-
-    env->ReleasePrimitiveArrayCritical(values, values0, JNI_ABORT);
-    env->ReleasePrimitiveArrayCritical(indices, indices0, JNI_ABORT);
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);
@@ -222,29 +268,8 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_addToNamespac
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_setLabel
-  (JNIEnv *env, jclass, jlong examplePtr, jfloat label)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
-
-  try
-  {  label_data* ld = (label_data*)&ex->l;
-     ld->label = label;
-
-     count_label(all->sd, ld->label);
-  }
-  catch(...)
-  { rethrow_cpp_exception_as_java_exception(env);
-  }
-}
-
-JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_setLabelWithWeight
-  (JNIEnv *env, jclass, jlong examplePtr, jfloat weight, jfloat label)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
+  (JNIEnv *env, jobject exampleObj, jfloat weight, jfloat label)
+{ INIT_VARS
 
   try
   {  label_data* ld = (label_data*)&ex->l;
@@ -259,30 +284,27 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_setLabelWithW
 }
 
 JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_getPrediction
-  (JNIEnv *env, jclass, jlong examplePtr)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
+  (JNIEnv *env, jobject exampleObj)
+{ INIT_VARS
 
- jclass predClass;
- jmethodID ctr;
- switch (all->l->pred_type)
+  jclass predClass;
+  jmethodID ctr;
+  switch (all->l->pred_type)
   {
     case prediction_type::prediction_type_t::scalar:
-        predClass = env->FindClass("vowpalwabbit/spark/prediction/ScalarPrediction");
-        ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
+      predClass = env->FindClass("vowpalwabbit/spark/prediction/ScalarPrediction");
+      ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
 
-        return env->NewObject(predClass, ctr, 
-            VW::get_prediction(ex),
-            ex->confidence);
+      return env->NewObject(predClass, ctr, 
+          VW::get_prediction(ex),
+          ex->confidence);
     
     case prediction_type::prediction_type_t::prob:
-        predClass = env->FindClass("java/lang/Float");
-        ctr = env->GetMethodID(predClass, "<init>", "(F)V");
+      predClass = env->FindClass("java/lang/Float");
+      ctr = env->GetMethodID(predClass, "<init>", "(F)V");
 
-        return env->NewObject(predClass, ctr, 
-            ex->pred.prob);
+      return env->NewObject(predClass, ctr, 
+          ex->pred.prob);
          
  /*       
     case prediction_type::prediction_type_t::action_probs:
@@ -296,11 +318,8 @@ JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_getPredict
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_learn
-  (JNIEnv *env, jclass, jlong examplePtr)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
+  (JNIEnv *env, jobject exampleObj)
+{ INIT_VARS
 
   try
   { VW::setup_example(*all, ex); 
@@ -315,12 +334,9 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_learn
   }
 }
 
-JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_predict
-  (JNIEnv *env, jclass, jlong examplePtr)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
+JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_predict
+  (JNIEnv *env, jobject exampleObj)
+{ INIT_VARS
 
   try
   { VW::setup_example(*all, ex); 
@@ -329,6 +345,8 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_predict
     
     // as this is not a ring-based example it is not free'd
     LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
+
+    return Java_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(env, exampleObj);
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);
