@@ -50,10 +50,10 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_endPass
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitNative
  * Method:    finish
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_finish
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
@@ -77,10 +77,10 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_initialize
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    finish
- * Signature: (J)J
+ * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_finish
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
@@ -124,18 +124,18 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_learn
 
 /*
  * Class:     vowpalwabbit_spark_VowpalWabbitExample
- * Method:    predict
- * Signature: ()Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_predict
-  (JNIEnv *, jobject);
-
-/*
- * Class:     vowpalwabbit_spark_VowpalWabbitExample
  * Method:    getPrediction
  * Signature: ()Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_getPrediction
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     vowpalwabbit_spark_VowpalWabbitExample
+ * Method:    predict
+ * Signature: ()Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_predict
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus
@@ -160,26 +160,26 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_create
 /*
  * Class:     vowpalwabbit_spark_ClusterSpanningTree
  * Method:    delete
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_delete
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_ClusterSpanningTree
  * Method:    start
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_start
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     vowpalwabbit_spark_ClusterSpanningTree
  * Method:    stop
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_stop
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
