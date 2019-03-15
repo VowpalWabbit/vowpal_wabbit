@@ -4,6 +4,8 @@
 #include "global_data.h"
 #include "cache.h"
 #include "vw.h"
+#include "interactions.h"
+#include "cb_adf.h"
 
 #include <numeric>
 #include <algorithm>
@@ -23,6 +25,7 @@ struct ccb
   CB::cb_class cb_label, default_cb_label;
   std::unordered_set<uint32_t> exclude_list, include_list;
   CCB::decision_scores_t decision_scores;
+  std::vector<std::string>* original_interactions;
 };
 
 namespace CCB
@@ -131,15 +134,74 @@ void clear_pred_and_label(ccb& data)
 // true if there exists at least 1 action in the cb multi-example
 bool has_action(multi_ex& cb_ex) { return cb_ex.size() > 1; }
 
+// This function intentionally does not handle increasing the num_features of the example because
+// the output_example function has special logic to ensure the number of feaures is correctly calculated.
+// Copy anything in default namespace for decision to ccb_decision_namespace in shared
+// Copy other decision namespaces to shared
+void inject_decision_features(example* shared, example* decision)
+{
+  for (auto index : decision->indices)
+  {
+    // constant namespace should be ignored, as it already exists and we don't want to double it up.
+    if (index == constant_namespace)
+    {
+      continue;
+    }
+    else if (index == 32) // Decision default namespace has a special namespace in shared
+    {
+      shared->indices.push_back(ccb_decision_namespace);
+      shared->feature_space[ccb_decision_namespace].deep_copy_from(decision->feature_space[32]);
+    }
+    else if (std::find(shared->indices.begin(), shared->indices.end(), index) == shared->indices.end())
+    {
+      // If the namespace does not exist, we can do a direct copy to.
+      shared->indices.push_back(index);
+      shared->feature_space[index].deep_copy_from(decision->feature_space[index]);
+    }
+    else // Otherwise they need to be combined.
+    {
+      for (auto f : decision->feature_space[index])
+      {
+        shared->feature_space[index].push_back(f.value(), f.index());
+      }
+    }
+  }
+}
+
+// TODO revert shared example back to original state.
+void remove_decision_features(example* shared, example* decision) {}
+
+// Generates all pairs of the namespaces for the two examples
+void calculate_and_insert_interactions(example* shared, example* decision, std::vector<std::string>& vec)
+{
+  for (auto shared_index : shared->indices)
+  {
+    for (auto decision_index : decision->indices)
+    {
+      if (decision_index == 32)
+      {
+        vec.push_back({(char)shared_index, (char)ccb_decision_namespace});
+      }
+      else
+      {
+        vec.push_back({(char)shared_index, (char)decision_index});
+      }
+    }
+  }
+}
+
 // build a cb example from the ccb example
 template <bool is_learn>
 void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
 {
   bool decision_has_label = decision->l.conditional_contextual_bandit.outcome != nullptr;
 
-  // set the shared example in the cb multi-example
-  //TODO merge decision features in shared feature + activate interactions
+  // Merge the decision features with the shared example and set it in the cb multi-example
+  // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
+  inject_decision_features(data.shared, decision);
   cb_ex.push_back(data.shared);
+
+  // If there are no features in decision, short circuit and do no copies.
 
   // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
   data.include_list.clear();
@@ -185,11 +247,27 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   sanity_checks<is_learn>(data);
   create_cb_labels(data);
 
+  std::vector<std::string> generated_interactions;
+
   // for each decision, re-build the cb example and call cb_explore_adf
   for (example* decision : data.decisions)
   {
     multi_ex cb_ex;
     build_cb_example<is_learn>(cb_ex, decision, data);
+
+    // Namespace crossing for decision features.
+    // If the decision example only has the constant namespace, there will be no extra crossing and so skip that logic.
+    if (!(decision->indices.size() == 1 && decision->indices[0] == constant_namespace))
+    {
+      generated_interactions.clear();
+      // TODO be more efficient here
+      std::copy(data.original_interactions->begin(), data.original_interactions->end(), std::back_inserter(generated_interactions));
+      calculate_and_insert_interactions(data.shared, decision, generated_interactions);
+      size_t removed_cnt;
+      size_t sorted_cnt;
+      INTERACTIONS::sort_and_filter_duplicate_interactions(generated_interactions, true, removed_cnt, sorted_cnt);
+      data.shared->override_interactions = &generated_interactions;
+    }
 
     if (has_action(cb_ex))
     {  // the cb example contains at least 1 action
@@ -202,6 +280,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       auto empty_action_scores = v_init<ACTION_SCORE::action_score>();
       data.decision_scores.push_back(empty_action_scores);
     }
+
+    data.shared->override_interactions = nullptr;
+    remove_decision_features(data.shared, decision);
   }
 
   delete_cb_labels(data);
@@ -220,6 +301,69 @@ void finish(ccb& data)
   data.include_list.~unordered_set<uint32_t>();
   data.cb_label.~cb_class();
   data.default_cb_label.~cb_class();
+}
+
+void output_example(vw& all, ccb& c, multi_ex& ec_seq)
+{
+  if (ec_seq.size() <= 0)
+    return;
+
+  /*size_t num_features = 0;
+
+  float loss = 0.;
+
+  auto& ec = *ec_seq[0];
+  ACTION_SCORE::action_scores preds = ec.pred.a_s;
+
+  for (size_t i = 0; i < ec_seq.size(); i++)
+    if (!CB::ec_is_example_header(*ec_seq[i]))
+      num_features += ec_seq[i]->num_features;
+
+  bool labeled_example = true;
+  if (c.gen_cs.known_cost.probability > 0)
+  {
+    for (uint32_t i = 0; i < preds.size(); i++)
+    {
+      float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
+      loss += l * preds[i].score;
+    }
+  }
+  else
+    labeled_example = false;
+
+  bool holdout_example = labeled_example;
+  for (size_t i = 0; i < ec_seq.size(); i++) holdout_example &= ec_seq[i]->test_only;
+
+  all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
+
+  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+
+  if (all.raw_prediction > 0)
+  {
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+
+    for (size_t i = 0; i < costs.size(); i++)
+    {
+      if (i > 0)
+        outputStringStream << ' ';
+      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+    }
+    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+  }
+
+  CB::print_update(all, !labeled_example, ec, &ec_seq, true);*/
+}
+
+void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
+{
+  if (ec_seq.size() > 0)
+  {
+    output_example(all, data, ec_seq);
+    CB_ADF::global_print_newline(all);
+  }
+  VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
@@ -249,10 +393,12 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->decision_scores = v_init<ACTION_SCORE::action_scores>();
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
+  data->original_interactions = &all.interactions;
 
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
+  l.set_finish_example(CCB::finish_multiline_example);
   l.set_finish(CCB::finish);
   return make_base(l);
 }
