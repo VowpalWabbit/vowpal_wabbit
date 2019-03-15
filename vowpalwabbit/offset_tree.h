@@ -8,7 +8,7 @@ namespace VW { namespace offset_tree {
 
   struct tree_node
   {
-    tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, bool is_leaf);
+    tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, bool is_leaf);
 
     inline bool operator==(const tree_node& rhs) const;
     bool operator!=(const tree_node& rhs) const;
@@ -16,6 +16,7 @@ namespace VW { namespace offset_tree {
     uint32_t id;
     uint32_t left_id;
     uint32_t right_id;
+    uint32_t parent_id;
     bool is_leaf;
   };
 
@@ -32,14 +33,14 @@ namespace VW { namespace offset_tree {
     uint32_t _num_leaf_nodes = 0;
     bool _initialized = false;
   };
-  
+
   struct offset_tree
   {
     void init(uint32_t num_actions);
     int32_t learner_count() const;
     const std::vector<float>& predict(LEARNER::single_learner& base, example& ec);
 
-   private:
+  private:
     min_depth_binary_tree binary_tree;
   };
 

@@ -50,7 +50,7 @@ namespace VW { namespace offset_tree {
       tournaments.reserve(_num_leaf_nodes);
       for (uint32_t i = 0; i < _num_leaf_nodes; i++)
       {
-        nodes.emplace_back(i, 0, 0, true);
+        nodes.emplace_back(i, 0, 0, 0, true);
         tournaments.emplace_back(i);
       }
       while (tournaments.size() > 1)
@@ -66,13 +66,16 @@ namespace VW { namespace offset_tree {
           auto left = tournaments[2 * j];
           auto right = tournaments[2 * j + 1];
           new_tournaments.emplace_back(id);
-          nodes.emplace_back(id++, left, right, false);
+          nodes[left].parent_id = id;
+          nodes[right].parent_id = id;
+          nodes.emplace_back(id++, left, right, 0, false);
         }
         if (num_tournaments % 2 == 1)
           new_tournaments.emplace_back(tournaments.back());
         tournaments = std::move(new_tournaments);
       }
       root_idx = tournaments[0];
+      nodes[nodes.size()-1].parent_id = root_idx;
     }
     catch (std::bad_alloc& e)
     {
@@ -94,13 +97,13 @@ namespace VW { namespace offset_tree {
   struct offset_helper
   {
     // typedef verbose prediction buffer type
-    offset_helper(T& b, uint32_t index_offset) 
+    offset_helper(T& b, uint32_t index_offset)
     : start_index_offset{index_offset}, collection(b) {}
-    
+
     // intercept index operator to adjust the offset before
     // passing to underlying collection
-    typename T::const_reference operator[](size_t idx) const 
-    { 
+    typename T::const_reference operator[](size_t idx) const
+    {
       return collection[idx - start_index_offset];
     }
 
@@ -186,11 +189,6 @@ namespace VW { namespace offset_tree {
 
     return scores;
   }
-  
-  void learn(offset_tree& tree, single_learner& base, example& ec)
-  {
-    THROW("Offset tree learn() - not yet impemented.");
-  }
 
   void predict(offset_tree& ot, single_learner& base, example& ec)
   {
@@ -200,6 +198,39 @@ namespace VW { namespace offset_tree {
     for (uint32_t idx = 0; idx < scores.size(); ++idx){
       ec.pred.a_s.push_back({idx,scores[idx]});
     }
+  }
+
+  void learn(offset_tree& tree, single_learner& base, example& ec)
+  {
+    predict(tree, base, ec);
+    //store predictions
+    static thread_local actions_scores preds;
+
+    uint32_t global_action = ec.l.cb.action;
+    uint32_t global_weight = ec.weight;
+
+    tree_node t = tree.nodes[global_action-1];
+    do
+      {//ascend
+        uint32_t previous_id = t.id;
+        t =tree_nodes[t.parent_id];
+
+        //learn
+        uint32_t local_action = 2;
+        if (t.left_id == previous_id)
+          local_action = 1;
+        ec.l.cb.action = local_action;
+        base.learn(ec, t.id-tree.leaf_node_count());
+
+        //reweight
+        base.predict(ec, t.id-tree.leaf_node_count());
+        ec.weight *= ec.pred.a_s[local_action-1].prob;
+      }  while (t.parent_id != t.id);
+
+    ec.l.cb.action = global_action;
+    ec.weight = global_weight;
+
+    //restore predictions
   }
 
   base_learner* offset_tree_setup(VW::config::options_i& options, vw& all)
