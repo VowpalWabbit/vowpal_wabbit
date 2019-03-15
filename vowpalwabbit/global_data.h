@@ -593,11 +593,11 @@ struct vw
   std::stack<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
-  v_array<int> final_prediction_sink;  // set to send global predictions to.
-  int raw_prediction;                  // file descriptors for text output.
+  std::vector<io_adapter*> final_prediction_sink; // set to send global predictions to.
+  io_adapter* raw_prediction;                  // file descriptors for text output.
 
-  void (*print)(int, float, float, v_array<char>);
-  void (*print_text)(int, std::string, v_array<char>);
+  void (*print)(io_adapter*, float, float, v_array<char>);
+  void (*print_text)(io_adapter*, std::string, v_array<char>);
   loss_function* loss;
 
   char* program_name;

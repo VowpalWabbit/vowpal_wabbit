@@ -90,9 +90,9 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return tag.begin() != tag.end();
 }
 
-void print_result(int f, float res, float, v_array<char> tag)
+void print_result(io_adapter* f, float res, float, v_array<char> tag)
 {
-  if (f >= 0)
+  if (f)
   {
     char temp[30];
     if (floorf(res) != res)
@@ -104,7 +104,7 @@ void print_result(int f, float res, float, v_array<char> tag)
     print_tag(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
     {
       cerr << "write error: " << strerror(errno) << endl;
@@ -112,9 +112,9 @@ void print_result(int f, float res, float, v_array<char> tag)
   }
 }
 
-void print_raw_text(int f, string s, v_array<char> tag)
+void print_raw_text(io_adapter* f, string s, v_array<char> tag)
 {
-  if (f < 0)
+  if (!f)
     return;
 
   std::stringstream ss;
@@ -122,7 +122,7 @@ void print_raw_text(int f, string s, v_array<char> tag)
   print_tag(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
-  ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+  ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
   if (t != len)
   {
     cerr << "write error: " << strerror(errno) << endl;
@@ -309,8 +309,7 @@ vw::vw()
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
-  raw_prediction = -1;
+  raw_prediction = nullptr;
   print = print_result;
   print_text = print_raw_text;
   lda = 0;

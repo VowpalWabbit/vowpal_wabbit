@@ -4,7 +4,7 @@
 using namespace std;
 namespace ACTION_SCORE
 {
-void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&)
+void print_action_score(io_adapter* f, v_array<action_score>& a_s, v_array<char>&)
 {
   if (f >= 0)
   {
@@ -18,7 +18,7 @@ void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&)
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
       cerr << "write error: " << strerror(errno) << endl;
   }

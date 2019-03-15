@@ -5,9 +5,6 @@ license as described in the file LICENSE.
  */
 #include "io_buf.h"
 #include <stdio.h>
-#ifdef WIN32
-#include <winsock2.h>
-#endif
 
 size_t io_buf::buf_read(char*& pointer, size_t n)
 {
@@ -111,52 +108,4 @@ void io_buf::buf_write(char*& pointer, size_t n)
     }
     buf_write(pointer, n);
   }
-}
-
-bool io_buf::is_socket(int f)
-{
-  // this appears to work in practice, but could probably be done in a cleaner fashion
-#ifdef _WIN32
-  const int _nhandle = _getmaxstdio() / 2;
-  return f >= _nhandle;
-#else
-  const int _nhandle = 32;
-  return f >= _nhandle;
-#endif
-}
-
-ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes)
-{
-#ifdef _WIN32
-  if (is_socket(f))
-    return recv(f, reinterpret_cast<char*>(buf), static_cast<int>(nbytes), 0);
-  else
-    return _read(f, buf, (unsigned int)nbytes);
-#else
-  return read(f, buf, (unsigned int)nbytes);
-#endif
-}
-
-ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
-{
-#ifdef _WIN32
-  if (is_socket(f))
-    return send(f, reinterpret_cast<const char*>(buf), static_cast<int>(nbytes), 0);
-  else
-    return _write(f, buf, (unsigned int)nbytes);
-#else
-  return write(f, buf, (unsigned int)nbytes);
-#endif
-}
-
-void io_buf::close_file_or_socket(int f)
-{
-#ifdef _WIN32
-  if (io_buf::is_socket(f))
-    closesocket(f);
-  else
-    _close(f);
-#else
-  close(f);
-#endif
 }

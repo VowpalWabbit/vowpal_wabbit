@@ -85,7 +85,7 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(int f, float res, float weight, v_array<char> tag)
+void active_print_result(io_adapter* f, float res, float weight, v_array<char> tag)
 {
   if (f >= 0)
   {
@@ -102,7 +102,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
       cerr << "write error: " << strerror(errno) << endl;
   }
@@ -122,10 +122,9 @@ void output_and_account_example(vw& all, active& a, example& ec)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for(auto adapter : all.final_prediction_sink)
   {
-    int f = (int)all.final_prediction_sink[i];
-    active_print_result(f, ec.pred.scalar, ai, ec.tag);
+    active_print_result(adapter, ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);

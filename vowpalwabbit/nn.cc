@@ -135,7 +135,7 @@ void end_pass(nn& n)
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
-  bool shouldOutput = n.all->raw_prediction > 0;
+  bool shouldOutput = n.all->raw_prediction;
   if (!n.finished_setup)
     finish_setup(n, *(n.all));
   shared_data sd;
@@ -391,8 +391,8 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  int save_raw_prediction = all.raw_prediction;
-  all.raw_prediction = -1;
+  auto save_raw_prediction = all.raw_prediction;
+  all.raw_prediction = nullptr;
   return_simple_example(all, nullptr, ec);
   all.raw_prediction = save_raw_prediction;
 }

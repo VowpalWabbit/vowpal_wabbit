@@ -185,7 +185,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     sprintf(temp_str, "%f", ec.pred.scalars[i]);  // 0.123 -> 0.123000
     outputStringStream << ':' << temp_str;
   }
-  for (int sink : all.final_prediction_sink) all.print_text(sink, outputStringStream.str(), ec.tag);
+  for (auto sink : all.final_prediction_sink) all.print_text(sink, outputStringStream.str(), ec.tag);
 
   // === Report updates using zero-one loss
   all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
@@ -271,7 +271,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
       l->set_finish_example(finish_example_scores<false>);
     }
   }
-  else if (all.raw_prediction > 0)
+  else if (all.raw_prediction)
     l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
         predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type::multiclass);
   else

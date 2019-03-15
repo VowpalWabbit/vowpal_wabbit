@@ -547,11 +547,9 @@ void global_print_newline(vw& all)
 {
   char temp[1];
   temp[0] = '\n';
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for(auto sink : all.final_prediction_sink)
   {
-    int f = all.final_prediction_sink[i];
-    ssize_t t;
-    t = io_buf::write_file_or_socket(f, temp, 1);
+    ssize_t t = sink->write(temp, 1);
     if (t != 1)
       cerr << "write error: " << strerror(errno) << endl;
   }
@@ -616,10 +614,10 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (int sink : all.final_prediction_sink)
+  for (auto sink : all.final_prediction_sink)
     all.print(sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction)
   {
     string outputString;
     stringstream outputStringStream(outputString);
@@ -672,9 +670,9 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     assert(loss >= 0);
   }
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
+  for (auto sink : all.final_prediction_sink) print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction)
   {
     string outputString;
     stringstream outputStringStream(outputString);
@@ -711,7 +709,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
     else
       for (example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq), data);
 
-    if (all.raw_prediction > 0)
+    if (all.raw_prediction)
     {
       v_array<char> empty = {nullptr, nullptr, nullptr, 0};
       all.print_text(all.raw_prediction, "", empty);

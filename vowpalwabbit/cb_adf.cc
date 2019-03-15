@@ -296,11 +296,9 @@ void global_print_newline(vw& all)
 {
   char temp[1];
   temp[0] = '\n';
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for (auto sink : all.final_prediction_sink)
   {
-    int f = all.final_prediction_sink[i];
-    ssize_t t;
-    t = io_buf::write_file_or_socket(f, temp, 1);
+    ssize_t t = sink->write(temp, 1);
     if (t != 1)
       cerr << "write error: " << strerror(errno) << endl;
   }
@@ -340,9 +338,9 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = update_statistics(all, c, ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)action, 0, ec.tag);
+  for (auto sink : all.final_prediction_sink) all.print(sink, (float)action, 0, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction)
   {
     string outputString;
     stringstream outputStringStream(outputString);
@@ -370,9 +368,9 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = update_statistics(all, c, ec, ec_seq);
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction)
   {
     string outputString;
     stringstream outputStringStream(outputString);
@@ -398,7 +396,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
     {
       output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
-      if (all.raw_prediction > 0)
+      if (all.raw_prediction)
         all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
     }
   }

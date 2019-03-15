@@ -263,7 +263,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   sprintf(temp_str, "%d:%f", maxid, maxprob);
   sso << temp_str;
 
-  for (int sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
+  for (auto sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
 
   print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
 }

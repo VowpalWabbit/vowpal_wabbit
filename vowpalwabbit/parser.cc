@@ -86,7 +86,7 @@ void set_compressed(parser* par)
   par->output = new comp_io_buf;
 }
 
-uint32_t cache_numbits(io_buf* buf, int filepointer)
+uint32_t cache_numbits(io_buf* buf, io_adapter* filepointer)
 {
   try
   {
@@ -185,7 +185,7 @@ void reset_source(vw& all, size_t numbits)
 
       // note: breaking cluster parallel online learning by dropping support for id
 
-      all.final_prediction_sink.push_back((size_t)f);
+      all.final_prediction_sink.push_back(new socket_adapter(f));
       all.p->input->files.push_back(f);
 
       if (isbinary(*(all.p->input)))
@@ -522,9 +522,39 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       string temp = all.data_filename;
       if (!quiet)
         all.trace_message << "Reading datafile = " << temp << endl;
+
+      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+
       try
       {
-        all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+        io_adapter* adapter = nullptr;
+        if(temp.c_str() != "")
+        {
+          adapter = should_use_compressed
+            ? new gzip_file_adapter(temp.c_str(), file_mode::read)
+            : new file_adapter(temp.c_str(), file_mode::read);
+        }
+        else if(!all.stdin_off)
+        {
+          // Should try and use stdin
+          if(should_use_compressed)
+          {
+#ifdef _WIN32
+            adapter = new gzip_file_adapter(_fileno(stdin), file_mode::read)
+#else
+            adapter = new gzip_file_adapter(fileno(stdin), file_mode::read)
+#endif
+          }
+          else
+          {
+            adapter = new stdio_adapter();
+          }
+        }
+
+        if(adapter)
+        {
+          all.p->input->files.push_back(adapter);
+        }
       }
       catch (exception const& ex)
       {

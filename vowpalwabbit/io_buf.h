@@ -30,6 +30,8 @@ license as described in the file LICENSE.
 #include <sys/stat.h>
 #endif
 
+#include "io_adapter.h"
+
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
 ** |__________|__________|__________|__________|__________|__________|__________|__________|   **
@@ -59,7 +61,7 @@ class io_buf
  public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
                         // the buffer.
-  v_array<int> files;
+  v_array<io_adapter*> files;
   size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
   char* head;
@@ -72,7 +74,6 @@ class io_buf
   void init()
   {
     space = v_init<char>();
-    files = v_init<int>();
     currentname = v_init<char>();
     finalname = v_init<char>();
     size_t s = 1 << 16;
@@ -102,37 +103,21 @@ class io_buf
 
   virtual int open_file(const char* name, bool stdin_off, int flag = READ)
   {
+    // TODO throw on fail or catch and return
     int ret = -1;
     switch (flag)
     {
       case READ:
         if (*name != '\0')
         {
-#ifdef _WIN32
-          // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
-          _sopen_s(&ret, name, _O_RDONLY | _O_BINARY | _O_SEQUENTIAL, _SH_DENYWR, 0);
-#else
-          ret = open(name, O_RDONLY | O_LARGEFILE);
-#endif
+          files.push_back(new file_adapter(name));
         }
         else if (!stdin_off)
-#ifdef _WIN32
-          ret = _fileno(stdin);
-#else
-          ret = fileno(stdin);
-#endif
-        if (ret != -1)
-          files.push_back(ret);
+          files.push_back(new stdio_adapter());
         break;
 
       case WRITE:
-#ifdef _WIN32
-        _sopen_s(&ret, name, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-        ret = open(name, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-        if (ret != -1)
-          files.push_back(ret);
+        files.push_back(new file_adapter(name));
         break;
 
       default:
@@ -144,13 +129,9 @@ class io_buf
     return ret;
   }
 
-  virtual void reset_file(int f)
+  virtual void reset_file(io_adapter* f)
   {
-#ifdef _WIN32
-    _lseek(f, 0, SEEK_SET);
-#else
-    lseek(f, 0, SEEK_SET);
-#endif
+    f->reset();
     space.end() = space.begin();
     head = space.begin();
   }
@@ -167,11 +148,9 @@ class io_buf
 
   virtual size_t num_files() { return files.size(); }
 
-  virtual ssize_t read_file(int f, void* buf, size_t nbytes) { return read_file_or_socket(f, buf, nbytes); }
+  virtual ssize_t read_file(io_adapter* f, void* buf, size_t nbytes) { return f->read(buf, nbytes); }
 
-  static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
-
-  ssize_t fill(int f)
+  ssize_t fill(io_adapter* f)
   {  // if the loaded values have reached the allocated space
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
@@ -190,9 +169,7 @@ class io_buf
       return 0;
   }
 
-  virtual ssize_t write_file(int f, const void* buf, size_t nbytes) { return write_file_or_socket(f, buf, nbytes); }
-
-  static ssize_t write_file_or_socket(int f, const void* buf, size_t nbytes);
+  virtual ssize_t write_file(io_adapter* f, void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
 
   virtual void flush()
   {
@@ -208,7 +185,7 @@ class io_buf
   {
     if (files.size() > 0)
     {
-      close_file_or_socket(files.pop());
+      delete files.pop();
       return true;
     }
     return false;
@@ -216,15 +193,11 @@ class io_buf
 
   virtual bool compressed() { return false; }
 
-  static void close_file_or_socket(int f);
-
   void close_files()
   {
     while (close_file())
       ;
   }
-
-  static bool is_socket(int f);
 
   void buf_write(char*& pointer, size_t n);
   size_t buf_read(char*& pointer, size_t n);

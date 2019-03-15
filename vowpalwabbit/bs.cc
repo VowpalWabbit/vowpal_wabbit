@@ -147,7 +147,7 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
     ss << temp;
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
       cerr << "write error: " << strerror(errno) << endl;
   }
@@ -174,7 +174,7 @@ void output_example(vw& all, bs& d, example& ec)
     }
   }
 
-  for (int sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
+  for (auto sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
 
   print_update(all, ec);
 }
@@ -183,7 +183,7 @@ template <bool is_learn>
 void predict_or_learn(bs& d, single_learner& base, example& ec)
 {
   vw& all = *d.all;
-  bool shouldOutput = all.raw_prediction > 0;
+  bool shouldOutput = all.raw_prediction != nullptr;
 
   float weight_temp = ec.weight;
 

@@ -98,10 +98,10 @@ bool ends_with(string const& fullString, string const& ending)
   }
 }
 
-uint64_t hash_file_contents(io_buf* io, int f)
+uint64_t hash_file_contents(io_buf* io, io_adapter* f)
 {
   uint64_t v = 5289374183516789128;
-  unsigned char buf[1024];
+  char buf[1024];
   while (true)
   {
     ssize_t n = io->read_file(f, buf, 1024);
@@ -164,14 +164,12 @@ void parse_dictionary_argument(vw& all, string str)
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
-  io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
-  int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0)
-    THROW("error: cannot read dictionary from file '" << fname << "'"
-                                                      << ", opening failed");
+  io_adapter* f_adapter = is_gzip
+    ? new gzip_file_adapter(fname.c_str(), file_mode::read)
+    : new file_adapter(fname.c_str());
 
-  uint64_t fd_hash = hash_file_contents(io, fd);
-  io->close_file();
+  uint64_t fd_hash = hash_file_contents(io, f_adapter);
+  delete f_adapter;
 
   if (!all.quiet)
     all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec
@@ -459,12 +457,6 @@ input_options parse_source(vw& all, options_i& options)
   {
     parsed_options.cache_files.push_back(all.data_filename + ".cache");
   }
-
-  if (parsed_options.compressed)
-    set_compressed(all.p);
-
-  if (ends_with(all.data_filename, ".gz"))
-    set_compressed(all.p);
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
@@ -1135,17 +1127,10 @@ void parse_output_preds(options_i& options, vw& all)
                           << endl;
     }
     if (raw_predictions == "stdout")
-      all.raw_prediction = 1;  // stdout
+      all.raw_prediction = new stdio_adapter()();  // stdout
     else
     {
-      const char* t = raw_predictions.c_str();
-      int f;
-#ifdef _WIN32
-      _sopen_s(&f, t, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-      f = open(t, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-      all.raw_prediction = f;
+      all.raw_prediction = new file_adapter(raw_predictions.c_str());
     }
   }
 }

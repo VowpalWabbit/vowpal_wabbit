@@ -280,7 +280,7 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, ec.weight, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
+  for (auto sink : all.final_prediction_sink)
     if (!all.sd->ldict)
       all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
@@ -289,7 +289,7 @@ void output_example(vw& all, example& ec)
       all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction)
   {
     stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
