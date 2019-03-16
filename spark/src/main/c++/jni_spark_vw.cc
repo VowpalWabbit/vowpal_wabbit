@@ -3,6 +3,7 @@
 #include "best_constant.h"
 #include "vector_io_buf.h"
 #include "util.h"
+#include "options_serializer_boost_po.h"
 
 // Guards
 StringGuard::StringGuard(JNIEnv *env, jstring source) : _env(env), _source(source), _cstr(nullptr)
@@ -90,12 +91,28 @@ JNIEXPORT jobject JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_getArgument
   (JNIEnv *env, jobject vwObj)
 { auto all = (vw*)get_native_pointer(env, vwObj);
 
+  // serialize the command line
+  VW::config::options_serializer_boost_po serializer;
+  for (auto const& option : all->options->get_all_options())
+  {
+    if (all->options->was_supplied(option->m_name))
+    {
+      serializer.add(*option);
+    }
+  }
+
+  auto serialized_keep_options = serializer.str().c_str();
+
+  // move it to Java
+  jstring args = env->NewStringUTF(serialized_keep_options);
+
   jclass clazz = env->FindClass("vowpalwabbit/spark/VowpalWabbitArguments");
-  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(II)V");
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;)V");
 
   return env->NewObject(clazz, ctor, 
       all->num_bits,
-      all->hash_seed);
+      all->hash_seed,
+      args);
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_endPass

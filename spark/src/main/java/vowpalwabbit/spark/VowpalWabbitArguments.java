@@ -8,10 +8,12 @@ package vowpalwabbit.spark;
 public class VowpalWabbitArguments { 
     private int numBits;
     private int hashSeed;
+    private String args;
 
-    public VowpalWabbitArguments(int numBits, int hashSeed) {
+    public VowpalWabbitArguments(int numBits, int hashSeed, String args) {
         this.numBits = numBits;
         this.hashSeed = hashSeed;
+        this.args = args;
     }
 
     /**
@@ -25,4 +27,9 @@ public class VowpalWabbitArguments {
      * @return hash seed.
      */
     public int getHashSeed() { return hashSeed; }
+
+    /**
+     * Command line arguments
+     */
+    public String getArgs() { return args; }
 }
