@@ -23,23 +23,23 @@ if(JNI_FOUND)
   file(MAKE_DIRECTORY target/classes)
   file(MAKE_DIRECTORY target/bin/natives/linux_64)
 
-  add_custom_target(javacompile 
-    COMMAND mvn compile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Compile classes for javah")
+  # add_custom_target(javacompile 
+    # COMMAND mvn compile
+    # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    # COMMENT "Compile classes for javah")
 
-  # this is acting up a bit wrt CLASSPATH. The directory needs to exist, so it's added into git
-  create_javah(TARGET javaheaders
-    CLASSES
-      org.vowpalwabbit.bare.VowpalWabbitNative
-      org.vowpalwabbit.bare.VowpalWabbitExample
-      org.vowpalwabbit.bare.ClusterSpanningTree
-    CLASSPATH ${CMAKE_CURRENT_SOURCE_DIR}/target/classes
-    OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_bare_vw_generated.h)
-  add_dependencies(javaheaders javacompile)
+  # useful to generate the jni headers
+  # create_javah(TARGET javaheaders
+  #   CLASSES
+  #     org.vowpalwabbit.bare.VowpalWabbitNative
+  #     org.vowpalwabbit.bare.VowpalWabbitExample
+  #     org.vowpalwabbit.bare.ClusterSpanningTree
+  #   CLASSPATH ${CMAKE_CURRENT_SOURCE_DIR}/target/classes
+  #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_bare_vw_generated.h)
+  # add_dependencies(javaheaders javacompile)
 
   add_library(vw_bare_jni SHARED ${vw_bare_jni_headers} ${vw_bare_jni_sources})
-  add_dependencies(vw_bare_jni javaheaders)
+  # add_dependencies(vw_bare_jni javaheaders)
 
   target_compile_options(vw_bare_jni PUBLIC ${linux_flags})
 
