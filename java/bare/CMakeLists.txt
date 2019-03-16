@@ -23,6 +23,7 @@ if(JNI_FOUND)
 
   # Ensure target directory exists
   file(MAKE_DIRECTORY target/classes)
+  file(MAKE_DIRECTORY target/test-classes)
   file(MAKE_DIRECTORY target/bin/natives/linux_64)
 
   # required for jni header generation
