@@ -145,7 +145,7 @@ JNIEXPORT jint JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_hash
 { CriticalArrayGuard dataGuard(env, data);
   const char* values0 = (const char*)dataGuard.data();
 
-  return (jint)uniform_hash(values0 + start, len, seed);
+  return (jint)uniform_hash(values0 + offset, len, seed);
 }
 
 // VW Example
