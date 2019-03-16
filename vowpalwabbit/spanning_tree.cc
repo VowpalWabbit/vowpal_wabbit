@@ -107,7 +107,7 @@ SpanningTree::SpanningTree(short unsigned int port) : m_stop(false), m_port(port
     THROWERRNO("bind: ");
 
   sockaddr_in bound_addr;
-  bzero(&bound_addr, sizeof(bound_addr));
+  memset(&bound_addr, 0, sizeof(bound_addr));
 	socklen_t len = sizeof(bound_addr);
 	if (::getsockname(sock, (sockaddr*)&bound_addr, &len) < 0)
     THROWERRNO("getsockname: ")
