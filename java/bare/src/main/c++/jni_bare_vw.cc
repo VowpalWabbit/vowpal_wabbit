@@ -140,6 +140,14 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_finish
   }
 }
 
+JNIEXPORT jint JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_hash
+  (JNIEnv *env, jclass, jbyteArray data, jint offset, jint len, jint seed)
+{ CriticalArrayGuard dataGuard(env, data);
+  const char* values0 = (const char*)dataGuard.data();
+
+  return (jint)uniform_hash(values0 + start, len, seed);
+}
+
 // VW Example
 #define INIT_VARS \
   auto exWrapper = (VowpalWabbitExampleWrapper*)get_native_pointer(env, exampleObj); \

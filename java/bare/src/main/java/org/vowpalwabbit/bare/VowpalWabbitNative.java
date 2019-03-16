@@ -58,6 +58,11 @@ public class VowpalWabbitNative implements Closeable {
     private native void finish();
 
     /**
+     * Invokes the native implementation of Murmur hash. Exposed through VowpalWabbitMurmur.
+     */
+    static native int hash(byte[] data, int offset, int len, int seed);
+
+    /**
      * Pointer to vw data structure defined in global_data.h
      */
     private long nativePointer;

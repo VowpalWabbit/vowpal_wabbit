@@ -1,5 +1,7 @@
 package org.vowpalwabbit.bare;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Java port of VW-style hashing.
  * 
@@ -20,12 +22,17 @@ public class VowpalWabbitMurmur {
   }
 
   public static int hash(String s, int seed) {
-    byte[] d = s.getBytes();
+    byte[] d = s.getBytes(StandardCharsets.UTF_8);
     return hash(d, d.length, seed);
   }
 
   public static int hash(byte[] data, int len, int seed) {
     return hash(data, 0, len, seed);
+  }
+
+  public static int hashNative(byte[] data, int offset ,int len, int seed) {
+    // don't have native code here to avoid native library load if not needed
+    return VowpalWabbitNative.hash(data, offset, len, seed);
   }
 
   public static int hash(byte[] data, int offset, int len, int seed) {

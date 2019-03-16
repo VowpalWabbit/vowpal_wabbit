@@ -55,6 +55,14 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_endPass
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_finish
   (JNIEnv *, jobject);
 
+/*
+ * Class:     org_vowpalwabbit_bare_VowpalWabbitNative
+ * Method:    hash
+ * Signature: ([BIII)I
+ */
+JNIEXPORT jint JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_hash
+  (JNIEnv *, jclass, jbyteArray, jint, jint, jint);
+
 #ifdef __cplusplus
 }
 #endif
