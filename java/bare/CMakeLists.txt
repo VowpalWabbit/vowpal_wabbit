@@ -23,6 +23,7 @@ if(JNI_FOUND)
   file(MAKE_DIRECTORY target/classes)
   file(MAKE_DIRECTORY target/bin/natives/linux_64)
 
+  # required for jni header generation
   # add_custom_target(javacompile 
     # COMMAND mvn compile
     # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -61,12 +62,14 @@ if(JNI_FOUND)
     COMMAND ldd $<TARGET_FILE:vw_bare_jni> | grep -E 'boost|libz' | grep -oP '=> \\K\\S+' | xargs -i cp {} target/bin/natives/linux_64
     # COMMAND mkdir target/bin/natives/linux_64
     COMMAND cp $<TARGET_FILE:vw_bare_jni> target/bin/natives/linux_64
+    COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
     COMMAND mvn verify
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Copying shared libary dependencies to output directory")
 
   # Replace version number in POM
   configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
+
 
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       set(JAVA_INSTALL_PATH /usr/lib)

@@ -15,9 +15,11 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testWrappedVsCommandLine() throws Exception {
+        String vwBinary = Files.readAllLines(Paths.get(getClass().getResource("/vw-bin.txt").getPath())).get(0);
+
         // need to use confidence_after_training as otherwise the numbers don't match up...
         Runtime.getRuntime()
-            .exec("../../vowpalwabbit/vw --quiet --confidence --confidence_after_training -f target/testSimple1-ref.model -d src/test/resources/test.txt -p target/testSimple1-ref.pred")
+            .exec(vwBinary + " --quiet --confidence --confidence_after_training -f target/testSimple1-ref.model -d src/test/resources/test.txt -p target/testSimple1-ref.pred")
             .waitFor();
 
         byte[] modelRef = Files.readAllBytes(Paths.get("target/testSimple1-ref.model"));
