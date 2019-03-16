@@ -34,7 +34,6 @@ option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_JAVA "Add Java targets." Off)
-option(BUILD_SPARK "Add Spark targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
@@ -126,10 +125,6 @@ endif()
 
 if(BUILD_JAVA)
   add_subdirectory(java)
-endif()
-
-if(BUILD_SPARK)
-  add_subdirectory(spark)
 endif()
 
 if(BUILD_PYTHON)
