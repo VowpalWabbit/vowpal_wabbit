@@ -1,3 +1,5 @@
+if(NOT WIN32)
+
 find_package(Java)
 find_package(JNI)
 include(UseJava)
@@ -83,4 +85,6 @@ if(JNI_FOUND)
       LIBRARY DESTINATION ${JAVA_INSTALL_PATH}
     )
   endif()
+endif()
+
 endif()
