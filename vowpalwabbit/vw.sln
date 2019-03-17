@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2016
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
 EndProject
@@ -56,6 +56,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python27", "..\python\windows27\python27.vcxproj", "{7D381808-CC76-4A1A-A8E6-3F71278858BB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_unit_test", "..\test\unit_test\unit_test.vcxproj", "{E02E3869-D9AD-4513-B352-93F90B7D6FE3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "simulator", "..\cs\examples\simulator\simulator.csproj", "{C099A5DA-E73C-400B-A8C2-651E3DACA79C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -230,6 +232,18 @@ Global
 		{E02E3869-D9AD-4513-B352-93F90B7D6FE3}.Release|x64.Build.0 = Release|x64
 		{E02E3869-D9AD-4513-B352-93F90B7D6FE3}.Release|x86.ActiveCfg = Release|Win32
 		{E02E3869-D9AD-4513-B352-93F90B7D6FE3}.Release|x86.Build.0 = Release|Win32
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Debug|x64.Build.0 = Debug|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Debug|x86.Build.0 = Debug|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Release|x64.ActiveCfg = Release|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Release|x64.Build.0 = Release|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Release|x86.ActiveCfg = Release|Any CPU
+		{C099A5DA-E73C-400B-A8C2-651E3DACA79C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -238,7 +252,7 @@ Global
 		{7D381808-CC76-4A1A-A8E6-3F71278858BB} = {5AF0ECDA-A523-4F8E-8537-E741983119CC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
+		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 	EndGlobalSection
 EndGlobal
