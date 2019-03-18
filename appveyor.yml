@@ -18,8 +18,8 @@ build_script:
 - SET nugetPath=%vwRoot%\vowpalwabbit\.nuget\nuget
 # Restore and build
 - cd %vwRoot%
-- .scripts/restore.cmd
-- .scripts/build.cmd
+- CALL .scripts/restore.cmd
+- CALL .scripts/build.cmd
 test_script:
 - ps: >-
     if($env:PLATFORM -eq "x64")
