@@ -1,3 +1,5 @@
+setlocal enabledelayedexpansion
+
 REM Integration points for toolchain customization
 IF NOT DEFINED nugetPath (
     SET "nugetPath=nuget"
