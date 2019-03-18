@@ -52,24 +52,24 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
   label = parse_label(&p, "ccb decision 1:1.0:0.5 3");
   BOOST_CHECK_EQUAL(label.explicit_included_actions.size(), 1);
   BOOST_CHECK_EQUAL(label.explicit_included_actions[0], 3);
-  BOOST_CHECK_CLOSE(label.outcome->cost, 1.0f, .0001f);
+  BOOST_CHECK_CLOSE(label.outcome->cost, 1.0f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(label.outcome->probabilities.size(), 1);
   BOOST_CHECK_EQUAL(label.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(label.outcome->probabilities[0].score, .5f, .0001f);
+  BOOST_CHECK_CLOSE(label.outcome->probabilities[0].score, .5f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(label.type, CCB::example_type::decision);
 
   label = parse_label(&p, "ccb decision 1:-2.0:0.5,2:0.25,3:0.25 3,4");
   BOOST_CHECK_EQUAL(label.explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(label.explicit_included_actions[0], 3);
   BOOST_CHECK_EQUAL(label.explicit_included_actions[1], 4);
-  BOOST_CHECK_CLOSE(label.outcome->cost, -2.0f, .0001f);
+  BOOST_CHECK_CLOSE(label.outcome->cost, -2.0f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(label.outcome->probabilities.size(), 3);
   BOOST_CHECK_EQUAL(label.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(label.outcome->probabilities[0].score, .5f, .0001f);
+  BOOST_CHECK_CLOSE(label.outcome->probabilities[0].score, .5f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(label.outcome->probabilities[1].action, 2);
-  BOOST_CHECK_CLOSE(label.outcome->probabilities[1].score, .25f, .0001f);
+  BOOST_CHECK_CLOSE(label.outcome->probabilities[1].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(label.outcome->probabilities[2].action, 3);
-  BOOST_CHECK_CLOSE(label.outcome->probabilities[2].score, .25f, .0001f);
+  BOOST_CHECK_CLOSE(label.outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(label.type, CCB::example_type::decision);
 
   BOOST_REQUIRE_THROW(parse_label(&p, "shared"), VW::vw_exception);
@@ -103,14 +103,14 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   BOOST_CHECK_EQUAL(uncached_label.explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(uncached_label.explicit_included_actions[0], 3);
   BOOST_CHECK_EQUAL(uncached_label.explicit_included_actions[1], 4);
-  BOOST_CHECK_CLOSE(uncached_label.outcome->cost, -2.0f, .0001f);
+  BOOST_CHECK_CLOSE(uncached_label.outcome->cost, -2.0f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(uncached_label.outcome->probabilities.size(), 3);
   BOOST_CHECK_EQUAL(uncached_label.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(uncached_label.outcome->probabilities[0].score, .5f, .0001f);
+  BOOST_CHECK_CLOSE(uncached_label.outcome->probabilities[0].score, .5f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(uncached_label.outcome->probabilities[1].action, 2);
-  BOOST_CHECK_CLOSE(uncached_label.outcome->probabilities[1].score, .25f, .0001f);
+  BOOST_CHECK_CLOSE(uncached_label.outcome->probabilities[1].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(uncached_label.outcome->probabilities[2].action, 3);
-  BOOST_CHECK_CLOSE(uncached_label.outcome->probabilities[2].score, .25f, .0001f);
+  BOOST_CHECK_CLOSE(uncached_label.outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(uncached_label.type, CCB::example_type::decision);
 }
 
@@ -131,13 +131,13 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   BOOST_CHECK_EQUAL(copied_to.explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(copied_to.explicit_included_actions[0], 3);
   BOOST_CHECK_EQUAL(copied_to.explicit_included_actions[1], 4);
-  BOOST_CHECK_CLOSE(copied_to.outcome->cost, -2.0f, .0001f);
+  BOOST_CHECK_CLOSE(copied_to.outcome->cost, -2.0f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to.outcome->probabilities.size(), 3);
   BOOST_CHECK_EQUAL(copied_to.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(copied_to.outcome->probabilities[0].score, .5f, .0001f);
+  BOOST_CHECK_CLOSE(copied_to.outcome->probabilities[0].score, .5f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to.outcome->probabilities[1].action, 2);
-  BOOST_CHECK_CLOSE(copied_to.outcome->probabilities[1].score, .25f, .0001f);
+  BOOST_CHECK_CLOSE(copied_to.outcome->probabilities[1].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to.outcome->probabilities[2].action, 3);
-  BOOST_CHECK_CLOSE(copied_to.outcome->probabilities[2].score, .25f, .0001f);
+  BOOST_CHECK_CLOSE(copied_to.outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to.type, CCB::example_type::decision);
 }

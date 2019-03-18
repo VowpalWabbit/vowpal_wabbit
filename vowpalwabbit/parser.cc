@@ -549,19 +549,29 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       if (input_options.json || input_options.dsjson)
       {
+        auto mode = json_parser_mode::standard;
+        if (all.label_type == label_type::cb)
+        {
+          mode = json_parser_mode::cb;
+        }
+        else if (all.label_type == label_type::ccb)
+        {
+          mode = json_parser_mode::ccb;
+        }
+
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
           all.p->audit = true;
-          all.p->jsonp = std::make_shared<json_parser<true>>();
+          all.p->jsonp = std::make_shared<json_parser<true>>(mode);
         }
         else
         {
           all.p->reader = &read_features_json<false>;
           all.p->audit = false;
-          all.p->jsonp = std::make_shared<json_parser<false>>();
+          all.p->jsonp = std::make_shared<json_parser<false>>(mode);
         }
 
         all.p->decision_service_json = input_options.dsjson;
