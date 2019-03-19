@@ -2625,7 +2625,7 @@ void parse_neighbor_features(string& nf_string, search& sch)
   strcpy(cstr, nf_string.c_str());
 
   char* p = strtok(cstr, ",");
-  v_array<substring> cmd = v_init<substring>();
+  std::vector<substring> cmd;
   while (p != 0)
   {
     cmd.clear();
@@ -2653,7 +2653,6 @@ void parse_neighbor_features(string& nf_string, search& sch)
 
     p = strtok(nullptr, ",");
   }
-  cmd.delete_v();
 
   delete[] cstr;
 }

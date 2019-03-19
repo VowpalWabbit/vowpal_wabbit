@@ -30,29 +30,6 @@ bool substring_equal(const substring& ss, const char* str)
   return (strncmp(ss.begin, str, len_ss) == 0);
 }
 
-void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
-{
-  ret.clear();
-  char* last = s.begin;
-  for (; s.begin != s.end; s.begin++)
-  {
-    if (*s.begin == delim)
-    {
-      if (allow_empty || (s.begin != last))
-      {
-        substring temp = {last, s.begin};
-        ret.push_back(temp);
-      }
-      last = s.begin + 1;
-    }
-  }
-  if (allow_empty || (s.begin != last))
-  {
-    substring final = {last, s.begin};
-    ret.push_back(final);
-  }
-}
-
 uint64_t hashstring(substring s, uint64_t h)
 {
   // trim leading whitespace but not UTF-8
