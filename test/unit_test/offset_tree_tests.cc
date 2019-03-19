@@ -8,7 +8,9 @@ using namespace std;
 
 namespace VW{ namespace offset_tree {
   std::ostream& operator<<(std::ostream& os, const tree_node& node) {
-    os << "{" << node.id << "," << node.left_id << "," << node.right_id << ", " << (node.is_leaf ? "true" : "false") << "}";
+    os << "{" << node.id << "," << node.left_id << "," << node.right_id << ", " << node.parent_id << ", "
+       << (node.is_leaf ? "true" : "false")
+       << "}";
     return os;
   }
 }}
@@ -98,27 +100,27 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_11) {
   VW::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(11);
   std::vector<VW::offset_tree::tree_node> expected = {
-      { 0,0,0,0,true},
-      { 1,0,0,0,true},
-      { 2,0,0,0,true},
-      { 3,0,0,0,true},
-      { 4,0,0,0,true},
-      { 5,0,0,0,true},
-      { 6,0,0,0,true},
-      { 7,0,0,0,true},
-      { 8,0,0,0,true},
-      { 9,0,0,0,true},
-      { 10,0,0,0,true},
-      { 11,0,1,0,false},
-      { 12,2,3,0,false},
-      { 13,4,5,0,false},
-      { 14,6,7,0,false},
-      { 15,8,9,0,false},
-      { 16,11,12,0,false},
-      { 17,13,14,0,false},
-      { 18,15,10,0,false},
-      { 19,16,17,0,false},
-      { 20,19,18,0,false}
+      { 0,0,0,11,true},
+      { 1,0,0,11,true},
+      { 2,0,0,12,true},
+      { 3,0,0,12,true},
+      { 4,0,0,13,true},
+      { 5,0,0,13,true},
+      { 6,0,0,14,true},
+      { 7,0,0,14,true},
+      { 8,0,0,15,true},
+      { 9,0,0,15,true},
+      { 10,0,0,18,true},
+      { 11,0,1,16,false},
+      { 12,2,3,16,false},
+      { 13,4,5,17,false},
+      { 14,6,7,17,false},
+      { 15,8,9,18,false},
+      { 16,11,12,19,false},
+      { 17,13,14,19,false},
+      { 18,15,10,20,false},
+      { 19,16,17,20,false},
+      { 20,19,18,20,false}
   };
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }
@@ -127,13 +129,13 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_4) {
   VW::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(4);
   std::vector<VW::offset_tree::tree_node> expected = {
-      { 0,0,0,0,true},
-      { 1,0,0,0,true},
-      { 2,0,0,0,true},
-      { 3,0,0,0,true},
-      { 4,0,1,0,false},
-      { 5,2,3,0,false},
-      { 6,4,5,0,false}
+      { 0,0,0,4,true},
+      { 1,0,0,4,true},
+      { 2,0,0,5,true},
+      { 3,0,0,5,true},
+      { 4,0,1,6,false},
+      { 5,2,3,6,false},
+      { 6,4,5,6,false}
   };
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }
@@ -142,11 +144,11 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_3) {
   VW::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(3);
   std::vector<VW::offset_tree::tree_node> expected = {
-      { 0,0,0,0,true},
-      { 1,0,0,0,true},
-      { 2,0,0,0,true},
-      { 3,0,1,0,false},
-      { 4,3,2,0,false}
+      { 0,0,0,3,true},
+      { 1,0,0,3,true},
+      { 2,0,0,4,true},
+      { 3,0,1,4,false},
+      { 4,3,2,4,false}
   };
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }

@@ -17,7 +17,7 @@ namespace VW { namespace offset_tree {
   {
     if (this == &rhs)
       return true;
-    return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && is_leaf == rhs.is_leaf);
+    return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && is_leaf == rhs.is_leaf && parent_id == rhs.parent_id);
   }
 
   bool tree_node::operator!=(const tree_node& rhs) const { return !(*this == rhs); }
