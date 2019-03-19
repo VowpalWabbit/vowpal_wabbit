@@ -36,11 +36,12 @@ namespace VW { namespace offset_tree {
 
   struct offset_tree
   {
+    using scores_t = std::vector<float>;
     void init(uint32_t num_actions);
     int32_t learner_count() const;
-    const std::vector<float>& predict(LEARNER::single_learner& base, example& ec);
-
-    private:
+    const scores_t& predict(LEARNER::single_learner& base, example& ec);
+    void learn(LEARNER::single_learner& base, example& ec);
+  private:
     min_depth_binary_tree binary_tree;
   };
 }}
