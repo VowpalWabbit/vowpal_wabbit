@@ -6,6 +6,8 @@ import org.apache.spark.sql.Row;
 import vowpalwabbit.spark.*;
 
 /**
+ * Base class for numeric featurizers.
+ * 
  * @author Markus Cozowicz
  */
 public abstract class NumericFeaturizer implements IFeaturizer, Serializable {
@@ -16,6 +18,7 @@ public abstract class NumericFeaturizer implements IFeaturizer, Serializable {
         this.fieldIdx = fieldIdx;
 
         // TODO: check if the columnName is a int? is this even support as column name?
+        // this would add support for "--hash_all"
         this.featureIdx = VowpalWabbitMurmur.hash(columnName, namespaceHash);
     }
 
@@ -31,5 +34,11 @@ public abstract class NumericFeaturizer implements IFeaturizer, Serializable {
         values.add(value);
     }
 
+    /**
+     * Sub-classes should return the feature value as double.
+     * 
+     * @param r the source row.
+     * @return the feature value.
+     */
     protected abstract double getAsDouble(Row r);
 }

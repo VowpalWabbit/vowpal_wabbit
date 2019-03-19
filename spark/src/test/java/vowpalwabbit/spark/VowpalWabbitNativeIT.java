@@ -8,6 +8,9 @@ import java.nio.charset.Charset;
 import java.util.*;
 import vowpalwabbit.spark.prediction.*;
 
+/**
+ * @author Markus Cozowicz
+ */
 public class VowpalWabbitNativeIT {
 
     @Test

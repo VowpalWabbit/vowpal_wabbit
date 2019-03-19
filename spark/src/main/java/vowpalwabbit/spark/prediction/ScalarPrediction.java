@@ -1,5 +1,10 @@
 package vowpalwabbit.spark.prediction;
 
+/**
+ * A scalar prediction.
+ * 
+ * @author Markus Cozowicz
+ */
 public class ScalarPrediction {
     private float value;
     private float confidence;
@@ -9,8 +14,18 @@ public class ScalarPrediction {
         this.confidence = confidence;
     }
 
+    /**
+     * The predicted value.
+     * 
+     * @return predicted value.
+     */
     public float getValue() { return value; }
 
+    /**
+     * The confidence of the {@code value}. Needs to be enabled using --confidence
+     * 
+     * @return confidence value.
+     */
     public float getConfidence() { return confidence; }
 
     @Override

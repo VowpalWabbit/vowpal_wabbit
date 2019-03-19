@@ -8,6 +8,9 @@ import java.io.File;
 import java.util.jar.*;
 import java.util.*;
 
+/**
+ * @author Markus Cozowicz
+ */
 public class Native {
     static {
         try {

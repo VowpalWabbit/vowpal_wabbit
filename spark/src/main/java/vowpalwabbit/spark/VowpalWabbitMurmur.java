@@ -1,5 +1,10 @@
 package vowpalwabbit.spark;
 
+/**
+ * Java port of VW-style hashing.
+ * 
+ * @author Borislav Nikolov
+ */
 public class VowpalWabbitMurmur {
   private static int rotl32(int x, int r) {
     return (x << r) | (x >>> (32L - r));

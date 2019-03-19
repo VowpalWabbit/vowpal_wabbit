@@ -6,6 +6,9 @@ import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.*;
 import static org.apache.spark.sql.functions.*;
 
+/**
+ * @author Markus Cozowicz
+ */
 public class VowpalWabbitHasherIT {
 
     @Test

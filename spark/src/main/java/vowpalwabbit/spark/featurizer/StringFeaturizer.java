@@ -6,6 +6,8 @@ import org.apache.spark.sql.Row;
 import vowpalwabbit.spark.*;
 
 /**
+ * Featurizes a string by concatenating the input column name and field value.
+ * 
  * @author Markus Cozowicz
  */
 public class StringFeaturizer implements IFeaturizer, Serializable {

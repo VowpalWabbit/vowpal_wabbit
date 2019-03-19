@@ -1,9 +1,6 @@
 package vowpalwabbit.spark.featurizer;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import org.apache.spark.sql.Row;
-import vowpalwabbit.spark.*;
 
 /**
  * @author Markus Cozowicz

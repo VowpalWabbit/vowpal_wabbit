@@ -32,12 +32,6 @@ CriticalArrayGuard::~CriticalArrayGuard()
 void* CriticalArrayGuard::data()
 { return _arr0; }
 
-// assume that the passed in object has a field "nativePointer" of type long
-jlong get_native_pointer(JNIEnv *env, jobject obj)
-{ jfieldID f = env->GetFieldID(env->GetObjectClass(obj), "nativePointer", "J");
-  return env->GetLongField(obj, f);
-}
-
 // VW 
 JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_initialize
   (JNIEnv *env, jclass, jstring args)
@@ -118,9 +112,8 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_endPass
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_VowpalWabbitNative_finish
-  (JNIEnv *env, jclass, jlong vwPtr)
-{
-  auto all = (vw*)vwPtr;
+  (JNIEnv *env, jobject vwObj)
+{ auto all = (vw*)get_native_pointer(env, vwObj);
 
   try
   {  VW::finish(*all);
@@ -159,11 +152,8 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_initialize
 }
 
 JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_VowpalWabbitExample_finish
-  (JNIEnv *env, jclass, jlong examplePtr)
-{
-  auto exWrapper = (VowpalWabbitExampleWrapper*)examplePtr;
-  vw* all = exWrapper->_all;
-  example* ex = exWrapper->_example;
+  (JNIEnv *env, jobject exampleObj)
+{ INIT_VARS
 
   try
   { VW::dealloc_example(all->p->lp.delete_label, *ex);

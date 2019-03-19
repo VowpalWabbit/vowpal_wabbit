@@ -14,9 +14,9 @@ JNIEXPORT jlong JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_create
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_delete
-  (JNIEnv *env, jclass, jlong ptr)
-{
-  auto tree = (VW::SpanningTree*)ptr;
+  (JNIEnv *env, jobject clusterObj)
+{ auto tree = (VW::SpanningTree*)get_native_pointer(env, clusterObj);
+
   try
   { 
       delete tree;
@@ -27,9 +27,9 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_delete
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_start
-  (JNIEnv *env, jclass, jlong ptr)
-{
-  auto tree = (VW::SpanningTree*)ptr;
+  (JNIEnv *env, jobject clusterObj)
+{ auto tree = (VW::SpanningTree*)get_native_pointer(env, clusterObj);
+
   try
   { tree->Start(); 
   }
@@ -39,9 +39,9 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_start
 }
 
 JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_stop
-  (JNIEnv *env, jclass, jlong ptr)
-{
-  auto tree = (VW::SpanningTree*)ptr;
+  (JNIEnv *env, jobject clusterObj)
+{ auto tree = (VW::SpanningTree*)get_native_pointer(env, clusterObj);
+
   try
   { tree->Stop();
   }
@@ -49,4 +49,3 @@ JNIEXPORT void JNICALL Java_vowpalwabbit_spark_ClusterSpanningTree_stop
   { rethrow_cpp_exception_as_java_exception(env);
   }
 }
-

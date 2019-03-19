@@ -24,12 +24,15 @@ import scala.collection.JavaConverters;
 import scala.collection.Seq;
 import vowpalwabbit.spark.featurizer.*;
 
+/**
+ * @author Markus Cozowicz
+ */
 public class VowpalWabbitFeaturizer extends Transformer implements Serializable, DefaultParamsWritable {
 
     private StringArrayParam inputCols;
     private Param<String> outputCol;
     private IntParam seed;
-    // TODO: hashAll
+    // TODO: hashAll though it's not clear that numeric column names are even supported
 
     private final String uid;
 

@@ -2,6 +2,12 @@
 #include "vw.h"
 #include "util.h"
 
+// assume that the passed in object has a field "nativePointer" of type long
+jlong get_native_pointer(JNIEnv *env, jobject obj)
+{ jfieldID f = env->GetFieldID(env->GetObjectClass(obj), "nativePointer", "J");
+  return env->GetLongField(obj, f);
+}
+
 void throw_java_exception(JNIEnv *env, const char* name, const char* msg)
 { jclass jc = env->FindClass(name);
   if (jc)
