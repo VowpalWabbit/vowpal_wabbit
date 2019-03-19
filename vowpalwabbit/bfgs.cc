@@ -457,6 +457,7 @@ double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
     }
 
   // if we're not regularizing the intercept term, then subtract it off from the result above
+  // when accessing weights[constant], always use weights.strided_index(constant)
   if (all.no_bias)
   {
     if (b.regularizers == nullptr)
