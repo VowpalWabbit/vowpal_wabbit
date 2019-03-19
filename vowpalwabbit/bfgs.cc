@@ -461,14 +461,14 @@ double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
   {
     if (b.regularizers == nullptr)
     {
-      (&weights[constant])[W_GT] -= regularization * weights[constant];
-      ret -= 0.5 * regularization * (weights[constant]) * (weights[constant]);
+      (&weights.strided_index(constant))[W_GT] -= regularization * (weights.strided_index(constant));
+      ret -= 0.5 * regularization * (weights.strided_index(constant)) * (weights.strided_index(constant));
     }
     else
     {
       uint64_t i = constant >> weights.stride_shift();
-      weight delta_weight = weights[constant] - b.regularizers[2 * i + 1];
-      (&weights[constant])[W_GT] -= b.regularizers[2 * i] * delta_weight;
+      weight delta_weight = (weights.strided_index(constant)) - b.regularizers[2 * i + 1];
+      (&weights.strided_index(constant))[W_GT] -= b.regularizers[2 * i] * delta_weight;
       ret -= 0.5 * b.regularizers[2 * i] * delta_weight * delta_weight;
     }
   }
