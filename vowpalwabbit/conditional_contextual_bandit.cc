@@ -182,7 +182,7 @@ void sample_and_modify_for_exploration(ccb& data, ACTION_SCORE::action_scores& s
 {
   // Sample for exploration
   uint32_t chosen_action;
-  if (exploration::sample_after_normalizing(data.random_seed + 1+ data.random_seed_counter++,
+  if (exploration::sample_after_normalizing(data.random_seed + data.random_seed_counter++,
           ACTION_SCORE::begin_scores(scores), ACTION_SCORE::end_scores(scores), chosen_action))
     THROW("Failed to sample from pdf");
 
