@@ -4,6 +4,7 @@
 #include "global_data.h"
 #include "cache.h"
 #include "vw.h"
+#include "explore.h"
 
 #include <numeric>
 #include <algorithm>
@@ -23,6 +24,8 @@ struct ccb
   CB::cb_class cb_label, default_cb_label;
   std::unordered_set<uint32_t> exclude_list, include_list;
   CCB::decision_scores_t decision_scores;
+  uint64_t random_seed;
+  uint64_t random_seed_counter;
 };
 
 namespace CCB
@@ -175,6 +178,18 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
     attach_label_to_first_action(decision->l.conditional_contextual_bandit.outcome, data);
 }
 
+void sample_and_modify_for_exploration(ccb& data, ACTION_SCORE::action_scores& scores)
+{
+  // Sample for exploration
+  uint32_t chosen_action;
+  if (exploration::sample_after_normalizing(data.random_seed + 1+ data.random_seed_counter++,
+          ACTION_SCORE::begin_scores(scores), ACTION_SCORE::end_scores(scores), chosen_action))
+    THROW("Failed to sample from pdf");
+
+  if (exploration::swap_chosen(scores.begin(), scores.end(), chosen_action))
+    THROW("Failed to swap top action score base don sampling");
+}
+
 // iterate over decisions contained in the multi-example, and for each decision, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
@@ -194,6 +209,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     if (has_action(cb_ex))
     {  // the cb example contains at least 1 action
       multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
+      sample_and_modify_for_exploration(data, data.shared->pred.a_s);
       save_action_scores<is_learn>(data);
       clear_pred_and_label(data);
     }
@@ -249,6 +265,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->decision_scores = v_init<ACTION_SCORE::action_scores>();
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
+  data->random_seed = all.random_seed;
+  data->random_seed_counter = 0;
 
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
