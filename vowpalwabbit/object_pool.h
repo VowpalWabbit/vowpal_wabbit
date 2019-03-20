@@ -3,6 +3,20 @@
 #include <set>
 #include <queue>
 
+// Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
+// project.
+#ifdef _M_CEE
+#pragma managed(push, off)
+#undef _M_CEE
+#include <mutex>
+#include <condition_variable>
+#define _M_CEE 001
+#pragma managed(pop)
+#else
+#include <mutex>
+#include <condition_variable>
+#endif
+
 namespace VW
 {
 
@@ -21,12 +35,14 @@ struct object_pool
 
   void return_object(T* obj)
   {
+    std::unique_lock<std::mutex> lock(m_lock);
     assert(is_from_pool(obj));
     m_pool.push(obj);
   }
 
   T* get_object()
   {
+    std::unique_lock<std::mutex> lock(m_lock);
     if (m_pool.empty())
     {
       new_chunk(m_chunk_size);
@@ -38,8 +54,6 @@ struct object_pool
   }
 
   bool empty() const { return m_pool.empty(); }
-
-  size_t available() const { return m_pool.size(); }
 
   size_t size() const {
     size_t size = 0;
@@ -81,13 +95,13 @@ struct object_pool
 
     for (size_t i = 0; i < size; i++)
     {
-      // TODO fix need to memset to 0
       memset(&chunk[i], 0, sizeof(T));
       new (&chunk[i]) T{};
       m_pool.push(m_initializer(&chunk[i]));
     }
   }
 
+  std::mutex m_lock;
   std::queue<T*> m_pool;
   std::vector<std::pair<T*, T*>> m_chunk_bounds;
   std::vector<std::unique_ptr<T[]>> m_chunks;

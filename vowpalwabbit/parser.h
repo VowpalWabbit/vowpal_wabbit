@@ -62,7 +62,6 @@ struct parser
   v_array<substring> words;
   v_array<substring> name;
 
-  std::mutex pool_lock;
   VW::object_pool<example, example_initializer> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
@@ -105,9 +104,6 @@ struct parser
 };
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
-
-/* [[deprecated]] */
-void initialize_parser_datastructures(vw& all);
 
 /* [[deprecated]] */
 void adjust_used_index(vw& all);

@@ -662,7 +662,6 @@ namespace VW
 example& get_unused_example(vw* all)
 {
   parser* p = all->p;
-  std::unique_lock<std::mutex> lock(p->pool_lock);
   auto ex = p->example_pool.get_object();
   ex->in_use = true;
   p->begin_parsed_examples++;
@@ -869,13 +868,9 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-
-  {
-    std::lock_guard<std::mutex> lock(all.p->pool_lock);
-    assert(ec.in_use);
-    ec.in_use = false;
-    all.p->example_pool.return_object(&ec);
-  }
+  assert(ec.in_use);
+  ec.in_use = false;
+  all.p->example_pool.return_object(&ec);
 }
 
 void finish_example(vw& all, multi_ex& ec_seq)
@@ -890,12 +885,12 @@ void finish_example(vw& all, example& ec)
   if (!is_ring_example(all, &ec))
     return;
 
+  clean_example(all, ec, false);
+
   {
     std::lock_guard<std::mutex> lock(all.p->output_lock);
     all.p->output_done.notify_one();
   }
-
-  clean_example(all, ec, false);
 }
 }  // namespace VW
 
@@ -972,10 +967,6 @@ example* example_initializer::operator()(example* ex)
 }
 
 void adjust_used_index(vw& all) { /* no longer used */ }
-
-void initialize_parser_datastructures(vw& all)
-{
-}
 
 namespace VW
 {
