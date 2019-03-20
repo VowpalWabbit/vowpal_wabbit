@@ -809,13 +809,6 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
     data->explore_type = EPS_GREEDY;
   }
 
-  multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
-
-  // Extract from lower level reductions.
-  data->gen_cs.scorer = all.scorer;
-  data->cs_ldf_learner = as_multiline(all.cost_sensitive);
   data->gen_cs.cb_type = CB_TYPE_IPS;
   if (options.was_supplied("cb_type"))
   {
@@ -831,11 +824,22 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
       data->gen_cs.cb_type = CB_TYPE_MTR;
     }
     else
+    {
       all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
+      options.replace("cb_type", "ips");
+    }
 
     if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
       all.trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
   }
+
+  multi_learner* base = as_multiline(setup_base(options, all));
+  all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
+
+  // Extract from lower level reductions.
+  data->gen_cs.scorer = all.scorer;
+  data->cs_ldf_learner = as_multiline(all.cost_sensitive);
 
   learner<cb_explore_adf, multi_ex>& l = init_learner(data, base, CB_EXPLORE_ADF::do_actual_learning<true>,
       CB_EXPLORE_ADF::do_actual_learning<false>, problem_multiplier, prediction_type::action_probs);
