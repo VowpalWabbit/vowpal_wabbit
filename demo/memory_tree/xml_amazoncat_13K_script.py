@@ -1,7 +1,7 @@
 import os
 import time
 import numpy as np
-from IPython import embed
+#from IPython import embed
 
 print("perform experiments on amazoncat 13K (multilabel)")
 leaf_example_multiplier = 2

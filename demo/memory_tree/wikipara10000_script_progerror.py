@@ -1,10 +1,9 @@
 import os
 import time
 import numpy as np
-from IPython import embed
 
 
-available_shots = {'three':3, "one":1}
+#available_shots = {'three':3, "one":1}
 available_shots = {'three':3}
 
 for shot,shots in available_shots.items():

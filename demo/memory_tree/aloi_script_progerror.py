@@ -1,7 +1,7 @@
 import os
 import time
 import numpy as np
-from IPython import embed
+#from IPython import embed
 
 
 #for shot in available_shots.iterkeys():
