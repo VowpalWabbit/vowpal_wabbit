@@ -5,7 +5,6 @@
 #include "cache.h"
 #include "vw.h"
 #include "interactions.h"
-#include "cb_adf.h"
 #include "label_dictionary.h"
 
 #include <numeric>
@@ -310,69 +309,6 @@ void finish(ccb& data)
   data.default_cb_label.~cb_class();
 }
 
-void output_example(vw& all, ccb& c, multi_ex& ec_seq)
-{
-  if (ec_seq.size() <= 0)
-    return;
-
-  /*size_t num_features = 0;
-
-  float loss = 0.;
-
-  auto& ec = *ec_seq[0];
-  ACTION_SCORE::action_scores preds = ec.pred.a_s;
-
-  for (size_t i = 0; i < ec_seq.size(); i++)
-    if (!CB::ec_is_example_header(*ec_seq[i]))
-      num_features += ec_seq[i]->num_features;
-
-  bool labeled_example = true;
-  if (c.gen_cs.known_cost.probability > 0)
-  {
-    for (uint32_t i = 0; i < preds.size(); i++)
-    {
-      float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
-      loss += l * preds[i].score;
-    }
-  }
-  else
-    labeled_example = false;
-
-  bool holdout_example = labeled_example;
-  for (size_t i = 0; i < ec_seq.size(); i++) holdout_example &= ec_seq[i]->test_only;
-
-  all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
-
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
-
-  if (all.raw_prediction > 0)
-  {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
-
-    for (size_t i = 0; i < costs.size(); i++)
-    {
-      if (i > 0)
-        outputStringStream << ' ';
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
-    }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
-  }
-
-  CB::print_update(all, !labeled_example, ec, &ec_seq, true);*/
-}
-
-void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
-{
-  if (ec_seq.size() > 0)
-  {
-    output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all);
-  }
-  VW::clear_seq_and_finish_examples(all, ec_seq);
-}
-
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ccb>();
@@ -405,7 +341,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
-  l.set_finish_example(finish_multiline_example);
   l.set_finish(CCB::finish);
   return make_base(l);
 }
