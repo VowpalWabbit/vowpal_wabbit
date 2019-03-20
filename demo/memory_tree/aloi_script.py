@@ -44,7 +44,7 @@ train_time = time.time() - start
 #test:
 print("## Testing...")
 start = time.time();
-os.system(".././vw {} -i {}".format(test_data, saved_model))
+os.system("../../build/vowpalwabbit/vw {} -i {}".format(test_data, saved_model))
 
 test_time = time.time() - start
 
