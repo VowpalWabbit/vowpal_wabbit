@@ -6,6 +6,7 @@
 #include "vw.h"
 #include "interactions.h"
 #include "cb_adf.h"
+#include "label_dictionary.h"
 
 #include <numeric>
 #include <algorithm>
@@ -16,6 +17,8 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
+namespace CCB
+{
 struct ccb
 {
   example* shared;
@@ -28,8 +31,6 @@ struct ccb
   std::vector<std::string>* original_interactions;
 };
 
-namespace CCB
-{
 void clear_all(ccb& data)
 {
   data.shared = nullptr;
@@ -147,29 +148,36 @@ void inject_decision_features(example* shared, example* decision)
     {
       continue;
     }
-    else if (index == 32) // Decision default namespace has a special namespace in shared
+    else if (index == 32)  // Decision default namespace has a special namespace in shared
     {
-      shared->indices.push_back(ccb_decision_namespace);
-      shared->feature_space[ccb_decision_namespace].deep_copy_from(decision->feature_space[32]);
+      LabelDict::add_example_namespace(*shared, (char)ccb_decision_namespace, decision->feature_space[32]);
     }
-    else if (std::find(shared->indices.begin(), shared->indices.end(), index) == shared->indices.end())
+    else
     {
-      // If the namespace does not exist, we can do a direct copy to.
-      shared->indices.push_back(index);
-      shared->feature_space[index].deep_copy_from(decision->feature_space[index]);
-    }
-    else // Otherwise they need to be combined.
-    {
-      for (auto f : decision->feature_space[index])
-      {
-        shared->feature_space[index].push_back(f.value(), f.index());
-      }
+      LabelDict::add_example_namespace(*shared, static_cast<char>(index), decision->feature_space[index]);
     }
   }
 }
 
-// TODO revert shared example back to original state.
-void remove_decision_features(example* shared, example* decision) {}
+void remove_decision_features(example* shared, example* decision)
+{
+  for (auto index : decision->indices)
+  {
+    // constant namespace should be ignored, as it already exists and we don't want to double it up.
+    if (index == constant_namespace)
+    {
+      continue;
+    }
+    else if (index == 32)  // Decision default namespace has a special namespace in shared
+    {
+      LabelDict::del_example_namespace(*shared, static_cast<char>(ccb_decision_namespace), decision->feature_space[32]);
+    }
+    else
+    {
+      LabelDict::del_example_namespace(*shared, static_cast<char>(index), decision->feature_space[index]);
+    }
+  }
+}
 
 // Generates all pairs of the namespaces for the two examples
 void calculate_and_insert_interactions(example* shared, example* decision, std::vector<std::string>& vec)
@@ -200,8 +208,6 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
   // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
   inject_decision_features(data.shared, decision);
   cb_ex.push_back(data.shared);
-
-  // If there are no features in decision, short circuit and do no copies.
 
   // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
   data.include_list.clear();
@@ -261,7 +267,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     {
       generated_interactions.clear();
       // TODO be more efficient here
-      std::copy(data.original_interactions->begin(), data.original_interactions->end(), std::back_inserter(generated_interactions));
+      std::copy(data.original_interactions->begin(), data.original_interactions->end(),
+          std::back_inserter(generated_interactions));
       calculate_and_insert_interactions(data.shared, decision, generated_interactions);
       size_t removed_cnt;
       size_t sorted_cnt;
@@ -398,7 +405,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
-  l.set_finish_example(CCB::finish_multiline_example);
+  l.set_finish_example(finish_multiline_example);
   l.set_finish(CCB::finish);
   return make_base(l);
 }
@@ -579,7 +586,7 @@ CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
 
   split_colons.clear();
 
-  for (int i = 1; i < split_commas.size(); i++)
+  for (size_t i = 1; i < split_commas.size(); i++)
   {
     tokenize(':', split_commas[i], split_colons);
     if (split_colons.size() != 2)
@@ -632,7 +639,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     ld->type = CCB::example_type::decision;
 
     // Skip the first two words "ccb <type>"
-    for (auto i = 2; i < words.size(); i++)
+    for (size_t i = 2; i < words.size(); i++)
     {
       auto is_outcome = std::find(words[i].begin, words[i].end, ':');
       if (is_outcome != words[i].end)
