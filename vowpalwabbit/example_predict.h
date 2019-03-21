@@ -16,11 +16,15 @@ struct example_predict
   {
     features* _feature_space;
     namespace_index* _index;
+  public:
+    iterator(features* feature_space, namespace_index* index)
+      : _feature_space(feature_space), _index(index)
+    { }
 
-   public:
-    iterator(features* feature_space, namespace_index* index) : _feature_space(feature_space), _index(index) {}
-
-    features& operator*() { return _feature_space[*_index]; }
+    features& operator*()
+    {
+      return _feature_space[*_index];
+    }
 
     iterator& operator++()
     {
@@ -35,8 +39,8 @@ struct example_predict
   };
 
   v_array<namespace_index> indices;
-  features feature_space[256];  // Groups of feature values.
-  uint64_t ft_offset;           // An offset for all feature values.
+  features feature_space[256]; //Groups of feature values.
+  uint64_t ft_offset;//An offset for all feature values.
 
   iterator begin() { return iterator(feature_space, indices.begin()); }
   iterator end() { return iterator(feature_space, indices.end()); }
@@ -45,7 +49,9 @@ struct example_predict
 // make sure we have an exception safe version of example_predict
 class safe_example_predict : public example_predict
 {
- public:
+public:
   safe_example_predict();
   ~safe_example_predict();
+
+  void clear();
 };

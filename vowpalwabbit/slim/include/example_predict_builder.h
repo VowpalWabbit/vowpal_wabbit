@@ -13,10 +13,10 @@ namespace vw_slim {
 		void add_namespace(namespace_index feature_group);
 
 	public:
-		example_predict_builder(example_predict* ex, const char* namespace_name);
+		example_predict_builder(example_predict* ex, char* namespace_name);
 		example_predict_builder(example_predict* ex, namespace_index namespace_idx);
 
-		void push_feature_string(const char* feature_idx, feature_value value);
+		void push_feature_string(char* feature_idx, feature_value value);
 		void push_feature(feature_index feature_idx, feature_value value);
 	};
 } //end-of-namespace

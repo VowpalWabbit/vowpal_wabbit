@@ -7,8 +7,6 @@
 // avoid mmap dependency
 #define DISABLE_SHARED_WEIGHTS
 
-typedef float weight;
-
 #include "example_predict.h"
 #include "explore.h"
 #include "gd_predict.h"
@@ -18,8 +16,8 @@ typedef float weight;
 namespace vw_slim {
 
 	/**
-	 * @brief Exploration algorithm specified by the model.
-	 */
+	* @brief Exploration algorithm specified by the model.
+	*/
 	enum vw_predict_exploration
 	{
 		epsilon_greedy,
@@ -35,6 +33,7 @@ namespace vw_slim {
 	{
 		example_predict& _ex;
 		unsigned char _ns;
+		bool _remove_ns;
 	public:
 		namespace_copy_guard(example_predict& ex, unsigned char ns);
 		~namespace_copy_guard();
@@ -62,8 +61,8 @@ namespace vw_slim {
 	};
 
 	/**
-	 * @brief Vowpal Wabbit slim predictor. Supports: regression, multi-class classification and contextual bandits.
-	 */
+	* @brief Vowpal Wabbit slim predictor. Supports: regression, multi-class classification and contextual bandits.
+	*/
 	template<typename W>
 	class vw_predict
 	{
@@ -90,12 +89,12 @@ namespace vw_slim {
 		{ }
 
 		/**
-		 * @brief Reads the Vowpal Wabbit model from the supplied buffer (produced using vw -f <modelname>)
-		 *
-		 * @param model The binary model.
-		 * @param length The length of the binary model.
-		 * @return int Returns 0 (S_VW_PREDICT_OK) if succesful, otherwise one of the error codes (see E_VW_PREDICT_ERR_*).
-		 */
+		* @brief Reads the Vowpal Wabbit model from the supplied buffer (produced using vw -f <modelname>)
+		*
+		* @param model The binary model.
+		* @param length The length of the binary model.
+		* @return int Returns 0 (S_VW_PREDICT_OK) if succesful, otherwise one of the error codes (see E_VW_PREDICT_ERR_*).
+		*/
 		int load(const char* model, size_t length)
 		{
 			if (!model || length == 0)
@@ -174,11 +173,7 @@ namespace vw_slim {
 				else if (find_opt_float(_command_line_arguments, "--epsilon", _epsilon))
 					_exploration = vw_predict_exploration::epsilon_greedy;
 				else
-				{
-					// use epsilon greedy by default
-					_exploration = vw_predict_exploration::epsilon_greedy;
-					_epsilon = 0.05f;
-				}
+					return E_VW_PREDICT_ERR_CB_EXPLORATION_MISSING;
 			}
 
 			// VW style check_sum validation
@@ -196,11 +191,11 @@ namespace vw_slim {
 			if (check_sum_computed != check_sum)
 				return E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM;
 
-            if (_command_line_arguments.find("--cb_adf") != std::string::npos)
-            {
+			if (_command_line_arguments.find("--cb_adf") != std::string::npos)
+			{
 				RETURN_ON_FAIL(mp.skip(sizeof(uint64_t))); // cb_adf.cc: event_sum
 				RETURN_ON_FAIL(mp.skip(sizeof(uint64_t))); // cb_adf.cc: action_sum
-            }
+			}
 
 			// gd.cc: save_load
 			bool gd_resume;
@@ -209,6 +204,7 @@ namespace vw_slim {
 				return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED;
 
 			// read sparse weights into dense
+			uint64_t weight_length = (uint64_t)1 << num_bits;
 			_stride_shift = (uint32_t)ceil_log_2(num_weights);
 
 			RETURN_ON_FAIL(mp.read_weights<W>(_weights, num_bits, _stride_shift));
@@ -221,36 +217,36 @@ namespace vw_slim {
 		}
 
 		/**
-		 * @brief True if the model describes a contextual bandit (cb) model using action dependent features (afd)
-		 *
-		 * @return true True if contextual bandit predict method can be used.
-		 * @return false False if contextual bandit predict method cannot be used.
-		 */
+		* @brief True if the model describes a contextual bandit (cb) model using action dependent features (afd)
+		*
+		* @return true True if contextual bandit predict method can be used.
+		* @return false False if contextual bandit predict method cannot be used.
+		*/
 		bool is_cb_explore_adf()
 		{
 			return _command_line_arguments.find("--cb_explore_adf") != std::string::npos;
 		}
 
 		/**
-		 * @brief True if the model describes a cost sensitive one-against-all (csoaa). This is also true for cb_explore_adf models, as they are reduced to csoaa.
-		 *
-		 * @return true True if csoaa predict method can be used.
-		 * @return false False if csoaa predict method cannot be used.
-		 */
+		* @brief True if the model describes a cost sensitive one-against-all (csoaa). This is also true for cb_explore_adf models, as they are reduced to csoaa.
+		*
+		* @return true True if csoaa predict method can be used.
+		* @return false False if csoaa predict method cannot be used.
+		*/
 		bool is_csoaa_ldf()
 		{
 			return _command_line_arguments.find("--csoaa_ldf") != std::string::npos;
 		}
 
 		/**
-		 * @brief Predicts a score (as in regression) for the provided example.
-		 *
-		 * Regular regression with support for constant feature (bias term) and interactions
-		 *
-		 * @param ex The example to get the prediction for.
-		 * @param score The output score produced by the model.
-		 * @return int Returns 0 (S_VW_PREDICT_OK) if succesful, otherwise one of the error codes (see E_VW_PREDICT_ERR_*).
-		 */
+		* @brief Predicts a score (as in regression) for the provided example.
+		*
+		* Regular regression with support for constant feature (bias term) and interactions
+		*
+		* @param ex The example to get the prediction for.
+		* @param score The output score produced by the model.
+		* @return int Returns 0 (S_VW_PREDICT_OK) if succesful, otherwise one of the error codes (see E_VW_PREDICT_ERR_*).
+		*/
 		int predict(example_predict& ex, float& score)
 		{
 			if (!_model_loaded)
@@ -282,7 +278,7 @@ namespace vw_slim {
 			out_scores.resize(num_actions);
 
 			example_predict* action = actions;
-			for (size_t i=0;i<num_actions;i++, action++)
+			for (size_t i = 0; i<num_actions; i++, action++)
 			{
 				std::vector<std::unique_ptr<namespace_copy_guard>> ns_copy_guards;
 
@@ -355,7 +351,7 @@ namespace vw_slim {
 				for (example_predict* action = actions; action != actions_end; ++action)
 					stride_shift_guards.push_back(std::unique_ptr<stride_shift_guard>(new stride_shift_guard(*action, _stride_shift)));
 
-				for (int i = 0; i < _bag_size; i++)
+				for (size_t i = 0; i < _bag_size; i++)
 				{
 					std::vector<std::unique_ptr<feature_offset_guard>> feature_offset_guards;
 					for (example_predict* action = actions; action != actions_end; ++action)
@@ -381,10 +377,58 @@ namespace vw_slim {
 				return E_VW_PREDICT_ERR_NOT_A_CB_MODEL;
 			}
 
-			// sample from pdf
-			RETURN_EXPLORATION_ON_FAIL(exploration::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), std::begin(scores), std::end(scores), std::begin(ranking), std::end(ranking)));
+			RETURN_EXPLORATION_ON_FAIL(sort_by_scores(std::begin(pdf), std::end(pdf), std::begin(scores), std::end(scores), std::begin(ranking), std::end(ranking)));
+
+			// Sample from the pdf
+			uint32_t chosen_action_idx;
+			RETURN_EXPLORATION_ON_FAIL(exploration::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), chosen_action_idx));
+
+			// Swap top element with chosen one (unless chosen is the top)
+			if (chosen_action_idx != 0)
+			{
+				std::iter_swap(std::begin(ranking), std::begin(ranking) + chosen_action_idx);
+				std::iter_swap(std::begin(pdf), std::begin(pdf) + chosen_action_idx);
+			}
 
 			return S_VW_PREDICT_OK;
 		}
+
+	private:
+		template<typename PdfIt, typename InputScoreIt, typename OutputIt>
+		int sort_by_scores(	PdfIt pdf_first, PdfIt pdf_last,
+							InputScoreIt scores_first, InputScoreIt scores_last,
+							OutputIt ranking_begin, OutputIt ranking_last)
+		{
+			size_t pdf_size = pdf_last - pdf_first;
+			size_t ranking_size = ranking_last - ranking_begin;
+
+			if (pdf_size != ranking_size)
+				return E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH;
+
+			// Intialize ranking with actions 0,1,2,3 ...
+			std::iota(ranking_begin, ranking_last, 0);
+
+			// Sort actions based on scores
+			std::sort(ranking_begin, ranking_last,
+				[&scores_first](size_t i1, size_t i2) { return scores_first[i1] < scores_first[i2]; });
+
+			// Pdf starts out in the same order as ranking.  Now that ranking has been sorted
+			// in the order specified by scores, we need to apply the same transform to pdf.
+			using PdfVal = typename std::iterator_traits<PdfIt>::value_type;
+			static thread_local typename std::vector<PdfVal> sorted_pdf(pdf_size);
+			sorted_pdf.clear();
+
+			int idx = 0;
+			for (auto idx_iter = ranking_begin; idx_iter != ranking_last; ++idx_iter, ++idx) {
+				sorted_pdf[idx] = pdf_first[*idx_iter];
+			}
+
+			// Since std::copy does not get built on windows, we do element by element copy.
+			for (int i = 0; i < pdf_size; ++i) {
+				*(pdf_first + i) = sorted_pdf[i];
+			}
+
+			return S_EXPLORATION_OK;
+		}
 	};
-} // end-of-namespace
+}; // end-of-namespace

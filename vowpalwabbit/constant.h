@@ -26,3 +26,5 @@ const unsigned char conditioning_namespace = 134;// this is \x86
 const unsigned char dictionary_namespace = 135; // this is \x87
 const unsigned char node_id_namespace = 136; // this is \x88
 const unsigned char message_namespace = 137; // this is \x89
+
+typedef float weight;
