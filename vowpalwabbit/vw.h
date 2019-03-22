@@ -102,7 +102,6 @@ feature* get_features(vw& all, example* ec, size_t& feature_number);
 void return_features(feature* f);
 
 void add_constant_feature(vw& all, example* ec);
-void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 // notify VW that you are done with the example.
 void finish_example(vw& all, example& ec);

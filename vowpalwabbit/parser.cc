@@ -795,13 +795,6 @@ void add_constant_feature(vw& vw, example* ec)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
 }
 
-void add_label(example* ec, float label, float weight, float base)
-{
-  ec->l.simple.label = label;
-  ec->l.simple.initial = base;
-  ec->weight = weight;
-}
-
 example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
