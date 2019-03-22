@@ -15,33 +15,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="example_predict_builder.h">
+    <ClInclude Include="include\example_predict_builder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="model_parser.h">
+    <ClInclude Include="include\model_parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="opts.h">
+    <ClInclude Include="include\opts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vw_slim_predict.h">
+    <ClInclude Include="include\vw_slim_predict.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="example_predict_builder.cc">
+    <ClCompile Include="..\vw_exception.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="model_parser.cc">
+    <ClCompile Include="..\example_predict.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="opts.cc">
+    <ClCompile Include="src\example_predict_builder.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vw_slim_predict.cc">
+    <ClCompile Include="src\model_parser.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\vowpalwabbit\vw_exception.cc">
+    <ClCompile Include="src\opts.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vw_slim_predict.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

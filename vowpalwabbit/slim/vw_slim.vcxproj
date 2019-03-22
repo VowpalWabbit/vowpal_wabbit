@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -69,16 +69,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore;$(SolutionDir)\slim\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore;$(SolutionDir)\slim\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore;$(SolutionDir)\slim\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir);$(SolutionDir)..\explore;$(SolutionDir)\slim\include</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -121,17 +121,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="example_predict_builder.h" />
-    <ClInclude Include="model_parser.h" />
-    <ClInclude Include="opts.h" />
-    <ClInclude Include="vw_slim_predict.h" />
+    <ClInclude Include="include\example_predict_builder.h" />
+    <ClInclude Include="include\model_parser.h" />
+    <ClInclude Include="include\opts.h" />
+    <ClInclude Include="include\vw_slim_predict.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\vowpalwabbit\vw_exception.cc" />
-    <ClCompile Include="example_predict_builder.cc" />
-    <ClCompile Include="model_parser.cc" />
-    <ClCompile Include="opts.cc" />
-    <ClCompile Include="vw_slim_predict.cc" />
+    <ClCompile Include="..\vw_exception.cc" />
+    <ClCompile Include="..\example_predict.cc" />
+    <ClCompile Include="src\example_predict_builder.cc" />
+    <ClCompile Include="src\model_parser.cc" />
+    <ClCompile Include="src\opts.cc" />
+    <ClCompile Include="src\vw_slim_predict.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

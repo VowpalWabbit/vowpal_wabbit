@@ -57,7 +57,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python27", "..\python\windo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_unit_test", "..\test\unit_test\unit_test.vcxproj", "{E02E3869-D9AD-4513-B352-93F90B7D6FE3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_slim", "..\vowpalwabbitslim\vw_slim.vcxproj", "{B68B36AA-F5AC-4A1A-8E52-D1B071B39483}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_slim", "slim\vw_slim.vcxproj", "{B68B36AA-F5AC-4A1A-8E52-D1B071B39483}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
