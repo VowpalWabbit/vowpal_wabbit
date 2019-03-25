@@ -319,7 +319,7 @@ void print_features(vw& all, example& ec)
     INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(
         all, ec, dat);
 
-    sort(dat.results.begin(), dat.results.end());
+    stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
     {
       for (string_value& sv : dat.results) cout << '\t' << sv.s;
