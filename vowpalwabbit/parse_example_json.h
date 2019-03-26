@@ -852,6 +852,28 @@ class DefaultState : public BaseState<audit>
 
       // inject label
       ctx.label_object_state.EndObject(ctx, memberCount);
+
+      // If we are in CCB mode and there have been no decisions. Check label cost, prob and action were passed. In that
+      // case this is CB, so generate a single decision with this info.
+      auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
+      if (jsonp->mode == json_parser_mode::ccb)
+      {
+        auto num_decisions = std::count_if(ctx.examples->begin(), ctx.examples->end(),
+            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::decision; });
+        if (num_decisions == 0 && ctx.label_object_state.found_cb)
+        {
+          ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+          ctx.all->p->lp.default_label(&ctx.ex->l);
+          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::decision;
+          ctx.examples->push_back(ctx.ex);
+
+          auto outcome = new CCB::conditional_contexual_bandit_outcome();
+          outcome->cost = ctx.label_object_state.cb_label.cost;
+          outcome->probabilities.push_back(
+              {ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
+          ctx.ex->l.conditional_contextual_bandit.outcome = outcome;
+        }
+      }
     }
 
     // if we're at the top-level go back to ds_state
@@ -1083,27 +1105,6 @@ class DecisionServiceState : public BaseState<audit>
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType /* memberCount */) override
   {
-    // If we are in CCB mode and there have been no decisions. Check label cost, prob and action were passed. In that
-    // case this is CB, so generate a single decision with this info.
-    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
-    if (jsonp->mode == json_parser_mode::ccb)
-    {
-      auto num_decisions = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-          [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::decision; });
-      if (num_decisions == 0 && ctx.label_object_state.found_cb)
-      {
-        ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-        ctx.all->p->lp.default_label(&ctx.ex->l);
-        ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::decision;
-        ctx.examples->push_back(ctx.ex);
-
-        auto outcome = new CCB::conditional_contexual_bandit_outcome();
-        outcome->cost = ctx.label_object_state.cb_label.cost;
-        outcome->probabilities.push_back({ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
-        ctx.ex->l.conditional_contextual_bandit.outcome = outcome;
-      }
-    }
-
     // TODO: improve validation
     return this;
   }

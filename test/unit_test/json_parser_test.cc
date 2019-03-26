@@ -41,7 +41,8 @@ BOOST_AUTO_TEST_CASE(parse_json_simple)
 }
 
 // TODO: Make unit test dig out and verify features.
-BOOST_AUTO_TEST_CASE(parse_json_cb) {
+BOOST_AUTO_TEST_CASE(parse_json_cb)
+{
   std::string json_text = R"(
     {
       "s_": "1",
@@ -88,7 +89,8 @@ BOOST_AUTO_TEST_CASE(parse_json_cb) {
 }
 
 // TODO: Make unit test dig out and verify features.
-BOOST_AUTO_TEST_CASE(parse_json_ccb) {
+BOOST_AUTO_TEST_CASE(parse_json_ccb)
+{
   std::string json_text = R"(
     {
       "s_": "1",
@@ -175,4 +177,50 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb) {
   BOOST_CHECK_CLOSE(label3.outcome->probabilities[1].score, .25f, .0001f);
 }
 
+BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
+{
+  std::string json_text = R"(
+    {
+      "s_": "1",
+      "s_": "2",
+      "_labelIndex": 0,
+      "_label_Action": 1,
+      "_label_Cost": 1,
+      "_label_Probability": 0.5,
+      "_multi": [
+        {
+          "a_": "1",
+          "b_": "1",
+          "c_": "1"
+        },
+        {
+          "a_": "2",
+          "b_": "2",
+          "c_": "2"
+        },
+        {
+          "a_": "3",
+          "b_": "3",
+          "c_": "3"
+        }
+      ]
+    })";
 
+  auto vw = VW::initialize("--ccb_explore_adf --json --no_stdin", nullptr, false, nullptr, nullptr);
+
+  auto examples = parse_json(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 5);
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::decision);
+
+  auto label1 = examples[4]->l.conditional_contextual_bandit;
+  BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 0);
+  BOOST_CHECK_CLOSE(label1.outcome->cost, 1.f, .0001f);
+  BOOST_CHECK_EQUAL(label1.outcome->probabilities.size(), 1);
+  BOOST_CHECK_EQUAL(label1.outcome->probabilities[0].action, 1);
+  BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .5f, .0001f);
+}
