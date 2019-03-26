@@ -147,7 +147,7 @@ void inject_decision_features(example* shared, example* decision)
     {
       continue;
     }
-    else if (index == 32)  // Decision default namespace has a special namespace in shared
+    else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
     {
       LabelDict::add_example_namespace(*shared, (char)ccb_decision_namespace, decision->feature_space[32]);
     }
@@ -167,7 +167,7 @@ void remove_decision_features(example* shared, example* decision)
     {
       continue;
     }
-    else if (index == 32)  // Decision default namespace has a special namespace in shared
+    else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
     {
       LabelDict::del_example_namespace(*shared, static_cast<char>(ccb_decision_namespace), decision->feature_space[32]);
     }
@@ -181,11 +181,13 @@ void remove_decision_features(example* shared, example* decision)
 // Generates all pairs of the namespaces for the two examples
 void calculate_and_insert_interactions(example* shared, example* decision, std::vector<std::string>& vec)
 {
+  vec.reserve(shared->indices.size() * decision->indices.size() + vec.size());
+
   for (auto shared_index : shared->indices)
   {
     for (auto decision_index : decision->indices)
     {
-      if (decision_index == 32)
+      if (decision_index == default_namespace)
       {
         vec.push_back({(char)shared_index, (char)ccb_decision_namespace});
       }

@@ -21,6 +21,7 @@ license as described in the file LICENSE.
 #include "conditional_contextual_bandit.h"
 #include <vector>
 
+const unsigned char default_namespace = 32;
 const unsigned char wap_ldf_namespace = 126;
 const unsigned char history_namespace = 127;
 const unsigned char constant_namespace = 128;
