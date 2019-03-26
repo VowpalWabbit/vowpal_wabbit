@@ -5,6 +5,7 @@
 #include "cache.h"
 #include "vw.h"
 #include "cb_adf.h"
+#include "cb_algs.h"
 
 #include <numeric>
 #include <algorithm>
@@ -39,6 +40,9 @@ void clear_all(ccb& data)
   data.include_list.clear();
   data.decision_scores.clear();
 }
+
+static constexpr uint32_t SHARED_EX_INDEX = 0;
+static constexpr uint32_t TOP_ACTION_INDEX = 0;
 
 // split the decisions, the actions and the shared example from the multiline example
 void split_multi_example(const multi_ex& examples, ccb& data)
@@ -235,7 +239,7 @@ void print_decision_scores(int f, decision_scores_t& decision_scores)
   }
 }
 
-void print_update(vw& all, std::vector<example*> decisions, decision_scores_t decision_scores, size_t num_features)
+void print_update(vw& all, std::vector<example*>& decisions, decision_scores_t& decision_scores, size_t num_features)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -301,13 +305,6 @@ void print_update(vw& all, std::vector<example*> decisions, decision_scores_t de
   }
 }
 
-inline float get_unbiased_cost(CCB::conditional_contexual_bandit_outcome* outcome, uint32_t action, float offset = 0.)
-{
-  if (action == outcome->probabilities[0].action)
-    return (outcome->cost - offset) / outcome->probabilities[0].score;
-  return 0.;
-}
-
 void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
 {
   if (ec_seq.size() <= 0)
@@ -334,10 +331,12 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   auto preds = ec_seq[0]->pred.decision_scores;
   for (int i = 0; i < decisions.size(); i++)
   {
-    if (decisions[i]->l.conditional_contextual_bandit.outcome != nullptr)
+    auto outcome = decisions[i]->l.conditional_contextual_bandit.outcome;
+    if (outcome != nullptr)
     {
-      float l = get_unbiased_cost(decisions[i]->l.conditional_contextual_bandit.outcome, preds[i][0].action);
-      loss += l * preds[i][0].score;
+      float l = CB_ALGS::get_unbiased_cost(
+          outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
+      loss += l * preds[i][TOP_ACTION_INDEX].score;
     }
     else
     {
@@ -349,9 +348,10 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   for (size_t i = 0; i < ec_seq.size(); i++) holdout_example &= ec_seq[i]->test_only;
 
   // TODO what does weight mean here?
-  all.sd->update(holdout_example, labeled_example, loss, ec_seq[0]->weight, num_features);
+  all.sd->update(holdout_example, labeled_example, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
-  for (auto sink : all.final_prediction_sink) print_decision_scores(sink, ec_seq[0]->pred.decision_scores);
+  for (auto sink : all.final_prediction_sink)
+    print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
 
    CCB::print_update(all, decisions, preds, num_features);
 }
