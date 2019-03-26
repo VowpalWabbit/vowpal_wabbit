@@ -826,6 +826,7 @@ exit $ErrorCount;
 #   and if any of them exists, we use it instead.
 #
 __DATA__
+
 # Test 1:
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
     -f models/0001_1.model -c --passes 8 --invariant \
@@ -1650,3 +1651,8 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 
 # Test 176: same model on cluster mode
 ./same-model-test.sh
+
+# Test 177: check --audit output is reproducible
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit 
+    train-sets/ref/audit2.stdout
+

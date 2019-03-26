@@ -25,6 +25,7 @@
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
+    <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />

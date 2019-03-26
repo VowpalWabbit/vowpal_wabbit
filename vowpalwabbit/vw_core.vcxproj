@@ -156,6 +156,7 @@
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="action_score.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
+    <ClInclude Include="object_pool.h" />
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />
@@ -202,6 +203,7 @@
     <ClInclude Include="options_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="parse_example_json.h" />
+    <ClInclude Include="queue.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="interact.h" />
