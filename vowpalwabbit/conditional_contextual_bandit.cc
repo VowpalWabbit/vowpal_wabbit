@@ -29,6 +29,9 @@ struct ccb
 
 namespace CCB
 {
+static constexpr uint32_t SHARED_EX_INDEX = 0;
+static constexpr uint32_t TOP_ACTION_INDEX = 0;
+
 void clear_all(ccb& data)
 {
   data.shared = nullptr;
@@ -40,9 +43,6 @@ void clear_all(ccb& data)
   data.include_list.clear();
   data.decision_scores.clear();
 }
-
-static constexpr uint32_t SHARED_EX_INDEX = 0;
-static constexpr uint32_t TOP_ACTION_INDEX = 0;
 
 // split the decisions, the actions and the shared example from the multiline example
 void split_multi_example(const multi_ex& examples, ccb& data)
