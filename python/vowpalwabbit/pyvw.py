@@ -114,10 +114,17 @@ class vw(pylibvw.vw):
         self.finished = False
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
-        """Returns a collection of examples for a multiline example or a single example in
-        a collection if it was single line example."""
+        """Returns a collection of examples for a multiline example learner or a single
+        example for a single example learner."""
+        str_ex = str_ex.replace('\r', '')
         ec = self._parse(str_ex)
-        return [example(self, x, labelType) for x in ec]
+        ec = [example(self, x, labelType) for x in ec]
+        if not self._is_multiline():
+            if len(ec) == 1:
+                ec = ec[0]
+            else:
+                raise TypeError('expecting single line example, got multi_ex of len %i' % len(ec))
+        return ec
 
     def num_weights(self):
         """Get length of weight vector."""
@@ -137,8 +144,6 @@ class vw(pylibvw.vw):
         if isinstance(ec, str):
             ec = self.parse(ec)
             new_example = True
-            if not self._is_multiline():
-                ec = ec[0]
 
         if isinstance(ec, example):
             if hasattr(ec, 'setup_done') and not ec.setup_done:
@@ -172,8 +177,6 @@ class vw(pylibvw.vw):
         if isinstance(ec, str):
             ec = self.parse(ec)
             new_example = True
-            if not self._is_multiline():
-                ec = ec[0]
 
         if not isinstance(ec, example) and not isinstance(ec, list):
             raise TypeError('expecting string, example object, or list of example objects as ec argument for predict, got %s' % type(ec))
