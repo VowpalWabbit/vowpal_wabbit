@@ -457,6 +457,21 @@ void substring_to_example(vw* all, example* ae, substring example)
     TC_parser<false> parser_line(bar_location, example.end, *all, ae);
 }
 
+std::vector<std::string> split(char* phrase, std::string delimiter){
+    std::vector<std::string> list;
+    std::string s = std::string(phrase);
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        list.push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    list.push_back(s);
+    return list;
+}
+
+
 namespace VW
 {
 void read_line(vw& all, example* ex, char* line)
@@ -465,4 +480,20 @@ void read_line(vw& all, example* ex, char* line)
   while ((ss.end >= ss.begin) && (*(ss.end - 1) == '\n')) ss.end--;
   substring_to_example(&all, ex, ss);
 }
+
+void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples)
+{
+  auto lines = split(line, "\n");
+  for(size_t i = 0; i < lines.size(); i++)
+  {
+    // Check if a new empty example needs to be added.
+    if(examples.size() < i + 1)
+    {
+      examples.push_back(&VW::get_unused_example(all));
+    }
+    read_line(*all, examples[i], const_cast<char*>(lines[i].c_str()));
+  }
+}
+
+
 }  // namespace VW
