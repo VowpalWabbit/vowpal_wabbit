@@ -150,6 +150,10 @@ endif()
 
 # PkgConfig
 if(VW_INSTALL)
+  FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
+    SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
+  ENDFOREACH()
+
   configure_file(libvw.pc.in libvw.pc)
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)
