@@ -1647,3 +1647,18 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 175: cbify ldf, regcbopt
 {VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01
     train-sets/ref/cbify_ldf_regcbopt.stderr
+
+# Test 176: offset_tree, 2 actions
+{VW} --ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.predict -P 1
+    test-sets/ref/offset_tree_000.stderr
+    pred-sets/ref/offset_tree_000.predict
+
+# Test 177: offset_tree, 3 actions
+{VW} --ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.predict -P 1
+    test-sets/ref/offset_tree_001.stderr
+    pred-sets/ref/offset_tree_001.predict
+
+# Test 178: offset_tree, 4 actions
+{VW} --ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.predict -P 1
+    test-sets/ref/offset_tree_002.stderr
+    pred-sets/ref/offset_tree_002.predict
