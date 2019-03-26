@@ -241,6 +241,12 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
+  if (!options.was_supplied("cb_sample"))
+  {
+    options.insert("cb_sample", "");
+    options.add_and_parse(new_options);
+  }
+
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
   all.label_type = label_type::ccb;

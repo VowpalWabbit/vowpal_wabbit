@@ -22,7 +22,6 @@ CCB::label parse_label(parser* p, std::string label)
 
 BOOST_AUTO_TEST_CASE(ccb_parse_label)
 {
-
   parser p{8 /*ring_size*/};
   p.words = v_init<substring>();
   p.parse_name = v_init<substring>();

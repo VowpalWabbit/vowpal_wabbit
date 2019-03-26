@@ -73,6 +73,7 @@ license as described in the file LICENSE.
 #include "explore_eval.h"
 #include "baseline.h"
 #include "classweight.h"
+#include "cb_sample.h"
 // #include "cntk.h"
 
 #include "options.h"
@@ -1271,6 +1272,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(mwt_setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
