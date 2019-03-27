@@ -1653,6 +1653,9 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 ./same-model-test.sh
 
 # Test 177: check --audit output is reproducible
-printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit 
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/audit2.stdout
 
+# Test 178: test cb_sample
+{VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict
+    pred-sets/ref/cb_sample_seed.predict

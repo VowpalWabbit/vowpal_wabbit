@@ -167,11 +167,11 @@ class LabelObjectState : public BaseState<audit>
 {
  private:
   BaseState<audit>* return_state;
+
+ public:
   CB::cb_class cb_label;
   bool found;
   bool found_cb;
-
- public:
   std::vector<unsigned int> actions;
   std::vector<float> probs;
   std::vector<unsigned int> inc;
@@ -852,6 +852,28 @@ class DefaultState : public BaseState<audit>
 
       // inject label
       ctx.label_object_state.EndObject(ctx, memberCount);
+
+      // If we are in CCB mode and there have been no decisions. Check label cost, prob and action were passed. In that
+      // case this is CB, so generate a single decision with this info.
+      auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
+      if (jsonp->mode == json_parser_mode::ccb)
+      {
+        auto num_decisions = std::count_if(ctx.examples->begin(), ctx.examples->end(),
+            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::decision; });
+        if (num_decisions == 0 && ctx.label_object_state.found_cb)
+        {
+          ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+          ctx.all->p->lp.default_label(&ctx.ex->l);
+          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::decision;
+          ctx.examples->push_back(ctx.ex);
+
+          auto outcome = new CCB::conditional_contexual_bandit_outcome();
+          outcome->cost = ctx.label_object_state.cb_label.cost;
+          outcome->probabilities.push_back(
+              {ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
+          ctx.ex->l.conditional_contextual_bandit.outcome = outcome;
+        }
+      }
     }
 
     // if we're at the top-level go back to ds_state
@@ -950,7 +972,8 @@ class StringToStringState : public BaseState<audit>
   std::string* output_string;
   BaseState<audit>* return_state;
 
-  BaseState<audit>* String(Context<audit>& /*ctx*/, const char* str, rapidjson::SizeType length, bool /* copy */) override
+  BaseState<audit>* String(
+      Context<audit>& /*ctx*/, const char* str, rapidjson::SizeType length, bool /* copy */) override
   {
     output_string->assign(str, str + length);
     return return_state;
@@ -1080,7 +1103,7 @@ class DecisionServiceState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* EndObject(Context<audit>& /* ctx */, rapidjson::SizeType /* memberCount */) override
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType /* memberCount */) override
   {
     // TODO: improve validation
     return this;
@@ -1152,10 +1175,10 @@ class DecisionServiceState : public BaseState<audit>
 template <bool audit>
 struct Context
 {
-private:
+ private:
   std::unique_ptr<std::stringstream> error_ptr;
 
-public:
+ public:
   vw* all;
 
   // last "<key>": encountered
@@ -1250,7 +1273,7 @@ public:
     {
       auto feature_group = ns.feature_group;
       // Do not insert feature_group if it already exists.
-      if(std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
+      if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
       {
         ex->indices.push_back(feature_group);
       }
@@ -1329,9 +1352,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 template <bool audit>
 struct json_parser
 {
-  json_parser(json_parser_mode mode)
-    : mode{mode}
-  {}
+  json_parser(json_parser_mode mode) : mode{mode} {}
 
   rapidjson::Reader reader;
   VWReaderHandler<audit> handler;
@@ -1382,7 +1403,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
 
   // As long as VW was configured correctly this should not occur.
-  if(parser->mode == json_parser_mode::standard)
+  if (parser->mode == json_parser_mode::standard)
   {
     THROW("dsjson does not support standard json parser mode.")
   }

@@ -184,3 +184,84 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
   BOOST_CHECK_EQUAL(label2.outcome->probabilities[1].action, 1);
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[1].score, .25f, .0001f);
 }
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
+{
+  std::string json_text = R"(
+{
+  "_label_cost": -1,
+  "_label_probability": 0.8166667,
+  "_label_Action": 2,
+  "_labelIndex": 1,
+  "Version": "1",
+  "EventId": "0074434d3a3a46529f65de8a59631939",
+  "a": [
+    2,
+    1,
+    3
+  ],
+  "c": {
+    "shared_ns": {
+      "shared_feature": 0
+    },
+    "_multi": [
+      {
+        "_tag": "tag",
+        "ns1": {
+          "f1": 1,
+          "f2": "strng"
+        },
+        "ns2": [
+          {
+            "f3": "value1"
+          },
+          {
+            "ns3": {
+              "f4": 0.994963765
+            }
+          }
+        ]
+      },
+      {
+        "_tag": "tag",
+        "ns1": {
+          "f1": 1,
+          "f2": "strng"
+        }
+      },
+      {
+        "_tag": "tag",
+        "ns1": {
+          "f1": 1,
+          "f2": "strng"
+        }
+      }
+    ]
+  },
+  "p": [
+    0.816666663,
+    0.183333333,
+    0.183333333
+  ],
+  "VWState": {
+    "m": "096200c6c41e42bbb879c12830247637/0639c12bea464192828b250ffc389657"
+  }
+}
+)";
+  auto vw = VW::initialize("--ccb_explore_adf --dsjson --no_stdin", nullptr, false, nullptr, nullptr);
+  auto examples = parse_dsjson(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 5);
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::decision);
+
+  auto label2 = examples[4]->l.conditional_contextual_bandit;
+  BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);
+  BOOST_CHECK_CLOSE(label2.outcome->cost, -1.f, .0001f);
+  BOOST_CHECK_EQUAL(label2.outcome->probabilities.size(), 1);
+  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 2);
+  BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, 0.8166667f, .0001f);
+}
