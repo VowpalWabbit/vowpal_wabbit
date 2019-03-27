@@ -21,6 +21,7 @@ license as described in the file LICENSE.
 #include "conditional_contextual_bandit.h"
 #include <vector>
 
+const unsigned char default_namespace = 32;
 const unsigned char wap_ldf_namespace = 126;
 const unsigned char history_namespace = 127;
 const unsigned char constant_namespace = 128;
@@ -34,6 +35,7 @@ const unsigned char conditioning_namespace = 134;  // this is \x86
 const unsigned char dictionary_namespace = 135;    // this is \x87
 const unsigned char node_id_namespace = 136;       // this is \x88
 const unsigned char message_namespace = 137;       // this is \x89
+const unsigned char ccb_decision_namespace = 139;
 
 typedef union {
   no_label::no_label empty;

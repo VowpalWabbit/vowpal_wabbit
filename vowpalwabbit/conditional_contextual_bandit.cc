@@ -4,6 +4,8 @@
 #include "global_data.h"
 #include "cache.h"
 #include "vw.h"
+#include "interactions.h"
+#include "label_dictionary.h"
 #include "cb_adf.h"
 #include "cb_algs.h"
 
@@ -16,6 +18,7 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
+
 struct ccb
 {
   example* shared;
@@ -25,6 +28,7 @@ struct ccb
   CB::cb_class cb_label, default_cb_label;
   std::unordered_set<uint32_t> exclude_list, include_list;
   CCB::decision_scores_t decision_scores;
+  std::vector<std::string>* original_interactions;
 };
 
 namespace CCB
@@ -51,13 +55,13 @@ void split_multi_example(const multi_ex& examples, ccb& data)
   {
     switch (ex->l.conditional_contextual_bandit.type)
     {
-      case CCB::example_type::shared:
+      case example_type::shared:
         data.shared = ex;
         break;
-      case CCB::example_type::action:
+      case example_type::action:
         data.actions.push_back(ex);
         break;
-      case CCB::example_type::decision:
+      case example_type::decision:
         data.decisions.push_back(ex);
         break;
       default:
@@ -136,14 +140,80 @@ void clear_pred_and_label(ccb& data)
 // true if there exists at least 1 action in the cb multi-example
 bool has_action(multi_ex& cb_ex) { return cb_ex.size() > 1; }
 
+// This function intentionally does not handle increasing the num_features of the example because
+// the output_example function has special logic to ensure the number of feaures is correctly calculated.
+// Copy anything in default namespace for decision to ccb_decision_namespace in shared
+// Copy other decision namespaces to shared
+void inject_decision_features(example* shared, example* decision)
+{
+  for (auto index : decision->indices)
+  {
+    // constant namespace should be ignored, as it already exists and we don't want to double it up.
+    if (index == constant_namespace)
+    {
+      continue;
+    }
+    else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
+    {
+      LabelDict::add_example_namespace(*shared, ccb_decision_namespace, decision->feature_space[32]);
+    }
+    else
+    {
+      LabelDict::add_example_namespace(*shared, index, decision->feature_space[index]);
+    }
+  }
+}
+
+void remove_decision_features(example* shared, example* decision)
+{
+  for (auto index : decision->indices)
+  {
+    // constant namespace should be ignored, as it already exists and we don't want to double it up.
+    if (index == constant_namespace)
+    {
+      continue;
+    }
+    else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
+    {
+      LabelDict::del_example_namespace(*shared, ccb_decision_namespace, decision->feature_space[32]);
+    }
+    else
+    {
+      LabelDict::del_example_namespace(*shared, index, decision->feature_space[index]);
+    }
+  }
+}
+
+// Generates all pairs of the namespaces for the two examples
+void calculate_and_insert_interactions(example* shared, example* decision, std::vector<std::string>& vec)
+{
+  vec.reserve(shared->indices.size() * decision->indices.size() + vec.size());
+
+  for (auto shared_index : shared->indices)
+  {
+    for (auto decision_index : decision->indices)
+    {
+      if (decision_index == default_namespace)
+      {
+        vec.push_back({(char)shared_index, (char)ccb_decision_namespace});
+      }
+      else
+      {
+        vec.push_back({(char)shared_index, (char)decision_index});
+      }
+    }
+  }
+}
+
 // build a cb example from the ccb example
 template <bool is_learn>
 void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
 {
   bool decision_has_label = decision->l.conditional_contextual_bandit.outcome != nullptr;
 
-  // set the shared example in the cb multi-example
-  //TODO merge decision features in shared feature + activate interactions
+  // Merge the decision features with the shared example and set it in the cb multi-example
+  // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
+  inject_decision_features(data.shared, decision);
   cb_ex.push_back(data.shared);
 
   // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
@@ -190,11 +260,28 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   sanity_checks<is_learn>(data);
   create_cb_labels(data);
 
+  std::vector<std::string> generated_interactions;
+
   // for each decision, re-build the cb example and call cb_explore_adf
   for (example* decision : data.decisions)
   {
     multi_ex cb_ex;
     build_cb_example<is_learn>(cb_ex, decision, data);
+
+    // Namespace crossing for decision features.
+    // If the decision example only has the constant namespace, there will be no extra crossing and so skip that logic.
+    if (!(decision->indices.size() == 1 && decision->indices[0] == constant_namespace))
+    {
+      generated_interactions.clear();
+      // TODO be more efficient here
+      std::copy(data.original_interactions->begin(), data.original_interactions->end(),
+          std::back_inserter(generated_interactions));
+      calculate_and_insert_interactions(data.shared, decision, generated_interactions);
+      size_t removed_cnt;
+      size_t sorted_cnt;
+      INTERACTIONS::sort_and_filter_duplicate_interactions(generated_interactions, true, removed_cnt, sorted_cnt);
+      data.shared->override_interactions = &generated_interactions;
+    }
 
     if (has_action(cb_ex))
     {  // the cb example contains at least 1 action
@@ -207,6 +294,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       auto empty_action_scores = v_init<ACTION_SCORE::action_score>();
       data.decision_scores.push_back(empty_action_scores);
     }
+
+    data.shared->override_interactions = nullptr;
+    remove_decision_features(data.shared, decision);
   }
 
   delete_cb_labels(data);
@@ -410,6 +500,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->decision_scores = v_init<ACTION_SCORE::action_scores>();
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
+  data->original_interactions = &all.interactions;
 
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
@@ -595,7 +686,7 @@ CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
 
   split_colons.clear();
 
-  for (int i = 1; i < split_commas.size(); i++)
+  for (size_t i = 1; i < split_commas.size(); i++)
   {
     tokenize(':', split_commas[i], split_colons);
     if (split_colons.size() != 2)
@@ -648,7 +739,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     ld->type = CCB::example_type::decision;
 
     // Skip the first two words "ccb <type>"
-    for (auto i = 2; i < words.size(); i++)
+    for (size_t i = 2; i < words.size(); i++)
     {
       auto is_outcome = std::find(words[i].begin, words[i].end, ':');
       if (is_outcome != words[i].end)
