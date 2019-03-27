@@ -69,6 +69,13 @@ inline float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label&
   return get_unbiased_cost(observation, action);
 }
 
+inline float get_unbiased_cost(ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
+{
+  if (action == a_s.action)
+    return (cost - offset) / a_s.score;
+  return 0.;
+}
+
 inline bool example_is_newline_not_header(example& ec)
 {
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
