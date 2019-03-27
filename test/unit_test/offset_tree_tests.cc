@@ -28,7 +28,7 @@ struct reduction_test_harness {
     ec.pred.a_s.push_back(ACTION_SCORE::action_score{ 1,curr_pred.second});
   }
 
-  void test_learn(single_learner& base, example& ec) { 
+  void test_learn(single_learner& base, example& ec) {
     // do nothing
   }
 
@@ -64,17 +64,17 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic){
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back({-1.0,1,0.5 ,0.0});
-  
+
   tree.learn(*as_singleline(test_harness), ec);
-  
+
   destroy_free<test_learner_t>(test_harness);
 }
 
 BOOST_AUTO_TEST_CASE(offset_tree_predict) {
   // 0 node tree
-  predict_test_helper({ {} }, {}); 
-  // 1 node tree  
-  predict_test_helper({ {} }, { 1.0f }); 
+  predict_test_helper({ {} }, {});
+  // 1 node tree
+  predict_test_helper({ {} }, { 1.0f });
   // 2 node trees
   predict_test_helper({ {.2f,.8f} }, { .2f,.8f });
   predict_test_helper({ {.1f,.9f} }, { .1f,.9f });
@@ -187,6 +187,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   tree.init(expected_scores.size());
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
+  ec.l.cb.costs = v_init<CB::cb_class>();
   auto& ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
   destroy_free<test_learner_t>(test_base);
