@@ -149,11 +149,11 @@ void inject_decision_features(example* shared, example* decision)
     }
     else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
     {
-      LabelDict::add_example_namespace(*shared, (char)ccb_decision_namespace, decision->feature_space[32]);
+      LabelDict::add_example_namespace(*shared, ccb_decision_namespace, decision->feature_space[32]);
     }
     else
     {
-      LabelDict::add_example_namespace(*shared, static_cast<char>(index), decision->feature_space[index]);
+      LabelDict::add_example_namespace(*shared, index, decision->feature_space[index]);
     }
   }
 }
@@ -169,11 +169,11 @@ void remove_decision_features(example* shared, example* decision)
     }
     else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
     {
-      LabelDict::del_example_namespace(*shared, static_cast<char>(ccb_decision_namespace), decision->feature_space[32]);
+      LabelDict::del_example_namespace(*shared, ccb_decision_namespace, decision->feature_space[32]);
     }
     else
     {
-      LabelDict::del_example_namespace(*shared, static_cast<char>(index), decision->feature_space[index]);
+      LabelDict::del_example_namespace(*shared, index, decision->feature_space[index]);
     }
   }
 }
