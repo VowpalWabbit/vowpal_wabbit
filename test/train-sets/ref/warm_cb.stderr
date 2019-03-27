@@ -19,4 +19,4 @@ average loss = 1.000000
 total feature number = 20
 average variance estimate = 171.578140
 theoretical average variance = 200.000000
-last lambda chosen = 0.031250 among lambdas ranging from 0.031250 to 0.937500
+last lambda chosen = 0.937500 among lambdas ranging from 0.031250 to 0.937500

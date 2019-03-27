@@ -196,9 +196,12 @@ void copy_example_to_adf(warm_cb& data, example& ec)
   }
 }
 
+// Changing the minimax value from eps/(K+eps)
+// to eps/(1+eps) to accomodate for
+// weight scaling of bandit examples by factor 1/K in mtr reduction
 float minimax_lambda(float epsilon, size_t num_actions)
 {
-	return epsilon / (num_actions + epsilon);
+	return epsilon / (1.0f + epsilon);
 }
 
 void setup_lambdas(warm_cb& data)
@@ -587,7 +590,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("corrupt_type_warm_start", data->cor_type_ws).default_value(UAR).help("type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: replacing with overwriting label)"))
       .add(make_option("corrupt_prob_warm_start", data->cor_prob_ws).default_value(0.f).help("probability of label corruption in the warm start phase"))
       .add(make_option("choices_lambda", data->choices_lambda).default_value(1U).help("the number of candidate lambdas to aggregate (lambda is the importance weight parameter between the two sources)"))
-      .add(make_option("lambda_scheme", data->lambda_scheme).default_value(ABS_CENTRAL).help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min lambda=0, max lambda=1, 3: center lambda=epsilon/(#actions+epsilon), 4: center lambda=epsilon/(#actions+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are generated using a doubling scheme"))
+      .add(make_option("lambda_scheme", data->lambda_scheme).default_value(ABS_CENTRAL).help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min lambda=0, max lambda=1, 3: center lambda=epsilon/(1+epsilon), 4: center lambda=epsilon/(1+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are generated using a doubling scheme"))
       .add(make_option("overwrite_label", data->overwrite_label).default_value(1U).help("the label used by type 3 corruptions (overwriting)"))
       .add(make_option("sim_bandit", data->sim_bandit).help("simulate contextual bandit updates on warm start examples"));
 
