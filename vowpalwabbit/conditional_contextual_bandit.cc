@@ -18,8 +18,7 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace CCB
-{
+
 struct ccb
 {
   example* shared;
@@ -56,13 +55,13 @@ void split_multi_example(const multi_ex& examples, ccb& data)
   {
     switch (ex->l.conditional_contextual_bandit.type)
     {
-      case CCB::example_type::shared:
+      case example_type::shared:
         data.shared = ex;
         break;
-      case CCB::example_type::action:
+      case example_type::action:
         data.actions.push_back(ex);
         break;
-      case CCB::example_type::decision:
+      case example_type::decision:
         data.decisions.push_back(ex);
         break;
       default:
