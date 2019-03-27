@@ -22,7 +22,7 @@ CCB::label parse_label(parser* p, std::string label)
 
 BOOST_AUTO_TEST_CASE(ccb_parse_label)
 {
-  parser p{8};
+  parser p{8 /*ring_size*/};
   p.words = v_init<substring>();
   p.parse_name = v_init<substring>();
 
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   io.space.resize(1000);
   io.space.end() = io.space.begin() + 1000;
 
-  parser p{8};
+  parser p{8 /*ring_size*/};
   p.words = v_init<substring>();
   p.parse_name = v_init<substring>();
 
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
 
 BOOST_AUTO_TEST_CASE(ccb_copy_label)
 {
-  parser p{8};
+  parser p{8 /*ring_size*/};
   p.words = v_init<substring>();
   p.parse_name = v_init<substring>();
   auto lp = CCB::ccb_label_parser;
