@@ -4,6 +4,8 @@
 #include "global_data.h"
 #include "cache.h"
 #include "vw.h"
+#include "cb_adf.h"
+#include "cb_algs.h"
 
 #include <numeric>
 #include <algorithm>
@@ -27,6 +29,9 @@ struct ccb
 
 namespace CCB
 {
+static constexpr uint32_t SHARED_EX_INDEX = 0;
+static constexpr uint32_t TOP_ACTION_INDEX = 0;
+
 void clear_all(ccb& data)
 {
   data.shared = nullptr;
@@ -211,6 +216,156 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   examples[0]->pred.decision_scores = data.decision_scores;
 }
 
+void print_decision_scores(int f, decision_scores_t& decision_scores)
+{
+  if (f >= 0)
+  {
+    std::stringstream ss;
+    for (auto decision : decision_scores)
+    {
+      std::string delimiter = "";
+      for (auto action_score : decision)
+      {
+        ss << delimiter << action_score.action << ':' << action_score.score;
+        delimiter = ",";
+      }
+      ss << '\n';
+    }
+    ss << '\n';
+    ssize_t len = ss.str().size();
+    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    if (t != len)
+      std::cerr << "write error: " << strerror(errno) << std::endl;
+  }
+}
+
+void print_update(vw& all, std::vector<example*>& decisions, decision_scores_t& decision_scores, size_t num_features)
+{
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    std::string label_str = "";
+    std::string delim = "";
+    int counter = 0;
+    for (auto decision : decisions)
+    {
+      counter++;
+
+      auto outcome = decision->l.conditional_contextual_bandit.outcome;
+      if (outcome == nullptr)
+      {
+        label_str += delim;
+        label_str += "?";
+      }
+      else
+      {
+        label_str += delim;
+        label_str += std::to_string(outcome->probabilities[0].action);
+        label_str += ":";
+        label_str += std::to_string(outcome->cost);
+      }
+
+      delim = ",";
+
+      // Stop after 2...
+      if (counter > 1 && decisions.size() > 2)
+      {
+        label_str += delim;
+        label_str += "...";
+        break;
+      }
+    }
+    std::ostringstream label_buf;
+    label_buf << std::setw(all.sd->col_current_label) << std::right << std::setfill(' ') << label_str;
+
+
+    std::string pred_str = "";
+    delim = "";
+    counter = 0;
+    for (auto decision : decision_scores)
+    {
+      counter++;
+      pred_str += delim;
+      pred_str += std::to_string(decision[0].action);
+      delim = ",";
+
+      // Stop after 3...
+      if (counter > 2)
+      {
+        pred_str += delim;
+        pred_str += "...";
+        break;
+      }
+    }
+    std::ostringstream pred_buf;
+    pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ') << pred_str;
+
+
+    all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf.str(), pred_buf.str(), num_features,
+        all.progress_add, all.progress_arg);
+  }
+}
+
+void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
+{
+  if (ec_seq.size() <= 0)
+    return;
+
+  std::vector<example*> decisions;
+  size_t num_features = 0;
+  float loss = 0.;
+
+  // Should this be done for shared, action and decision?
+  for (auto ec : ec_seq)
+  {
+    num_features += ec->num_features;
+
+    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::decision)
+    {
+      decisions.push_back(ec);
+    }
+  }
+
+  // What does it mean for not all of the decisions to be labeled? Does it become a non-labeled example at that point?
+  // Is it hold out?
+  bool labeled_example = true;
+  auto preds = ec_seq[0]->pred.decision_scores;
+  for (int i = 0; i < decisions.size(); i++)
+  {
+    auto outcome = decisions[i]->l.conditional_contextual_bandit.outcome;
+    if (outcome != nullptr)
+    {
+      float l = CB_ALGS::get_unbiased_cost(
+          outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
+      loss += l * preds[i][TOP_ACTION_INDEX].score;
+    }
+    else
+    {
+      labeled_example = false;
+    }
+  }
+
+  bool holdout_example = labeled_example;
+  for (size_t i = 0; i < ec_seq.size(); i++) holdout_example &= ec_seq[i]->test_only;
+
+  // TODO what does weight mean here?
+  all.sd->update(holdout_example, labeled_example, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
+
+  for (auto sink : all.final_prediction_sink)
+    print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
+
+   CCB::print_update(all, decisions, preds, num_features);
+}
+
+void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
+{
+  if (ec_seq.size() > 0)
+  {
+    output_example(all, data, ec_seq);
+    CB_ADF::global_print_newline(all);
+  }
+  VW::clear_seq_and_finish_examples(all, ec_seq);
+}
+
 void finish(ccb& data)
 {
   data.actions.~vector<example*>();
@@ -259,6 +414,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
+  l.set_finish_example(finish_multiline_example);
   l.set_finish(CCB::finish);
   return make_base(l);
 }
