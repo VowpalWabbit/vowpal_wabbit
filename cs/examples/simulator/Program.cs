@@ -3,7 +3,7 @@
 namespace simulator
 {
     class Program
-    {
+    { 
         private static readonly string help_string = "usage: simulator initial_random tot_iter mod_iter reward_seed vw_seed exp_iter num_contexts num_actions ml_args_snips";
 
         static void Main(string[] args)

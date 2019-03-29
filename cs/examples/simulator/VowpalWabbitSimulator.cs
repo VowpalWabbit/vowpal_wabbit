@@ -23,11 +23,9 @@ namespace simulator
             {
                 // generate distinct per user context with 2 seperate prefered actions
                 this.PDF = Enumerable.Range(0, numActions).Select(_ => 0.005f).ToArray();
-                this.PDF[2 * sharedContext] = 0.03f;
-                this.PDF[2 * sharedContext + 1] = 0.025f;
+                this.PDF[sharedContext] = 0.03f;
 
                 this.exampleBuffer = new byte[32 * 1024];
-
 
                 var str = JsonConvert.SerializeObject(
                     new
@@ -121,11 +119,26 @@ namespace simulator
                     {
                         var scores = ex.Predict(VowpalWabbitPredictionType.ActionProbabilities, scorer);
 
-                        // TODO sample from distribution and choose action.
-                        var topAction = 0;
+                        var total = 0.0;
 
-                        foreach (var ap in scores)
-                            scorerPdf[ap.Action] = ap.Score;
+                        foreach (var actionScore in scores)
+                        {
+                            total += actionScore.Score;
+                            scorerPdf[actionScore.Action] = actionScore.Score;
+                        }
+
+                        var draw = randGen.NextDouble() * total;
+                        var sum = 0.0;
+                        uint topAction = 0;
+                        foreach (var actionScore in scores)
+                        {
+                            sum += actionScore.Score;
+                            if(sum > draw)
+                            {
+                                topAction = actionScore.Action;
+                                break;
+                            }
+                        }
 
                         int modelAction = (int)scores[0].Action;
                         if (i > initial_random)
