@@ -119,6 +119,8 @@ class vw(pylibvw.vw):
         str_ex = str_ex.replace('\r', '')
         ec = self._parse(str_ex)
         ec = [example(self, x, labelType) for x in ec]
+        for ex in ec:
+            ex.setup_done = True
         if not self._is_multiline():
             if len(ec) == 1:
                 ec = ec[0]
@@ -557,7 +559,7 @@ class example(pylibvw.example):
     easier to use (by making the types safer via namespace_id) and
     also with added python-specific functionality."""
 
-    def __init__(self, vw, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
+    def __init__(self, vw, initStringOrDictOrRawExample=None, labelType=pylibvw.vw.lDefault):
         """Construct a new example from vw. If initString is None, you
         get an "empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
@@ -566,34 +568,27 @@ class example(pylibvw.example):
         finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more
         (for lazy feature computation)."""
 
-        while hasattr(initStringOrDict, '__call__'):
-            initStringOrDict = initStringOrDict()
+        while hasattr(initStringOrDictOrRawExample, '__call__'):
+            initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
-        if initStringOrDict is None:
+        if initStringOrDictOrRawExample is None:
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
-        elif isinstance(initStringOrDict, str):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDict)
+        elif isinstance(initStringOrDictOrRawExample, str):
+            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
             self.setup_done = True
-        elif isinstance(initStringOrDict, dict):
+        elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
+            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+        elif isinstance(initStringOrDictOrRawExample, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
-            self.push_feature_dict(vw, initStringOrDict)
+            self.push_feature_dict(vw, initStringOrDictOrRawExample)
             self.setup_done = False
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
-        self.vw = vw
-        self.stride = vw.get_stride()
-        self.finished = False
-        self.labelType = labelType
-
-    def __init__(self, vw, raw_example, labelType=pylibvw.vw.lDefault):
-        """Wrap existing raw example object"""
-
-        pylibvw.example.__init__(self, vw, labelType, raw_example)
         self.vw = vw
         self.stride = vw.get_stride()
         self.finished = False
