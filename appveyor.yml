@@ -1,5 +1,5 @@
 version: 1.0.{build}
-image: Visual Studio 2017
+os: Windows Server 2012 R2
 configuration:
 - Release
 platform: x64
@@ -15,12 +15,12 @@ build_script:
 # Set up vowpal_wabbit repo root
 - SET vwRoot=C:\vowpal_wabbit
 # Set up toolchain integration
-- SET "msbuildPath=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\MSBuild.exe"
+- SET "msbuildPath=C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe"
 - SET nugetPath=%vwRoot%\vowpalwabbit\.nuget\nuget
 # Restore and build
 - cd %vwRoot%
-- CALL .scripts/restore.cmd
-- CALL .scripts/build.cmd
+- .scripts/restore.cmd
+- .scripts/build.cmd
 test_script:
 - ps: >-
     if($env:PLATFORM -eq "x64")

@@ -1,6 +1,6 @@
 REM Integration points for toolchain customization
 IF NOT DEFINED nugetPath (
-    SET "nugetPath=nuget"
+    SET nugetPath=nuget
 )
 
 IF NOT DEFINED msbuildPath (

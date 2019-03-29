@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace simulator
 {
@@ -10,49 +10,58 @@ namespace simulator
         {
             string ml_args = args[0] + " --quiet";
 
-            if (!int.TryParse(args[1], out int initial_random))
+            int initial_random;
+            int tot_iter;
+            int mod_iter;
+            int reward_seed;
+            ulong vw_seed;
+            int exp_iter;
+            int num_contexts;
+            int num_actions;
+
+            if (!int.TryParse(args[1], out initial_random))
             {
                 Console.WriteLine(help_string);
                 return;
             }
 
-            if (!int.TryParse(args[2], out int tot_iter))
+            if (!int.TryParse(args[2], out tot_iter))
             {
                 Console.WriteLine(help_string);
                 return;
             }
 
-            if (!int.TryParse(args[3], out int mod_iter))
+            if (!int.TryParse(args[3], out mod_iter))
             {
                 Console.WriteLine(help_string);
                 return;
             }
 
-            if (!int.TryParse(args[4], out int reward_seed))
+            if (!int.TryParse(args[4], out reward_seed))
             {
                 Console.WriteLine(help_string);
                 return;
             }
 
-            if (!ulong.TryParse(args[5], out ulong vw_seed))
+            if (!ulong.TryParse(args[5], out vw_seed))
             {
                 Console.WriteLine(help_string);
                 return;
             }
 
-            if (!int.TryParse(args[6], out int exp_iter))
+            if (!int.TryParse(args[6], out exp_iter))
             {
                 Console.WriteLine(help_string);
                 return;
             }
 
-            if (!int.TryParse(args[7], out int num_contexts))
+            if (!int.TryParse(args[7], out num_contexts))
             {
                 Console.WriteLine(help_string);
                 return;
             }
 
-            if (!int.TryParse(args[8], out int num_actions))
+            if (!int.TryParse(args[8], out num_actions))
             {
                 Console.WriteLine(help_string);
                 return;

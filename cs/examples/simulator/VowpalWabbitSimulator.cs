@@ -1,4 +1,4 @@
-using Microsoft.Research.MultiWorldTesting.ExploreLibrary;
+﻿//using Microsoft.Research.MultiWorldTesting.ExploreLibrary;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -27,7 +27,7 @@ namespace simulator
                 this.PDF[2 * sharedContext + 1] = 0.025f;
 
                 this.exampleBuffer = new byte[32 * 1024];
-                
+
 
                 var str = JsonConvert.SerializeObject(
                     new
@@ -57,7 +57,8 @@ namespace simulator
 
             public VowpalWabbitMultiLineExampleCollection CreateExample(VowpalWabbit vw)
             {
-                var examples = vw.ParseDecisionServiceJson(this.exampleBuffer, 0, this.length, true, out VowpalWabbitDecisionServiceInteractionHeader header);
+                VowpalWabbitDecisionServiceInteractionHeader header;
+                var examples = vw.ParseDecisionServiceJson(this.exampleBuffer, 0, this.length, true, out header);
 
                 var adf = new VowpalWabbitExample[examples.Count - 1];
                 examples.CopyTo(1, adf, 0, examples.Count - 1);
@@ -86,9 +87,7 @@ namespace simulator
             var exampleBuffer = new byte[32 * 1024];
 
             var randGen = new Random(rewardSeed);
-            var prg = new PRG(vwSeed);
             var userGen = new Random();
-            var explorer = new GenericTopSlotExplorer();
 
             var simExamples = Enumerable.Range(0, numContexts)
                 .Select(i => new SimulatorExample(numActions, i))
@@ -121,21 +120,12 @@ namespace simulator
                     using (var ex = simExample.CreateExample(learner))
                     {
                         var scores = ex.Predict(VowpalWabbitPredictionType.ActionProbabilities, scorer);
-                        var actionProbs = scores
-                            .Select(a =>
-                                new ActionProbability
-                                {
-                                    Action = (int)(a.Action),
-                                    Probability = a.Score
-                                })
-                                .ToArray();
 
-                        // sampling from distribution
-                        var chosen = explorer.MapContext(prg, actionProbs, numActions);
-                        var topAction = chosen.Value[0];
+                        // TODO sample from distribution and choose action.
+                        var topAction = 0;
 
-                        foreach (var ap in actionProbs)
-                            scorerPdf[ap.Action] = ap.Probability;
+                        foreach (var ap in scores)
+                            scorerPdf[ap.Action] = ap.Score;
 
                         int modelAction = (int)scores[0].Action;
                         if (i > initial_random)
