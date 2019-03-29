@@ -10,8 +10,12 @@ if(WIN32)
   target_link_libraries(spanning_tree PRIVATE wsock32 ws2_32)
 endif()
 
+if(STATIC_LINK_VW)
+  target_link_libraries(spanning_tree PRIVATE ${unix_static_flag})
+endif()
+
 target_include_directories(spanning_tree PRIVATE ${vowpal_wabbit_dir})
-target_link_libraries(spanning_tree PRIVATE Threads::Threads)
+target_link_libraries(spanning_tree PRIVATE ${LINK_THREADS})
 
 if(VW_INSTALL)
   install(TARGETS spanning_tree

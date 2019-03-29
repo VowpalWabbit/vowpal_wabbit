@@ -274,9 +274,6 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
-  p = new_parser();
-  p->emptylines_separate_examples = false;
-  p->lp = simple_label;
   label_type = label_type::simple;
 
   l = nullptr;
@@ -286,7 +283,6 @@ vw::vw()
 
   reg_mode = 0;
   current_pass = 0;
-  reduction_stack = v_init<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)>();
 
   data_filename = "";
   delete_prediction = nullptr;

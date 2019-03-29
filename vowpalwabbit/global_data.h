@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
+#include <stack>
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -164,14 +165,13 @@ inline void deleter(substring ss, uint64_t /* label */) { free_it(ss.begin); }
 class namedlabels
 {
  private:
-  v_array<substring> id2name;
+  std::vector<substring> id2name;
   v_hashmap<substring, uint64_t> name2id;
   uint32_t K;
 
  public:
   namedlabels(std::string label_list)
   {
-    id2name = v_init<substring>();
     char* temp = calloc_or_throw<char>(1 + label_list.length());
     memcpy(temp, label_list.c_str(), strlen(label_list.c_str()));
     substring ss = {temp, nullptr};
@@ -202,7 +202,6 @@ class namedlabels
       free(id2name[0].begin);
     name2id.iter(deleter);
     name2id.delete_v();
-    id2name.delete_v();
   }
 
   uint32_t getK() { return K; }
@@ -591,7 +590,7 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  v_array<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
   v_array<int> final_prediction_sink;  // set to send global predictions to.
