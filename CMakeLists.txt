@@ -108,7 +108,16 @@ find_package(Threads REQUIRED)
 
 set(LINK_THREADS Threads::Threads)
 if(STATIC_LINK_VW)
-  set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
+  if(APPLE)
+    set(unix_static_flag "")
+    #Guess ZLIB_LIBRARY to be the one provided by homebrew if none was provided
+    if(NOT ZLIB_LIBRARY)
+      file(GLOB ZLIB_LIBRARY /usr/local/Cellar/zlib/*/lib/libz.a)
+    endif()
+  elseif()
+    set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
+    set(unix_static_flag -static)
+  endif()
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
@@ -150,6 +159,10 @@ endif()
 
 # PkgConfig
 if(VW_INSTALL)
+  FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
+    SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
+  ENDFOREACH()
+
   configure_file(libvw.pc.in libvw.pc)
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)

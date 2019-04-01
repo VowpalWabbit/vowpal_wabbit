@@ -75,8 +75,6 @@ class Clean(_clean):
 
 class Sdist(_sdist):
     def run(self):
-        # run prep if needed
-        prep()
         _sdist.run(self)
 
 
