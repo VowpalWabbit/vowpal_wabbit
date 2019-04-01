@@ -134,7 +134,7 @@ target_link_libraries(vw-bin PRIVATE vw)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
 if(STATIC_LINK_VW)
-  target_link_libraries(vw-bin PRIVATE -static)
+  target_link_libraries(vw-bin PRIVATE ${unix_static_flag})
 endif()
 
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
