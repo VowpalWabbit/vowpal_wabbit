@@ -539,12 +539,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
+          all.p->text_reader = &line_to_examples_json<true>;
           all.p->audit = true;
           all.p->jsonp = std::make_shared<json_parser<true>>();
         }
         else
         {
           all.p->reader = &read_features_json<false>;
+          all.p->text_reader = &line_to_examples_json<false>;
           all.p->audit = false;
           all.p->jsonp = std::make_shared<json_parser<false>>();
         }
@@ -552,7 +554,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         all.p->decision_service_json = input_options.dsjson;
       }
       else
+      {
         all.p->reader = read_features_string;
+        all.p->text_reader = VW::read_lines;
+      }
 
       all.p->resettable = all.p->write_cache;
     }

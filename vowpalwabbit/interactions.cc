@@ -127,14 +127,14 @@ void sort_and_filter_duplicate_interactions(
   for (size_t i = 0; i < vec.size(); ++i)
   {
     std::string sorted_i(vec[i]);
-    std::sort(std::begin(sorted_i), std::end(sorted_i));
+    std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
     vec_sorted.push_back(make_pair(sorted_i, i));
   }
 
   if (filter_duplicates)
   {
     // remove duplicates
-    sort(vec_sorted.begin(), vec_sorted.end(),
+    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
         [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
           return a.first < b.first;
         });
@@ -148,7 +148,7 @@ void sort_and_filter_duplicate_interactions(
     removed_cnt = vec.size() - vec_sorted.size();
 
     // restore original order
-    sort(vec_sorted.begin(), vec_sorted.end(),
+    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
         [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
           return a.second < b.second;
         });
