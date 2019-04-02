@@ -36,7 +36,7 @@ From PyPI:
 
 From local repo (useful when making modifications):
 
-.. code-block::
+.. code-block:: bash
 
     # Dependencies
     $ sudo apt-get install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
@@ -111,13 +111,13 @@ Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be 
 
 .. code-block:: bash
 
-    git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
+    $ git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
     # create conda environment if necessary
-    conda create -n vowpalwabbit
-    source activate vowpalwabbit
+    $ conda create -n vowpalwabbit
+    $ source activate vowpalwabbit
     # install necessary boost dependencies
-    conda install -y -c anaconda boost
-    pip install -e vowpal_wabbit/python
+    $ conda install -y -c anaconda boost
+    $ pip install -e vowpal_wabbit/python
 
 Development
 -----------
