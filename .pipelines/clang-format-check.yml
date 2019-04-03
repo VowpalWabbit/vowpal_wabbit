@@ -7,8 +7,8 @@ resources:
 pool:
   vmImage: 'ubuntu-16.04'
 
-jobs:
-- job: format
-  container: travisbase
-  steps:
-  - script: ./utl/clang-format check
+# jobs:
+# - job: job_container
+container: travisbase
+steps:
+- script: ./utl/clang-format check
