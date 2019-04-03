@@ -468,7 +468,7 @@ single_learner* as_singleline(learner<T, E>* l)
 template <bool is_learn>
 void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
 {
-  std::vector<uint64_t> saved_offsets(examples.size());
+  std::vector<uint64_t> saved_offsets;
   for (auto ec : examples)
   {
     saved_offsets.push_back(ec->ft_offset);
