@@ -11,7 +11,7 @@
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_STATIC_LIB
-
+#define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
@@ -694,9 +694,6 @@ void my_set_condition(predictor_ptr P, ptag t, char c) { P->set_condition(t, c);
 void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->set_condition_range(hi, count, name0); }
 void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
 void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
-
-//We need to forward declare this here to be able to add VW_DLL_MEMBER as BOOST_PYTHON_MODULE doesn't help
-extern "C" VW_DLL_MEMBER void initpylibvw();
 
 BOOST_PYTHON_MODULE(pylibvw)
 { // This will enable user-defined docstrings and python signatures,
