@@ -103,9 +103,10 @@ For Mac OSX
 
     $ brew install cmake
     $ brew install boost
-    $ brew install boost-python
-    # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
-    $ brew install boost-python3
+    #If you want to build with python 2 support
+    brew install boost-python
+    #If you want to build with python 3 support
+    brew install boost-python3
 
 Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be done using the following steps:
 
