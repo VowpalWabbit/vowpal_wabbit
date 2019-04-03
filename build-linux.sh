@@ -4,11 +4,6 @@ set -x
 
 export PATH="$HOME/miniconda/bin:$PATH"
 
-# Check if any clang-formatting necessary
-
-cd /vw
-./utl/clang-format check
-
 sudo apt remove --yes --force-yes cmake
 
 # Upgrade CMake
