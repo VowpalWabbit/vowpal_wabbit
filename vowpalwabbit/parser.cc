@@ -854,7 +854,7 @@ void parse_example_label(vw& all, example& ec, string label)
   words.delete_v();
 }
 
-void empty_example(vw& /* all */, example& ec)
+void empty_example(vw& /*all*/, example& ec)
 {
   for (features& fs : ec) fs.clear();
 
