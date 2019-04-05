@@ -172,7 +172,6 @@
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="cbify.h" />
-    <ClInclude Include="warm_cb.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -272,7 +271,6 @@
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
-    <ClCompile Include="warm_cb.cc" />
     <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="cb_explore_adf.cc" />
     <ClCompile Include="gen_cs_example.cc" />
