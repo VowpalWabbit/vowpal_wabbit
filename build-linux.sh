@@ -21,8 +21,6 @@ sudo mkdir /opt/cmake
 sudo sh cmake-$version.$build-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
 sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
 
-sudo apt-get install rapidjson-dev
-
 cd /vw
 mkdir build
 cd build
