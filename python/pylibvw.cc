@@ -1,5 +1,5 @@
 #include "../vowpalwabbit/vw.h"
-
+#include<iostream>
 #include "../vowpalwabbit/multiclass.h"
 #include "../vowpalwabbit/cost_sensitive.h"
 #include "../vowpalwabbit/cb.h"
@@ -448,10 +448,15 @@ py::list ex_get_scalars(example_ptr ec)
 py::list ex_get_action_scores(example_ptr ec)
 { py::list values;
   v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
-
+  float ordered_scores[scores.size()] = {0.0};
+  
   for (ACTION_SCORE::action_score s : scores)
-  { values.append(s.score);
+  {
+    ordered_scores[s.action] = s.score;
   }
+
+  for (int i = 0; i < scores.size(); values.append(ordered_scores[i++]));
+
   return values;
 }
 
