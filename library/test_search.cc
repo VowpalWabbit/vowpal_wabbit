@@ -25,7 +25,7 @@ public:
   void _run(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output)
   { output.clear();
     for (size_t i=0; i<input_example.size(); i++)
-    { example* ex = VW::read_example(vw_obj, "1 |w " + input_example[i].word);
+    { example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
       action p  = Search::predictor(sch, i+1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, *ex);
       output.push_back(p);
