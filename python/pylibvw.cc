@@ -460,10 +460,16 @@ py::list ex_get_scalars(example_ptr ec)
 py::list ex_get_action_scores(example_ptr ec)
 { py::list values;
   v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
-
-  for (ACTION_SCORE::action_score s : scores)
-  { values.append(s.score);
+  std::vector<float> ordered_scores(scores.size());
+  for (auto action_score: scores)
+  {
+     ordered_scores[action_score.action] = action_score.score;
   }
+
+  for (auto action_score: ordered_scores)
+  { values.append(action_score);
+  }
+
   return values;
 }
 
