@@ -24,7 +24,6 @@ ProcessorCount(NumProcessors)
 message(STATUS "Number of processors: ${NumProcessors}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nprocs.txt ${NumProcessors})
 
-
 option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
 option(GCOV "Turn on flags required for gcov" OFF)
@@ -39,6 +38,7 @@ option(BUILD_DOCS "Add documentation targets." Off)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
+set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Add -ffast-math for speed, remove for testability.
 set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse)
@@ -83,10 +83,6 @@ set(windows_release_config /GL /O2 /Gy /Oi /Ob2 /Ot /Oy /GT /MD)
 set(windows_debug_config /INCREMENTAL /Od /Zi /analyze-)
 set(windows_flags $<$<CONFIG:DEBUG>:${windows_debug_config}> $<$<CONFIG:RELEASE>:${windows_release_config}>)
 
-# TODO move to consuming vcpkg of this dependency
-add_library(rapidjson INTERFACE)
-target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
-
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -123,6 +119,7 @@ endif()
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
 find_package(ZLIB REQUIRED)
+find_package(RapidJSON REQUIRED MODULE)
 
 add_subdirectory(cluster)
 add_subdirectory(library)
