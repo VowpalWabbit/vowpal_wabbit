@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install -y software-properties-common python-softw
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update
 
-RUN sudo apt-get install
 # Add Open JDK repo (including license agreement), install Java
 RUN echo "oracle-java11-installer shared/accepted-oracle-license-v1-2 select true" | \
   debconf-set-selections && \
@@ -16,7 +15,7 @@ RUN echo "oracle-java11-installer shared/accepted-oracle-license-v1-2 select tru
 # Install build tools
 RUN apt-get install -y \
     gcc g++ libboost-all-dev zlib1g-dev help2man make libssl-dev cmake doxygen graphviz \
-    python-setuptools python-dev build-essential maven wget git rapidjson-dev && \
+    python-setuptools python-dev build-essential maven wget git && \
   rm -rf /var/lib/apt/lists/*
 
 # ppa for g++ 4.9 (first version that supports complete c++11. i.e. <regex>)
