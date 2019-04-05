@@ -4,10 +4,10 @@ Vowpal Wabbit Python Wrapper
 .. image:: https://badge.fury.io/py/vowpalwabbit.svg
     :alt: PyPI Package
     :target: https://pypi.python.org/pypi/vowpalwabbit
-.. image:: https://travis-ci.org/JohnLangford/vowpal_wabbit.png
+.. image:: https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master
     :alt: Build Status
-    :target: https://travis-ci.org/JohnLangford/vowpal_wabbit
-.. image:: https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true
+    :target: https://travis-ci.org/VowpalWabbit/vowpal_wabbit
+.. image:: https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true
     :alt: Windows Build Status
     :target: https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit
 .. image:: https://coveralls.io/repos/github/JohnLangford/vowpal_wabbit/badge.svg
@@ -18,20 +18,12 @@ Vowpal Wabbit is a fast machine learning library for online learning, and this i
 
 Installing this package builds Vowpal Wabbit locally for explicit use within python, it will not create the command-line version
 of the tool (or affect any previously existing command-line installations).
-To install the command-line version see the main project page: https://github.com/JohnLangford/vowpal_wabbit
+To install the command-line version see the main project page: https://github.com/VowpalWabbit/vowpal_wabbit
 
 The version of the PyPI vowpalwabbit package corresponds to the tagged version of the code in the github repo that will be used
 during building and installation.
 If you need to make local changes to the code and rebuild the python binding be sure to pip uninstall vowpalwabbit then rebuild
 using the local repo installation instructions below.
-
-Vowpal Wabbit internally requires `boost-python` to be installed prior to installation.
-Install boost dependencies as below if they are not already installed.
-
-.. code-block:: bash
-
-    $ sudo apt-get install libboost-program-options-dev zlib1g-dev libboost-python-dev
-
 
 Installation
 ------------
@@ -44,10 +36,14 @@ From PyPI:
 
 From local repo (useful when making modifications):
 
-.. code-block::
+.. code-block:: bash
 
+    # Dependencies
+    $ sudo apt-get install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
+    
+    # Build and install package
     $ cd python
-    $ pip install -e .
+    $ python setup.py install
 
 Usage
 -----
@@ -99,29 +95,30 @@ For Ubuntu/Debian/Mint
 
 .. code-block:: bash
 
-    $ apt-get install libboost-program-options-dev zlib1g-dev libboost-python-dev
+    $ apt-get install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
 
 For Mac OSX
 
 .. code-block:: bash
 
-    $ brew install libtool autoconf automake
+    $ brew install cmake
     $ brew install boost
-    $ brew install boost-python
-    # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
-    $ brew install boost-python3
+    #If you want to build with python 2 support
+    brew install boost-python
+    #If you want to build with python 3 support
+    brew install boost-python3
 
 Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be done using the following steps:
 
 .. code-block:: bash
 
-    git clone https://github.com/JohnLangford/vowpal_wabbit.git
+    $ git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
     # create conda environment if necessary
-    conda create -n vowpalwabbit
-    source activate vowpalwabbit
+    $ conda create -n vowpalwabbit
+    $ source activate vowpalwabbit
     # install necessary boost dependencies
-    conda install -y -c anaconda boost
-    pip install -e vowpal_wabbit/python
+    $ conda install -y -c anaconda boost
+    $ pip install -e vowpal_wabbit/python
 
 Development
 -----------
@@ -150,8 +147,8 @@ Directory Structure:
 
 **Note:** neither examples nor tests directories are included in the distributed package, they are only for development purposes.
 
-.. _issues: https://github.com/JohnLangford/vowpal_wabbit/issues
-.. _repo: https://github.com/JohnLangford/vowpal_wabbit
+.. _issues: https://github.com/VowpalWabbit/vowpal_wabbit/issues
+.. _repo: https://github.com/VowpalWabbit/vowpal_wabbit
 .. _pytest: http://pytest.org/latest/getting-started.html
 .. _tox: https://tox.readthedocs.io/en/latest/index.html
 

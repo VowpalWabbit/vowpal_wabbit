@@ -2736,8 +2736,7 @@ base_learner* setup(options_i& options, vw& all)
   new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
   options.add_and_parse(new_options);
 
-  // If hook was passed as the search_task then do not activate reduction. This task can only be used in library form.
-  if (!options.was_supplied("search_task") || task_string == "hook")
+  if (!options.was_supplied("search_task"))
     return nullptr;
 
   search_initialize(&all, *sch.get());
@@ -2913,7 +2912,7 @@ base_learner* setup(options_i& options, vw& all)
   if (!priv.allow_current_policy)  // if we're not dagger
     all.check_holdout_every_n_passes = priv.passes_per_policy;
 
-  all.searchstr = &sch;
+  all.searchstr = sch.get();
 
   priv.start_clock_time = clock();
 
