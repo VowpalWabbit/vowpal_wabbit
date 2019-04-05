@@ -360,7 +360,6 @@
     <Import Project="$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
-    <Import Project="packages\rapidjson.1.0.2\build\native\rapidjson.targets" Condition="Exists('packages\rapidjson.1.0.2\build\native\rapidjson.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -372,7 +371,6 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
-    <Error Condition="!Exists('packages\rapidjson.1.0.2\build\native\rapidjson.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\rapidjson.1.0.2\build\native\rapidjson.targets'))" />
   </Target>
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
