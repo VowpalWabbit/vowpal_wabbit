@@ -176,8 +176,30 @@ example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existi
   return boost::shared_ptr<example>(existing_example);
 }
 
+multi_ex unwrap_example_list(py::list& ec)
+{
+  multi_ex ex_coll;
+  for (ssize_t i = 0; i<len(ec); i++)
+  {
+    py::object eci = ec[i];
+    py::extract<example_ptr> get_ex(eci);
+    example_ptr ecp;
+    if (get_ex.check())
+      ecp = get_ex();
+    ex_coll.push_back(ecp.get());
+  }
+  return ex_coll;
+}
+
 void my_finish_example(vw_ptr all, example_ptr ec)
-{ // TODO
+{
+  as_singleline(all->l)->finish_example(*all, *ec);
+}
+
+void my_finish_multi_ex(vw_ptr& all, py::list& ec)
+{
+  auto ex_col = unwrap_example_list(ec);
+  as_multiline(all->l)->finish_example(*all, ex_col);
 }
 
 void my_learn(vw_ptr all, example_ptr ec)
@@ -201,15 +223,8 @@ bool my_is_multiline(vw_ptr all)
 
 template<bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec)
-{ multi_ex ex_coll;
-  for (ssize_t i = 0; i<len(ec); i++)
-  { py::object eci = ec[i];
-    py::extract<example_ptr> get_ex(eci);
-    example_ptr ecp;
-    if (get_ex.check())
-      ecp = get_ex();
-    ex_coll.push_back(ecp.get());
-  }
+{
+  multi_ex ex_coll = unwrap_example_list(ec);
   if (learn) all->learn(ex_coll);
   else as_multiline(all->l)->predict(ex_coll);
 }
@@ -714,7 +729,8 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("predict", &my_predict, "given a pyvw example, predict on that example")
   .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
   .def("hash_feature", &VW::hash_feature, "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
-  .def("finish_example", &my_finish_example, "tell VW that you're done with a given example")
+  .def("_finish_example", &my_finish_example, "tell VW that you're done with a given example")
+  .def("_finish_example_multi_ex", &my_finish_multi_ex, "tell VW that you're done with the given examples")
   .def("setup_example", &my_setup_example, "given an example that you've created by hand, prepare it for learning (eg, compute quadratic feature)")
   .def("unsetup_example", &unsetup_example, "reverse the process of setup, so that you can go back and modify this example")
 
