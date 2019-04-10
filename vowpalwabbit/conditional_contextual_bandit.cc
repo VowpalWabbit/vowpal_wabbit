@@ -18,7 +18,6 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-
 struct ccb
 {
   example* shared;
@@ -103,14 +102,15 @@ void delete_cb_labels(ccb& data)
   for (example* action : data.actions) action->l.cb.costs.delete_v();
 }
 
-void attach_label_to_first_action(conditional_contexual_bandit_outcome* outcome, ccb& data)
+void attach_label_to_example(example* example, conditional_contexual_bandit_outcome* outcome, ccb& data)
 {
   // save the cb label
-  data.cb_label.action = data.chosen_action_index;
+  // Action is unused in cb
+  data.cb_label.action = 0;
   data.cb_label.probability = outcome->probabilities[0].score;
   data.cb_label.cost = outcome->cost;
 
-  data.actions[0]->l.cb.costs.push_back(data.cb_label);
+  example->l.cb.costs.push_back(data.cb_label);
 }
 
 template <bool is_learn>
@@ -134,7 +134,7 @@ void save_action_scores(ccb& data)
 void clear_pred_and_label(ccb& data)
 {
   data.shared->pred.a_s.clear();
-  data.actions[0]->l.cb.costs.clear();
+  data.actions[data.chosen_action_index]->l.cb.costs.clear();
 }
 
 // true if there exists at least 1 action in the cb multi-example
@@ -226,7 +226,7 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
   data.origin_index.clear();
   for (size_t i = 0; i < data.actions.size(); i++)
   {
-    // filter actions that are not explicitely included
+    // filter actions that are not explicitly included
     if (!data.include_list.empty() && data.include_list.find((uint32_t)i) == data.include_list.end())
       continue;
 
@@ -243,11 +243,15 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
     // remember the index of the chosen action
     if (is_learn && decision_has_label &&
         i == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+    {
+      // This is used to exclude this action from further decisions and to remove the label after the call.
       data.chosen_action_index = (uint32_t)i;
+      attach_label_to_example(data.actions[i], decision->l.conditional_contextual_bandit.outcome, data);
+    }
   }
 
-  if (is_learn && decision_has_label && has_action(cb_ex))
-    attach_label_to_first_action(decision->l.conditional_contextual_bandit.outcome, data);
+  // Must reset this in case the pooled example has stale data here.
+  data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
 }
 
 // iterate over decisions contained in the multi-example, and for each decision, build a cb example and perform a
@@ -367,7 +371,6 @@ void print_update(vw& all, std::vector<example*>& decisions, decision_scores_t& 
     std::ostringstream label_buf;
     label_buf << std::setw(all.sd->col_current_label) << std::right << std::setfill(' ') << label_str;
 
-
     std::string pred_str = "";
     delim = "";
     counter = 0;
@@ -388,7 +391,6 @@ void print_update(vw& all, std::vector<example*>& decisions, decision_scores_t& 
     }
     std::ostringstream pred_buf;
     pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ') << pred_str;
-
 
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf.str(), pred_buf.str(), num_features,
         all.progress_add, all.progress_arg);
@@ -443,7 +445,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   for (auto sink : all.final_prediction_sink)
     print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
 
-   CCB::print_update(all, decisions, preds, num_features);
+  CCB::print_update(all, decisions, preds, num_features);
 }
 
 void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
