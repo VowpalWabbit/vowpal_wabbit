@@ -13,7 +13,7 @@ jobject action_scores_prediction(example* vec, JNIEnv *env)
   jclass action_scores_class = env->FindClass("vowpalWabbit/responses/ActionScores");
   for (uint32_t i=0; i<num_values; ++i)
   { ACTION_SCORE::action_score a = a_s[i];
-    jobject j_action_score = env->NewObject(action_score_class, action_score_constructor, a.action, a.score);
+    jobject j_action_score = env->NewObject(action_score_class, action_score_constructor, a.action + 1, a.score);
     env->SetObjectArrayElement(j_action_scores, i, j_action_score);
   }
   jmethodID action_scores_constructor = env->GetMethodID(action_scores_class, "<init>", "([LvowpalWabbit/responses/ActionScore;)V");

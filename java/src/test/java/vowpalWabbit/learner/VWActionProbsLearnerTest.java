@@ -35,34 +35,34 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
         }
         ActionProbs[] expectedTrainPreds = new ActionProbs[]{
             actionProbs(
-                actionProb(0, 0.9625f),
+                actionProb(1, 0.9625f),
+                actionProb(2, 0.0125f),
+                actionProb(3, 0.0125f),
+                actionProb(4, 0.0125f)
+            ),
+            actionProbs(
                 actionProb(1, 0.0125f),
-                actionProb(2, 0.0125f),
-                actionProb(3, 0.0125f)
+                actionProb(2, 0.9625f),
+                actionProb(3, 0.0125f),
+                actionProb(4, 0.0125f)
             ),
             actionProbs(
-                actionProb(0, 0.0125f),
-                actionProb(1, 0.9625f),
-                actionProb(2, 0.0125f),
-                actionProb(3, 0.0125f)
+                actionProb(1, 0.0125f),
+                actionProb(2, 0.9625f),
+                actionProb(3, 0.0125f),
+                actionProb(4, 0.0125f)
             ),
             actionProbs(
-                actionProb(0, 0.0125f),
-                actionProb(1, 0.9625f),
-                actionProb(2, 0.0125f),
-                actionProb(3, 0.0125f)
+                actionProb(1, 0.0125f),
+                actionProb(2, 0.9625f),
+                actionProb(3, 0.0125f),
+                actionProb(4, 0.0125f)
             ),
             actionProbs(
-                actionProb(0, 0.0125f),
-                actionProb(1, 0.9625f),
-                actionProb(2, 0.0125f),
-                actionProb(3, 0.0125f)
-            ),
-            actionProbs(
-                actionProb(0, 0.0125f),
-                actionProb(1, 0.9625f),
-                actionProb(2, 0.0125f),
-                actionProb(3, 0.0125f)
+                actionProb(1, 0.0125f),
+                actionProb(2, 0.9625f),
+                actionProb(3, 0.0125f),
+                actionProb(4, 0.0125f)
             )
         };
         vw.close();
@@ -73,10 +73,10 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
 
         ActionProbs[] expectedTestPreds = new ActionProbs[]{
             actionProbs(
-                actionProb(0, 0.0125f),
                 actionProb(1, 0.0125f),
-                actionProb(2, 0.9625f),
-                actionProb(3, 0.0125f)
+                actionProb(2, 0.0125f),
+                actionProb(3, 0.9625f),
+                actionProb(4, 0.0125f)
             )
         };
 
@@ -100,20 +100,20 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
         }
         ActionProbs[] expectedTrainPreds = new ActionProbs[]{
                 actionProbs(
-                    actionProb(0, 0.5f),
-                    actionProb(1, 0.5f)
+                    actionProb(1, 0.5f),
+                    actionProb(2, 0.5f)
                 ),
                 actionProbs(
-                    actionProb(0, 0.5f),
-                    actionProb(1, 0.5f)
-                ),
-                actionProbs(
-                    actionProb(0, 0.97499996f),
-                    actionProb(1, 0.025f)
+                    actionProb(1, 0.5f),
+                    actionProb(2, 0.5f)
                 ),
                 actionProbs(
                     actionProb(1, 0.97499996f),
-                    actionProb(0, 0.025f)
+                    actionProb(2, 0.025f)
+                ),
+                actionProbs(
+                    actionProb(2, 0.97499996f),
+                    actionProb(1, 0.025f)
                 )
         };
         vw.close();
@@ -124,8 +124,8 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
 
         ActionProbs[] expectedTestPreds = new ActionProbs[]{
             actionProbs(
-                actionProb(0, 0.97499996f),
-                actionProb(1, 0.025f)
+                actionProb(1, 0.97499996f),
+                actionProb(2, 0.025f)
             )
         };
 

@@ -48,17 +48,17 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
         ActionScores[] expected = new ActionScores[]{
                 actionScores(
-                        actionScore(1, -1.0573887f),
-                        actionScore(0, -0.033036415f),
-                        actionScore(2, 1.0063205f)
+                        actionScore(2, -1.0573887f),
+                        actionScore(1, -0.033036415f),
+                        actionScore(3, 1.0063205f)
                 ),
                 actionScores(
-                        actionScore(1, -1.0342788f),
-                        actionScore(0, 0.9994181f)
+                        actionScore(2, -1.0342788f),
+                        actionScore(1, 0.9994181f)
                 ),
                 actionScores(
-                        actionScore(0, 0.033397526f),
-                        actionScore(1, 1.0227613f)
+                        actionScore(1, 0.033397526f),
+                        actionScore(2, 1.0227613f)
                 )
         };
         assertArrayEquals(expected, pred);
@@ -93,20 +93,20 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
         ActionScores[] expectedTrainPreds = new ActionScores[]{
             actionScores(
-                actionScore(0, 0),
-                actionScore(1, 0)
+                actionScore(1, 0),
+                actionScore(2, 0)
             ),
             actionScores(
-                actionScore(0, 0.14991696f),
-                actionScore(1, 0.14991696f)
+                actionScore(1, 0.14991696f),
+                actionScore(2, 0.14991696f)
             ),
             actionScores(
-                actionScore(0, 0.27180168f),
-                actionScore(1, 0.31980497f)
+                actionScore(1, 0.27180168f),
+                actionScore(2, 0.31980497f)
             ),
             actionScores(
-                actionScore(1, 0.35295868f),
-                actionScore(0, 0.3869971f)
+                actionScore(2, 0.35295868f),
+                actionScore(1, 0.3869971f)
             )
         };
         vw.close();
@@ -117,8 +117,8 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
         ActionScores[] expectedTestPreds = new ActionScores[]{
             actionScores(
-                actionScore(0, 0.33543912f),
-                actionScore(1, 0.37897447f)
+                actionScore(1, 0.33543912f),
+                actionScore(2, 0.37897447f)
             )
         };
 

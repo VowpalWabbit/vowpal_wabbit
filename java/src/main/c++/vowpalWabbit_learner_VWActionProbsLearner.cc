@@ -16,7 +16,7 @@ jobject action_probs_prediction(example* vec, JNIEnv *env)
   jclass action_probs_class = env->FindClass("vowpalWabbit/responses/ActionProbs");
   for (uint32_t i=0; i<num_values; ++i)
   { ACTION_SCORE::action_score a = a_s[i];
-    jobject j_action_prob = env->NewObject(action_prob_class, action_prob_constructor, a.action, a.score);
+    jobject j_action_prob = env->NewObject(action_prob_class, action_prob_constructor, a.action + 1, a.score);
     env->SetObjectArrayElement(j_action_probs, i, j_action_prob);
   }
   jmethodID action_probs_constructor = env->GetMethodID(action_probs_class, "<init>", "([LvowpalWabbit/responses/ActionProb;)V");
