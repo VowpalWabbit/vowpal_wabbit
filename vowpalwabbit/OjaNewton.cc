@@ -73,7 +73,6 @@ struct OjaNewton
       // more complicated initialization: orthgonal basis of a random matrix
 
       const double PI2 = 2.f * 3.1415927f;
-      const float FLOAT_MIN = (std::numeric_limits<float>::min)();
 
       for (uint32_t i = 0; i < length; i++)
       {
@@ -85,7 +84,7 @@ struct OjaNewton
 
           //in the box-muller tranform, r1 should be strictly positive: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
           //redraw until r1 > 0
-          while (r1 < FLOAT_MIN)
+          while (r1 == 0.f)
           {
             r1 = merand48(all->random_state);
             r2 = merand48(all->random_state);
