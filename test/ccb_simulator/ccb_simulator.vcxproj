@@ -129,6 +129,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\w\repos\vowpal_wabbit_jackgerrits\explore;C:\w\repos\vowpal_wabbit_jackgerrits\vowpalwabbit;$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\w\repos\vowpal_wabbit_jackgerrits\explore;C:\w\repos\vowpal_wabbit_jackgerrits\vowpalwabbit;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="ccb_simulator.cpp" />
   </ItemGroup>

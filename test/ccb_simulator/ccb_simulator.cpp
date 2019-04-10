@@ -16,18 +16,18 @@ struct acp
   float probability;
 };
 
-std::vector<std::string> build_example_string(std::string& user_feature, std::vector<std::string>& action_features,
+std::vector<std::string> build_example_string_ccb(std::string& user_feature, std::vector<std::string>& action_features,
     std::vector<std::string>& decision_features, std::vector<std::tuple<size_t, float, float>> labels = {})
 {
   std::vector<std::string> ret_val;
   std::stringstream ss;
-  ss << "ccb shared | " << user_feature;
+  ss << "ccb shared |User " << user_feature;
   ret_val.push_back(ss.str());
   ss.str(std::string());
 
   for (auto action : action_features)
   {
-    ss << "ccb action | " << action;
+    ss << "ccb action |Action " << action;
     ret_val.push_back(ss.str());
     ss.str(std::string());
   }
@@ -37,15 +37,46 @@ std::vector<std::string> build_example_string(std::string& user_feature, std::ve
     ss << "ccb decision ";
     if (labels.size() > i)
     {
-      ss << std::get<0>(labels[i]) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
+      ss << (std::get<0>(labels[i])) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
     }
-    ss << " | " << decision_features[i];
+    ss << " |Slot " << decision_features[i];
     ret_val.push_back(ss.str());
     ss.str(std::string());
   }
 
   return ret_val;
 }
+
+//std::vector<std::string> build_example_string_cb(std::string& user_feature, std::vector<std::string>& action_features,
+//    std::string& decision_features, std::tuple<size_t, float, float> outcome)
+//{
+//  std::vector<std::string> ret_val;
+//  std::stringstream ss;
+//  ss << "ccb shared |User " << user_feature;
+//  ret_val.push_back(ss.str());
+//  ss.str(std::string());
+//
+//  for (auto action : action_features)
+//  {
+//    ss << "ccb action |Action " << action;
+//    ret_val.push_back(ss.str());
+//    ss.str(std::string());
+//  }
+//
+//  for (size_t i = 0; i < decision_features.size(); i++)
+//  {
+//    ss << "ccb decision ";
+//    if (labels.size() > i)
+//    {
+//      ss << (std::get<0>(labels[i])) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
+//    }
+//    ss << " |Slot " << decision_features[i];
+//    ret_val.push_back(ss.str());
+//    ss.str(std::string());
+//  }
+//
+//  return ret_val;
+//}
 
 void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std::tuple<int, int>>>>& clicks_shows)
 {
@@ -71,11 +102,12 @@ void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std:
 
 int main()
 {
-  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2");
+  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --cubic UAS -l 0.01 --ignore_linear UAS");
 
   auto const NUM_USERS = 3;
   auto const NUM_ACTIONS = 4;
   auto const NUM_SLOTS = 2;
+  auto const NUM_ITER = 1000000;
 
   std::vector<std::string> user_features = {"a", "b", "c"};
   std::vector<std::string> action_features = {"d", "e", "f", "g"};
@@ -97,15 +129,16 @@ int main()
       {{{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}},
   };
 
-  std::random_device rd;
+  //std::random_device rd;
+  std::default_random_engine rd{0};
   std::mt19937 eng(rd());
   std::uniform_int_distribution<> user_distribution(0, NUM_USERS - 1);
   std::uniform_real_distribution<float> click_distribution(0.0f, 1.0f);
 
-  for (int i = 0; i < 10000; i++)
+  for (int i = 0; i < NUM_ITER; i++)
   {
     auto chosen_user = user_distribution(eng);
-    auto ex_str = build_example_string(user_features[chosen_user], action_features, slot_features);
+    auto ex_str = build_example_string_ccb(user_features[chosen_user], action_features, slot_features);
 
     multi_ex ex_col;
     for (auto str : ex_str)
@@ -121,21 +154,22 @@ int main()
     {
       auto& decision = decision_scores[i];
       auto chosen_id = decision[0].action;
-      auto prob = all_users[chosen_user][chosen_id][i];
+      auto prob_chosen = decision[0].score;
+      auto prob_to_click = all_users[chosen_user][chosen_id][i];
 
       std::get<1>(clicks_shows[chosen_user][chosen_id][i])++;
-      if (click_distribution(eng) < prob)
+      if (click_distribution(eng) < prob_to_click)
       {
         std::get<0>(clicks_shows[chosen_user][chosen_id][i])++;
-        outcomes.push_back({chosen_id, -1.f, prob});
+        outcomes.push_back({chosen_id, -1.f, prob_chosen});
       }
       else
       {
-        outcomes.push_back({chosen_id, 0.f, prob});
+        outcomes.push_back({chosen_id, 0.f, prob_chosen});
       }
     }
 
-    auto learn_ex = build_example_string(user_features[chosen_user], action_features, slot_features, outcomes);
+    auto learn_ex = build_example_string_ccb(user_features[chosen_user], action_features, slot_features, outcomes);
     multi_ex learn_ex_col;
     for (auto str : learn_ex)
     {
@@ -143,11 +177,14 @@ int main()
     }
     vw->learn(learn_ex_col);
 
-    if (i % 2000 == 0)
+    if (i % 10000 == 0)
     {
       // Clear terminal
       std::cout << "\033[2J" << std::endl;
       print_click_shows(i, clicks_shows);
     }
   }
+
+  std::cout << "\033[2J" << std::endl;
+  print_click_shows(NUM_ITER, clicks_shows);
 }
