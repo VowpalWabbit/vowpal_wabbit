@@ -102,7 +102,7 @@ void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std:
 
 int main()
 {
-  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --cubic UAS -l 0.01 --ignore_linear UAS");
+  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --cubic UAS -l 0.01 --ignore_linear UAS --quiet");
 
   auto const NUM_USERS = 3;
   auto const NUM_ACTIONS = 4;
@@ -168,6 +168,7 @@ int main()
         outcomes.push_back({chosen_id, 0.f, prob_chosen});
       }
     }
+    as_multiline(vw->l)->finish_example(*vw, ex_col);
 
     auto learn_ex = build_example_string_ccb(user_features[chosen_user], action_features, slot_features, outcomes);
     multi_ex learn_ex_col;
@@ -176,6 +177,7 @@ int main()
       learn_ex_col.push_back(VW::read_example(*vw, str));
     }
     vw->learn(learn_ex_col);
+    as_multiline(vw->l)->finish_example(*vw, learn_ex_col);
 
     if (i % 10000 == 0)
     {
