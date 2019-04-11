@@ -1659,3 +1659,35 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 # Test 178: test cb_sample
 {VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict
     pred-sets/ref/cb_sample_seed.predict
+
+# Test 179 cb_adf, sharedfeatures
+{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+    train-sets/ref/no_shared_features.stderr
+
+# Test 180 warm_cb warm start
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb.stderr
+
+# Test 181 warm_cb warm start with lambda set containing 0/1
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_lambda_zeroone.stderr
+
+# Test 182 warm_cb warm start with warm start update turned off
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_no_ws_upd.stderr
+
+# Test 183 warm_cb warm start with interaction update turned off
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_no_int_upd.stderr
+
+# Test 184 warm_cb warm start with bandit warm start type (Sim-Bandit)
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass
+    train-sets/ref/warm_cb_simbandit.stderr
+
+# Test 185 warm_cb warm start with CYC supervised corruption
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
+    train-sets/ref/warm_cb_cyc.stderr
+
+# Test 186 warm_cb warm start with input cost-sensitive examples
+{VW} --warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb
+    train-sets/ref/warm_cb_cs.stderr

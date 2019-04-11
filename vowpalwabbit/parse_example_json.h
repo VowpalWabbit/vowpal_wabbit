@@ -1429,56 +1429,45 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 }  // namespace VW
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples)
+void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
 {
-  bool reread;
-  do
+  if (all->p->decision_service_json)
   {
-    reread = false;
-
-    char* line;
-    size_t num_chars;
-    size_t num_chars_initial = read_features(all, line, num_chars);
-    if (num_chars_initial < 1)
-      return (int)num_chars_initial;
-
-    line[num_chars] = '\0';
-    if (all->p->decision_service_json)
+    // Skip lines that do not start with "{"
+    if (line[0] != '{')
     {
-      // Skip lines that do not start with "{"
-      if (line[0] != '{')
-      {
-        reread = true;
-        continue;
-      }
-
-      DecisionServiceInteraction interaction;
-      VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
-          reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
-
-      if (interaction.skipLearn)
-      {
-        VW::return_multiple_example(*all, examples);
-        examples.push_back(&VW::get_unused_example(all));
-        reread = true;
-      }
-
-      // let's continue reading data until we find a line with actions provided
-      if (interaction.actions.size() == 0)
-        reread = true;
+      return;
     }
-    else
-      VW::template read_line_json<audit>(
-          *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
-  } while (reread);
+
+    DecisionServiceInteraction interaction;
+    VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
+        reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+    if (interaction.skipLearn)
+    {
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
+      return;
+    }
+
+    // let's continue reading data until we find a line with actions provided
+    if (interaction.actions.size() == 0)
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
+      return;
+  }
+  else
+    VW::template read_line_json<audit>(
+        *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
 
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
   // they're layed out in memory) there is no way to determine upfront if a shared example exists thus even if there are
   // no features for the shared example, still an empty example is returned.
 
+  // insert new line example at the end
   if (examples.size() > 1)
-  {  // insert new line example at the end
+  {
     example& ae = VW::get_unused_example(all);
     char empty = '\0';
     substring example = {&empty, &empty};
@@ -1486,6 +1475,25 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
     examples.push_back(&ae);
   }
+}
+
+template <bool audit>
+int read_features_json(vw* all, v_array<example*>& examples)
+{
+  // Keep reading lines until a valid set of examples is produced.
+  do
+  {
+    char* line;
+    size_t num_chars;
+    size_t num_chars_initial = read_features(all, line, num_chars);
+    if (num_chars_initial < 1)
+      return (int)num_chars_initial;
+
+    // Ensure there is a null terminator.
+    line[num_chars] = '\0';
+
+    line_to_examples_json<audit>(all, line, num_chars, examples);
+  } while (examples.size() == 0);
 
   return 1;
 }

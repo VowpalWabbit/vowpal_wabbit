@@ -11,7 +11,7 @@
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_STATIC_LIB
-
+#define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
@@ -162,12 +162,18 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType)
   return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
-example_ptr my_read_example(vw_ptr all, size_t labelType, char*str)
+example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 { example*ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
   return boost::shared_ptr<example>(ec, my_delete_example);
+}
+
+example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
+{
+  existing_example->example_counter = labelType;
+  return boost::shared_ptr<example>(existing_example);
 }
 
 void my_finish_example(vw_ptr all, example_ptr ec)
@@ -183,17 +189,14 @@ void my_learn(vw_ptr all, example_ptr ec)
   }
 }
 
-float my_learn_string(vw_ptr all, char*str)
-{ example*ec = VW::read_example(*all, str);
-  all->learn(*ec);
-  float pp = ec->partial_prediction;
-  VW::finish_example(*all, *ec);
-  return pp;
-}
-
 float my_predict(vw_ptr all, example_ptr ec)
 { as_singleline(all->l)->predict(*ec);
   return ec->partial_prediction;
+}
+
+bool my_is_multiline(vw_ptr all)
+{
+  return all->l->is_multiline;
 }
 
 template<bool learn>
@@ -211,19 +214,28 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
   else as_multiline(all->l)->predict(ex_coll);
 }
 
+py::list my_parse(vw_ptr& all, char* str)
+{
+  v_array<example*> examples = v_init<example*>();
+  examples.push_back(&VW::get_unused_example(all.get()));
+  all->p->text_reader(all.get(), str, strlen(str), examples);
+
+  py::list example_collection;
+  for (auto ex : examples)
+  {
+    VW::setup_example(*all, ex);
+    example_collection.append(ex);
+  }
+  examples.clear();
+  examples.delete_v();
+  return example_collection;
+}
+
 void my_learn_multi_ex(vw_ptr& all, py::list& ec)
 {  predict_or_learn<true>(all, ec); }
 
 void my_predict_multi_ex(vw_ptr& all, py::list& ec)
 { predict_or_learn<false>(all, ec); }
-
-float my_predict_string(vw_ptr all, char*str)
-{ example*ec = VW::read_example(*all, str);
-  as_singleline(all->l)->predict(*ec);
-  float pp = ec->partial_prediction;
-  VW::finish_example(*all, *ec);
-  return pp;
-}
 
 string varray_char_to_string(v_array<char> &a)
 { string ret = "";
@@ -448,10 +460,16 @@ py::list ex_get_scalars(example_ptr ec)
 py::list ex_get_action_scores(example_ptr ec)
 { py::list values;
   v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
-
-  for (ACTION_SCORE::action_score s : scores)
-  { values.append(s.score);
+  std::vector<float> ordered_scores(scores.size());
+  for (auto action_score: scores)
+  {
+     ordered_scores[action_score.action] = action_score.score;
   }
+
+  for (auto action_score: ordered_scores)
+  { values.append(action_score);
+  }
+
   return values;
 }
 
@@ -683,9 +701,6 @@ void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { 
 void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
 void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
 
-//We need to forward declare this here to be able to add VW_DLL_MEMBER as BOOST_PYTHON_MODULE doesn't help
-extern "C" VW_DLL_MEMBER void initpylibvw();
-
 BOOST_PYTHON_MODULE(pylibvw)
 { // This will enable user-defined docstrings and python signatures,
   // while disabling the C++ signatures
@@ -699,9 +714,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
   .def("save", &my_save, "save model to filename")
   .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
-  .def("learn_string", &my_learn_string, "given an example specified as a string (as in a VW data file), learn on that example")
   .def("predict", &my_predict, "given a pyvw example, predict on that example")
-  .def("predict_string", &my_predict_string, "given an example specified as a string (as in a VW data file), predict on that example")
   .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
   .def("hash_feature", &VW::hash_feature, "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
   .def("finish_example", &my_finish_example, "tell VW that you're done with a given example")
@@ -725,6 +738,8 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
   .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")
+  .def("_parse", &my_parse, "Parse a string into a collection of VW examples")
+  .def("_is_multiline", &my_is_multiline, "true if the base reduction is multiline")
 
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
@@ -746,6 +761,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<example, example_ptr>("example", py::no_init)
   .def("__init__", py::make_constructor(my_read_example), "Given a string as an argument parse that into a VW example (and run setup on it) -- default to multiclass label type")
   .def("__init__", py::make_constructor(my_empty_example), "Construct an empty (non setup) example; you must provide a label type (vw.lBinary, vw.lMulticlass, etc.)")
+  .def("__init__", py::make_constructor(my_existing_example), "Create a new example object pointing to an existing object.")
 
   .def("set_test_only", &my_set_test_only, "Change the test-only bit on an example")
 

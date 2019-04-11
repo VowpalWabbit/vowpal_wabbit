@@ -22,8 +22,32 @@ class CMakeExtension(Extension):
     def __init__(self, name):
         # don't invoke the original build_ext for this special extension
         Extension.__init__(self, name, sources=[])
+        
+def get_ext_filename_without_platform_suffix(filename):
+    from distutils.sysconfig import get_config_var
+    ext_suffix = get_config_var('EXT_SUFFIX')
+    name, ext = os.path.splitext(filename)
 
+    if not ext_suffix:
+        return filename
+
+    if ext_suffix == ext:
+        return filename
+
+    ext_suffix = ext_suffix.replace(ext, '')
+    idx = name.find(ext_suffix)
+
+    if idx == -1:
+        return filename
+    else:
+        return name[:idx] + ext
+    
 class BuildPyLibVWBindingsModule(_build_ext):
+    def get_ext_filename(self, ext_name):
+        # don't append the extension suffix to the binary name
+        # see https://stackoverflow.com/questions/38523941/change-cythons-naming-rules-for-so-files/40193040#40193040
+        filename = _build_ext.get_ext_filename(self, ext_name)
+        return get_ext_filename_without_platform_suffix(filename)
 
     def run(self):
         for ext in self.extensions:
@@ -75,8 +99,6 @@ class Clean(_clean):
 
 class Sdist(_sdist):
     def run(self):
-        # run prep if needed
-        prep()
         _sdist.run(self)
 
 

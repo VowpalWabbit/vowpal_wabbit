@@ -18,6 +18,7 @@ else(Boost_MINOR_VERSION GREATER 66)
   endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
 endif(Boost_MINOR_VERSION GREATER 66)
 
+find_package(PythonInterp ${PY_VERSION} REQUIRED)
 find_package(PythonLibs ${PY_VERSION} REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system python${BOOST_PY_VERSION_SUFFIX})
 

@@ -27,7 +27,14 @@ int daemon(int a, int b)
   exit(0);
   return 0;
 }
+
+// Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just use the actual isocpp version.
+#if _MSC_VER >= 1920
+#define getpid _getpid
+#else
 int getpid() { return (int)::GetCurrentProcessId(); }
+#endif
+
 #else
 #include <netdb.h>
 #endif
@@ -549,12 +556,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
+          all.p->text_reader = &line_to_examples_json<true>;
           all.p->audit = true;
           all.p->jsonp = std::make_shared<json_parser<true>>(mode);
         }
         else
         {
           all.p->reader = &read_features_json<false>;
+          all.p->text_reader = &line_to_examples_json<false>;
           all.p->audit = false;
           all.p->jsonp = std::make_shared<json_parser<false>>(mode);
         }
@@ -562,7 +571,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         all.p->decision_service_json = input_options.dsjson;
       }
       else
+      {
         all.p->reader = read_features_string;
+        all.p->text_reader = VW::read_lines;
+      }
 
       all.p->resettable = all.p->write_cache;
     }
@@ -859,7 +871,7 @@ void parse_example_label(vw& all, example& ec, string label)
   words.delete_v();
 }
 
-void empty_example(vw& /* all */, example& ec)
+void empty_example(vw& /*all*/, example& ec)
 {
   for (features& fs : ec) fs.clear();
 
