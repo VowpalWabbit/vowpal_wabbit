@@ -14,6 +14,7 @@ LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
 #define CB_TYPE_DM 1
 #define CB_TYPE_IPS 2
 #define CB_TYPE_MTR 3
+#define CB_TYPE_SM 4
 
 namespace CB_ALGS
 {
