@@ -77,10 +77,17 @@ struct OjaNewton
       for (uint32_t i = 0; i < length; i++)
       {
         weight& w = weights.strided_index(i);
+        float r1, r2;
         for (int j = 1; j <= m; j++)
         {
-          float r1 = merand48(all->random_state);
-          float r2 = merand48(all->random_state);
+          //box-muller tranform: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+          //redraw until r1 should be strictly positive
+          do
+          {
+            r1 = merand48(all->random_state);
+            r2 = merand48(all->random_state);
+          } while (r1 == 0.f);
+
           (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
         }
       }
