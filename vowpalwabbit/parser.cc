@@ -27,7 +27,14 @@ int daemon(int a, int b)
   exit(0);
   return 0;
 }
+
+// Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just use the actual isocpp version.
+#if _MSC_VER >= 1920
+#define getpid _getpid
+#else
 int getpid() { return (int)::GetCurrentProcessId(); }
+#endif
+
 #else
 #include <netdb.h>
 #endif
