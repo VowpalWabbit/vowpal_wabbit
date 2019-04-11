@@ -4,7 +4,7 @@
 Utility script to replay DecisionService dsjson logs from a known initial model to obtain a given final target model.
 """
 
-import os, json, hashlib, struct, argparse, subprocess
+import os, hashlib, struct, argparse, subprocess
 
 def check_result(result):
   if(result.returncode != 0):
@@ -86,7 +86,6 @@ def run_test_model_reproducibility(initial_model, final_model, log_files, vw_bin
     if not os.path.isfile(empty_file_name):
         open(empty_file_name, 'a').close()
 
-    initial_readable_model_file = create_readable_model(initial_model, output_dir, vw_bins[0], empty_file_name)
     final_readable_model_file = create_readable_model(final_model, output_dir, vw_bins[0], empty_file_name)
 
     # Extract event ids used from model files
