@@ -1687,3 +1687,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 # Test 185 warm_cb warm start with input cost-sensitive examples
 {VW} --warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb
     train-sets/ref/warm_cb_cs.stderr
+
+# Test 186 test counting examples with holdout_after option
+{VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat
+    train-sets/ref/holdout_after.stderr
+
+# Test 187 test counting examples with holdout_after option with 2 passes on the training set
+{VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2
+    train-sets/ref/holdout_after_2passes.stderr
+
