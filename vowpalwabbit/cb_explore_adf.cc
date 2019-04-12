@@ -738,7 +738,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   bool cb_explore_adf_option = false;
   bool softmax = false;
   bool regcb = false;
-  std::string type_string = "ips";
+  std::string type_string = "mtr";
   option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
@@ -766,7 +766,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
                .keep()
                .help("Only explore the first action in a tie-breaking event"))
       .add(make_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
+      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr,mtr}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option)
@@ -831,8 +831,8 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
     }
     else
     {
-      all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
-      options.replace("cb_type", "ips");
+      all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
+      options.replace("cb_type", "mtr");
     }
 
     if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
