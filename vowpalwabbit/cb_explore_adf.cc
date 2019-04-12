@@ -766,7 +766,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
                .keep()
                .help("Only explore the first action in a tie-breaking event"))
       .add(make_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr,mtr}. Default: mtr"));
+      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option)
