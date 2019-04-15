@@ -74,7 +74,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
   if (after == 0)  // hold out by period
     return (counter % period == target_modulus);
   else  // hold out by position
-    return (counter >= after);
+    return (counter > after);
 }
 
 void set_compressed(parser* par)
