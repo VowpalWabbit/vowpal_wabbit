@@ -1226,7 +1226,7 @@ echo "" | {VW}
 
 # Test 84: check cb_adf
 {VW} --cb_adf -d train-sets/cb_test.ldf --noconstant
-    train-sets/ref/cb_adf.stderr
+    train-sets/ref/cb_adf_mtr.stderr
 
 # Test 85: check multilabel_oaa
 {VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel.predict
