@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master)](https://travis-ci.org/VowpalWabbit/vowpal_wabbit)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit/branch/master)
 
-[![Coverage Status](https://coveralls.io/repos/JohnLangford/vowpal_wabbit/badge.svg)](https://coveralls.io/r/JohnLangford/vowpal_wabbit)
+[![Coverage Status](https://coveralls.io/repos/VowpalWabbit/vowpal_wabbit/badge.svg)](https://coveralls.io/r/VowpalWabbit/vowpal_wabbit)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/JohnLangford/vowpal_wabbit.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/JohnLangford/vowpal_wabbit/alerts/)
 [![Gitter chat](https://badges.gitter.im/VowpalWabbit.png)](https://gitter.im/VowpalWabbit)
 
