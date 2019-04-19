@@ -100,9 +100,8 @@ def get_important_features(log_file, ml_args, warmstart_model=None, max_num_feat
     num_hashed_features = len(extract_features(readModel_fp))
     features = extract_features(invHash_fp)
     if len(features) != num_hashed_features:
-        print('Not all the features names were found in the log file. A larger log file should be used.', file=sys.stderr)
-        if input('Press ENTER to display available features or press any other key to exit...' ) != '':
-            sys.exit(1)
+        print('Error: {} features found. Expected: {}. A larger log file should be used. Aborting!'.format(len(features), num_hashed_features), file=sys.stderr)
+        sys.exit(1)
 
     print('=====================================')
     for x in features:
