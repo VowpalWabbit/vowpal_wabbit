@@ -40,7 +40,7 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
-if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR BUILD_PYTHON OR LTO))
+if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
   message(FATAL_ERROR "Unsupported option enabled on Win32 build")
 endif()
 
@@ -98,7 +98,10 @@ if(STATIC_LINK_VW)
   SET(BUILD_SHARED_LIBS OFF)
 else()
   set(Boost_USE_STATIC_LIBS OFF)
-  add_definitions( -DBOOST_ALL_DYN_LINK )
+  if(WIN32)
+    # Windows links everything dynamically
+    add_definitions( -DBOOST_ALL_DYN_LINK )
+  endif()
 endif()
 
 set(Boost_USE_MULTITHREADED ON)

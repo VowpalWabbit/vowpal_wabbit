@@ -11,7 +11,7 @@ msbuild vowpal_wabbit.sln /p:Configuration=Release
 GOTO FINISH
 
 :USAGE
-    ECHO Usage: build_windows.sh [vcpkg_rootdir]
+    ECHO Usage: build-windows.bat [vcpkg_rootdir]
     GOTO FINISH
 
 :FINISH
