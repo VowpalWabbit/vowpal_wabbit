@@ -90,8 +90,8 @@
     <ClCompile Include="sample.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\vowpalwabbit\vw_core.vcxproj">
-      <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
+    <ProjectReference Include="..\vowpalwabbit\libvw.vcxproj">
+      <Project>{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
