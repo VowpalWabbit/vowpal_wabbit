@@ -7,6 +7,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # VW targets Windows 8.1 SDK
+# CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
+# https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
   set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
 endif()
@@ -41,7 +43,7 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
 if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
-  message(FATAL_ERROR "Unsupported option enabled on Win32 build")
+  message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
 # Add -ffast-math for speed, remove for testability.

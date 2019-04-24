@@ -8,10 +8,8 @@ popd
 
 cmake %~dp0 -G "Visual Studio 14 2015 Win64" -DCMAKE_TOOLCHAIN_FILE=%VCPKG_PATH%\scripts\buildsystems\vcpkg.cmake
 msbuild vowpal_wabbit.sln /p:Configuration=Release
-GOTO FINISH
+GOTO:EOF
 
 :USAGE
     ECHO Usage: build-windows.bat [vcpkg_rootdir]
-    GOTO FINISH
-
-:FINISH
+    GOTO:EOF
