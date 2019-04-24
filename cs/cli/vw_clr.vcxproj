@@ -24,8 +24,11 @@
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>vw_clr</RootNamespace>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
-    <CodeAnalysisRuleSet>..\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <!-- There are no rules in the ruleset above that can run on this project type. Temporarily suppress running them
+         (same as pre-path-fix behaviour as checked in) until we either replace this with a non-C++/CLI binding or
+         find the correct ruleset to use. -->
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
