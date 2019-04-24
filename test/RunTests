@@ -1577,8 +1577,9 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/157.stderr
 
 # Test 158: test decision service json parsing
-{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT
-    train-sets/ref/decisionservice.stderr
+{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict
+    train-sets/ref/cbe_adf_dsjson.stderr
+    pred-sets/ref/cbe_adf_dsjson.predict
 
 # Test 159: test --bootstrap & --binary interaction
 {VW} -d train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
