@@ -8,9 +8,12 @@ SETLOCAL
 CALL %~dp0init.cmd
 
 REM TODO: Determine how to pass test failure out of this script so it can be used by CI/CD setups
-
-ECHO Running VW C Smoke test
-"%vwRoot%\vowpalwabbit\out\target\Release\x64\c_test.exe"
+REM Until then, setting SkipCSmokeTest will enable CI/CD pipelines that fail on stderr to avoid failing on
+REM this test.
+IF NOT DEFINED SkipCSmokeTest (
+    ECHO Running VW C Smoke test
+    "%vwRoot%\vowpalwabbit\out\target\Release\x64\c_test.exe"
+)
 
 ECHO Running VW Unit Tests in C++
 "%vwRoot%\vowpalwabbit\out\target\Release\x64\vw_unit_test.exe"
