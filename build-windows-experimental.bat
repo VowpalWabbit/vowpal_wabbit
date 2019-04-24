@@ -11,5 +11,5 @@ msbuild vowpal_wabbit.sln /p:Configuration=Release
 GOTO:EOF
 
 :USAGE
-    ECHO Usage: build-windows.bat [vcpkg_rootdir]
+    ECHO Usage: build-windows-experimental.bat [vcpkg_rootdir]
     GOTO:EOF

@@ -61,5 +61,5 @@ vcpkg install boost-uuid:x64-windows
 ```
 mkdir build
 cd build
-..\build_windows.bat [vcpkg_root_directory]
+..\build_windows-experimental.bat [vcpkg_root_directory]
 ```
