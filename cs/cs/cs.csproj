@@ -19,8 +19,8 @@
     <CodeContractsAssemblyMode>0</CodeContractsAssemblyMode>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <OutputPath>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\</OutputPath>
-    <IntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntermediateOutputPath>
+    <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(ProjectName)\</IntermediateOutputPath>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
