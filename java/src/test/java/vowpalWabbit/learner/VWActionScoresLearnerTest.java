@@ -97,8 +97,8 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
                 actionScore(1, 0)
             ),
             actionScores(
-                actionScore(0, 0.14991696f),
-                actionScore(1, 0.14991696f)
+                actionScore(0, 0.11246802f),
+                actionScore(1, 0.11246802f)
             ),
             actionScores(
                 actionScore(0, 0.27180168f),
