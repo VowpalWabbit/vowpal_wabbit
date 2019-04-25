@@ -22,8 +22,10 @@ find_package(PythonInterp ${PY_VERSION} REQUIRED)
 find_package(PythonLibs ${PY_VERSION} REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system python${BOOST_PY_VERSION_SUFFIX})
 
-# Use position independent code for all targets in this directory
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if (NOT WIN32)
+  # Use position independent code for all targets in this directory
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT WIN32)
   set(EXPORT_DYNAMIC -Wl,--export-dynamic)
@@ -33,7 +35,14 @@ endif()
 
 # create the lib
 add_library(pylibvw SHARED pylibvw.cc)
+
 set_target_properties(pylibvw PROPERTIES PREFIX "")
+if (NOT WIN32)
+  # Windows links dynamically
+  target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+else()
+  set_target_properties(pylibvw PROPERTIES SUFFIX ".pyd")
+endif()
 target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
 target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
