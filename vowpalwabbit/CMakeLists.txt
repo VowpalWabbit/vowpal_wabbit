@@ -8,7 +8,6 @@ target_include_directories(allreduce PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Winsock32 should be available on Windows
 if(WIN32)
   target_link_libraries(allreduce PUBLIC wsock32 ws2_32)
-  target_compile_options(allreduce PUBLIC ${windows_flags})
 else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
@@ -81,8 +80,6 @@ endif()
 if(WIN32)
   target_compile_definitions(vw PUBLIC __SSE2__)
   target_compile_options(vw PUBLIC /MP)
-
-  target_compile_options(vw PUBLIC ${windows_flags})
 else()
   target_compile_options(vw PUBLIC ${linux_flags})
 endif()
@@ -139,7 +136,7 @@ endif()
 
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
-  add_library(vw_c_wrapper vwdll.cpp)
+  add_library(vw_c_wrapper SHARED vwdll.cpp)
   target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
   target_link_libraries(vw_c_wrapper PUBLIC vw)
 
