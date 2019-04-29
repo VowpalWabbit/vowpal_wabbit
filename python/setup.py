@@ -7,17 +7,27 @@ import platform
 import sys
 from codecs import open
 from distutils.command.clean import clean as _clean
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension, find_packages, Distribution as _distribution
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.test import test as _test
 from setuptools.command.install_lib import install_lib as _install_lib
-from shutil import copy, rmtree
+from shutil import rmtree
 
 system = platform.system()
 version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
 
+class Distribution(_distribution):
+    if system == 'Windows':
+        global_options = _distribution.global_options + [
+            ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only.'),
+        ]
+
+    def __init__(self, attrs=None):
+        self.vcpkg_root = None
+        _distribution.__init__(self, attrs)
+        
 class CMakeExtension(Extension):
     def __init__(self, name):
         # don't invoke the original build_ext for this special extension
@@ -41,7 +51,7 @@ def get_ext_filename_without_platform_suffix(filename):
         return filename
     else:
         return name[:idx] + ext
-    
+
 class BuildPyLibVWBindingsModule(_build_ext):
     def get_ext_filename(self, ext_name):
         # don't append the extension suffix to the binary name
@@ -52,6 +62,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
     def run(self):
         for ext in self.extensions:
             self.build_cmake(ext)
+
         _build_ext.run(self)
 
     def build_cmake(self, ext):
@@ -64,21 +75,48 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         # example of cmake args
         config = 'Debug' if self.debug else 'Release'
+    
         cmake_args = [
-            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(lib_output_dir),
             '-DCMAKE_BUILD_TYPE=' + config,
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
             '-DBUILD_PYTHON=On',
             '-DWARNINGS=Off'
         ]
-
         # example of build args
         build_args = [
-            '--config', config,
-            '--', '-j8',
-            # Build the pylibvw target
-            "pylibvw"
+            '--config', config
         ]
+
+        if system == 'Windows':
+            cmake_args += [
+                '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
+                '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
+                '-G', "Visual Studio 14 2015 Win64"
+            ]
+            build_args += [
+                '--target', 'pylibvw'
+            ]
+
+            if self.distribution.vcpkg_root is not None:
+                # add the vcpkg toolchain if its provided
+                abs_vcpkg_path = os.path.abspath(self.distribution.vcpkg_root)
+                vcpkg_toolchain = os.path.join(
+                    abs_vcpkg_path,
+                    'scripts',
+                    'buildsystems',
+                    'vcpkg.cmake'
+                )
+                cmake_args +=  ['-DCMAKE_TOOLCHAIN_FILE=' + vcpkg_toolchain]
+
+        else:
+            cmake_args += [
+                '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(lib_output_dir),
+            ]
+            build_args += [
+                '--', '-j8',
+                # Build the pylibvw target
+                "pylibvw"
+            ]
 
         cmake_directory = os.path.join(here, '..')
         os.chdir(str(self.build_temp))
@@ -101,12 +139,9 @@ class Sdist(_sdist):
     def run(self):
         _sdist.run(self)
 
-
 class InstallLib(_install_lib):
     def build(self):
         _install_lib.build(self)
-        if system == 'Windows':
-            copy(os.path.join(here, 'bin', 'zlib.dll'), os.path.join(self.build_dir, 'zlib.dll'))
 
 
 class Tox(_test):
@@ -173,6 +208,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     ext_modules=[CMakeExtension('pylibvw')],
+    distclass=Distribution,
     cmdclass={
         'build_ext': BuildPyLibVWBindingsModule,
         'clean': Clean,

@@ -10,7 +10,6 @@
 #include "../vowpalwabbit/options_serializer_boost_po.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
-#define BOOST_PYTHON_STATIC_LIB
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
