@@ -8,5 +8,5 @@ Description: Vowpal Wabbit Machine Learning System
 URL: @PACKAGE_URL@
 Version: @PACKAGE_VERSION@
 Requires: zlib
-Libs: -L@CMAKE_INSTALL_PREFIX@/lib -lvw -lallreduce @CMAKE_THREAD_LIBS_INIT@ @Boost_LIBRARIES@
+Libs: -L@CMAKE_INSTALL_PREFIX@/lib -lvw -lallreduce @CMAKE_THREAD_LIBS_INIT@ @BOOST_LINK_LIBRARIES@
 Cflags: -I@CMAKE_INSTALL_PREFIX@/include/vowpalwabbit

@@ -67,6 +67,8 @@ struct parser
 
   io_buf* input = nullptr;  // Input source(s)
   int (*reader)(vw*, v_array<example*>& examples);
+  void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
+
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf* output = nullptr;   // Where to output the cache.

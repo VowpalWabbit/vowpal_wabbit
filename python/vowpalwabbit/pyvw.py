@@ -113,6 +113,19 @@ class vw(pylibvw.vw):
 
         self.finished = False
 
+    def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
+        """Returns a collection of examples for a multiline example learner or a single
+        example for a single example learner."""
+        str_ex = str_ex.replace('\r', '')
+        ec = self._parse(str_ex)
+        ec = [example(self, x, labelType) for x in ec]
+        if not self._is_multiline():
+            if len(ec) == 1:
+                ec = ec[0]
+            else:
+                raise TypeError('expecting single line example, got multi_ex of len %i' % len(ec))
+        return ec
+
     def num_weights(self):
         """Get length of weight vector."""
         return pylibvw.vw.num_weights(self)
@@ -126,9 +139,13 @@ class vw(pylibvw.vw):
         """Perform an online update; ec can either be an example
         object or a string (in which case it is parsed and then
         learned on) or list which is iterated over."""
+        # If a string was given, parse it before passing to learner.
+        new_example = False
         if isinstance(ec, str):
-            self.learn_string(ec)
-        elif isinstance(ec, example):
+            ec = self.parse(ec)
+            new_example = True
+
+        if isinstance(ec, example):
             if hasattr(ec, 'setup_done') and not ec.setup_done:
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
@@ -136,6 +153,12 @@ class vw(pylibvw.vw):
             pylibvw.vw.learn_multi(self,ec)
         else:
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
+
+        if new_example:
+            if isinstance(ec, list):
+                map(lambda x: x.finish(), ec)
+            else:
+                ec.finish()
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on this example; ec can either be an example
@@ -145,9 +168,14 @@ class vw(pylibvw.vw):
         otherwise the the learner's prediction type will determine the output."""
 
         new_example = False
-        if isinstance(ec, (str, dict)):
+        if isinstance(ec, dict):
             ec = self.example(ec)
             ec.setup_done = True
+            new_example = True
+
+        # If a string was given, parse it before passing to learner.
+        if isinstance(ec, str):
+            ec = self.parse(ec)
             new_example = True
 
         if not isinstance(ec, example) and not isinstance(ec, list):
@@ -170,7 +198,10 @@ class vw(pylibvw.vw):
             prediction = get_prediction(ec[0], prediction_type)
 
         if new_example:
-            ec.finish()
+            if isinstance(ec, list):
+                map(lambda x: x.finish(), ec)
+            else:
+                ec.finish()
 
         return prediction
 
@@ -554,6 +585,15 @@ class example(pylibvw.example):
         else:
             raise TypeError('expecting string or dict as argument for example construction')
 
+        self.vw = vw
+        self.stride = vw.get_stride()
+        self.finished = False
+        self.labelType = labelType
+
+    def __init__(self, vw, raw_example, labelType=pylibvw.vw.lDefault):
+        """Wrap existing raw example object"""
+
+        pylibvw.example.__init__(self, vw, labelType, raw_example)
         self.vw = vw
         self.stride = vw.get_stride()
         self.finished = False
