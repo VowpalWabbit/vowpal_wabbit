@@ -1,18 +1,23 @@
 cmake_minimum_required(VERSION 3.5)
 
-# Only allow Release and Debug configurations
+# Only allow 
+
+
+and Debug configurations
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-project(vowpal_wabbit C CXX)
-set(CMAKE_CXX_STANDARD 11)
-
 # VW targets Windows 8.1 SDK
+# CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
+# https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
   set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
 endif()
+
+project(vowpal_wabbit C CXX)
+set(CMAKE_CXX_STANDARD 11)
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
@@ -39,6 +44,10 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
+if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
+  message(FATAL_ERROR "Unsupported option enabled on Windows build")
+endif()
+
 # Add -ffast-math for speed, remove for testability.
 set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse)
 set(linux_debug_config -g -O0)
@@ -48,7 +57,10 @@ if((NOT PROFILE) AND (NOT GCOV))
 endif()
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
+set(
+
+
+-fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
 
 if(LTO)
 	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -78,10 +90,6 @@ if(GCOV)
   set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg)
 endif()
 
-set(windows_release_config /GL /O2 /Gy /Oi /Ob2 /Ot /Oy /GT /MD)
-set(windows_debug_config /INCREMENTAL /Od /Zi /analyze-)
-set(windows_flags $<$<CONFIG:DEBUG>:${windows_debug_config}> $<$<CONFIG:RELEASE>:${windows_release_config}>)
-
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -93,6 +101,10 @@ if(STATIC_LINK_VW)
   SET(BUILD_SHARED_LIBS OFF)
 else()
   set(Boost_USE_STATIC_LIBS OFF)
+  if(WIN32)
+    # Windows links everything dynamically
+    add_definitions( -DBOOST_ALL_DYN_LINK )
+  endif()
 endif()
 
 set(Boost_USE_MULTITHREADED ON)
