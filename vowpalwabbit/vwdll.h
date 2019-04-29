@@ -73,10 +73,12 @@ extern "C"
   VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish(VW_HANDLE handle);
 
   VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(
-      VW_HANDLE handle, const char* label, VW_FEATURE_SPACE* features, size_t len);
+      VW_HANDLE handle, const char* label, VW_FEATURE_SPACE features, size_t len);
 
+  VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_InitializeFeatureSpaces(size_t len);
+  VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_GetFeatureSpace(VW_FEATURE_SPACE first, size_t index);
   VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen);
-  VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE* features, size_t len);
+  VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE features, size_t len);
 #ifdef USE_CODECVT
   VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t* line);
 #endif
@@ -100,6 +102,10 @@ extern "C"
   VW_DLL_MEMBER const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e);
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e);
   VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e);
+  VW_DLL_MEMBER void VW_CALLING_CONV VW_SetSpace(VW_FEATURE_SPACE feature_space, char name);
+  VW_DLL_MEMBER void VW_CALLING_CONV VW_InitFeatures(VW_FEATURE_SPACE feature_space, size_t features_count);
+  VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeature(VW_FEATURE_SPACE feature_space, size_t index);
+  VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE feature, size_t feature_hash, float value);
   VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen);
   VW_DLL_MEMBER void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f);
 #ifdef USE_CODECVT
