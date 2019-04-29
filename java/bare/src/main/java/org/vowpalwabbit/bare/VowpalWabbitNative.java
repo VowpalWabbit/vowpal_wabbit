@@ -34,6 +34,11 @@ public class VowpalWabbitNative implements Closeable {
     private static native long initializeFromModel(String args, byte[] model);
 
     /**
+     * Perform remaining passes.
+     */
+    public native void performRemainingPasses();
+
+    /**
      * Returns a snapshot of the current model.
      * 
      * @return serialized VW model.

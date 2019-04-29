@@ -23,6 +23,9 @@ public class VowpalWabbitMurmur {
 
   public static int hash(String s, int seed) {
     byte[] d = s.getBytes(StandardCharsets.UTF_8);
+    for (int i = 0; i < d.length; i++)
+      System.out.print("" + d[i] + ", ");
+    System.out.println();
     return hash(d, d.length, seed);
   }
 
@@ -43,7 +46,7 @@ public class VowpalWabbitMurmur {
 
     int i = offset;
     while (i <= offset + len - 4) {
-      int k1 = (data[i] | data[i + 1] << 8 | data[i + 2] << 16 | data[i + 3] << 24);
+      int k1 = ((data[i] & 0xFF) | (data[i + 1] & 0xFF) << 8 | (data[i + 2] & 0xFF) << 16 | (data[i + 3] & 0xFF) << 24);
 
       k1 *= c1;
       k1 = rotl32(k1, 15);
@@ -60,11 +63,11 @@ public class VowpalWabbitMurmur {
     int end = offset + (nblocks * 4);
     switch (len & 3) {
     case 3:
-      k1 ^= (int) data[end + 2] << 16;
+      k1 ^= (data[end + 2] & 0xFF) << 16;
     case 2:
-      k1 ^= (int) data[end + 1] << 8;
+      k1 ^= (data[end + 1] & 0xFF) << 8;
     case 1:
-      k1 ^= (int) data[end];
+      k1 ^= data[end] & 0xFF;
 
       k1 *= c1;
       k1 = rotl32(k1, 15);

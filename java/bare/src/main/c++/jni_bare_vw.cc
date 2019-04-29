@@ -66,6 +66,35 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_initialize
   }
 }
 
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_performRemainingPasses
+  (JNIEnv *env, jobject vwObj)
+{ auto all = (vw*)get_native_pointer(env, vwObj);
+
+  try
+  { if (all->numpasses > 1)
+    { adjust_used_index(*all);
+      all->do_reset_source = true;
+      VW::start_parser(*all);
+      LEARNER::generic_driver(*all);
+      VW::end_parser(*all);
+    }
+  }
+  catch(...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+/*
+vw* vwInstance = (vw*)vwPtr;
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_setNumPasses
+  (JNIEnv *env, jobject vwObj, jint numpasses, jint passesComplete)
+{ auto all = (vw*)get_native_pointer(env, vwObj);
+
+  all->numpasses = numpasses;
+  all->passes_complete = passesComplete;
+}
+*/
 
 JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_getModel
   (JNIEnv *env, jobject vwObj)

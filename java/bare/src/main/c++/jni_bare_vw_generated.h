@@ -25,6 +25,14 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_initialize
 
 /*
  * Class:     org_vowpalwabbit_bare_VowpalWabbitNative
+ * Method:    performRemainingPasses
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_performRemainingPasses
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     org_vowpalwabbit_bare_VowpalWabbitNative
  * Method:    getModel
  * Signature: ()[B
  */

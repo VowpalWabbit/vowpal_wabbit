@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.vowpalwabbit.bare.prediction.*;
 
@@ -12,6 +13,17 @@ import org.vowpalwabbit.bare.prediction.*;
  * @author Markus Cozowicz
  */
 public class VowpalWabbitNativeIT {
+    @Test 
+    public void testHashing() throws Exception {
+        String w1 = "ஜெய்";
+
+        byte[] sarr = ("a" + w1).getBytes(StandardCharsets.UTF_8);
+
+        int h1 = VowpalWabbitMurmur.hash(sarr, 0, sarr.length, -1801964169);
+        int h1n = VowpalWabbitMurmur.hashNative(sarr, 0, sarr.length, -1801964169);
+
+        assertEquals(h1, h1n);
+    }
 
     @Test
     public void testWrappedVsCommandLine() throws Exception {
@@ -118,6 +130,33 @@ public class VowpalWabbitNativeIT {
 
                 assertEquals(learnPrediction, pred.getValue(), 1e-4);
             }
+        }
+    }
+
+    @Test
+    public void testBFGS() throws Exception {
+        File tempFile = File. createTempFile("vowpalwabbit", ".cache");
+        tempFile.deleteOnExit();
+        String cachePath = tempFile.getAbsolutePath();
+
+        try (VowpalWabbitNative vw = new VowpalWabbitNative("--loss_function=logistic --bfgs --passes 2 -k --cache_file=" + cachePath))
+        {
+            try (VowpalWabbitExample ex = vw.createExample())
+            {
+                for (int i=0;i<10;i++) {
+                    ex.addToNamespaceDense('a',
+                        VowpalWabbitMurmur.hash("a", 0),
+                        new double[] { 1.0, 2.0, 3.0 });
+                    ex.setLabel((i % 2) * 2 - 1 );
+
+                    ex.learn();
+                    ex.clear();
+                }
+
+                vw.endPass();
+            }
+
+            vw.performRemainingPasses();
         }
     }
 }
