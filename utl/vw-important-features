@@ -5,7 +5,7 @@
 
 '''
 Usage example:
->python vw-important-features -d data.json --ml_args "--cb_adf -l 0.01 --cb_type mtr"
+>vw-important-features -d data.json --ml_args "--cb_adf -l 0.01 --cb_type mtr"
 
 Sample output:
 =====================================
@@ -42,7 +42,7 @@ def extract_features(fp):
     if '\n' not in text:
         return []
     else:
-        return text.split('\n')
+        return text.splitlines()
 
 def get_important_features(log_file, ml_args, warmstart_model=None, max_num_features=20):
     
