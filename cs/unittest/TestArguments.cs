@@ -19,7 +19,7 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings("--cb_explore_adf --epsilon 0.3 --interact ud") { Verbose = true }))
             {
-                // --cb_explore_adf --epsilon 0.3 --interact ud --cb_adf--csoaa_ldf multiline --csoaa_rank
+                // --cb_explore_adf --epsilon 0.3 --interact ud --cb_adf --csoaa_ldf multiline --csoaa_rank
                 Console.WriteLine(vw.Arguments.CommandLine);
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_explore_adf"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--epsilon 0.3"));
@@ -32,7 +32,7 @@ namespace cs_unittest
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
                 Console.WriteLine(vw.Arguments.CommandLine);
-                // --no_stdin--bit_precision 18--cb_explore_adf--epsilon 0.300000--cb_adf--cb_type ips --csoaa_ldf multiline--csoaa_rank--interact ud
+                // --no_stdin --bit_precision 18 --cb_explore_adf --epsilon 0.300000 --cb_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --interact ud
 
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--no_stdin"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--bit_precision 18"));
