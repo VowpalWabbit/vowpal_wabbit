@@ -117,8 +117,8 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
         ActionScores[] expectedTestPreds = new ActionScores[]{
             actionScores(
-                actionScore(0, 0.399044f),
-                actionScore(1, 0.49084f)
+                actionScore(0, 0.39904374f),
+                actionScore(1, 0.49083984f)
             )
         };
 
