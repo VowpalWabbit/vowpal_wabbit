@@ -23,9 +23,6 @@ public class VowpalWabbitMurmur {
 
   public static int hash(String s, int seed) {
     byte[] d = s.getBytes(StandardCharsets.UTF_8);
-    for (int i = 0; i < d.length; i++)
-      System.out.print("" + d[i] + ", ");
-    System.out.println();
     return hash(d, d.length, seed);
   }
 
