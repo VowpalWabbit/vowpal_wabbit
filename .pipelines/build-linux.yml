@@ -9,6 +9,5 @@ pool:
 
 container: travisbase
 steps:
-- bash: ./build-linux.sh
-  arguments: $(Build.SourcesDirectory)
+- bash: ./build-linux.sh $(Build.SourcesDirectory)
   displayName: Build Linux
