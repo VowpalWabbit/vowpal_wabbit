@@ -9,5 +9,6 @@ pool:
 
 container: travisbase
 steps:
-- script: ./build-linux.sh `pwd`
+- bash: ./build-linux.sh
+  arguments: $(Build.SourcesDirectory)
   displayName: Build Linux
