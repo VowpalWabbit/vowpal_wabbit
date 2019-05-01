@@ -2,17 +2,10 @@
 set -e
 set -x
 
-export PATH="$HOME/miniconda/bin:$PATH"
+# Miniconda is installed to root in docker file
+export PATH="/root/miniconda/bin:$PATH"
 
 # Check if any clang-formatting necessary
-
-echo $PATH
-ls $HOME/../..
-ls $HOME/..
-ls $HOME
-
-sudo find / -type d -name "miniconda"
-ls $HOME/miniconda
 
 cd $1
 ./utl/clang-format check
