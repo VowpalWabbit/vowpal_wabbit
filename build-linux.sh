@@ -10,9 +10,9 @@ echo $PATH
 ls $HOME/../..
 ls $HOME/..
 ls $HOME
-ls $HOME/miniconda
 
 sudo find / -type d -name "miniconda"
+ls $HOME/miniconda
 
 cd $1
 ./utl/clang-format check
