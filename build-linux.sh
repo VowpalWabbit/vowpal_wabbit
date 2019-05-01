@@ -7,7 +7,9 @@ export PATH="$HOME/miniconda/bin:$PATH"
 # Check if any clang-formatting necessary
 
 echo $PATH
-cat $HOME/miniconda/bin
+ls $HOME/miniconda/bin
+ls $HOME
+ls $HOME/miniconda
 
 cd $1
 ./utl/clang-format check
