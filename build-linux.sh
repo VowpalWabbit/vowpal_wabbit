@@ -11,7 +11,8 @@ ls $HOME/../..
 ls $HOME/..
 ls $HOME
 ls $HOME/miniconda
-ls $HOME/miniconda/bin
+
+sudo find / -type d -name "miniconda"
 
 cd $1
 ./utl/clang-format check
