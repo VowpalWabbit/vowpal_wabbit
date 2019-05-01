@@ -5,6 +5,11 @@ set -x
 # Miniconda is installed to root in docker file
 export PATH="/root/miniconda/bin:$PATH"
 
+ls /root/
+ls /root/miniconda
+ls /root/miniconda/bin
+
+
 # Check if any clang-formatting necessary
 
 cd $1
