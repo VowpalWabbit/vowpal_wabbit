@@ -9,5 +9,21 @@ pool:
 
 container: travisbase
 steps:
-- bash: ./build-linux.sh $(Build.SourcesDirectory)
-  displayName: Build Linux
+- bash: ./upgrade-cmake.sh $(Build.SourcesDirectory)
+  displayName: Upgrade CMake
+- bash: ./clang-format-check.sh $(Build.SourcesDirectory)
+  displayName: Clang format check
+- bash: ./build.sh $(Build.SourcesDirectory)
+  displayName: Build C++
+- bash: ./test.sh $(Build.SourcesDirectory)
+  displayName: Test C++
+- bash: ./java.sh $(Build.SourcesDirectory)
+  displayName: Build + test Java
+- bash: ./python.sh $(Build.SourcesDirectory)
+  displayName: Build + test Python
+- bash: ./build-with-coverage.sh $(Build.SourcesDirectory)
+  displayName: Build with coverage C++
+- bash: ./test-with-coverage.sh $(Build.SourcesDirectory)
+  displayName: Test with coverage C++
+# - bash: ./upload-test-coverage.sh $(Build.SourcesDirectory)
+#   displayName: Upgrade CMake
