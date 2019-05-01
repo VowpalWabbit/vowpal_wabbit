@@ -1,7 +1,7 @@
 resources:
   containers:
   - container: travisbase
-    image:  vowpalwabbit/travis-base:20190202.1
+    image:  vowpalwabbit/travis-base:20190501.1
     endpoint: DockerHub
 
 pool:
