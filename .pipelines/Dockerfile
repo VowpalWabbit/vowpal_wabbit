@@ -42,11 +42,11 @@ RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
 RUN easy_install pip && \
   pip install cpp-coveralls wheel virtualenv pytest readme_renderer pandas && \
   wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh && \
-  bash miniconda.sh -b -p $HOME/miniconda && \
+  bash miniconda.sh -b -p /opt/miniconda && \
   hash -r && \
-  $HOME/miniconda/bin/conda config --set always_yes yes --set changeps1 no && \
-  $HOME/miniconda/bin/conda update -q conda && \
-  $HOME/miniconda/bin/conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
+  /opt/miniconda/bin/conda config --set always_yes yes --set changeps1 no && \
+  /opt/miniconda/bin/conda update -q conda && \
+  /opt/miniconda/bin/conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
 
 # Download maven dependencies
 RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml.in && \
