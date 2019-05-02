@@ -102,7 +102,7 @@ extern "C"
   VW_DLL_MEMBER const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e);
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e);
   VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e);
-  VW_DLL_MEMBER void VW_CALLING_CONV VW_SetSpace(VW_FEATURE_SPACE feature_space, char name);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEATURE_SPACE feature_space, const char* name);
   VW_DLL_MEMBER void VW_CALLING_CONV VW_InitFeatures(VW_FEATURE_SPACE feature_space, size_t features_count);
   VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeature(VW_FEATURE_SPACE feature_space, size_t index);
   VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE feature, size_t feature_hash, float value);
