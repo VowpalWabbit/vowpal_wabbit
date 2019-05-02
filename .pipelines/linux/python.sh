@@ -9,8 +9,8 @@ export PATH="/opt/miniconda/bin:$PATH"
 cd $1
 cd python
 source activate test-python27
-pip install pytest readme_renderer pandas --user
+sudo pip install pytest readme_renderer pandas
 python setup.py check -mrs
-python setup.py install
+sudo python setup.py install
 py.test tests
 source deactivate
