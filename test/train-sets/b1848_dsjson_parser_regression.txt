@@ -1,0 +1,2 @@
+{"RewardValue":1.0,"EnqueuedTimeUtc":"2018-09-22T01:48:38.423Z","EventId":"4f237fdc7ef844de8ac7f2278a526a0b-2aw0J","Observations":[{"v":1.0,"EventId":"4f237fdc7ef844de8ac7f2278a526a0b-2aw0J","ActionId":null}]}
+[CHECKPOINT INFO LINE]
