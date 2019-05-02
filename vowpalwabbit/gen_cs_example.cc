@@ -207,23 +207,28 @@ void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_of
 {
   bool shared = CB::ec_is_example_header(*examples[0]);
   
-  if (!shared)
-  {
-    THROW("Softmax is only implemented for cb_adf mode");
-  }
-
   cs_labels.costs.clear();
-  COST_SENSITIVE::wclass wc = {-FLT_MAX, 0, 0., 0.};
-  cs_labels.costs.push_back(wc);  //Handle shared example
+  if (shared)
+  {
+    COST_SENSITIVE::wclass wc = {-FLT_MAX, 0, 0., 0.};
+    cs_labels.costs.push_back(wc);  //Handle shared example
+  }
 
   for (uint32_t i = 0; i < action_vals.size(); i++)
   {
     uint32_t current_action = action_vals[i].action;
     COST_SENSITIVE::wclass wc = {0., current_action, 0., 0.};
+
     if (current_action == chosen_action)
       wc.x = action_vals[i].score + sign_offset;
     else
       wc.x = action_vals[i].score - sign_offset;
+
+    // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to 0.
+    if (wc.x > 100.)
+      wc.x = 100.0;
+    if (wc.x < -100.)
+      wc.x = -100.0;
 
     cs_labels.costs.push_back(wc);
   }

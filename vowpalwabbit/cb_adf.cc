@@ -36,8 +36,10 @@ struct cb_adf
   COST_SENSITIVE::label cs_labels;
   v_array<COST_SENSITIVE::label> prepped_cs_labels;
 
-  action_scores a_s;  // temporary storage for mtr
-  v_array<uint32_t> backup_nf; // temporary storage for sm
+  action_scores a_s;  // temporary storage for mtr and sm
+  action_scores prob_s;  // temporary storage for sm; stores softmax values
+  v_array<uint32_t> backup_nf; // temporary storage for sm; backup for numFeatures in examples
+  v_array<uint32_t> backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t offset;
   bool no_predict;
@@ -90,8 +92,8 @@ float safe_probability(float prob)
 {
   if (prob <= 0.)
   {
-    std::cout << "Probability " << prob << " is not possible, replacing with 1e-3.  Fix your dataset. " << std::endl;
-    return 1e-3f;
+    std::cout << "Probability " << prob << " is not possible, replacing with 1e-6.  Fix your dataset. " << std::endl;
+    return 1e-6f;
   }
   else
     return prob;
@@ -100,21 +102,42 @@ float safe_probability(float prob)
 void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   gen_cs_test_example(examples, mydata.cs_labels);  // create test labels.
   call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
-
-  // Can probably do this more efficiently than 5 loops over the examples...
-  //[1: find chosen action; 2: get probability of chosen action; 3: backup example wts; 4: create cs_labels; 5: restore example wts]
-  v_array<action_score>& preds = examples[0]->pred.a_s;
-  float sign_offset = 1.0;    // To account for negative rewards/costs
-  uint32_t chosen_action = -1;
-  float example_weight = 1.0;
   
-  for (uint32_t i = 1; i < examples.size(); i++)    // Assumes i=0 refers to the "shared" example
+  // Can probably do this more efficiently than 6 loops over the examples...
+  //[1: initialize temporary storage;
+  // 2: find chosen action;
+  // 3: create cs_labels (gen_cs_example_sm);
+  // 4: get probability of chosen action;
+  // 5: backup example wts;
+  // 6: restore example wts]
+  mydata.a_s.clear();
+  mydata.prob_s.clear();
+  // TODO: Check that predicted scores are always stored with the first example
+  for (uint32_t i = 0; i < examples[0]->pred.a_s.size(); i++)
+  {
+    mydata.a_s.push_back({examples[0]->pred.a_s[i].action, examples[0]->pred.a_s[i].score});
+    mydata.prob_s.push_back({examples[0]->pred.a_s[i].action, 0.0});
+  }
+
+  float sign_offset = 1.0;    // To account for negative rewards/costs
+  uint32_t chosen_action;
+  float example_weight = 1.0;
+
+  bool shared = CB::ec_is_example_header(*examples[0]);
+  uint32_t startK = 0;
+  if (shared)
+    startK = 1;
+
+  for (uint32_t i = startK; i < examples.size(); i++)
   {
     CB::label ld = examples[i]->l.cb;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
-      chosen_action = (i-1);    //Offset by 1 to account for "shared" example
+      chosen_action = (i-startK);
       example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability);
+
+      // Importance weights of examples cannot be negative.
+      // So we use a trick: set |w| as weight, and use sign(w) as an offset in the regression target.
       if (ld.costs[0].cost < 0.0)
       {
         sign_offset = -1.0;
@@ -124,40 +147,48 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
     }
   }
 
-  gen_cs_example_sm(examples, chosen_action, sign_offset, preds, mydata.cs_labels);
-  generate_softmax(1.0, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+  gen_cs_example_sm(examples, chosen_action, sign_offset, mydata.a_s, mydata.cs_labels);
 
-  for (uint32_t i = 0; i < preds.size(); i++)  // Scale example_wt by prob of chosen action
+  // Lambda is -1 in the call to generate_softmax because in vw, lower score is better; for softmax higher score is better.
+  generate_softmax(-1.0, begin_scores(mydata.a_s), end_scores(mydata.a_s), begin_scores(mydata.prob_s), end_scores(mydata.prob_s));
+
+  // TODO: Check Marco's example that causes VW to report prob > 1.
+
+  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)  // Scale example_wt by prob of chosen action
   {
-    if (preds[i].action == chosen_action)
+    if (mydata.prob_s[i].action == chosen_action)
     {
-      example_weight *= preds[i].score;
+      example_weight *= mydata.prob_s[i].score;
       break;
     }
   }
   
-  mydata.a_s.clear();   // Re-using this datastructure to temporarily store the weights of the examples
+  mydata.backup_weights.clear();
   mydata.backup_nf.clear();
-  //Do we also need to backup and restore example.numFeatures?
-  for (uint32_t i = 0; i < preds.size(); i++)
+    for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
   {
-    uint32_t current_action = preds[i].action;
-    mydata.a_s.push_back({current_action, examples[current_action + 1]->weight});
-    mydata.backup_nf.push_back(examples[current_action + 1]->num_features);
+    uint32_t current_action = mydata.prob_s[i].action;
+    mydata.backup_weights.push_back(examples[current_action + startK]->weight);
+    mydata.backup_nf.push_back(examples[current_action + startK]->num_features);
+
     if (current_action == chosen_action)
-      examples[current_action + 1]->weight = example_weight * (1.0 - preds[i].score);
+      examples[current_action + startK]->weight = example_weight * (1.0 - mydata.prob_s[i].score);
     else
-      examples[current_action + 1]->weight = example_weight * preds[i].score;
+      examples[current_action + startK]->weight = example_weight * mydata.prob_s[i].score;
+
+    if (examples[current_action + startK]->weight <= 1e-15)
+      examples[current_action + startK]->weight = 0;
   }
 
   //Do actual training
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 
-  //Restore example weights
-  for (uint32_t i = 0; i < mydata.a_s.size(); i++)
+  //Restore example weights and numFeatures
+  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
   {
-    examples[mydata.a_s[i].action + 1]->weight = mydata.a_s[i].score;
-    examples[mydata.a_s[i].action + 1]->num_features = mydata.backup_nf[i];
+    uint32_t current_action = mydata.prob_s[i].action;
+    examples[current_action + startK]->weight = mydata.backup_weights[i];
+    examples[current_action + startK]->num_features = mydata.backup_nf[i];
   }
 }
 
@@ -191,6 +222,8 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
   examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability *
       ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
+
+  //TODO!!! mydata.cb_labels are not getting properly restored (empty costs are dropped)
   GEN_CS::call_cs_ldf<true>(
       base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
