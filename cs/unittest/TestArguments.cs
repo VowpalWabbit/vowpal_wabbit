@@ -19,7 +19,7 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings("--cb_explore_adf --epsilon 0.3 --interact ud") { Verbose = true }))
             {
-                // --cb_explore_adf --epsilon 0.3 --interact ud --cb_adf--csoaa_ldf multiline --csoaa_rank
+                // --cb_explore_adf --epsilon 0.3 --interact ud --cb_adf --csoaa_ldf multiline --csoaa_rank
                 Console.WriteLine(vw.Arguments.CommandLine);
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_explore_adf"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--epsilon 0.3"));
@@ -32,7 +32,7 @@ namespace cs_unittest
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
                 Console.WriteLine(vw.Arguments.CommandLine);
-                // --no_stdin--bit_precision 18--cb_explore_adf--epsilon 0.300000--cb_adf--cb_type ips --csoaa_ldf multiline--csoaa_rank--interact ud
+                // --no_stdin --bit_precision 18 --cb_explore_adf --epsilon 0.300000 --cb_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --interact ud
 
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--no_stdin"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--bit_precision 18"));
@@ -41,7 +41,7 @@ namespace cs_unittest
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--interact ud"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_ldf multiline"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_rank"));
-                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_type ips"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_type mtr"));
             }
         }
 
@@ -88,7 +88,7 @@ namespace cs_unittest
         [TestCategory("Vowpal Wabbit")]
         public void TestArgumentDeDup()
         {
-            using (var vw = new VowpalWabbit("-l 0.3 -l 0.3 --learning_rate 0.3 -f model1 --save_resume -q ab")) 
+            using (var vw = new VowpalWabbit("-l 0.3 -l 0.3 --learning_rate 0.3 -f model1 --save_resume -q ab"))
             {
                 Assert.AreEqual(0.3f, vw.Native.Arguments.LearningRate);
             }

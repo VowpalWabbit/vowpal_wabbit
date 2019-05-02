@@ -341,7 +341,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<cb_adf>();
   bool cb_adf_option = false;
-  std::string type_string = "ips";
+  std::string type_string = "mtr";
 
   option_group_definition new_options("Contextual Bandit with Action Dependent Features");
   new_options
@@ -350,7 +350,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", ld->rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", ld->no_predict).help("Do not do a prediction when training"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr, mtr}"));
+      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr,mtr}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_adf_option)
@@ -384,8 +384,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     ld->gen_cs.cb_type = CB_TYPE_DM;
   else
   {
-    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
-    ld->gen_cs.cb_type = CB_TYPE_IPS;
+    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to mtr." << std::endl;
+    ld->gen_cs.cb_type = CB_TYPE_MTR;
   }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;

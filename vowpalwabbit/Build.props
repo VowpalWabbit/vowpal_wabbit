@@ -3,6 +3,8 @@
   <PropertyGroup Label="Globals">
 	  <Linkage-zlib>static</Linkage-zlib>
 	  <CallingConvention-zlib>stdcall</CallingConvention-zlib>
+
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildThisFileDirectory)</SolutionDir>
   </PropertyGroup>
 </Project>
 

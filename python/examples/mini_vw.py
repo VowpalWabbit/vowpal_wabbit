@@ -20,7 +20,7 @@ def mini_vw(inputFile, numPasses, otherArgs):
             else:
                 ex = vw.example(l)
                 vw.learn(ex)
-                ex.finish()
+                vw.finish_example(ex)
 
         h.close()
     vw.finish()

@@ -13,7 +13,7 @@ class SearchTask():
         self.bogus_example = [self.vw.example("1 | x")]
 
     def __del__(self):
-        self.bogus_example[0].finish()
+        self.vw.finish_examples(bogus_example)
 
     def _run(self, your_own_input_example):
         pass
@@ -125,6 +125,23 @@ class vw(pylibvw.vw):
                 raise TypeError('expecting single line example, got multi_ex of len %i' % len(ec))
         return ec
 
+    def finish_example(self, ex):
+        """Should only be used in conjunction with the parse method"""
+
+        if isinstance(ex, example):
+            if self._is_multiline():
+                raise ValueError('Learner is multiline but single example was passed to finish_example. Use the list of examples instead?')
+            if not ex.finished:
+                pylibvw.vw._finish_example(self, ex)
+                ex.finished = True
+        elif isinstance(ex, list):
+            if not self._is_multiline():
+                raise ValueError('Learner is singleline but multi example was passed to finish_example. Use a single example instead?')
+            if all(x.finished == False for x in ex):
+                pylibvw.vw._finish_example_multi_ex(self, ex)
+                for x in ex:
+                    x.finished = True
+
     def num_weights(self):
         """Get length of weight vector."""
         return pylibvw.vw.num_weights(self)
@@ -154,10 +171,7 @@ class vw(pylibvw.vw):
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
 
         if new_example:
-            if isinstance(ec, list):
-                map(lambda x: x.finish(), ec)
-            else:
-                ec.finish()
+            self.finish_example(ec)
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on this example; ec can either be an example
@@ -197,10 +211,7 @@ class vw(pylibvw.vw):
             prediction = get_prediction(ec[0], prediction_type)
 
         if new_example:
-            if isinstance(ec, list):
-                map(lambda x: x.finish(), ec)
-            else:
-                ec.finish()
+            self.finish_example(ec)
 
         return prediction
 
@@ -591,15 +602,8 @@ class example(pylibvw.example):
         self.finished = False
         self.labelType = labelType
 
-    def __del__(self):
-        self.finish()
-
     def __enter__(self):
         return self
-
-    def __exit__(self,typ,value,traceback):
-        self.finish()
-        return typ is None
 
     def get_ns(self, id):
         """Construct a namespace_id from either an integer or string
@@ -745,13 +749,6 @@ class example(pylibvw.example):
         #     else:
         #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
         #     self.push_feature(ns, f, v, ns_hash)
-
-    def finish(self):
-        """Tell VW that you're done with this example and it can
-        recycle it for later use."""
-        if not self.finished:
-            self.vw.finish_example(self)
-            self.finished = True
 
     def iter_features(self):
         """Iterate over all feature/value pairs in this example (all
