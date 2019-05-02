@@ -5,7 +5,7 @@ add_executable(vw-unit-test.out
 
 # Add the include directories from vw target for testing
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)
-target_link_libraries(vw-unit-test.out PRIVATE vw allreduce Boost::unit_test_framework Boost::system)
+target_link_libraries(vw-unit-test.out PRIVATE vw allreduce vw_c_wrapper Boost::unit_test_framework Boost::system)
 
 # Communicate that Boost Unit Test is being statically linked
 if(STATIC_LINK_VW)
