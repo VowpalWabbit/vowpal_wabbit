@@ -47,16 +47,14 @@ base_learner* cb_sample_setup(options_i& options, vw& all)
 
   option_group_definition new_options("CB Sample");
   new_options.add(make_option("cb_sample", cb_sample_option).keep().help("Sample from CB pdf and swap top action."));
-  new_options.add(make_option("cb_sample_seed", override_seed)
-    .help("Override seed used for sampling, if not provided overall random seed used. Overriden by tag defined seed, must be of the form 'seed=<number>'."));
   options.add_and_parse(new_options);
 
   if (!cb_sample_option)
     return nullptr;
 
-  data->random_seed = options.was_supplied("cb_sample_seed") ? override_seed : all.random_seed;
+  data->random_seed = all.random_seed;
   data->random_seed_counter = 0;
 
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
-      learn_or_predict<false>, 1, prediction_type::action_probs));
+      learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs));
 }
