@@ -1250,7 +1250,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(lrqfa_setup);
   all.reduction_stack.push(stagewise_poly_setup);
   all.reduction_stack.push(scorer_setup);
-  // ReductionsS
+  // Reductions
   all.reduction_stack.push(bs_setup);
   all.reduction_stack.push(binary_setup);
 
