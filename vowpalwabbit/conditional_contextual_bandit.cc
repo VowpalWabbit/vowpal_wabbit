@@ -12,7 +12,6 @@
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
-#include <unordered_map>
 
 using namespace LEARNER;
 using namespace VW;
@@ -23,9 +22,9 @@ struct ccb
   example* shared;
   std::vector<example*> actions, decisions;
   uint32_t chosen_action_index;
-  std::unordered_map<uint32_t, uint32_t> origin_index;
+  std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
-  std::unordered_set<uint32_t> exclude_list, include_list;
+  std::vector<bool> exclude_list/*, include_list*/;
   CCB::decision_scores_t decision_scores;
   std::vector<std::string>* original_interactions;
 };
@@ -41,9 +40,8 @@ void clear_all(ccb& data)
   data.actions.clear();
   data.decisions.clear();
   data.chosen_action_index = 0;
-  data.origin_index.clear();
-  data.exclude_list.clear();
-  data.include_list.clear();
+  // data.exclude_list.clear();
+  // data.include_list.clear();
   data.decision_scores.clear();
 }
 
@@ -126,9 +124,9 @@ void save_action_scores(ccb& data)
 
   // exclude the chosen action from next decisions
   if (!is_learn)
-    data.exclude_list.insert(copy[0].action);
+    data.exclude_list[copy[0].action] = true;
   else
-    data.exclude_list.insert(data.chosen_action_index);
+    data.exclude_list[data.chosen_action_index] = true;
 }
 
 void clear_pred_and_label(ccb& data)
@@ -216,22 +214,25 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
   inject_decision_features(data.shared, decision);
   cb_ex.push_back(data.shared);
 
+  // For V0, include list is not supported
   // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
-  data.include_list.clear();
-  for (uint32_t included_action_id : decision->l.conditional_contextual_bandit.explicit_included_actions)
-    data.include_list.insert(included_action_id);
+  // data.include_list.clear();
+  // for (uint32_t included_action_id : decision->l.conditional_contextual_bandit.explicit_included_actions)
+  //   data.include_list.insert(included_action_id);
 
   // set the available actions in the cb multi-example
   uint32_t index = 0;
-  data.origin_index.clear();
+  // Ensure the origin_index vector is big enough for this example.
+  data.origin_index.resize(data.actions.size());
   for (size_t i = 0; i < data.actions.size(); i++)
   {
+    // For V0, include list is not supported
     // filter actions that are not explicitly included
-    if (!data.include_list.empty() && data.include_list.find((uint32_t)i) == data.include_list.end())
-      continue;
+    // if (!data.include_list.empty() && data.include_list.find((uint32_t)i) == data.include_list.end())
+    //   continue;
 
     // filter actions chosen by previous decisions
-    if (data.exclude_list.find((uint32_t)i) != data.exclude_list.end())
+    if (data.exclude_list[i])
       continue;
 
     // select the action
@@ -265,6 +266,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   create_cb_labels(data);
 
   std::vector<std::string> generated_interactions;
+
+  // Reset exclusion list for this example.
+  data.exclude_list.assign(data.actions.size(), false);
 
   // for each decision, re-build the cb example and call cb_explore_adf
   for (example* decision : data.decisions)
@@ -421,7 +425,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   // Is it hold out?
   bool labeled_example = true;
   auto preds = ec_seq[0]->pred.decision_scores;
-  for (int i = 0; i < decisions.size(); i++)
+  for (size_t i = 0; i < decisions.size(); i++)
   {
     auto outcome = decisions[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
@@ -462,9 +466,9 @@ void finish(ccb& data)
 {
   data.actions.~vector<example*>();
   data.decisions.~vector<example*>();
-  data.origin_index.~unordered_map<uint32_t, uint32_t>();
-  data.exclude_list.~unordered_set<uint32_t>();
-  data.include_list.~unordered_set<uint32_t>();
+  data.origin_index.~vector<uint32_t>();
+  data.exclude_list.~vector<bool>();
+  // data.include_list.~unordered_set<uint32_t>();
   data.cb_label.~cb_class();
   data.default_cb_label.~cb_class();
 }
@@ -529,9 +533,9 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
     ld->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     ld->outcome->cost = read_object<float>(cache);
-    read_count += sizeof(float);
+    read_count += sizeof(ld->outcome->cost);
     auto size_probs = read_object<uint32_t>(cache);
-    read_count += sizeof(uint32_t);
+    read_count += sizeof(size_probs);
 
     for (uint32_t i = 0; i < size_probs; i++)
     {
