@@ -109,6 +109,7 @@ find_package(Threads REQUIRED)
 
 set(LINK_THREADS Threads::Threads)
 if(STATIC_LINK_VW)
+  find_package(ZLIB REQUIRED libz.a)
   if(APPLE)
     set(unix_static_flag "")
     #Guess ZLIB_LIBRARY to be the one provided by homebrew if none was provided
@@ -119,11 +120,12 @@ if(STATIC_LINK_VW)
     set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
     set(unix_static_flag -static)
   endif()
+else()
+  find_package(ZLIB REQUIRED)
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
-find_package(ZLIB REQUIRED)
 
 # Ensure rapidjson submodule is ready
 find_package(Git QUIET)
