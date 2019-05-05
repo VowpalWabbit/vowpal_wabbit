@@ -2,13 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.vowpalwabbit</groupId>
-    <artifactId>vw-bare-jni</artifactId>
+    <groupId>com.github.johnlangford</groupId>
+    <artifactId>vw-jni</artifactId>
     <version>@PACKAGE_VERSION@-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>Vowpal Wabbit Spark JNI Layer</name>
-    <description>A wrapper around Vowpal Wabbit that allows use through Java/Spark.</description>
-    <url>https://github.com/VowpalWabbit/vowpal_wabbit</url>
+    <name>Vowpal Wabbit JNI Layer</name>
+    <description>
+        A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper requires that the vw_jni platform
+        specific library is installed on your java.library.path.
+    </description>
+    <url>https://github.com/JohnLangford/vowpal_wabbit</url>
 
     <scm>
         <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
@@ -36,15 +39,26 @@
 
     <developers>
         <developer>
+            <name>Jonathan Morra</name>
+            <email>jonmorra@gmail.com</email>
+        </developer>
+        <developer>
+            <name>Ryan Deak</name>
+            <email>r.m.deak@gmail.com</email>
+        </developer>
+        <developer>
+            <name>John Langford</name>
+            <email>jl@hunch.net</email>
+        </developer>
+        <developer>
             <name>Markus Cozowicz</name>
             <email>marcozo@microsoft.com</email>
         </developer>
-   </developers>
+    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>1.8</java.version>
+        <java.version>1.6</java.version>
     </properties>
 
     <dependencies>
@@ -66,15 +80,7 @@
             <version>16.0.1</version>
             <scope>test</scope>
         </dependency>
-        <!--
-        For cross-platform going forward
-        <dependency>
-            <groupId>org.scijava</groupId>
-            <artifactId>native-lib-loader</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        -->
-     </dependencies>
+    </dependencies>
 
     <build>
         <resources>
@@ -86,12 +92,8 @@
             <testResource>
                 <directory>${project.build.directory}</directory>
                 <includes>
-                    <include>*vw_bare_jni*</include>
+                    <include>*vw_jni*</include>
                 </includes>
-            </testResource>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <filtering>true</filtering>
             </testResource>
         </testResources>
         <plugins>
@@ -104,7 +106,7 @@
                         <fileset>
                             <directory>${project.build.directory}</directory>
                             <excludes>
-                                <exclude>*vw_bare_jni*</exclude>
+                                <exclude>*vw_jni*</exclude>
                             </excludes>
                             <followSymlinks>false</followSymlinks>
                         </fileset>
@@ -120,7 +122,58 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
-            <!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-ban-duplicate-classes</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <banDuplicateClasses>
+                                    <findAllDuplicates>true</findAllDuplicates>
+                                </banDuplicateClasses>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-ban-version-downgrades</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireUpperBoundDeps />
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <version>1.0-alpha-3</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.19.1</version>
+                <executions>
+                <execution>
+                    <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                    </goals>
+                </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -137,24 +190,17 @@
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
 
+                    <!-- It's important to run tests serially because we are doing timing tests in some of the tests. -->
+                    <!-- TODO: That tests may fail when executed in parallel is likely an indication of a thread-safety issue -->
+                    <!-- TODO: This thread-safety issue could be on the Java or C side.  Merits future investigation. -->
+                    <!-- TODO: To test, uncomment forkMode and comment forkCount and reuseForks. -->
+                    <!--<forkMode>once</forkMode>-->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
                     <argLine>-Djava.library.path=${project.build.directory}</argLine>
+
                 </configuration>
-            </plugin>-->
-             <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.19.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>2.7</version>
@@ -171,14 +217,24 @@
                                 <resource>
                                     <directory>${project.build.directory}</directory>
                                     <includes>
-                                        <include>*.so</include>
-                                        <include>*.so.*</include>
+                                        <include>*vw_jni*</include>
                                     </includes>
                                 </resource>
                             </resources>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.5</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -208,4 +264,34 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -22,7 +22,9 @@ public class Native {
 
            // Extract library and dependencies
            File jarFile = new File(Native.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-            try (JarFile jar = new JarFile(jarFile)) {
+           JarFile jar = null;
+           try {
+                jar = new JarFile(jarFile);
                 Enumeration<JarEntry> entries = jar.entries();
                 while(entries.hasMoreElements()) {
                     final String name = entries.nextElement().getName();
@@ -38,11 +40,15 @@ public class Native {
                     }
                 }
             }
+            finally {
+                if (jar != null)
+                    jar.close();
+            }
 
             // load the library
-            System.load(tempDirectory.resolve("natives/linux_64/libvw_bare_jni.so").toString());
+            System.load(tempDirectory.resolve("natives/linux_64/libvw_jni.so").toString());
         } catch (Exception e) {
-            throw new RuntimeException("Unable to load native library 'vw_bare_jni'", e);
+            throw new RuntimeException("Unable to load native library 'vw_jni'", e);
         }
     }
 
