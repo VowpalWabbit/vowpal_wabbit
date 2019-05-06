@@ -155,7 +155,7 @@ Directory Structure:
 Experimental build for Windows
 ------------------------------
 
-An extension on the experimental Windows CMake build for the main project.
+An extension on the `experimental Windows CMake build`_ for the main project.
 
 **Note:** attempting to install boost-python in vcpkg while multiple python versions are installed in vcpkg will cause errors. Ensure only the relevant python version is installed in the environment before proceeding.
 
@@ -195,3 +195,5 @@ Due to limitations in the current version of boost-python, some manual changes m
 .. code-block:: bat
 
     > python setup.py --vcpkg-root=[vcpkg-dir] install
+    
+.. _experimental Windows CMake build: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building#experimental-using-cmake-on-windows
