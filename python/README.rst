@@ -196,4 +196,4 @@ Due to limitations in the current version of boost-python, some manual changes m
 
     > python setup.py --vcpkg-root=[vcpkg-dir] install
     
-.. _experimental Windows CMake build: https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/README.Windows.md#experimental-cmake-build
+.. _experimental Windows CMake build: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building#experimental-using-cmake-on-windows
