@@ -26,7 +26,6 @@ ProcessorCount(NumProcessors)
 message(STATUS "Number of processors: ${NumProcessors}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nprocs.txt ${NumProcessors})
 
-
 option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
 option(GCOV "Turn on flags required for gcov" OFF)
@@ -85,10 +84,6 @@ if(GCOV)
   set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg)
 endif()
 
-# TODO move to consuming vcpkg of this dependency
-add_library(rapidjson INTERFACE)
-target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
-
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -129,6 +124,29 @@ endif()
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
 find_package(ZLIB REQUIRED)
+
+# Ensure rapidjson submodule is ready
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  # Update submodules as needed
+  option(GIT_SUBMODULE "Check submodules during build" ON)
+  if(GIT_SUBMODULE)
+    message(STATUS "Submodule update")
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+    endif()
+  endif()
+endif()
+
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
+  message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
+add_library(rapidjson INTERFACE)
+target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
 
 add_subdirectory(cluster)
 add_subdirectory(library)
