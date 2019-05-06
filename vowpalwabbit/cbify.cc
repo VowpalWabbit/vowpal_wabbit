@@ -393,7 +393,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
-      .add(make_option("cbify_use_predas", data->use_predas).help("output multiclass predictions instead of action scores"));
+      .add(make_option("cbify_use_predas", data->use_predas).help("output action scores instead of multiclass predictions"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))
