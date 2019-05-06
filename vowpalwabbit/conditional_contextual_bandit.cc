@@ -522,10 +522,10 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   size_t read_count = 0;
 
   ld->type = static_cast<example_type>(read_object<uint8_t>(cache));
-  read_count += sizeof(uint8_t);
+  read_count += sizeof(ld->type);
 
   bool is_outcome_present = read_object<bool>(cache);
-  read_count += sizeof(bool);
+  read_count += sizeof(is_outcome_present);
 
   if (is_outcome_present)
   {
@@ -545,7 +545,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   }
 
   auto size_includes = read_object<uint32_t>(cache);
-  read_count += sizeof(uint32_t);
+  read_count += sizeof(size_includes);
 
   for (uint32_t i = 0; i < size_includes; i++)
   {
@@ -574,7 +574,7 @@ void cache_label(void* v, io_buf& cache)
   cache.buf_write(c, size);
 
   *(uint8_t*)c = static_cast<uint8_t>(ld->type);
-  c += sizeof(uint8_t);
+  c += sizeof(ld->type);
 
   *(bool*)c = ld->outcome != nullptr;
   c += sizeof(bool);
@@ -582,7 +582,7 @@ void cache_label(void* v, io_buf& cache)
   if (ld->outcome != nullptr)
   {
     *(float*)c = ld->outcome->cost;
-    c += sizeof(float);
+    c += sizeof(ld->outcome->cost);
 
     *(uint32_t*)c = convert(ld->outcome->probabilities.size());
     c += sizeof(uint32_t);
@@ -600,7 +600,7 @@ void cache_label(void* v, io_buf& cache)
   for (const auto& included_action : ld->explicit_included_actions)
   {
     *(uint32_t*)c = included_action;
-    c += sizeof(uint32_t);
+    c += sizeof(included_action);
   }
 }
 
