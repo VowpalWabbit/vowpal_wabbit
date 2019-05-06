@@ -36,6 +36,7 @@ struct cbify
   cbify_adf_data adf_data;
   float loss0;
   float loss1;
+  bool use_predas;
 
   // for ldf inputs
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
@@ -183,7 +184,8 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   else
     ec.l.multi = ld;
 
-  ec.pred.multiclass = cl.action;
+  if (!data.use_predas)
+    ec.pred.multiclass = cl.action;
 }
 
 template <bool is_learn, bool use_cs>
@@ -226,7 +228,8 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   if (is_learn)
     base.learn(data.adf_data.ecs);
 
-  ec.pred.multiclass = cl.action;
+  if (!data.use_predas)
+    ec.pred.multiclass = cl.action;
 }
 
 void init_adf_data(cbify& data, const size_t num_actions)
@@ -389,7 +392,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
+      .add(make_option("cbify_use_predas", data->use_predas).help("output multiclass predictions instead of action scores"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))
