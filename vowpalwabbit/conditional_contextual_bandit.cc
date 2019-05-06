@@ -520,11 +520,19 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   CCB::label* ld = static_cast<CCB::label*>(v);
   size_t read_count = 0;
+  char* read_ptr;
 
-  ld->type = static_cast<example_type>(read_object<uint8_t>(cache));
+  size_t next_read_size = sizeof(ld->type);
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+    return 0;
+  ld->type = *(CCB::example_type*)read_ptr;
   read_count += sizeof(ld->type);
 
-  bool is_outcome_present = read_object<bool>(cache);
+  bool is_outcome_present;
+  next_read_size = sizeof(bool);
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+    return 0;
+  is_outcome_present = *(bool*)read_ptr;
   read_count += sizeof(is_outcome_present);
 
   if (is_outcome_present)
@@ -532,25 +540,48 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
     ld->outcome = new CCB::conditional_contexual_bandit_outcome();
     ld->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
-    ld->outcome->cost = read_object<float>(cache);
+    next_read_size = sizeof(ld->outcome->cost);
+    if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+      return 0;
+    ld->outcome->cost = *(float*)read_ptr;
     read_count += sizeof(ld->outcome->cost);
-    auto size_probs = read_object<uint32_t>(cache);
+
+    uint32_t size_probs;
+    next_read_size = sizeof(size_probs);
+    if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+      return 0;
+    size_probs = *(uint32_t*)read_ptr;
     read_count += sizeof(size_probs);
 
     for (uint32_t i = 0; i < size_probs; i++)
     {
-      ld->outcome->probabilities.push_back(read_object<ACTION_SCORE::action_score>(cache));
-      read_count += sizeof(ACTION_SCORE::action_score);
+      ACTION_SCORE::action_score a_s;
+      next_read_size = sizeof(a_s);
+      if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+        return 0;
+      a_s = *(ACTION_SCORE::action_score*)read_ptr;
+      read_count += sizeof(a_s);
+
+      ld->outcome->probabilities.push_back(a_s);
     }
   }
 
-  auto size_includes = read_object<uint32_t>(cache);
+  uint32_t size_includes;
+  next_read_size = sizeof(size_includes);
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+    return 0;
+  size_includes = *(uint32_t*)read_ptr;
   read_count += sizeof(size_includes);
 
   for (uint32_t i = 0; i < size_includes; i++)
   {
-    ld->explicit_included_actions.push_back(read_object<uint32_t>(cache));
-    read_count += sizeof(uint32_t);
+    uint32_t include;
+    next_read_size = sizeof(include);
+    if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+      return 0;
+    include = *(uint32_t*)read_ptr;
+    read_count += sizeof(include);
+    ld->explicit_included_actions.push_back(include);
   }
 
   return read_count;

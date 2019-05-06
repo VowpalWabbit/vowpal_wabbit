@@ -19,15 +19,5 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
 
 namespace VW
 {
-  template <typename T>
-  T read_object(io_buf& cache)
-  {
-    char* c;
-    size_t next_read_size = sizeof(T);
-    if (cache.buf_read(c, next_read_size) < next_read_size)
-      THROW("Failed to read CCB label cache");
-    return *reinterpret_cast<T*>(c);
-  }
-
   uint32_t convert(size_t number);
 }
