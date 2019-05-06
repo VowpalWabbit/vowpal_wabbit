@@ -430,7 +430,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
     auto outcome = decisions[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
-      float l = CB_ALGS::get_unbiased_cost(
+      float l = CB_ALGS::get_cost_estimate(
           outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
       loss += l * preds[i][TOP_ACTION_INDEX].score;
     }

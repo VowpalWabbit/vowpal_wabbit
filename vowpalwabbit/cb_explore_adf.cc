@@ -593,7 +593,7 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
+      float l = get_cost_estimate(&c.gen_cs.known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }
