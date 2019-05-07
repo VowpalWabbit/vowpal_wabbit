@@ -1,4 +1,4 @@
-#include "jni_bare_vw_generated.h"
+#include "jni_spark_vw_generated.h"
 #include "vw.h"
 
 // some JNI helper

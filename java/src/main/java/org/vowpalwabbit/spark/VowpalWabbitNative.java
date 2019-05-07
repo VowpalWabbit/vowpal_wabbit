@@ -1,4 +1,4 @@
-package org.vowpalwabbit.bare;
+package org.vowpalwabbit.spark;
 
 import java.io.Closeable;
 

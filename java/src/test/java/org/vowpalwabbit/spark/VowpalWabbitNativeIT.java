@@ -1,4 +1,4 @@
-package org.vowpalwabbit.bare;
+package org.vowpalwabbit.spark;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -7,7 +7,7 @@ import java.nio.file.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import org.vowpalwabbit.bare.prediction.*;
+import org.vowpalwabbit.spark.prediction.*;
 
 /**
  * @author Markus Cozowicz

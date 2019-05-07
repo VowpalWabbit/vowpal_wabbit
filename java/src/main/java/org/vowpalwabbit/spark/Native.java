@@ -1,4 +1,4 @@
-package org.vowpalwabbit.bare;
+package org.vowpalwabbit.spark;
 
 // For cross-platform, but it doesn't support dependencies yet
 // import org.scijava.nativelib.NativeLoader;

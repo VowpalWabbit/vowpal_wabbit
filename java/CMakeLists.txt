@@ -14,8 +14,8 @@ if(JNI_FOUND)
     ${src_base}/vowpalWabbit_learner_VWScalarLearner.h
     ${src_base}/vowpalWabbit_learner_VWScalarsLearner.h
     ${src_base}/vowpalWabbit_VW.h
-    ${src_base}/jni_bare_vw.h
-    ${src_base}/jni_bare_vw_generated.h
+    ${src_base}/jni_spark_vw.h
+    ${src_base}/jni_spark_vw_generated.h
     ${src_base}/vector_io_buf.h
     ${src_base}/util.h
   )
@@ -31,9 +31,9 @@ if(JNI_FOUND)
     ${src_base}/vowpalWabbit_learner_VWScalarLearner.cc
     ${src_base}/vowpalWabbit_learner_VWScalarsLearner.cc
     ${src_base}/vowpalWabbit_VW.cc
-    ${src_base}/jni_bare_vw.cc
+    ${src_base}/jni_spark_vw.cc
     ${src_base}/vector_io_buf.cc
-    ${src_base}/jni_bare_cluster.cc
+    ${src_base}/jni_spark_cluster.cc
     ${src_base}/util.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit/spanning_tree.cc
   )
@@ -51,7 +51,7 @@ if(JNI_FOUND)
       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/
   )
 
-  # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_bare_jni.so
+  # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
   target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
 
   # Replace version number in POM
@@ -89,18 +89,18 @@ if(JNI_FOUND)
     # useful to generate the jni headers
     # create_javah(TARGET javaheaders
     #   CLASSES
-    #     org.vowpalwabbit.bare.VowpalWabbitNative
-    #     org.vowpalwabbit.bare.VowpalWabbitExample
-    #     org.vowpalwabbit.bare.ClusterSpanningTree
+    #     org.vowpalwabbit.spark.VowpalWabbitNative
+    #     org.vowpalwabbit.spark.VowpalWabbitExample
+    #     org.vowpalwabbit.spark.ClusterSpanningTree
     #   CLASSPATH ${CMAKE_CURRENT_SOURCE_DIR}/target/classes
-    #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_bare_vw_generated.h)
+    #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_spark_vw_generated.h)
     # add_dependencies(javaheaders javacompile)
 
-    # add_library(vw_bare_jni SHARED ${vw_bare_jni_headers} ${vw_bare_jni_sources})
+    # add_library(vw_spark_jni SHARED ${vw_spark_jni_headers} ${vw_spark_jni_sources})
 
-    # target_compile_options(vw_bare_jni PUBLIC ${linux_flags})
+    # target_compile_options(vw_spark_jni PUBLIC ${linux_flags})
 
-    # target_include_directories(vw_bare_jni PUBLIC
+    # target_include_directories(vw_spark_jni PUBLIC
     #    ${CMAKE_CURRENT_SOURCE_DIR}
     #    ${JNI_INCLUDE_DIRS} 
     #    ${explore_INCLUDE_DIRS}
@@ -109,7 +109,7 @@ if(JNI_FOUND)
     # TODO: support Win/osx 64/32/ ..
 
     # that doesn't work with ldd below
-    # set_target_properties(vw_bare_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY target/bin/natives/linux_64)
+    # set_target_properties(vw_spark_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY target/bin/natives/linux_64)
 
     add_custom_command(TARGET vw_jni POST_BUILD
         COMMAND ldd $<TARGET_FILE:vw_jni> | grep -E 'boost|libz' | grep -oP '=> \\K\\S+' | xargs -i cp {} target/bin/natives/linux_64

@@ -1,4 +1,4 @@
-#include "jni_bare_vw.h"
+#include "jni_spark_vw.h"
 #include "vw_exception.h"
 #include "best_constant.h"
 #include "vector_io_buf.h"
@@ -34,7 +34,7 @@ void* CriticalArrayGuard::data()
 { return _arr0; }
 
 // VW 
-JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_initialize
+JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initialize
   (JNIEnv *env, jclass, jstring args)
 { StringGuard g_args(env, args);
 
@@ -46,7 +46,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_initialize
   }
 }
 
-JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_initializeFromModel
+JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializeFromModel
   (JNIEnv *env, jclass, jstring args, jbyteArray model)
 { StringGuard g_args(env, args);
   CriticalArrayGuard modelGuard(env, model);
@@ -66,7 +66,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_initialize
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_performRemainingPasses
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRemainingPasses
   (JNIEnv *env, jobject vwObj)
 { auto all = (vw*)get_native_pointer(env, vwObj);
 
@@ -87,7 +87,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_performRema
 /*
 vw* vwInstance = (vw*)vwPtr;
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_setNumPasses
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_setNumPasses
   (JNIEnv *env, jobject vwObj, jint numpasses, jint passesComplete)
 { auto all = (vw*)get_native_pointer(env, vwObj);
 
@@ -96,7 +96,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_setNumPasse
 }
 */
 
-JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_getModel
+JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getModel
   (JNIEnv *env, jobject vwObj)
 { auto all = (vw*)get_native_pointer(env, vwObj);
 
@@ -116,7 +116,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_getMo
   }
 }
 
-JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_getArguments
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArguments
   (JNIEnv *env, jobject vwObj)
 { auto all = (vw*)get_native_pointer(env, vwObj);
 
@@ -135,7 +135,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_getArgum
   // move it to Java
   jstring args = env->NewStringUTF(serialized_keep_options);
 
-  jclass clazz = env->FindClass("org/vowpalwabbit/bare/VowpalWabbitArguments");
+  jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitArguments");
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;)V");
 
   return env->NewObject(clazz, ctor, 
@@ -144,7 +144,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_getArgum
       args);
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_endPass
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass
   (JNIEnv *env, jobject vwObj)
 { auto all = (vw*)get_native_pointer(env, vwObj);
 
@@ -157,7 +157,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_endPass
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_finish
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_finish
   (JNIEnv *env, jobject vwObj)
 { auto all = (vw*)get_native_pointer(env, vwObj);
 
@@ -169,7 +169,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_finish
   }
 }
 
-JNIEXPORT jint JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_hash
+JNIEXPORT jint JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_hash
   (JNIEnv *env, jclass, jbyteArray data, jint offset, jint len, jint seed)
 { CriticalArrayGuard dataGuard(env, data);
   const char* values0 = (const char*)dataGuard.data();
@@ -183,7 +183,7 @@ JNIEXPORT jint JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitNative_hash
   vw* all = exWrapper->_all; \
   example* ex = exWrapper->_example;
 
-JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_initialize
+JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initialize
   (JNIEnv *env, jclass, jlong vwPtr, jboolean isEmpty)
 {
   auto all = (vw*)vwPtr;
@@ -205,7 +205,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_initializ
   }
 }
 
-JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_finish
+JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish
   (JNIEnv *env, jobject exampleObj)
 { INIT_VARS
 
@@ -218,7 +218,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_finish
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_clear
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear
   (JNIEnv *env, jobject exampleObj)
 { INIT_VARS
 
@@ -239,7 +239,7 @@ void addNamespaceIfNotExists(vw* all, example* ex, char ns)
     ex->indices.push_back(ns);
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_addToNamespaceDense
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceDense
   (JNIEnv *env, jobject exampleObj, jchar ns, jint weight_index_base, jdoubleArray values)
 { INIT_VARS
 
@@ -273,7 +273,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_addToNames
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_addToNamespaceSparse
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceSparse
   (JNIEnv *env, jobject exampleObj, jchar ns, jintArray indices, jdoubleArray values)
 { INIT_VARS
 
@@ -311,7 +311,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_addToNames
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_setLabel
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel
   (JNIEnv *env, jobject exampleObj, jfloat weight, jfloat label)
 { INIT_VARS
 
@@ -327,7 +327,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_setLabel
   }
 }
 
-JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_getPrediction
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction
   (JNIEnv *env, jobject exampleObj)
 { INIT_VARS
 
@@ -336,7 +336,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_getPred
   switch (all->l->pred_type)
   {
     case prediction_type::prediction_type_t::scalar:
-      predClass = env->FindClass("org/vowpalwabbit/bare/prediction/ScalarPrediction");
+      predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
       ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
 
       return env->NewObject(predClass, ctr, 
@@ -361,7 +361,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_getPred
   }   
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_learn
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_learn
   (JNIEnv *env, jobject exampleObj)
 { INIT_VARS
 
@@ -378,7 +378,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_learn
   }
 }
 
-JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_predict
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predict
   (JNIEnv *env, jobject exampleObj)
 { INIT_VARS
 
@@ -390,7 +390,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_bare_VowpalWabbitExample_predict
     // as this is not a ring-based example it is not free'd
     LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
 
-    return Java_org_vowpalwabbit_bare_VowpalWabbitExample_getPrediction(env, exampleObj);
+    return Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(env, exampleObj);
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);

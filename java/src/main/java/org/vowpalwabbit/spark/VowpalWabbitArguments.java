@@ -1,4 +1,4 @@
-package org.vowpalwabbit.bare;
+package org.vowpalwabbit.spark;
 
 /**
  * Holds information extract from the VW command line.
