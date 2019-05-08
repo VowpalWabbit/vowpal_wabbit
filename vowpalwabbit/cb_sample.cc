@@ -33,12 +33,13 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
 
   // Sampling is done after the base learner has generated a pdf.
   uint32_t chosen_action;
-  if (exploration::sample_after_normalizing(seed + data.random_seed_counter++,
-          ACTION_SCORE::begin_scores(action_scores), ACTION_SCORE::end_scores(action_scores), chosen_action))
-    THROW("Failed to sample from pdf");
+  auto result = exploration::sample_after_normalizing(seed + data.random_seed_counter++,
+             ACTION_SCORE::begin_scores(action_scores), ACTION_SCORE::end_scores(action_scores),
+             chosen_action);
+  assert(result == S_EXPLORATION_OK);
 
-  if (exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action))
-    THROW("Failed to swap top action_score chosen during sampling");
+  result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
+  assert(result == S_EXPLORATION_OK);
 }
 
 base_learner* cb_sample_setup(options_i& options, vw& all)
