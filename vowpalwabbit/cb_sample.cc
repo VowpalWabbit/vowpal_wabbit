@@ -46,7 +46,6 @@ base_learner* cb_sample_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_sample_data>();
   bool cb_sample_option = false;
-  uint64_t override_seed;
 
   option_group_definition new_options("CB Sample");
   new_options.add(make_option("cb_sample", cb_sample_option).keep().help("Sample from CB pdf and swap top action."));
