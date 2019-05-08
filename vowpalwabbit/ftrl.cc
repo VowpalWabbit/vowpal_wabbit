@@ -18,6 +18,7 @@ using namespace VW::config;
 #define W_MX 3  // maximum absolute value
 #define W_WE 4  // Wealth
 #define W_MG 5  // maximum gradient
+#define W_AV 6  // average features
 
 struct update_data
 {
@@ -30,6 +31,7 @@ struct update_data
   float normalized_squared_norm_x;
   float normalization;
   float weight;
+  float iter;
 };
 
 struct ftrl
@@ -41,6 +43,12 @@ struct ftrl
   size_t no_win_counter;
   size_t early_stop_thres;
   double total_weight;
+  double wealth_bias;
+  double bias;
+  double sum_grad_bias;
+  double sum_abs_grad_bias;
+  double max_grad_bias;
+  double iter;
 };
 
 struct uncertainty
@@ -179,18 +187,23 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 {
   float* w = &wref;
 
+  w[W_AV]=w[W_AV]+x;
+  x=x-w[W_AV]/(d.iter+1.0);
+
   float fabs_x = fabs(x);
   if (fabs_x > w[W_MX]) {
     w[W_MX] = fabs_x;
   }
 
-  //cerr << "1 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" x:"<<x<<endl;
-
   // COCOB update without sigmoid
-  if (w[W_MG]*w[W_MX]!=0)
-    w[W_XT] = (8.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+  if (w[W_MG]*w[W_MX]>0)
+    w[W_XT] = (4.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
   else
     w[W_XT] = 0;
+
+  //if (isnan(w[W_XT]))
+  //  cerr << "1 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" x:"<<x<<endl;
+
 
   //cerr << "2 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" x:"<<x<<endl;
   //if (w[W_WE]+4.0<0)
@@ -207,15 +220,18 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 void inner_update_cb_post(update_data& d, float x, float& wref)
 {
   float* w = &wref;
+
+  x=x-w[W_AV]/(d.iter+1.0);
+
   float gradient = d.update * x;
 
   //cerr << "3 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" grad:"<< gradient<<" x:"<<x<<endl;
 
   float fabs_gradient = fabs(d.update);
   if (fabs_gradient > w[W_MG]) {
-    w[W_MG] = fabs_gradient>1.0?fabs_gradient:1.0;
+    w[W_MG] = fabs_gradient>4.0?fabs_gradient:4.0;
     if (w[W_MX]!=0)
-      w[W_XT] = (8.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+      w[W_XT] = (4.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
   }
 
   //if (fabs(w[W_XT]/(4.0+w[W_WE])*gradient)>=0.99)
@@ -248,13 +264,17 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
   b.data.weight = ec.weight;
+  b.data.iter = b.iter;
 
   GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
+
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
 
-  ec.partial_prediction = b.data.predict/((float)(b.all->normalized_sum_norm_x/b.total_weight));
+  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight))+b.bias;
+  //ec.partial_prediction = b.data.predict + b.bias;
+
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
@@ -372,6 +392,20 @@ void update_after_prediction_cb(ftrl& b, example& ec)
   //cerr << endl<<"update"<< endl;
 
   GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
+
+  float fabs_gradient = fabs(b.data.update);
+  if (fabs_gradient > b.max_grad_bias) {
+    b.max_grad_bias = fabs_gradient;
+    b.bias = (4.0+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
+  }
+
+  b.wealth_bias += -b.bias*b.data.update;
+  b.sum_abs_grad_bias += fabs(b.data.update);
+  b.sum_grad_bias += -b.data.update;
+
+  b.bias = (4.0+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
+
+  b.iter += 1.0;
 }
 
 void update_after_prediction_cb2(ftrl& b, example& ec)
@@ -500,6 +534,12 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->no_win_counter = 0;
   b->all->normalized_sum_norm_x = 0;
   b->total_weight = 0.;
+  b->bias = 0.;
+  b->wealth_bias=0.;
+  b->sum_abs_grad_bias=0.;
+  b->sum_grad_bias=0.;
+  b->max_grad_bias=4.0;
+  b->iter=0.;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
