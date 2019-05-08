@@ -162,6 +162,15 @@ void inject_decision_features(example* shared, example* decision)
   }
 }
 
+// Flattens all features of the action into the history namespace in the shared example.
+void inject_history_features(example* shared, example* action)
+{
+  for (auto index : action->indices)
+  {
+    LabelDict::add_example_namespace(*shared, ccb_history_namespace, action->feature_space[index]);
+  }
+}
+
 void remove_decision_features(example* shared, example* decision)
 {
   for (auto index : decision->indices)
@@ -182,22 +191,28 @@ void remove_decision_features(example* shared, example* decision)
   }
 }
 
-// Generates all pairs of the namespaces for the two examples
-void calculate_and_insert_interactions(example* shared, example* decision, std::vector<std::string>& vec)
+// Generates all combinations of 4th order interactions between namespaces in [shared,history,slot,action]
+void calculate_and_insert_interactions(example* shared, example* decision, std::vector<example*> actions, std::vector<std::string>& vec)
 {
   vec.reserve(shared->indices.size() * decision->indices.size() + vec.size());
 
   for (auto shared_index : shared->indices)
   {
-    for (auto decision_index : decision->indices)
+    // History namespace is included in the shared example, it is added explicitly for each interaction.
+    if (shared_index == ccb_history_namespace)
     {
-      if (decision_index == default_namespace)
+      continue;
+    }
+
+    for (auto action : actions)
+    {
+      for(auto action_index : action->indices)
       {
-        vec.push_back({(char)shared_index, (char)ccb_decision_namespace});
-      }
-      else
-      {
-        vec.push_back({(char)shared_index, (char)decision_index});
+        for (auto decision_index : decision->indices)
+        {
+          char decision_ns_index = (decision_index == default_namespace) ? ccb_decision_namespace : decision_index;
+          vec.push_back({(char)shared_index, decision_ns_index, (char)ccb_history_namespace, (char)action_index});
+        }
       }
     }
   }
@@ -284,7 +299,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       // TODO be more efficient here
       std::copy(data.original_interactions->begin(), data.original_interactions->end(),
           std::back_inserter(generated_interactions));
-      calculate_and_insert_interactions(data.shared, decision, generated_interactions);
+      // FIXME currently all action namespaces are used adding redundant interactions.
+      calculate_and_insert_interactions(data.shared, decision, data.actions, generated_interactions);
       size_t removed_cnt;
       size_t sorted_cnt;
       INTERACTIONS::sort_and_filter_duplicate_interactions(generated_interactions, true, removed_cnt, sorted_cnt);
@@ -295,6 +311,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     {  // the cb example contains at least 1 action
       multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
       save_action_scores<is_learn>(data);
+      inject_history_features(data.shared, data.actions[data.chosen_action_index]);
       clear_pred_and_label(data);
     }
     else
@@ -309,8 +326,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   delete_cb_labels(data);
 
-  // save the predictions
-  // TODO fix console print: this rewrite the polylabel and thus break the print stdout happening in cb.cc
+  // Save the predictions
   examples[0]->pred.decision_scores = data.decision_scores;
 }
 
