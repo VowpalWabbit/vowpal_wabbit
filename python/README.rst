@@ -152,4 +152,48 @@ Directory Structure:
 .. _pytest: http://pytest.org/latest/getting-started.html
 .. _tox: https://tox.readthedocs.io/en/latest/index.html
 
+Experimental build for Windows
+------------------------------
 
+An extension on the `experimental Windows CMake build`_ for the main project.
+
+**Note:** attempting to install boost-python in vcpkg while multiple python versions are installed in vcpkg will cause errors. Ensure only the relevant python version is installed in the environment before proceeding.
+
+Python3
+~~~~~~~
+
+1. install required vcpkgs
+
+.. code-block:: bat
+
+    > vcpkg install python3:x64-windows
+    > vcpkg install boost-python:x64-windows
+    
+2. Run
+
+.. code-block:: bat
+
+    > python setup.py --vcpkg-root=[vcpkg-dir] install
+
+Python2
+~~~~~~~
+
+Due to limitations in the current version of boost-python, some manual changes must be made to the vcpkg tools
+
+1. Edit [vcpkg-root]\\ports\\boost-python
+2. Edit the file CONTROL
+    a. Change the Build-Depends entry for **python3** to **python2**
+3. install required vcpkgs
+
+.. code-block:: bat
+
+    > vcpkg install python2:x64-windows
+    > vcpkg install boost-python:x64-windows
+
+4. Run
+
+.. code-block:: bat
+
+    > python setup.py --vcpkg-root=[vcpkg-dir] install
+    
+.. _experimental Windows CMake build: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building#experimental-using-cmake-on-windows

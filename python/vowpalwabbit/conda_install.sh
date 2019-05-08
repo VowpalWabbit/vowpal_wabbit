@@ -12,8 +12,7 @@ conda install --yes gxx_linux-64
 source activate ${CONDA_DEFAULT_ENV}
 
 # boost packages
-BOOST_V="1.65"
-conda install -c conda-forge --yes boost=$BOOST_V libboost=$BOOST_V py-boost=$BOOST_V
+conda install -c conda-forge --yes boost libboost py-boost zlib cmake
 
 # make a soft link to the compiler, since Makefiles internally use `which g++`
 if [ ! -z "${GXX}" ]; then
@@ -25,6 +24,7 @@ fi
 # set BOOST_XXX variables, that will be used to find boost libs in linking
 if [ ! -z "$CONDA_PREFIX" ]; then
   BASE_BOOST=$CONDA_PREFIX
+  export BOOST_ROOT=$CONDA_PREFIX
 else
   echo '$CONDA_PREFIX is not set - aborting' >&2
   exit 1
@@ -33,4 +33,4 @@ export USER_BOOST_INCLUDE="-I $BASE_BOOST/include/boost -I $BASE_BOOST/include"
 export USER_BOOST_LIBRARY="-L $BASE_BOOST/lib"
 
 # build the C++ binaries and python package
-pip install -e vowpal_wabbit/python/
+pip install -e `dirname $0`/../
