@@ -52,6 +52,8 @@ void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false
 bool substring_equal(const substring& a, const substring& b);
 bool substring_equal(const substring& ss, const char* str);
 
+size_t substring_len(substring& s);
+
 inline char* safe_index(char* start, char v, char* max)
 {
   while (start != max && *start != v) start++;

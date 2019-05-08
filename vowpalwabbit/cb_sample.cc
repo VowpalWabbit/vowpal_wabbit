@@ -22,10 +22,12 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
   uint64_t seed = data.random_seed;
   if (examples[0]->tag.size() > 0)
   {
-    if (strncmp(examples[0]->tag.begin(), "seed=", 5) == 0)
+    const std::string SEED_IDENTIFIER = "seed=";
+    if (strncmp(examples[0]->tag.begin(), SEED_IDENTIFIER.c_str(), SEED_IDENTIFIER.size()) == 0 &&
+        examples[0]->tag.size() > SEED_IDENTIFIER.size())
     {
       substring tag_seed{examples[0]->tag.begin() + 5, examples[0]->tag.begin() + examples[0]->tag.size()};
-      seed = static_cast<uint64_t>(int_of_substring(tag_seed));
+      seed = uniform_hash(tag_seed.begin, substring_len(tag_seed), 0);
     }
   }
 
