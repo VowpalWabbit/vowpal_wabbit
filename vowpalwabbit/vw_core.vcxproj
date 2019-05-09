@@ -211,6 +211,7 @@
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
     <ClInclude Include="classweight.h" />
+    <ClInclude Include="shared_feature_merger.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
@@ -301,6 +302,7 @@
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="classweight.cc" />
+    <ClInclude Include="shared_feature_merger.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

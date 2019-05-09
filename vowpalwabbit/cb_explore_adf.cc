@@ -565,7 +565,7 @@ void finish(cb_explore_adf& data)
   for (size_t i = 0; i < data.prepped_cs_labels.size(); i++) data.prepped_cs_labels[i].costs.delete_v();
   data.prepped_cs_labels.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();
-  data.gen_cs.mtr_ec_seq.~vector();
+  data.gen_cs.mtr_ec_seq.~multi_ex();
 }
 
 // Semantics: Currently we compute the IPS loss no matter what flags

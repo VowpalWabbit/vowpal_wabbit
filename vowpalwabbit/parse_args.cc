@@ -74,6 +74,7 @@ license as described in the file LICENSE.
 #include "baseline.h"
 #include "classweight.h"
 #include "warm_cb.h"
+#include "shared_feature_merger.h"
 // #include "cntk.h"
 
 #include "options.h"
@@ -1278,6 +1279,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(explore_eval_setup);
   all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push(Search::setup);
+  all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(audit_regressor_setup);
 
   all.l = setup_base(options, all);
