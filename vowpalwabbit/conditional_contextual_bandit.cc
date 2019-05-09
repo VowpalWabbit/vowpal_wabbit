@@ -299,7 +299,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       // TODO be more efficient here
       std::copy(data.original_interactions->begin(), data.original_interactions->end(),
           std::back_inserter(generated_interactions));
-      // FIXME currently all action namespaces are used adding redundant interactions.
+      // TODO currently all action namespaces are used adding redundant interactions.
       calculate_and_insert_interactions(data.shared, decision, data.actions, generated_interactions);
       size_t removed_cnt;
       size_t sorted_cnt;
