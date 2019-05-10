@@ -26,6 +26,7 @@ struct ccb
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list/*, include_list*/;
   CCB::decision_scores_t decision_scores;
+  std::vector<std::string> generated_interactions;
   std::vector<std::string>* original_interactions;
 };
 
@@ -280,8 +281,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   sanity_checks<is_learn>(data);
   create_cb_labels(data);
 
-  std::vector<std::string> generated_interactions;
-
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
@@ -295,16 +294,16 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // If the decision example only has the constant namespace, there will be no extra crossing and so skip that logic.
     if (!(decision->indices.size() == 1 && decision->indices[0] == constant_namespace))
     {
-      generated_interactions.clear();
+      data.generated_interactions.clear();
       // TODO be more efficient here
       std::copy(data.original_interactions->begin(), data.original_interactions->end(),
-          std::back_inserter(generated_interactions));
+          std::back_inserter(data.generated_interactions));
       // TODO currently all action namespaces are used adding redundant interactions.
-      calculate_and_insert_interactions(data.shared, decision, data.actions, generated_interactions);
+      calculate_and_insert_interactions(data.shared, decision, data.actions, data.generated_interactions);
       size_t removed_cnt;
       size_t sorted_cnt;
-      INTERACTIONS::sort_and_filter_duplicate_interactions(generated_interactions, true, removed_cnt, sorted_cnt);
-      data.shared->override_interactions = &generated_interactions;
+      INTERACTIONS::sort_and_filter_duplicate_interactions(data.generated_interactions, true, removed_cnt, sorted_cnt);
+      data.shared->interactions = &data.generated_interactions;
     }
 
     if (has_action(cb_ex))
@@ -320,7 +319,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       data.decision_scores.push_back(empty_action_scores);
     }
 
-    data.shared->override_interactions = nullptr;
+    data.shared->interactions = data.original_interactions;
     remove_decision_features(data.shared, decision);
   }
 
@@ -487,6 +486,7 @@ void finish(ccb& data)
   // data.include_list.~unordered_set<uint32_t>();
   data.cb_label.~cb_class();
   data.default_cb_label.~cb_class();
+  data.generated_interactions.~vector<std::string>();
 }
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)

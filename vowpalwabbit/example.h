@@ -91,9 +91,6 @@ struct example : public example_predict  // core example datatype.
   bool end_pass;  // special example indicating end of pass.
   bool sorted;    // Are the features sorted or not?
   bool in_use;    // in use or not (for the parser)
-
-  // Interactions can be overriden on a per example basis by setting this pointer.
-  std::vector<std::string>* override_interactions;
 };
 
 struct vw;
