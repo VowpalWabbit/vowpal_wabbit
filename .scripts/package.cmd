@@ -9,9 +9,15 @@ CALL %~dp0init.cmd
 
 PUSHD %~dp0..
 
-REM TODO: these should be read from the version props file, or similar
-SET Version=8.6.1
-SET Tag=-INTERNALONLY
+REM TODO: these should be read from the version props file, or similar, with the ability to overload via env
+REM Tracked by https://github.com/VowpalWabbit/vowpal_wabbit/issues/1714
+IF NOT DEFINED Version (
+    SET Version=8.6.1
+)
+
+IF NOT DEFINED Tag (
+    SET Tag=-INTERNALONLY
+)
 
 SET RootRelativeOutputDirX64=%vwRoot%\vowpalwabbit\out\target\
 SET RootRelativeOutputDirAnyCPU=%vwRoot%\vowpalwabbit\out\target\
