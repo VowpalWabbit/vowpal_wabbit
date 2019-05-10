@@ -10,6 +10,7 @@ CALL %~dp0init.cmd
 PUSHD %~dp0..
 
 REM TODO: these should be read from the version props file, or similar, with the ability to overload via env
+REM Tracked by https://github.com/VowpalWabbit/vowpal_wabbit/issues/1714
 IF NOT DEFINED Version (
     SET Version=8.6.1
 )
