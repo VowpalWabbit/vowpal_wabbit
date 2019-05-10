@@ -45,6 +45,8 @@ struct cb_to_cs_adf
 
 CB::cb_class* get_observed_cost(CB::label& ld);
 
+float safe_probability(float prob);
+
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
 
 template <bool is_learn>

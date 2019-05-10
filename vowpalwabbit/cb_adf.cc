@@ -88,17 +88,6 @@ void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
-float safe_probability(float prob)
-{
-  if (prob <= 0.)
-  {
-    std::cout << "Probability " << prob << " is not possible, replacing with 1e-6.  Fix your dataset. " << std::endl;
-    return 1e-6f;
-  }
-  else
-    return prob;
-}
-
 void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   gen_cs_test_example(examples, mydata.cs_labels);  // create test labels.
   call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
