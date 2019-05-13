@@ -302,7 +302,7 @@
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="classweight.cc" />
-    <ClInclude Include="shared_feature_merger.cc" />
+    <ClCompile Include="shared_feature_merger.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

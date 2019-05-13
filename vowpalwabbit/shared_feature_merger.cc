@@ -1,3 +1,4 @@
+#include "shared_feature_merger.h"
 #include "cb.h"
 #include "example.h"
 #include "label_dictionary.h"
@@ -55,7 +56,7 @@ void predict_or_learn(sfm_data& data, LEARNER::multi_learner& base, multi_ex& ec
   }
 }
 
-LEARNER::base_learner* shared_feature_merger_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)
 {
   if (!options.was_supplied("csoaa_ldf"))
   {
