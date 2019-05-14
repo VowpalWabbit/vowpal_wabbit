@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
       right_quadratic << right.space_names[i].get()->second;
       for (size_t k = 1; k <= rank; k++)
-        right_quadratic << '\t' << weights[(right.indicies[i] + k)];
+        right_quadratic << '\t' << weights[(right.indicies[i] + k + rank)];
     }
     right_linear << endl;
     right_quadratic << endl;
