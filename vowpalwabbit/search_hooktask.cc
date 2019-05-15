@@ -14,7 +14,7 @@ namespace HookTask
 {
 Search::search_task task = {"hook", run, initialize, finish, run_setup, run_takedown};
 
-void initialize(Search::search& sch, size_t& num_actions, options_i&)
+void initialize(Search::search& sch, size_t& num_actions, options_i& arg)
 {
   task_data* td = new task_data;
   td->run_f = nullptr;
@@ -26,6 +26,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i&)
   td->delete_run_object = nullptr;
   td->delete_extra_data = nullptr;
   td->num_actions = num_actions;
+  td->arg = &arg;
   sch.set_task_data<task_data>(td);
 }
 

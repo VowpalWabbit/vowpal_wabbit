@@ -8,7 +8,6 @@ target_include_directories(allreduce PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Winsock32 should be available on Windows
 if(WIN32)
   target_link_libraries(allreduce PUBLIC wsock32 ws2_32)
-  target_compile_options(allreduce PUBLIC ${windows_flags})
 else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
@@ -32,7 +31,7 @@ set(vw_all_headers
   binary.h nn.h boosting.h ftrl.h no_label.h spanning_tree.h bs.h gd.h noop.h stable_unique.h
   cache.h gd_mf.h oaa.h stagewise_poly.h cb_adf.h gd_predict.h OjaNewton.h svrg.h cb_algs.h
   gen_cs_example.h parse_args.h topk.h cb_explore_adf.h parse_dispatch_loop.h unique_sort.h
-  interact.h interactions.h parse_example_json.h cbify.h interactions_predict.h vw_allreduce.h
+  interact.h interactions.h parse_example_json.h cbify.h warm_cb.h interactions_predict.h vw_allreduce.h
   classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
   config.h.in primitives.h lda_core.h print.h vw_versions.h
 )
@@ -46,7 +45,7 @@ set(vw_all_sources
   search_multiclasstask.cc search_entityrelationtask.cc search_graph.cc parse_example.cc scorer.cc
   network.cc parse_args.cc accumulate.cc gd.cc learner.cc mwt.cc lda_core.cc gd_mf.cc mf.cc bfgs.cc
   noop.cc print.cc example.cc parser.cc loss_functions.cc sender.cc nn.cc confidence.cc bs.cc
-  cbify.cc explore_eval.cc topk.cc stagewise_poly.cc log_multi.cc recall_tree.cc active.cc
+  cbify.cc warm_cb.cc explore_eval.cc topk.cc stagewise_poly.cc log_multi.cc recall_tree.cc active.cc
   active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
   action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc
@@ -81,8 +80,6 @@ endif()
 if(WIN32)
   target_compile_definitions(vw PUBLIC __SSE2__)
   target_compile_options(vw PUBLIC /MP)
-
-  target_compile_options(vw PUBLIC ${windows_flags})
 else()
   target_compile_options(vw PUBLIC ${linux_flags})
 endif()
@@ -139,7 +136,7 @@ endif()
 
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
-  add_library(vw_c_wrapper vwdll.cpp)
+  add_library(vw_c_wrapper SHARED vwdll.cpp)
   target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
   target_link_libraries(vw_c_wrapper PUBLIC vw)
 

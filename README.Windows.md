@@ -39,3 +39,27 @@ cd .scripts
 restore
 build
 ```
+
+## Experimental CMake build
+## Additional Prerequisites
+### [vcpkg](https://github.com/Microsoft/vcpkg)
+```
+vcpkg install cpprestsdk:x64-windows
+vcpkg install zlib:x64-windows
+vcpkg install boost-align:x64-windows
+vcpkg install boost-system:x64-windows
+vcpkg install boost-program-options:x64-windows
+vcpkg install boost-test:x64-windows
+vcpkg install boost-thread:x64-windows
+vcpkg install boost-uuid:x64-windows
+```
+
+## Compiling
+
+*This assumes running inside of "Developer Command Prompt" for your instance of Visual Studio*
+
+```
+mkdir build
+cd build
+..\build_windows-experimental.bat [vcpkg_root_directory]
+```

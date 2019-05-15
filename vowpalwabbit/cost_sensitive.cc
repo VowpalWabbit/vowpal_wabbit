@@ -273,12 +273,12 @@ void output_example(vw& all, example& ec)
     if (chosen_loss == FLT_MAX)
       cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
 
-    loss = chosen_loss - min;
+    loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(&ld), loss, ec.weight, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)
