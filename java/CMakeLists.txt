@@ -48,7 +48,7 @@ if(JNI_FOUND)
   # Ensure target directory exists
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/)
   add_custom_command(TARGET vw_jni POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/
   )
 
   # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
