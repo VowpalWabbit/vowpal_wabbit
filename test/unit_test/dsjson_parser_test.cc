@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
           "d_": "2"
         }
       ],
-      "_df":[
+      "_slots":[
           {
               "_id": "00eef1eb-2205-4f47",
               "_inc": [1,2],
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
           }
       ]
   },
-  "_decisions":[{
+  "_outcomes":[{
       "_label_cost": 2,
       "_o": [],
       "_a": 1,
@@ -163,8 +163,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
   BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
   BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
   BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::decision);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::decision);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
 
   auto label1 = examples[3]->l.conditional_contextual_bandit;
   BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
   BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
   BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
   BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::decision);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
 
   auto label2 = examples[4]->l.conditional_contextual_bandit;
   BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);

@@ -22,7 +22,7 @@ license as described in the file LICENSE.
 #include <io.h>
 typedef int socklen_t;
 
-int daemon(int a, int b)
+int daemon(int /*a*/, int /*b*/)
 {
   exit(0);
   return 0;
@@ -991,7 +991,7 @@ example* example_initializer::operator()(example* ex)
   return ex;
 }
 
-void adjust_used_index(vw& all) { /* no longer used */ }
+void adjust_used_index(vw& /*all*/) { /* no longer used */ }
 
 namespace VW
 {

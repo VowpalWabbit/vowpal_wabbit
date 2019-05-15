@@ -37,7 +37,7 @@ namespace CCB {
     unset = 0,
     shared = 1,
     action = 2,
-    decision = 3
+    slot = 3
   };
 
   struct label {

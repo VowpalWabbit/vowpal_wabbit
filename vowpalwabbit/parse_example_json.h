@@ -511,7 +511,7 @@ struct MultiState : BaseState<audit>
 template <bool audit>
 struct DfState : BaseState<audit>
 {
-  DfState() : BaseState<audit>("Df") {}
+  DfState() : BaseState<audit>("Slots") {}
   BaseState<audit>* saved;
   BaseState<audit>* saved_root_state;
 
@@ -530,7 +530,7 @@ struct DfState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
-    ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::decision;
+    ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
 
     ctx.examples->push_back(ctx.ex);
 
@@ -751,7 +751,7 @@ class DefaultState : public BaseState<audit>
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi"))
         return &ctx.multi_state;
 
-      if (ctx.key_length == 3 && !strcmp(ctx.key, "_df"))
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots"))
         return &ctx.df_state;
 
       if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag"))
@@ -853,18 +853,18 @@ class DefaultState : public BaseState<audit>
       // inject label
       ctx.label_object_state.EndObject(ctx, memberCount);
 
-      // If we are in CCB mode and there have been no decisions. Check label cost, prob and action were passed. In that
-      // case this is CB, so generate a single decision with this info.
+      // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
+      // case this is CB, so generate a single slot with this info.
       auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
       if (jsonp->mode == json_parser_mode::ccb)
       {
-        auto num_decisions = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::decision; });
-        if (num_decisions == 0 && ctx.label_object_state.found_cb)
+        auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
+            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+        if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
           ctx.all->p->lp.default_label(&ctx.ex->l);
-          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::decision;
+          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
           auto outcome = new CCB::conditional_contexual_bandit_outcome();
@@ -1031,9 +1031,9 @@ struct DecisionServiceInteraction
 };
 
 template <bool audit>
-class DecisionListState : public BaseState<audit>
+class CCBOutcomeList : public BaseState<audit>
 {
-  int decision_object_index = 0;
+  int slot_object_index = 0;
 
   std::vector<uint32_t> actions;
   std::vector<float> probs;
@@ -1042,24 +1042,24 @@ class DecisionListState : public BaseState<audit>
   BaseState<audit>* old_root;
 
  public:
-  DecisionListState() : BaseState<audit>("DecisionList") {}
+  CCBOutcomeList() : BaseState<audit>("CCBOutcomeList") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
-    decision_object_index = 0;
+    slot_object_index = 0;
 
-    // Find start index of decision objects by iterating until we find the first decision example.
+    // Find start index of slot objects by iterating until we find the first slot example.
     for (auto ex : *ctx.examples)
     {
-      if (ex->l.conditional_contextual_bandit.type != CCB::example_type::decision)
+      if (ex->l.conditional_contextual_bandit.type != CCB::example_type::slot)
       {
-        decision_object_index++;
+        slot_object_index++;
       }
     }
     old_root = ctx.root_state;
     ctx.root_state = this;
 
-    if (decision_object_index == 0)
+    if (slot_object_index == 0)
     {
       THROW("Badly formed ccb example. Shared example is required.")
     }
@@ -1070,11 +1070,11 @@ class DecisionListState : public BaseState<audit>
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
     // Set current example so that default state correctly sets the label.
-    ctx.ex = (*ctx.examples)[decision_object_index];
+    ctx.ex = (*ctx.examples)[slot_object_index];
     // The end object logic assumes shared example so we need to take one here.
-    ctx.label_index_state.index = decision_object_index - 1;
+    ctx.label_index_state.index = slot_object_index - 1;
 
-    decision_object_index++;
+    slot_object_index++;
 
     // Push a namespace so that default state can get back here when it reaches the end of the object.
     ctx.PushNamespace(" ", this);
@@ -1103,7 +1103,7 @@ class DecisionServiceState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType /* memberCount */) override
+  BaseState<audit>* EndObject(Context<audit>& /*ctx*/, rapidjson::SizeType /* memberCount */) override
   {
     // TODO: improve validation
     return this;
@@ -1161,9 +1161,9 @@ class DecisionServiceState : public BaseState<audit>
         ctx.bool_state.return_state = this;
         return &ctx.bool_state;
       }
-      else if (length == 10 && !strncmp(str, "_decisions", 10))
+      else if (length == 9 && !strncmp(str, "_outcomes", 9))
       {
-        return &ctx.decision_list_state;
+        return &ctx.ccb_outcome_list_state;
       }
     }
 
@@ -1219,7 +1219,7 @@ struct Context
   StringToStringState<audit> string_state;
   FloatToFloatState<audit> float_state;
   BoolToBoolState<audit> bool_state;
-  DecisionListState<audit> decision_list_state;
+  CCBOutcomeList<audit> ccb_outcome_list_state;
 
   BaseState<audit>* root_state;
 
