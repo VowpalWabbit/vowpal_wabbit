@@ -1,4 +1,5 @@
 add_subdirectory(unit_test)
+add_subdirectory(ccb_simulator)
 
 # Don't offer target on Windows
 if(NOT WIN32)
