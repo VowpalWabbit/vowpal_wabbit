@@ -30,11 +30,6 @@ enum class file_mode
 
 struct socket_adapter : public io_adapter
 {
-  socket_adapter(std::string host)
-  {
-    socket_fd = open_socket(host.c_str());
-  }
-
   socket_adapter(int fd) : socket_fd{fd}
   {}
 

@@ -57,6 +57,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
+#include "io_adapter.h"
 
 using namespace std;
 
@@ -151,12 +152,12 @@ void reset_source(vw& all, size_t numbits)
         input->close_file();
       else
       {
-        int fd = input->files.pop();
+        auto fd = input->files.pop();
         const auto& fps = all.final_prediction_sink;
 
         // If the current popped file is not in the list of final predictions sinks, close it.
         if(std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
-          io_buf::close_file_or_socket(fd);
+          delete fd;
       }
     input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
                                                                                       // open_file
@@ -173,7 +174,7 @@ void reset_source(vw& all, size_t numbits)
       }
 
       // close socket, erase final prediction sink and socket
-      io_buf::close_file_or_socket(all.p->input->files[0]);
+      delete all.p->input->files[0];
       all.final_prediction_sink.clear();
       all.p->input->files.clear();
 
@@ -186,7 +187,7 @@ void reset_source(vw& all, size_t numbits)
       // note: breaking cluster parallel online learning by dropping support for id
 
       all.final_prediction_sink.push_back(new socket_adapter(f));
-      all.p->input->files.push_back(f);
+      all.p->input->files.push_back(new socket_adapter(f));
 
       if (isbinary(*(all.p->input)))
       {
@@ -475,24 +476,22 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    all.p->max_fd = 0;
     if (!all.quiet)
       all.trace_message << "calling accept" << endl;
-    int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
-    if (f < 0)
+    auto f_a = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
+    if (f_a < 0)
       THROWERRNO("accept");
 
-    all.p->label_sock = f;
+    io_adapter* f = new socket_adapter(f_a);
+
     all.print = print_result;
 
-    all.final_prediction_sink.push_back((size_t)f);
+    all.final_prediction_sink.push_back(f);
 
     all.p->input->files.push_back(f);
-    all.p->max_fd = max(f, all.p->max_fd);
     if (!all.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
-    all.p->max_fd++;
     if (all.active)
       all.p->reader = read_features_string;
     else

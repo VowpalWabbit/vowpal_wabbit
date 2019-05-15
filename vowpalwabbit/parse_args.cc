@@ -164,12 +164,14 @@ void parse_dictionary_argument(vw& all, string str)
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
+  io_buf* io = new io_buf;
   io_adapter* f_adapter = is_gzip
-    ? new gzip_file_adapter(fname.c_str(), file_mode::read)
-    : new file_adapter(fname.c_str());
+    ? static_cast<io_adapter*>(new gzip_file_adapter(fname.c_str(), file_mode::read))
+    : static_cast<io_adapter*>(new file_adapter(fname.c_str()));
 
   uint64_t fd_hash = hash_file_contents(io, f_adapter);
   delete f_adapter;
+  delete io;
 
   if (!all.quiet)
     all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec
@@ -185,13 +187,14 @@ void parse_dictionary_argument(vw& all, string str)
       return;
     }
 
-  fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0)
-  {
-    delete io;
-    THROW("error: cannot re-read dictionary from file '" << fname << "'"
-                                                         << ", opening failed");
-  }
+  // fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
+  auto fd = new file_adapter(fname.c_str());
+  // if (fd < 0)
+  // {
+  //   delete io;
+  //   THROW("error: cannot re-read dictionary from file '" << fname << "'"
+  //                                                        << ", opening failed");
+  // }
 
   feature_dict* map = &calloc_or_throw<feature_dict>();
   map->init(1023, nullptr, substring_equal);
@@ -207,7 +210,7 @@ void parse_dictionary_argument(vw& all, string str)
     pos = 0;
     do
     {
-      nread = io->read_file(fd, &rc, 1);
+      nread = fd->read(&rc, 1);
       if ((rc != EOF) && (nread > 0))
         buffer[pos++] = rc;
       if (pos >= size - 1)
@@ -270,7 +273,7 @@ void parse_dictionary_argument(vw& all, string str)
     }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  io->close_file();
+  delete fd;
   delete io;
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);

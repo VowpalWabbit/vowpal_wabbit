@@ -130,7 +130,7 @@ void bs_predict_vote(example& ec, vector<double>& pred_vec)
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
-void print_result(int f, float res, v_array<char> tag, float lb, float ub)
+void print_result(io_adapter* f, float res, v_array<char> tag, float lb, float ub)
 {
   if (f >= 0)
   {

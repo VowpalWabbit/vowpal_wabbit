@@ -27,7 +27,7 @@ struct topk
   vw* all;
 };
 
-void print_result(int f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples>& pr_queue)
+void print_result(io_adapter* f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples>& pr_queue)
 {
   if (f >= 0)
   {
@@ -47,11 +47,7 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-#ifdef _WIN32
-    ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
-#else
-    ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
-#endif
+    f->write(ss.str().c_str(), len)
     if (t != len)
       cerr << "write error: " << strerror(errno) << endl;
   }

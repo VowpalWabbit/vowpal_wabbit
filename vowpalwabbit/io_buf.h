@@ -52,6 +52,20 @@ license as described in the file LICENSE.
 ** This is done to avoid reallocating arrays as much as possible.
 */
 
+namespace VW {
+  namespace io {
+    std::unique_ptr<io_adapter> open_file(std::string& file_path)
+    {
+      return std::unique_ptr<io_adapter>(new file_adapter(file_path));
+    }
+
+    std::unique_ptr<io_adapter> open_stdio()
+    {
+      return std::unique_ptr<io_adapter>(new stdio_adapter());
+    }
+  }
+}
+
 class io_buf
 {
   // used to check-sum i/o files for corruption detection
@@ -101,7 +115,7 @@ class io_buf
     return _hash;
   }
 
-  virtual int open_file(const char* name, bool stdin_off, int flag = READ)
+   virtual int open_file(const char* name, bool stdin_off, int flag = READ)
   {
     // TODO throw on fail or catch and return
     int ret = -1;
@@ -148,7 +162,7 @@ class io_buf
 
   virtual size_t num_files() { return files.size(); }
 
-  virtual ssize_t read_file(io_adapter* f, void* buf, size_t nbytes) { return f->read(buf, nbytes); }
+  virtual ssize_t read_file(io_adapter* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
 
   ssize_t fill(io_adapter* f)
   {  // if the loaded values have reached the allocated space

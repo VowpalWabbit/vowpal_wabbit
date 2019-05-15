@@ -23,60 +23,23 @@ struct global_prediction
   float weight;
 };
 
-size_t really_read(int sock, void* in, size_t count)
-{
-  char* buf = (char*)in;
-  size_t done = 0;
-  int r = 0;
-  while (done < count)
-  {
-    if ((r =
-#ifdef _WIN32
-                recv(sock, buf, (unsigned int)(count - done), 0)
-#else
-                read(sock, buf, (unsigned int)(count - done))
-#endif
-                ) == 0)
-      return 0;
-    else if (r < 0)
-    {
-      THROWERRNO("read(" << sock << "," << count << "-" << done << ")");
-    }
-    else
-    {
-      done += r;
-      buf += r;
-    }
-  }
-  return done;
-}
-
-void get_prediction(int sock, float& res, float& weight)
+void get_prediction(io_adapter* sock, float& res, float& weight)
 {
   global_prediction p;
-  really_read(sock, &p, sizeof(p));
+  sock->read((char*)&p, sizeof(p));
   res = p.p;
   weight = p.weight;
 }
 
-void send_prediction(int sock, global_prediction p)
+void binary_print_result(io_adapter* f, float res, float weight, v_array<char>)
 {
-  if (
-#ifdef _WIN32
-      send(sock, reinterpret_cast<const char*>(&p), sizeof(p), 0)
-#else
-      write(sock, &p, sizeof(p))
-#endif
-      < (int)sizeof(p))
-    THROWERRNO("send_prediction write(" << sock << ")");
-}
-
-void binary_print_result(int f, float res, float weight, v_array<char>)
-{
-  if (f >= 0)
+  if (f != nullptr)
   {
     global_prediction ps = {res, weight};
-    send_prediction(f, ps);
+    if(f->write(reinterpret_cast<const char*>(&ps), sizeof(ps)) < (int)sizeof(ps))
+    {
+      THROWERRNO("binary_print_result");
+    }
   }
 }
 
