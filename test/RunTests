@@ -1226,7 +1226,7 @@ echo "" | {VW}
 
 # Test 84: check cb_adf
 {VW} --cb_adf -d train-sets/cb_test.ldf --noconstant
-    train-sets/ref/cb_adf.stderr
+    train-sets/ref/cb_adf_mtr.stderr
 
 # Test 85: check multilabel_oaa
 {VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel.predict
@@ -1577,8 +1577,9 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/157.stderr
 
 # Test 158: test decision service json parsing
-{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT
-    train-sets/ref/decisionservice.stderr
+{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict
+    train-sets/ref/cbe_adf_dsjson.stderr
+    pred-sets/ref/cbe_adf_dsjson.predict
 
 # Test 159: test --bootstrap & --binary interaction
 {VW} -d train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
@@ -1696,3 +1697,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2
     train-sets/ref/holdout_after_2passes.stderr
 
+# Test 188 test cb_adf with softmax
+{VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_adf_sm.stderr
+    pred-sets/ref/cb_adf_sm.predict
