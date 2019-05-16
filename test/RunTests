@@ -1697,11 +1697,11 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2
     train-sets/ref/holdout_after_2passes.stderr
 
-# Test 188 test cb_adf with softmax
+# Test 188: one-against-all with subsampling
+{VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
+    train-sets/ref/oaa_subsample.stderr
+
+# Test 189 test cb_adf with softmax
 {VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm
     train-sets/ref/cb_adf_sm.stderr
     pred-sets/ref/cb_adf_sm.predict
-
-# Test 189: one-against-all with subsampling
-{VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
-    train-sets/ref/oaa_subsample.stderr
