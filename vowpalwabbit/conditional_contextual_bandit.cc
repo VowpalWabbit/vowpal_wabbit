@@ -24,10 +24,11 @@ struct ccb
   uint32_t chosen_action_index;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
-  std::vector<bool> exclude_list/*, include_list*/;
+  std::vector<bool> exclude_list /*, include_list*/;
   CCB::decision_scores_t decision_scores;
   std::vector<std::string> generated_interactions;
   std::vector<std::string>* original_interactions;
+  std::vector<CCB::label> stored_labels;
 };
 
 namespace CCB
@@ -207,7 +208,7 @@ void calculate_and_insert_interactions(example* shared, example* slot, std::vect
 
     for (auto action : actions)
     {
-      for(auto action_index : action->indices)
+      for (auto action_index : action->indices)
       {
         for (auto slot_index : slot->indices)
         {
@@ -279,6 +280,16 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   clear_all(data);
   split_multi_example(examples, data);  // split shared, actions and slots
   sanity_checks<is_learn>(data);
+
+  // Stash the CCB labels before rewriting them.
+  data.stored_labels.clear();
+  for (auto ex : examples)
+  {
+    data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type,
+        ex->l.conditional_contextual_bandit.outcome, ex->l.conditional_contextual_bandit.explicit_included_actions});
+  }
+
+  // This will overwrite the labels with CB.
   create_cb_labels(data);
 
   // Reset exclusion list for this example.
@@ -324,6 +335,13 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   }
 
   delete_cb_labels(data);
+
+  // Restore ccb labels to the example objects.
+  for (size_t i = 0; i < examples.size(); i++)
+  {
+    examples[i]->l.conditional_contextual_bandit = {
+        data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions};
+  }
 
   // Save the predictions
   examples[0]->pred.decision_scores = data.decision_scores;
@@ -474,6 +492,19 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all);
   }
+
+  //for (auto a_s : ec_seq[0]->pred.decision_scores)
+  //{
+  //  a_s.delete_v();
+  //}
+  //ec_seq[0]->pred.decision_scores.clear();
+
+  // Delete all of the labels originally allocated by the parser.
+  for (auto ex : ec_seq)
+  {
+    all.p->lp.delete_label(&ex->l);
+  }
+
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
