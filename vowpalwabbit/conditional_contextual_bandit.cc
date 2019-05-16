@@ -25,7 +25,6 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list /*, include_list*/;
-  CCB::decision_scores_t decision_scores;
   std::vector<std::string> generated_interactions;
   std::vector<std::string>* original_interactions;
   std::vector<CCB::label> stored_labels;
@@ -44,7 +43,6 @@ void clear_all(ccb& data)
   data.chosen_action_index = 0;
   // data.exclude_list.clear();
   // data.include_list.clear();
-  data.decision_scores.clear();
 }
 
 // split the slots, the actions and the shared example from the multiline example
@@ -114,12 +112,12 @@ void attach_label_to_example(example* example, conditional_contexual_bandit_outc
 }
 
 template <bool is_learn>
-void save_action_scores(ccb& data)
+void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   // save a copy
   auto copy = v_init<ACTION_SCORE::action_score>();
   copy_array(copy, data.shared->pred.a_s);
-  data.decision_scores.push_back(copy);
+  decision_scores.push_back(copy);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : copy) action_score.action = data.origin_index[action_score.action];
@@ -133,8 +131,8 @@ void save_action_scores(ccb& data)
 
 void clear_pred_and_label(ccb& data)
 {
-  data.shared->pred.a_s.clear();
-  data.actions[data.chosen_action_index]->l.cb.costs.clear();
+  data.shared->pred.a_s.delete_v();
+  data.actions[data.chosen_action_index]->l.cb.costs.delete_v();
 }
 
 // true if there exists at least 1 action in the cb multi-example
@@ -295,6 +293,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
+    auto decision_scores = v_init<ACTION_SCORE::action_scores>();
+
   // for each slot, re-build the cb example and call cb_explore_adf
   for (example* slot : data.slots)
   {
@@ -320,14 +320,14 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     if (has_action(cb_ex))
     {  // the cb example contains at least 1 action
       multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
-      save_action_scores<is_learn>(data);
-      inject_history_features(data.shared, data.actions[data.chosen_action_index]);
+      save_action_scores<is_learn>(data, decision_scores);
+      //inject_history_features(data.shared, data.actions[data.chosen_action_index]);
       clear_pred_and_label(data);
     }
     else
     {  // the cb example contains no action => cannot decide
       auto empty_action_scores = v_init<ACTION_SCORE::action_score>();
-      data.decision_scores.push_back(empty_action_scores);
+      decision_scores.push_back(empty_action_scores);
     }
 
     data.shared->interactions = data.original_interactions;
@@ -344,7 +344,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   }
 
   // Save the predictions
-  examples[0]->pred.decision_scores = data.decision_scores;
+  examples[0]->pred.decision_scores = decision_scores;
 }
 
 void print_decision_scores(int f, decision_scores_t& decision_scores)
@@ -493,11 +493,11 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all);
   }
 
-  //for (auto a_s : ec_seq[0]->pred.decision_scores)
-  //{
-  //  a_s.delete_v();
-  //}
-  //ec_seq[0]->pred.decision_scores.clear();
+  for (auto a_s : ec_seq[0]->pred.decision_scores)
+  {
+    a_s.delete_v();
+  }
+  ec_seq[0]->pred.decision_scores.delete_v();
 
   // Delete all of the labels originally allocated by the parser.
   for (auto ex : ec_seq)
@@ -518,6 +518,7 @@ void finish(ccb& data)
   data.cb_label.~cb_class();
   data.default_cb_label.~cb_class();
   data.generated_interactions.~vector<std::string>();
+  data.stored_labels.~vector<CCB::label>();
 }
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
@@ -550,7 +551,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   all.label_type = label_type::ccb;
 
   // Extract from lower level reductions
-  data->decision_scores = v_init<ACTION_SCORE::action_scores>();
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
   data->original_interactions = &all.interactions;
