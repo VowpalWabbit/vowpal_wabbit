@@ -20,7 +20,7 @@ using namespace VW::config;
 struct ccb
 {
   example* shared;
-  std::vector<example*> actions, decisions;
+  std::vector<example*> actions, slots;
   uint32_t chosen_action_index;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
@@ -39,14 +39,14 @@ void clear_all(ccb& data)
 {
   data.shared = nullptr;
   data.actions.clear();
-  data.decisions.clear();
+  data.slots.clear();
   data.chosen_action_index = 0;
   // data.exclude_list.clear();
   // data.include_list.clear();
   data.decision_scores.clear();
 }
 
-// split the decisions, the actions and the shared example from the multiline example
+// split the slots, the actions and the shared example from the multiline example
 void split_multi_example(const multi_ex& examples, ccb& data)
 {
   for (auto ex : examples)
@@ -59,8 +59,8 @@ void split_multi_example(const multi_ex& examples, ccb& data)
       case example_type::action:
         data.actions.push_back(ex);
         break;
-      case example_type::decision:
-        data.decisions.push_back(ex);
+      case example_type::slot:
+        data.slots.push_back(ex);
         break;
       default:
         THROW("ccb_adf_explore: badly formatted example - invalid example type");
@@ -71,16 +71,16 @@ void split_multi_example(const multi_ex& examples, ccb& data)
 template <bool is_learn>
 void sanity_checks(ccb& data)
 {
-  if (data.decisions.size() > data.actions.size())
+  if (data.slots.size() > data.actions.size())
     THROW("ccb_adf_explore: badly formatted example - number of actions "
-        << data.actions.size() << " must be greater than the number of decisions " << data.decisions.size());
+        << data.actions.size() << " must be greater than the number of slots " << data.slots.size());
 
   if (is_learn)
   {
-    for (auto decision : data.decisions)
+    for (auto slot : data.slots)
     {
-      if (decision->l.conditional_contextual_bandit.outcome != nullptr &&
-          decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
+          slot->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
         THROW("ccb_adf_explore: badly formatted example - missing label probability");
     }
   }
@@ -123,7 +123,7 @@ void save_action_scores(ccb& data)
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : copy) action_score.action = data.origin_index[action_score.action];
 
-  // exclude the chosen action from next decisions
+  // exclude the chosen action from next slots
   if (!is_learn)
     data.exclude_list[copy[0].action] = true;
   else
@@ -141,24 +141,24 @@ bool has_action(multi_ex& cb_ex) { return cb_ex.size() > 1; }
 
 // This function intentionally does not handle increasing the num_features of the example because
 // the output_example function has special logic to ensure the number of feaures is correctly calculated.
-// Copy anything in default namespace for decision to ccb_decision_namespace in shared
-// Copy other decision namespaces to shared
-void inject_decision_features(example* shared, example* decision)
+// Copy anything in default namespace for slot to ccb_slot_namespace in shared
+// Copy other slot namespaces to shared
+void inject_slot_features(example* shared, example* slot)
 {
-  for (auto index : decision->indices)
+  for (auto index : slot->indices)
   {
     // constant namespace should be ignored, as it already exists and we don't want to double it up.
     if (index == constant_namespace)
     {
       continue;
     }
-    else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
+    else if (index == default_namespace)  // slot default namespace has a special namespace in shared
     {
-      LabelDict::add_example_namespace(*shared, ccb_decision_namespace, decision->feature_space[32]);
+      LabelDict::add_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[32]);
     }
     else
     {
-      LabelDict::add_example_namespace(*shared, index, decision->feature_space[index]);
+      LabelDict::add_example_namespace(*shared, index, slot->feature_space[index]);
     }
   }
 }
@@ -172,30 +172,30 @@ void inject_history_features(example* shared, example* action)
   }
 }
 
-void remove_decision_features(example* shared, example* decision)
+void remove_slot_features(example* shared, example* slot)
 {
-  for (auto index : decision->indices)
+  for (auto index : slot->indices)
   {
     // constant namespace should be ignored, as it already exists and we don't want to double it up.
     if (index == constant_namespace)
     {
       continue;
     }
-    else if (index == default_namespace)  // Decision default namespace has a special namespace in shared
+    else if (index == default_namespace)  // slot default namespace has a special namespace in shared
     {
-      LabelDict::del_example_namespace(*shared, ccb_decision_namespace, decision->feature_space[32]);
+      LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[32]);
     }
     else
     {
-      LabelDict::del_example_namespace(*shared, index, decision->feature_space[index]);
+      LabelDict::del_example_namespace(*shared, index, slot->feature_space[index]);
     }
   }
 }
 
 // Generates all combinations of 4th order interactions between namespaces in [shared,history,slot,action]
-void calculate_and_insert_interactions(example* shared, example* decision, std::vector<example*> actions, std::vector<std::string>& vec)
+void calculate_and_insert_interactions(example* shared, example* slot, std::vector<example*> actions, std::vector<std::string>& vec)
 {
-  vec.reserve(shared->indices.size() * decision->indices.size() + vec.size());
+  vec.reserve(shared->indices.size() * slot->indices.size() + vec.size());
 
   for (auto shared_index : shared->indices)
   {
@@ -209,10 +209,10 @@ void calculate_and_insert_interactions(example* shared, example* decision, std::
     {
       for(auto action_index : action->indices)
       {
-        for (auto decision_index : decision->indices)
+        for (auto slot_index : slot->indices)
         {
-          char decision_ns_index = (decision_index == default_namespace) ? ccb_decision_namespace : decision_index;
-          vec.push_back({(char)shared_index, decision_ns_index, (char)ccb_history_namespace, (char)action_index});
+          char slot_ns_index = (slot_index == default_namespace) ? ccb_slot_namespace : slot_index;
+          vec.push_back({(char)shared_index, slot_ns_index, (char)ccb_history_namespace, (char)action_index});
         }
       }
     }
@@ -221,19 +221,19 @@ void calculate_and_insert_interactions(example* shared, example* decision, std::
 
 // build a cb example from the ccb example
 template <bool is_learn>
-void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
+void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
 {
-  bool decision_has_label = decision->l.conditional_contextual_bandit.outcome != nullptr;
+  bool slot_has_label = slot->l.conditional_contextual_bandit.outcome != nullptr;
 
-  // Merge the decision features with the shared example and set it in the cb multi-example
+  // Merge the slot features with the shared example and set it in the cb multi-example
   // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
-  inject_decision_features(data.shared, decision);
+  inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
   // For V0, include list is not supported
   // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
   // data.include_list.clear();
-  // for (uint32_t included_action_id : decision->l.conditional_contextual_bandit.explicit_included_actions)
+  // for (uint32_t included_action_id : slot->l.conditional_contextual_bandit.explicit_included_actions)
   //   data.include_list.insert(included_action_id);
 
   // set the available actions in the cb multi-example
@@ -247,7 +247,7 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
     // if (!data.include_list.empty() && data.include_list.find((uint32_t)i) == data.include_list.end())
     //   continue;
 
-    // filter actions chosen by previous decisions
+    // filter actions chosen by previous slots
     if (data.exclude_list[i])
       continue;
 
@@ -258,12 +258,12 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
     data.origin_index[index++] = (uint32_t)i;
 
     // remember the index of the chosen action
-    if (is_learn && decision_has_label &&
-        i == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+    if (is_learn && slot_has_label &&
+        i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
     {
-      // This is used to exclude this action from further decisions and to remove the label after the call.
+      // This is used to exclude this action from further slots and to remove the label after the call.
       data.chosen_action_index = (uint32_t)i;
-      attach_label_to_example(data.actions[i], decision->l.conditional_contextual_bandit.outcome, data);
+      attach_label_to_example(data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
     }
   }
 
@@ -271,35 +271,35 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
   data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
 }
 
-// iterate over decisions contained in the multi-example, and for each decision, build a cb example and perform a
+// iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
 void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 {
   clear_all(data);
-  split_multi_example(examples, data);  // split shared, actions and decisions
+  split_multi_example(examples, data);  // split shared, actions and slots
   sanity_checks<is_learn>(data);
   create_cb_labels(data);
 
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
-  // for each decision, re-build the cb example and call cb_explore_adf
-  for (example* decision : data.decisions)
+  // for each slot, re-build the cb example and call cb_explore_adf
+  for (example* slot : data.slots)
   {
     multi_ex cb_ex;
-    build_cb_example<is_learn>(cb_ex, decision, data);
+    build_cb_example<is_learn>(cb_ex, slot, data);
 
-    // Namespace crossing for decision features.
-    // If the decision example only has the constant namespace, there will be no extra crossing and so skip that logic.
-    if (!(decision->indices.size() == 1 && decision->indices[0] == constant_namespace))
+    // Namespace crossing for slot features.
+    // If the slot example only has the constant namespace, there will be no extra crossing and so skip that logic.
+    if (!(slot->indices.size() == 1 && slot->indices[0] == constant_namespace))
     {
       data.generated_interactions.clear();
       // TODO be more efficient here
       std::copy(data.original_interactions->begin(), data.original_interactions->end(),
           std::back_inserter(data.generated_interactions));
       // TODO currently all action namespaces are used adding redundant interactions.
-      calculate_and_insert_interactions(data.shared, decision, data.actions, data.generated_interactions);
+      calculate_and_insert_interactions(data.shared, slot, data.actions, data.generated_interactions);
       size_t removed_cnt;
       size_t sorted_cnt;
       INTERACTIONS::sort_and_filter_duplicate_interactions(data.generated_interactions, true, removed_cnt, sorted_cnt);
@@ -320,7 +320,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     }
 
     data.shared->interactions = data.original_interactions;
-    remove_decision_features(data.shared, decision);
+    remove_slot_features(data.shared, slot);
   }
 
   delete_cb_labels(data);
@@ -334,10 +334,10 @@ void print_decision_scores(int f, decision_scores_t& decision_scores)
   if (f >= 0)
   {
     std::stringstream ss;
-    for (auto decision : decision_scores)
+    for (auto slot : decision_scores)
     {
       std::string delimiter = "";
-      for (auto action_score : decision)
+      for (auto action_score : slot)
       {
         ss << delimiter << action_score.action << ':' << action_score.score;
         delimiter = ",";
@@ -352,18 +352,18 @@ void print_decision_scores(int f, decision_scores_t& decision_scores)
   }
 }
 
-void print_update(vw& all, std::vector<example*>& decisions, decision_scores_t& decision_scores, size_t num_features)
+void print_update(vw& all, std::vector<example*>& slots, decision_scores_t& decision_scores, size_t num_features)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     std::string label_str = "";
     std::string delim = "";
     int counter = 0;
-    for (auto decision : decisions)
+    for (auto slot : slots)
     {
       counter++;
 
-      auto outcome = decision->l.conditional_contextual_bandit.outcome;
+      auto outcome = slot->l.conditional_contextual_bandit.outcome;
       if (outcome == nullptr)
       {
         label_str += delim;
@@ -380,7 +380,7 @@ void print_update(vw& all, std::vector<example*>& decisions, decision_scores_t& 
       delim = ",";
 
       // Stop after 2...
-      if (counter > 1 && decisions.size() > 2)
+      if (counter > 1 && slots.size() > 2)
       {
         label_str += delim;
         label_str += "...";
@@ -393,11 +393,11 @@ void print_update(vw& all, std::vector<example*>& decisions, decision_scores_t& 
     std::string pred_str = "";
     delim = "";
     counter = 0;
-    for (auto decision : decision_scores)
+    for (auto slot : decision_scores)
     {
       counter++;
       pred_str += delim;
-      pred_str += std::to_string(decision[0].action);
+      pred_str += std::to_string(slot[0].action);
       delim = ",";
 
       // Stop after 3...
@@ -421,28 +421,28 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   if (ec_seq.size() <= 0)
     return;
 
-  std::vector<example*> decisions;
+  std::vector<example*> slots;
   size_t num_features = 0;
   float loss = 0.;
 
-  // Should this be done for shared, action and decision?
+  // Should this be done for shared, action and slot?
   for (auto ec : ec_seq)
   {
     num_features += ec->num_features;
 
-    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::decision)
+    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot)
     {
-      decisions.push_back(ec);
+      slots.push_back(ec);
     }
   }
 
-  // What does it mean for not all of the decisions to be labeled? Does it become a non-labeled example at that point?
+  // What does it mean for not all of the slots to be labeled? Does it become a non-labeled example at that point?
   // Is it hold out?
   bool labeled_example = true;
   auto preds = ec_seq[0]->pred.decision_scores;
-  for (size_t i = 0; i < decisions.size(); i++)
+  for (size_t i = 0; i < slots.size(); i++)
   {
-    auto outcome = decisions[i]->l.conditional_contextual_bandit.outcome;
+    auto outcome = slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
       float l = CB_ALGS::get_cost_estimate(
@@ -464,7 +464,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   for (auto sink : all.final_prediction_sink)
     print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
 
-  CCB::print_update(all, decisions, preds, num_features);
+  CCB::print_update(all, slots, preds, num_features);
 }
 
 void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
@@ -480,7 +480,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
 void finish(ccb& data)
 {
   data.actions.~vector<example*>();
-  data.decisions.~vector<example*>();
+  data.slots.~vector<example*>();
   data.origin_index.~vector<uint32_t>();
   data.exclude_list.~vector<bool>();
   // data.include_list.~unordered_set<uint32_t>();
@@ -785,11 +785,11 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       THROW("action labels may not have a cost");
     ld->type = CCB::example_type::action;
   }
-  else if (substring_equal(type, "decision"))
+  else if (substring_equal(type, "slot"))
   {
     if (words.size() > 4)
-      THROW("ccb decision label can only have a type cost and exclude list");
-    ld->type = CCB::example_type::decision;
+      THROW("ccb slot label can only have a type cost and exclude list");
+    ld->type = CCB::example_type::slot;
 
     // Skip the first two words "ccb <type>"
     for (size_t i = 2; i < words.size(); i++)
@@ -799,7 +799,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       {
         if (ld->outcome != nullptr)
         {
-          THROW("There may be only 1 outcome associated with a decision.")
+          THROW("There may be only 1 outcome associated with a slot.")
         }
 
         ld->outcome = parse_outcome(words[i]);
