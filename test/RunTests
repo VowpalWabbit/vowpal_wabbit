@@ -1709,5 +1709,5 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 # Test 190: one-against-all with subsampling
 {VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
     train-sets/ref/oaa_subsample.stderr
-    
- 
+
+# Do not delete this line or the empty line above it
