@@ -1,11 +1,17 @@
 Vowpal Wabbit Python Wrapper
 ============================
 
+Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
+
+
+Code Documenation
+-----------------
+
+See documenation for the following modules in the package:
+
 .. toctree::
    vowpalwabbit.pyvw
    vowpalwabbit.sklearn
-
-Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
 
 Usage
 -----
