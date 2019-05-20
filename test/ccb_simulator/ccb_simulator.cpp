@@ -48,15 +48,46 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
   return ret_val;
 }
 
-void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std::tuple<int, int>>>>& clicks_impressions)
+void print_click_shows(size_t num_iter, std::vector<std::map<std::vector<size_t>, std::tuple<std::vector<size_t>, size_t>>>& clicks_impressions)
 {
   std::cout << "num iterations: " << num_iter << "\n";
-  std::cout << "user\tslot\taction\tclicks\tshown\tctr\n";
+  std::cout << "user\tactions\tclicks          shown\tctr\n";
   for (auto user_index = 0; user_index < clicks_impressions.size(); user_index++)
   {
     std::cout << "--\n";
-    auto& slots = clicks_impressions[user_index];
-    for (auto slot_index = 0; slot_index < slots.size(); slot_index++)
+    
+    for (auto& kv : clicks_impressions[user_index])
+    {
+      std::cout << user_index << "\t";
+
+      // actions
+      for (auto num : kv.first)
+      {
+        std::cout << num;
+      }
+      std::cout << "\t";
+
+      // clicks
+      std::stringstream ss;
+      for (auto num : std::get<0>(kv.second))
+      {
+        ss << num << ",";
+      }
+
+      std::cout << std::setw(16) << std::left << ss.str();
+
+      // shown
+      std::cout << std::get<1>(kv.second) << "\t";
+     
+      for (auto num : std::get<0>(kv.second))
+      {
+        std::cout <<std::setprecision(4) << (float)num / std::get<1>(kv.second) << ",";
+      }
+      std::cout << "\n";
+
+    }
+
+   /* for (auto slot_index = 0; slot_index < slots.size(); slot_index++)
     {
       auto& actions = slots[slot_index];
       for (auto action_index = 0; action_index < actions.size(); action_index++)
@@ -66,7 +97,7 @@ void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std:
                   << "\t" << std::get<1>(click_show) << "\t" << (float)std::get<0>(click_show) / std::get<1>(click_show)
                   << "\n";
       }
-    }
+    }*/
   }
   std::cout << std::endl;
 }
@@ -83,6 +114,52 @@ int main()
   std::vector<std::string> user_features = {"a", "b", "c"};
   std::vector<std::string> action_features = {"d", "e", "f", "g"};
   std::vector<std::string> slot_features = {"h", "slot_id"};
+
+  std::vector<std::map<std::vector<size_t>, std::tuple<std::vector<size_t>, size_t>>> clicks_impressions = {
+    {
+      {{0, 1}, {{0,0}, 0}},
+      {{0, 2}, {{0,0}, 0}},
+      {{0, 3}, {{0,0}, 0}},
+      {{1, 0}, {{0,0}, 0}},
+      {{1, 2}, {{0,0}, 0}},
+      {{1, 3}, {{0,0}, 0}},
+      {{2, 0}, {{0,0}, 0}},
+      {{2, 1}, {{0,0}, 0}},
+      {{2, 3}, {{0,0}, 0}},
+      {{3, 0}, {{0,0}, 0}},
+      {{3, 1}, {{0,0}, 0}},
+      {{3, 2}, {{0,0}, 0}}
+    },
+    {
+      {{0, 1}, {{0,0}, 0}},
+      {{0, 2}, {{0,0}, 0}},
+      {{0, 3}, {{0,0}, 0}},
+      {{1, 0}, {{0,0}, 0}},
+      {{1, 2}, {{0,0}, 0}},
+      {{1, 3}, {{0,0}, 0}},
+      {{2, 0}, {{0,0}, 0}},
+      {{2, 1}, {{0,0}, 0}},
+      {{2, 3}, {{0,0}, 0}},
+      {{3, 0}, {{0,0}, 0}},
+      {{3, 1}, {{0,0}, 0}},
+      {{3, 2}, {{0,0}, 0}}
+    },
+    {
+      {{0, 1}, {{0,0}, 0}},
+      {{0, 2}, {{0,0}, 0}},
+      {{0, 3}, {{0,0}, 0}},
+      {{1, 0}, {{0,0}, 0}},
+      {{1, 2}, {{0,0}, 0}},
+      {{1, 3}, {{0,0}, 0}},
+      {{2, 0}, {{0,0}, 0}},
+      {{2, 1}, {{0,0}, 0}},
+      {{2, 3}, {{0,0}, 0}},
+      {{3, 0}, {{0,0}, 0}},
+      {{3, 1}, {{0,0}, 0}},
+      {{3, 2}, {{0,0}, 0}}
+    }
+  };
+
 
   std::vector<std::map<std::vector<size_t>,std::vector<float>>> user_slot_action_probabilities =
   {
@@ -131,11 +208,11 @@ int main()
   };
 
   // click, show
-  std::vector<std::vector<std::vector<std::tuple<int, int>>>> clicks_impressions = {
+  /*std::vector<std::vector<std::vector<std::tuple<int, int>>>> clicks_impressions = {
       {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
       {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
       {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
-  };
+  };*/
 
   std::default_random_engine rd{0};
   std::mt19937 eng(rd());
@@ -171,10 +248,10 @@ int main()
       auto prob_chosen = slot[0].score;
       auto prob_to_click = user_slot_action_probabilities[chosen_user][actions_taken][slot_id];
 
-      std::get<1>(clicks_impressions[chosen_user][slot_id][action_id])++;
+      std::get<1>(clicks_impressions[chosen_user][actions_taken])++;
       if (click_distribution(eng) < prob_to_click)
       {
-        std::get<0>(clicks_impressions[chosen_user][slot_id][action_id])++;
+        std::get<0>(clicks_impressions[chosen_user][actions_taken])[slot_id]++;
         outcomes.push_back({action_id, -1.f, prob_chosen});
       }
       else
