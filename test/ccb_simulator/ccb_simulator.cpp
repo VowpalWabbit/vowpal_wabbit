@@ -4,6 +4,7 @@
 #include <random>
 #include <string>
 #include <sstream>
+#include <map>
 
 #include "vw.h"
 #include "rand48.h"
@@ -47,37 +48,6 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
   return ret_val;
 }
 
-//std::vector<std::string> build_example_string_cb(std::string& user_feature, std::vector<std::string>& action_features,
-//    std::string& slot_features, std::tuple<size_t, float, float> outcome)
-//{
-//  std::vector<std::string> ret_val;
-//  std::stringstream ss;
-//  ss << "ccb shared |User " << user_feature;
-//  ret_val.push_back(ss.str());
-//  ss.str(std::string());
-//
-//  for (auto action : action_features)
-//  {
-//    ss << "ccb action |Action " << action;
-//    ret_val.push_back(ss.str());
-//    ss.str(std::string());
-//  }
-//
-//  for (size_t i = 0; i < slot_features.size(); i++)
-//  {
-//    ss << "ccb slot ";
-//    if (labels.size() > i)
-//    {
-//      ss << (std::get<0>(labels[i])) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
-//    }
-//    ss << " |Slot " << slot_features[i];
-//    ret_val.push_back(ss.str());
-//    ss.str(std::string());
-//  }
-//
-//  return ret_val;
-//}
-
 void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std::tuple<int, int>>>>& clicks_impressions)
 {
   std::cout << "num iterations: " << num_iter << "\n";
@@ -103,7 +73,7 @@ void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std:
 
 int main()
 {
-  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 -l 0.001 --quiet");
+  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --learning_rate 0.001 --quiet");
 
   auto const NUM_USERS = 3;
   auto const NUM_ACTIONS = 4;
@@ -114,20 +84,51 @@ int main()
   std::vector<std::string> action_features = {"d", "e", "f", "g"};
   std::vector<std::string> slot_features = {"h", "slot_id"};
 
-  //std::vector<std::vector<float>> user_1_actions_slots_probs = {{0.1f, 0.2f}, {0.3f, 0.2f}, {0.2f, 0.4f}, {0.4f, 0.3f}};
-
-  //std::vector<std::vector<float>> user_2_actions_slots_probs = {{0.4f, 0.2f}, {0.2f, 0.4f}, {0.1f, 0.2f}, {0.2f, 0.1f}};
-
-  //std::vector<std::vector<float>> user_3_actions_slots_probs = {{0.3f, 0.1f}, {0.2f, 0.3f}, {0.3f, 0.2f}, {0.1f, 0.1f}};
-
-  std::vector<std::vector<float>> user_0_slots_actions_probs = {{0.01f, 0.2f, 0.3f, 0.1f}, {0.01f, 0.3f, 0.5f, 0.2f}};
-  std::vector<std::vector<float>> user_1_slots_actions_probs = {{0.01f, 0.2f, 0.3f, 0.4f}, {0.01f, 0.1f, 0.3f, 0.2f}};
-  std::vector<std::vector<float>> user_2_slots_actions_probs = {{0.01f, 0.2f, 0.1f, 0.1f}, {0.01f, 0.5f, 0.1f, 0.4f}};
-
-
-
-  std::vector<std::vector<std::vector<float>>> all_users = {
-      user_0_slots_actions_probs, user_1_slots_actions_probs, user_2_slots_actions_probs};
+  std::vector<std::map<std::vector<size_t>,std::vector<float>>> user_slot_action_probabilities =
+  {
+    {
+      {{0, 1}, {0.01f, 0.3f}},
+      {{0, 2}, {0.01f, 0.5f}},
+      {{0, 3}, {0.01f, 0.2f}},
+      {{1, 0}, {0.2f, 0.01f}},
+      {{1, 2}, {0.2f, 0.5f}},
+      {{1, 3}, {0.2f, 0.2f}},
+      {{2, 0}, {0.3f, 0.01f}},
+      {{2, 1}, {0.3f, 0.3f}},
+      {{2, 3}, {0.3f, 0.2f}},
+      {{3, 0}, {0.1f, 0.01f}},
+      {{3, 1}, {0.1f, 0.3f}},
+      {{3, 2}, {0.1f, 0.5f}}
+    },
+    {
+      {{0, 1}, {0.01f, 0.1f}},
+      {{0, 2}, {0.01f, 0.3f}},
+      {{0, 3}, {0.01f, 0.2f}},
+      {{1, 0}, {0.2f, 0.01f}},
+      {{1, 2}, {0.2f, 0.3f}},
+      {{1, 3}, {0.2f, 0.2f}},
+      {{2, 0}, {0.3f, 0.01f}},
+      {{2, 1}, {0.3f, 0.1f}},
+      {{2, 3}, {0.3f, 0.2f}},
+      {{3, 0}, {0.1f, 0.01f}},
+      {{3, 1}, {0.1f, 0.1f}},
+      {{3, 2}, {0.1f, 0.3f}}
+    },
+    {
+      {{0, 1}, {0.01f, 0.5f}},
+      {{0, 2}, {0.01f, 0.1f}},
+      {{0, 3}, {0.01f, 0.4f}},
+      {{1, 0}, {0.2f, 0.01f}},
+      {{1, 2}, {0.2f, 0.1f}},
+      {{1, 3}, {0.2f, 0.4f}},
+      {{2, 0}, {0.1f, 0.01f}},
+      {{2, 1}, {0.1f, 0.5f}},
+      {{2, 3}, {0.1f, 0.4f}},
+      {{3, 0}, {0.1f, 0.01f}},
+      {{3, 1}, {0.1f, 0.5f}},
+      {{3, 2}, {0.1f, 0.1f}}
+    }
+  };
 
   // click, show
   std::vector<std::vector<std::vector<std::tuple<int, int>>>> clicks_impressions = {
@@ -136,7 +137,6 @@ int main()
       {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
   };
 
-  //std::random_device rd;
   std::default_random_engine rd{0};
   std::mt19937 eng(rd());
   std::uniform_int_distribution<> user_distribution(0, NUM_USERS - 1);
@@ -144,7 +144,7 @@ int main()
 
   for (int i = 0; i < NUM_ITER; i++)
   {
-    auto chosen_user = user_distribution(eng);
+    volatile auto chosen_user = user_distribution(eng);
     auto ex_str = build_example_string_ccb(user_features[chosen_user], action_features, slot_features);
 
     multi_ex ex_col;
@@ -157,26 +157,32 @@ int main()
 
     std::vector<std::tuple<size_t, float, float>> outcomes;
     auto decision_scores = ex_col[0]->pred.decision_scores;
+
+    std::vector<size_t> actions_taken;
+    for (auto s : decision_scores)
+    {
+      actions_taken.push_back(s[0].action);
+    };
+
     for (auto slot_id = 0; slot_id < decision_scores.size(); slot_id++)
     {
       auto& slot = decision_scores[slot_id];
-      auto chosen_id = slot[0].action;
+      auto action_id = slot[0].action;
       auto prob_chosen = slot[0].score;
-      auto prob_to_click = all_users[chosen_user][slot_id][chosen_id];
+      auto prob_to_click = user_slot_action_probabilities[chosen_user][actions_taken][slot_id];
 
-      std::get<1>(clicks_impressions[chosen_user][slot_id][chosen_id])++;
+      std::get<1>(clicks_impressions[chosen_user][slot_id][action_id])++;
       if (click_distribution(eng) < prob_to_click)
       {
-        std::get<0>(clicks_impressions[chosen_user][slot_id][chosen_id])++;
-        outcomes.push_back({chosen_id, -1.f, prob_chosen});
+        std::get<0>(clicks_impressions[chosen_user][slot_id][action_id])++;
+        outcomes.push_back({action_id, -1.f, prob_chosen});
       }
       else
       {
-        outcomes.push_back({chosen_id, 0.f, prob_chosen});
+        outcomes.push_back({action_id, 0.f, prob_chosen});
       }
     }
     as_multiline(vw->l)->finish_example(*vw, ex_col);
-
 
     auto learn_ex = build_example_string_ccb(user_features[chosen_user], action_features, slot_features, outcomes);
     multi_ex learn_ex_col;
