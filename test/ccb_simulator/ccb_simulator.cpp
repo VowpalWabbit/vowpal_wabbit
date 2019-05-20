@@ -17,7 +17,7 @@ struct acp
 };
 
 std::vector<std::string> build_example_string_ccb(std::string& user_feature, std::vector<std::string>& action_features,
-    std::vector<std::string>& decision_features, std::vector<std::tuple<size_t, float, float>> labels = {})
+    std::vector<std::string>& slot_features, std::vector<std::tuple<size_t, float, float>> labels = {})
 {
   std::vector<std::string> ret_val;
   std::stringstream ss;
@@ -32,14 +32,14 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
     ss.str(std::string());
   }
 
-  for (size_t i = 0; i < decision_features.size(); i++)
+  for (size_t i = 0; i < slot_features.size(); i++)
   {
-    ss << "ccb decision ";
+    ss << "ccb slot ";
     if (labels.size() > i)
     {
       ss << (std::get<0>(labels[i])) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
     }
-    ss << " |Slot " << decision_features[i];
+    ss << " |Slot " << slot_features[i];
     ret_val.push_back(ss.str());
     ss.str(std::string());
   }
@@ -48,7 +48,7 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
 }
 
 //std::vector<std::string> build_example_string_cb(std::string& user_feature, std::vector<std::string>& action_features,
-//    std::string& decision_features, std::tuple<size_t, float, float> outcome)
+//    std::string& slot_features, std::tuple<size_t, float, float> outcome)
 //{
 //  std::vector<std::string> ret_val;
 //  std::stringstream ss;
@@ -63,14 +63,14 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
 //    ss.str(std::string());
 //  }
 //
-//  for (size_t i = 0; i < decision_features.size(); i++)
+//  for (size_t i = 0; i < slot_features.size(); i++)
 //  {
-//    ss << "ccb decision ";
+//    ss << "ccb slot ";
 //    if (labels.size() > i)
 //    {
 //      ss << (std::get<0>(labels[i])) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
 //    }
-//    ss << " |Slot " << decision_features[i];
+//    ss << " |Slot " << slot_features[i];
 //    ret_val.push_back(ss.str());
 //    ss.str(std::string());
 //  }
@@ -87,11 +87,11 @@ void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std:
     auto& actions = clicks_shows[user_index];
     for (auto action_index = 0; action_index < actions.size(); action_index++)
     {
-      auto& decisions = actions[action_index];
-      for (auto decision_index = 0; decision_index < decisions.size(); decision_index++)
+      auto& slots = actions[action_index];
+      for (auto slot_index = 0; slot_index < slots.size(); slot_index++)
       {
-        auto& click_show = decisions[decision_index];
-        std::cout << user_index << "\t" << action_index << "\t" << decision_index << "\t" << std::get<0>(click_show)
+        auto& click_show = slots[slot_index];
+        std::cout << user_index << "\t" << action_index << "\t" << slot_index << "\t" << std::get<0>(click_show)
                   << "\t" << std::get<1>(click_show) << "\t" << (float)std::get<0>(click_show) / std::get<1>(click_show)
                   << "\n";
       }
@@ -152,9 +152,9 @@ int main()
     auto decision_scores = ex_col[0]->pred.decision_scores;
     for (auto i = 0; i < decision_scores.size(); i++)
     {
-      auto& decision = decision_scores[i];
-      auto chosen_id = decision[0].action;
-      auto prob_chosen = decision[0].score;
+      auto& slot = decision_scores[i];
+      auto chosen_id = slot[0].action;
+      auto prob_chosen = slot[0].score;
       auto prob_to_click = all_users[chosen_user][chosen_id][i];
 
       std::get<1>(clicks_shows[chosen_user][chosen_id][i])++;
