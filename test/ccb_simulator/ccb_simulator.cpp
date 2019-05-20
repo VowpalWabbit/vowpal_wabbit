@@ -78,20 +78,21 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
 //  return ret_val;
 //}
 
-void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std::tuple<int, int>>>>& clicks_shows)
+void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std::tuple<int, int>>>>& clicks_impressions)
 {
   std::cout << "num iterations: " << num_iter << "\n";
-  std::cout << "user\taction\tdecsn\tclicks\tshown\tctr\n";
-  for (auto user_index = 0; user_index < clicks_shows.size(); user_index++)
+  std::cout << "user\tslot\taction\tclicks\tshown\tctr\n";
+  for (auto user_index = 0; user_index < clicks_impressions.size(); user_index++)
   {
-    auto& actions = clicks_shows[user_index];
-    for (auto action_index = 0; action_index < actions.size(); action_index++)
+    std::cout << "--\n";
+    auto& slots = clicks_impressions[user_index];
+    for (auto slot_index = 0; slot_index < slots.size(); slot_index++)
     {
-      auto& slots = actions[action_index];
-      for (auto slot_index = 0; slot_index < slots.size(); slot_index++)
+      auto& actions = slots[slot_index];
+      for (auto action_index = 0; action_index < actions.size(); action_index++)
       {
-        auto& click_show = slots[slot_index];
-        std::cout << user_index << "\t" << action_index << "\t" << slot_index << "\t" << std::get<0>(click_show)
+        auto& click_show = actions[action_index];
+        std::cout << user_index << "\t" << slot_index << "\t" << action_index << "\t" << std::get<0>(click_show)
                   << "\t" << std::get<1>(click_show) << "\t" << (float)std::get<0>(click_show) / std::get<1>(click_show)
                   << "\n";
       }
@@ -102,7 +103,7 @@ void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std:
 
 int main()
 {
-  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --cubic UAS -l 0.01 --ignore_linear UAS --quiet");
+  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 -l 0.01 --quiet");
 
   auto const NUM_USERS = 3;
   auto const NUM_ACTIONS = 4;
@@ -111,22 +112,28 @@ int main()
 
   std::vector<std::string> user_features = {"a", "b", "c"};
   std::vector<std::string> action_features = {"d", "e", "f", "g"};
-  std::vector<std::string> slot_features = {"h", "i"};
+  std::vector<std::string> slot_features = {"h", "slot_id"};
 
-  std::vector<std::vector<float>> user_1_actions_slots_probs = {{0.4f, 0.2f}, {0.3f, 0.2f}, {0.2f, 0.4f}, {0.1f, 0.3f}};
+  //std::vector<std::vector<float>> user_1_actions_slots_probs = {{0.1f, 0.2f}, {0.3f, 0.2f}, {0.2f, 0.4f}, {0.4f, 0.3f}};
 
-  std::vector<std::vector<float>> user_2_actions_slots_probs = {{0.2f, 0.1f}, {0.2f, 0.4f}, {0.1f, 0.2f}, {0.2f, 0.1f}};
+  //std::vector<std::vector<float>> user_2_actions_slots_probs = {{0.4f, 0.2f}, {0.2f, 0.4f}, {0.1f, 0.2f}, {0.2f, 0.1f}};
 
-  std::vector<std::vector<float>> user_3_actions_slots_probs = {{0.3f, 0.1f}, {0.2f, 0.3f}, {0.3f, 0.2f}, {0.1f, 0.1f}};
+  //std::vector<std::vector<float>> user_3_actions_slots_probs = {{0.3f, 0.1f}, {0.2f, 0.3f}, {0.3f, 0.2f}, {0.1f, 0.1f}};
+
+  std::vector<std::vector<float>> user_0_slots_actions_probs = {{0.5f, 0.2f, 0.3f, 0.1f}, {0.3f, 0.5f, 0.1f, 0.2f}};
+  std::vector<std::vector<float>> user_1_slots_actions_probs = {{0.5f, 0.2f, 0.3f, 0.4f}, {0.2f, 0.5f, 0.3f, 0.2f}};
+  std::vector<std::vector<float>> user_2_slots_actions_probs = {{0.5f, 0.2f, 0.1f, 0.1f}, {0.2f, 0.5f, 0.1f, 0.4f}};
+
+
 
   std::vector<std::vector<std::vector<float>>> all_users = {
-      user_1_actions_slots_probs, user_2_actions_slots_probs, user_3_actions_slots_probs};
+      user_0_slots_actions_probs, user_1_slots_actions_probs, user_2_slots_actions_probs};
 
   // click, show
-  std::vector<std::vector<std::vector<std::tuple<int, int>>>> clicks_shows = {
-      {{{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}},
-      {{{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}},
-      {{{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}},
+  std::vector<std::vector<std::vector<std::tuple<int, int>>>> clicks_impressions = {
+      {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
+      {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
+      {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
   };
 
   //std::random_device rd;
@@ -150,17 +157,17 @@ int main()
 
     std::vector<std::tuple<size_t, float, float>> outcomes;
     auto decision_scores = ex_col[0]->pred.decision_scores;
-    for (auto i = 0; i < decision_scores.size(); i++)
+    for (auto slot_id = 0; slot_id < decision_scores.size(); slot_id++)
     {
-      auto& slot = decision_scores[i];
+      auto& slot = decision_scores[slot_id];
       auto chosen_id = slot[0].action;
       auto prob_chosen = slot[0].score;
-      auto prob_to_click = all_users[chosen_user][chosen_id][i];
+      auto prob_to_click = all_users[chosen_user][slot_id][chosen_id];
 
-      std::get<1>(clicks_shows[chosen_user][chosen_id][i])++;
+      std::get<1>(clicks_impressions[chosen_user][slot_id][chosen_id])++;
       if (click_distribution(eng) < prob_to_click)
       {
-        std::get<0>(clicks_shows[chosen_user][chosen_id][i])++;
+        std::get<0>(clicks_impressions[chosen_user][slot_id][chosen_id])++;
         outcomes.push_back({chosen_id, -1.f, prob_chosen});
       }
       else
@@ -169,6 +176,7 @@ int main()
       }
     }
     as_multiline(vw->l)->finish_example(*vw, ex_col);
+
 
     auto learn_ex = build_example_string_ccb(user_features[chosen_user], action_features, slot_features, outcomes);
     multi_ex learn_ex_col;
@@ -183,10 +191,10 @@ int main()
     {
       // Clear terminal
       std::cout << "\033[2J" << std::endl;
-      print_click_shows(i, clicks_shows);
+      print_click_shows(i, clicks_impressions);
     }
   }
 
   std::cout << "\033[2J" << std::endl;
-  print_click_shows(NUM_ITER, clicks_shows);
+  print_click_shows(NUM_ITER, clicks_impressions);
 }
