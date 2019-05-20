@@ -103,7 +103,7 @@ void print_click_shows(size_t num_iter, std::vector<std::vector<std::vector<std:
 
 int main()
 {
-  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 -l 0.01 --quiet");
+  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 -l 0.001 --quiet");
 
   auto const NUM_USERS = 3;
   auto const NUM_ACTIONS = 4;
@@ -120,9 +120,9 @@ int main()
 
   //std::vector<std::vector<float>> user_3_actions_slots_probs = {{0.3f, 0.1f}, {0.2f, 0.3f}, {0.3f, 0.2f}, {0.1f, 0.1f}};
 
-  std::vector<std::vector<float>> user_0_slots_actions_probs = {{0.5f, 0.2f, 0.3f, 0.1f}, {0.3f, 0.5f, 0.1f, 0.2f}};
-  std::vector<std::vector<float>> user_1_slots_actions_probs = {{0.5f, 0.2f, 0.3f, 0.4f}, {0.2f, 0.5f, 0.3f, 0.2f}};
-  std::vector<std::vector<float>> user_2_slots_actions_probs = {{0.5f, 0.2f, 0.1f, 0.1f}, {0.2f, 0.5f, 0.1f, 0.4f}};
+  std::vector<std::vector<float>> user_0_slots_actions_probs = {{0.01f, 0.2f, 0.3f, 0.1f}, {0.01f, 0.3f, 0.5f, 0.2f}};
+  std::vector<std::vector<float>> user_1_slots_actions_probs = {{0.01f, 0.2f, 0.3f, 0.4f}, {0.01f, 0.1f, 0.3f, 0.2f}};
+  std::vector<std::vector<float>> user_2_slots_actions_probs = {{0.01f, 0.2f, 0.1f, 0.1f}, {0.01f, 0.5f, 0.1f, 0.4f}};
 
 
 

@@ -321,7 +321,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     {  // the cb example contains at least 1 action
       multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
       save_action_scores<is_learn>(data, decision_scores);
-      //inject_history_features(data.shared, data.actions[data.chosen_action_index]);
+      inject_history_features(data.shared, data.actions[data.chosen_action_index]);
       clear_pred_and_label(data);
     }
     else
