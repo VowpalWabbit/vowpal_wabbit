@@ -18,7 +18,7 @@ struct acp
 };
 
 std::vector<std::string> build_example_string_ccb(std::string& user_feature, std::vector<std::string>& action_features,
-    std::vector<std::string>& slot_features, std::vector<std::tuple<size_t, float, float>> labels = {})
+    std::vector<std::string>& slot_features, std::vector<std::string>& tags, std::vector<std::tuple<size_t, float, float>> labels = {})
 {
   std::vector<std::string> ret_val;
   std::stringstream ss;
@@ -40,7 +40,7 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
     {
       ss << (std::get<0>(labels[i])) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
     }
-    ss << " |Slot " << slot_features[i];
+    ss << " " << tags[i] << "|Slot " << slot_features[i];
     ret_val.push_back(ss.str());
     ss.str(std::string());
   }
@@ -55,7 +55,7 @@ void print_click_shows(size_t num_iter, std::vector<std::map<std::vector<size_t>
   for (auto user_index = 0; user_index < clicks_impressions.size(); user_index++)
   {
     std::cout << "--\n";
-    
+
     for (auto& kv : clicks_impressions[user_index])
     {
       std::cout << user_index << "\t";
@@ -78,7 +78,7 @@ void print_click_shows(size_t num_iter, std::vector<std::map<std::vector<size_t>
 
       // shown
       std::cout << std::get<1>(kv.second) << "\t";
-     
+
       for (auto num : std::get<0>(kv.second))
       {
         std::cout <<std::setprecision(4) << (float)num / std::get<1>(kv.second) << ",";
@@ -86,25 +86,13 @@ void print_click_shows(size_t num_iter, std::vector<std::map<std::vector<size_t>
       std::cout << "\n";
 
     }
-
-   /* for (auto slot_index = 0; slot_index < slots.size(); slot_index++)
-    {
-      auto& actions = slots[slot_index];
-      for (auto action_index = 0; action_index < actions.size(); action_index++)
-      {
-        auto& click_show = actions[action_index];
-        std::cout << user_index << "\t" << slot_index << "\t" << action_index << "\t" << std::get<0>(click_show)
-                  << "\t" << std::get<1>(click_show) << "\t" << (float)std::get<0>(click_show) / std::get<1>(click_show)
-                  << "\n";
-      }
-    }*/
   }
   std::cout << std::endl;
 }
 
 int main()
 {
-  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --learning_rate 0.001 --quiet");
+  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --learning_rate 0.001 --quiet --first_only");
 
   auto const NUM_USERS = 3;
   auto const NUM_ACTIONS = 4;
@@ -113,7 +101,7 @@ int main()
 
   std::vector<std::string> user_features = {"a", "b", "c"};
   std::vector<std::string> action_features = {"d", "e", "f", "g"};
-  std::vector<std::string> slot_features = {"h", "slot_id"};
+  std::vector<std::string> slot_features = {"h", "i"};
 
   std::vector<std::map<std::vector<size_t>, std::tuple<std::vector<size_t>, size_t>>> clicks_impressions = {
     {
@@ -207,22 +195,23 @@ int main()
     }
   };
 
-  // click, show
-  /*std::vector<std::vector<std::vector<std::tuple<int, int>>>> clicks_impressions = {
-      {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
-      {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
-      {{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, {{0, 0}, {0, 0}, {0, 0}, {0, 0}}},
-  };*/
-
   std::default_random_engine rd{0};
   std::mt19937 eng(rd());
   std::uniform_int_distribution<> user_distribution(0, NUM_USERS - 1);
   std::uniform_real_distribution<float> click_distribution(0.0f, 1.0f);
+  uint64_t merand_seed = 0;
 
-  for (int i = 0; i < NUM_ITER; i++)
+
+
+  for (int i = 1; i <= NUM_ITER; i++)
   {
     volatile auto chosen_user = user_distribution(eng);
-    auto ex_str = build_example_string_ccb(user_features[chosen_user], action_features, slot_features);
+    std::vector<std::string> tags;
+    for (int t = 0; t < NUM_SLOTS; t++)
+    {
+      tags.push_back("seed="+std::to_string(merand48(merand_seed)));
+    }
+    auto ex_str = build_example_string_ccb(user_features[chosen_user], action_features, slot_features, tags);
 
     multi_ex ex_col;
     for (auto str : ex_str)
@@ -241,6 +230,7 @@ int main()
       actions_taken.push_back(s[0].action);
     };
 
+    std::get<1>(clicks_impressions[chosen_user][actions_taken])++;
     for (auto slot_id = 0; slot_id < decision_scores.size(); slot_id++)
     {
       auto& slot = decision_scores[slot_id];
@@ -248,7 +238,6 @@ int main()
       auto prob_chosen = slot[0].score;
       auto prob_to_click = user_slot_action_probabilities[chosen_user][actions_taken][slot_id];
 
-      std::get<1>(clicks_impressions[chosen_user][actions_taken])++;
       if (click_distribution(eng) < prob_to_click)
       {
         std::get<0>(clicks_impressions[chosen_user][actions_taken])[slot_id]++;
@@ -261,7 +250,7 @@ int main()
     }
     as_multiline(vw->l)->finish_example(*vw, ex_col);
 
-    auto learn_ex = build_example_string_ccb(user_features[chosen_user], action_features, slot_features, outcomes);
+    auto learn_ex = build_example_string_ccb(user_features[chosen_user], action_features, slot_features, tags, outcomes);
     multi_ex learn_ex_col;
     for (auto str : learn_ex)
     {
@@ -270,7 +259,7 @@ int main()
     vw->learn(learn_ex_col);
     as_multiline(vw->l)->finish_example(*vw, learn_ex_col);
 
-    if (i % 10000 == 0)
+    if (i % 5000 == 0)
     {
       // Clear terminal
       std::cout << "\033[2J" << std::endl;

@@ -2,14 +2,15 @@
 #include "cb_sample.h"
 #include "explore.h"
 
+#include "rand48.h"
+
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
 struct cb_sample_data
 {
-  uint64_t random_seed;
-  uint64_t random_seed_counter;
+  uint64_t seed_state;
 };
 
 template <bool is_learn>
@@ -19,7 +20,8 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
 
   auto action_scores = examples[0]->pred.a_s;
 
-  uint64_t seed = data.random_seed;
+  bool tag_provided_seed = false;
+  uint64_t seed = data.seed_state;
   if (examples[0]->tag.size() > 0)
   {
     const std::string SEED_IDENTIFIER = "seed=";
@@ -28,15 +30,22 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
     {
       substring tag_seed{examples[0]->tag.begin() + 5, examples[0]->tag.begin() + examples[0]->tag.size()};
       seed = uniform_hash(tag_seed.begin, substring_len(tag_seed), 0);
+      tag_provided_seed = true;
     }
   }
 
   // Sampling is done after the base learner has generated a pdf.
   uint32_t chosen_action;
-  auto result = exploration::sample_after_normalizing(seed + data.random_seed_counter++,
+  auto result = exploration::sample_after_normalizing(seed,
              ACTION_SCORE::begin_scores(action_scores), ACTION_SCORE::end_scores(action_scores),
              chosen_action);
   assert(result == S_EXPLORATION_OK);
+
+  // Update the seed state in place if it was used for this example.
+  if (!tag_provided_seed)
+  {
+    merand48(data.seed_state);
+  }
 
   result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
   assert(result == S_EXPLORATION_OK);
@@ -54,8 +63,7 @@ base_learner* cb_sample_setup(options_i& options, vw& all)
   if (!cb_sample_option)
     return nullptr;
 
-  data->random_seed = all.random_seed;
-  data->random_seed_counter = 0;
+  data->seed_state = all.random_seed;
 
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
       learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs));
