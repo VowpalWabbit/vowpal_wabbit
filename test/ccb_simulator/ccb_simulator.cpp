@@ -92,7 +92,7 @@ void print_click_shows(size_t num_iter, std::vector<std::map<std::vector<size_t>
 
 int main()
 {
-  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 --learning_rate 0.001 --quiet --first_only");
+  auto vw = VW::initialize("--ccb_explore_adf --epsilon 0.2 -l 0.001 --power_t 0 --quiet --first_only");
 
   auto const NUM_USERS = 3;
   auto const NUM_ACTIONS = 4;
@@ -152,18 +152,18 @@ int main()
   std::vector<std::map<std::vector<size_t>,std::vector<float>>> user_slot_action_probabilities =
   {
     {
-      {{0, 1}, {0.01f, 0.3f}},
-      {{0, 2}, {0.01f, 0.5f}},
-      {{0, 3}, {0.01f, 0.2f}},
-      {{1, 0}, {0.2f, 0.01f}},
-      {{1, 2}, {0.2f, 0.5f}},
-      {{1, 3}, {0.2f, 0.2f}},
-      {{2, 0}, {0.3f, 0.01f}},
-      {{2, 1}, {0.3f, 0.3f}},
-      {{2, 3}, {0.3f, 0.2f}},
-      {{3, 0}, {0.1f, 0.01f}},
-      {{3, 1}, {0.1f, 0.3f}},
-      {{3, 2}, {0.1f, 0.5f}}
+      {{0, 1}, {0.01f, 0.01f}},
+      {{0, 2}, {0.01f, 0.01f}},
+      {{0, 3}, {0.01f, 0.01f}},
+      {{1, 0}, {0.01f, 0.01f}},
+      {{1, 2}, {0.01f, 0.01f}},
+      {{1, 3}, {0.01f, 0.01f}},
+      {{2, 0}, {0.01f, 0.01f}},
+      {{2, 1}, {0.01f, 0.01f}},
+      {{2, 3}, {0.01f, 0.01f}},
+      {{3, 0}, {0.01f, 0.01f}},
+      {{3, 1}, {0.01f, 0.01f}},
+      {{3, 2}, {0.5f, 0.5f}}
     },
     {
       {{0, 1}, {0.01f, 0.1f}},
