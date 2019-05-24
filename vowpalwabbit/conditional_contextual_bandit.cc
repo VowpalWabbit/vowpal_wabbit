@@ -101,6 +101,15 @@ void delete_cb_labels(ccb& data)
   for (example* action : data.actions) action->l.cb.costs.delete_v();
 }
 
+// Flattens all features of the action into the history namespace in the shared example.
+void inject_history_features(example* shared, example* action)
+{
+  for (auto index : action->indices)
+  {
+    LabelDict::add_example_namespace(*shared, ccb_history_namespace, action->feature_space[index]);
+  }
+}
+
 void attach_label_to_example(uint32_t action_index_one_based, example* example, conditional_contexual_bandit_outcome* outcome, ccb& data)
 {
   // save the cb label
@@ -165,15 +174,6 @@ void inject_slot_features(example* shared, example* slot)
     {
       LabelDict::add_example_namespace(*shared, index, slot->feature_space[index]);
     }
-  }
-}
-
-// Flattens all features of the action into the history namespace in the shared example.
-void inject_history_features(example* shared, example* action)
-{
-  for (auto index : action->indices)
-  {
-    LabelDict::add_example_namespace(*shared, ccb_history_namespace, action->feature_space[index]);
   }
 }
 
