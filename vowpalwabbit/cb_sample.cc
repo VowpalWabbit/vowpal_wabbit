@@ -25,7 +25,7 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
   // Find that chosen action in the learning case, skip the shared example.
   for(size_t i = 1; i < examples.size(); i++)
   {
-    if(examples[0]->l.cb.costs.size() > 0)
+    if(examples[i]->l.cb.costs.size() > 0)
     {
       // Must remove 1 because of shared example index.
       labelled_action = i - 1;
@@ -35,7 +35,16 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
   // If we are learning and have a label, then take that action as the chosen action. Otherwise sample the distribution.
   if (is_learn && labelled_action != -1)
   {
-    chosen_action = labelled_action;
+    // Find where the labelled action is in the final prediction to determine if swapping needs to occur.
+    // This only matters if the prediction decided to explore, but the same output should happen for the learn case.
+    for (size_t i = 0; i < action_scores.size(); i++)
+    {
+      auto& a_s = action_scores[i];
+      if (a_s.action == labelled_action)
+      {
+        chosen_action = i;
+      }
+    }
   }
   else
   {
