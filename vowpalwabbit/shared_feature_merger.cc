@@ -87,11 +87,7 @@ void finish_multiline_example(vw& all, sfm_data& data, multi_ex& ec_seq)
 
   data.base->finish_example(all, *source);
 
-  if (has_example_header)
-  {
-    for (size_t k = 0; k < tmp.size(); k++) LabelDict::del_example_namespaces_from_example(*tmp[k], *ec_seq[0]);
-    ec_seq[0]->pred = tmp[0]->pred;
-  }
+  VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
 LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)
