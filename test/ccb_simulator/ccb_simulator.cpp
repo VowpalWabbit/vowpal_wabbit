@@ -40,7 +40,8 @@ std::vector<std::string> build_example_string_ccb(std::string& user_feature, std
     {
       ss << (std::get<0>(labels[i])) << ":" << std::get<1>(labels[i]) << ":" << std::get<2>(labels[i]);
     }
-    ss << " " << tags[i] << "|Slot " << slot_features[i];
+    ss << " |Slot " << slot_features[i];
+    // ss << " " << tags[i] << "|Slot " << slot_features[i];
     ret_val.push_back(ss.str());
     ss.str(std::string());
   }
@@ -263,10 +264,10 @@ int main()
     {
       // Clear terminal
       std::cout << "\033[2J" << std::endl;
-      print_click_shows(i, clicks_impressions);
+      // print_click_shows(i, clicks_impressions);
     }
   }
 
   std::cout << "\033[2J" << std::endl;
-  print_click_shows(NUM_ITER, clicks_impressions);
+  // print_click_shows(NUM_ITER, clicks_impressions);
 }

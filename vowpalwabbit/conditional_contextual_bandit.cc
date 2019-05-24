@@ -112,7 +112,16 @@ void attach_label_to_example(uint32_t action_index_one_based, example* example, 
   example->l.cb.costs.push_back(data.cb_label);
 }
 
-template <bool is_learn>
+
+// Flattens all features of the action into the history namespace in the shared example.
+void inject_history_features(example* shared, example* action)
+{
+  for (auto index : action->indices)
+  {
+    LabelDict::add_example_namespace(*shared, ccb_history_namespace, action->feature_space[index]);
+  }
+}
+
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   // save a copy
@@ -138,7 +147,6 @@ void clear_pred_and_label(ccb& data)
 {
   data.shared->pred.a_s.delete_v();
   data.actions[data.action_with_label]->l.cb.costs.delete_v();
-
 }
 
 // true if there exists at least 1 action in the cb multi-example
@@ -165,15 +173,6 @@ void inject_slot_features(example* shared, example* slot)
     {
       LabelDict::add_example_namespace(*shared, index, slot->feature_space[index]);
     }
-  }
-}
-
-// Flattens all features of the action into the history namespace in the shared example.
-void inject_history_features(example* shared, example* action)
-{
-  for (auto index : action->indices)
-  {
-    LabelDict::add_example_namespace(*shared, ccb_history_namespace, action->feature_space[index]);
   }
 }
 
@@ -350,7 +349,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     if (has_action(cb_ex))
     {  // the cb example contains at least 1 action
       multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
-      save_action_scores<is_learn>(data, decision_scores);
+      save_action_scores(data, decision_scores);
       clear_pred_and_label(data);
     }
     else
