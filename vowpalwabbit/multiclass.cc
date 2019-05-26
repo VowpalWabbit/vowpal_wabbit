@@ -157,13 +157,13 @@ void print_update_with_probability(vw& all, example& ec, uint32_t pred)
 }
 void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update<print_score>(all, ec, pred); }
 
-void finish_example(vw& all, example& ec)
+void finish_example(vw& all, example& ec, bool update_loss)
 {
   float loss = 0;
   if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1)
     loss = ec.weight;
 
-  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)
