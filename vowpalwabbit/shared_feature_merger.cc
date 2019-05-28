@@ -50,6 +50,7 @@ void predict_or_learn(sfm_data& data, LEARNER::multi_learner& base, multi_ex& ec
     tmp.insert(tmp.end(), startIter, ec_seq.end());
     // merge sequences
     for (size_t k = 0; k < tmp.size(); k++) LabelDict::add_example_namespaces_from_example(*tmp[k], *ec_seq[0]);
+    tmp[0]->pred = ec_seq[0]->pred;
   }
   if (source->size() == 0)
     return;
