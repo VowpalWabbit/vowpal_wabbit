@@ -36,58 +36,50 @@ void predict_or_learn(sfm_data& data, LEARNER::multi_learner& base, multi_ex& ec
 {
   if (ec_seq.size() == 0)
     THROW("cb_adf: At least one action must be provided for an example to be valid.");
-  multi_ex tmp;
-  multi_ex* source = &ec_seq;
+
+  multi_ex::value_type shared_example = nullptr;
 
   const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
   if (has_example_header)
   {
-    source = &tmp;
-    // copy vector and pass it down instead
-    tmp.reserve(ec_seq.size() - 1);
-    // skip first element since its a shared feature
-    auto startIter = std::next(ec_seq.begin());
-    tmp.insert(tmp.end(), startIter, ec_seq.end());
+    shared_example = ec_seq[0];
+    ec_seq.erase(ec_seq.begin());
     // merge sequences
-    for (size_t k = 0; k < tmp.size(); k++) LabelDict::add_example_namespaces_from_example(*tmp[k], *ec_seq[0]);
-    tmp[0]->pred = ec_seq[0]->pred;
+    for (auto & example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
+    ec_seq[0]->pred = shared_example->pred;
   }
-  if (source->size() == 0)
+  if (ec_seq.size() == 0)
     return;
   if (is_learn)
-    base.learn(*source);
+    base.learn(ec_seq);
   else
-    base.predict(*source);
+    base.predict(ec_seq);
 
   if (has_example_header)
   {
-    for (size_t k = 0; k < tmp.size(); k++) LabelDict::del_example_namespaces_from_example(*tmp[k], *ec_seq[0]);
-    ec_seq[0]->pred = tmp[0]->pred;
+    for (auto& example : ec_seq) LabelDict::del_example_namespaces_from_example(*example, *shared_example);
+    shared_example->pred = ec_seq[0]->pred;
+    ec_seq.insert(ec_seq.begin(), shared_example);
   }
 }
 
+// Currently unused due to inefficiency.
 void finish_multiline_example(vw& all, sfm_data& data, multi_ex& ec_seq)
 {
-  multi_ex tmp;
-  multi_ex* source = &ec_seq;
-
+  multi_ex::value_type shared_example = nullptr;
   const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
   if (has_example_header)
   {
-    source = &tmp;
-    // copy vector and pass it down instead
-    tmp.reserve(ec_seq.size() - 1);
-    // skip first element since its a shared feature
-    auto startIter = std::next(ec_seq.begin());
-    tmp.insert(tmp.end(), startIter, ec_seq.end());
+
+    shared_example = ec_seq[0];
+    ec_seq.erase(ec_seq.begin());
     // merge sequences
-    for (size_t k = 0; k < tmp.size(); k++) LabelDict::add_example_namespaces_from_example(*tmp[k], *ec_seq[0]);
+    for (auto& example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
   }
-  if (source->size() == 0)
-    return;
 
-  data.base->finish_example(all, *source);
+  data.base->finish_example(all, ec_seq);
 
+  if(has_example_header) ec_seq.insert(ec_seq.begin(), shared_example);
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
@@ -102,7 +94,9 @@ LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, v
   data->base = base;
   auto& learner = LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
 
-  learner.set_finish_example(finish_multiline_example);
+  // Incorrect values will be reported without this, but its currently too expensive to be worth it
+  // TODO: If we can find a more efficient way to massage the data, we should uncomment this line
+  //learner.set_finish_example(finish_multiline_example);
 
   return LEARNER::make_base(learner);
 }
