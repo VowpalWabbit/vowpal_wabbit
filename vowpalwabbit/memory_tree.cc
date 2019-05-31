@@ -9,6 +9,7 @@
 #include "reductions.h"
 #include "rand48.h"
 #include "vw.h"
+#include "v_array.h"
 
 
 using namespace std;
@@ -20,7 +21,7 @@ namespace memory_tree_ns
     ///////////////////////Helper//////////////////////////////
     //////////////////////////////////////////////////////////
     template<typename T> 
-    void pop_at_index(v_array<T>& array, uint32_t index)
+    void remove_at_index(v_array<T>& array, uint32_t index)
     {
         if (index >= array.size()){
             cout<<"ERROR: index is larger than the size"<<endl;
@@ -37,7 +38,7 @@ namespace memory_tree_ns
         return;
     }
 
-    void copy_example_data(example* dst, example* src, int oas = false, bool no_feat = false)
+    void copy_example_data(example* dst, example* src, int oas = false) //copy example data. 
     { 
         if (oas == false){
             dst->l = src->l;
@@ -46,51 +47,15 @@ namespace memory_tree_ns
         else{
             dst->l.multilabels.label_v.delete_v();
             copy_array(dst->l.multilabels.label_v, src->l.multilabels.label_v);
-	    //cout<<dst->l.multilabels.label_v.size()<<endl;
         }
-
-        copy_array(dst->tag, src->tag);
-        dst->example_counter = src->example_counter;
-        dst->ft_offset = src->ft_offset;
-
-        if (no_feat == false){
-            copy_array(dst->indices, src->indices);
-            for (namespace_index c : src->indices)
-                dst->feature_space[c].deep_copy_from(src->feature_space[c]);
-            dst->ft_offset = src->ft_offset;
-
-            dst->num_features = src->num_features;
-        }
-        dst->partial_prediction = src->partial_prediction;
-        if (src->passthrough == nullptr) dst->passthrough = nullptr;
-        else
-        { 
-            dst->passthrough = new features;
-            dst->passthrough->deep_copy_from(*src->passthrough);
-        }
-        dst->loss = src->loss;
-        dst->weight = src->weight;
-        dst->total_sum_feat_sq = src->total_sum_feat_sq;
-        dst->confidence = src->confidence;
-        dst->test_only = src->test_only;
-        dst->end_pass = src->end_pass;
-        dst->sorted = src->sorted;
-        dst->in_use = src->in_use;
+        VW::copy_example_data(false, dst, src);
     }
 
-    inline void free_example(example* ec)
+    inline void free_example(example* ec) //to do: try to see if we can dealloc_example in example.cc
     {
-        ec->tag.delete_v();
-        if (ec->passthrough){
-            ec->passthrough->delete_v();
-        }
-        for (int i = 0; i < 256; i++)
-            ec->feature_space[i].delete_v();
-        ec->indices.delete_v();
+        VW::dealloc_example(nullptr, *ec);
         free(ec);
     }
-
-
 
     void remove_repeat_features_in_f(features& f, float& total_sum_feat_sq )
     {
@@ -119,29 +84,6 @@ namespace memory_tree_ns
             remove_repeat_features_in_f(ec.feature_space[nc], ec.total_sum_feat_sq);
     }
 
-    //f = f1 - f2
-    void subtract_features(features& f1, features& f2, features& f)
-    {//f1 and f2 are features under the same namespace
-        f.deep_copy_from(f1);
-        //now scan through f2's indices, check if the index is in f1's indices:
-        for (size_t i = 0; i < f2.indicies.size(); i++){
-            uint64_t ind_f2 = f2.indicies[i];
-            float val_f2 = f2.values[i];
-            uint64_t pos = 0;
-            for (pos = 0; pos < f.indicies.size(); pos++)
-            {
-                if (ind_f2 == f.indicies[pos]) //the feature index of f2 is also in f1, then we subtract:
-                {
-                    f.values[pos] -= val_f2;
-                    break;
-                }
-            }
-            if (pos == f.indicies.size()) //this feature index of f2 is not in f1,  then push back (0-val), as we are doing f1-f2.
-                f.push_back(0. - val_f2, ind_f2); 
-        }
-    }
-
-
     ////Implement kronecker_product between two examples:
     //kronecker_prod at feature level:
 
@@ -151,6 +93,7 @@ namespace memory_tree_ns
         if (f2.indicies.size() == 0)
             return;
     
+        float denominator = pow(norm_sq1*norm_sq2,0.5);
         for (size_t idx1 = 0, idx2 = 0; idx1 < f1.size() && idx2 < f2.size(); idx1++)
         {
             uint64_t ec1pos = f1.indicies[idx1];
@@ -161,8 +104,8 @@ namespace memory_tree_ns
                 ec2pos = f2.indicies[idx2];
 
             if (ec1pos == ec2pos){
-                prod_f.push_back(f1.values[idx1]*f2.values[idx2]/pow(norm_sq1*norm_sq2,0.5), ec1pos);
-                total_sum_feat_sq+=f1.values[idx1]*f2.values[idx2]/pow(norm_sq1*norm_sq2,0.5);
+                prod_f.push_back(f1.values[idx1]*f2.values[idx2]/denominator, ec1pos);
+                total_sum_feat_sq+=f1.values[idx1]*f2.values[idx2]/denominator;  //make this out of loop
                 ++idx2;
             }
         }
@@ -171,7 +114,7 @@ namespace memory_tree_ns
     void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, int oas = false)
     {
         copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
-        ec.total_sum_feat_sq = 0.0;
+        ec.total_sum_feat_sq = 0.0;  //sort namespaces.  pass indices array into sort...template (leave this to the end)
         for(namespace_index c1 : ec1.indices){
             for(namespace_index c2 : ec2.indices){
                 if (c1 == c2)
@@ -251,7 +194,7 @@ namespace memory_tree_ns
         int iter;
         uint32_t dream_repeats; //number of dream operations per example.
 
-        uint32_t total_num_queires; 
+        uint32_t total_num_queries; 
 
         size_t max_depth;
         size_t max_ex_in_leaf;
@@ -274,7 +217,7 @@ namespace memory_tree_ns
         size_t current_pass;
         size_t final_pass;
 
-        int top_K;
+        int top_K;  //commands:
         int oas;
 	    int dream_at_update;
 
@@ -312,20 +255,17 @@ namespace memory_tree_ns
         if (fs_2.indicies.size() == 0)
             return 0.f;
    
-        int numint = 0;
         for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size() ; idx1++)
         { 
             uint64_t ec1pos = fs_1.indicies[idx1];
             uint64_t ec2pos = fs_2.indicies[idx2];
-            //params.all->trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
             if(ec1pos < ec2pos) continue;
    
             while(ec1pos > ec2pos && ++idx2 < fs_2.size())
                 ec2pos = fs_2.indicies[idx2];
    
             if(ec1pos == ec2pos)
-            { //params.all->trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
-                numint++;
+            {
                 dotprod += fs_1.values[idx1] * fs_2.values[idx2];
                 ++idx2;
             }
@@ -356,7 +296,7 @@ namespace memory_tree_ns
         b.nodes[0].internal = -1; //mark the root as leaf
         b.nodes[0].base_router = (b.routers_used++);
 
-        b.total_num_queires = 0;
+        b.total_num_queries = 0;
         b.max_routers = b.max_nodes;
         cout<<"tree initiazliation is done...."<<endl
             <<"max nodes "<<b.max_nodes<<endl
@@ -415,7 +355,7 @@ namespace memory_tree_ns
         if (b.nodes[cn].examples_index.size() >= 1){
             int loc_at_leaf = int(merand48(b.all->random_state)*b.nodes[cn].examples_index.size());
 	        uint32_t ec_id = b.nodes[cn].examples_index[loc_at_leaf];
-            pop_at_index(b.nodes[cn].examples_index, loc_at_leaf); 
+            remove_at_index(b.nodes[cn].examples_index, loc_at_leaf); 
             return ec_id;
         }
         else    
@@ -452,7 +392,6 @@ namespace memory_tree_ns
         
         //ec.l.simple = {route_label, imp_weight, 0.f}; 
         float ec_input_weight = ec.weight;
-        ec.weight = abs(weighted_value);
         ec.weight = 1.f;
 	    ec.l.simple = {route_label, 1., 0.f};
         base.learn(ec, b.nodes[cn].base_router); //update the router according to the new example.
@@ -523,7 +462,7 @@ namespace memory_tree_ns
 
             b.examples[ec_pos]->l.simple = {1.f, 1.f, 0.f};
             base.predict(*b.examples[ec_pos], b.nodes[cn].base_router); //re-predict
-            float scalar = b.examples[ec_pos]->pred.scalar;
+            float scalar = b.examples[ec_pos]->pred.scalar; //this is spliting the leaf. 
             if (scalar < 0)
             {
                 b.nodes[left_child].examples_index.push_back(ec_pos);
@@ -557,33 +496,20 @@ namespace memory_tree_ns
         }
     }
 
-
-    template<typename T> 
-    inline bool in_v_array(const v_array<T>& array, const T& item, uint32_t& pos){
-        pos = 0;
-        for (uint32_t i = 0; i < array.size(); i++){
-            if (array[i] == item){
-                pos = i;
-                return true;
-            }
-        }
-        return false;
-    }
     
     template<typename T>
-    inline uint32_t over_lap(const v_array<T>& array_1, const v_array<T>& array_2){
+    inline uint32_t over_lap(v_array<T>& array_1, v_array<T>& array_2){
         uint32_t num_overlap = 0;
         for (size_t i1 = 0; i1 < array_1.size(); i1++){
             T item1 = array_1[i1];
-            uint32_t pos = 0;
-            if (in_v_array(array_2, item1, pos) == true)
+            if (v_array_contains(array_2, item1) == true)
                 num_overlap++;
         }
         return num_overlap;
     }
     
     template<typename T>
-    inline uint32_t hamming_loss(const v_array<T>& array_1, const v_array<T>& array_2){
+    inline uint32_t hamming_loss(v_array<T>& array_1, v_array<T>& array_2){
     	uint32_t overlap = over_lap(array_1, array_2);
 	    return array_1.size() + array_2.size() - 2*overlap;
     }
@@ -591,16 +517,12 @@ namespace memory_tree_ns
     void collect_labels_from_leaf(memory_tree& b, const uint32_t cn, v_array<uint32_t>& leaf_labs){
         if (b.nodes[cn].internal != -1)
             cout<<"something is wrong, it should be a leaf node"<<endl;
-        
-        leaf_labs.delete_v();
-        uint32_t tmp_pos = 0;
-        //cout<<b.nodes[cn].examples_index.size()<<endl;
+    
+        leaf_labs.clear();
         for (size_t i = 0; i < b.nodes[cn].examples_index.size(); i++){ //scan through each memory in the leaf
             uint32_t loc = b.nodes[cn].examples_index[i];
-            //cout<<i<<" "<<b.examples[loc]->l.multilabels.label_v.size()<<endl;
             for (uint32_t lab: b.examples[loc]->l.multilabels.label_v){ //scan through each label:
-                //cout<<i<<" "<<loc<<" "<<b.examples[loc]->l.multilabels.label_v.size()<<endl;
-                if (in_v_array(leaf_labs, lab, tmp_pos) == false) //no in the leaf lab set yet:
+                if (v_array_contains(leaf_labs, lab) == false)
                     leaf_labs.push_back(lab); 
             }
         }
@@ -611,15 +533,12 @@ namespace memory_tree_ns
         collect_labels_from_leaf(b, cn, leaf_labs); //unique labels from the leaf.
         MULTILABEL::labels multilabels = ec.l.multilabels;
         MULTILABEL::labels preds = ec.pred.multilabels;
-        uint32_t tmp_pos = 0;
         ec.l.simple = {FLT_MAX, 1.f, 0.f};
         for (size_t i = 0; i < leaf_labs.size(); i++){
             ec.l.simple.label = -1.f;
-            if (in_v_array(multilabels.label_v, leaf_labs[i], tmp_pos))
+            if (v_array_contains(multilabels.label_v, leaf_labs[i]))
                 ec.l.simple.label = 1.f;
-	    //cout<<"train at leaf oas"<<" "<<ec.l.simple.label<<endl;
             base.learn(ec, b.max_routers + 1 + leaf_labs[i]);
-	    //cout<<"end of train at leaf oas"<<endl;
         }
         ec.pred.multilabels = preds;
         ec.l.multilabels = multilabels;
@@ -686,8 +605,7 @@ namespace memory_tree_ns
 
     //for any two examples, use number of overlap labels to indicate the similarity between these two examples. 
     float get_overlap_from_two_examples(example& ec1, example& ec2){
-        int num_overlap = over_lap(ec1.l.multilabels.label_v, ec2.l.multilabels.label_v);
-        return num_overlap*1.f;
+        return (float)over_lap(ec1.l.multilabels.label_v, ec2.l.multilabels.label_v);
     }
 
     //we use F1 score as the reward signal 
@@ -702,14 +620,10 @@ namespace memory_tree_ns
             return 2.*(v1*v2/(v1+v2));
     }
 
-    void predict(memory_tree& b, single_learner& base, example& test_ec)
+    
+    void predict(memory_tree& b, single_learner& base, example& ec)
     {
-        example& ec = calloc_or_throw<example>();
-        copy_example_data(&ec, &test_ec, b.oas);
         remove_repeat_features_in_ec(ec);
-	//example& ec = test_ec;
-     
-
         MULTICLASS::label_t mc;
         uint32_t save_multi_pred;
         MULTILABEL::labels multilabels;
@@ -744,12 +658,12 @@ namespace memory_tree_ns
         if(b.oas == false){
             closest_ec = pick_nearest(b, base, cn, ec);
             if (closest_ec != -1)
-                test_ec.pred.multiclass = b.examples[closest_ec]->l.multi.label;
+                ec.pred.multiclass = b.examples[closest_ec]->l.multi.label;
             else
-                test_ec.pred.multiclass = 0;
+                ec.pred.multiclass = 0;
             
-            if (test_ec.l.multi.label != test_ec.pred.multiclass){
-                test_ec.loss = test_ec.weight;
+            if (ec.l.multi.label != ec.pred.multiclass){
+                ec.loss = ec.weight;
                 b.num_mistakes++;
             }
         }
@@ -762,12 +676,9 @@ namespace memory_tree_ns
             }
             v_array<uint32_t> selected_labs = v_init<uint32_t>();
             ec.loss = compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs);
-            test_ec.loss = ec.loss;
             b.hamming_loss += ec.loss;
         }
-	free_example(&ec);
     }
-
 
 
     float return_reward_from_node(memory_tree& b, single_learner& base, uint32_t cn, example& ec, float weight = 1.f){
@@ -812,7 +723,7 @@ namespace memory_tree_ns
             if (closest_ec != -1)
                 reward = F1_score_for_two_examples(ec, *b.examples[closest_ec]);
         }
-        b.total_num_queires++;
+        b.total_num_queries++;
 
         if (b.learn_at_leaf == true && closest_ec != -1){
         	float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
@@ -831,7 +742,7 @@ namespace memory_tree_ns
     }
 
     void learn_at_leaf_random(memory_tree& b, single_learner& base, const uint32_t& leaf_id, example& ec, const float& weight){
-        b.total_num_queires ++;
+        b.total_num_queries ++;
         int32_t ec_id = -1;
         float reward = 0.f;
         if (b.nodes[leaf_id].examples_index.size() > 0){
@@ -1033,7 +944,7 @@ namespace memory_tree_ns
             
             if (b.iter%5000 == 0){
                 if (b.oas == false)
-	                cout<<"at iter "<<b.iter<<", top("<<b.top_K<<") pred error: "<<b.num_mistakes*1./b.iter<<", total num queires so far: "<<b.total_num_queires<<", max depth: "<<b.max_depth<<", max exp in leaf: "<<b.max_ex_in_leaf<<endl;
+	                cout<<"at iter "<<b.iter<<", top("<<b.top_K<<") pred error: "<<b.num_mistakes*1./b.iter<<", total num queires so far: "<<b.total_num_queries<<", max depth: "<<b.max_depth<<", max exp in leaf: "<<b.max_ex_in_leaf<<endl;
                 else
                     cout<<"at iter "<<b.iter<<", avg hamming loss: "<<b.hamming_loss*1./b.iter<<endl;
             }
