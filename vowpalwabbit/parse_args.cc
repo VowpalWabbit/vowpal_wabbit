@@ -1305,7 +1305,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
 
-    all.p = new parser{ring_size};
+    all.p = new parser{ring_size, strict_parse};
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
