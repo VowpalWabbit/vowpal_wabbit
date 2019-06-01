@@ -57,32 +57,6 @@ namespace memory_tree_ns
         free(ec);
     }
 
-    void remove_repeat_features_in_f(features& f, float& total_sum_feat_sq )
-    {
-        for (size_t i = 0; i < f.indicies.size(); i++){
-            if (f.values[i] != -FLT_MAX){
-                uint64_t loc = f.indicies[i];
-                for (size_t j = i+1; j < f.indicies.size(); j++){
-                    if (loc == f.indicies[j]){
-                        total_sum_feat_sq -= (f.values[i]*f.values[i] + f.values[j]*f.values[j]);
-                        f.values[i] += f.values[j];
-                        total_sum_feat_sq += f.values[i]*f.values[i];
-                        f.values[j] = -FLT_MAX;
-                    }
-                }
-            }
-        }
-        for (size_t i = 0; i < f.indicies.size(); i++){
-            if (f.values[i] == -FLT_MAX)
-                f.values[i] = 0.0;
-        }
-    }
-    
-    void remove_repeat_features_in_ec(example& ec)
-    {
-        for (auto nc : ec.indices)
-            remove_repeat_features_in_f(ec.feature_space[nc], ec.total_sum_feat_sq);
-    }
 
     ////Implement kronecker_product between two examples:
     //kronecker_prod at feature level:
@@ -623,7 +597,6 @@ namespace memory_tree_ns
     
     void predict(memory_tree& b, single_learner& base, example& ec)
     {
-        remove_repeat_features_in_ec(ec);
         MULTICLASS::label_t mc;
         uint32_t save_multi_pred;
         MULTILABEL::labels multilabels;
@@ -954,7 +927,6 @@ namespace memory_tree_ns
             if (b.current_pass < 1){ //in the first pass, we need to store the memory:
                 example* new_ec = &calloc_or_throw<example>();
                 copy_example_data(new_ec, &ec, b.oas);
-                remove_repeat_features_in_ec(*new_ec); ////sort unique.
                 b.examples.push_back(new_ec);   
                 if(b.online == true)
                     insert_example_hal(b, base, b.examples.size() - 1,*b.examples[b.examples.size()-1]); //query and learn

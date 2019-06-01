@@ -24,6 +24,7 @@ for shot,shots in available_shots.items():
     dream_repeats = 5
     loss = "squared"
     online = 0
+    sort_feature = 1
 
     tree_node = int(2*passes*(num_of_classes*shots/(np.log(num_of_classes*shots)/np.log(2)*leaf_example_multiplier)));
 
@@ -39,11 +40,11 @@ for shot,shots in available_shots.items():
     print("## Training...")
     start = time.time()
     os.system("../../build/vowpalwabbit/vw {} --memory_tree {} --learn_at_leaf {} --max_number_of_labels {} --oas {} --online {} --dream_at_update {}\
-              --leaf_example_multiplier {} --dream_repeats {} \
+              --leaf_example_multiplier {} --dream_repeats {} --sort_features {}\
         --Alpha {} -l {} -b {} -c --passes {} --loss_function {} --holdout_off -f {}".format(
                 train_data,
                 tree_node, learn_at_leaf, num_of_classes,  use_oas, online, dream_at_update, 
-                leaf_example_multiplier, dream_repeats, alpha, lr, bits, passes, loss, saved_model))
+                leaf_example_multiplier, dream_repeats, sort_feature, alpha, lr, bits, passes, loss, saved_model))
     train_time = time.time() - start
 
     #test:
