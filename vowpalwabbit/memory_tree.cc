@@ -85,15 +85,31 @@ namespace memory_tree_ns
         }
     }
 
+    int cmpfunc( const void *a, const void *b) 
+    {
+        return *(char*)a - *(char*)b;
+    }
+
     void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, int oas = false)
     {
         copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
         ec.total_sum_feat_sq = 0.0;  //sort namespaces.  pass indices array into sort...template (leave this to the end)
-        for(namespace_index c1 : ec1.indices){
-            for(namespace_index c2 : ec2.indices){
-                if (c1 == c2)
-                    diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1], ec.total_sum_feat_sq, ec1.total_sum_feat_sq, ec2.total_sum_feat_sq);
-            }
+        
+        qsort(ec1.indices.begin(), ec1.indices.size(), sizeof(namespace_index), cmpfunc);
+        qsort(ec2.indices.begin(), ec2.indices.size(), sizeof(namespace_index), cmpfunc);
+        
+        for (size_t idx1 = 0, idx2 = 0; idx1 < ec1.indices.size() && idx2 < ec2.indices.size(); idx1++)
+        {
+            namespace_index c1 = ec1.indices[idx1];
+            namespace_index c2 = ec2.indices[idx2];
+            if (c1 < c2) continue;
+            
+            while (c1 > c2 && ++idx2 < ec2.indices.size())
+                c2 = ec2.indices[idx2];
+            
+            if (c1 == c2)
+                diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1], ec.total_sum_feat_sq, ec1.total_sum_feat_sq, ec2.total_sum_feat_sq);
+                ++idx2;
         }
     }
 
@@ -135,21 +151,6 @@ namespace memory_tree_ns
         }
     };
 
-    struct score_label
-    {
-        uint32_t label;
-        float score;
-        score_label()
-        {
-            label = 0;
-            score = 0;
-        }
-        score_label(uint32_t l, float s){
-            label = l;
-            score = s;
-        }
-    };
-
     //memory_tree
     struct memory_tree
     {
@@ -173,31 +174,24 @@ namespace memory_tree_ns
         size_t max_depth;
         size_t max_ex_in_leaf;
 
-        float construct_time;
-        float test_time;
-        float cumulative_reward;
-        float cumulative_reward_count;
-
-        bool path_id_feat;
+        float construct_time; //recording the time for constructing the memory tree
+        float test_time; //recording the test time 
 
         uint32_t num_mistakes;
-        uint32_t num_ecs;
-        uint32_t num_test_ecs;
-        uint32_t test_mistakes;
-        int learn_at_leaf;
+        int learn_at_leaf; //indictor for turning on learning the scorer function at the leaf level
 
         bool test_mode;
 
-        size_t current_pass;
+        size_t current_pass;  //for tracking # of passes over the dataset
         size_t final_pass;
 
         int top_K;  //commands:
-        int oas;
-	    int dream_at_update;
+        int oas; //indicator for multi-label classification (oas = 1)
+	    int dream_at_update; 
 
-        int online;
+        int online; //indicator for running CMT in online fashion
 
-        float F1_score;
+        float F1_score; 
         float hamming_loss;
 
         memory_tree()
@@ -208,9 +202,6 @@ namespace memory_tree_ns
             routers_used = 0;
             iter = 0;
             num_mistakes = 0;
-            num_ecs = 0;
-            num_test_ecs = 0;
-            path_id_feat = false;
             test_mode = false;
             max_depth = 0;
             max_ex_in_leaf = 0;
@@ -335,7 +326,6 @@ namespace memory_tree_ns
         else    
             return -1;
     }
-
 
     //train the node with id cn, using the statistics stored in the node to
     //formulate a binary classificaiton example.
@@ -846,11 +836,10 @@ namespace memory_tree_ns
         path_to_leaf.delete_v();
     }
 
-    void insert_example_hal(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec) 
+    //using reward signals 
+    void insert_example_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec) 
     {
-        //insert_example_without_ips(b, base, ec_array_index, true);
         single_query_and_learn(b, base, ec_array_index, ec);
-        //multiple_query_learn_and_final_insert(b, base, ec_array_index, ec);
     }
 
     //node here the ec is already stored in the b.examples, the task here is to rout it to the leaf, 
@@ -929,7 +918,7 @@ namespace memory_tree_ns
                 copy_example_data(new_ec, &ec, b.oas);
                 b.examples.push_back(new_ec);   
                 if(b.online == true)
-                    insert_example_hal(b, base, b.examples.size() - 1,*b.examples[b.examples.size()-1]); //query and learn
+                    insert_example_rew(b, base, b.examples.size() - 1,*b.examples[b.examples.size()-1]); //query and learn
                 
                 insert_example(b, base, b.examples.size() - 1); //unsupervised learning. 
                 for (uint32_t i = 0; i < b.dream_repeats; i++)
@@ -937,7 +926,7 @@ namespace memory_tree_ns
             }
             else{ //starting from the current pass, we just learn using reinforcement signal, no insertion needed:
                 size_t ec_id = (b.iter)%b.examples.size();
-                insert_example_hal(b, base, ec_id, *b.examples[ec_id]); //no insertion will happen in this call
+                insert_example_rew(b, base, ec_id, *b.examples[ec_id]); //no insertion will happen in this call
 		        for (uint32_t i = 0; i < b.dream_repeats; i++)
 		            experience_replay(b, base);
             }
