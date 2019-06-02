@@ -1710,4 +1710,19 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
     train-sets/ref/oaa_subsample.stderr
 
+# Test 191: malformed examples, onethread, strict_parse failure
+{VW} -d train-sets/malformed.dat --onethread --strict_parse
+    train-sets/ref/malformed-onethread-strict_parse.stderr
+    train-sets/ref/malformed-onethread-strict_parse.stdout
+
+# Test 192: malformed examples, strict_parse failure
+{VW} -d train-sets/malformed.dat --strict_parse
+    train-sets/ref/malformed-strict_parse.stderr
+    train-sets/ref/malformed-strict_parse.stdout
+
+# Test 193: malformed examples success
+{VW} -d train-sets malformed.dat
+    train-sets/ref/malformed.stderr
+    train-sets/ref/malformed.stdout
+
 # Do not delete this line or the empty line above it
