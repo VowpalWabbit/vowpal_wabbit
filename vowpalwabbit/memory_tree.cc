@@ -68,19 +68,23 @@ namespace memory_tree_ns
             return;
     
         float denominator = pow(norm_sq1*norm_sq2,0.5);
-        for (size_t idx1 = 0, idx2 = 0; idx1 < f1.size() && idx2 < f2.size(); idx1++)
+        size_t idx1 = 0;
+        size_t idx2 = 0;
+
+        while (idx1 < f1.size() && idx2 < f2.size())
         {
             uint64_t ec1pos = f1.indicies[idx1];
             uint64_t ec2pos = f2.indicies[idx2];
-            if (ec1pos < ec2pos) continue;
-
-            while (ec1pos > ec2pos && ++idx2 < f2.size())
-                ec2pos = f2.indicies[idx2];
-
-            if (ec1pos == ec2pos){
+            
+            if (ec1pos < ec2pos)
+                idx1++;
+            else if(ec1pos > ec2pos)
+                idx2++;
+            else{
                 prod_f.push_back(f1.values[idx1]*f2.values[idx2]/denominator, ec1pos);
                 total_sum_feat_sq+=f1.values[idx1]*f2.values[idx2]/denominator;  //make this out of loop
-                ++idx2;
+                idx1++;
+                idx2++;
             }
         }
     }
@@ -98,18 +102,22 @@ namespace memory_tree_ns
         qsort(ec1.indices.begin(), ec1.indices.size(), sizeof(namespace_index), cmpfunc);
         qsort(ec2.indices.begin(), ec2.indices.size(), sizeof(namespace_index), cmpfunc);
         
-        for (size_t idx1 = 0, idx2 = 0; idx1 < ec1.indices.size() && idx2 < ec2.indices.size(); idx1++)
+        size_t idx1 = 0;
+        size_t idx2 = 0;
+        while (idx1 < ec1.indices.size() && idx2 < ec2.indices.size())
+        //for (size_t idx1 = 0, idx2 = 0; idx1 < ec1.indices.size() && idx2 < ec2.indices.size(); idx1++)
         {
             namespace_index c1 = ec1.indices[idx1];
             namespace_index c2 = ec2.indices[idx2];
-            if (c1 < c2) continue;
-            
-            while (c1 > c2 && ++idx2 < ec2.indices.size())
-                c2 = ec2.indices[idx2];
-            
-            if (c1 == c2)
+            if (c1 < c2)
+                idx1++;
+            else if (c1 > c2)
+                idx2++;
+            else{
                 diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1], ec.total_sum_feat_sq, ec1.total_sum_feat_sq, ec2.total_sum_feat_sq);
-                ++idx2;
+                idx1++;
+                idx2++;
+            }
         }
     }
 
@@ -460,20 +468,41 @@ namespace memory_tree_ns
         }
     }
 
+
+    int compare_label( const void *a, const void *b) 
+    {
+        return *(uint32_t*)a - *(uint32_t*)b;
+    }
+
     
-    template<typename T>
-    inline uint32_t over_lap(v_array<T>& array_1, v_array<T>& array_2){
+    
+    inline uint32_t over_lap(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2){
         uint32_t num_overlap = 0;
-        for (size_t i1 = 0; i1 < array_1.size(); i1++){
-            T item1 = array_1[i1];
-            if (v_array_contains(array_2, item1) == true)
+        
+        qsort(array_1.begin(), array_1.size(), sizeof(uint32_t), compare_label);
+        qsort(array_2.begin(), array_2.size(), sizeof(uint32_t), compare_label);
+
+        uint32_t idx1 = 0;
+        uint32_t idx2 = 0;
+        while (idx1 < array_1.size() && idx2 < array_2.size())
+        {
+            uint32_t c1 = array_1[idx1];
+            uint32_t c2 = array_2[idx2];
+            if (c1 < c2)
+                idx1++;
+            else if (c1 > c2)
+                idx2++;
+            else{
                 num_overlap++;
+                idx1++;
+                idx2++;
+            }
         }
         return num_overlap;
     }
-    
-    template<typename T>
-    inline uint32_t hamming_loss(v_array<T>& array_1, v_array<T>& array_2){
+
+    //template<typename T>
+    inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2){
     	uint32_t overlap = over_lap(array_1, array_2);
 	    return array_1.size() + array_2.size() - 2*overlap;
     }
