@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 
 #include <math.h>
 #include <ctype.h>
+#include <stdexcept>
 #include "parse_example.h"
 #include "hash.h"
 #include "unique_sort.h"
@@ -77,9 +78,11 @@ class TC_parser
   inline void parserWarning(const char* message, char* begin, char* pos, const char* message2)
   {
     if (p->strict_parse) {
-      THROW(message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
-            << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
-            << endl);
+      std::stringstream exc_msg;
+      exc_msg << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
+              << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
+              << endl;
+      throw std::domain_error(exc_msg.str());
     } else {
       cerr << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
            << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
