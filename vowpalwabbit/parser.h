@@ -105,6 +105,7 @@ struct parser
   std::shared_ptr<void> jsonp;
 
   bool strict_parse;
+  std::exception_ptr exc_ptr;
 };
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
