@@ -18,7 +18,6 @@ using namespace VW::config;
 #define W_MX 3  // maximum absolute value
 #define W_WE 4  // Wealth
 #define W_MG 5  // maximum gradient
-#define W_AV 6  // average features
 
 struct update_data
 {
@@ -29,8 +28,6 @@ struct update_data
   float l2_lambda;
   float predict;
   float normalized_squared_norm_x;
-  float normalization;
-  float weight;
   float iter;
 };
 
@@ -87,6 +84,7 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
   GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
   return uncetain.score;
 }
+
 template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
@@ -187,9 +185,6 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 {
   float* w = &wref;
 
-  w[W_AV]=w[W_AV]+x;
-  x=x-w[W_AV]/(d.iter+1.0);
-
   float fabs_x = fabs(x);
   if (fabs_x > w[W_MX]) {
     w[W_MX] = fabs_x;
@@ -197,20 +192,9 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 
   // COCOB update without sigmoid
   if (w[W_MG]*w[W_MX]>0)
-    w[W_XT] = (4.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+    w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
   else
     w[W_XT] = 0;
-
-  //if (isnan(w[W_XT]))
-  //  cerr << "1 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" x:"<<x<<endl;
-
-
-  //cerr << "2 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" x:"<<x<<endl;
-  //if (w[W_WE]+4.0<0)
-  //  cerr << w[W_WE] << ", ";
-
-  // KT update
-  //w[W_XT] = (2.0*sqrtf(w[W_G2])+w[W_WE]) * w[W_ZT]/(w[W_MX]*w[W_MX]*(1.0+w[W_G2]));
 
   d.predict += w[W_XT] * x;
   if (w[W_MX]>0)
@@ -221,145 +205,37 @@ void inner_update_cb_post(update_data& d, float x, float& wref)
 {
   float* w = &wref;
 
-  x=x-w[W_AV]/(d.iter+1.0);
-
   float gradient = d.update * x;
-
-  //cerr << "3 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" grad:"<< gradient<<" x:"<<x<<endl;
 
   float fabs_gradient = fabs(d.update);
   if (fabs_gradient > w[W_MG]) {
-    w[W_MG] = fabs_gradient>4.0?fabs_gradient:4.0;
+    w[W_MG] = fabs_gradient>d.ftrl_beta?fabs_gradient:d.ftrl_beta;
+    w[W_MG] = fabs_gradient;
     if (w[W_MX]!=0)
-      w[W_XT] = (4.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+      w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
   }
 
-  //if (fabs(w[W_XT]/(4.0+w[W_WE])*gradient)>=0.99)
-  //  cerr << "mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" update:"<< d.update<<" x:"<<x<<endl;
-
   w[W_ZT] += -gradient;
-
-  // KT update
-  //w[W_G2] += 1.0;
-
-  // COCOB update
   w[W_G2] += fabs(gradient);
-
   w[W_WE] += (-gradient*w[W_XT]);
-
-//   // COCOB update without sigmoid
-//   if (w[W_MG]>0)
-//     w[W_XT] = (4.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
-//   else
-//     w[W_XT] = 0;
-
-  //if (w[W_MX]<fabs(gradient))
-  //cerr << "4 mx:"<<w[W_MX]<<" mg:"<<w[W_MG]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" grad:"<< gradient<<" x:"<<x<<endl;
-  //if (w[W_WE]+4.0<0)
-  //  cerr << w[W_WE]<< ", ";
 }
 
 void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
-  b.data.weight = ec.weight;
   b.data.iter = b.iter;
 
   GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
 
-
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
 
-  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight))+b.bias;
-  //ec.partial_prediction = b.data.predict + b.bias;
+  //ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight))+b.bias;
+  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight));
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
-
-
-// Coin betting vectors
-// W_XT 0  current parameter
-// W_ZT 1  fraction to bet
-// W_G2 2  sum of squared gradients
-// W_MX 3  maximum absolute value x
-// W_WE 4  Wealth
-// W_MG 3  maximum absolute gradient
-void inner_update_cb2_state_and_predict(update_data& d, float x, float& wref)
-{
-  float* w = &wref;
-
-  float fabs_x = fabs(x);
-  if (fabs_x > w[W_MX]) {
-    w[W_MX] = fabs_x;
-  }
-
-//   if (w[W_ZT]<-0.5/w[W_MX])
-//     w[W_ZT]=-0.5/w[W_MX];
-//   else if (w[W_ZT]>0.5/w[W_MX])
-//     w[W_ZT]=0.5/w[W_MX];
-
-  // ONS-based update
-  w[W_XT] = (0.25+w[W_WE]) * w[W_ZT];
-
-  //d.predict += w[W_XT] * x/w[W_MX];
-  d.predict += w[W_XT] * x;
-  if (w[W_MX]>0)
-    d.normalized_squared_norm_x += x*x/(w[W_MX]*w[W_MX]);
-}
-
-void inner_update_cb2_post(update_data& d, float x, float& wref)
-{
-  float* w = &wref;
-  float gradient = d.update * x;
-
-  float fabs_gradient = fabs(gradient);
-  if (fabs_gradient > w[W_MG]) {
-    //gradient = sign(gradient)*w[W_MG];
-    w[W_MG] = fabs_gradient;
-    if (w[W_MG]>0.0)
-      if (w[W_ZT]<-0.5/w[W_MG])
-        w[W_ZT]=-0.5/w[W_MG];
-      else if (w[W_ZT]>0.5/w[W_MG])
-        w[W_ZT]=0.5/w[W_MG];
-    else
-      w[W_ZT]=0;
-  }
-
-  float z = gradient/(1.0-w[W_ZT]*gradient);
-  w[W_G2] += z*z;
-  w[W_ZT] += -2.0/(2.0-log(3.0))*z/(w[W_G2]+0.1);
-  if (w[W_MG]>0.0)
-    if (w[W_ZT]<-0.5/w[W_MG])
-      w[W_ZT]=-0.5/w[W_MG];
-    else if (w[W_ZT]>0.5/w[W_MG])
-      w[W_ZT]=0.5/w[W_MG];
-  else
-    w[W_ZT]=0;
-
-
-  w[W_WE] += (-gradient*w[W_XT]);
-
-  //cerr << "mx:"<<w[W_MX]<<" wealth:"<< w[W_WE]<<" w:"<< w[W_XT]<<" beta:"<<w[W_ZT]/(w[W_MX]*(w[W_MX]+w[W_G2]))<<" grad:"<< gradient<<endl;
-}
-
-void update_state_and_predict_cb2(ftrl& b, single_learner&, example& ec)
-{
-  b.data.predict = 0;
-  b.data.normalized_squared_norm_x = 0;
-
-  GD::foreach_feature<update_data, inner_update_cb2_state_and_predict>(*b.all, ec, b.data);
-
-  b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
-  b.total_weight += ec.weight;
-
-  ec.partial_prediction = b.data.predict/((float)(b.all->normalized_sum_norm_x/b.total_weight));
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
-}
-
-
-
 
 void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 {
@@ -384,37 +260,26 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
-
 void update_after_prediction_cb(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-
-  //cerr << endl<<"update"<< endl;
 
   GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
 
   float fabs_gradient = fabs(b.data.update);
   if (fabs_gradient > b.max_grad_bias) {
     b.max_grad_bias = fabs_gradient;
-    b.bias = (4.0+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
+    b.bias = (b.ftrl_alpha+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
   }
 
   b.wealth_bias += -b.bias*b.data.update;
   b.sum_abs_grad_bias += fabs(b.data.update);
   b.sum_grad_bias += -b.data.update;
 
-  b.bias = (4.0+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
+  b.bias = (b.ftrl_alpha+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
 
   b.iter += 1.0;
 }
-
-void update_after_prediction_cb2(ftrl& b, example& ec)
-{
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-
-  GD::foreach_feature<update_data, inner_update_cb2_post>(*b.all, ec, b.data);
-}
-
 
 
 template <bool audit>
@@ -449,17 +314,6 @@ void learn_cb(ftrl& a, single_learner& base, example& ec)
 
   // update state based on the prediction
   update_after_prediction_cb(a, ec);
-}
-
-void learn_cb2(ftrl& a, single_learner& base, example& ec)
-{
-  assert(ec.in_use);
-
-  // update state based on the example and predict
-  update_state_and_predict_cb2(a, base, ec);
-
-  // update state based on the prediction
-  update_after_prediction_cb2(a, ec);
 }
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
@@ -502,18 +356,16 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   bool ftrl_option = false;
   bool pistol = false;
   bool coin = false;
-  bool coin2 = false;
 
   option_group_definition new_options("Follow the Regularized Leader");
   new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("coin", coin).keep().help("coin betting optimizer"))
-      .add(make_option("coin2", coin2).keep().help("ONS-based coin betting optimizer"))
+      .add(make_option("coin", coin).keep().help("Coin betting optimizer"))
       .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
   options.add_and_parse(new_options);
 
-  if (!ftrl_option && !pistol && !coin && !coin2)
+  if (!ftrl_option && !pistol && !coin)
   {
     return nullptr;
   }
@@ -529,6 +381,11 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
   }
+  else if (coin)
+  {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : .0f;
+  }
 
   b->all = &all;
   b->no_win_counter = 0;
@@ -538,7 +395,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->wealth_bias=0.;
   b->sum_abs_grad_bias=0.;
   b->sum_grad_bias=0.;
-  b->max_grad_bias=4.0;
+  b->max_grad_bias=b->ftrl_beta;
   b->iter=0.;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
@@ -563,13 +420,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   {
     algorithm_name = "Coin Betting";
     learn_ptr = learn_cb;
-    all.weights.stride_shift(3);  // NOTE: for more parameter storage
-  }
-  else if (coin2)
-  {
-    algorithm_name = "ONS-based Coin Betting";
-    learn_ptr = learn_cb2;
-    all.weights.stride_shift(3);  // NOTE: for more parameter storage
+    all.weights.stride_shift(3);  // NOTE: for even more parameter storage
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;
