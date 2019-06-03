@@ -45,6 +45,8 @@ struct cb_to_cs_adf
 
 CB::cb_class* get_observed_cost(CB::label& ld);
 
+float safe_probability(float prob);
+
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
 
 template <bool is_learn>
@@ -187,6 +189,9 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
+
+void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_offset, ACTION_SCORE::action_scores action_vals,
+    COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)

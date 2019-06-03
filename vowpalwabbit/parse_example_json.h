@@ -1425,41 +1425,51 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
                                    "Handler: "
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));
-}
 }  // namespace VW
+}
 
 template <bool audit>
-void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
 {
   if (all->p->decision_service_json)
   {
     // Skip lines that do not start with "{"
     if (line[0] != '{')
     {
-      return;
+      return false;
     }
 
     DecisionServiceInteraction interaction;
     VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
+    // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
+    // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
+    // for counterfactual. (@marco)
     if (interaction.skipLearn)
     {
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
-      return;
+      return false;
     }
 
-    // let's continue reading data until we find a line with actions provided
+    // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0)
-      VW::return_multiple_example(*all, examples);
-      examples.push_back(&VW::get_unused_example(all));
-      return;
+    {
+      //VW::return_multiple_example(*all, examples);
+      //examples.push_back(&VW::get_unused_example(all));
+      return false;
+    }
   }
   else
     VW::template read_line_json<audit>(
         *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
 
+  return true;
+}
+
+inline void prepare_for_learner(vw* all, v_array<example*>& examples)
+{
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
   // they're layed out in memory) there is no way to determine upfront if a shared example exists thus even if there are
@@ -1477,12 +1487,30 @@ void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<exampl
   }
 }
 
+// This is used by the python parser
+template <bool audit>
+void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+{
+  bool good_example = parse_line_json<audit>(all, line, num_chars, examples);
+  if (!good_example)
+  {
+    VW::return_multiple_example(*all, examples);
+    examples.push_back(&VW::get_unused_example(all));
+    return;
+  }
+
+  prepare_for_learner(all, examples);
+}
+
 template <bool audit>
 int read_features_json(vw* all, v_array<example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
+  bool reread;
   do
   {
+    reread = false;
+
     char* line;
     size_t num_chars;
     size_t num_chars_initial = read_features(all, line, num_chars);
@@ -1492,8 +1520,10 @@ int read_features_json(vw* all, v_array<example*>& examples)
     // Ensure there is a null terminator.
     line[num_chars] = '\0';
 
-    line_to_examples_json<audit>(all, line, num_chars, examples);
-  } while (examples.size() == 0);
+    reread = !parse_line_json<audit>(all, line, num_chars, examples);
+  } while (reread);
+
+  prepare_for_learner(all, examples);
 
   return 1;
 }

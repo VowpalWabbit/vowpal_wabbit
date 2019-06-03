@@ -14,6 +14,7 @@
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 #include "vw_versions.h"
+#include "explore.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -22,6 +23,7 @@ using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
+using namespace exploration;
 
 namespace CB_ADF
 {
@@ -34,7 +36,10 @@ struct cb_adf
   COST_SENSITIVE::label cs_labels;
   v_array<COST_SENSITIVE::label> prepped_cs_labels;
 
-  action_scores a_s;  // temporary storage for mtr
+  action_scores a_s;  // temporary storage for mtr and sm
+  action_scores prob_s;  // temporary storage for sm; stores softmax values
+  v_array<uint32_t> backup_nf; // temporary storage for sm; backup for numFeatures in examples
+  v_array<uint32_t> backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t offset;
   bool no_predict;
@@ -83,6 +88,99 @@ void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
+void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
+  gen_cs_test_example(examples, mydata.cs_labels);  // create test labels.
+  call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
+  
+  // Can probably do this more efficiently than 6 loops over the examples...
+  //[1: initialize temporary storage;
+  // 2: find chosen action;
+  // 3: create cs_labels (gen_cs_example_sm);
+  // 4: get probability of chosen action;
+  // 5: backup example wts;
+  // 6: restore example wts]
+  mydata.a_s.clear();
+  mydata.prob_s.clear();
+  // TODO: Check that predicted scores are always stored with the first example
+  for (uint32_t i = 0; i < examples[0]->pred.a_s.size(); i++)
+  {
+    mydata.a_s.push_back({examples[0]->pred.a_s[i].action, examples[0]->pred.a_s[i].score});
+    mydata.prob_s.push_back({examples[0]->pred.a_s[i].action, 0.0});
+  }
+
+  float sign_offset = 1.0;    // To account for negative rewards/costs
+  uint32_t chosen_action;
+  float example_weight = 1.0;
+
+  bool shared = CB::ec_is_example_header(*examples[0]);
+  uint32_t startK = 0;
+  if (shared)
+    startK = 1;
+
+  for (uint32_t i = startK; i < examples.size(); i++)
+  {
+    CB::label ld = examples[i]->l.cb;
+    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+    {
+      chosen_action = (i-startK);
+      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability);
+
+      // Importance weights of examples cannot be negative.
+      // So we use a trick: set |w| as weight, and use sign(w) as an offset in the regression target.
+      if (ld.costs[0].cost < 0.0)
+      {
+        sign_offset = -1.0;
+        example_weight = -example_weight;
+      }
+      break;
+    }
+  }
+
+  gen_cs_example_sm(examples, chosen_action, sign_offset, mydata.a_s, mydata.cs_labels);
+
+  // Lambda is -1 in the call to generate_softmax because in vw, lower score is better; for softmax higher score is better.
+  generate_softmax(-1.0, begin_scores(mydata.a_s), end_scores(mydata.a_s), begin_scores(mydata.prob_s), end_scores(mydata.prob_s));
+
+  // TODO: Check Marco's example that causes VW to report prob > 1.
+
+  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)  // Scale example_wt by prob of chosen action
+  {
+    if (mydata.prob_s[i].action == chosen_action)
+    {
+      example_weight *= mydata.prob_s[i].score;
+      break;
+    }
+  }
+  
+  mydata.backup_weights.clear();
+  mydata.backup_nf.clear();
+    for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
+  {
+    uint32_t current_action = mydata.prob_s[i].action;
+    mydata.backup_weights.push_back(examples[current_action + startK]->weight);
+    mydata.backup_nf.push_back(examples[current_action + startK]->num_features);
+
+    if (current_action == chosen_action)
+      examples[current_action + startK]->weight = example_weight * (1.0 - mydata.prob_s[i].score);
+    else
+      examples[current_action + startK]->weight = example_weight * mydata.prob_s[i].score;
+
+    if (examples[current_action + startK]->weight <= 1e-15)
+      examples[current_action + startK]->weight = 0;
+  }
+
+  //Do actual training
+  call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
+
+  //Restore example weights and numFeatures
+  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
+  {
+    uint32_t current_action = mydata.prob_s[i].action;
+    examples[current_action + startK]->weight = mydata.backup_weights[i];
+    examples[current_action + startK]->num_features = mydata.backup_nf[i];
+  }
+}
+
 void learn_DR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels);
@@ -113,6 +211,8 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
   examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability *
       ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
+
+  //TODO!!! mydata.cb_labels are not getting properly restored (empty costs are dropped)
   GEN_CS::call_cs_ldf<true>(
       base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
@@ -172,6 +272,9 @@ void do_actual_learning(cb_adf& data, multi_learner& base, multi_ex& ec_seq)
           learn_MTR<false>(data, base, ec_seq);
         else
           learn_MTR<true>(data, base, ec_seq);
+        break;
+      case CB_TYPE_SM:
+        learn_SM(data, base, ec_seq);
         break;
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << data.gen_cs.cb_type);
@@ -350,7 +453,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", ld->rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", ld->no_predict).help("Do not do a prediction when training"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr,mtr}. Default: mtr"));
+      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_adf_option)
@@ -382,9 +485,11 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     ld->gen_cs.cb_type = CB_TYPE_MTR;
   else if (type_string.compare("dm") == 0)
     ld->gen_cs.cb_type = CB_TYPE_DM;
+  else if (type_string.compare("sm") == 0)
+    ld->gen_cs.cb_type = CB_TYPE_SM;
   else
   {
-    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to mtr." << std::endl;
+    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr." << std::endl;
     ld->gen_cs.cb_type = CB_TYPE_MTR;
   }
 

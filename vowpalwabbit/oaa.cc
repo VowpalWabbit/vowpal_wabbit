@@ -278,8 +278,10 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
         predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type::multiclass);
 
-  if (data_ptr->num_subsample > 0)
+  if (data_ptr->num_subsample > 0) {
     l->set_learn(learn_randomized);
+    l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
+  }
   l->set_finish(finish);
 
   return make_base(*l);
