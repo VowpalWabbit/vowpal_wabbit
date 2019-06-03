@@ -88,15 +88,19 @@ void finish(cbify& data)
 {
   CB::cb_label.delete_label(&data.cb_label);
   data.a_s.delete_v();
+
   if (data.use_adf)
   {
     for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-    {
-      data.adf_data.ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
-      free_it(data.adf_data.ecs[a]);
-    }
+      {
+        data.adf_data.ecs[a]->pred.a_s.delete_v();
+        VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
+        free_it(data.adf_data.ecs[a]);
+      }
     data.adf_data.ecs.~vector<example*>();
+    data.cs_costs.~vector<v_array<COST_SENSITIVE::wclass>>();
+    data.cb_costs.~vector<v_array<CB::cb_class>>();
+    data.cb_as.~vector<ACTION_SCORE::action_scores>();
   }
 }
 
@@ -221,6 +225,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 
   // add cb label to chosen action
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
+  lab.costs.clear();
   lab.costs.push_back(cl);
 
   if (is_learn)
@@ -246,22 +251,21 @@ void init_adf_data(cbify& data, const size_t num_actions)
 template <bool is_learn>
 void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
-  auto& cs_costs = data.cs_costs;
-  auto& cb_costs = data.cb_costs;
-  auto& cb_as = data.cb_as;
-
   // change label and pred data for cb
-  cs_costs.resize(ec_seq.size());
-  cb_costs.resize(ec_seq.size());
-  cb_as.resize(ec_seq.size());
+  if (data.cs_costs.size() < ec_seq.size())
+    data.cs_costs.resize(ec_seq.size());
+  if (data.cb_costs.size() < ec_seq.size())
+    data.cb_costs.resize(ec_seq.size());
+  if (data.cb_as.size() < ec_seq.size())
+    data.cb_as.resize(ec_seq.size());
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    cs_costs[i] = ec.l.cs.costs;
-    cb_costs[i].clear();
-    cb_as[i].clear();
-    ec.l.cb.costs = cb_costs[i];
-    ec.pred.a_s = cb_as[i];
+    data.cs_costs[i] = ec.l.cs.costs;
+    data.cb_costs[i].clear();
+    data.cb_as[i].clear();
+    ec.l.cb.costs = data.cb_costs[i];
+    ec.pred.a_s = data.cb_as[i];
   }
 
   base.predict(ec_seq);
@@ -279,24 +283,30 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   if(!cl.action)
     THROW("No action with non-zero probability found!");
 
-  cl.cost = loss_csldf(data, cs_costs, cl.action);
+  cl.cost = loss_csldf(data, data.cs_costs, cl.action);
 
   // add cb label to chosen action
-  auto& lab = ec_seq[cl.action - 1]->l.cb;
-  lab.costs.push_back(cl);
+  data.cb_label.costs.clear();
+  data.cb_label.costs.push_back(cl);
+  data.cb_costs[cl.action-1] = ec_seq[cl.action-1]->l.cb.costs;
+  ec_seq[cl.action - 1]->l.cb = data.cb_label;
 
   base.learn(ec_seq);
 
   // set cs prediction and reset cs costs
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
-    if (i == cl.action - 1)
-    {
-      ec_seq[i]->pred.multiclass = cl.action;
-      ec_seq[i]->l.cs.costs = cs_costs[cl.action - 1]; // only need this cost for eval
-    }
+    auto& ec = *ec_seq[i];
+    data.cb_as[i]=ec.pred.a_s;//store action_score vector for later reuse.
+    if (i == cl.action -1 )
+      data.cb_label = ec.l.cb;
     else
-      ec_seq[i]->pred.multiclass = 0;
+      data.cb_costs[i] = ec.l.cb.costs;
+    ec.l.cs.costs = data.cs_costs[i];
+    if (i == cl.action - 1)
+      ec.pred.multiclass = cl.action;
+    else
+      ec.pred.multiclass = 0;
   }
 }
 
@@ -366,7 +376,7 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   }
 }
 
-void finish_multiline_example(vw& all, cbify& data, multi_ex& ec_seq)
+void finish_multiline_example(vw& all, cbify& , multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -467,6 +477,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->all = &all;
+  data->use_adf=true;
 
   if (!options.was_supplied("cb_explore_adf"))
   {
