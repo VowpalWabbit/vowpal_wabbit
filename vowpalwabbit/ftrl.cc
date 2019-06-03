@@ -84,7 +84,6 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
   GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
   return uncetain.score;
 }
-
 template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
@@ -192,7 +191,7 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 
   // COCOB update without sigmoid
   if (w[W_MG]*w[W_MX]>0)
-    w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+    w[W_XT] = (4.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
   else
     w[W_XT] = 0;
 
@@ -210,7 +209,6 @@ void inner_update_cb_post(update_data& d, float x, float& wref)
   float fabs_gradient = fabs(d.update);
   if (fabs_gradient > w[W_MG]) {
     w[W_MG] = fabs_gradient>d.ftrl_beta?fabs_gradient:d.ftrl_beta;
-    w[W_MG] = fabs_gradient;
     if (w[W_MX]!=0)
       w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
   }
@@ -231,8 +229,7 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
 
-  //ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight))+b.bias;
-  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight));
+  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight))+b.bias;
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
@@ -259,6 +256,7 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
 
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
+
 
 void update_after_prediction_cb(ftrl& b, example& ec)
 {
@@ -359,7 +357,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Follow the Regularized Leader");
   new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("coin", coin).keep().help("Coin betting optimizer"))
+      .add(make_option("coin", coin).keep().help("coin betting optimizer"))
       .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
@@ -380,11 +378,6 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   {
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
-  }
-  else if (coin)
-  {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : .0f;
   }
 
   b->all = &all;
@@ -420,7 +413,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   {
     algorithm_name = "Coin Betting";
     learn_ptr = learn_cb;
-    all.weights.stride_shift(3);  // NOTE: for even more parameter storage
+    all.weights.stride_shift(3);  // NOTE: for more parameter storage
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;
