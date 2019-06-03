@@ -191,7 +191,7 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 
   // COCOB update without sigmoid
   if (w[W_MG]*w[W_MX]>0)
-    w[W_XT] = (4.0+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+    w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
   else
     w[W_XT] = 0;
 
@@ -357,7 +357,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Follow the Regularized Leader");
   new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("coin", coin).keep().help("coin betting optimizer"))
+      .add(make_option("coin", coin).keep().help("Coin betting optimizer"))
       .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
