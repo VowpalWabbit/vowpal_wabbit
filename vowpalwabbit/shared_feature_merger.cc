@@ -26,10 +26,7 @@ bool use_reduction(config::options_i& options)
   return false;
 }
 
-struct sfm_data
-{
-  LEARNER::multi_learner* base;
-};
+struct sfm_data {};
 
 template <bool is_learn>
 void predict_or_learn(sfm_data& data, LEARNER::multi_learner& base, multi_ex& ec_seq)
@@ -63,26 +60,6 @@ void predict_or_learn(sfm_data& data, LEARNER::multi_learner& base, multi_ex& ec
   }
 }
 
-// Currently unused due to inefficiency.
-void finish_multiline_example(vw& all, sfm_data& data, multi_ex& ec_seq)
-{
-  multi_ex::value_type shared_example = nullptr;
-  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
-  if (has_example_header)
-  {
-
-    shared_example = ec_seq[0];
-    ec_seq.erase(ec_seq.begin());
-    // merge sequences
-    for (auto& example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
-  }
-
-  data.base->finish_example(all, ec_seq);
-
-  if(has_example_header) ec_seq.insert(ec_seq.begin(), shared_example);
-  VW::clear_seq_and_finish_examples(all, ec_seq);
-}
-
 LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)
 {
   if (!use_reduction(options))
@@ -91,12 +68,10 @@ LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, v
   auto data = scoped_calloc_or_throw<sfm_data>();
 
   auto* base = LEARNER::as_multiline(setup_base(options, all));
-  data->base = base;
   auto& learner = LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
 
-  // Incorrect values will be reported without this, but its currently too expensive to be worth it
-  // TODO: If we can find a more efficient way to massage the data, we should uncomment this line
-  //learner.set_finish_example(finish_multiline_example);
+  // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
+  //       shared example in a finish_example function. However, its too expensive to perform the full operation.
 
   return LEARNER::make_base(learner);
 }
