@@ -100,6 +100,8 @@ void finish(cbify& data)
     data.adf_data.ecs.~vector<example*>();
     data.cs_costs.~vector<v_array<COST_SENSITIVE::wclass>>();
     data.cb_costs.~vector<v_array<CB::cb_class>>();
+    for (auto as : data.cb_as)
+      as.delete_v();
     data.cb_as.~vector<ACTION_SCORE::action_scores>();
   }
 }

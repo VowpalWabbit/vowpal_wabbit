@@ -276,7 +276,6 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
-
   action_scores& preds = examples[0]->pred.a_s;
 
   uint32_t num_actions = (uint32_t)preds.size();
