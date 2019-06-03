@@ -314,7 +314,7 @@ struct LabelState : BaseState<audit>
 
   BaseState<audit>* StartObject(Context<audit>& ctx) { return ctx.label_object_state.StartObject(ctx); }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool)
   {
     VW::parse_example_label(*ctx.all, *ctx.ex, str);
     return ctx.previous_state;
@@ -341,7 +341,7 @@ struct TextState : BaseState<audit>
 {
   TextState() : BaseState<audit>("text") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
     auto& ns = ctx.CurrentNamespace();
 
@@ -382,7 +382,7 @@ struct TagState : BaseState<audit>
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool )
   {
     push_many(ctx.ex->tag, str, length);
 
@@ -598,7 +598,7 @@ class DefaultState : public BaseState<audit>
     return &ctx.ignore_state;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
     ctx.key = str;
     ctx.key_length = length;
@@ -637,7 +637,7 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
     // string escape
     const char* end = str + length;
