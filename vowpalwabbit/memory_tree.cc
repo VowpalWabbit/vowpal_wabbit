@@ -51,7 +51,7 @@ namespace memory_tree_ns
         VW::copy_example_data(false, dst, src);
     }
 
-    inline void free_example(example* ec) //to do: try to see if we can dealloc_example in example.cc
+    inline void free_example(example* ec) 
     {
         VW::dealloc_example(nullptr, *ec);
         free(ec);
@@ -96,7 +96,10 @@ namespace memory_tree_ns
 
     void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, int oas = false)
     {
-        copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
+        //copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
+        VW::dealloc_example(nullptr, ec, nullptr); //clear ec
+        copy_example_data(&ec, &ec1, oas);
+
         ec.total_sum_feat_sq = 0.0;  //sort namespaces.  pass indices array into sort...template (leave this to the end)
         
         qsort(ec1.indices.begin(), ec1.indices.size(), sizeof(namespace_index), cmpfunc);
@@ -202,6 +205,8 @@ namespace memory_tree_ns
         float F1_score; 
         float hamming_loss;
 
+        example* kprod_ec;
+
         memory_tree()
         {
             nodes = v_init<node>();
@@ -268,6 +273,8 @@ namespace memory_tree_ns
         b.nodes.push_back(node());
         b.nodes[0].internal = -1; //mark the root as leaf
         b.nodes[0].base_router = (b.routers_used++);
+
+        b.kprod_ec = &calloc_or_throw<example>(); //allocate space for kronecker product example
 
         b.total_num_queries = 0;
         b.max_routers = b.max_nodes;
@@ -575,12 +582,10 @@ namespace memory_tree_ns
                 //(which is for unsupervised training for memory tree)
                 if (b.learn_at_leaf == true && b.current_pass >= 1){ 
                     float tmp_s = normalized_linear_prod(b, &ec, b.examples[loc]);
-                    example* kprod_ec = &calloc_or_throw<example>();
-                    diag_kronecker_product_test(ec, *b.examples[loc], *kprod_ec, b.oas);
-                    kprod_ec->l.simple = {FLT_MAX, 0., tmp_s};
-                    base.predict(*kprod_ec, b.max_routers);
-                    score = kprod_ec->partial_prediction;
-                    free_example(kprod_ec);
+                    diag_kronecker_product_test(ec, *b.examples[loc], *b.kprod_ec, b.oas );
+                    b.kprod_ec->l.simple = {FLT_MAX, 0., tmp_s};
+                    base.predict(*b.kprod_ec, b.max_routers);
+                    score = b.kprod_ec->partial_prediction;
                 }
                 else
                     score = normalized_linear_prod(b, &ec, b.examples[loc]);
@@ -720,12 +725,10 @@ namespace memory_tree_ns
 
         if (b.learn_at_leaf == true && closest_ec != -1){
         	float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
-        	example* kprod_ec = &calloc_or_throw<example>();
-        	diag_kronecker_product_test(ec, *b.examples[closest_ec], *kprod_ec, b.oas);
-         	kprod_ec->l.simple = {reward, 1.f, -score};
-	    	kprod_ec->weight = weight;
-            base.learn(*kprod_ec, b.max_routers);
-            free_example(kprod_ec);
+            diag_kronecker_product_test(ec, *b.examples[closest_ec], *b.kprod_ec, b.oas );
+         	b.kprod_ec->l.simple = {reward, 1.f, -score};
+	    	b.kprod_ec->weight = weight;
+            base.learn(*b.kprod_ec, b.max_routers);
         }
 
         if (b.oas == true)
@@ -746,12 +749,10 @@ namespace memory_tree_ns
             if (b.examples[ec_id]->l.multi.label == ec.l.multi.label)
                 reward = 1.f;             
             float score = normalized_linear_prod(b, &ec, b.examples[ec_id]);
-        	example* kprod_ec = &calloc_or_throw<example>();
-        	diag_kronecker_product_test(ec, *b.examples[ec_id], *kprod_ec, b.oas);
-         	kprod_ec->l.simple = {reward, 1.f, -score};
-	    	kprod_ec->weight = weight; //* b.nodes[leaf_id].examples_index.size();
-            base.learn(*kprod_ec, b.max_routers);
-            free_example(kprod_ec);
+            diag_kronecker_product_test(ec, *b.examples[ec_id], *b.kprod_ec, b.oas);
+         	b.kprod_ec->l.simple = {reward, 1.f, -score};
+	    	b.kprod_ec->weight = weight; //* b.nodes[leaf_id].examples_index.size();
+            base.learn(*b.kprod_ec, b.max_routers);
         }
         return;
     }
@@ -990,6 +991,7 @@ namespace memory_tree_ns
         for (size_t i = 0; i < b.examples.size(); i++)
             free_example(b.examples[i]);
         b.examples.delete_v();
+        free_example(b.kprod_ec);
         cout<<b.max_nodes<<endl;
         cout<<b.construct_time<<" "<<b.test_time<<endl;
     }
