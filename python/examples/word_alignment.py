@@ -87,7 +87,7 @@ class WordAligner(pyvw.SearchTask):
                                     oracle    = oracle,
                                     condition = [ (i, 'p'), (i-1, 'q') ] )
 
-            for ex in examples: ex.finish()
+            self.vw.finish_example(examples)
 
             output.append( spans[pred][2] )
             for j in spans[pred][2]:

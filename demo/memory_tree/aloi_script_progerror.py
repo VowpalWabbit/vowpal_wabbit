@@ -19,6 +19,7 @@ learn_at_leaf = 1 #turn on leaf at leaf actually works better
 loss = "squared"
 dream_repeats = 20 #3
 online = 1
+#random_seed = 4000
 
 tree_node = int(2*passes*(num_of_classes*shots/(np.log(num_of_classes*shots)/np.log(2)*leaf_example_multiplier)));
 

@@ -10,19 +10,17 @@ class SearchTask():
     def __init__(self, vw, sch, num_actions):
         self.vw = vw
         self.sch = sch
-        self.blank_line = self.vw.example("")
-        self.blank_line.finish()
-        self.bogus_example = self.vw.example("1 | x")
+        self.bogus_example = [self.vw.example("1 | x")]
 
     def __del__(self):
-        self.bogus_example.finish()
+        self.vw.finish_examples(bogus_example)
 
     def _run(self, your_own_input_example):
         pass
 
     def _call_vw(self, my_example, isTest, useOracle=False):  # run_fn, setup_fn, takedown_fn, isTest):
         self._output = None
-        self.bogus_example.set_test_only(isTest)
+        self.bogus_example[0].set_test_only(isTest)
         def run(): self._output = self._run(my_example)
         setup = None
         takedown = None
@@ -30,8 +28,7 @@ class SearchTask():
         if callable(getattr(self, "_takedown", None)): takedown = lambda: self._takedown(my_example)
         self.sch.set_structured_predict_hook(run, setup, takedown)
         self.sch.set_force_oracle(useOracle)
-        self.vw.learn(self.bogus_example)
-        self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
+        self.vw.learn(self.bogus_example) # this will cause our ._run hook to get called
 
     def learn(self, data_iterator):
         """Train search task by providing an iterator of examples"""
@@ -128,6 +125,23 @@ class vw(pylibvw.vw):
                 raise TypeError('expecting single line example, got multi_ex of len %i' % len(ec))
         return ec
 
+    def finish_example(self, ex):
+        """Should only be used in conjunction with the parse method"""
+
+        if isinstance(ex, example):
+            if self._is_multiline():
+                raise ValueError('Learner is multiline but single example was passed to finish_example. Use the list of examples instead?')
+            if not ex.finished:
+                pylibvw.vw._finish_example(self, ex)
+                ex.finished = True
+        elif isinstance(ex, list):
+            if not self._is_multiline():
+                raise ValueError('Learner is singleline but multi example was passed to finish_example. Use a single example instead?')
+            if all(x.finished == False for x in ex):
+                pylibvw.vw._finish_example_multi_ex(self, ex)
+                for x in ex:
+                    x.finished = True
+
     def num_weights(self):
         """Get length of weight vector."""
         return pylibvw.vw.num_weights(self)
@@ -157,10 +171,7 @@ class vw(pylibvw.vw):
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
 
         if new_example:
-            if isinstance(ec, list):
-                map(lambda x: x.finish(), ec)
-            else:
-                ec.finish()
+            self.finish_example(ec)
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on this example; ec can either be an example
@@ -200,10 +211,7 @@ class vw(pylibvw.vw):
             prediction = get_prediction(ec[0], prediction_type)
 
         if new_example:
-            if isinstance(ec, list):
-                map(lambda x: x.finish(), ec)
-            else:
-                ec.finish()
+            self.finish_example(ec)
 
         return prediction
 
@@ -594,15 +602,8 @@ class example(pylibvw.example):
         self.finished = False
         self.labelType = labelType
 
-    def __del__(self):
-        self.finish()
-
     def __enter__(self):
         return self
-
-    def __exit__(self,typ,value,traceback):
-        self.finish()
-        return typ is None
 
     def get_ns(self, id):
         """Construct a namespace_id from either an integer or string
@@ -748,13 +749,6 @@ class example(pylibvw.example):
         #     else:
         #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
         #     self.push_feature(ns, f, v, ns_hash)
-
-    def finish(self):
-        """Tell VW that you're done with this example and it can
-        recycle it for later use."""
-        if not self.finished:
-            self.vw.finish_example(self)
-            self.finished = True
 
     def iter_features(self):
         """Iterate over all feature/value pairs in this example (all

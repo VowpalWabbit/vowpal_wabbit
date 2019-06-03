@@ -112,8 +112,8 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
                     actionProb(1, 0.025f)
                 ),
                 actionProbs(
-                    actionProb(1, 0.97499996f),
-                    actionProb(0, 0.025f)
+                    actionProb(0, 0.97499996f),
+                    actionProb(1, 0.025f)
                 )
         };
         vw.close();
