@@ -996,67 +996,30 @@ namespace memory_tree_ns
 
     ///////////////////Save & Load//////////////////////////////////////
     ////////////////////////////////////////////////////////////////////
-    #define writeit(what,str)                               \
-    do                                                    \
-        {                                                   \
-        msg << str << " = " << what << " ";               \
-        bin_text_read_write_fixed (model_file,            \
-                                    (char*) &what,         \
-                                    sizeof (what),         \
-                                    "",                    \
-                                    read,                  \
-                                    msg,                   \
-                                    text);                 \
-        }                                                   \
-    while (0);
 
-    #define writeitvar(what,str,mywhat)                     \
-    auto mywhat = (what);                                 \
-    do                                                    \
-        {                                                   \
-        msg << str << " = " << mywhat << " ";             \
-        bin_text_read_write_fixed (model_file,            \
-                                    (char*) &mywhat,       \
-                                    sizeof (mywhat),       \
-                                    "",                    \
-                                    read,                  \
-                                    msg,                   \
-                                    text);                 \
-        }                                                   \
-    while (0);
 
     void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, stringstream& msg, int& oas)
     {   //deal with tag
         //deal with labels:
-	writeit(ec->num_features, "num_features");
-	writeit(ec->total_sum_feat_sq, "total_sum_features");
-	writeit(ec->weight, "example_weight");
-	writeit(ec->loss, "loss");
-	writeit(ec->ft_offset, "ft_offset");
+	    writeit(ec->num_features, "num_features");
+	    writeit(ec->total_sum_feat_sq, "total_sum_features");
+	    writeit(ec->weight, "example_weight");
+	    writeit(ec->loss, "loss");
+	    writeit(ec->ft_offset, "ft_offset");
         if(oas == false){ //multi-class
             writeit(ec->l.multi.label, "multiclass_label");
             writeit(ec->l.multi.weight, "multiclass_weight");
         }
         else{ //multi-label
-	    //cout<<"start "<<oas<<endl;
             writeitvar(ec->l.multilabels.label_v.size(), "label_size", label_size);
-	    //cout<<"label_size: "<<label_size<<endl;
             if (read){
             	ec->l.multilabels.label_v.clear();
             	for (uint32_t i = 0; i < label_size; i++)
                 	ec->l.multilabels.label_v.push_back(0);
             }
-	    //cout<<"done reading"<<endl;
             for (uint32_t i = 0; i < label_size; i++)
                 writeit(ec->l.multilabels.label_v[i], "ec_label");
-	    //cout<<"done"<<endl;
         }
-
-	//writeit(ec->num_features, "num_features");
-        //writeit(ec->total_sum_feat_sq, "total_sum_features");
-        //writeit(ec->weight, "example_weight");
-        //writeit(ec->loss, "loss");
-        //writeit(ec->ft_offset, "ft_offset");
 
         writeitvar(ec->tag.size(), "tags", tag_number);
         if (read){
@@ -1139,7 +1102,7 @@ namespace memory_tree_ns
             writeit(b.max_nodes, "max_nodes");
             writeit(b.learn_at_leaf, "learn_at_leaf");
             writeit(b.oas, "oas");
-	    //writeit(b.leaf_example_multiplier, "leaf_example_multiplier")
+	        //writeit(b.leaf_example_multiplier, "leaf_example_multiplier")
             writeitvar(b.nodes.size(), "nodes", n_nodes); 
             writeit(b.max_num_labels, "max_number_of_labels");
 
