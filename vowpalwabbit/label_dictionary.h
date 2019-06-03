@@ -1,6 +1,7 @@
 #pragma once
 
 #include "example_predict.h"
+#include "v_hashmap.h"
 
 namespace LabelDict
 {
