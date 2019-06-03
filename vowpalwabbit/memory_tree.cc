@@ -262,7 +262,7 @@ namespace memory_tree_ns
 
     void init_tree(memory_tree& b)
     {
-        srand48(4000);
+        //srand48(4000);
         //simple initilization: initilize the root only
         b.routers_used = 0;
         b.nodes.push_back(node());
@@ -283,7 +283,7 @@ namespace memory_tree_ns
 
 
     //rout based on the prediction
-    inline uint32_t descent(node& n, const float prediction)
+    inline uint32_t insert_descent(node& n, const float prediction)
     { 
         //prediction <0 go left, otherwise go right
         if(prediction < 0){
@@ -439,13 +439,13 @@ namespace memory_tree_ns
             {
                 b.nodes[left_child].examples_index.push_back(ec_pos);
                 float leaf_pred = train_node(b, base, *b.examples[ec_pos], left_child);
-                descent(b.nodes[left_child], leaf_pred); //fake descent, only for update nl and nr                
+                insert_descent(b.nodes[left_child], leaf_pred); //fake descent, only for update nl and nr                
             }
             else
             {
                 b.nodes[right_child].examples_index.push_back(ec_pos);
                 float leaf_pred = train_node(b, base, *b.examples[ec_pos], right_child);
-                descent(b.nodes[right_child], leaf_pred); //fake descent. for update nr and nl
+                insert_descent(b.nodes[right_child], leaf_pred); //fake descent. for update nr and nl
             }
 
             if(b.oas == false){
@@ -615,7 +615,7 @@ namespace memory_tree_ns
 
     
     void predict(memory_tree& b, single_learner& base, example& ec)
-    {
+    {  
         MULTICLASS::label_t mc;
         uint32_t save_multi_pred;
         MULTILABEL::labels multilabels;
@@ -628,6 +628,7 @@ namespace memory_tree_ns
             multilabels = ec.l.multilabels;
             preds = ec.pred.multilabels;
         }
+
 
         uint32_t cn = 0;
         ec.l.simple = {-1.f, 1.f, 0.};
@@ -728,7 +729,7 @@ namespace memory_tree_ns
         }
 
         if (b.oas == true)
-            train_one_against_some_at_leaf(b,base, cn,ec); ///learn the infoerence procedure anyway
+            train_one_against_some_at_leaf(b,base, cn,ec); ///learn the inference procedure anyway
 
         return reward;
     }
@@ -772,7 +773,7 @@ namespace memory_tree_ns
         }
 
         path.clear();
-	ec.l.simple = {FLT_MAX, 1.0, 0.0};
+	    ec.l.simple = {FLT_MAX, 1.0, 0.0};
 		while(b.nodes[cn].internal != -1){
 			path.push_back(cn);  //path stores node id from the root to the leaf
 			base.predict(ec, b.nodes[cn].base_router);
@@ -780,7 +781,7 @@ namespace memory_tree_ns
 			if (insertion == false)
 				cn = prediction < 0 ? b.nodes[cn].left : b.nodes[cn].right;
 			else
-			    cn = descent(b.nodes[cn], prediction);
+			    cn = insert_descent(b.nodes[cn], prediction);
 		}
 		path.push_back(cn); //push back the leaf 
         
@@ -866,7 +867,7 @@ namespace memory_tree_ns
     }
 
     //using reward signals 
-    void insert_example_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec) 
+    void update_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec) 
     {
         single_query_and_learn(b, base, ec_array_index, ec);
     }
@@ -880,7 +881,7 @@ namespace memory_tree_ns
         {   
             //predict and train the node at cn.
             float router_pred = train_node(b, base, *b.examples[ec_array_index], cn); 
-            uint32_t newcn = descent(b.nodes[cn], router_pred); //updated nr or nl
+            uint32_t newcn = insert_descent(b.nodes[cn], router_pred); //updated nr or nl
             cn = newcn; 
         }
     
@@ -895,7 +896,7 @@ namespace memory_tree_ns
                 b.max_ex_in_leaf = b.nodes[cn].examples_index.size();
             }
             float leaf_pred = train_node(b, base, *b.examples[ec_array_index], cn); //tain the leaf as well.
-            descent(b.nodes[cn], leaf_pred); //this is a faked descent, the purpose is only to update nl and nr of cn
+            insert_descent(b.nodes[cn], leaf_pred); //this is a faked descent, the purpose is only to update nl and nr of cn
 
             //if the number of examples exceeds the max_leaf_examples, and not reach the max_nodes - 2 yet, we split:
             if((b.nodes[cn].examples_index.size() >= b.max_leaf_examples) && (b.nodes.size() + 2 <= b.max_nodes)){
@@ -906,7 +907,6 @@ namespace memory_tree_ns
 
     void experience_replay(memory_tree& b, single_learner& base)
     {
-      //return; // TODO turn this back on
         uint32_t cn = 0; //start from root, randomly descent down! 
 	    int ec_id = random_sample_example_pop(b,cn);
 	    if (ec_id >= 0){
@@ -947,7 +947,7 @@ namespace memory_tree_ns
                 copy_example_data(new_ec, &ec, b.oas);
                 b.examples.push_back(new_ec);   
                 if(b.online == true)
-                    insert_example_rew(b, base, b.examples.size() - 1,*b.examples[b.examples.size()-1]); //query and learn
+                    update_rew(b, base, b.examples.size() - 1,*b.examples[b.examples.size()-1]); //query and learn
                 
                 insert_example(b, base, b.examples.size() - 1); //unsupervised learning. 
                 for (uint32_t i = 0; i < b.dream_repeats; i++)
@@ -955,7 +955,7 @@ namespace memory_tree_ns
             }
             else{ //starting from the current pass, we just learn using reinforcement signal, no insertion needed:
                 size_t ec_id = (b.iter)%b.examples.size();
-                insert_example_rew(b, base, ec_id, *b.examples[ec_id]); //no insertion will happen in this call
+                update_rew(b, base, ec_id, *b.examples[ec_id]); //no insertion will happen in this call
 		        for (uint32_t i = 0; i < b.dream_repeats; i++)
 		            experience_replay(b, base);
             }
