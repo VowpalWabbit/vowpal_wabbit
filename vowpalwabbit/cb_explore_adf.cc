@@ -115,10 +115,6 @@ example* test_adf_sequence(multi_ex& ec_seq)
       ret = ec;
       count += 1;
     }
-
-    // Check whether the current line is a shared features example and not in the first position.
-    if (CB::ec_is_example_header(*ec) && (k != 0))
-      THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
 
   if (count > 1)
@@ -157,7 +153,6 @@ float binary_search(float fhat, float delta, float sens, float tol = 1e-6)
 void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_costs, float delta, cb_explore_adf& data,
     multi_learner& base, multi_ex& examples, bool min_only)
 {
-  const bool shared = CB::ec_is_example_header(*examples[0]);
   const size_t num_actions = examples[0]->pred.a_s.size();
   min_costs.resize(num_actions);
   max_costs.resize(num_actions);
@@ -175,9 +170,9 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
   }
 
   // set regressor predictions
-  for (auto as : ex_as[0])
+  for (const auto& as : ex_as[0])
   {
-    examples[shared + as.action]->pred.scalar = as.score;
+    examples[as.action]->pred.scalar = as.score;
   }
 
   const float cmin = data.min_cb_cost;
@@ -185,7 +180,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
 
   for (size_t a = 0; a < num_actions; ++a)
   {
-    example* ec = examples[shared + a];
+    example* ec = examples[a];
     ec->l.simple.label = cmin - 1;
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
@@ -269,8 +264,8 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-	data.offset = examples[0]->ft_offset;
-  //Explore uniform random an epsilon fraction of the time.
+  data.offset = examples[0]->ft_offset;
+  // Explore uniform random an epsilon fraction of the time.
 
   if (is_learn && test_adf_sequence(examples) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
@@ -297,8 +292,7 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
 {
   if (is_learn && test_adf_sequence(examples) != nullptr)
   {
-    uint32_t shared = static_cast<uint32_t>(CB::ec_is_example_header(*examples[0]));
-    for (size_t i = shared; i < examples.size() - 1; ++i)
+    for (size_t i = 0; i < examples.size() - 1; ++i)
     {
       CB::label& ld = examples[i]->l.cb;
       if (ld.costs.size() == 1)
@@ -387,8 +381,6 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
   // Randomize over predictions from a base set of predictors
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)examples.size();
-  if (CB::ec_is_example_header(*examples[0]))
-    num_actions--;
   if (num_actions == 0)
   {
     preds.clear();
@@ -478,8 +470,6 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   else
     probs[preds[0].action].score += additive_probability;
 
-  const uint32_t shared = CB::ec_is_example_header(*examples[0]) ? 1 : 0;
-
   float norm = min_prob * num_actions + (additive_probability - min_prob);
   for (size_t i = 1; i < data.cover_size; i++)
   {
@@ -487,12 +477,9 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
     if (is_learn)
     {
       data.cs_labels_2.costs.clear();
-      if (shared > 0)
-        data.cs_labels_2.costs.push_back(data.cs_labels.costs[0]);
       for (uint32_t j = 0; j < num_actions; j++)
       {
-        float pseudo_cost =
-            data.cs_labels.costs[j + shared].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
+        float pseudo_cost = data.cs_labels.costs[j].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
         data.cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
       GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2,
@@ -564,7 +551,7 @@ void finish(cb_explore_adf& data)
   for (size_t i = 0; i < data.prepped_cs_labels.size(); i++) data.prepped_cs_labels[i].costs.delete_v();
   data.prepped_cs_labels.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();
-  data.gen_cs.mtr_ec_seq.~vector();
+  data.gen_cs.mtr_ec_seq.~multi_ex();
 }
 
 // Semantics: Currently we compute the IPS loss no matter what flags
@@ -583,9 +570,10 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
   auto& ec = *ec_seq[0];
   ACTION_SCORE::action_scores preds = ec.pred.a_s;
 
-  for (size_t i = 0; i < ec_seq.size(); i++)
-    if (!CB::ec_is_example_header(*ec_seq[i]))
-      num_features += ec_seq[i]->num_features;
+  for (const auto& example : ec_seq)
+  {
+    num_features += example->num_features;
+  }
 
   bool labeled_example = true;
   if (c.gen_cs.known_cost.probability > 0)
@@ -761,7 +749,9 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
                .keep()
                .help("Only explore the first action in a tie-breaking event"))
       .add(make_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
+      .add(make_option("cb_type", type_string)
+               .keep()
+               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option)
