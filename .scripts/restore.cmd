@@ -42,7 +42,7 @@ ECHO Restoring "%vwRoot%\cs\examples\simulator\packages.config"
 ECHO.
 
 ECHO Restoring "%vwRoot%\cs\explore\ds_explore_cs.sln"
-"%dotnetPath%" restore "%vwRoot%\cs\explore\ds_explore_cs.sln"
+"%dotnetPath%" restore "/p:Configuration=Release;Platform=Any CPU" "%vwRoot%\cs\explore\ds_explore_cs.sln"
 ECHO.
 
 POPD
