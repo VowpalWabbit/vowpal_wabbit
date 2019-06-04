@@ -29,7 +29,7 @@ bool use_reduction(config::options_i& options)
 struct sfm_data {};
 
 template <bool is_learn>
-void predict_or_learn(sfm_data& data, LEARNER::multi_learner& base, multi_ex& ec_seq)
+void predict_or_learn(sfm_data& , LEARNER::multi_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
     THROW("cb_adf: At least one action must be provided for an example to be valid.");
