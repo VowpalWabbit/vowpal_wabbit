@@ -470,7 +470,7 @@ namespace memory_tree_ns
 
         if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
         {
-            b.max_ex_in_leaf = std::max(b.nodes[cn].nl, b.nodes[cn].nr);
+            b.max_ex_in_leaf = (std::max)(b.nodes[cn].nl, b.nodes[cn].nr);
             //cout<<b.max_ex_in_leaf<<endl;
         }
     }
