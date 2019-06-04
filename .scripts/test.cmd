@@ -25,10 +25,19 @@ IF "%ERRORLEVEL%" NEQ "0" (
 )
 
 ECHO Running VW Unit Tests in C#
-REM TODO: Add explicit logging configuration so it can be uploaded to pipeline results.
 "%vstestPath%" /Platform:x64 /inIsolation "%vwRoot%\vowpalwabbit\x64\Release\cs_unittest.dll" /TestCaseFilter:"TestCategory!=NotOnVSO" --logger:trx "--ResultsDirectory:%vwRoot%\vowpalwabbit\out\test\Release\x64"
 
 IF "%ERRORLEVEL%" NEQ "0" (
+    ENDLOCAL
+    EXIT /B %ERRORLEVEL%
+)
+
+ECHO Running C# Exploration Library Tests...
+REM These really should be using some standard harness so we can get output logs into CI systems
+"%vwRoot%\cs\explore\bin\Release\ds_explore_cs_test.exe" "%vwRoot%\test\explore\test1-input.txt" "%vwRoot%\test\explore\test1-expected.txt"
+
+IF "%ERRORLEVEL%" NEQ "0" (
+    ECHO Failed.
     ENDLOCAL
     EXIT /B %ERRORLEVEL%
 )
