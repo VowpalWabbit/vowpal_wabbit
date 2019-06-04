@@ -184,8 +184,7 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEA
 VW_DLL_MEMBER void VW_CALLING_CONV VW_InitFeatures(VW_FEATURE_SPACE feature_space, size_t features_count)
 {
   VW::primitive_feature_space* fs = reinterpret_cast<VW::primitive_feature_space*>(feature_space);
-  fs->fs = new feature[features_count];
-  fs->len = features_count;
+  VW::init_features(*fs, features_count);
 }
 
 VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeature(VW_FEATURE_SPACE feature_space, size_t index)
@@ -194,11 +193,10 @@ VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeature(VW_FEATURE_SPACE feature_
   return &(fs->fs[index]);
 }
 
-VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE f, size_t feature_hash, float value)
+VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE_SPACE feature_space, size_t index, size_t feature_hash, float value)
 {
-  feature* _feature = reinterpret_cast<feature*>(f);
-  _feature->weight_index = feature_hash;
-  _feature->x = value;
+  VW::primitive_feature_space* fs = reinterpret_cast<VW::primitive_feature_space*>(feature_space);
+  VW::set_feature(*fs, index, feature_hash, value);
 }
 
 VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)

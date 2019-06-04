@@ -105,7 +105,7 @@ extern "C"
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEATURE_SPACE feature_space, const char* name);
   VW_DLL_MEMBER void VW_CALLING_CONV VW_InitFeatures(VW_FEATURE_SPACE feature_space, size_t features_count);
   VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeature(VW_FEATURE_SPACE feature_space, size_t index);
-  VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE feature, size_t feature_hash, float value);
+  VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE feature, size_t index, size_t feature_hash, float value);
   VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen);
   VW_DLL_MEMBER void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f);
 #ifdef USE_CODECVT
