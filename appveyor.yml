@@ -20,7 +20,7 @@ build_script:
 - cd %vwRoot%
 - git submodule update --init --recursive
 - .scripts/restore.cmd
-- .scripts/build.cmd
+- .scripts/build.cmd /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 test_script:
 - ps: >-
     if($env:PLATFORM -eq "x64")
