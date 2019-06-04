@@ -53,9 +53,49 @@ bool is_ring_example(vw& all, example* ae);
 
 struct primitive_feature_space  // just a helper definition.
 {
-  unsigned char name;
-  feature* fs;
-  size_t len;
+ private:
+  vw& all;
+  unsigned char name{0};
+  uint64_t hash{0};
+  std::vector<feature> fs{0};
+
+ public:
+  primitive_feature_space(vw& _all);
+  primitive_feature_space(vw& _all, const std::string& _name, size_t _len);
+  primitive_feature_space(::vw& _all, const std::string& _name, std::initializer_list<feature> features);
+  primitive_feature_space::primitive_feature_space(
+      ::vw& _all, const std::string& _name, std::initializer_list<std::tuple<const char*, float>> features);
+  primitive_feature_space(const primitive_feature_space& other) = default;
+  primitive_feature_space& operator=(const primitive_feature_space& other) = default;
+
+  void reset(size_t _len);
+
+  const feature& operator[](size_t index) const;
+  feature& operator[](size_t index);
+
+  void set(size_t index, const std::string& feature_name, float value);
+
+  void set_name(const std::string& _name);
+  unsigned char get_name() const;
+  size_t size() const;
+};
+
+class feature_space
+{
+ private:
+  vw& all;
+  std::vector<primitive_feature_space> fspaces;
+
+ public:
+  feature_space(vw& _all, size_t _size);
+
+  feature_space(const feature_space& other) = default;
+  feature_space& operator=(const feature_space& other) = default;
+
+  const primitive_feature_space& operator[](size_t index) const;
+  primitive_feature_space& operator[](size_t index);
+
+  size_t size() const { return fspaces.size(); }
 };
 
 // The next commands deal with creating examples.  Caution: VW does not all allow creation of many examples at once by
@@ -69,7 +109,7 @@ example* read_example(vw& all, std::string example_line);
 // The more complex way to create an example.
 
 // after you create and fill feature_spaces, get an example with everything filled in.
-example* import_example(vw& all, std::string label, primitive_feature_space* features, size_t len);
+example* import_example(vw& all, std::string label, feature_space& features);
 
 // callers must free memory using release_example
 // this interface must be used with care as finish_example is a no-op for these examples.
@@ -115,9 +155,7 @@ void copy_example_data(bool audit, example*, example*);  // metadata + features,
 void clear_example_data(example&);                       // don't clear the label
 void move_feature_namespace(example* dst, example* src, namespace_index c);
 
-// after export_example, must call releaseFeatureSpace to free native memory
-primitive_feature_space* export_example(vw& all, example* e, size_t& len);
-void releaseFeatureSpace(primitive_feature_space* features, size_t len);
+feature_space* export_example(vw& all, example* e, size_t& len);
 
 void save_predictor(vw& all, std::string reg_name);
 void save_predictor(vw& all, io_buf& buf);

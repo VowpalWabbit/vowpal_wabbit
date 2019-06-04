@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="cb_explore_adf_test.cc" />
     <ClCompile Include="explore_test.cc" />
+    <ClCompile Include="feature_space_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />

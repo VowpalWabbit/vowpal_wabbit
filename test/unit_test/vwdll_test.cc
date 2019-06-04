@@ -30,23 +30,23 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
   //construct example
   VW_HANDLE handle2 = VW_InitializeA("-q st --noconstant --quiet");
   VW_EXAMPLE example_constructed;
-  auto fs = VW_InitializeFeatureSpaces(2);
+  auto fs = VW_InitializeFeatureSpace(handle2, 2);
 
-  auto first = VW_GetFeatureSpace(fs, 0);
+  auto first = VW_GetPrimitiveFeatureSpace(fs, 0);
   VW_InitFeatures(first, 3);
-  auto shash = VW_SetFeatureSpace(handle2, first, "s");
-  VW_SetFeature(VW_GetFeature(first, 0), VW_HashFeatureA(handle2, "p^the_man", shash), 1.0f);
-  VW_SetFeature(VW_GetFeature(first, 1), VW_HashFeatureA(handle2, "w^the", shash), 1.0f);
-  VW_SetFeature(VW_GetFeature(first, 2), VW_HashFeatureA(handle2, "w^man", shash), 1.0f);
+  VW_SetFeatureSpaceA(first, "s");
+  VW_SetFeatureA(first, 0, "p^the_man", 1.0f);
+  VW_SetFeatureA(first, 1, "w^the", 1.0f);
+  VW_SetFeatureA(first, 2, "w^man",  1.0f);
 
-  auto second = VW_GetFeatureSpace(fs, 1);
+  auto second = VW_GetPrimitiveFeatureSpace(fs, 1);
   VW_InitFeatures(second, 3);
-  auto thash = VW_SetFeatureSpace(handle2, second, "t");
-  VW_SetFeature(VW_GetFeature(second, 0), VW_HashFeatureA(handle2, "p^un_homme", thash), 1.0f);
-  VW_SetFeature(VW_GetFeature(second, 1), VW_HashFeatureA(handle2, "w^un", thash), 1.0f);
-  VW_SetFeature(VW_GetFeature(second, 2), VW_HashFeatureA(handle2, "w^homme", thash), 1.0f);
+  VW_SetFeatureSpaceA(second, "t");
+  VW_SetFeatureA(second, 0, "p^un_homme", 1.0f);
+  VW_SetFeatureA(second, 1, "w^un", 1.0f);
+  VW_SetFeatureA(second, 2, "w^homme", 1.0f);
 
-  example_constructed = VW_ImportExample(handle2, "1", fs, 2);
+  example_constructed = VW_ImportExample(handle2, "1", fs);
 
 
   // learn both
