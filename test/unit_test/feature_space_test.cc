@@ -25,17 +25,20 @@ BOOST_AUTO_TEST_CASE(parsed_and_constructed_example_parity)
 
   auto example_parsed = VW::read_example(*vw1, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   auto fs = VW::feature_space(*vw2, 2);
-  fs[0].reset(3);
-  fs[0].set_name("s");
-  fs[0].set(0, "p^the_man", 1.0f);
-  fs[0].set(1, "w^the", 1.0f);
-  fs[0].set(2, "w^man", 1.0f);
+  fs[0]
+    .reset(3)
+    .set_name("s")
+    .set(0, "p^the_man", 1.0f)
+    .set(1, "w^the", 1.0f)
+    .set(2, "w^man", 1.0f);
 
-  fs[1].reset(3);
-  fs[1].set_name("t");
-  fs[1].set(0, "p^un_homme", 1.0f);
-  fs[1].set(1, "w^un", 1.0f);
-  fs[1].set(2, "w^homme", 1.0f);
+   fs[1]
+    .reset(3)
+    .set_name("t")
+    .set(0, "p^un_homme", 1.0f)
+    .set(1, "w^un", 1.0f)
+    .set(2, "w^homme", 1.0f);
+
   auto example_constructed = VW::import_example(*vw2, "1", fs);
 
   vw1->learn(*example_parsed);
