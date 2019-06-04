@@ -4,8 +4,8 @@ learning rate = 0.001
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-using cache_file = train-sets/rcv1_smaller.dat.cache
-ignoring text input in favor of cache input
+creating cache_file = train-sets/rcv1_smaller.dat.cache
+Reading datafile = train-sets/rcv1_smaller.dat
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
