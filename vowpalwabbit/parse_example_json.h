@@ -314,8 +314,11 @@ struct LabelState : BaseState<audit>
 
   BaseState<audit>* StartObject(Context<audit>& ctx) { return ctx.label_object_state.StartObject(ctx); }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool copy)
   {
+    // only to be used with copy=false
+    assert(!copy);
+
     VW::parse_example_label(*ctx.all, *ctx.ex, str);
     return ctx.previous_state;
   }
@@ -341,8 +344,11 @@ struct TextState : BaseState<audit>
 {
   TextState() : BaseState<audit>("text") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
   {
+    // only to be used with copy=false
+    assert(!copy);
+
     auto& ns = ctx.CurrentNamespace();
 
     // split into individual features
@@ -382,8 +388,11 @@ struct TagState : BaseState<audit>
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool )
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool copy)
   {
+    // only to be used with copy=false
+    assert(!copy);
+
     push_many(ctx.ex->tag, str, length);
 
     return ctx.previous_state;
@@ -598,8 +607,11 @@ class DefaultState : public BaseState<audit>
     return &ctx.ignore_state;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
   {
+    // only to be used with copy=false
+    assert(!copy);
+
     ctx.key = str;
     ctx.key_length = length;
 
@@ -637,8 +649,10 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
   {
+    assert(!copy);
+
     // string escape
     const char* end = str + length;
     for (char* p = (char*)str; p != end; p++)
