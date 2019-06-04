@@ -992,8 +992,8 @@ namespace memory_tree_ns
             free_example(b.examples[i]);
         b.examples.delete_v();
         free_example(b.kprod_ec);
-        cout<<b.max_nodes<<endl;
-        cout<<b.construct_time<<" "<<b.test_time<<endl;
+        //cout<<b.max_nodes<<endl;
+        //cout<<b.construct_time<<" "<<b.test_time<<endl;
     }
 
     ///////////////////Save & Load//////////////////////////////////////
