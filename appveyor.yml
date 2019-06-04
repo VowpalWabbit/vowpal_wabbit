@@ -1,5 +1,5 @@
 version: 1.0.{build}
-os: Windows Server 2012 R2
+#os: Windows Server 2012 R2 # Per https://www.appveyor.com/docs/appveyor-yml/, os: is not a supported property to configure environment.
 image: Visual Studio 2017
 configuration:
 - Release
@@ -15,7 +15,6 @@ build_script:
 # Set up vowpal_wabbit repo root
 - SET vwRoot=C:\vowpal_wabbit
 # Set up toolchain integration
-- SET "msbuildPath=C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\MsBuild.exe"
 - SET nugetPath=%vwRoot%\vowpalwabbit\.nuget\nuget
 # Restore and build
 - cd %vwRoot%
