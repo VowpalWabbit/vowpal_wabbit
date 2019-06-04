@@ -86,16 +86,16 @@ struct option_group_definition
   option_group_definition(std::string name) : m_name(name) {}
 
   template <typename T>
-  option_group_definition& add(typed_option<T> op)
+  option_group_definition& add(T&& op)
   {
-    m_options.push_back(std::make_shared<typed_option<T>>(op));
+    m_options.push_back(std::make_shared<typename std::decay<T>::type>(op));
     return *this;
   }
 
   template <typename T>
-  option_group_definition& operator()(typed_option<T> op)
+  option_group_definition& operator()(T&& op)
   {
-    add(op);
+    add(std::forward<T>(op));
     return *this;
   }
 

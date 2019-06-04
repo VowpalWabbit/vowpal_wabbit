@@ -74,6 +74,7 @@ license as described in the file LICENSE.
 #include "baseline.h"
 #include "classweight.h"
 #include "warm_cb.h"
+#include "shared_feature_merger.h"
 // #include "cntk.h"
 
 #include "options.h"
@@ -1272,6 +1273,8 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(mwt_setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
+  // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
