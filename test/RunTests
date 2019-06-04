@@ -1716,5 +1716,4 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 # test 192: offline contextual memory tree 
 {VW} train-sets/rcv1_small.dat --memory_tree 10 --learn_at_leaf 1 --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --oas 0 --online 1 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 29 -c --passes 3 --loss_function squared --holdout_off train-sets/ref/cmt_rcv1_small_offline.stderr
 
-
 # Do not delete this line or the empty line above it
