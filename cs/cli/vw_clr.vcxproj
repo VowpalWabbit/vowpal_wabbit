@@ -205,7 +205,17 @@
     <Import Project="$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" />
     <Import Project="$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
   </ImportGroup>
-  <Import Project="$(ProjectDir)\..\version.props" />
+
+  <PropertyGroup>
+    <WriteAssemblyInfoCpp>true</WriteAssemblyInfoCpp>
+    <WriteResourceRc>true</WriteResourceRc>
+    <AssemblyTitle>Vowpal Wabbit Parallel</AssemblyTitle>
+    <AssemblyDescription>Vowpal Wabbit Parallel</AssemblyDescription>
+    <AssemblyGuid>0bb98c1a-b25f-43a0-94b6-fed77f7e5cd8</AssemblyGuid>
+  </PropertyGroup>
+
+  <Import Project="$(ProjectDir)\..\version.targets" />
+
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -217,13 +227,6 @@
     <Error Condition="!Exists('$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
   </Target>
-  <Target Name="BeforeBuild" BeforeTargets="PrepareForBuild">
-    <FileUpdate Files="AssemblyInfo.cpp" Regex="AssemblyVersionAttribute\(&quot;.*&quot;\)" ReplacementText="AssemblyVersionAttribute(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
-    <FileUpdate Files="AssemblyInfo.cpp" Regex="AssemblyFileVersion\(&quot;.*&quot;\)" ReplacementText="AssemblyFileVersion(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
-    <FileUpdate Files="Resource.rc" Regex="FileVersion&quot;.*" ReplacementText="FileVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16" />
-    <FileUpdate Files="Resource.rc" Regex="ProductVersion&quot;.*" ReplacementText="ProductVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16" />
-    <FileUpdate Files="Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
-    <FileUpdate Files="Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
-  </Target>
+
   <Import Project="..\..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
