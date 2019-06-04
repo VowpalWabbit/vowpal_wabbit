@@ -199,7 +199,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
 // Changing the minimax value from eps/(K+eps)
 // to eps/(1+eps) to accomodate for
 // weight scaling of bandit examples by factor 1/K in mtr reduction
-float minimax_lambda(float epsilon, size_t num_actions)
+float minimax_lambda(float epsilon)
 {
 	return epsilon / (1.0f + epsilon);
 }
@@ -232,7 +232,7 @@ void setup_lambdas(warm_cb& data)
 	if (data.lambda_scheme == ABS_CENTRAL || data.lambda_scheme == ABS_CENTRAL_ZEROONE)
 		lambdas[mid] = 0.5;
 	else
-		lambdas[mid] = minimax_lambda(data.epsilon, data.num_actions);
+		lambdas[mid] = minimax_lambda(data.epsilon);
 
 	for (uint32_t i = mid; i > 0; i--)
 		lambdas[i-1] = lambdas[i] / 2.0;
@@ -261,8 +261,8 @@ uint32_t generate_uar_action(warm_cb& data)
 
 uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
 {
-	float cor_prob;
-	uint32_t cor_type;
+	float cor_prob=0.;
+	uint32_t cor_type=UAR;
 	uint32_t cor_action;
 
 	if (ec_type == WARM_START)
