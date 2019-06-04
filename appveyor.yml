@@ -3,7 +3,6 @@ os: Windows Server 2012 R2
 configuration:
 - Release
 platform: x64
-shallow_clone: true
 clone_folder: C:\vowpal_wabbit
 cache:
   - vowpalwabbit\packages -> **\packages.config
@@ -19,6 +18,7 @@ build_script:
 - SET nugetPath=%vwRoot%\vowpalwabbit\.nuget\nuget
 # Restore and build
 - cd %vwRoot%
+- git submodule update --init --recursive
 - .scripts/restore.cmd
 - .scripts/build.cmd
 test_script:

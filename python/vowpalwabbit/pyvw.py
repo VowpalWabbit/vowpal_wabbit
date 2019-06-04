@@ -10,19 +10,17 @@ class SearchTask():
     def __init__(self, vw, sch, num_actions):
         self.vw = vw
         self.sch = sch
-        self.blank_line = self.vw.example("")
-        self.blank_line.finish()
-        self.bogus_example = self.vw.example("1 | x")
+        self.bogus_example = [self.vw.example("1 | x")]
 
     def __del__(self):
-        self.bogus_example.finish()
+        self.vw.finish_examples(bogus_example)
 
     def _run(self, your_own_input_example):
         pass
 
     def _call_vw(self, my_example, isTest, useOracle=False):  # run_fn, setup_fn, takedown_fn, isTest):
         self._output = None
-        self.bogus_example.set_test_only(isTest)
+        self.bogus_example[0].set_test_only(isTest)
         def run(): self._output = self._run(my_example)
         setup = None
         takedown = None
@@ -30,8 +28,7 @@ class SearchTask():
         if callable(getattr(self, "_takedown", None)): takedown = lambda: self._takedown(my_example)
         self.sch.set_structured_predict_hook(run, setup, takedown)
         self.sch.set_force_oracle(useOracle)
-        self.vw.learn(self.bogus_example)
-        self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
+        self.vw.learn(self.bogus_example) # this will cause our ._run hook to get called
 
     def learn(self, data_iterator):
         """Train search task by providing an iterator of examples"""
@@ -113,6 +110,38 @@ class vw(pylibvw.vw):
 
         self.finished = False
 
+    def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
+        """Returns a collection of examples for a multiline example learner or a single
+        example for a single example learner."""
+        str_ex = str_ex.replace('\r', '')
+        ec = self._parse(str_ex)
+        ec = [example(self, x, labelType) for x in ec]
+        for ex in ec:
+            ex.setup_done = True
+        if not self._is_multiline():
+            if len(ec) == 1:
+                ec = ec[0]
+            else:
+                raise TypeError('expecting single line example, got multi_ex of len %i' % len(ec))
+        return ec
+
+    def finish_example(self, ex):
+        """Should only be used in conjunction with the parse method"""
+
+        if isinstance(ex, example):
+            if self._is_multiline():
+                raise ValueError('Learner is multiline but single example was passed to finish_example. Use the list of examples instead?')
+            if not ex.finished:
+                pylibvw.vw._finish_example(self, ex)
+                ex.finished = True
+        elif isinstance(ex, list):
+            if not self._is_multiline():
+                raise ValueError('Learner is singleline but multi example was passed to finish_example. Use a single example instead?')
+            if all(x.finished == False for x in ex):
+                pylibvw.vw._finish_example_multi_ex(self, ex)
+                for x in ex:
+                    x.finished = True
+
     def num_weights(self):
         """Get length of weight vector."""
         return pylibvw.vw.num_weights(self)
@@ -126,9 +155,13 @@ class vw(pylibvw.vw):
         """Perform an online update; ec can either be an example
         object or a string (in which case it is parsed and then
         learned on) or list which is iterated over."""
+        # If a string was given, parse it before passing to learner.
+        new_example = False
         if isinstance(ec, str):
-            self.learn_string(ec)
-        elif isinstance(ec, example):
+            ec = self.parse(ec)
+            new_example = True
+
+        if isinstance(ec, example):
             if hasattr(ec, 'setup_done') and not ec.setup_done:
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
@@ -136,6 +169,9 @@ class vw(pylibvw.vw):
             pylibvw.vw.learn_multi(self,ec)
         else:
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
+
+        if new_example:
+            self.finish_example(ec)
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on this example; ec can either be an example
@@ -145,9 +181,14 @@ class vw(pylibvw.vw):
         otherwise the the learner's prediction type will determine the output."""
 
         new_example = False
-        if isinstance(ec, (str, dict)):
+        if isinstance(ec, dict):
             ec = self.example(ec)
             ec.setup_done = True
+            new_example = True
+
+        # If a string was given, parse it before passing to learner.
+        if isinstance(ec, str):
+            ec = self.parse(ec)
             new_example = True
 
         if not isinstance(ec, example) and not isinstance(ec, list):
@@ -170,7 +211,7 @@ class vw(pylibvw.vw):
             prediction = get_prediction(ec[0], prediction_type)
 
         if new_example:
-            ec.finish()
+            self.finish_example(ec)
 
         return prediction
 
@@ -526,7 +567,7 @@ class example(pylibvw.example):
     easier to use (by making the types safer via namespace_id) and
     also with added python-specific functionality."""
 
-    def __init__(self, vw, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
+    def __init__(self, vw, initStringOrDictOrRawExample=None, labelType=pylibvw.vw.lDefault):
         """Construct a new example from vw. If initString is None, you
         get an "empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
@@ -535,21 +576,23 @@ class example(pylibvw.example):
         finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more
         (for lazy feature computation)."""
 
-        while hasattr(initStringOrDict, '__call__'):
-            initStringOrDict = initStringOrDict()
+        while hasattr(initStringOrDictOrRawExample, '__call__'):
+            initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
-        if initStringOrDict is None:
+        if initStringOrDictOrRawExample is None:
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
-        elif isinstance(initStringOrDict, str):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDict)
+        elif isinstance(initStringOrDictOrRawExample, str):
+            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
             self.setup_done = True
-        elif isinstance(initStringOrDict, dict):
+        elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
+            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+        elif isinstance(initStringOrDictOrRawExample, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
             self.stride = vw.get_stride()
             self.finished = False
-            self.push_feature_dict(vw, initStringOrDict)
+            self.push_feature_dict(vw, initStringOrDictOrRawExample)
             self.setup_done = False
         else:
             raise TypeError('expecting string or dict as argument for example construction')
@@ -559,15 +602,8 @@ class example(pylibvw.example):
         self.finished = False
         self.labelType = labelType
 
-    def __del__(self):
-        self.finish()
-
     def __enter__(self):
         return self
-
-    def __exit__(self,typ,value,traceback):
-        self.finish()
-        return typ is None
 
     def get_ns(self, id):
         """Construct a namespace_id from either an integer or string
@@ -713,13 +749,6 @@ class example(pylibvw.example):
         #     else:
         #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
         #     self.push_feature(ns, f, v, ns_hash)
-
-    def finish(self):
-        """Tell VW that you're done with this example and it can
-        recycle it for later use."""
-        if not self.finished:
-            self.vw.finish_example(self)
-            self.finished = True
 
     def iter_features(self):
         """Iterate over all feature/value pairs in this example (all

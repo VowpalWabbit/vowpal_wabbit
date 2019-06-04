@@ -18,16 +18,17 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1E205806-7F80-47DD-A38D-FC08083F3593}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>vw</RootNamespace>
+    <ProjectName>vw_core</ProjectName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>VW</RootNamespace>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
-    <CodeAnalysisRuleSet>..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -40,37 +41,14 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(ProjectDir)Build.props" />
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
+  
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <LinkIncremental>true</LinkIncremental>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <RuntimeLibrary>
-    </RuntimeLibrary>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release|x64'">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <LinkIncremental>false</LinkIncremental>
-    <!-- <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>false</RunCodeAnalysis> -->
-    <RuntimeLibrary>
-    </RuntimeLibrary>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
@@ -87,9 +65,9 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -119,42 +97,21 @@
       <MinimalRebuild Condition="'$(Configuration)'=='Debug'">false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>win32\make_config_h.exe</Command>
     </PreBuildEvent>
-    <!-- <Lib>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalDependencies>
-    </Lib>
-    <Lib>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalDependencies>
-      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalLibraryDirectories>
-    </Lib> -->
   </ItemDefinitionGroup>
+
   <PropertyGroup>
     <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\</OutDir>
     <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <!-- <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <OutDir>$(SolutionDir)dll\x64\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)dll\x64\$(Configuration)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <OutDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <OutDir>$(SolutionDir)$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)$(PlatformShortName)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup> -->
   <ItemGroup>
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="action_score.h" />
+    <ClInclude Include="object_pool.h" />
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />
@@ -171,6 +128,7 @@
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="cbify.h" />
+    <ClInclude Include="warm_cb.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -201,6 +159,7 @@
     <ClInclude Include="options_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="parse_example_json.h" />
+    <ClInclude Include="queue.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="interact.h" />
@@ -252,6 +211,7 @@
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
     <ClInclude Include="classweight.h" />
+    <ClInclude Include="shared_feature_merger.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
@@ -269,6 +229,7 @@
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
+    <ClCompile Include="warm_cb.cc" />
     <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="cb_explore_adf.cc" />
     <ClCompile Include="gen_cs_example.cc" />
@@ -341,34 +302,31 @@
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="classweight.cc" />
+    <ClCompile Include="shared_feature_merger.cc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="vw_types.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(ProjectDir)\.nuget\NuGet.targets" Condition="Exists('$(ProjectDir)\.nuget\NuGet.targets')" />
-    <Import Project="$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets')" />
-    <Import Project="$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
-    <Import Project="$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" />
-    <Import Project="$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" />
-    <Import Project="$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
+    <Import Project="$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets')" />
+    <Import Project="$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
+    <Import Project="$(SolutionDir)packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" />
+    <Import Project="$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" />
+    <Import Project="$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(ProjectDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(ProjectDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
   </Target>
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>

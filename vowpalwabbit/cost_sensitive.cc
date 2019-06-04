@@ -206,17 +206,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     if (ec_seq != nullptr)
     {
       num_current_features = 0;
-      // If the first example is "shared", don't include its features.
-      // These should be already included in each example (TODO: including quadratic and cubic).
-      // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example** ecc = &((*ec_seq)[0]);
-      const example& first_ex = *(*ec_seq)[0];
-
-      v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
-      if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0)
-        ecc++;
-
-      for (; ecc != &(*ec_seq->cend()); ecc++) num_current_features += (*ecc)->num_features;
+      // TODO: including quadratic and cubic.
+      for (auto & ecc : *ec_seq) num_current_features += ecc->num_features;
     }
 
     std::string label_buf;
@@ -273,12 +264,12 @@ void output_example(vw& all, example& ec)
     if (chosen_loss == FLT_MAX)
       cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
 
-    loss = chosen_loss - min;
+    loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(&ld), loss, ec.weight, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)

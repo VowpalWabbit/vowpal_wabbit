@@ -36,13 +36,13 @@ struct options_serializer_boost_po : options_serializer_i
   }
 
   template <typename T>
-  void serialize(typed_option<T> typed_option)
+  void serialize(typed_option<T>& typed_option)
   {
     m_output_stream << " --" << typed_option.m_name << " " << typed_option.value();
   }
 
   template <typename T>
-  void serialize(typed_option<std::vector<T>> typed_option)
+  void serialize(typed_option<std::vector<T>>& typed_option)
   {
     auto vec = typed_option.value();
     if (vec.size() > 0)
@@ -69,7 +69,7 @@ struct options_serializer_boost_po : options_serializer_i
 };
 
 template <>
-void options_serializer_boost_po::serialize<bool>(typed_option<bool> typed_argument);
+void options_serializer_boost_po::serialize<bool>(typed_option<bool>& typed_argument);
 
 template <>
 void options_serializer_boost_po::add_impl<typelist<>>(base_option& options);
