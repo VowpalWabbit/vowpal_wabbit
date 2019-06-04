@@ -29,6 +29,10 @@ IF NOT DEFINED vstestPath (
     )
 )
 
+IF NOT DEFINED dotnetPath (
+    SET dotnetPath=dotnet
+)
+
 REM Repo-specific paths
 IF NOT DEFINED vwRoot (
     SET vwRoot=%~dp0..
