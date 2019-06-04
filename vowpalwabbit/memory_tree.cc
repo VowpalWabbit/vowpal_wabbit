@@ -1154,7 +1154,10 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
         .add(make_option("dream_at_update", tree->dream_at_update).default_value(0).help("turn on dream operations at reward based update as well"))
         .add(make_option("online", tree->online).default_value(0).help("turn on dream operations at reward based update as well"));
     options.add_and_parse(new_options);
-
+if (!tree->max_nodes)
+{
+  return nullptr;
+}
 
     tree->all = &all;
     tree->current_pass = 0;
