@@ -28,7 +28,6 @@ struct update_data
   float l2_lambda;
   float predict;
   float normalized_squared_norm_x;
-  float iter;
 };
 
 struct ftrl
@@ -40,12 +39,6 @@ struct ftrl
   size_t no_win_counter;
   size_t early_stop_thres;
   double total_weight;
-  double wealth_bias;
-  double bias;
-  double sum_grad_bias;
-  double sum_abs_grad_bias;
-  double max_grad_bias;
-  double iter;
 };
 
 struct uncertainty
@@ -222,14 +215,13 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
-  b.data.iter = b.iter;
 
   GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
 
-  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight))+b.bias;
+  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight));
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
@@ -263,20 +255,6 @@ void update_after_prediction_cb(ftrl& b, example& ec)
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
-
-  float fabs_gradient = fabs(b.data.update);
-  if (fabs_gradient > b.max_grad_bias) {
-    b.max_grad_bias = fabs_gradient;
-    b.bias = (b.ftrl_alpha+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
-  }
-
-  b.wealth_bias += -b.bias*b.data.update;
-  b.sum_abs_grad_bias += fabs(b.data.update);
-  b.sum_grad_bias += -b.data.update;
-
-  b.bias = (b.ftrl_alpha+b.wealth_bias) * b.sum_grad_bias/(b.max_grad_bias*(b.sum_abs_grad_bias+b.max_grad_bias));
-
-  b.iter += 1.0;
 }
 
 
@@ -379,17 +357,17 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
   }
+  else if (coin)
+  {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
+  }
+
 
   b->all = &all;
   b->no_win_counter = 0;
   b->all->normalized_sum_norm_x = 0;
   b->total_weight = 0.;
-  b->bias = 0.;
-  b->wealth_bias=0.;
-  b->sum_abs_grad_bias=0.;
-  b->sum_grad_bias=0.;
-  b->max_grad_bias=b->ftrl_beta;
-  b->iter=0.;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
