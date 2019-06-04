@@ -1143,7 +1143,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
 	auto tree = scoped_calloc_or_throw<memory_tree>();
     option_group_definition new_options("Memory Tree");
 
-    new_options.add(make_option("memory_tree", tree->max_nodes).keep().help("Make a memory tree with at most <n> nodes"))
+    new_options.add(make_option("memory_tree", tree->max_nodes).keep().default_value(0).help("Make a memory tree with at most <n> nodes"))
         .add(make_option("max_number_of_labels",tree->max_num_labels).default_value(10).help("max number of unique label"))
         .add(make_option("leaf_example_multiplier",tree->leaf_example_multiplier).default_value(1).help("multiplier on examples per leaf (default = log nodes)"))
         .add(make_option("Alpha", tree->alpha).default_value(0.1f).help("Alpha"))
