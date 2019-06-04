@@ -73,12 +73,8 @@ CB::cb_class get_observed_cost(multi_ex& examples)
     // throw exception();
   }
 
-  bool shared = CB::ec_is_example_header(*examples[0]);
-
   known_cost = ld.costs[0];
   known_cost.action = index;
-  if (shared)  // take care of shared example
-    known_cost.action--;
   return known_cost;
 }
 
@@ -91,7 +87,7 @@ void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   gen_cs_test_example(examples, mydata.cs_labels);  // create test labels.
   call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
-  
+
   // Can probably do this more efficiently than 6 loops over the examples...
   //[1: initialize temporary storage;
   // 2: find chosen action;
@@ -109,20 +105,15 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   }
 
   float sign_offset = 1.0;    // To account for negative rewards/costs
-  uint32_t chosen_action;
+  uint32_t chosen_action = 0;
   float example_weight = 1.0;
 
-  bool shared = CB::ec_is_example_header(*examples[0]);
-  uint32_t startK = 0;
-  if (shared)
-    startK = 1;
-
-  for (uint32_t i = startK; i < examples.size(); i++)
+  for (uint32_t i = 0; i < examples.size(); i++)
   {
     CB::label ld = examples[i]->l.cb;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
-      chosen_action = (i-startK);
+      chosen_action = i;
       example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability);
 
       // Importance weights of examples cannot be negative.
@@ -151,22 +142,22 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
       break;
     }
   }
-  
+
   mydata.backup_weights.clear();
   mydata.backup_nf.clear();
     for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
   {
     uint32_t current_action = mydata.prob_s[i].action;
-    mydata.backup_weights.push_back(examples[current_action + startK]->weight);
-    mydata.backup_nf.push_back(examples[current_action + startK]->num_features);
+    mydata.backup_weights.push_back(examples[current_action]->weight);
+    mydata.backup_nf.push_back(examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action + startK]->weight = example_weight * (1.0 - mydata.prob_s[i].score);
+      examples[current_action]->weight = example_weight * (1.0 - mydata.prob_s[i].score);
     else
-      examples[current_action + startK]->weight = example_weight * mydata.prob_s[i].score;
+      examples[current_action]->weight = example_weight * mydata.prob_s[i].score;
 
-    if (examples[current_action + startK]->weight <= 1e-15)
-      examples[current_action + startK]->weight = 0;
+    if (examples[current_action]->weight <= 1e-15)
+      examples[current_action]->weight = 0;
   }
 
   //Do actual training
@@ -176,8 +167,8 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
   {
     uint32_t current_action = mydata.prob_s[i].action;
-    examples[current_action + startK]->weight = mydata.backup_weights[i];
-    examples[current_action + startK]->num_features = mydata.backup_nf[i];
+    examples[current_action]->weight = mydata.backup_weights[i];
+    examples[current_action]->num_features = mydata.backup_nf[i];
   }
 }
 
@@ -231,10 +222,6 @@ bool test_adf_sequence(multi_ex& ec_seq)
 
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
       count += 1;
-
-    if (CB::ec_is_example_header(*ec))
-      if (k != 0)
-        THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
   if (count == 0)
     return true;
@@ -313,9 +300,8 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   size_t num_features = 0;
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-      num_features += (*ec_seq)[i]->num_features;
+  for (const auto & example : *ec_seq)
+    num_features += example->num_features;
 
   float loss = 0.;
 
@@ -421,6 +407,9 @@ void finish(cb_adf& data)
   for (size_t i = 0; i < data.prepped_cs_labels.size(); i++) data.prepped_cs_labels[i].costs.delete_v();
   data.prepped_cs_labels.delete_v();
   data.cs_labels.costs.delete_v();
+  data.backup_weights.delete_v();
+  data.backup_nf.delete_v();
+  data.prob_s.delete_v();
 
   data.a_s.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();

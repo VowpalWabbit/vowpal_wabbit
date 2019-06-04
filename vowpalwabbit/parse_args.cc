@@ -75,6 +75,7 @@ license as described in the file LICENSE.
 #include "baseline.h"
 #include "classweight.h"
 #include "warm_cb.h"
+#include "shared_feature_merger.h"
 // #include "cntk.h"
 
 #include "options.h"
@@ -1274,6 +1275,8 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(mwt_setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
+  // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
@@ -1331,6 +1334,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     options.add_and_parse(weight_args);
 
     std::string span_server_arg;
+    int span_server_port_arg;
     // bool threads_arg;
     size_t unique_id_arg;
     size_t total_arg;
@@ -1342,7 +1346,9 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
         .add(
             make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
-        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
+        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"))
+        .add(make_option("span_server_port", span_server_port_arg).default_value(26543)
+          .help("Port of the server for setting up spanning tree"));
     options.add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
@@ -1355,7 +1361,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     if (options.was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(span_server_arg, unique_id_arg, total_arg, node_arg);
+      all.all_reduce = new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg);
     }
 
     parse_diagnostics(options, all);

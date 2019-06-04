@@ -3,11 +3,9 @@
 
 #include <jni.h>
 #include <functional>
+#include "util.h"
 
-void throw_java_exception(JNIEnv *env, const char* name, const char* msg);
-void rethrow_cpp_exception_as_java_exception(JNIEnv *env);
-
-example* read_example(JNIEnv *env, jstring example_string, vw* vwInstance);
+example* read_example(JNIEnv* env, jstring example_string, vw* vwInstance);
 example* read_example(const char* example_string, vw* vwInstance);
 
 // It would appear that after reading posts like
@@ -16,17 +14,13 @@ example* read_example(const char* example_string, vw* vwInstance);
 // http://stackoverflow.com/questions/3203305/write-a-function-that-accepts-a-lambda-expression-as-argument
 // it is more efficient to use another type parameter instead of std::function<T(example*)>
 // but more difficult to read.
-template<typename T, typename F>
-T base_predict(
-  JNIEnv *env,
-  example* ex,
-  bool learn,
-  vw* vwInstance,
-  const F& predictor,
-  const bool predict)
-{ T result = 0;
+template <typename T, typename F>
+T base_predict(JNIEnv* env, example* ex, bool learn, vw* vwInstance, const F& predictor, const bool predict)
+{
+  T result = 0;
   try
-  { if (learn)
+  {
+    if (learn)
       vwInstance->learn(*ex);
     else
       vwInstance->predict(*ex);
@@ -37,36 +31,30 @@ T base_predict(
     vwInstance->finish_example(*ex);
   }
   catch (...)
-  { rethrow_cpp_exception_as_java_exception(env);
+  {
+    rethrow_cpp_exception_as_java_exception(env);
   }
   return result;
 }
 
-template<typename T, typename F>
-T base_predict(
-  JNIEnv *env,
-  jstring example_string,
-  jboolean learn,
-  jlong vwPtr,
-  const F& predictor)
-{ vw* vwInstance = (vw*)vwPtr;
+template <typename T, typename F>
+T base_predict(JNIEnv* env, jstring example_string, jboolean learn, jlong vwPtr, const F& predictor)
+{
+  vw* vwInstance = (vw*)vwPtr;
   example* ex = read_example(env, example_string, vwInstance);
   return base_predict<T>(env, ex, learn, vwInstance, predictor, true);
 }
 
-template<typename T, typename F>
-T base_predict(
-  JNIEnv *env,
-  jobjectArray example_strings,
-  jboolean learn,
-  jlong vwPtr,
-  const F& predictor)
-{ vw* vwInstance = (vw*)vwPtr;
+template <typename T, typename F>
+T base_predict(JNIEnv* env, jobjectArray example_strings, jboolean learn, jlong vwPtr, const F& predictor)
+{
+  vw* vwInstance = (vw*)vwPtr;
   int example_count = env->GetArrayLength(example_strings);
-  multi_ex ex_coll;   // When doing multiline prediction the final result is stored in the FIRST example parsed.
+  multi_ex ex_coll;  // When doing multiline prediction the final result is stored in the FIRST example parsed.
   example* first_example = NULL;
-  for (int i=0; i<example_count; i++)
-  { jstring example_string = (jstring) (env->GetObjectArrayElement(example_strings, i));
+  for (int i = 0; i < example_count; i++)
+  {
+    jstring example_string = (jstring)(env->GetObjectArrayElement(example_strings, i));
     example* ex = read_example(env, example_string, vwInstance);
     ex_coll.push_back(ex);
     if (i == 0)
@@ -75,13 +63,15 @@ T base_predict(
   env->DeleteLocalRef(example_strings);
 
   try
-  { if (learn)
+  {
+    if (learn)
       vwInstance->learn(ex_coll);
     else
       vwInstance->predict(ex_coll);
   }
   catch (...)
-  { rethrow_cpp_exception_as_java_exception(env);
+  {
+    rethrow_cpp_exception_as_java_exception(env);
   }
 
   vwInstance->finish_example(ex_coll);
@@ -89,4 +79,4 @@ T base_predict(
   return predictor(first_example, env);
 }
 
-#endif // VW_BASE_LEARNER_H
+#endif  // VW_BASE_LEARNER_H
