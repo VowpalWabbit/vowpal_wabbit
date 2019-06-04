@@ -16,6 +16,7 @@ build_script:
 - SET vwRoot=C:\vowpal_wabbit
 # Set up toolchain integration
 - SET nugetPath=%vwRoot%\vowpalwabbit\.nuget\nuget
+- SET DebugBuildScripts=true
 # Restore and build
 - cd %vwRoot%
 - git submodule update --init --recursive
