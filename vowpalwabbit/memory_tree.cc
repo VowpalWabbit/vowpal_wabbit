@@ -468,7 +468,7 @@ namespace memory_tree_ns
         b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001); //avoid to set nl to zero
         b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001); //avoid to set nr to zero
 
-        if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
+        if ((std::max)(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
         {
             b.max_ex_in_leaf = (std::max)(b.nodes[cn].nl, b.nodes[cn].nr);
             //cout<<b.max_ex_in_leaf<<endl;
