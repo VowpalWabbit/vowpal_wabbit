@@ -37,7 +37,7 @@ start = time.time()
 #train_data = 'tmp_rcv1x.vw.txt'
 os.system("../../build/vowpalwabbit/vw {} --memory_tree {} --learn_at_leaf {} --dream_at_update {}\
           --max_number_of_labels {} --dream_repeats {} --oas {} \
-          --leaf_example_multiplier {} --Alpha {} -l {} -b {} -c --passes {} --loss_function {} --holdout_off -f {}".format(
+          --leaf_example_multiplier {} --alpha {} -l {} -b {} -c --passes {} --loss_function {} --holdout_off -f {}".format(
                 train_data, tree_node, learn_at_leaf, dream_at_update,
                 max_num_labels, dream_repeats, use_oas,
                 leaf_example_multiplier,
