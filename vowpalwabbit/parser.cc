@@ -795,7 +795,7 @@ void add_label(example* ec, float label, float weight, float base)
   ec->weight = weight;
 }
 
-example* import_example(vw& all, string label, feature_space& features)
+example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
   all.p->lp.default_label(&ret->l);
@@ -803,12 +803,12 @@ example* import_example(vw& all, string label, feature_space& features)
   if (label.length() > 0)
     parse_example_label(all, *ret, label);
 
-  for (size_t i = 0; i < features.size(); i++)
+  for (size_t i = 0; i < len; i++)
   {
-    unsigned char index = features[i].get_name();
+    unsigned char index = features[i].name;
     ret->indices.push_back(index);
-    for (size_t j = 0; j < features[i].size(); j++)
-      ret->feature_space[index].push_back(features[i][j].x, features[i][j].weight_index);
+    for (size_t j = 0; j < features[i].len; j++)
+      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
   }
 
   setup_example(all, ret);
@@ -816,19 +816,19 @@ example* import_example(vw& all, string label, feature_space& features)
   return ret;
 }
 
-feature_space* export_example(vw& all, example* ec, size_t& len)
+primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
 {
   len = ec->indices.size();
-  feature_space* fs_ptr = new feature_space(all, len);
-  feature_space& fs = *fs_ptr;
+  primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
   int fs_count = 0;
 
   for (size_t idx = 0; idx < len; ++idx)
   {
     namespace_index i = ec->indices[idx];
-    fs[fs_count].set_name(std::string(1, i));
-    fs[fs_count].reset(ec->feature_space[i].size());
+    fs_ptr[fs_count].name = i;
+    fs_ptr[fs_count].len = ec->feature_space[i].size();
+    fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     uint32_t stride_shift = all.weights.stride_shift();
     int f_count = 0;
@@ -836,12 +836,18 @@ feature_space* export_example(vw& all, example* ec, size_t& len)
     {
       feature t = {f.value(), f.index()};
       t.weight_index >>= stride_shift;
-      fs[fs_count][f_count] = t;
+      fs_ptr[fs_count].fs[f_count] = t;
       f_count++;
     }
     fs_count++;
   }
   return fs_ptr;
+}
+
+void releaseFeatureSpace(primitive_feature_space* features, size_t len)
+{
+  for (size_t i = 0; i < len; i++) delete[] features[i].fs;
+  delete (features);
 }
 
 void parse_example_label(vw& all, example& ec, string label)

@@ -77,21 +77,21 @@ VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish(VW_HANDLE handle)
   VW::finish(*pointer);
 }
 
-VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, const char * label, VW_FEATURE_SPACE features)
+VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, const char * label, VW_FEATURE_SPACE features, size_t len)
 { vw * pointer = static_cast<vw*>(handle);
-  VW::feature_space * f = reinterpret_cast<VW::feature_space*>( features );
-  return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, label, *f));
+  VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
+  return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, label, f, len));
 }
 
-VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_InitializeFeatureSpace(VW_HANDLE handle, size_t len)
-{ vw* pointer = static_cast<vw*>(handle);
-  return static_cast<VW_FEATURE_SPACE>(new VW::feature_space(*pointer, len));
-}
-
-VW_DLL_MEMBER VW_PRIMITIVE_FEATURE_SPACE VW_CALLING_CONV VW_GetPrimitiveFeatureSpace(VW_FEATURE_SPACE fs, size_t index)
+VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_InitializeFeatureSpaces(size_t len)
 {
-  VW::feature_space* f = reinterpret_cast<VW::feature_space*>(fs);
-  return static_cast<VW_PRIMITIVE_FEATURE_SPACE>(&((*f)[index]));
+  return static_cast<VW_FEATURE_SPACE>(new VW::primitive_feature_space[len]);
+}
+
+VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_GetFeatureSpace(VW_FEATURE_SPACE first, size_t index)
+{
+  VW::primitive_feature_space* f = reinterpret_cast<VW::primitive_feature_space*>(first);
+  return static_cast<VW_FEATURE_SPACE>(&f[index]);
 }
 
 VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t * plen)
@@ -101,8 +101,8 @@ VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle
 }
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE features, size_t len)
-{ VW::feature_space * f = reinterpret_cast<VW::feature_space*>( features );
-  delete f;
+{ VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
+  VW::releaseFeatureSpace(f, len);
 }
 #ifdef USE_CODECVT
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t * line)
@@ -175,33 +175,30 @@ VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e)
 { return VW::get_confidence(static_cast<example*>(e));
 }
 
-VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeatureSpaceA(VW_PRIMITIVE_FEATURE_SPACE feature_space, const char* name)
+VW_DLL_MEMBER size_t VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEATURE_SPACE feature_space, const char* name)
 { VW::primitive_feature_space* f = reinterpret_cast<VW::primitive_feature_space*>(feature_space);
-  string space_name(name);
-  f->set_name(space_name);
-}
-
-VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeatureSpace(VW_PRIMITIVE_FEATURE_SPACE feature_space, const char16_t* name)
-{
-  VW_SetFeatureSpaceA(feature_space, utf16_to_utf8(name).c_str());
+  f->name = *name;
+  return VW_HashSpaceA(handle, name);
 }
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_InitFeatures(VW_FEATURE_SPACE feature_space, size_t features_count)
 {
   VW::primitive_feature_space* fs = reinterpret_cast<VW::primitive_feature_space*>(feature_space);
-  fs->reset(features_count);
+  fs->fs = new feature[features_count];
+  fs->len = features_count;
 }
 
-VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeatureA(VW_PRIMITIVE_FEATURE_SPACE feature_space, size_t index, const char* name, float value)
+VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeature(VW_FEATURE_SPACE feature_space, size_t index)
 {
   VW::primitive_feature_space* fs = reinterpret_cast<VW::primitive_feature_space*>(feature_space);
-  fs->set(index, std::string(name), value);
+  return &(fs->fs[index]);
 }
 
-VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(
-    VW_PRIMITIVE_FEATURE_SPACE feature_space, size_t index, const char16_t* name, float value)
+VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE f, size_t feature_hash, float value)
 {
-  VW_SetFeatureA(feature_space, index, utf16_to_utf8(name).c_str(), value);
+  feature* _feature = reinterpret_cast<feature*>(f);
+  _feature->weight_index = feature_hash;
+  _feature->x = value;
 }
 
 VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)
