@@ -87,7 +87,7 @@ void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   gen_cs_test_example(examples, mydata.cs_labels);  // create test labels.
   call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
-  
+
   // Can probably do this more efficiently than 6 loops over the examples...
   //[1: initialize temporary storage;
   // 2: find chosen action;
@@ -105,7 +105,7 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   }
 
   float sign_offset = 1.0;    // To account for negative rewards/costs
-  uint32_t chosen_action;
+  uint32_t chosen_action = 0;
   float example_weight = 1.0;
 
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -142,7 +142,7 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
       break;
     }
   }
-  
+
   mydata.backup_weights.clear();
   mydata.backup_nf.clear();
     for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
@@ -407,6 +407,9 @@ void finish(cb_adf& data)
   for (size_t i = 0; i < data.prepped_cs_labels.size(); i++) data.prepped_cs_labels[i].costs.delete_v();
   data.prepped_cs_labels.delete_v();
   data.cs_labels.costs.delete_v();
+  data.backup_weights.delete_v();
+  data.backup_nf.delete_v();
+  data.prob_s.delete_v();
 
   data.a_s.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();
