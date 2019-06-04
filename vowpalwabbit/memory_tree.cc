@@ -466,7 +466,7 @@ namespace memory_tree_ns
         }
         b.nodes[cn].examples_index.delete_v(); //empty the cn's example list
         b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001); //avoid to set nl to zero
-        b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001); //avoid to set nr to zero
+        b.nodes[cn].nr = (std::max)(double(b.nodes[right_child].examples_index.size()), 0.001); //avoid to set nr to zero
 
         if ((std::max)(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
         {
