@@ -189,7 +189,7 @@ namespace memory_tree_ns
         float test_time; //recording the test time 
 
         uint32_t num_mistakes;
-        int learn_at_leaf; //indictor for turning on learning the scorer function at the leaf level
+        int learn_at_leaf; //indicator for turning on learning the scorer function at the leaf level
 
         bool test_mode;
 
