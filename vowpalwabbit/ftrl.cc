@@ -176,35 +176,39 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
 void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 {
   float* w = &wref;
+  float w_mx = w[W_MX];
+  float w_xt=0.0;
 
   float fabs_x = fabs(x);
-  if (fabs_x > w[W_MX]) {
-    w[W_MX] = fabs_x;
+  if (fabs_x > w_mx) {
+    w_mx = fabs_x;
   }
 
-  // COCOB update without sigmoid
-  if (w[W_MG]*w[W_MX]>0)
-    w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
-  else
-    w[W_XT] = 0;
+  if (w[W_MG]*w_mx>0)
+    w_xt = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w_mx*(w[W_MG]*w_mx+w[W_G2]));
 
-  d.predict += w[W_XT] * x;
-  if (w[W_MX]>0)
-    d.normalized_squared_norm_x += x*x/(w[W_MX]*w[W_MX]);
+  d.predict += w_xt * x;
+  if (w_mx>0)
+    d.normalized_squared_norm_x += x*x/(w_mx*w_mx);
 }
 
 void inner_update_cb_post(update_data& d, float x, float& wref)
 {
   float* w = &wref;
-
+  float fabs_x = fabs(x);
   float gradient = d.update * x;
 
-  float fabs_gradient = fabs(d.update);
-  if (fabs_gradient > w[W_MG]) {
-    w[W_MG] = fabs_gradient>d.ftrl_beta?fabs_gradient:d.ftrl_beta;
-    if (w[W_MX]!=0)
-      w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+  if (fabs_x > w[W_MX]) {
+    w[W_MX] = fabs_x;
   }
+
+  float fabs_gradient = fabs(d.update);
+  if (fabs_gradient > w[W_MG])
+    w[W_MG] = fabs_gradient>d.ftrl_beta?fabs_gradient:d.ftrl_beta;
+  if (w[W_MG]*w[W_MX]>0)
+    w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+  else
+    w[W_XT] = 0;
 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
