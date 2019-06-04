@@ -81,7 +81,7 @@ void fail_send(const socket_t fd, const void* buf, const int count)
 
 namespace VW
 {
-SpanningTree::SpanningTree(short unsigned int port) : m_stop(false), m_port(port), m_future(nullptr)
+SpanningTree::SpanningTree(uint16_t port) : m_stop(false), m_port(port), m_future(nullptr)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -104,15 +104,16 @@ SpanningTree::SpanningTree(short unsigned int port) : m_stop(false), m_port(port
 
   address.sin_port = htons(port);
   if (::bind(sock, (sockaddr*)&address, sizeof(address)) < 0)
-    THROWERRNO("bind: ");
+    THROWERRNO("bind failed for " << inet_ntoa(address.sin_addr));
 
   sockaddr_in bound_addr;
   memset(&bound_addr, 0, sizeof(bound_addr));
-	socklen_t len = sizeof(bound_addr);
-	if (::getsockname(sock, (sockaddr*)&bound_addr, &len) < 0)
-    THROWERRNO("getsockname: ")
+  socklen_t len = sizeof(bound_addr);
+  if (::getsockname(sock, (sockaddr*)&bound_addr, &len) < 0)
+    THROWERRNO("getsockname: " << inet_ntoa(bound_addr.sin_addr));
 
-	m_port = ntohs(bound_addr.sin_port);
+  // which port did we bind too (if m_port is 0 this will give us the actual port)
+  m_port = ntohs(bound_addr.sin_port);
 }
 
 SpanningTree::~SpanningTree()
@@ -138,7 +139,7 @@ void SpanningTree::Stop()
 {
   m_stop = true;
 #ifndef _WIN32
-// just close won't unblock the accept
+  // just close won't unblock the accept
   shutdown(sock, SHUT_RD);
 #endif
   CLOSESOCK(sock);
@@ -180,8 +181,8 @@ void SpanningTree::Run()
     if (getnameinfo((sockaddr*)&client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0))
       THROWERRNO("getnameinfo: ");
 
-    cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << ") serv=" << servInfo
-         << endl;
+    cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
+         << ") serv=" << servInfo << endl;
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
@@ -212,8 +213,8 @@ void SpanningTree::Run()
     int ok = true;
     if (id >= total)
     {
-      cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total << " !"
-           << endl;
+      cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total
+           << " !" << endl;
       ok = false;
     }
     partial partial_nodeset;

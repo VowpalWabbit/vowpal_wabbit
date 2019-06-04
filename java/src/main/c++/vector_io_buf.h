@@ -8,7 +8,7 @@ class vector_io_buf : public io_buf
 {
   std::vector<char>::iterator _iterator;
 
-public:
+ public:
   std::vector<char> _buffer;
 
   vector_io_buf();

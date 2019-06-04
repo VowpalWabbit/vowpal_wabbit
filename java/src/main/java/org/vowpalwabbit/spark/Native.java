@@ -3,7 +3,6 @@ package org.vowpalwabbit.spark;
 // For cross-platform, but it doesn't support dependencies yet
 // import org.scijava.nativelib.NativeLoader;
 import java.nio.file.*;
-import java.net.URL;
 import java.io.File;
 import java.util.jar.*;
 import java.util.*;

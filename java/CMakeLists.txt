@@ -42,8 +42,7 @@ if(JNI_FOUND)
   target_link_libraries(vw_jni PUBLIC vw)
   target_include_directories(vw_jni PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR} 
-    ${JNI_INCLUDE_DIRS} 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit)
+    ${JNI_INCLUDE_DIRS})
 
   # Ensure target directory exists
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/)
@@ -71,22 +70,23 @@ if(JNI_FOUND)
   endif()
 
   if(NOT WIN32)
-    # Bare Library targed to use for spark
-    find_package(Java)
-    include(UseJava)
-
     # Ensure target directory exists
     file(MAKE_DIRECTORY target/classes)
     file(MAKE_DIRECTORY target/test-classes)
     file(MAKE_DIRECTORY target/bin/natives/linux_64)
 
-    # required for jni header generation
+    # Development
+    # - uncomment the following section to generate the jni headers
+    # - it's commented to speed up the build as it's not expected to change frequently
+
+    # find_package(Java)
+    # include(UseJava)
+
     # add_custom_target(javacompile 
         # COMMAND mvn compile
         # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         # COMMENT "Compile classes for javah")
 
-    # useful to generate the jni headers
     # create_javah(TARGET javaheaders
     #   CLASSES
     #     org.vowpalwabbit.spark.VowpalWabbitNative
@@ -96,24 +96,8 @@ if(JNI_FOUND)
     #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_spark_vw_generated.h)
     # add_dependencies(javaheaders javacompile)
 
-    # add_library(vw_spark_jni SHARED ${vw_spark_jni_headers} ${vw_spark_jni_sources})
-
-    # target_compile_options(vw_spark_jni PUBLIC ${linux_flags})
-
-    # target_include_directories(vw_spark_jni PUBLIC
-    #    ${CMAKE_CURRENT_SOURCE_DIR}
-    #    ${JNI_INCLUDE_DIRS} 
-    #    ${explore_INCLUDE_DIRS}
-    #    ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit)
-
-    # TODO: support Win/osx 64/32/ ..
-
-    # that doesn't work with ldd below
-    # set_target_properties(vw_spark_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY target/bin/natives/linux_64)
-
     add_custom_command(TARGET vw_jni POST_BUILD
         COMMAND ldd $<TARGET_FILE:vw_jni> | grep -E 'boost|libz' | grep -oP '=> \\K\\S+' | xargs -i cp {} target/bin/natives/linux_64
-        # COMMAND mkdir target/bin/natives/linux_64
         COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
         COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
         COMMAND mvn verify

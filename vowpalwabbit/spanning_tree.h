@@ -44,7 +44,7 @@ class SpanningTree
  private:
   bool m_stop;
   socket_t sock;
-  short unsigned int m_port;
+  uint16_t m_port;
 
   // future to signal end of thread running.
   // Need a pointer since C++/CLI doesn't like futures yet
