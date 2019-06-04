@@ -23,7 +23,7 @@ ECHO Building "%vwRoot%\vowpalwabbit\vw.sln" for Release x64
 "%msbuildPath%" /v:normal %__MULTIBUILD_SWITCH% /nr:false "/p:Configuration=Release;Platform=x64" "%vwRoot%\vowpalwabbit\vw.sln"
 
 ECHO Building "%vwRoot%\cs\explore\ds_explore_cs.sln"
-"%msbuildPath%" /v:normal %__MULTIBUILD_SWITCH% /nr:false "/p:Configuration=Release;Platform=Any CPU" "%vwRoot%\vowpalwabbit\vw.sln"
+"%msbuildPath%" /v:normal %__MULTIBUILD_SWITCH% /nr:false "/p:Configuration=Release;Platform=Any CPU" "%vwRoot%\cs\explore\ds_explore_cs.sln"
 
 POPD
 
