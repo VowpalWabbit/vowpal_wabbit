@@ -27,8 +27,6 @@ namespace Microsoft.DecisionService.Exploration
 
         public static int SampleAfterNormalizing(double draw, float[] probabilityDistribution, out bool pdfUpdated)
         {
-            pdfUpdated = false;
-
             // Create a discrete_distribution based on the returned weights. This class handles the
             // case where the sum of the weights is < or > 1, by normalizing agains the sum.
             float total = 0;
@@ -38,40 +36,51 @@ namespace Microsoft.DecisionService.Exploration
                     probabilityDistribution[i] = 0;
                 total += probabilityDistribution[i];
             }
+
             if (total == 0)
                 throw new ArgumentOutOfRangeException("At least one score must be positive.");
+
+            // Except in the rare chance that the total adds up to exactly 1, notify the consumer that
+            // we changed the PDF values.
+            pdfUpdated = (total == 1f);
 
             draw = total * draw;
             if (draw > total) //make very sure that draw can not be greater than total.
                 draw = total;
 
+            bool index_found = false;
+            float sum = 0;
             float action_probability = 0;
             int action_index = probabilityDistribution.Length - 1;
-            float sum = 0;
+
             for (int i = 0; i < probabilityDistribution.Length; i++)
             {
                 sum += probabilityDistribution[i];
-                if (sum > draw)
+                if (!index_found && sum > draw)
                 {
                     action_index = i;
-                    action_probability = probabilityDistribution[i] / total;
-                    break;
+
+                    // Through we found the index, we cannot break out of the loop, because we will
+                    // not have finished normalizing the pdf. This leads to a partially normalized PDF.
+                    index_found = true;
                 }
+                
+                action_probability = probabilityDistribution[i] / total;
             }
 
             return action_index;
         }
 
-        public static int[] Sample(string seed, float[] probabilityDistribution, float[] scores)
+        public static int[] SampleAfterNormalizingAndSwap(string seed, float[] probabilityDistribution, float[] scores)
         {
             bool pdfUpdated;
-            return Sample(seed, probabilityDistribution, scores, out pdfUpdated);
+            return SampleAfterNormalizingAndSwap(seed, probabilityDistribution, scores, out pdfUpdated);
         }
 
         /// <summary>
         /// Produce ranking
         /// </summary>
-        public static int[] Sample(string seed, float[] probabilityDistribution, float[] scores, out bool pdfUpdated)
+        public static int[] SampleAfterNormalizingAndSwap(string seed, float[] probabilityDistribution, float[] scores, out bool pdfUpdated)
         {
             return SwapTopSlot(scores, SampleAfterNormalizing(seed, probabilityDistribution, out pdfUpdated));
         }
