@@ -135,7 +135,7 @@ class TestVW:
              '2 |user B |movie 2',
              '3 |user C |movie 3',
              '4 |user D |movie 4',
-             '5 |user D |movie 1']
+             '5 |user E |movie 1']
         model = VW(convert_to_vw=False, lrq='um4', lrqdropout=True, loss_function='quantile')
         assert model.params['lrq'] == 'um4'
         assert model.params['lrqdropout']
