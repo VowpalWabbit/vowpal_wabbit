@@ -50,6 +50,10 @@
             <name>John Langford</name>
             <email>jl@hunch.net</email>
         </developer>
+        <developer>
+            <name>Markus Cozowicz</name>
+            <email>marcozo@microsoft.com</email>
+        </developer>
     </developers>
 
     <properties>
@@ -79,6 +83,11 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>target/bin</directory>
+            </resource>
+        </resources>
         <testResources>
             <testResource>
                 <directory>${project.build.directory}</directory>
@@ -154,6 +163,19 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.19.1</version>
+                <executions>
+                <execution>
+                    <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                    </goals>
+                </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.17</version>
                 <executions>
@@ -175,7 +197,7 @@
                     <!--<forkMode>once</forkMode>-->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <argLine>-Djava.library.path=${project.build.directory}</argLine>
+                    <argLine>-Djava.library.path=${project.build.directory}/bin</argLine>
 
                 </configuration>
             </plugin>

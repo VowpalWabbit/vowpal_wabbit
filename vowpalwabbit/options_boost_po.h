@@ -98,7 +98,7 @@ struct options_boost_po : public options_i
                                  .run();
 
     auto it = std::find_if(pos.options.begin(), pos.options.end(),
-        [&key](boost::program_options::option option) { return option.string_key == key; });
+        [&key](boost::program_options::option& option) { return option.string_key == key; });
 
     if (it != pos.options.end() && (*it).value.size() > 0)
     {
@@ -214,7 +214,7 @@ template <typename T>
 po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
     std::shared_ptr<typed_option<T>>& opt, po::typed_value<std::vector<T>>* po_value)
 {
-  return po_value->notifier([this, opt](std::vector<T> final_arguments) {
+  return po_value->notifier([opt](std::vector<T> final_arguments) {
     T first = final_arguments[0];
     for (auto const& item : final_arguments)
     {
@@ -236,7 +236,7 @@ template <typename T>
 po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
     std::shared_ptr<typed_option<std::vector<T>>>& opt, po::typed_value<std::vector<T>>* po_value)
 {
-  return po_value->notifier([this, opt](std::vector<T> final_arguments) {
+  return po_value->notifier([opt](std::vector<T> final_arguments) {
     // Set the value for the listening location.
     opt->m_location = final_arguments;
     opt->value(final_arguments);

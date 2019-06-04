@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <!-- TODO: This should really come from project type, but this will disappear once we get
+             .NET Standard projects and non /clr bindings -->
+        <WriteAssemblyInfoCs Condition="'$(WriteAssemblyInfoCs)'==''">false</WriteAssemblyInfoCs>
+        <WriteAssemblyInfoCpp Condition="'$(WriteAssemblyInfoCpp)'==''">false</WriteAssemblyInfoCpp>
+        <WriteResourceRc Condition="'$(WriteResourceRc)'==''">false</WriteResourceRc>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <AssemblyConfiguration></AssemblyConfiguration>
+        <AssemblyCompany>Microsoft Corp</AssemblyCompany>
+        <AssemblyProduct>Vowpal Wabbit</AssemblyProduct>
+        <CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</CurrentYear>
+        <AssemblyCopyright>Copyright (C) Microsoft Corp 2012-$(CurrentYear), Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved</AssemblyCopyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <VersionFile Include="$(MSBuildThisFileDirectory)..\version.txt" />
+    </ItemGroup>
+
+    <Target Name="ReadVersion">
+        <ReadLinesFromFile File="@(VersionFile)" >
+            <Output TaskParameter="Lines" ItemName="VWVersionFileItems" />
+        </ReadLinesFromFile>
+        <PropertyGroup>
+            <VowpalWabbitAssemblyVersion>@(VWVersionFileItems, ' ')</VowpalWabbitAssemblyVersion>
+            <VowpalWabbitAssemblyVersion>$(VowpalWabbitAssemblyVersion.Trim())</VowpalWabbitAssemblyVersion>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="OutputVersion" DependsOnTargets="ReadVersion">
+        <Message Text="Setting version '$(VowpalWabbitAssemblyVersion)'"  />
+    </Target>
+
+    <Target Name="WriteVersionToAssemblyInfoCs" DependsOnTargets="ReadVersion">
+        <!-- TODO: Get this out of source -->
+        <AssemblyInfo CodeLanguage="CS" 
+                      OutputFile="$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs" 
+                      AssemblyTitle="$(AssemblyTitle)" 
+                      AssemblyDescription="$(AssemblyDescription)" 
+                      Guid="$(AssemblyGuid)" 
+                      AssemblyConfiguration=""
+                      AssemblyCompany="Microsoft Corp" 
+                      AssemblyProduct="Vowpal Wabbit" 
+                      AssemblyCopyright="$(AssemblyCopyright)" 
+                      AssemblyTrademark="" 
+                      ComVisible="false" 
+                      CLSCompliant="false" 
+                      AssemblyVersion="$(VowpalWabbitAssemblyVersion)" 
+                      AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" />
+    </Target>
+
+    <Target Name="WriteVersionToAssemblyInfoCpp" DependsOnTargets="ReadVersion">
+        <FileUpdate Files="$(MSBuildProjectDirectory)\AssemblyInfo.cpp" Regex="AssemblyVersionAttribute\(&quot;.*&quot;\)" ReplacementText="AssemblyVersionAttribute(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
+        <FileUpdate Files="$(MSBuildProjectDirectory)\AssemblyInfo.cpp" Regex="AssemblyFileVersion\(&quot;.*&quot;\)" ReplacementText="AssemblyFileVersion(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
+    </Target>
+
+    <Target Name="WriteVersionToResourceRc" DependsOnTargets="ReadVersion">
+        <FileUpdate Files="$(MSBuildProjectDirectory)\Resource.rc" Regex="FileVersion&quot;.*" ReplacementText="FileVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16" />
+        <FileUpdate Files="$(MSBuildProjectDirectory)\Resource.rc" Regex="ProductVersion&quot;.*" ReplacementText="ProductVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16" />
+        <FileUpdate Files="$(MSBuildProjectDirectory)\Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
+        <FileUpdate Files="$(MSBuildProjectDirectory)\Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
+    </Target>
+
+    <PropertyGroup>
+        <WriteTargets>OutputVersion</WriteTargets>
+        <WriteTargets Condition="'$(WriteAssemblyInfoCs.ToLower())'=='true'">
+            $(WriteTargets);
+            WriteVersionToAssemblyInfoCs
+        </WriteTargets>
+        <WriteTargets Condition="'$(WriteAssemblyInfoCpp.ToLower()'=='true'">
+            $(WriteTargets);
+            WriteVersionToAssemblyInfoCpp
+        </WriteTargets>
+        <WriteTargets Condition="'$(WriteResourceRc.ToLower()'=='true'">
+            $(WriteTargets);
+            WriteVersionToResourceRc
+        </WriteTargets>
+        <BuildDependsOn>
+            $(WriteTargets);
+            $(BuildDependsOn);
+        </BuildDependsOn>
+    </PropertyGroup>
+</Project>

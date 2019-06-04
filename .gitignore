@@ -108,6 +108,7 @@ python/dist/**
 python/src/**
 python/vowpalwabbit.egg-info/**
 python/.coverage
+python/docs/build
 
 /COPYING
 /README
