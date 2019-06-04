@@ -62,20 +62,18 @@ struct primitive_feature_space  // just a helper definition.
  public:
   primitive_feature_space(vw& _all);
   primitive_feature_space(vw& _all, const std::string& _name, size_t _len);
-  primitive_feature_space(::vw& _all, const std::string& _name, std::initializer_list<feature> features);
-  primitive_feature_space::primitive_feature_space(
-      ::vw& _all, const std::string& _name, std::initializer_list<std::tuple<const char*, float>> features);
+
   primitive_feature_space(const primitive_feature_space& other) = default;
   primitive_feature_space& operator=(const primitive_feature_space& other) = default;
 
-  void reset(size_t _len);
+  primitive_feature_space& reset(size_t _len);
 
   const feature& operator[](size_t index) const;
   feature& operator[](size_t index);
 
-  void set(size_t index, const std::string& feature_name, float value);
+  primitive_feature_space& set(size_t index, const std::string& feature_name, float value);
 
-  void set_name(const std::string& _name);
+  primitive_feature_space& set_name(const std::string& _name);
   unsigned char get_name() const;
   size_t size() const;
 };
