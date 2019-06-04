@@ -11,7 +11,7 @@ size_t options_serializer_boost_po::size() { return m_output_stream.str().size()
 void options_serializer_boost_po::add(base_option& option) { add_impl<supported_options_types>(option); }
 
 template <>
-void options_serializer_boost_po::serialize<bool>(typed_option<bool> typed_option)
+void options_serializer_boost_po::serialize<bool>(typed_option<bool>& typed_option)
 {
   if (typed_option.value())
   {
@@ -20,7 +20,7 @@ void options_serializer_boost_po::serialize<bool>(typed_option<bool> typed_optio
 }
 
 template <>
-void options_serializer_boost_po::add_impl<typelist<>>(base_option& options)
+void options_serializer_boost_po::add_impl<typelist<>>(base_option&)
 {
   THROW("That is an unsupported option type.");
 }
