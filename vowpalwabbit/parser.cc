@@ -999,17 +999,17 @@ void free_parser(vw& all)
     output->currentname.delete_v();
   }
 
-  // while (! all.p->example_pool.empty())
-  //   {
-  //     example* temp = all.p->example_pool.get_object();
-  //     VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-  //   }
+   while (! all.p->example_pool.empty())
+     {
+       example* temp = all.p->example_pool.get_object();
+       VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+     }
 
-  // while (all.p->ready_parsed_examples.size() != 0)
-  //   {
-  //     example* temp = all.p->ready_parsed_examples.pop();
-  //     VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-  //   }
+   while (all.p->ready_parsed_examples.size() != 0)
+     {
+       example* temp = all.p->ready_parsed_examples.pop();
+       VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+     }
   all.p->counts.delete_v();
 }
 

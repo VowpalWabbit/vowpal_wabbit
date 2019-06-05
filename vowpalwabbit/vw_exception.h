@@ -14,6 +14,14 @@ license as described in the file LICENSE.
 #define _NOEXCEPT throw()
 #endif
 
+#include <string.h>
+
+#ifdef _WIN32
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#else
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#endif
+
 namespace VW
 {
 class vw_exception : public std::exception
@@ -158,7 +166,7 @@ bool launchDebugger();
       __msg << ", errno = unknown";                          \
     else                                                     \
       __msg << ", errno = " << __errmsg;                     \
-    throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
+    throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #else
 #define THROWERRNO(args)                                     \
@@ -170,7 +178,7 @@ bool launchDebugger();
       __msg << "errno = unknown";                            \
     else                                                     \
       __msg << "errno = " << __errmsg;                       \
-    throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
+    throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #endif
 
@@ -179,14 +187,14 @@ bool launchDebugger();
   {                                                          \
     std::stringstream __msg;                                 \
     __msg << args;                                           \
-    throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
+    throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 
 #define THROW_EX(ex, args)                     \
   {                                            \
     std::stringstream __msg;                   \
     __msg << args;                             \
-    throw ex(__FILE__, __LINE__, __msg.str()); \
+    throw ex(__FILENAME__, __LINE__, __msg.str()); \
   }
 
 }  // namespace VW

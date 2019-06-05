@@ -51,15 +51,15 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     std::cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what()
               << std::endl;
 
-    // In strict parse mode, warnings are treated as fatal.
-    if(all.p->strict_parse) throw;
+    // Stash the exception so it can be thrown on the main thread.
+    all.p->exc_ptr = std::current_exception();
   }
   catch (std::exception& e)
   {
     std::cerr << "vw: example #" << example_number << e.what() << std::endl;
 
-    // In strict parse mode, warnings are treated as fatal.
-    if(all.p->strict_parse) throw;
+    // Stash the exception so it can be thrown on the main thread.
+    all.p->exc_ptr = std::current_exception();
   }
   lock_done(*all.p);
   examples.delete_v();
