@@ -136,7 +136,12 @@ endif()
 
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
-  add_library(vw_c_wrapper SHARED vwdll.cpp)
+  if(STATIC_LINK_VW)
+    add_library(vw_c_wrapper vwdll.cpp)
+  else()
+    add_library(vw_c_wrapper SHARED vwdll.cpp)
+  endif()
+
   target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
   target_link_libraries(vw_c_wrapper PUBLIC vw)
 
