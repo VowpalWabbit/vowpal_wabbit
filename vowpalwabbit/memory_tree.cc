@@ -302,7 +302,7 @@ namespace memory_tree_ns
 
 
     //rout based on the prediction
-    inline uint32_t insert_descent(node& n, const float prediction)
+    inline uint64_t insert_descent(node& n, const float prediction)
     {
         //prediction <0 go left, otherwise go right
         if(prediction < 0){
@@ -316,7 +316,7 @@ namespace memory_tree_ns
     }
 
     //return the id of the example and the leaf id (stored in cn)
-    inline int random_sample_example_pop(memory_tree& b, uint32_t& cn)
+    inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     {
         cn = 0; //always start from the root:
         while (b.nodes[cn].internal == 1)
@@ -378,7 +378,7 @@ namespace memory_tree_ns
         float prediction = ec.pred.scalar;
 	    //float imp_weight = 1.f; //no importance weight.
 
-        float weighted_value = (float)(1.-b.alpha)*log(b.nodes[cn].nl/(b.nodes[cn].nr+1e-1))/log(2.)+b.alpha*prediction;
+        float weighted_value = (float)((1.-b.alpha)*log(b.nodes[cn].nl/(b.nodes[cn].nr+1e-1))/log(2.)+b.alpha*prediction);
         float route_label = weighted_value < 0.f ? -1.f : 1.f;
 
         //ec.l.simple = {route_label, imp_weight, 0.f};
@@ -621,8 +621,8 @@ namespace memory_tree_ns
     //we use F1 score as the reward signal
     float F1_score_for_two_examples(example& ec1, example& ec2){
         float num_overlaps = get_overlap_from_two_examples(ec1, ec2);
-        float v1 = (float) num_overlaps/(1e-7+ec1.l.multilabels.label_v.size()*1.);
-        float v2 = (float) num_overlaps/(1e-7+ec2.l.multilabels.label_v.size()*1.);
+        float v1 = (float) (num_overlaps/(1e-7+ec1.l.multilabels.label_v.size()*1.));
+        float v2 = (float) (num_overlaps/(1e-7+ec2.l.multilabels.label_v.size()*1.));
         if (num_overlaps == 0.f)
             return 0.f;
         else
@@ -647,11 +647,11 @@ namespace memory_tree_ns
         }
 
 
-        uint32_t cn = 0;
+        uint64_t cn = 0;
         ec.l.simple = {-1.f, 1.f, 0.};
         while(b.nodes[cn].internal == 1){ //if it's internal{
             base.predict(ec, b.nodes[cn].base_router);
-            uint32_t newcn = ec.pred.scalar < 0 ? b.nodes[cn].left : b.nodes[cn].right; //do not need to increment nl and nr.
+            uint64_t newcn = ec.pred.scalar < 0 ? b.nodes[cn].left : b.nodes[cn].right; //do not need to increment nl and nr.
             cn = newcn;
         }
 
@@ -691,7 +691,7 @@ namespace memory_tree_ns
     }
 
 
-    float return_reward_from_node(memory_tree& b, single_learner& base, uint32_t cn, example& ec, float weight = 1.f){
+    float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, example& ec, float weight = 1.f){
         //example& ec = *b.examples[ec_array_index];
         MULTICLASS::label_t mc;
         uint32_t save_multi_pred = 0;
@@ -769,7 +769,7 @@ namespace memory_tree_ns
         return;
     }
 
-    void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t & ec_array_index, uint32_t cn, v_array<uint32_t>& path, bool insertion){
+    void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t & ec_array_index, uint64_t cn, v_array<uint32_t>& path, bool insertion){
 		example& ec = *b.examples[ec_array_index];
 
         MULTICLASS::label_t mc;
@@ -889,12 +889,12 @@ namespace memory_tree_ns
     //and insert the ec_array_index to the leaf.
     void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, bool fake_insert = false)
     {
-        uint32_t cn = 0; //start from the root.
+        uint64_t cn = 0; //start from the root.
         while(b.nodes[cn].internal == 1) //if it's internal node:
         {
             //predict and train the node at cn.
             float router_pred = train_node(b, base, *b.examples[ec_array_index], cn);
-            uint32_t newcn = insert_descent(b.nodes[cn], router_pred); //updated nr or nl
+            uint64_t newcn = insert_descent(b.nodes[cn], router_pred); //updated nr or nl
             cn = newcn;
         }
 
@@ -920,7 +920,7 @@ namespace memory_tree_ns
 
     void experience_replay(memory_tree& b, single_learner& base)
     {
-        uint32_t cn = 0; //start from root, randomly descent down!
+      uint64_t cn = 0; //start from root, randomly descent down!
 	    int ec_id = random_sample_example_pop(b,cn);
 	    if (ec_id >= 0){
             if (b.current_pass < 1)
