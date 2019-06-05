@@ -134,13 +134,13 @@ namespace memory_tree_ns
     //construct node for tree.
     struct node
     {
-        uint32_t parent; //parent index
+        uint64_t parent; //parent index
         int internal;
         //bool internal; //an internal or leaf
         uint32_t depth; //depth.
-        uint32_t base_router; //use to index router.
-        uint32_t left;  //left child.
-        uint32_t right; //right child.
+        uint64_t base_router; //use to index router.
+        uint64_t left;  //left child.
+        uint64_t right; //right child.
 
         double nl; //number of examples routed to left.
         double nr; //number of examples routed to right.
@@ -176,7 +176,7 @@ namespace memory_tree_ns
         size_t max_routers;
         size_t max_num_labels;
         float alpha; //for cpt type of update.
-        size_t routers_used;
+        uint64_t routers_used;
         int iter;
         uint32_t dream_repeats; //number of dream operations per example.
 
@@ -189,7 +189,7 @@ namespace memory_tree_ns
         float test_time; //recording the test time
 
         uint32_t num_mistakes;
-        int learn_at_leaf; //indicator for turning on learning the scorer function at the leaf level
+        bool learn_at_leaf; //indicator for turning on learning the scorer function at the leaf level
 
         bool test_mode;
 
@@ -200,7 +200,7 @@ namespace memory_tree_ns
         bool oas; //indicator for multi-label classification (oas = 1)
 	    int dream_at_update;
 
-        int online; //indicator for running CMT in online fashion
+        bool online; //indicator for running CMT in online fashion
 
         float F1_score;
         float hamming_loss;
@@ -378,7 +378,7 @@ namespace memory_tree_ns
         float prediction = ec.pred.scalar;
 	    //float imp_weight = 1.f; //no importance weight.
 
-        float weighted_value = (1.-b.alpha)*log(b.nodes[cn].nl/(b.nodes[cn].nr+1e-1))/log(2.)+b.alpha*prediction;
+        float weighted_value = (float)(1.-b.alpha)*log(b.nodes[cn].nl/(b.nodes[cn].nr+1e-1))/log(2.)+b.alpha*prediction;
         float route_label = weighted_value < 0.f ? -1.f : 1.f;
 
         //ec.l.simple = {route_label, imp_weight, 0.f};
@@ -523,7 +523,7 @@ namespace memory_tree_ns
     //template<typename T>
     inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2){
     	uint32_t overlap = over_lap(array_1, array_2);
-	    return array_1.size() + array_2.size() - 2*overlap;
+	    return (uint32_t)(array_1.size() + array_2.size() - 2*overlap);
     }
 
     void collect_labels_from_leaf(memory_tree& b, const uint32_t cn, v_array<uint32_t>& leaf_labs){
@@ -621,8 +621,8 @@ namespace memory_tree_ns
     //we use F1 score as the reward signal
     float F1_score_for_two_examples(example& ec1, example& ec2){
         float num_overlaps = get_overlap_from_two_examples(ec1, ec2);
-	    float v1 = num_overlaps/(1e-7+ec1.l.multilabels.label_v.size()*1.);
-        float v2 = num_overlaps/(1e-7+ec2.l.multilabels.label_v.size()*1.);
+        float v1 = (float) num_overlaps/(1e-7+ec1.l.multilabels.label_v.size()*1.);
+        float v2 = (float) num_overlaps/(1e-7+ec2.l.multilabels.label_v.size()*1.);
         if (num_overlaps == 0.f)
             return 0.f;
         else
@@ -685,7 +685,7 @@ namespace memory_tree_ns
                 b.F1_score += reward;
             }
             v_array<uint32_t> selected_labs = v_init<uint32_t>();
-            ec.loss = compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs);
+            ec.loss = (float)compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs);
             b.hamming_loss += ec.loss;
         }
     }
@@ -822,7 +822,7 @@ namespace memory_tree_ns
 
         if (path_to_leaf.size() > 1){
             //uint32_t random_pos = merand48(b.all->random_state)*(path_to_leaf.size()-1);
-            uint32_t random_pos = merand48(b.all->random_state)*(path_to_leaf.size()); //include leaf
+          uint32_t random_pos = (uint32_t)(merand48(b.all->random_state)*(path_to_leaf.size())); //include leaf
             uint32_t cn = path_to_leaf[random_pos];
 
             if (b.nodes[cn].internal != -1){ //if it's an internal node:'
@@ -832,11 +832,11 @@ namespace memory_tree_ns
                 float weight = path_to_leaf.size()*1.f/(path_to_leaf.size() - 1.f);
                 if (coin == -1.f){ //go left
                     float reward_left_subtree = return_reward_from_node(b,base, b.nodes[cn].left, ec, weight);
-                    objective = (float)(1.-b.alpha)*log(b.nodes[cn].nl/b.nodes[cn].nr) + b.alpha*(-reward_left_subtree/(1.-prob_right))/2.;
+                    objective = (float)((1.-b.alpha)*log(b.nodes[cn].nl/b.nodes[cn].nr) + b.alpha*(-reward_left_subtree/(1.-prob_right))/2.);
                 }
                 else{ //go right:
                     float reward_right_subtree= return_reward_from_node(b,base, b.nodes[cn].right, ec, weight);
-                    objective = (1.-b.alpha)*log(b.nodes[cn].nl/b.nodes[cn].nr) + b.alpha*(reward_right_subtree/prob_right)/2.;
+                    objective = (float)((1.-b.alpha)*log(b.nodes[cn].nl/b.nodes[cn].nr) + b.alpha*(reward_right_subtree/prob_right)/2.);
                 }
 
                 float ec_input_weight = ec.weight;
@@ -968,11 +968,11 @@ namespace memory_tree_ns
             }
             else{ //starting from the current pass, we just learn using reinforcement signal, no insertion needed:
                 size_t ec_id = (b.iter)%b.examples.size();
-                update_rew(b, base, ec_id, *b.examples[ec_id]); //no insertion will happen in this call
+                update_rew(b, base, (uint32_t)ec_id, *b.examples[ec_id]); //no insertion will happen in this call
 		        for (uint32_t i = 0; i < b.dream_repeats; i++)
 		            experience_replay(b, base);
             }
-            b.construct_time += double(clock() - begin)/CLOCKS_PER_SEC;
+            b.construct_time += float(clock() - begin)/CLOCKS_PER_SEC;
         }
         else if (b.test_mode == true){
             b.iter++;
@@ -984,7 +984,7 @@ namespace memory_tree_ns
             }
             clock_t begin = clock();
             predict(b, base, ec);
-            b.test_time += double(clock() - begin)/CLOCKS_PER_SEC;
+            b.test_time += float(clock() - begin)/CLOCKS_PER_SEC;
         }
 
     }
@@ -1103,7 +1103,7 @@ namespace memory_tree_ns
 
             if (read)
             {
-                size_t ss = 0;
+                uint32_t ss = 0;
                 writeit(ss, "stride_shift");
                 b.all->weights.stride_shift(ss);
             }
@@ -1161,10 +1161,10 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
         .add(make_option("alpha", tree->alpha).default_value(0.1f).help("Alpha"))
         .add(make_option("dream_repeats", tree->dream_repeats).default_value(1).help("number of dream operations per example (default = 1)"))
         .add(make_option("top_K",tree->top_K).default_value(1).help("top K prediction error (default 1)"))
-        .add(make_option("learn_at_leaf",tree->learn_at_leaf).default_value(0).help("whether or not learn at leaf (defualt = True)"))
+        .add(make_option("learn_at_leaf",tree->learn_at_leaf).help("whether or not learn at leaf (defualt = True)"))
         .add(make_option("oas", tree->oas).help("use oas at the leaf"))
         .add(make_option("dream_at_update", tree->dream_at_update).default_value(0).help("turn on dream operations at reward based update as well"))
-        .add(make_option("online", tree->online).default_value(0).help("turn on dream operations at reward based update as well"));
+        .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
     options.add_and_parse(new_options);
 if (!tree->max_nodes)
 {
@@ -1175,7 +1175,7 @@ if (!tree->max_nodes)
     tree->current_pass = 0;
     tree->final_pass = all.numpasses;
 
-    tree->max_leaf_examples = tree->leaf_example_multiplier*(log(tree->max_nodes)/log(2));
+    tree->max_leaf_examples = (size_t)(tree->leaf_example_multiplier*(log(tree->max_nodes)/log(2)));
 
 
     init_tree(*tree);
