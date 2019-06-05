@@ -36,8 +36,8 @@ struct example_initializer
 
 struct parser
 {
-  parser(size_t ring_size)
-      : example_pool{ring_size}, ready_parsed_examples{ring_size}, ring_size{ring_size}
+  parser(size_t ring_size, bool strict_parse_)
+      : example_pool{ring_size}, ready_parsed_examples{ring_size}, ring_size{ring_size}, strict_parse{strict_parse_}
   {
     this->input = new io_buf{};
     this->output = new io_buf{};
@@ -103,6 +103,9 @@ struct parser
   bool audit = false;
   bool decision_service_json = false;
   std::shared_ptr<void> jsonp;
+
+  bool strict_parse;
+  std::exception_ptr exc_ptr;
 };
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
