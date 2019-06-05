@@ -23,8 +23,7 @@ struct gd;
 float finalize_prediction(shared_data* sd, float ret);
 void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd* g = nullptr, uint32_t ftrl_size = 0);
-
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd* g = nullptr);
 
 template <class T>
 struct multipredict_info

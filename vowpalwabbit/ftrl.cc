@@ -39,7 +39,6 @@ struct ftrl
   size_t no_win_counter;
   size_t early_stop_thres;
   double total_weight;
-  uint32_t ftrl_size;
 };
 
 struct uncertainty
@@ -152,7 +151,7 @@ void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
 
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
-  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2.f * tmp) * tmp;
+  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2 * tmp) * tmp;
 
   d.predict += w[W_XT] * x;
 }
@@ -316,7 +315,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
     if (resume)
-      GD::save_load_online_state(*all, model_file, read, text, nullptr, b.ftrl_size);
+      GD::save_load_online_state(*all, model_file, read, text);
     else
       GD::save_load_regressor(*all, model_file, read, text);
   }
@@ -390,21 +389,18 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     else
       learn_ptr = learn_proximal<false>;
       all.weights.stride_shift(2);  // NOTE: for more parameter storage
-      b->ftrl_size =  3;
   }
   else if (pistol)
   {
     algorithm_name = "PiSTOL";
     learn_ptr = learn_pistol;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
-    b->ftrl_size =  4;
   }
   else if (coin)
   {
     algorithm_name = "Coin Betting";
     learn_ptr = learn_cb;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
-    b->ftrl_size =  6;
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;
