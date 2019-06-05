@@ -143,6 +143,7 @@ int main(int argc, char* argv[])
   catch (VW::vw_exception& e)
   {
     cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
+    exit(1);
   }
   catch (exception& e)
   {
