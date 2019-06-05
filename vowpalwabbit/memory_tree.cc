@@ -627,7 +627,7 @@ namespace memory_tree_ns
             return 0.f;
         else
 	    //return v2; //only precision
-            return 2.*(v1*v2/(v1+v2));
+            return 2.f*(v1*v2/(v1+v2));
     }
 
 
@@ -960,7 +960,7 @@ namespace memory_tree_ns
                 copy_example_data(new_ec, &ec, b.oas);
                 b.examples.push_back(new_ec);
                 if(b.online == true)
-                    update_rew(b, base, b.examples.size() - 1,*b.examples[b.examples.size()-1]); //query and learn
+                  update_rew(b, base, (uint32_t)(b.examples.size() - 1),*b.examples[b.examples.size()-1]); //query and learn
 
                 insert_example(b, base, (uint32_t)(b.examples.size() - 1)); //unsupervised learning.
                 for (uint32_t i = 0; i < b.dream_repeats; i++)
@@ -1162,7 +1162,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
         .add(make_option("dream_repeats", tree->dream_repeats).default_value(1).help("number of dream operations per example (default = 1)"))
         .add(make_option("top_K",tree->top_K).default_value(1).help("top K prediction error (default 1)"))
         .add(make_option("learn_at_leaf",tree->learn_at_leaf).default_value(0).help("whether or not learn at leaf (defualt = True)"))
-        .add(make_option("oas", tree->oas).default_value(false).help("use oas at the leaf"))
+        .add(make_option("oas", tree->oas).help("use oas at the leaf"))
         .add(make_option("dream_at_update", tree->dream_at_update).default_value(0).help("turn on dream operations at reward based update as well"))
         .add(make_option("online", tree->online).default_value(0).help("turn on dream operations at reward based update as well"));
     options.add_and_parse(new_options);
