@@ -131,9 +131,6 @@ int main(int argc, char* argv[])
 
     for (vw* v : alls)
     {
-      if (v->p->exc_ptr) {
-        std::rethrow_exception(v->p->exc_ptr);
-      }
       VW::sync_stats(*v);
       VW::finish(*v);
     }

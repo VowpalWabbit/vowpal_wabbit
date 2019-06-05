@@ -105,13 +105,26 @@ class vw_unrecognised_option_exception : public vw_exception
   ~vw_unrecognised_option_exception() _NOEXCEPT {}
 };
 
-class strict_parse_exception : public std::exception
+class strict_parse_exception : public vw_exception
 {
- private:
-  std::string message;
  public:
-  strict_parse_exception(std::string message_) : message{message_} {}
-  const char* what() const _NOEXCEPT { return message.c_str(); }
+  strict_parse_exception(const char* file, int lineNumber, std::string message)
+      : vw_exception(file, lineNumber, message)
+  {
+  }
+
+  strict_parse_exception(const strict_parse_exception& ex) : vw_exception(ex) {}
+
+  strict_parse_exception& operator=(const strict_parse_exception& other)
+  {
+    // check for self-assignment
+    if (&other == this)
+      return *this;
+    vw_exception::operator=(other);
+    return *this;
+  }
+
+  ~strict_parse_exception() _NOEXCEPT {}
 };
 
 #ifdef _WIN32

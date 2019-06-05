@@ -82,7 +82,7 @@ class TC_parser
        << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
        << endl;
     if (p->strict_parse) {
-      throw VW::strict_parse_exception(ss.str());
+      THROW_EX(VW::strict_parse_exception, ss.str());
     } else {
       cerr << ss.str();
     }
