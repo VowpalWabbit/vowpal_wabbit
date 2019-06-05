@@ -235,10 +235,10 @@ void setup_lambdas(warm_cb& data)
 		lambdas[mid] = minimax_lambda(data.epsilon);
 
 	for (uint32_t i = mid; i > 0; i--)
-		lambdas[i-1] = lambdas[i] / 2.0;
+		lambdas[i-1] = lambdas[i] / 2.0f;
 
 	for (uint32_t i = mid+1; i < data.choices_lambda; i++)
-		lambdas[i] = 1 - (1-lambdas[i-1]) / 2.0;
+		lambdas[i] = 1.f - (1.f-lambdas[i-1]) / 2.0f;
 
 	if (data.lambda_scheme == MINIMAX_CENTRAL_ZEROONE || data.lambda_scheme == ABS_CENTRAL_ZEROONE)
 	{
@@ -297,8 +297,8 @@ bool ind_update(warm_cb& data, int ec_type)
 float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
 {
 	float weight_multiplier;
-	float ws_train_size = data.ws_train_size;
-	float inter_train_size = data.inter_period;
+	float ws_train_size = (float)data.ws_train_size;
+	float inter_train_size = (float)data.inter_period;
 	float total_train_size = ws_train_size + inter_train_size;
 	float total_weight = (1-data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 
@@ -357,7 +357,7 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
 	//generate cost-sensitive label (for cost-sensitive learner's temporary use)
 	auto& csls = data.csls;
 	auto& cbls = data.cbls;
-	for (size_t a = 0; a < data.num_actions; ++a)
+	for (uint32_t a = 0; a < data.num_actions; ++a)
 	{
 		csls[a].costs[0].class_index = a+1;
 		if (use_cs)
@@ -479,7 +479,7 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
 
 	for (size_t a = 0; a < data.num_actions; ++a)
 		if (pred_best_approx == data.a_s_adf[a].action + 1)
-			temp_var = 1.0 / data.a_s_adf[a].score;
+			temp_var = 1.0f / data.a_s_adf[a].score;
 
 	data.cumu_var += temp_var;
 }
@@ -531,7 +531,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 
 }
 
-void init_adf_data(warm_cb& data, const size_t num_actions)
+void init_adf_data(warm_cb& data, const uint32_t num_actions)
 {
   data.num_actions = num_actions;
   if (data.sim_bandit)
