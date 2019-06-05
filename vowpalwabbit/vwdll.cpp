@@ -350,6 +350,14 @@ public:
         return nbytes;
     }
 
+    virtual bool close_file() {
+       if (files.size() > 0) {
+            files.pop();
+            return true;
+        }
+        return false;
+    }
+
     char* GetDataPointer() {
         return data.data();
     }
