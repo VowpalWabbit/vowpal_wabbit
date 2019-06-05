@@ -149,7 +149,7 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   {
     uint32_t current_action = mydata.prob_s[i].action;
     mydata.backup_weights.push_back(examples[current_action]->weight);
-    mydata.backup_nf.push_back(examples[current_action]->num_features);
+    mydata.backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
       examples[current_action]->weight = example_weight * (1.0f - mydata.prob_s[i].score);

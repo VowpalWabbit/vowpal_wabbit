@@ -38,7 +38,7 @@ namespace memory_tree_ns
         return;
     }
 
-    void copy_example_data(example* dst, example* src, int oas = false) //copy example data.
+    void copy_example_data(example* dst, example* src, bool oas = false) //copy example data.
     {
         if (oas == false){
             dst->l = src->l;
@@ -94,7 +94,7 @@ namespace memory_tree_ns
         return *(char*)a - *(char*)b;
     }
 
-    void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, int oas = false)
+    void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
     {
         //copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
         VW::dealloc_example(nullptr, ec, nullptr); //clear ec
@@ -197,7 +197,7 @@ namespace memory_tree_ns
         size_t final_pass;
 
         int top_K;  //commands:
-        int oas; //indicator for multi-label classification (oas = 1)
+        bool oas; //indicator for multi-label classification (oas = 1)
 	    int dream_at_update;
 
         int online; //indicator for running CMT in online fashion
@@ -482,7 +482,7 @@ namespace memory_tree_ns
 
         if ((std::max)(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
         {
-            b.max_ex_in_leaf = (std::max)(b.nodes[cn].nl, b.nodes[cn].nr);
+          b.max_ex_in_leaf = (size_t)(std::max)(b.nodes[cn].nl, b.nodes[cn].nr);
             //cout<<b.max_ex_in_leaf<<endl;
         }
     }
@@ -832,7 +832,7 @@ namespace memory_tree_ns
                 float weight = path_to_leaf.size()*1.f/(path_to_leaf.size() - 1.f);
                 if (coin == -1.f){ //go left
                     float reward_left_subtree = return_reward_from_node(b,base, b.nodes[cn].left, ec, weight);
-                    objective = (1.-b.alpha)*log(b.nodes[cn].nl/b.nodes[cn].nr) + b.alpha*(-reward_left_subtree/(1.-prob_right))/2.;
+                    objective = (float)(1.-b.alpha)*log(b.nodes[cn].nl/b.nodes[cn].nr) + b.alpha*(-reward_left_subtree/(1.-prob_right))/2.;
                 }
                 else{ //go right:
                     float reward_right_subtree= return_reward_from_node(b,base, b.nodes[cn].right, ec, weight);
@@ -1012,7 +1012,7 @@ namespace memory_tree_ns
     ////////////////////////////////////////////////////////////////////
 
 
-    void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, stringstream& msg, int& oas)
+    void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, stringstream& msg, bool& oas)
     {   //deal with tag
         //deal with labels:
 	    writeit(ec->num_features, "num_features");
@@ -1162,7 +1162,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
         .add(make_option("dream_repeats", tree->dream_repeats).default_value(1).help("number of dream operations per example (default = 1)"))
         .add(make_option("top_K",tree->top_K).default_value(1).help("top K prediction error (default 1)"))
         .add(make_option("learn_at_leaf",tree->learn_at_leaf).default_value(0).help("whether or not learn at leaf (defualt = True)"))
-        .add(make_option("oas", tree->oas).default_value(0).help("use oas at the leaf"))
+        .add(make_option("oas", tree->oas).default_value(false).help("use oas at the leaf"))
         .add(make_option("dream_at_update", tree->dream_at_update).default_value(0).help("turn on dream operations at reward based update as well"))
         .add(make_option("online", tree->online).default_value(0).help("turn on dream operations at reward based update as well"));
     options.add_and_parse(new_options);
