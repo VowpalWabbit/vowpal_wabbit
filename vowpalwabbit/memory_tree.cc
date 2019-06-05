@@ -67,7 +67,7 @@ namespace memory_tree_ns
         if (f2.indicies.size() == 0)
             return;
     
-        float denominator = pow(norm_sq1*norm_sq2,0.5);
+        float denominator = pow(norm_sq1*norm_sq2,0.5f);
         size_t idx1 = 0;
         size_t idx2 = 0;
 
@@ -259,9 +259,9 @@ namespace memory_tree_ns
         float linear_prod = linear_kernel(fec1, fec2);
         fec1->fs.delete_v(); 
         fec2->fs.delete_v();
-        free(fec1);
-        free(fec2);
-        return linear_prod/pow(fec1->total_sum_feat_sq*fec2->total_sum_feat_sq, 0.5);
+        free_flatten_example(fec1);
+        free_flatten_example(fec2);
+        return linear_prod/pow(fec1->total_sum_feat_sq*fec2->total_sum_feat_sq, 0.5f);
     }
 
 
@@ -269,7 +269,18 @@ namespace memory_tree_ns
     {
         //srand48(4000);
         //simple initilization: initilize the root only
+        b.iter = 0;
+        b.num_mistakes = 0;
         b.routers_used = 0;
+        b.test_mode = false;
+        b.max_depth = 0;
+        b.max_ex_in_leaf = 0;
+        b.construct_time = 0;
+        b.test_time = 0;
+        b.top_K = 1;
+        b.hamming_loss = 0.f;
+        b.F1_score = 0.f;
+
         b.nodes.push_back(node());
         b.nodes[0].internal = -1; //mark the root as leaf
         b.nodes[0].base_router = (b.routers_used++);
@@ -349,7 +360,7 @@ namespace memory_tree_ns
         //predict, learn and predict
         //note: here we first train the router and then predict.
         MULTICLASS::label_t mc;
-        uint32_t save_multi_pred;
+        uint32_t save_multi_pred = 0;
         MULTILABEL::labels multilabels;
         MULTILABEL::labels preds;
         if (b.oas == false){
@@ -427,7 +438,7 @@ namespace memory_tree_ns
         {
             uint32_t ec_pos = b.nodes[cn].examples_index[ec_id];
             MULTICLASS::label_t mc;
-            uint32_t save_multi_pred;
+            uint32_t save_multi_pred = 0;
             MULTILABEL::labels multilabels;
             MULTILABEL::labels preds;
             if (b.oas == false){
@@ -622,7 +633,7 @@ namespace memory_tree_ns
     void predict(memory_tree& b, single_learner& base, example& ec)
     {  
         MULTICLASS::label_t mc;
-        uint32_t save_multi_pred;
+        uint32_t save_multi_pred = 0;
         MULTILABEL::labels multilabels;
         MULTILABEL::labels preds;
         if (b.oas == false){
@@ -652,7 +663,7 @@ namespace memory_tree_ns
             ec.l.multilabels = multilabels;
         }
 
-        int64_t closest_ec;
+        int64_t closest_ec = 0;
         if(b.oas == false){
             closest_ec = pick_nearest(b, base, cn, ec);
             if (closest_ec != -1)
@@ -682,7 +693,7 @@ namespace memory_tree_ns
     float return_reward_from_node(memory_tree& b, single_learner& base, uint32_t cn, example& ec, float weight = 1.f){
         //example& ec = *b.examples[ec_array_index];
         MULTICLASS::label_t mc;
-        uint32_t save_multi_pred;
+        uint32_t save_multi_pred = 0;
         MULTILABEL::labels multilabels;
         MULTILABEL::labels preds;
         if (b.oas ==false){
@@ -761,7 +772,7 @@ namespace memory_tree_ns
 		example& ec = *b.examples[ec_array_index];
         
         MULTICLASS::label_t mc;
-        uint32_t save_multi_pred;
+        uint32_t save_multi_pred = 0;
         MULTILABEL::labels multilabels;
         MULTILABEL::labels preds;
         if (b.oas == false){
