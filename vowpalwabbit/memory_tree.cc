@@ -927,7 +927,7 @@ namespace memory_tree_ns
             	insert_example(b, base, ec_id); //unsupervised learning
             else{
 		if (b.dream_at_update == false){
-	        	v_array<uint32_t> tmp_path = v_init<uint32_t>();
+	        	v_array<uint64_t> tmp_path = v_init<uint64_t>();
 			route_to_leaf(b, base, ec_id, 0, tmp_path, true);
 			tmp_path.delete_v();
 		}
