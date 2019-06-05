@@ -1,0 +1,25 @@
+memory_tree: max_nodes = 10 max_leaf_examples = 33 alpha = 0.1 oas = 0 online =1 
+Num weight bits = 15
+learning rate = 0.001
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_smaller.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0        1        0       50
+1.000000     n.a.            2            2.0  unknown        1      103
+1.000000     n.a.            4            4.0  unknown        1      134
+0.500000 0.000000            8            8.0  unknown        1      145
+0.200000 0.000000           16           16.0        1        1       23
+0.090909 0.000000           32           32.0  unknown        1       31
+0.043478 0.000000           64           64.0  unknown        1       60
+0.018868 0.000000          128          128.0        1        1      105
+
+finished run
+number of examples = 250
+weighted example sum = 250.000000
+weighted label sum = 0.000000
+average loss = 0.008772
+total feature number = 19870
