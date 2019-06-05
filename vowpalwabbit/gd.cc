@@ -786,8 +786,10 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         if (i >= length)
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
-        weight buff[4] = {0, 0, 0, 0};
-        if (g == NULL || (!g->adaptive && !g->normalized))
+        weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+        if (all.ftrl_size>0)
+          brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * all.ftrl_size, "");
+        else if (g == NULL || (!g->adaptive && !g->normalized))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
@@ -812,7 +814,19 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         else
           brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
 
-        if (g == nullptr || (!g->adaptive && !g->normalized))
+        if (all.ftrl_size==3) {
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
+        }
+        else if (all.ftrl_size==4) {
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
+        }
+        else if (all.ftrl_size==6) {
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " " << (&(*v))[5] << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
+        }
+        else if (g == nullptr || (!g->adaptive && !g->normalized))
         {
           msg << ":" << *v << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);

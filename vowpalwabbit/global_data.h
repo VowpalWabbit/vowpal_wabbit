@@ -565,6 +565,7 @@ struct vw
   bool adaptive;            // Should I use adaptive individual learning rates?
   bool normalized_updates;  // Should every feature be normalized
   bool invariant_updates;   // Should we use importance aware/safe updates
+  uint32_t ftrl_size;
   uint64_t random_seed;
   uint64_t random_state;  // per instance random_state
   bool random_weights;

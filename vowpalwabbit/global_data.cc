@@ -354,6 +354,7 @@ vw::vw()
   normalized_updates = true;
   invariant_updates = true;
   normalized_idx = 2;
+  ftrl_size = 0;
 
   add_constant = true;
   audit = false;
