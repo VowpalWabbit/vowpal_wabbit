@@ -55,6 +55,7 @@ license as described in the file LICENSE.
 #include "autolink.h"
 #include "log_multi.h"
 #include "recall_tree.h"
+#include "memory_tree.h"
 #include "stagewise_poly.h"
 #include "active.h"
 #include "active_cover.h"
@@ -1261,6 +1262,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(ect_setup);
   all.reduction_stack.push(log_multi_setup);
   all.reduction_stack.push(recall_tree_setup);
+  all.reduction_stack.push(memory_tree_setup);
   all.reduction_stack.push(classweight_setup);
   all.reduction_stack.push(multilabel_oaa_setup);
 
