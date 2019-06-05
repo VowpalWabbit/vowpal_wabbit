@@ -257,8 +257,8 @@ namespace memory_tree_ns
         flat_example* fec1 = flatten_sort_example(*b.all, ec1);
         flat_example* fec2 = flatten_sort_example(*b.all, ec2);
         float linear_prod = linear_kernel(fec1, fec2);
-        fec1->fs.delete_v(); 
-        fec2->fs.delete_v();
+        //fec1->fs.delete_v(); 
+        //fec2->fs.delete_v();
         free_flatten_example(fec1);
         free_flatten_example(fec2);
         return linear_prod/pow(fec1->total_sum_feat_sq*fec2->total_sum_feat_sq, 0.5f);
