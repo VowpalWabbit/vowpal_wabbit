@@ -55,6 +55,7 @@ license as described in the file LICENSE.
 #include "autolink.h"
 #include "log_multi.h"
 #include "recall_tree.h"
+#include "memory_tree.h"
 #include "stagewise_poly.h"
 #include "active.h"
 #include "active_cover.h"
@@ -1261,6 +1262,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(ect_setup);
   all.reduction_stack.push(log_multi_setup);
   all.reduction_stack.push(recall_tree_setup);
+  all.reduction_stack.push(memory_tree_setup);
   all.reduction_stack.push(classweight_setup);
   all.reduction_stack.push(multilabel_oaa_setup);
 
@@ -1301,12 +1303,14 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
   {
     time(&all.init_time);
 
+    bool strict_parse = false;
     size_t ring_size;
     option_group_definition vw_args("VW options");
-    vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"));
+    vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"))
+        .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
 
-    all.p = new parser{ring_size};
+    all.p = new parser{ring_size, strict_parse};
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))

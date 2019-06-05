@@ -26,11 +26,15 @@
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
+    <ClCompile Include="vwdll_test.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)libvw.vcxproj">
+      <Project>{ea52de0d-a5be-4fb9-8c84-3a57bdfebed9}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)vw_core.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
     </ProjectReference>

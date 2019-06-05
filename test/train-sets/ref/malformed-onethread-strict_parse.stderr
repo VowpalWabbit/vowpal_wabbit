@@ -1,0 +1,13 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/malformed.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+vw example #0(parse_example.cc:85): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+
+vw (parse_example.cc:85): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+

@@ -1719,4 +1719,24 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     test-sets/ref/ftrl_coin.stderr
     pred-sets/ref/ftrl_coin.predict
 
+# Test 193: malformed examples, onethread, strict_parse failure
+./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse
+    train-sets/ref/malformed-onethread-strict_parse.stderr
+
+# Test 194: malformed examples, strict_parse failure
+./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse
+    train-sets/ref/malformed-strict_parse.stderr
+
+# Test 195: malformed examples success
+{VW} -d train-sets/malformed.dat --onethread
+    train-sets/ref/malformed.stderr
+
+# Test 196: online contextual memory tree
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf 1 --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --oas 0 --online 1 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_online.stderr
+
+# Test 197: offline contextual memory tree
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf 1 --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --oas 0 --online 0 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_offline.stderr
+
 # Do not delete this line or the empty line above it
