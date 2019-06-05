@@ -39,7 +39,7 @@ struct cb_adf
   action_scores a_s;  // temporary storage for mtr and sm
   action_scores prob_s;  // temporary storage for sm; stores softmax values
   v_array<uint32_t> backup_nf; // temporary storage for sm; backup for numFeatures in examples
-  v_array<uint32_t> backup_weights;  // temporary storage for sm; backup for weights in examples
+  v_array<float> backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t offset;
   bool no_predict;
@@ -149,10 +149,10 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
   {
     uint32_t current_action = mydata.prob_s[i].action;
     mydata.backup_weights.push_back(examples[current_action]->weight);
-    mydata.backup_nf.push_back(examples[current_action]->num_features);
+    mydata.backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action]->weight = example_weight * (1.0 - mydata.prob_s[i].score);
+      examples[current_action]->weight = example_weight * (1.0f - mydata.prob_s[i].score);
     else
       examples[current_action]->weight = example_weight * mydata.prob_s[i].score;
 

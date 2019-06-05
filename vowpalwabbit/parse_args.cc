@@ -586,7 +586,7 @@ string spoof_hex_encoded_namespaces(const string& arg)
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all)
+void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionary_nses)
 {
   string hash_function("strings");
   uint32_t new_bits;
@@ -598,7 +598,6 @@ void parse_feature_tweaks(options_i& options, vw& all)
   vector<string> ignore_linears;
   vector<string> keeps;
   vector<string> redefines;
-  vector<string> dictionary_nses;
 
   vector<string> dictionary_path;
 
@@ -990,7 +989,6 @@ void parse_feature_tweaks(options_i& options, vw& all)
       all.dictionary_path.push_back(PATH.substr(previous));
     }
 
-    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
   }
 
   if (noconstant)
@@ -1501,14 +1499,14 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
   return options;
 }
 
-void parse_modules(options_i& options, vw& all)
+void parse_modules(options_i& options, vw& all, vector<string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.random_state = all.random_seed;
 
-  parse_feature_tweaks(options, all);  // feature tweaks
+  parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
@@ -1634,9 +1632,13 @@ vw* initialize(
     // Loads header of model files and loads the command line options into the options object.
     load_header_merge_options(options, all, *model);
 
-    parse_modules(options, all);
+    vector<string> dictionary_nses;
+    parse_modules(options, all, dictionary_nses);
 
     parse_sources(options, all, *model, skipModelLoad);
+
+    //we must delay so parse_mask is fully defined.
+    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
 
     options.check_unregistered();
 
