@@ -297,7 +297,7 @@ bool ind_update(warm_cb& data, int ec_type)
 float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
 {
 	float weight_multiplier;
-	float ws_train_size = data.ws_train_size;
+	float ws_train_size = (float)data.ws_train_size;
 	float inter_train_size = data.inter_period;
 	float total_train_size = ws_train_size + inter_train_size;
 	float total_weight = (1-data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
@@ -531,7 +531,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 
 }
 
-void init_adf_data(warm_cb& data, const size_t num_actions)
+void init_adf_data(warm_cb& data, const uint32_t num_actions)
 {
   data.num_actions = num_actions;
   if (data.sim_bandit)
