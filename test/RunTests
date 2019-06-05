@@ -1710,4 +1710,13 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
     train-sets/ref/oaa_subsample.stderr
 
+# Test 191: train coin betting
+{VW} -k -d train-sets/0001.dat -f models/ftrl_coin.model --passes 1 --coin
+    train-sets/ref/ftrl_coin.stderr
+
+# Test 192: test coin betting
+{VW} -k -t -d train-sets/0001.dat -i models/ftrl_coin.model -p ftrl_coin.predict
+    test-sets/ref/ftrl_coin.stderr
+    pred-sets/ref/ftrl_coin.predict
+
 # Do not delete this line or the empty line above it
