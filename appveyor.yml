@@ -20,14 +20,14 @@ build_script:
 - cd %vwRoot%
 - git submodule update --init --recursive
 - .scripts/restore.cmd
-- .scripts/build.cmd
+- .scripts/build.cmd /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 test_script:
 - ps: >-
     if($env:PLATFORM -eq "x64")
 
     {
        cd c:\vowpal_wabbit
-       vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
+       vstest.console /logger:Appveyor /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
     }
 on_failure:
 - ps: Get-ChildItem C:\Users\appveyor\AppData\Local\CrashDumps\\*.dmp | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
