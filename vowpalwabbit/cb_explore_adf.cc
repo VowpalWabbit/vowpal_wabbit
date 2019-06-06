@@ -531,7 +531,7 @@ void predict_or_learn_softmax(cb_explore_adf& data, multi_learner& base, multi_e
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
-  generate_softmax(data.lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+  generate_softmax(-data.lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
   enforce_minimum_probability(data.epsilon, true, begin_scores(preds), end_scores(preds));
 }
@@ -748,7 +748,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
       .add(make_option("first_only", data->first_only)
                .keep()
                .help("Only explore the first action in a tie-breaking event"))
-      .add(make_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"))
+      .add(make_option("lambda", data->lambda).keep().default_value(1.f).help("parameter for softmax"))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
@@ -765,7 +765,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   }
 
   data->all = &all;
-  if (data->lambda > 0)  // Lambda should always be negative because we are using a cost basis.
+  if (data->lambda < 0)  // Lambda should always be negative because we are using a cost basis.
     data->lambda = -data->lambda;
 
   if (!options.was_supplied("cb_adf"))
