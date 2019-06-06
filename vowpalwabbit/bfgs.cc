@@ -949,7 +949,7 @@ void predict(bfgs& b, base_learner&, example& ec)
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
   if (audit)
-      GD::print_audit_features(*(b.all), ec);
+    GD::print_audit_features(*(b.all), ec);
 }
 
 template <bool audit>
@@ -1153,15 +1153,15 @@ base_learner* bfgs_setup(options_i& options, vw& all)
 
   void (*learn_ptr)(bfgs&, base_learner&, example&) = nullptr;
   if (all.audit)
-        learn_ptr = learn<true>;
+    learn_ptr = learn<true>;
   else
-        learn_ptr = learn<false>;
+    learn_ptr = learn<false>;
 
-    learner<bfgs, example>* l;
+  learner<bfgs, example>* l;
   if (all.audit || all.hash_inv)
-        l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride());
+    l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride());
   else
-        l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride());
+    l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride());
 
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);

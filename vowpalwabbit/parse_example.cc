@@ -79,11 +79,13 @@ class TC_parser
   {
     std::stringstream ss;
     ss << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
-       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
-       << endl;
-    if (p->strict_parse) {
+       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << endl;
+    if (p->strict_parse)
+    {
       THROW_EX(VW::strict_parse_exception, ss.str());
-    } else {
+    }
+    else
+    {
       cerr << ss.str();
     }
   }

@@ -157,43 +157,43 @@ class StopWatch
 // Equivalent to System::Diagnostics::Debugger::Launch();
 bool launchDebugger();
 
-#define THROWERRNO(args)                                     \
-  {                                                          \
-    std::stringstream __msg;                                 \
-    __msg << args;                                           \
-    char __errmsg[256];                                      \
-    if (strerror_s(__errmsg, sizeof __errmsg, errno) != 0)   \
-      __msg << ", errno = unknown";                          \
-    else                                                     \
-      __msg << ", errno = " << __errmsg;                     \
+#define THROWERRNO(args)                                         \
+  {                                                              \
+    std::stringstream __msg;                                     \
+    __msg << args;                                               \
+    char __errmsg[256];                                          \
+    if (strerror_s(__errmsg, sizeof __errmsg, errno) != 0)       \
+      __msg << ", errno = unknown";                              \
+    else                                                         \
+      __msg << ", errno = " << __errmsg;                         \
     throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #else
-#define THROWERRNO(args)                                     \
-  {                                                          \
-    std::stringstream __msg;                                 \
-    __msg << args;                                           \
-    char __errmsg[256];                                      \
-    if (strerror_r(errno, __errmsg, sizeof __errmsg) != 0)   \
-      __msg << "errno = unknown";                            \
-    else                                                     \
-      __msg << "errno = " << __errmsg;                       \
+#define THROWERRNO(args)                                         \
+  {                                                              \
+    std::stringstream __msg;                                     \
+    __msg << args;                                               \
+    char __errmsg[256];                                          \
+    if (strerror_r(errno, __errmsg, sizeof __errmsg) != 0)       \
+      __msg << "errno = unknown";                                \
+    else                                                         \
+      __msg << "errno = " << __errmsg;                           \
     throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #endif
 
 // ease error handling and also log filename and line number
-#define THROW(args)                                          \
-  {                                                          \
-    std::stringstream __msg;                                 \
-    __msg << args;                                           \
+#define THROW(args)                                              \
+  {                                                              \
+    std::stringstream __msg;                                     \
+    __msg << args;                                               \
     throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 
-#define THROW_EX(ex, args)                     \
-  {                                            \
-    std::stringstream __msg;                   \
-    __msg << args;                             \
+#define THROW_EX(ex, args)                         \
+  {                                                \
+    std::stringstream __msg;                       \
+    __msg << args;                                 \
     throw ex(__FILENAME__, __LINE__, __msg.str()); \
   }
 
