@@ -175,7 +175,7 @@ VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e)
 { return VW::get_confidence(static_cast<example*>(e));
 }
 
-VW_DLL_MEMBER size_t VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEATURE_SPACE feature_space, const char* name)
+VW_DLL_MEMBER unsigned long VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEATURE_SPACE feature_space, const char* name)
 { VW::primitive_feature_space* f = reinterpret_cast<VW::primitive_feature_space*>(feature_space);
   f->name = *name;
   return VW_HashSpaceA(handle, name);
