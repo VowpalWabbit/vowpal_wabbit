@@ -919,10 +919,10 @@ class DecisionServiceState : public BaseState<audit>
 template <bool audit>
 struct Context
 {
-private:
+ private:
   std::unique_ptr<std::stringstream> error_ptr;
 
-public:
+ public:
   vw* all;
 
   // last "<key>": encountered
@@ -1015,7 +1015,7 @@ public:
     {
       auto feature_group = ns.feature_group;
       // Do not insert feature_group if it already exists.
-      if(std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
+      if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
       {
         ex->indices.push_back(feature_group);
       }
@@ -1159,7 +1159,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));
 }  // namespace VW
-}
+}  // namespace VW
 
 template <bool audit>
 bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
@@ -1189,8 +1189,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0)
     {
-      //VW::return_multiple_example(*all, examples);
-      //examples.push_back(&VW::get_unused_example(all));
+      // VW::return_multiple_example(*all, examples);
+      // examples.push_back(&VW::get_unused_example(all));
       return false;
     }
   }

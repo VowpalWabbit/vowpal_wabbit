@@ -28,7 +28,8 @@ int daemon(int a, int b)
   return 0;
 }
 
-// Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just use the actual isocpp version.
+// Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
+// use the actual isocpp version.
 #if _MSC_VER >= 1920
 #define getpid _getpid
 #else
@@ -155,7 +156,7 @@ void reset_source(vw& all, size_t numbits)
         const auto& fps = all.final_prediction_sink;
 
         // If the current popped file is not in the list of final predictions sinks, close it.
-        if(std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
+        if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
           io_buf::close_file_or_socket(fd);
       }
     input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
@@ -978,7 +979,9 @@ example* example_initializer::operator()(example* ex)
   return ex;
 }
 
-void adjust_used_index(vw&) { /* no longer used */ }
+void adjust_used_index(vw&)
+{ /* no longer used */
+}
 
 namespace VW
 {
@@ -999,17 +1002,17 @@ void free_parser(vw& all)
     output->currentname.delete_v();
   }
 
-  while (! all.p->example_pool.empty())
-    {
-      example* temp = all.p->example_pool.get_object();
-      VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-    }
+  while (!all.p->example_pool.empty())
+  {
+    example* temp = all.p->example_pool.get_object();
+    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+  }
 
   while (all.p->ready_parsed_examples.size() != 0)
-    {
-      example* temp = all.p->ready_parsed_examples.pop();
-      VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-    }
+  {
+    example* temp = all.p->ready_parsed_examples.pop();
+    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+  }
   all.p->counts.delete_v();
 }
 

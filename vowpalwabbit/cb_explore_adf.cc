@@ -708,7 +708,6 @@ void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_
       default:
         THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
-
   }
 }
 }  // namespace CB_EXPLORE_ADF
