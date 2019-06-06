@@ -147,7 +147,7 @@ inline uint64_t hash_feature(vw& all, std::string s, uint64_t u)
   ss.end = ss.begin + s.length();
   return all.p->hasher(ss, u) & all.parse_mask;
 }
-inline uint64_t hash_feature_static(std::string s, unsigned long u, std::string h, uint32_t num_bits)
+inline uint64_t hash_feature_static(std::string s, uint64_t u, std::string h, uint32_t num_bits)
 {
   substring ss;
   ss.begin = (char*)s.c_str();
@@ -156,7 +156,7 @@ inline uint64_t hash_feature_static(std::string s, unsigned long u, std::string 
   return getHasher(h)(ss, u) & parse_mark;
 }
 
-inline uint64_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
+inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
   substring ss;
   ss.begin = fstr;
