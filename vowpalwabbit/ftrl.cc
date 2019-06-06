@@ -39,6 +39,7 @@ struct ftrl
   size_t no_win_counter;
   size_t early_stop_thres;
   uint32_t ftrl_size;
+  double total_weight;
 };
 
 struct uncertainty
@@ -228,9 +229,9 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
   GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
-  b.all->total_weight += ec.weight;
+  b.total_weight += ec.weight;
 
-  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.all->total_weight));
+  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight));
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
@@ -315,7 +316,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
     if (resume)
-      GD::save_load_online_state(*all, model_file, read, text, nullptr, b.ftrl_size);
+      GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size);
     else
       GD::save_load_regressor(*all, model_file, read, text);
   }
@@ -376,7 +377,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->all = &all;
   b->no_win_counter = 0;
   b->all->normalized_sum_norm_x = 0;
-  b->all->total_weight = 0;
+  b->total_weight = 0;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 

@@ -43,8 +43,8 @@ namespace GD
 {
 struct gd
 {
-  // double normalized_sum_norm_x;
-  // double total_weight;
+  //  double normalized_sum_norm_x;
+  double total_weight;
   size_t no_win_counter;
   size_t early_stop_thres;
   float initial_constant;
@@ -559,14 +559,14 @@ float get_pred_per_update(gd& g, example& ec)
     if (!stateless)
     {
       g.all->normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
-      g.all->total_weight += ec.weight;
+      g.total_weight += ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-          (float)g.all->total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
+          (float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
     }
     else
     {
       float nsnx = ((float)g.all->normalized_sum_norm_x) + ec.weight * nd.norm_x;
-      float tw = (float)g.all->total_weight + ec.weight;
+      float tw = (float)g.total_weight + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
     nd.pred_per_update *= g.update_multiplier;
@@ -863,7 +863,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     }
 }
 
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, uint32_t ftrl_size)
+  void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
 {
   // vw& all = *g.all;
   stringstream msg;
@@ -922,13 +922,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     // restore some data to allow --save_resume work more accurate
 
     // fix average loss
-    double total_weight = 0.;  // value holder as g* may be null
-    if (!read)
-      total_weight = all.total_weight;
     msg << "total_weight " << total_weight << "\n";
     bin_text_read_write_fixed(model_file, (char*)&total_weight, sizeof(total_weight), "", read, msg, text);
-    if (read)
-      all.total_weight = total_weight;
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
@@ -1018,7 +1013,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
             << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
             << VERSION_SAVE_RESUME_FIX << endl
             << endl;
-      save_load_online_state(all, model_file, read, text, &g);
+      save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }
     else
       save_load_regressor(all, model_file, read, text);
@@ -1135,7 +1130,7 @@ base_learner* setup(options_i& options, vw& all)
   g->all = &all;
   g->all->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
-  g->all->total_weight = 0.;
+  g->total_weight = 0.;
   g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.power_t;
   g->adaptive = all.adaptive;
@@ -1145,7 +1140,7 @@ base_learner* setup(options_i& options, vw& all)
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
     g->all->normalized_sum_norm_x = all.initial_t;
-    g->all->total_weight = all.initial_t;
+    g->total_weight = all.initial_t;
   }
 
   bool feature_mask_off = true;

@@ -500,7 +500,6 @@ struct vw
 
   version_struct model_file_ver;
   double normalized_sum_norm_x;
-  double total_weight;
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
