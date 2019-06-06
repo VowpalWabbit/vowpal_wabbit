@@ -923,12 +923,6 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
     // fix average loss
     double total_weight = 0.;  // value holder as g* may be null
-    /*if (!read && g != nullptr)
-      total_weight = g->total_weight;
-    msg << "gd::total_weight " << total_weight << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&total_weight, sizeof(total_weight), "", read, msg, text);
-    if (read && g != nullptr)
-      g->total_weight = total_weight;*/
     if (!read)
       total_weight = all.total_weight;
     msg << "total_weight " << total_weight << "\n";
