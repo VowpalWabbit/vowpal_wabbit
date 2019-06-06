@@ -207,7 +207,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     {
       num_current_features = 0;
       // TODO: including quadratic and cubic.
-      for (auto & ecc : *ec_seq) num_current_features += ecc->num_features;
+      for (auto& ecc : *ec_seq) num_current_features += ecc->num_features;
     }
 
     std::string label_buf;

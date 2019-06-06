@@ -70,8 +70,8 @@ struct parser
   void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
 
   hash_func_t hasher;
-  bool resettable;  // Whether or not the input can be reset.
-  io_buf* output = nullptr;   // Where to output the cache.
+  bool resettable;           // Whether or not the input can be reset.
+  io_buf* output = nullptr;  // Where to output the cache.
   bool write_cache = false;
   bool sort_features = false;
   bool sorted_cache = false;
@@ -80,8 +80,8 @@ struct parser
   uint64_t begin_parsed_examples = 0;  // The index of the beginning parsed example.
   uint64_t end_parsed_examples = 0;    // The index of the fully parsed example.
   uint32_t in_pass_counter = 0;
-  bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather than a
-                                      // per-line basis
+  bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather
+                                              // than a per-line basis
 
   std::mutex output_lock;
   std::condition_variable output_done;

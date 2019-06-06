@@ -19,16 +19,13 @@
 
 namespace VW
 {
-
 // Not thread safe
 template <typename T, typename TInitializer>
 struct object_pool
 {
   object_pool() = default;
   object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
-    : m_initializer(initializer),
-    m_initial_chunk_size(initial_chunk_size),
-    m_chunk_size(chunk_size)
+      : m_initializer(initializer), m_initial_chunk_size(initial_chunk_size), m_chunk_size(chunk_size)
   {
     new_chunk(initial_chunk_size);
   }
@@ -55,11 +52,12 @@ struct object_pool
 
   bool empty() const { return m_pool.empty(); }
 
-  size_t size() const {
+  size_t size() const
+  {
     size_t size = 0;
     auto num_chunks = m_chunk_bounds.size();
 
-    if(m_chunk_bounds.size() > 0 && m_initial_chunk_size > 0)
+    if (m_chunk_bounds.size() > 0 && m_initial_chunk_size > 0)
     {
       size += m_initial_chunk_size;
       num_chunks--;
@@ -69,10 +67,11 @@ struct object_pool
     return size;
   }
 
-  bool is_from_pool(T* obj) const {
-    for(auto& bound : m_chunk_bounds)
+  bool is_from_pool(T* obj) const
+  {
+    for (auto& bound : m_chunk_bounds)
     {
-      if(obj >= bound.first && obj <= bound.second)
+      if (obj >= bound.first && obj <= bound.second)
       {
         return true;
       }
@@ -84,7 +83,7 @@ struct object_pool
  private:
   void new_chunk(size_t size)
   {
-    if(size == 0)
+    if (size == 0)
     {
       return;
     }

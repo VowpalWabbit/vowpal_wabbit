@@ -241,7 +241,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   if ((c.known_cost = get_observed_cost(ld)) != nullptr)
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      loss += get_unbiased_cost(c.known_cost, c.pred_scores, i+1) * ec.pred.a_s[i].score;
+      loss += get_unbiased_cost(c.known_cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
