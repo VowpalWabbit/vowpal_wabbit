@@ -233,22 +233,22 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char * s, const c
 }
 
 #ifdef USE_CODECVT
-VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t * s, unsigned long u)
+VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t* s, size_t u)
 { return VW_HashFeatureA(handle, utf16_to_utf8(s).c_str(),u);
 }
 
-VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t * s, unsigned long u, const char16_t * h, unsigned int num_bits)
+VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t * s, size_t u, const char16_t * h, unsigned int num_bits)
 { return VW_HashFeatureStaticA(utf16_to_utf8(s).c_str(), u, utf16_to_utf8(h).c_str(), num_bits);
 }
 #endif
 
-VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char * s, unsigned long u)
+VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char * s, size_t u)
 { vw * pointer = static_cast<vw*>(handle);
   string str(s);
   return VW::hash_feature(*pointer, str, u);
 }
 
-VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char * s, unsigned long u, const char * h = "strings", unsigned int num_bits = 18)
+VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char * s, size_t u, const char * h = "strings", unsigned int num_bits = 18)
 { string str(s);
   string hash(h);
   return VW::hash_feature_static(str, u, hash, num_bits);
