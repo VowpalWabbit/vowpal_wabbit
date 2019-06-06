@@ -762,7 +762,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 template <class T>
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, uint32_t ftrl_size, T& weights)
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, T& weights)
 {
   uint64_t length = (uint64_t)1 << all.num_bits;
 
@@ -786,10 +786,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         if (i >= length)
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
-        weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        if (ftrl_size>0)
-          brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
-        else if (g == NULL || (!g->adaptive && !g->normalized))
+        weight buff[4] = {0, 0, 0, 0};
+        if (g == NULL || (!g->adaptive && !g->normalized))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
@@ -814,19 +812,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         else
           brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
 
-        if (ftrl_size==3) {
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
-        }
-        else if (ftrl_size==4) {
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
-        }
-        else if (ftrl_size==6) {
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " " << (&(*v))[5] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
-        }
-        else if (g == nullptr || (!g->adaptive && !g->normalized))
+        if (g == nullptr || (!g->adaptive && !g->normalized))
         {
           msg << ":" << *v << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
@@ -846,7 +832,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       }
 }
 
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, uint32_t ftrl_size)
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
 {
   // vw& all = *g.all;
   stringstream msg;
@@ -945,9 +931,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     all.current_pass = 0;
   }
   if (all.weights.sparse)
-    save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights);
+    save_load_online_state(all, model_file, read, text, g, msg, all.weights.sparse_weights);
   else
-    save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
+    save_load_online_state(all, model_file, read, text, g, msg, all.weights.dense_weights);
 }
 
 template <class T>
