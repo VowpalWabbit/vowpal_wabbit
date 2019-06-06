@@ -178,12 +178,14 @@ inline uint32_t num_weights(vw& all) { return (uint32_t)all.length(); }
 
 inline uint32_t get_stride(vw& all) { return all.weights.stride(); }
 
-inline void init_features(primitive_feature_space& fs, size_t features_count) {
+inline void init_features(primitive_feature_space& fs, size_t features_count)
+{
   fs.fs = new feature[features_count];
   fs.len = features_count;
 }
 
-inline void set_feature(primitive_feature_space& fs, size_t index, uint64_t feature_hash, float value) {
+inline void set_feature(primitive_feature_space& fs, size_t index, uint64_t feature_hash, float value)
+{
   fs.fs[index].weight_index = feature_hash;
   fs.fs[index].x = value;
 }

@@ -988,7 +988,6 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
       }
       all.dictionary_path.push_back(PATH.substr(previous));
     }
-
   }
 
   if (noconstant)
@@ -1347,8 +1346,9 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(
             make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
         .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"))
-        .add(make_option("span_server_port", span_server_port_arg).default_value(26543)
-          .help("Port of the server for setting up spanning tree"));
+        .add(make_option("span_server_port", span_server_port_arg)
+                 .default_value(26543)
+                 .help("Port of the server for setting up spanning tree"));
     options.add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
@@ -1637,7 +1637,7 @@ vw* initialize(
 
     parse_sources(options, all, *model, skipModelLoad);
 
-    //we must delay so parse_mask is fully defined.
+    // we must delay so parse_mask is fully defined.
     for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
 
     options.check_unregistered();

@@ -27,10 +27,12 @@ bool use_reduction(config::options_i& options)
   return false;
 }
 
-struct sfm_data {};
+struct sfm_data
+{
+};
 
 template <bool is_learn>
-void predict_or_learn(sfm_data& , LEARNER::multi_learner& base, multi_ex& ec_seq)
+void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
     THROW("cb_adf: At least one action must be provided for an example to be valid.");
@@ -43,7 +45,7 @@ void predict_or_learn(sfm_data& , LEARNER::multi_learner& base, multi_ex& ec_seq
     shared_example = ec_seq[0];
     ec_seq.erase(ec_seq.begin());
     // merge sequences
-    for (auto & example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
+    for (auto& example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
     swap(ec_seq[0]->pred, shared_example->pred);
   }
   if (ec_seq.size() == 0)

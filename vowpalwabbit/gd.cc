@@ -684,7 +684,8 @@ void sync_weights(vw& all)
   all.sd->contraction = 1.;
 }
 
-size_t write_index(io_buf& model_file, stringstream& msg, bool text, uint32_t num_bits, uint64_t i) {
+size_t write_index(io_buf& model_file, stringstream& msg, bool text, uint32_t num_bits, uint64_t i)
+{
   size_t brw;
   uint32_t old_i = 0;
 
@@ -771,7 +772,8 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 template <class T>
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, uint32_t ftrl_size, T& weights)
+void save_load_online_state(
+    vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, uint32_t ftrl_size, T& weights)
 {
   uint64_t length = (uint64_t)1 << all.num_bits;
 
@@ -796,7 +798,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        if (ftrl_size>0)
+        if (ftrl_size > 0)
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
         else if (g == NULL || (!g->adaptive && !g->normalized))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
@@ -810,33 +812,43 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       }
     } while (brw > 0);
   else  // write binary or text
-    for (typename T::iterator v = weights.begin(); v != weights.end(); ++v) {
+    for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
+    {
       i = v.index() >> weights.stride_shift();
 
-      if (ftrl_size==3) {
-        if (*v != 0. || (&(*v))[1]!=0. || (&(*v))[2]!=0.) {
+      if (ftrl_size == 3)
+      {
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
+        {
           brw = write_index(model_file, msg, text, all.num_bits, i);
-          msg <<":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
       }
-      else if (ftrl_size==4) {
-        if (*v != 0. || (&(*v))[1]!=0. || (&(*v))[2]!=0. || (&(*v))[3]!=0.) {
+      else if (ftrl_size == 4)
+      {
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0. || (&(*v))[3] != 0.)
+        {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
         }
       }
-      else if (ftrl_size==6) {
-        if (*v != 0. || (&(*v))[1]!=0. || (&(*v))[2]!=0. || (&(*v))[3]!=0. || (&(*v))[4]!=0. || (&(*v))[5]!=0.) {
+      else if (ftrl_size == 6)
+      {
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0. || (&(*v))[3] != 0. || (&(*v))[4] != 0. ||
+            (&(*v))[5] != 0.)
+        {
           brw = write_index(model_file, msg, text, all.num_bits, i);
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " " << (&(*v))[5] << "\n";
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
+              << (&(*v))[5] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
         }
       }
       else if (g == nullptr || (!g->adaptive && !g->normalized))
       {
-        if (*v != 0.) {
+        if (*v != 0.)
+        {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
@@ -845,7 +857,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
       {
         // either adaptive or normalized
-        if (*v != 0. || (&(*v))[1]!=0.) {
+        if (*v != 0. || (&(*v))[1] != 0.)
+        {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
@@ -854,7 +867,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       else
       {
         // adaptive and normalized
-        if (*v != 0. || (&(*v))[1]!=0. || (&(*v))[2]!=0.) {
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
+        {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
@@ -863,7 +877,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     }
 }
 
-  void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
+void save_load_online_state(
+    vw& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
 {
   // vw& all = *g.all;
   stringstream msg;
