@@ -102,7 +102,7 @@ extern "C"
   VW_DLL_MEMBER const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e);
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e);
   VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e);
-  VW_DLL_MEMBER unsigned long VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEATURE_SPACE feature_space, const char* name);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_SetFeatureSpace(VW_HANDLE handle, VW_FEATURE_SPACE feature_space, const char* name);
   VW_DLL_MEMBER void VW_CALLING_CONV VW_InitFeatures(VW_FEATURE_SPACE feature_space, size_t features_count);
   VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeature(VW_FEATURE_SPACE feature_space, size_t index);
   VW_DLL_MEMBER void VW_CALLING_CONV VW_SetFeature(VW_FEATURE feature, size_t index, size_t feature_hash, float value);
@@ -115,13 +115,11 @@ extern "C"
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceA(VW_HANDLE handle, const char* s);
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char* s, const char* h);
 #ifdef USE_CODECVT
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t* s, unsigned long u);
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(
-      const char16_t* s, unsigned long u, const char16_t* h, unsigned int num_bits);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t* s, size_t u);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t* s, size_t u, const char16_t* h, unsigned int num_bits);
 #endif
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char* s, unsigned long u);
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(
-      const char* s, unsigned long u, const char* h, unsigned int num_bits);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char* s, size_t u);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char* s, size_t u, const char* h, unsigned int num_bits);
 
   VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e);
   VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e);
