@@ -749,7 +749,7 @@ namespace memory_tree_ns
         return reward;
     }
 
-    void learn_at_leaf_random(memory_tree& b, single_learner& base, const uint32_t& leaf_id, example& ec, const float& weight){
+    void learn_at_leaf_random(memory_tree& b, single_learner& base, const uint64_t& leaf_id, example& ec, const float& weight){
         b.total_num_queries ++;
         int32_t ec_id = -1;
         float reward = 0.f;
