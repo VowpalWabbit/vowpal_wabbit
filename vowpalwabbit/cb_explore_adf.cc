@@ -820,7 +820,10 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
     }
 
     if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
-      all.trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
+      {
+        all.trace_message << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
+        options.replace("cb_type", "mtr");
+      }
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));
