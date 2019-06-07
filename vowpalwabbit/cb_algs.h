@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 #include "baseline.h"
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
-LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
+LEARNER::base_learner *cb_algs_setup(VW::config::options_i &options, vw &all);
 
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1
@@ -16,12 +16,10 @@ LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
 #define CB_TYPE_MTR 3
 #define CB_TYPE_SM 4
 
-namespace CB_ALGS
-{
+namespace CB_ALGS {
 template <bool is_learn>
-float get_cost_pred(
-    LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
-{
+float get_cost_pred(LEARNER::single_learner *scorer, CB::cb_class *known_cost,
+                    example &ec, uint32_t index, uint32_t base) {
   CB::label ld = ec.l.cb;
 
   label_data simple_temp;
@@ -35,14 +33,12 @@ float get_cost_pred(
   BASELINE::set_baseline_enabled(&ec);
   ec.l.simple = simple_temp;
   polyprediction p = ec.pred;
-  if (is_learn && known_cost != nullptr && index == known_cost->action)
-  {
+  if (is_learn && known_cost != nullptr && index == known_cost->action) {
     float old_weight = ec.weight;
     ec.weight /= known_cost->probability;
     scorer->learn(ec, index - 1 + base);
     ec.weight = old_weight;
-  }
-  else
+  } else
     scorer->predict(ec, index - 1 + base);
 
   if (!baseline_enabled_old)
@@ -55,23 +51,22 @@ float get_cost_pred(
   return pred;
 }
 
-inline float get_unbiased_cost(CB::cb_class* observation, uint32_t action, float offset = 0.)
-{
+inline float get_unbiased_cost(CB::cb_class *observation, uint32_t action,
+                               float offset = 0.) {
   if (action == observation->action)
     return (observation->cost - offset) / observation->probability;
   return 0.;
 }
 
-inline float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
-{
-  for (auto& cl : scores.costs)
+inline float get_unbiased_cost(CB::cb_class *observation,
+                               COST_SENSITIVE::label &scores, uint32_t action) {
+  for (auto &cl : scores.costs)
     if (cl.class_index == action)
       return get_unbiased_cost(observation, action, cl.x) + cl.x;
   return get_unbiased_cost(observation, action);
 }
 
-inline bool example_is_newline_not_header(example& ec)
-{
+inline bool example_is_newline_not_header(example &ec) {
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
-}  // namespace CB_ALGS
+} // namespace CB_ALGS

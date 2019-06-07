@@ -4,4 +4,4 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-int open_socket(const char* host);
+int open_socket(const char *host);

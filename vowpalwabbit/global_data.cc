@@ -3,47 +3,41 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <stdio.h>
-#include <float.h>
-#include <errno.h>
-#include <iostream>
-#include <sstream>
-#include <math.h>
 #include <assert.h>
+#include <errno.h>
+#include <float.h>
+#include <iostream>
+#include <math.h>
+#include <sstream>
+#include <stdio.h>
 
-#include "global_data.h"
 #include "gd.h"
+#include "global_data.h"
 #include "vw_exception.h"
 
 using namespace std;
 
-struct global_prediction
-{
+struct global_prediction {
   float p;
   float weight;
 };
 
-size_t really_read(int sock, void* in, size_t count)
-{
-  char* buf = (char*)in;
+size_t really_read(int sock, void *in, size_t count) {
+  char *buf = (char *)in;
   size_t done = 0;
   int r = 0;
-  while (done < count)
-  {
+  while (done < count) {
     if ((r =
 #ifdef _WIN32
-                recv(sock, buf, (unsigned int)(count - done), 0)
+             recv(sock, buf, (unsigned int)(count - done), 0)
 #else
-                read(sock, buf, (unsigned int)(count - done))
+             read(sock, buf, (unsigned int)(count - done))
 #endif
-                ) == 0)
+             ) == 0)
       return 0;
-    else if (r < 0)
-    {
+    else if (r < 0) {
       THROWERRNO("read(" << sock << "," << count << "-" << done << ")");
-    }
-    else
-    {
+    } else {
       done += r;
       buf += r;
     }
@@ -51,19 +45,17 @@ size_t really_read(int sock, void* in, size_t count)
   return done;
 }
 
-void get_prediction(int sock, float& res, float& weight)
-{
+void get_prediction(int sock, float &res, float &weight) {
   global_prediction p;
   really_read(sock, &p, sizeof(p));
   res = p.p;
   weight = p.weight;
 }
 
-void send_prediction(int sock, global_prediction p)
-{
+void send_prediction(int sock, global_prediction p) {
   if (
 #ifdef _WIN32
-      send(sock, reinterpret_cast<const char*>(&p), sizeof(p), 0)
+      send(sock, reinterpret_cast<const char *>(&p), sizeof(p), 0)
 #else
       write(sock, &p, sizeof(p))
 #endif
@@ -71,29 +63,23 @@ void send_prediction(int sock, global_prediction p)
     THROWERRNO("send_prediction write(" << sock << ")");
 }
 
-void binary_print_result(int f, float res, float weight, v_array<char>)
-{
-  if (f >= 0)
-  {
+void binary_print_result(int f, float res, float weight, v_array<char>) {
+  if (f >= 0) {
     global_prediction ps = {res, weight};
     send_prediction(f, ps);
   }
 }
 
-int print_tag(std::stringstream& ss, v_array<char> tag)
-{
-  if (tag.begin() != tag.end())
-  {
+int print_tag(std::stringstream &ss, v_array<char> tag) {
+  if (tag.begin() != tag.end()) {
     ss << ' ';
     ss.write(tag.begin(), sizeof(char) * tag.size());
   }
   return tag.begin() != tag.end();
 }
 
-void print_result(int f, float res, float, v_array<char> tag)
-{
-  if (f >= 0)
-  {
+void print_result(int f, float res, float, v_array<char> tag) {
+  if (f >= 0) {
     char temp[30];
     if (floorf(res) != res)
       sprintf(temp, "%f", res);
@@ -104,16 +90,15 @@ void print_result(int f, float res, float, v_array<char> tag)
     print_tag(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-    {
+    ssize_t t =
+        io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    if (t != len) {
       cerr << "write error: " << strerror(errno) << endl;
     }
   }
 }
 
-void print_raw_text(int f, string s, v_array<char> tag)
-{
+void print_raw_text(int f, string s, v_array<char> tag) {
   if (f < 0)
     return;
 
@@ -122,24 +107,22 @@ void print_raw_text(int f, string s, v_array<char> tag)
   print_tag(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
-  ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-  if (t != len)
-  {
+  ssize_t t =
+      io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+  if (t != len) {
     cerr << "write error: " << strerror(errno) << endl;
   }
 }
 
-void set_mm(shared_data* sd, float label)
-{
+void set_mm(shared_data *sd, float label) {
   sd->min_label = min(sd->min_label, label);
   if (label != FLT_MAX)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data*, float) {}
+void noop_mm(shared_data *, float) {}
 
-void vw::learn(example& ec)
-{
+void vw::learn(example &ec) {
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
@@ -149,8 +132,7 @@ void vw::learn(example& ec)
     LEARNER::as_singleline(l)->learn(ec);
 }
 
-void vw::learn(multi_ex& ec)
-{
+void vw::learn(multi_ex &ec) {
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
@@ -160,78 +142,69 @@ void vw::learn(multi_ex& ec)
     LEARNER::as_multiline(l)->learn(ec);
 }
 
-void vw::predict(example& ec)
-{
+void vw::predict(example &ec) {
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
   LEARNER::as_singleline(l)->predict(ec);
 }
 
-void vw::predict(multi_ex& ec)
-{
+void vw::predict(multi_ex &ec) {
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
   LEARNER::as_multiline(l)->predict(ec);
 }
 
-void vw::finish_example(example& ec)
-{
+void vw::finish_example(example &ec) {
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
   LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
-void vw::finish_example(multi_ex& ec)
-{
+void vw::finish_example(multi_ex &ec) {
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
   LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
-{
-  for (size_t i = 0; i < grams.size(); i++)
-  {
+void compile_gram(vector<string> grams, uint32_t *dest, char *descriptor,
+                  bool quiet) {
+  for (size_t i = 0; i < grams.size(); i++) {
     string ngram = grams[i];
-    if (isdigit(ngram[0]))
-    {
+    if (isdigit(ngram[0])) {
       int n = atoi(ngram.c_str());
       if (!quiet)
-        cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << endl;
-      for (size_t j = 0; j < 256; j++) dest[j] = n;
-    }
-    else if (ngram.size() == 1)
+        cerr << "Generating " << n << "-" << descriptor
+             << " for all namespaces." << endl;
+      for (size_t j = 0; j < 256; j++)
+        dest[j] = n;
+    } else if (ngram.size() == 1)
       cout << "You must specify the namespace index before the n" << endl;
-    else
-    {
+    else {
       int n = atoi(ngram.c_str() + 1);
       dest[(uint32_t)(unsigned char)*ngram.c_str()] = n;
       if (!quiet)
-        cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
+        cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0]
+             << " namespaces." << endl;
     }
   }
 }
 
-void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
-{
-  for (size_t i = 0; i < limits.size(); i++)
-  {
+void compile_limits(vector<string> limits, uint32_t *dest, bool quiet) {
+  for (size_t i = 0; i < limits.size(); i++) {
     string limit = limits[i];
-    if (isdigit(limit[0]))
-    {
+    if (isdigit(limit[0])) {
       int n = atoi(limit.c_str());
       if (!quiet)
         cerr << "limiting to " << n << "features for each namespace." << endl;
-      for (size_t j = 0; j < 256; j++) dest[j] = n;
-    }
-    else if (limit.size() == 1)
+      for (size_t j = 0; j < 256; j++)
+        dest[j] = n;
+    } else if (limit.size() == 1)
       cout << "You must specify the namespace index before the n" << endl;
-    else
-    {
+    else {
       int n = atoi(limit.c_str() + 1);
       dest[(uint32_t)limit[0]] = n;
       if (!quiet)
@@ -240,34 +213,31 @@ void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
   }
 }
 
-void trace_listener_cerr(void*, const std::string& message)
-{
+void trace_listener_cerr(void *, const std::string &message) {
   cerr << message;
   cerr.flush();
 }
 
-int vw_ostream::vw_streambuf::sync()
-{
+int vw_ostream::vw_streambuf::sync() {
   int ret = std::stringbuf::sync();
   if (ret)
     return ret;
 
   parent.trace_listener(parent.trace_context, str());
   str("");
-  return 0;  // success
+  return 0; // success
 }
 
-vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr)
-{
+vw_ostream::vw_ostream()
+    : std::ostream(&buf), buf(*this), trace_context(nullptr) {
   trace_listener = trace_listener_cerr;
 }
 
-vw::vw(const vw&) { THROW("Copy constructor not supported"); }
+vw::vw(const vw &) { THROW("Copy constructor not supported"); }
 
-vw::vw()
-{
+vw::vw() {
   sd = &calloc_or_throw<shared_data>();
-  sd->dump_interval = 1.;  // next update progress dump
+  sd->dump_interval = 1.; // next update progress dump
   sd->contraction = 1.;
   sd->first_observed_label = FLT_MAX;
   sd->is_more_than_two_labels_observed = false;
@@ -305,11 +275,13 @@ vw::vw()
   set_minmax = set_mm;
 
   power_t = 0.5;
-  eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
-              // updates (see parse_args.cc)
+  eta = 0.5; // default learning rate for normalized adaptive updates, this is
+             // switched to 10 by default for the other
+             // updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
+  final_prediction_sink.begin() = final_prediction_sink.end() =
+      final_prediction_sink.end_array = nullptr;
   raw_prediction = -1;
   print = print_result;
   print_text = print_raw_text;
@@ -340,8 +312,7 @@ vw::vw()
 
   all_reduce = nullptr;
 
-  for (size_t i = 0; i < 256; i++)
-  {
+  for (size_t i = 0; i < 256; i++) {
     ngram[i] = 0;
     skips[i] = 0;
     limit[i] = INT_MAX;
@@ -376,8 +347,8 @@ vw::vw()
   print_invert = false;
 
   // Set by the '--progress <arg>' option and affect sd->dump_interval
-  progress_add = false;  // default is multiplicative progress dumps
-  progress_arg = 2.0;    // next update progress dump multiplier
+  progress_add = false; // default is multiplicative progress dumps
+  progress_arg = 2.0;   // next update progress dump multiplier
 
   sd->is_more_than_two_labels_observed = false;
   sd->first_observed_label = FLT_MAX;

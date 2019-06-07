@@ -8,15 +8,14 @@
 #else
 #include <netdb.h>
 #endif
-#include "reductions.h"
 #include "gd.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
-struct mf
-{
+struct mf {
   vector<string> pairs;
 
   size_t rank;
@@ -36,12 +35,11 @@ struct mf
   // array for temp storage of features
   features temp_features;
 
-  vw* all;  // for pairs? and finalize
+  vw *all; // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, single_learner& base, example& ec)
-{
+void predict(mf &data, single_learner &base, example &ec) {
   float prediction = 0;
   if (cache_sub_predictions)
     data.sub_predictions.resize(2 * data.rank + 1);
@@ -62,15 +60,13 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (string& i : data.pairs)
-  {
+  for (string &i : data.pairs) {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
 
-    if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
-    {
-      for (size_t k = 1; k <= data.rank; k++)
-      {
+    if (ec.feature_space[left_ns].size() > 0 &&
+        ec.feature_space[right_ns].size() > 0) {
+      for (size_t k = 1; k <= data.rank; k++) {
         ec.indices[0] = left_ns;
 
         // compute l^k * x_l using base learner
@@ -101,8 +97,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
-void learn(mf& data, single_learner& base, example& ec)
-{
+void learn(mf &data, single_learner &base, example &ec) {
   // predict with current weights
   predict<true>(data, base, ec);
   float predicted = ec.pred.scalar;
@@ -120,24 +115,23 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (string& i : data.pairs)
-  {
+  for (string &i : data.pairs) {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
 
-    if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
-    {
+    if (ec.feature_space[left_ns].size() > 0 &&
+        ec.feature_space[right_ns].size() > 0) {
       // set example to left namespace only
       ec.indices[0] = left_ns;
 
       // store feature values in left namespace
       data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
 
-      for (size_t k = 1; k <= data.rank; k++)
-      {
-        features& fs = ec.feature_space[left_ns];
+      for (size_t k = 1; k <= data.rank; k++) {
+        features &fs = ec.feature_space[left_ns];
         // multiply features in left namespace by r^k * x_r
-        for (size_t i = 0; i < fs.size(); ++i) fs.values[i] *= data.sub_predictions[2 * k];
+        for (size_t i = 0; i < fs.size(); ++i)
+          fs.values[i] *= data.sub_predictions[2 * k];
 
         // update l^k using base learner
         base.update(ec, k);
@@ -157,11 +151,11 @@ void learn(mf& data, single_learner& base, example& ec)
       // store feature values for right namespace
       data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
 
-      for (size_t k = 1; k <= data.rank; k++)
-      {
-        features& fs = ec.feature_space[right_ns];
+      for (size_t k = 1; k <= data.rank; k++) {
+        features &fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
-        for (size_t i = 0; i < fs.size(); ++i) fs.values[i] *= data.sub_predictions[2 * k - 1];
+        for (size_t i = 0; i < fs.size(); ++i)
+          fs.values[i] *= data.sub_predictions[2 * k - 1];
 
         // update r^k using base learner
         base.update(ec, k + data.rank);
@@ -179,8 +173,7 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = predicted;
 }
 
-void finish(mf& o)
-{
+void finish(mf &o) {
   // restore global pairs
   o.all->pairs = o.pairs;
 
@@ -189,11 +182,12 @@ void finish(mf& o)
   o.sub_predictions.delete_v();
 }
 
-base_learner* mf_setup(options_i& options, vw& all)
-{
+base_learner *mf_setup(options_i &options, vw &all) {
   auto data = scoped_calloc_or_throw<mf>();
   option_group_definition new_options("Matrix Factorization Reduction");
-  new_options.add(make_option("new_mf", data->rank).keep().help("rank for reduction-based matrix factorization"));
+  new_options.add(make_option("new_mf", data->rank)
+                      .keep()
+                      .help("rank for reduction-based matrix factorization"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("new_mf"))
@@ -207,8 +201,9 @@ base_learner* mf_setup(options_i& options, vw& all)
 
   all.random_positive_weights = true;
 
-  learner<mf, example>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
+  learner<mf, example> &l =
+      init_learner(data, as_singleline(setup_base(options, all)), learn,
+                   predict<false>, 2 * data->rank + 1);
   l.set_finish(finish);
   return make_base(l);
 }

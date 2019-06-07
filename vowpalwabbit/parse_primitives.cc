@@ -9,43 +9,44 @@ license as described in the file LICENSE.
 #else
 #include <string>
 #endif
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
 
-#include "parse_primitives.h"
 #include "hash.h"
+#include "parse_primitives.h"
 #include "vw_exception.h"
 
-bool substring_equal(const substring& a, const substring& b)
-{
-  return (a.end - a.begin == b.end - b.begin)  // same length
-      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
+bool substring_equal(const substring &a, const substring &b) {
+  return (a.end - a.begin == b.end - b.begin) // same length
+         && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
 }
 
-uint64_t hashstring(substring s, uint64_t h)
-{
+uint64_t hashstring(substring s, uint64_t h) {
   // trim leading whitespace but not UTF-8
-  for (; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin) >= 0; s.begin++)
+  for (; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin) >= 0;
+       s.begin++)
     ;
   // trim trailing white space but not UTF-8
-  for (; s.end > s.begin && *(s.end - 1) <= 0x20 && (int)*(s.end - 1) >= 0; s.end--)
+  for (; s.end > s.begin && *(s.end - 1) <= 0x20 && (int)*(s.end - 1) >= 0;
+       s.end--)
     ;
 
   size_t ret = 0;
-  char* p = s.begin;
+  char *p = s.begin;
   while (p != s.end)
     if (*p >= '0' && *p <= '9')
       ret = 10 * ret + *(p++) - '0';
     else
-      return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h);
+      return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
 
   return ret + h;
 }
 
-uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h); }
+uint64_t hashall(substring s, uint64_t h) {
+  return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
+}
 
-hash_func_t getHasher(const std::string& s)
-{
+hash_func_t getHasher(const std::string &s) {
   if (s == "strings")
     return hashstring;
   else if (s == "all")
@@ -54,25 +55,21 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
-std::ostream& operator<<(std::ostream& os, const substring& ss)
-{
+std::ostream &operator<<(std::ostream &os, const substring &ss) {
   std::string s(ss.begin, ss.end - ss.begin);
   return os << s;
 }
 
-std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
-{
-  substring* it = ss.cbegin();
+std::ostream &operator<<(std::ostream &os, const v_array<substring> &ss) {
+  substring *it = ss.cbegin();
 
-  if (it == ss.cend())
-  {
+  if (it == ss.cend()) {
     return os;
   }
 
   os << *it;
 
-  for (it++; it != ss.cend(); it++)
-  {
+  for (it++; it != ss.cend(); it++) {
     os << ",";
     os << *it;
   }
