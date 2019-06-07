@@ -1,17 +1,19 @@
+#include <float.h>
 #include "correctedMath.h"
 #include "reductions.h"
 #include "vw_exception.h"
-#include <float.h>
 
 using namespace std;
 using namespace VW::config;
 
-struct scorer {
-  vw *all;
-}; // for set_minmax, loss
+struct scorer
+{
+  vw* all;
+};  // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
-void predict_or_learn(scorer &s, LEARNER::single_learner &base, example &ec) {
+void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
+{
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
     base.learn(ec);
@@ -19,25 +21,21 @@ void predict_or_learn(scorer &s, LEARNER::single_learner &base, example &ec) {
     base.predict(ec);
 
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
-    ec.loss =
-        s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) *
-        ec.weight;
+    ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   ec.pred.scalar = link(ec.pred.scalar);
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer &, LEARNER::single_learner &base, example &ec,
-                         size_t count, size_t, polyprediction *pred,
-                         bool finalize_predictions) {
-  base.multipredict(
-      ec, 0, count, pred,
-      finalize_predictions); // TODO: need to thread step through???
-  for (size_t c = 0; c < count; c++)
-    pred[c].scalar = link(pred[c].scalar);
+inline void multipredict(scorer&, LEARNER::single_learner& base, example& ec, size_t count, size_t,
+    polyprediction* pred, bool finalize_predictions)
+{
+  base.multipredict(ec, 0, count, pred, finalize_predictions);  // TODO: need to thread step through???
+  for (size_t c = 0; c < count; c++) pred[c].scalar = link(pred[c].scalar);
 }
 
-void update(scorer &s, LEARNER::single_learner &base, example &ec) {
+void update(scorer& s, LEARNER::single_learner& base, example& ec)
+{
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
 }
@@ -53,15 +51,15 @@ inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
 
-LEARNER::base_learner *scorer_setup(options_i &options, vw &all) {
+LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
+{
   auto s = scoped_calloc_or_throw<scorer>();
   string link;
   option_group_definition new_options("scorer options");
   new_options.add(make_option("link", link)
                       .default_value("identity")
                       .keep()
-                      .help("Specify the link function: identity, logistic, "
-                            "glf1 or poisson"));
+                      .help("Specify the link function: identity, logistic, glf1 or poisson"));
   options.add_and_parse(new_options);
 
   // This always returns a base_learner.
@@ -69,26 +67,28 @@ LEARNER::base_learner *scorer_setup(options_i &options, vw &all) {
   s->all = &all;
 
   auto base = as_singleline(setup_base(options, all));
-  LEARNER::learner<scorer, example> *l;
-  void (*multipredict_f)(scorer &, LEARNER::single_learner &, example &, size_t,
-                         size_t, polyprediction *, bool) = multipredict<id>;
+  LEARNER::learner<scorer, example>* l;
+  void (*multipredict_f)(scorer&, LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) =
+      multipredict<id>;
 
   if (link.compare("identity") == 0)
-    l = &init_learner(s, base, predict_or_learn<true, id>,
-                      predict_or_learn<false, id>);
-  else if (link.compare("logistic") == 0) {
-    l = &init_learner(s, base, predict_or_learn<true, logistic>,
-                      predict_or_learn<false, logistic>);
+    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
+  else if (link.compare("logistic") == 0)
+  {
+    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>);
     multipredict_f = multipredict<logistic>;
-  } else if (link.compare("glf1") == 0) {
-    l = &init_learner(s, base, predict_or_learn<true, glf1>,
-                      predict_or_learn<false, glf1>);
+  }
+  else if (link.compare("glf1") == 0)
+  {
+    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>);
     multipredict_f = multipredict<glf1>;
-  } else if (link.compare("poisson") == 0) {
-    l = &init_learner(s, base, predict_or_learn<true, expf>,
-                      predict_or_learn<false, expf>);
+  }
+  else if (link.compare("poisson") == 0)
+  {
+    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
     multipredict_f = multipredict<expf>;
-  } else
+  }
+  else
     THROW("Unknown link function: " << link);
 
   l->set_multipredict(multipredict_f);

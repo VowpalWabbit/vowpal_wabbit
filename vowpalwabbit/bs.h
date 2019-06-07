@@ -7,10 +7,11 @@ license as described in the file LICENSE.
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
-LEARNER::base_learner *bs_setup(VW::config::options_i &options, vw &all);
+LEARNER::base_learner* bs_setup(VW::config::options_i& options, vw& all);
 
-namespace BS {
-inline uint32_t weight_gen(vw &all) // sampling from Poisson with rate 1
+namespace BS
+{
+inline uint32_t weight_gen(vw& all)  // sampling from Poisson with rate 1
 {
   float temp = merand48(all.random_state);
   if (temp <= 0.3678794411714423215955)
@@ -55,4 +56,4 @@ inline uint32_t weight_gen(vw &all) // sampling from Poisson with rate 1
     return 19;
   return 20;
 }
-} // namespace BS
+}  // namespace BS

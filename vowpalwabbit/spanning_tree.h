@@ -2,9 +2,9 @@
 
 #ifdef _WIN32
 
-#include <WS2tcpip.h>
 #include <WinSock2.h>
 #include <Windows.h>
+#include <WS2tcpip.h>
 #include <io.h>
 
 #define CLOSESOCK closesocket
@@ -15,18 +15,20 @@ typedef unsigned short uint16_t;
 typedef int socklen_t;
 typedef SOCKET socket_t;
 
-namespace std {
+namespace std
+{
 // forward declare promise as C++/CLI doesn't allow usage in header files
-template <typename T> class future;
-} // namespace std
+template <typename T>
+class future;
+}  // namespace std
 #else
-#include <arpa/inet.h>
-#include <netdb.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <netdb.h>
 #include <strings.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include <arpa/inet.h>
 
 #define CLOSESOCK close
 
@@ -35,18 +37,20 @@ typedef int socket_t;
 #include <future>
 #endif
 
-namespace VW {
-class SpanningTree {
-private:
+namespace VW
+{
+class SpanningTree
+{
+ private:
   bool m_stop;
   socket_t sock;
   uint16_t m_port;
 
   // future to signal end of thread running.
   // Need a pointer since C++/CLI doesn't like futures yet
-  std::future<void> *m_future;
+  std::future<void>* m_future;
 
-public:
+ public:
   SpanningTree(short unsigned int port = 26543);
   ~SpanningTree();
 
@@ -56,4 +60,4 @@ public:
   void Run();
   void Stop();
 };
-} // namespace VW
+}  // namespace VW

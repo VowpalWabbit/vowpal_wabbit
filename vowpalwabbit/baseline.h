@@ -5,11 +5,12 @@ license as described in the file LICENSE.
  */
 #pragma once
 
-LEARNER::base_learner *baseline_setup(VW::config::options_i &options, vw &all);
+LEARNER::base_learner* baseline_setup(VW::config::options_i& options, vw& all);
 
-namespace BASELINE {
+namespace BASELINE
+{
 // utility functions for disabling baseline on a given example
-void set_baseline_enabled(example *ec);
-void reset_baseline_disabled(example *ec);
-bool baseline_enabled(example *ec);
-} // namespace BASELINE
+void set_baseline_enabled(example* ec);
+void reset_baseline_disabled(example* ec);
+bool baseline_enabled(example* ec);
+}  // namespace BASELINE
