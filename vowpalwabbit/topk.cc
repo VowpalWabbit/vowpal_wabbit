@@ -94,8 +94,7 @@ void predict_or_learn(topk& d, LEARNER::single_learner& base, multi_ex& ec_seq)
 
 void finish_example(vw& all, topk& d, multi_ex& ec_seq)
 {
-  for (int sink : all.final_prediction_sink)
-    print_result(sink, d.pr_queue);
+  for (int sink : all.final_prediction_sink) print_result(sink, d.pr_queue);
 
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }

@@ -45,23 +45,14 @@ float safe_probability(float prob)
 void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
-  bool shared = CB::ec_is_example_header(*examples[0]);
   for (uint32_t i = 0; i < examples.size(); i++)
   {
     CB::label ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
-    if (shared && i > 0)
-      wc.class_index = (uint32_t)i - 1;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / safe_probability(ld.costs[0].probability);
     cs_labels.costs.push_back(wc);
-  }
-
-  if (shared)  // take care of shared examples
-  {
-    cs_labels.costs[0].class_index = 0;
-    cs_labels.costs[0].x = -FLT_MAX;
   }
 }
 
@@ -69,23 +60,14 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
-  bool shared = CB::ec_is_example_header(*examples[0]);
   for (uint32_t i = 0; i < examples.size(); i++)
   {
     CB::label ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
-    if (shared && i > 0)
-      wc.class_index = (uint32_t)i - 1;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost;
     cs_labels.costs.push_back(wc);
-  }
-
-  if (shared)  // take care of shared examples
-  {
-    cs_labels.costs[0].class_index = 0;
-    cs_labels.costs[0].x = -FLT_MAX;
   }
 }
 
@@ -93,19 +75,10 @@ void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
-  bool shared = CB::ec_is_example_header(*examples[0]);
   for (uint32_t i = 0; i < examples.size(); i++)
   {
     COST_SENSITIVE::wclass wc = {FLT_MAX, i, 0., 0.};
-    if (shared && i > 0)
-      wc.class_index = (uint32_t)i - 1;
     cs_labels.costs.push_back(wc);
-  }
-
-  if (shared)  // take care of shared examples
-  {
-    cs_labels.costs[0].class_index = 0;
-    cs_labels.costs[0].x = -FLT_MAX;
   }
 }
 
@@ -167,10 +140,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
 
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
 {
-  bool shared = CB::ec_is_example_header(*(ec_seq[0]));
   c.action_sum += ec_seq.size();
-  if (shared)
-    c.action_sum -= 1;
   c.event_sum++;
 
   c.mtr_ec_seq.clear();
@@ -182,12 +152,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
     COST_SENSITIVE::wclass wc = {0, 0, 0, 0};
 
     bool keep_example = false;
-    if (shared && i == 0)
-    {
-      wc.x = -FLT_MAX;
-      keep_example = true;
-    }
-    else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       wc.x = ld.costs[0].cost;
       c.mtr_example = (uint32_t)i;
@@ -201,19 +166,10 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   }
 }
 
-void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_offset,
-    ACTION_SCORE::action_scores action_vals,
+void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset, ACTION_SCORE::action_scores action_vals,
     COST_SENSITIVE::label& cs_labels)
 {
-  bool shared = CB::ec_is_example_header(*examples[0]);
-  
   cs_labels.costs.clear();
-  if (shared)
-  {
-    COST_SENSITIVE::wclass wc = {-FLT_MAX, 0, 0., 0.};
-    cs_labels.costs.push_back(wc);  //Handle shared example
-  }
-
   for (uint32_t i = 0; i < action_vals.size(); i++)
   {
     uint32_t current_action = action_vals[i].action;
@@ -224,7 +180,8 @@ void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_of
     else
       wc.x = action_vals[i].score - sign_offset;
 
-    // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to 0.
+    // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to
+    // 0.
     if (wc.x > 100.)
       wc.x = 100.0;
     if (wc.x < -100.)

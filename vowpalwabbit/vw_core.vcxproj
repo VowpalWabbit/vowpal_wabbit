@@ -163,6 +163,7 @@
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="recall_tree.h" />
+    <ClInclude Include="memory_tree.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="io_buf.h" />
@@ -213,6 +214,7 @@
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
     <ClInclude Include="classweight.h" />
+    <ClInclude Include="shared_feature_merger.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
@@ -261,6 +263,7 @@
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
     <ClCompile Include="recall_tree.cc" />
+    <ClCompile Include="memory_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="io_buf.cc" />
@@ -305,6 +308,7 @@
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="classweight.cc" />
+    <ClCompile Include="shared_feature_merger.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

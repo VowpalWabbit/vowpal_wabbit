@@ -361,11 +361,8 @@ struct LabelState : BaseState<audit>
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool copy) override
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     VW::parse_example_label(*ctx.all, *ctx.ex, str);
     return ctx.previous_state;
   }
@@ -391,11 +388,8 @@ struct TextState : BaseState<audit>
 {
   TextState() : BaseState<audit>("text") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy) override
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     auto& ns = ctx.CurrentNamespace();
 
     // split into individual features
@@ -435,11 +429,8 @@ struct TagState : BaseState<audit>
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool copy) override
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     push_many(ctx.ex->tag, str, length);
 
     return ctx.previous_state;
@@ -718,11 +709,8 @@ class DefaultState : public BaseState<audit>
     return &ctx.ignore_state;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy) override
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     ctx.key = str;
     ctx.key_length = length;
 
@@ -784,10 +772,8 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy) override
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
-    assert(!copy);
-
     // string escape
     const char* end = str + length;
     for (char* p = (char*)str; p != end; p++)
@@ -1426,7 +1412,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));
 }  // namespace VW
-}
+}  // namespace VW
 
 template <bool audit>
 bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
@@ -1456,8 +1442,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0)
     {
-      //VW::return_multiple_example(*all, examples);
-      //examples.push_back(&VW::get_unused_example(all));
+      // VW::return_multiple_example(*all, examples);
+      // examples.push_back(&VW::get_unused_example(all));
       return false;
     }
   }

@@ -176,6 +176,7 @@ class AllReduceSockets : public AllReduce
  private:
   node_socks socks;
   std::string span_server;
+  int port;
   size_t unique_id;  // unique id for each node in the network, id == 0 means extra io.
 
   void all_reduce_init();
@@ -278,8 +279,9 @@ class AllReduceSockets : public AllReduce
   void broadcast(char* buffer, const size_t n);
 
  public:
-  AllReduceSockets(std::string pspan_server, const size_t punique_id, size_t ptotal, const size_t pnode)
-      : AllReduce(ptotal, pnode), span_server(pspan_server), unique_id(punique_id)
+  AllReduceSockets(
+      std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal, const size_t pnode)
+      : AllReduce(ptotal, pnode), span_server(pspan_server), port(pport), unique_id(punique_id)
   {
   }
 

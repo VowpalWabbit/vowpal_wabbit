@@ -16,9 +16,21 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
 {
   float threshold = 0.f;
   float sensitivity = 0.f;
+
+  float existing_label = ec.l.simple.label;
+  if (existing_label == FLT_MAX)
+  {
+    base.predict(ec);
+    float opposite_label = 1.f;
+    if (ec.pred.scalar > 0)
+      opposite_label = -1.f;
+    ec.l.simple.label = opposite_label;
+  }
+
   if (!is_confidence_after_training)
     sensitivity = base.sensitivity(ec);
 
+  ec.l.simple.label = existing_label;
   if (is_learn)
     base.learn(ec);
   else

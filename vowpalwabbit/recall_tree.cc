@@ -430,21 +430,6 @@ void finish(recall_tree& b)
   b.nodes.delete_v();
 }
 
-#define writeit(what, str)                                                                  \
-  do                                                                                        \
-  {                                                                                         \
-    msg << str << " = " << what << " ";                                                     \
-    bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
-  } while (0);
-
-#define writeitvar(what, str, mywhat)                                                           \
-  auto mywhat = (what);                                                                         \
-  do                                                                                            \
-  {                                                                                             \
-    msg << str << " = " << mywhat << " ";                                                       \
-    bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), "", read, msg, text); \
-  } while (0);
-
 void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)

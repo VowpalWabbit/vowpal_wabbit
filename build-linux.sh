@@ -31,7 +31,7 @@ make test_with_output
 cd ..
 
 # Run Java build and test
-mvn clean test -f java/pom.xml
+mvn verify -f java/pom.xml
 
 # Run python build and tests
 cd python

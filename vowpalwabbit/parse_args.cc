@@ -55,6 +55,7 @@ license as described in the file LICENSE.
 #include "autolink.h"
 #include "log_multi.h"
 #include "recall_tree.h"
+#include "memory_tree.h"
 #include "stagewise_poly.h"
 #include "active.h"
 #include "active_cover.h"
@@ -75,6 +76,7 @@ license as described in the file LICENSE.
 #include "classweight.h"
 #include "cb_sample.h"
 #include "warm_cb.h"
+#include "shared_feature_merger.h"
 // #include "cntk.h"
 
 #include "options.h"
@@ -585,7 +587,7 @@ string spoof_hex_encoded_namespaces(const string& arg)
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all)
+void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionary_nses)
 {
   string hash_function("strings");
   uint32_t new_bits;
@@ -597,7 +599,6 @@ void parse_feature_tweaks(options_i& options, vw& all)
   vector<string> ignore_linears;
   vector<string> keeps;
   vector<string> redefines;
-  vector<string> dictionary_nses;
 
   vector<string> dictionary_path;
 
@@ -988,8 +989,6 @@ void parse_feature_tweaks(options_i& options, vw& all)
       }
       all.dictionary_path.push_back(PATH.substr(previous));
     }
-
-    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
   }
 
   if (noconstant)
@@ -1261,6 +1260,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(ect_setup);
   all.reduction_stack.push(log_multi_setup);
   all.reduction_stack.push(recall_tree_setup);
+  all.reduction_stack.push(memory_tree_setup);
   all.reduction_stack.push(classweight_setup);
   all.reduction_stack.push(multilabel_oaa_setup);
 
@@ -1273,8 +1273,10 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(mwt_setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
+  // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
@@ -1301,12 +1303,14 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
   {
     time(&all.init_time);
 
+    bool strict_parse = false;
     size_t ring_size;
     option_group_definition vw_args("VW options");
-    vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"));
+    vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"))
+        .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
 
-    all.p = new parser{ring_size};
+    all.p = new parser{ring_size, strict_parse};
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1332,6 +1336,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     options.add_and_parse(weight_args);
 
     std::string span_server_arg;
+    int span_server_port_arg;
     // bool threads_arg;
     size_t unique_id_arg;
     size_t total_arg;
@@ -1343,7 +1348,10 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
         .add(
             make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
-        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
+        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"))
+        .add(make_option("span_server_port", span_server_port_arg)
+                 .default_value(26543)
+                 .help("Port of the server for setting up spanning tree"));
     options.add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
@@ -1356,7 +1364,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     if (options.was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(span_server_arg, unique_id_arg, total_arg, node_arg);
+      all.all_reduce = new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg);
     }
 
     parse_diagnostics(options, all);
@@ -1494,14 +1502,14 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
   return options;
 }
 
-void parse_modules(options_i& options, vw& all)
+void parse_modules(options_i& options, vw& all, vector<string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.random_state = all.random_seed;
 
-  parse_feature_tweaks(options, all);  // feature tweaks
+  parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
@@ -1627,9 +1635,13 @@ vw* initialize(
     // Loads header of model files and loads the command line options into the options object.
     load_header_merge_options(options, all, *model);
 
-    parse_modules(options, all);
+    vector<string> dictionary_nses;
+    parse_modules(options, all, dictionary_nses);
 
     parse_sources(options, all, *model, skipModelLoad);
+
+    // we must delay so parse_mask is fully defined.
+    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
 
     options.check_unregistered();
 
