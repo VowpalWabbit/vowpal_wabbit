@@ -77,9 +77,17 @@ class TC_parser
 
   inline void parserWarning(const char* message, char* begin, char* pos, const char* message2)
   {
-    cerr << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
-         << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
-         << endl;
+    std::stringstream ss;
+    ss << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
+       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << endl;
+    if (p->strict_parse)
+    {
+      THROW_EX(VW::strict_parse_exception, ss.str());
+    }
+    else
+    {
+      cerr << ss.str();
+    }
   }
 
   inline float featureValue()

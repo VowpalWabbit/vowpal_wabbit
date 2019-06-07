@@ -279,7 +279,8 @@ class AllReduceSockets : public AllReduce
   void broadcast(char* buffer, const size_t n);
 
  public:
-  AllReduceSockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal, const size_t pnode)
+  AllReduceSockets(
+      std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal, const size_t pnode)
       : AllReduce(ptotal, pnode), span_server(pspan_server), port(pport), unique_id(punique_id)
   {
   }

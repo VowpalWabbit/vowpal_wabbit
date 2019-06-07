@@ -38,6 +38,7 @@ struct ftrl
   struct update_data data;
   size_t no_win_counter;
   size_t early_stop_thres;
+  uint32_t ftrl_size;
   double total_weight;
 };
 
@@ -52,7 +53,6 @@ struct uncertainty
     score = 0;
   }
 };
-
 
 inline float sign(float w)
 {
@@ -151,7 +151,7 @@ void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
 
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
-  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2 * tmp) * tmp;
+  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2.f * tmp) * tmp;
 
   d.predict += w[W_XT] * x;
 }
@@ -164,7 +164,6 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
 }
-
 
 // Coin betting vectors
 // W_XT 0  current parameter
@@ -180,17 +179,18 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
   float w_xt = 0.0;
 
   float fabs_x = fabs(x);
-  if (fabs_x > w_mx) {
+  if (fabs_x > w_mx)
+  {
     w_mx = fabs_x;
   }
 
   // COCOB update without sigmoid
-  if (w[W_MG]*w_mx>0)
-    w_xt = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w_mx*(w[W_MG]*w_mx+w[W_G2]));
+  if (w[W_MG] * w_mx > 0)
+    w_xt = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]));
 
   d.predict += w_xt * x;
-  if (w_mx>0)
-    d.normalized_squared_norm_x += x*x/(w_mx*w_mx);
+  if (w_mx > 0)
+    d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
 }
 
 void inner_update_cb_post(update_data& d, float x, float& wref)
@@ -199,25 +199,26 @@ void inner_update_cb_post(update_data& d, float x, float& wref)
   float fabs_x = fabs(x);
   float gradient = d.update * x;
 
-  if (fabs_x > w[W_MX]) {
+  if (fabs_x > w[W_MX])
+  {
     w[W_MX] = fabs_x;
   }
 
   float fabs_gradient = fabs(d.update);
   if (fabs_gradient > w[W_MG])
-    w[W_MG] = fabs_gradient>d.ftrl_beta?fabs_gradient:d.ftrl_beta;
+    w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta;
 
   // COCOB update without sigmoid.
   // If a new Lipschitz constant and/or magnitude of x is found, the w is
   // recalculated and used in the update of the wealth below.
-  if (w[W_MG]*w[W_MX]>0)
-    w[W_XT] = (d.ftrl_alpha+w[W_WE]) * w[W_ZT]/(w[W_MG]*w[W_MX]*(w[W_MG]*w[W_MX]+w[W_G2]));
+  if (w[W_MG] * w[W_MX] > 0)
+    w[W_XT] = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]));
   else
     w[W_XT] = 0;
 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
-  w[W_WE] += (-gradient*w[W_XT]);
+  w[W_WE] += (-gradient * w[W_XT]);
 }
 
 void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
@@ -230,7 +231,7 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
 
-  ec.partial_prediction = b.data.predict/((float)((b.all->normalized_sum_norm_x + 1e-6)/b.total_weight));
+  ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
@@ -258,14 +259,12 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
-
 void update_after_prediction_cb(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
 }
-
 
 template <bool audit>
 void learn_proximal(ftrl& a, single_learner& base, example& ec)
@@ -315,7 +314,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
     if (resume)
-      GD::save_load_online_state(*all, model_file, read, text);
+      GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size);
     else
       GD::save_load_regressor(*all, model_file, read, text);
   }
@@ -372,11 +371,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
   }
 
-
   b->all = &all;
   b->no_win_counter = 0;
   b->all->normalized_sum_norm_x = 0;
-  b->total_weight = 0.;
+  b->total_weight = 0;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
@@ -388,19 +386,22 @@ base_learner* ftrl_setup(options_i& options, vw& all)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
-      all.weights.stride_shift(2);  // NOTE: for more parameter storage
+    all.weights.stride_shift(2);  // NOTE: for more parameter storage
+    b->ftrl_size = 3;
   }
   else if (pistol)
   {
     algorithm_name = "PiSTOL";
     learn_ptr = learn_pistol;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
+    b->ftrl_size = 4;
   }
   else if (coin)
   {
     algorithm_name = "Coin Betting";
     learn_ptr = learn_cb;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
+    b->ftrl_size = 6;
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;

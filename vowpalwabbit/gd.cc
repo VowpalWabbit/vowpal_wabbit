@@ -43,7 +43,7 @@ namespace GD
 {
 struct gd
 {
-  // double normalized_sum_norm_x;
+  //  double normalized_sum_norm_x;
   double total_weight;
   size_t no_win_counter;
   size_t early_stop_thres;
@@ -684,6 +684,24 @@ void sync_weights(vw& all)
   all.sd->contraction = 1.;
 }
 
+size_t write_index(io_buf& model_file, stringstream& msg, bool text, uint32_t num_bits, uint64_t i)
+{
+  size_t brw;
+  uint32_t old_i = 0;
+
+  msg << i;
+
+  if (num_bits < 31)
+  {
+    old_i = (uint32_t)i;
+    brw = bin_text_write_fixed(model_file, (char*)&old_i, sizeof(old_i), msg, text);
+  }
+  else
+    brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
+
+  return brw;
+}
+
 template <class T>
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& weights)
 {
@@ -738,16 +756,8 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
       {
         i = v.index() >> weights.stride_shift();
         stringstream msg;
-        msg << i;
 
-        if (all.num_bits < 31)
-        {
-          old_i = (uint32_t)i;
-          brw = bin_text_write_fixed(model_file, (char*)&old_i, sizeof(old_i), msg, text);
-        }
-        else
-          brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
-
+        brw = write_index(model_file, msg, text, all.num_bits, i);
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
@@ -762,7 +772,8 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 template <class T>
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, T& weights)
+void save_load_online_state(
+    vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, uint32_t ftrl_size, T& weights)
 {
   uint64_t length = (uint64_t)1 << all.num_bits;
 
@@ -786,8 +797,10 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         if (i >= length)
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
-        weight buff[4] = {0, 0, 0, 0};
-        if (g == NULL || (!g->adaptive && !g->normalized))
+        weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+        if (ftrl_size > 0)
+          brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
+        else if (g == NULL || (!g->adaptive && !g->normalized))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
@@ -800,39 +813,72 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     } while (brw > 0);
   else  // write binary or text
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
-      if (*v != 0.)
-      {
-        i = v.index() >> weights.stride_shift();
-        msg << i;
-        if (all.num_bits < 31)
-        {
-          old_i = (uint32_t)i;
-          brw = bin_text_write_fixed(model_file, (char*)&old_i, sizeof(old_i), msg, text);
-        }
-        else
-          brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
+    {
+      i = v.index() >> weights.stride_shift();
 
-        if (g == nullptr || (!g->adaptive && !g->normalized))
+      if (ftrl_size == 3)
+      {
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
         {
-          msg << ":" << *v << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
-        }
-        else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-        {
-          // either adaptive or normalized
-          msg << ":" << *v << " " << (&(*v))[1] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
-        }
-        else
-        {
-          // adaptive and normalized
+          brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
       }
+      else if (ftrl_size == 4)
+      {
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0. || (&(*v))[3] != 0.)
+        {
+          brw = write_index(model_file, msg, text, all.num_bits, i);
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
+        }
+      }
+      else if (ftrl_size == 6)
+      {
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0. || (&(*v))[3] != 0. || (&(*v))[4] != 0. ||
+            (&(*v))[5] != 0.)
+        {
+          brw = write_index(model_file, msg, text, all.num_bits, i);
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
+              << (&(*v))[5] << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
+        }
+      }
+      else if (g == nullptr || (!g->adaptive && !g->normalized))
+      {
+        if (*v != 0.)
+        {
+          brw = write_index(model_file, msg, text, all.num_bits, i);
+          msg << ":" << *v << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
+        }
+      }
+      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+      {
+        // either adaptive or normalized
+        if (*v != 0. || (&(*v))[1] != 0.)
+        {
+          brw = write_index(model_file, msg, text, all.num_bits, i);
+          msg << ":" << *v << " " << (&(*v))[1] << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
+        }
+      }
+      else
+      {
+        // adaptive and normalized
+        if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
+        {
+          brw = write_index(model_file, msg, text, all.num_bits, i);
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+          brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
+        }
+      }
+    }
 }
 
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
+void save_load_online_state(
+    vw& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
 {
   // vw& all = *g.all;
   stringstream msg;
@@ -891,13 +937,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     // restore some data to allow --save_resume work more accurate
 
     // fix average loss
-    double total_weight = 0.;  // value holder as g* may be null
-    if (!read && g != nullptr)
-      total_weight = g->total_weight;
-    msg << "gd::total_weight " << total_weight << "\n";
+    msg << "total_weight " << total_weight << "\n";
     bin_text_read_write_fixed(model_file, (char*)&total_weight, sizeof(total_weight), "", read, msg, text);
-    if (read && g != nullptr)
-      g->total_weight = total_weight;
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
@@ -931,9 +972,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     all.current_pass = 0;
   }
   if (all.weights.sparse)
-    save_load_online_state(all, model_file, read, text, g, msg, all.weights.sparse_weights);
+    save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights);
   else
-    save_load_online_state(all, model_file, read, text, g, msg, all.weights.dense_weights);
+    save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
 }
 
 template <class T>
@@ -987,8 +1028,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
             << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
             << VERSION_SAVE_RESUME_FIX << endl
             << endl;
-      // save_load_online_state(g, model_file, read, text);
-      save_load_online_state(all, model_file, read, text, &g);
+      save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }
     else
       save_load_regressor(all, model_file, read, text);

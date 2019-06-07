@@ -166,8 +166,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   }
 }
 
-void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset,
-    ACTION_SCORE::action_scores action_vals,
+void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset, ACTION_SCORE::action_scores action_vals,
     COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
@@ -181,7 +180,8 @@ void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset,
     else
       wc.x = action_vals[i].score - sign_offset;
 
-    // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to 0.
+    // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to
+    // 0.
     if (wc.x > 100.)
       wc.x = 100.0;
     if (wc.x < -100.)
