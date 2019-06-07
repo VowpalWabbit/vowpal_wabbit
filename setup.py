@@ -76,13 +76,18 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         # example of cmake args
         config = 'Debug' if self.debug else 'Release'
+        
+        boost_root = ''
+        if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
+            boost_root = '-DBOOST_ROOT=' + os.environ['CONDA_PREFIX']
     
         cmake_args = [
             '-DCMAKE_BUILD_TYPE=' + config,
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
             '-DBUILD_PYTHON=On',
             '-DBUILD_TESTS=Off',
-            '-DWARNINGS=Off'
+            '-DWARNINGS=Off',
+            boost_root
         ]
         # example of build args
         build_args = [
@@ -121,7 +126,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             ]
 
         os.chdir(str(self.build_temp))
-        self.spawn(['cmake', str(here)] + cmake_args)
+        self.spawn(['cmake'] + cmake_args + [str(here)])
         if not self.dry_run:
             self.spawn(['cmake', '--build', '.'] + build_args)
         os.chdir(str(here))
