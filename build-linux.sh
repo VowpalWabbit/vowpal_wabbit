@@ -34,12 +34,11 @@ cd ..
 mvn verify -f java/pom.xml
 
 # Run python build and tests
-cd python
 source activate test-python27
 pip install pytest readme_renderer pandas
 python setup.py check -mrs
 python setup.py install
-py.test tests
+py.test python/tests
 source deactivate
 cd ..
 
