@@ -40,7 +40,6 @@ python setup.py check -mrs
 python setup.py install
 py.test python/tests
 source deactivate
-cd ..
 
 # Clear out build directory then build using GCov and run one set of tests again
 rm -rf build
