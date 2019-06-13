@@ -886,12 +886,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   all.p->example_pool.return_object(&ec);
 }
 
-void finish_example(vw& all, multi_ex& ec_seq)
-{
-  for (auto ec : ec_seq) finish_example(all, *ec);
-  ec_seq.clear();
-}
-
 void finish_example(vw& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated

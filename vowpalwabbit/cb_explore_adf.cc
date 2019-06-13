@@ -635,7 +635,7 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
     x->l.cb.costs.clear();
   }
 
-  VW::clear_seq_and_finish_examples(all, ec_seq);
+  VW::finish_example(all, ec_seq);
 }
 
 template <bool is_learn>

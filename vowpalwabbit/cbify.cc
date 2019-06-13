@@ -390,7 +390,7 @@ void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
     output_example_seq(all, ec_seq);
     // global_print_newline(all);
   }
-  VW::clear_seq_and_finish_examples(all, ec_seq);
+  VW::finish_example(all, ec_seq);
 }
 
 base_learner* cbify_setup(options_i& options, vw& all)
