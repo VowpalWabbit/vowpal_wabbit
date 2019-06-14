@@ -112,15 +112,6 @@ void attach_label_to_example(uint32_t action_index_one_based, example* example, 
   example->l.cb.costs.push_back(data.cb_label);
 }
 
-// Flattens all features of the action into the history namespace in the shared example.
-void inject_history_features(example* shared, example* action)
-{
-  for (auto index : action->indices)
-  {
-    LabelDict::add_example_namespace(*shared, ccb_history_namespace, action->feature_space[index]);
-  }
-}
-
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   // save a copy
@@ -137,9 +128,6 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   // Exclude the chosen action from next slots.
   auto original_index_of_chosen_action = copy[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
-
-  // Stash the features of this chosen example into the history namespace.
-  inject_history_features(data.shared, data.actions[original_index_of_chosen_action]);
 }
 
 void clear_pred_and_label(ccb& data)
@@ -185,12 +173,6 @@ void remove_slot_features(example* shared, example* slot)
       continue;
     }
 
-    // History namespace should be ignored also
-    if (index == ccb_history_namespace)
-    {
-      continue;
-    }
-
     else if (index == default_namespace)  // slot default namespace has a special namespace in shared
     {
       LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[32]);
@@ -209,20 +191,19 @@ void calculate_and_insert_interactions(example* shared, example* slot, std::vect
 
   for (auto shared_index : shared->indices)
   {
-    // History namespace is included in the shared example, it is added explicitly for each interaction.
-    if (shared_index == ccb_history_namespace)
-    {
-      continue;
-    }
-
     for (auto action : actions)
     {
       for (auto action_index : action->indices)
       {
         for (auto slot_index : slot->indices)
         {
-          char slot_ns_index = (slot_index == default_namespace) ? ccb_slot_namespace : slot_index;
-          vec.push_back({(char)shared_index, slot_ns_index, (char)ccb_history_namespace, (char)action_index});
+           if (shared_index == constant_namespace || slot_index == constant_namespace || action_index == constant_namespace)
+          {
+            continue;
+          }
+
+          namespace_index slot_ns_index = (slot_index == default_namespace) ? ccb_slot_namespace : slot_index;
+          vec.push_back({(char)shared_index, (char)slot_ns_index, (char)action_index});
         }
       }
     }
@@ -300,14 +281,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         ex->l.conditional_contextual_bandit.outcome, ex->l.conditional_contextual_bandit.explicit_included_actions});
   }
 
-  // Shared example must include history namespace:
-  if (std::find(data.shared->indices.begin(), data.shared->indices.end(), ccb_history_namespace) ==
-      data.shared->indices.end())
-  {
-    data.shared->indices.push_back(ccb_history_namespace);
-  }
-  data.shared->feature_space[ccb_history_namespace].push_back(1, constant);
-
   // This will overwrite the labels with CB.
   create_cb_labels(data);
 
@@ -319,12 +292,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // for each slot, re-build the cb example and call cb_explore_adf
   for (example* slot : data.slots)
   {
-    multi_ex cb_ex;
-    build_cb_example<is_learn>(cb_ex, slot, data);
-
-    assert(std::find(data.shared->indices.begin(), data.shared->indices.end(), ccb_history_namespace) !=
-        data.shared->indices.end());
-
     // Namespace crossing for slot features.
     // If the slot example only has the constant namespace, there will be no extra crossing and so skip that logic.
     if (!(slot->indices.size() == 1 && slot->indices[0] == constant_namespace))
@@ -344,6 +311,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         ex->interactions = &data.generated_interactions;
       }
     }
+
+    multi_ex cb_ex;
+    build_cb_example<is_learn>(cb_ex, slot, data);
 
     if (has_action(cb_ex))
     {  // the cb example contains at least 1 action
@@ -376,10 +346,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     examples[i]->l.conditional_contextual_bandit = {
         data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions};
   }
-
-  // Remove history features
-  LabelDict::del_example_namespace(
-      *data.shared, ccb_history_namespace, data.shared->feature_space[ccb_history_namespace]);
 
   // Save the predictions
   examples[0]->pred.decision_scores = decision_scores;
