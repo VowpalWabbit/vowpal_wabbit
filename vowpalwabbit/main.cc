@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
     if (should_use_onethread)
     {
       if (alls.size() == 1)
-        ;//LEARNER::generic_driver_onethread(all);
+        LEARNER::generic_driver_onethread(all);
       else
         throw "--onethread doesn't make sense with multiple learners";
     }
