@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
       if (alls.size() == 1)
         LEARNER::generic_driver(all);
       else
-        LEARNER::generic_driver(all, alls);
+        LEARNER::generic_driver(alls);
       VW::end_parser(all);
     }
 

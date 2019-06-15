@@ -65,6 +65,33 @@ namespace LEARNER
     VW::finish_example(all, ec);
   }
   
+  /* example headers have the word "shared" */
+  bool ec_is_example_header(example& ec)
+  {
+    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    if (costs.size() != 1)
+      return false;
+    if (costs[0].probability == -1.f)
+      return true;
+    return false;
+  }
+  
+  bool inline is_save_cmd(example* ec)
+  {
+    return (ec->tag.size() >= 4) && (0 == strncmp((const char*)ec->tag.begin(), "save", 4));
+  }
+  
+  /* is this just a newline */
+  inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !ec_is_example_header(ec)); }
+
+  void drain_examples(vw& all) {
+    if (all.early_terminate) { // drain any extra examples from parser.
+      example* ec = nullptr;
+      while ((ec = VW::get_example(all.p)) != nullptr) VW::finish_example(all, *ec);
+    }
+    all.l->end_examples();
+  }
+  
   class single_instance_context {
   public:
     single_instance_context(vw& all)
@@ -96,29 +123,10 @@ namespace LEARNER
     std::vector<vw*> _all;
   };
   
-  /* example headers have the word "shared" */
-  bool ec_is_example_header(example& ec)
-  {
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
-    if (costs.size() != 1)
-      return false;
-    if (costs[0].probability == -1.f)
-      return true;
-    return false;
-  }
-  
-  bool inline is_save_cmd(example* ec)
-  {
-    return (ec->tag.size() >= 4) && (0 == strncmp((const char*)ec->tag.begin(), "save", 4));
-  }
-  
-  /* is this just a newline */
-  inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !ec_is_example_header(ec)); }
-
-  template<typename Context>
+  template<typename context_type>
   class single_example_handler {
   public:
-    single_example_handler(Context context)
+    single_example_handler(const context_type& context)
     : _context(context) {}
     
     void on_example(example* ec) {
@@ -132,10 +140,10 @@ namespace LEARNER
         _context.template process<example, learn_ex>(*ec);
     }
   private:
-    Context _context;
+    context_type _context;
   };
   
-  template<typename Context>
+  template<typename context_type>
   class multi_example_handler {
   private:
     bool complete_multi_ex(example* ec)
@@ -164,7 +172,7 @@ namespace LEARNER
     }
     
   public:
-    multi_example_handler(Context context)
+    multi_example_handler(const context_type context)
     : _context(context) {}
     
     void on_example(example* ec) {
@@ -175,28 +183,28 @@ namespace LEARNER
     }
     
   private:
-    Context _context;
+    context_type _context;
     multi_ex ec_seq;
   };
   
-  class ready_examples {
+  class ready_examples_queue {
   public:
-    ready_examples(vw& master)
+    ready_examples_queue(vw& master)
     : _master(master) {}
     
-    example* get() {
+    example* pop() {
       return !_master.early_terminate ? VW::get_example(_master.p) : nullptr;
     }
   private:
     vw& _master;
   };
   
-  class not_ready_examples {
+  class custom_examples_queue {
   public:
-    not_ready_examples(v_array<example*> examples)
+    custom_examples_queue(v_array<example*> examples)
     : _examples(examples) {}
     
-    example* get() {
+    example* pop() {
       return _index < _examples.size() ? _examples[_index++] : nullptr;
     }
   private:
@@ -204,53 +212,41 @@ namespace LEARNER
     size_t _index {0};
   };
   
-  template <class Source, class Handler>
-  void new_driver(Source& example_source, Handler& handler)
+  template <typename queue_type, typename handler_type>
+  void process_examples(queue_type& examples, handler_type& handler)
   {
-    example* ex;
+    example* ec;
     
-    while ((ex = example_source.get()) != nullptr)
-      handler.on_example(ex);
+    while ((ec = examples.pop()) != nullptr)
+      handler.on_example(ec);
   }
   
-  void drain_examples_if_needed(vw& all) {
-    if (all.early_terminate) { // drain any extra examples from parser.
-      example* ec = nullptr;
-      while ((ec = VW::get_example(all.p)) != nullptr) VW::finish_example(all, *ec);
+  template <typename context_type>
+  void generic_driver(ready_examples_queue& examples, context_type& context) {
+    if (context.get_master().l->is_multiline) {
+      using handler_type = multi_example_handler<context_type>;
+      handler_type handler(context);
+      process_examples(examples, handler);
+    } else {
+      using handler_type = single_example_handler<context_type>;
+      handler_type handler(context);
+      process_examples(examples, handler);
     }
-    all.l->end_examples();
+    drain_examples(context.get_master());
   }
   
   void generic_driver(vw& all)
   {
     single_instance_context context(all);
-    ready_examples examples_source(all);
-    if (all.l->is_multiline) {
-      using handler_type = multi_example_handler<single_instance_context>;
-      handler_type handler(context);
-      new_driver<ready_examples, handler_type>(examples_source, handler);
-    } else {
-      using handler_type = single_example_handler<single_instance_context>;
-      handler_type handler(context);
-      new_driver<ready_examples, handler_type>(examples_source, handler);
-    }
-    drain_examples_if_needed(all);
+    ready_examples_queue examples(all);
+    generic_driver(examples, context);
   }
   
-  void generic_driver(vw& master, std::vector<vw*> all)
+  void generic_driver(const std::vector<vw*>& all)
   {
     multi_instance_context context(all);
-    ready_examples examples_source(context.get_master());
-    if (master.l->is_multiline) {
-      using handler_type = multi_example_handler<multi_instance_context>;
-      handler_type handler(context);
-      new_driver<ready_examples, handler_type>(examples_source, handler);
-    } else {
-      using handler_type = single_example_handler<multi_instance_context>;
-      handler_type handler(context);
-      new_driver<ready_examples, handler_type>(examples_source, handler);
-    }
-    drain_examples_if_needed(context.get_master());
+    ready_examples_queue examples(context.get_master());
+    generic_driver(examples, context);
   }
   
   template<typename handler_type>
@@ -259,8 +255,8 @@ namespace LEARNER
     handler_type handler(context);
     auto multi_ex_fptr = [&handler](vw& all, v_array<example*> examples) {
       all.p->end_parsed_examples += examples.size();  // divergence: lock & signal
-      not_ready_examples examples_source(examples);
-      new_driver<not_ready_examples, handler_type>(examples_source, handler);
+      custom_examples_queue examples_queue(examples);
+      process_examples(examples_queue, handler);
     };
     parse_dispatch(all, multi_ex_fptr);
     all.l->end_examples();
