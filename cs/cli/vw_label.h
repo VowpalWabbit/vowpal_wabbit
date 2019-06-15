@@ -72,7 +72,7 @@ public:
     void set(float value)
     { if (value < 0 || value >1)
       {
-        if (value > 1 && value - 1 < tollerance)
+        if (value > 1 && value - 1 < tolerance)
           m_probability = 1.0f;
         else
           throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
