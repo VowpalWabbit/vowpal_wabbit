@@ -114,7 +114,7 @@ namespace LEARNER
     
     vw& get_master() {return *_all.front();}
     
-    template <class T, void (*process_impl)(T&, vw&)>
+    template <class T	, void (*process_impl)(T&, vw&)>
     void process(T& ec) {
       // start with last as the first instance will free the example as it is the owner
       for (auto it = _all.rbegin(); it != _all.rend(); ++it) process_impl(ec, **it);
@@ -174,6 +174,12 @@ namespace LEARNER
   public:
     multi_example_handler(const context_type context)
     : _context(context) {}
+    
+    ~multi_example_handler() {
+      if (!ec_seq.empty()) {
+        _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+      }
+    }
     
     void on_example(example* ec) {
       if (try_complete_multi_ex(ec)) {
