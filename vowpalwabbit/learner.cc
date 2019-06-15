@@ -97,7 +97,7 @@ namespace LEARNER
     single_instance_context(vw& all)
     : _all(all) {}
     
-    vw& get_master() {return _all;}
+    vw& get_master() const {return _all;}
     
     template <class T, void (*process_impl)(T&, vw&)>
     void process(T& ec) {
@@ -112,9 +112,9 @@ namespace LEARNER
     multi_instance_context(const std::vector<vw*>& all)
     : _all(all) {}
     
-    vw& get_master() {return *_all.front();}
+    vw& get_master() const {return *_all.front();}
     
-    template <class T	, void (*process_impl)(T&, vw&)>
+    template <class T, void (*process_impl)(T&, vw&)>
     void process(T& ec) {
       // start with last as the first instance will free the example as it is the owner
       for (auto it = _all.rbegin(); it != _all.rend(); ++it) process_impl(ec, **it);
