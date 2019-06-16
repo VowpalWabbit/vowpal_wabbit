@@ -113,6 +113,7 @@
     <ClInclude Include="action_score.h" />
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
+    <ClInclude Include="ccb_label.h" />
     <ClInclude Include="object_pool.h" />
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="array_parameters.h" />
@@ -221,6 +222,7 @@
     <ClCompile Include="action_score.cc" />
     <ClCompile Include="cb_sample.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
+    <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
     <ClCompile Include="autolink.cc" />

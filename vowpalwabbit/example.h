@@ -19,6 +19,7 @@ license as described in the file LICENSE.
 #include "action_score.h"
 #include "example_predict.h"
 #include "conditional_contextual_bandit.h"
+#include "ccb_label.h"
 #include <vector>
 
 const unsigned char default_namespace = 32;
@@ -36,7 +37,6 @@ const unsigned char dictionary_namespace = 135;    // this is \x87
 const unsigned char node_id_namespace = 136;       // this is \x88
 const unsigned char message_namespace = 137;       // this is \x89
 const unsigned char ccb_slot_namespace = 139;
-const unsigned char ccb_history_namespace = 140;
 
 typedef union {
   no_label::no_label empty;
