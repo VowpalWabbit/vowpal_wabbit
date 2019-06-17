@@ -72,8 +72,8 @@ template <bool is_learn>
 void sanity_checks(ccb& data)
 {
   if (data.slots.size() > data.actions.size())
-    THROW("ccb_adf_explore: badly formatted example - number of actions "
-        << data.actions.size() << " must be greater than the number of slots " << data.slots.size());
+    std::cerr <<"ccb_adf_explore: badly formatted example - number of actions "
+        << data.actions.size() << " must be greater than the number of slots " << data.slots.size();
 
   if (is_learn)
   {
@@ -81,7 +81,7 @@ void sanity_checks(ccb& data)
     {
       if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
           slot->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
-        THROW("ccb_adf_explore: badly formatted example - missing label probability");
+        std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
     }
   }
 }
@@ -281,7 +281,10 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 {
   clear_all(data);
   split_multi_example(examples, data);  // split shared, actions and slots
+
+#ifndef NDEBUG
   sanity_checks<is_learn>(data);
+#endif
 
   // Stash the CCB labels before rewriting them.
   data.stored_labels.clear();
@@ -483,6 +486,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
     else
     {
       labeled_example = false;
+      std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n";
     }
   }
 

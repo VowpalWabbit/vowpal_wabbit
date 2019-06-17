@@ -1731,11 +1731,11 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} -d train-sets/malformed.dat --onethread
     train-sets/ref/malformed.stderr
 
-# Test 178: test cb_sample
+# Test 196: test cb_sample
 {VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict
     pred-sets/ref/cb_sample_seed.predict
 
-# Test 196: CCB train then test
+# Test 197: CCB train then test
 {VW} -d train-sets/ccb_test.dat --ccb_explore_adf -p ccb_test.predict
     train-sets/ref/ccb_test.stderr
     train-sets/ref/ccb_test.predict
