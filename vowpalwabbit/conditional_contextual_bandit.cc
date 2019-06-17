@@ -195,13 +195,23 @@ void calculate_and_insert_interactions(example* shared, example* slot, std::vect
     {
       for (auto action_index : action->indices)
       {
+         // Skip past any grouping where shared, action or slot is the constant namespace.
+        if (shared_index == constant_namespace ||  action_index == constant_namespace)
+        {
+          continue;
+        }
+
+        // Insert automatic quadratic interactions between all shared  action pairs
+        vec.push_back({(char)shared_index, (char)action_index});
+
         for (auto slot_index : slot->indices)
         {
-           if (shared_index == constant_namespace || slot_index == constant_namespace || action_index == constant_namespace)
+          if (slot_index == constant_namespace)
           {
             continue;
           }
 
+          // Insert automatic cubic interactions between all shared + action + slot groups
           namespace_index slot_ns_index = (slot_index == default_namespace) ? ccb_slot_namespace : slot_index;
           vec.push_back({(char)shared_index, (char)slot_ns_index, (char)action_index});
         }
