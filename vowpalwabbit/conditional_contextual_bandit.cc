@@ -470,31 +470,31 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
     }
   }
 
-  // What does it mean for not all of the slots to be labeled? Does it become a non-labeled example at that point?
   // Is it hold out?
-  bool labeled_example = true;
+  size_t num_labelled = 0;
   auto preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
     auto outcome = slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
+      num_labelled++;
       float l = CB_ALGS::get_cost_estimate(
           outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
       loss += l * preds[i][TOP_ACTION_INDEX].score;
     }
-    else
-    {
-      labeled_example = false;
-      std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n";
-    }
   }
 
-  bool holdout_example = labeled_example;
+  if(num_labelled > 0 && num_labelled < slots.size())
+  {
+    std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n";
+  }
+
+  bool holdout_example = num_labelled > 0;
   for (size_t i = 0; i < ec_seq.size(); i++) holdout_example &= ec_seq[i]->test_only;
 
   // TODO what does weight mean here?
-  all.sd->update(holdout_example, labeled_example, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
+  all.sd->update(holdout_example, num_labelled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto sink : all.final_prediction_sink)
     print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
