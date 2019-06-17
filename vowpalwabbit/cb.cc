@@ -113,6 +113,7 @@ bool substring_eq(substring ss, const char* str)
 void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 {
   CB::label* ld = (CB::label*)v;
+  ld->costs.clear();
   for (size_t i = 0; i < words.size(); i++)
   {
     cb_class f;
