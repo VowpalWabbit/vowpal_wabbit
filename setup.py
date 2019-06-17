@@ -209,6 +209,11 @@ setup(
     keywords='fast machine learning online classification regression',
     package_dir={'' : os.path.relpath(pkg_path)},
     packages=find_packages(where=pkg_path),
+    install_requires=[
+        'numpy>=1.6.1',
+        'scipy>=0.9',
+        'scikit-learn>=0.17'
+    ],
     platforms='any',
     zip_safe=False,
     include_package_data=True,
