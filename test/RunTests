@@ -1740,5 +1740,4 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/ccb_test.stderr
     train-sets/ref/ccb_test.predict
 
-
 # Do not delete this line or the empty line above it
