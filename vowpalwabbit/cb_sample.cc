@@ -19,16 +19,16 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
   multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   auto action_scores = examples[0]->pred.a_s;
-  uint32_t chosen_action;
+  uint32_t chosen_action = -1;
 
   int labelled_action = -1;
   // Find that chosen action in the learning case, skip the shared example.
-  for(size_t i = 1; i < examples.size(); i++)
+  for(size_t i = 0; i < examples.size(); i++)
   {
     if(examples[i]->l.cb.costs.size() > 0)
     {
       // Must remove 1 because of shared example index.
-      labelled_action = i - 1;
+      labelled_action = i;
     }
   }
 
@@ -43,6 +43,7 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
       if (a_s.action == labelled_action)
       {
         chosen_action = i;
+        break;
       }
     }
   }
