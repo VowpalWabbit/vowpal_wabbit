@@ -630,10 +630,6 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all);
   }
 
-  for (auto x : ec_seq)
-  {
-    x->l.cb.costs.clear();
-  }
 
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
