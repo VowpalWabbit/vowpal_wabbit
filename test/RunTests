@@ -1732,7 +1732,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/malformed.stderr
 
 # Test 196: test cb_sample
-{VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict
+{VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234
     pred-sets/ref/cb_sample_seed.predict
 
 # Test 197: CCB train then test
