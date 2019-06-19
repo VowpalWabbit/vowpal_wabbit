@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include "vw_clr.h"
 #include "cb.h"
 #include "best_constant.h"
+#include "constant.h"
 #include "multiclass.h"
 
 namespace VW
@@ -70,9 +71,14 @@ public:
 
     void set(float value)
     { if (value < 0 || value >1)
-        throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
-
-      m_probability = value;
+      {
+        if (value > 1 && value - 1 < probability_tolerance)
+          m_probability = 1.0f;
+        else
+          throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
+      }
+      else
+        m_probability = value;
     }
   }
 
