@@ -23,6 +23,13 @@ namespace CCB
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   CCB::label* ld = static_cast<CCB::label*>(v);
+
+  if (ld->outcome)
+  {
+    ld->outcome->probabilities.clear();
+  }
+  ld->explicit_included_actions.clear();
+
   size_t read_count = 0;
   char* read_ptr;
 

@@ -9,14 +9,57 @@
 #include "cb_adf.h"
 #include "cb_algs.h"
 #include "constant.h"
+#include "object_pool.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
+#include <queue>
 
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+template <typename T>
+struct v_array_initializer
+{
+  v_array<T>* operator()(v_array<T>* array)
+  {
+    *array = v_array<T>();
+    return array;
+  }
+};
+
+template <typename T>
+struct v_array_cleanup
+{
+  void operator()(v_array<T>* array) { array->delete_v(); }
+};
+
+template <typename T>
+using v_array_pool = VW::no_lock_object_pool<v_array<T>, v_array_initializer<T>, v_array_cleanup<T>>;
+
+template <typename T>
+void return_v_array(v_array<T>& array, std::queue<v_array<T>*>& in_use_queue, v_array_pool<T>& pool)
+{
+  array.clear();
+  auto return_item = in_use_queue.front();
+  in_use_queue.pop();
+  return_item->_begin = array._begin;
+  return_item->_end = array._end;
+  return_item->end_array = array.end_array;
+  return_item->erase_count = array.erase_count;
+  pool.return_object(return_item);
+}
+
+// Intentionally returns shallow copy of pooled array
+template <typename T>
+v_array<T> get_v_array(std::queue<v_array<T>*>& in_use_queue, v_array_pool<T>& pool)
+{
+  auto pooled_item = pool.get_object();
+  in_use_queue.push(pooled_item);
+  return *pooled_item;
+}
 
 struct ccb
 {
@@ -29,6 +72,24 @@ struct ccb
   std::vector<std::string>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
+
+  // In order to reuse the v_arrays in this reduction we are using a combination of object pooling
+  // and tracking queues. Since the v_arrays are used by value we need to shallow copy them into
+  // place. Therefore, we can't use the pooled object directly but must use the buffer within.
+  // 1. Remove object from pool
+  // 2. Shallow copy into location to be used
+  // 3. Place onto corresponding queue When done:
+  // 1. Shallow copy onto an item from queue
+  // 2. Return pooled queue item to pool
+  //
+  // It doesn't matter which queue object is used to return it as it is essentially just a container
+  // for the internal buffer that we are using.
+  std::queue<v_array<CB::cb_class>*> in_use_cb_label;
+  std::queue<v_array<ACTION_SCORE::action_score>*> in_use_action_score;
+  std::queue<v_array<ACTION_SCORE::action_scores>*> in_use_action_scores;
+  v_array_pool<CB::cb_class> cb_label_pool;
+  v_array_pool<ACTION_SCORE::action_score> action_score_pool;
+  v_array_pool<ACTION_SCORE::action_scores> action_scores_pool;
 };
 
 namespace CCB
@@ -72,8 +133,8 @@ template <bool is_learn>
 void sanity_checks(ccb& data)
 {
   if (data.slots.size() > data.actions.size())
-    std::cerr <<"ccb_adf_explore: badly formatted example - number of actions "
-        << data.actions.size() << " must be greater than the number of slots " << data.slots.size();
+    std::cerr << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
+              << " must be greater than the number of slots " << data.slots.size();
 
   if (is_learn)
   {
@@ -89,19 +150,27 @@ void sanity_checks(ccb& data)
 // create empty/default cb labels
 void create_cb_labels(ccb& data)
 {
-  data.shared->l.cb.costs = v_init<CB::cb_class>();
+  data.shared->l.cb.costs = get_v_array(data.in_use_cb_label, data.cb_label_pool);
   data.shared->l.cb.costs.push_back(data.default_cb_label);
-  for (example* action : data.actions) action->l.cb.costs = v_init<CB::cb_class>();
+  for (example* action : data.actions)
+  {
+    action->l.cb.costs = get_v_array(data.in_use_cb_label, data.cb_label_pool);
+  }
 }
 
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  data.shared->l.cb.costs.delete_v();
-  for (example* action : data.actions) action->l.cb.costs.delete_v();
+  return_v_array(data.shared->l.cb.costs, data.in_use_cb_label, data.cb_label_pool);
+
+  for (example* action : data.actions)
+  {
+    return_v_array(action->l.cb.costs, data.in_use_cb_label, data.cb_label_pool);
+  }
 }
 
-void attach_label_to_example(uint32_t action_index_one_based, example* example, conditional_contexual_bandit_outcome* outcome, ccb& data)
+void attach_label_to_example(
+    uint32_t action_index_one_based, example* example, conditional_contexual_bandit_outcome* outcome, ccb& data)
 {
   // save the cb label
   // Action is unused in cb
@@ -115,7 +184,7 @@ void attach_label_to_example(uint32_t action_index_one_based, example* example, 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   // save a copy
-  auto copy = v_init<ACTION_SCORE::action_score>();
+  auto copy = get_v_array(data.in_use_action_score, data.action_score_pool);
   copy_array(copy, data.shared->pred.a_s);
   decision_scores.push_back(copy);
 
@@ -132,8 +201,10 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 
 void clear_pred_and_label(ccb& data)
 {
-  data.shared->pred.a_s.delete_v();
-  data.actions[data.action_with_label]->l.cb.costs.delete_v();
+  return_v_array(data.shared->pred.a_s, data.in_use_action_score, data.action_score_pool);
+
+  // This just needs to be cleared as it is reused.
+  data.actions[data.action_with_label]->l.cb.costs.clear();
 }
 
 // true if there exists at least 1 action in the cb multi-example
@@ -185,7 +256,8 @@ void remove_slot_features(example* shared, example* slot)
 }
 
 // Generates all combinations of 4th order interactions between namespaces in [shared,history,slot,action]
-void calculate_and_insert_interactions(example* shared, example* slot, std::vector<example*> actions, std::vector<std::string>& vec)
+void calculate_and_insert_interactions(
+    example* shared, example* slot, std::vector<example*> actions, std::vector<std::string>& vec)
 {
   vec.reserve(shared->indices.size() * slot->indices.size() + vec.size());
 
@@ -195,8 +267,8 @@ void calculate_and_insert_interactions(example* shared, example* slot, std::vect
     {
       for (auto action_index : action->indices)
       {
-         // Skip past any grouping where shared, action or slot is the constant namespace.
-        if (shared_index == constant_namespace ||  action_index == constant_namespace)
+        // Skip past any grouping where shared, action or slot is the constant namespace.
+        if (shared_index == constant_namespace || action_index == constant_namespace)
         {
           continue;
         }
@@ -258,8 +330,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
     data.origin_index[index++] = (uint32_t)i;
 
     // remember the index of the chosen action
-    if (is_learn && slot_has_label &&
-        i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+    if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
     {
       // This is used to remove the label later.
       data.action_with_label = (uint32_t)i;
@@ -268,9 +339,10 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   }
 
   // Must reset this in case the pooled example has stale data here.
-  data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
+  data.shared->pred.a_s = get_v_array(data.in_use_action_score, data.action_score_pool);
 
-  // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared example.
+  // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
+  // example.
   std::swap(data.shared->tag, slot->tag);
 }
 
@@ -290,8 +362,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   data.stored_labels.clear();
   for (auto ex : examples)
   {
-    data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type,
-        ex->l.conditional_contextual_bandit.outcome, ex->l.conditional_contextual_bandit.explicit_included_actions});
+    data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type, ex->l.conditional_contextual_bandit.outcome,
+        ex->l.conditional_contextual_bandit.explicit_included_actions});
   }
 
   // This will overwrite the labels with CB.
@@ -300,7 +372,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
-  auto decision_scores = v_init<ACTION_SCORE::action_scores>();
+  auto decision_scores = get_v_array(data.in_use_action_scores, data.action_scores_pool);
 
   // for each slot, re-build the cb example and call cb_explore_adf
   for (example* slot : data.slots)
@@ -335,9 +407,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       clear_pred_and_label(data);
     }
     else
-    {  // the cb example contains no action => cannot decide
-      auto empty_action_scores = v_init<ACTION_SCORE::action_score>();
-      decision_scores.push_back(empty_action_scores);
+    {
+      // the cb example contains no action => cannot decide
+      decision_scores.push_back(get_v_array(data.in_use_action_score, data.action_score_pool));
     }
 
     data.shared->interactions = data.original_interactions;
@@ -485,7 +557,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
     }
   }
 
-  if(num_labelled > 0 && num_labelled < slots.size())
+  if (num_labelled > 0 && num_labelled < slots.size())
   {
     std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n";
   }
@@ -512,15 +584,10 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
 
   for (auto a_s : ec_seq[0]->pred.decision_scores)
   {
-    a_s.delete_v();
+    return_v_array(a_s, data.in_use_action_score, data.action_score_pool);
   }
-  ec_seq[0]->pred.decision_scores.delete_v();
-
-  // Delete all of the labels originally allocated by the parser.
-  for (auto ex : ec_seq)
-  {
-    all.p->lp.delete_label(&ex->l);
-  }
+  return_v_array(ec_seq[0]->pred.decision_scores, data.in_use_action_scores, data.action_scores_pool);
+  ec_seq[0]->pred.decision_scores = {0,0,0,0};
 
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
@@ -529,23 +596,36 @@ void finish(ccb& data)
 {
   data.actions.~vector<example*>();
   data.slots.~vector<example*>();
-  data.origin_index.~map<uint32_t,uint32_t>();
+  data.origin_index.~map<uint32_t, uint32_t>();
   data.exclude_list.~vector<bool>();
   // data.include_list.~unordered_set<uint32_t>();
   data.cb_label.~cb_class();
   data.default_cb_label.~cb_class();
   data.generated_interactions.~vector<std::string>();
   data.stored_labels.~vector<CCB::label>();
+
+  data.action_score_pool.~v_array_pool<ACTION_SCORE::action_score>();
+  data.action_scores_pool.~v_array_pool<ACTION_SCORE::action_scores>();
+  data.cb_label_pool.~v_array_pool<CB::cb_class>();
+
+  data.in_use_cb_label.~queue<v_array<CB::cb_class>*>();
+  data.in_use_action_score.~queue<v_array<ACTION_SCORE::action_score>*>();
+  data.in_use_action_scores.~queue<v_array<ACTION_SCORE::action_scores>*>();
 }
+
+// Prediction deleter is intentionally a nullopt as it is handled by the reduction.
+void nullopt_delete(void*){}
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
-  option_group_definition new_options("Conditional Contextual Bandit Exploration with Action Dependent Features");
-  new_options.add(make_option("ccb_explore_adf", ccb_explore_adf_option)
-                      .keep()
-                      .help("Do Conditional Contextual Bandit learning with multiline action dependent features."));
+  option_group_definition new_options(
+      "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
+  new_options.add(
+      make_option("ccb_explore_adf", ccb_explore_adf_option)
+          .keep()
+          .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."));
   options.add_and_parse(new_options);
 
   if (!ccb_explore_adf_option)
@@ -574,6 +654,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
+
+  all.delete_prediction = nullopt_delete;
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(CCB::finish);
