@@ -20,6 +20,7 @@ using namespace VW::config;
 
 struct ccb
 {
+  vw* all;
   example* shared;
   std::vector<example*> actions, slots;
   std::map<uint32_t, uint32_t> origin_index;
@@ -29,6 +30,10 @@ struct ccb
   std::vector<std::string>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
+
+  // All of these hashes are with a hasher seeded with the below namespace hash.
+  std::map<std::string, uint64_t> hashes;
+  uint64_t id_namespace_hash;
 };
 
 namespace CCB
@@ -163,6 +168,42 @@ void inject_slot_features(example* shared, example* slot)
   }
 }
 
+void inject_slot_id(ccb& data, example* shared, int id)
+{
+  auto current_index_str = "index"+id;
+  uint64_t index;
+  if(data.hashes.count(current_index_str) == 0)
+  {
+    index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
+    data.hashes[current_index_str] = index;
+  }
+  else
+  {
+    index = data.hashes[current_index_str];
+  }
+
+  shared->feature_space[ccb_id_namespace].push_back(1., index);
+}
+
+void remove_slot_id(ccb& data, example* shared, int id)
+{
+  auto current_index_str = "index"+id;
+  uint64_t index;
+  if(data.hashes.count(current_index_str) == 0)
+  {
+    index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
+    data.hashes[current_index_str] = index;
+  }
+  else
+  {
+    index = data.hashes[current_index_str];
+  }
+
+  auto& indices = shared->feature_space[ccb_id_namespace].indicies;
+  auto val_index = std::distance(indices.begin(), std::find(indices.begin(), indices.end(), index));
+  shared->feature_space[ccb_id_namespace].values[val_index] = 0.f;
+}
+
 void remove_slot_features(example* shared, example* slot)
 {
   for (auto index : slot->indices)
@@ -184,39 +225,28 @@ void remove_slot_features(example* shared, example* slot)
   }
 }
 
-// Generates all combinations of 4th order interactions between namespaces in [shared,history,slot,action]
+// Generates interaction between all namespaces and interactions with the slot id namespace.
 void calculate_and_insert_interactions(example* shared, example* slot, std::vector<example*> actions, std::vector<std::string>& vec)
 {
-  vec.reserve(shared->indices.size() * slot->indices.size() + vec.size());
-
-  for (auto shared_index : shared->indices)
+  std::vector<std::string> new_interactions;
+  for(auto interaction : vec)
   {
-    for (auto action : actions)
+    interaction.push_back((char)ccb_id_namespace);
+    new_interactions.push_back(interaction);
+  }
+  vec.insert(vec.end(), new_interactions.begin(), new_interactions.end());
+
+  for (auto& action : actions)
+  {
+    for (auto& action_index : action->indices)
     {
-      for (auto action_index : action->indices)
-      {
-         // Skip past any grouping where shared, action or slot is the constant namespace.
-        if (shared_index == constant_namespace ||  action_index == constant_namespace)
-        {
-          continue;
-        }
-
-        // Insert automatic quadratic interactions between all shared  action pairs
-        vec.push_back({(char)shared_index, (char)action_index});
-
-        for (auto slot_index : slot->indices)
-        {
-          if (slot_index == constant_namespace)
-          {
-            continue;
-          }
-
-          // Insert automatic cubic interactions between all shared + action + slot groups
-          namespace_index slot_ns_index = (slot_index == default_namespace) ? ccb_slot_namespace : slot_index;
-          vec.push_back({(char)shared_index, (char)slot_ns_index, (char)action_index});
-        }
-      }
+      vec.push_back({(char)action_index, (char)ccb_id_namespace});
     }
+  }
+
+  for (auto& shared_index : shared->indices)
+  {
+    vec.push_back({(char)shared_index, (char)ccb_id_namespace});
   }
 }
 
@@ -303,6 +333,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   auto decision_scores = v_init<ACTION_SCORE::action_scores>();
 
   // for each slot, re-build the cb example and call cb_explore_adf
+  int slot_id = 0;
   for (example* slot : data.slots)
   {
     // Namespace crossing for slot features.
@@ -310,14 +341,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     if (!(slot->indices.size() == 1 && slot->indices[0] == constant_namespace))
     {
       data.generated_interactions.clear();
-      // TODO be more efficient here
       std::copy(data.original_interactions->begin(), data.original_interactions->end(),
           std::back_inserter(data.generated_interactions));
-      // TODO currently all action namespaces are used adding redundant interactions.
       calculate_and_insert_interactions(data.shared, slot, data.actions, data.generated_interactions);
-      size_t removed_cnt;
-      size_t sorted_cnt;
-      INTERACTIONS::sort_and_filter_duplicate_interactions(data.generated_interactions, true, removed_cnt, sorted_cnt);
       data.shared->interactions = &data.generated_interactions;
       for (auto ex : data.actions)
       {
@@ -328,14 +354,18 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     multi_ex cb_ex;
     build_cb_example<is_learn>(cb_ex, slot, data);
 
+    inject_slot_id(data, data.shared, slot_id);
+
     if (has_action(cb_ex))
-    {  // the cb example contains at least 1 action
+    {
+      // the cb example contains at least 1 action
       multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
       save_action_scores(data, decision_scores);
       clear_pred_and_label(data);
     }
     else
-    {  // the cb example contains no action => cannot decide
+    {
+      // the cb example contains no action => cannot decide
       auto empty_action_scores = v_init<ACTION_SCORE::action_score>();
       decision_scores.push_back(empty_action_scores);
     }
@@ -346,9 +376,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = data.original_interactions;
     }
     remove_slot_features(data.shared, slot);
+    remove_slot_id(data, data.shared, slot_id);
 
     // Put back the original shared example tag.
     std::swap(data.shared->tag, slot->tag);
+    slot_id++;
   }
 
   delete_cb_labels(data);
@@ -571,6 +603,11 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
   data->original_interactions = &all.interactions;
+  data->all = &all;
+
+  auto id_ds = ccb_id_namespace;
+  auto namespace_str = static_cast<char>(140) + "id";
+  data->id_namespace_hash = VW::hash_space(all, namespace_str);
 
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);

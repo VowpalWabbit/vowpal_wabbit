@@ -1,0 +1,52 @@
+
+{
+    "Timestamp":"timestamp_utc",all
+    "Version": "1",
+    "c":{
+    "shared_feature": "feature",
+    "_multi": [
+        {
+            "feature1": 3.0,
+            "feature2": "name1"
+        },
+        {
+            "feature1": 2.0,
+            "feature2": "name2"
+        },
+        {
+            "feature1": 3.0,
+            "feature2": "name3"
+        }
+    ],
+    "_slots": [
+        {
+            "size": "small",
+            "_a": [
+                0,
+                2
+            ]
+        },
+        {
+            "size": "large"
+        }
+    ]
+}
+, 
+    "_outcomes":[{
+            "_id": "id1",
+            "_label_cost": 0,
+            "_a":[2,0,1],     
+            "_p":[0.67,0.165,0.165],
+            "_o":[]               
+        },{
+            "_id": "id2",
+            "_label_cost": 0,
+            "_a":1,               
+            "_p":0.34,            
+            "_o":[-1.0, 0.0]
+        }
+    ],
+    "VWState": {
+      "m": "vm_state"
+    }
+}
