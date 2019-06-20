@@ -31,7 +31,7 @@ def read_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--searcher', type=str, default='tpe', choices=['tpe', 'rand'])
-    parser.add_argument('--features', type=str, help="namespaces to bed uses. E.g.: '--keep a --keep b'")
+    parser.add_argument('--features', type=str, help="namespaces to be uses  by vw while tuning hyper params. E.g.: '--keep a --keep b'")
     parser.add_argument('--max_evals', type=int, default=100)
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
