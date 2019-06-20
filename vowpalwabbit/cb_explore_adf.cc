@@ -250,7 +250,8 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
   {
     float prob = 1.f / (float)num_actions;
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
-    data.tau--;
+    if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr)
+      data.tau--;
   }
   else
   {
