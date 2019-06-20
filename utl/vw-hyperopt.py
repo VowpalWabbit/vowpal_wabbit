@@ -26,13 +26,12 @@ except ImportError:
            "Without seaborn, standard matplotlib plots will not look very charming. "
            "It's recommended to install it via pip install seaborn")
 
-#FEATURES =  '--keep j --keep l --keep q --keep u --keep w --keep A'
 
 def read_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--searcher', type=str, default='tpe', choices=['tpe', 'rand'])
-    parser.add_argument('--features', type=str, help="which namespaces to use")
+    parser.add_argument('--features', type=str, help="namespaces to bed uses. E.g.: '--keep a --keep b'")
     parser.add_argument('--max_evals', type=int, default=100)
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
@@ -67,7 +66,6 @@ class HyperoptSpaceConstructor(object):
         self.range_pattern = re.compile("[^~]+")  # re.compile("(?<=\[).+(?=\])")
         self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
         self.only_continuous = re.compile("(?<=~)[IL]*")  # re.compile("(?<=\])[IL]*")
-
 
     def _process_vw_argument(self, arg, value, algorithm):
         try:
@@ -180,6 +178,7 @@ class HyperOptimizer(object):
         self.searcher = searcher
         self.features = features
         self.is_regression = is_regression
+        self.labels_clf_count = 0
 
         self.trials = Trials()
         self.current_trial = 0
@@ -223,11 +222,16 @@ class HyperOptimizer(object):
     def compose_vw_train_command(self):
         data_part = ('vw -d %s -f %s --holdout_off -c %s'
                      % (self.train_set, self.train_model, self.features))
+        if self.labels_clf_count > 2: # multiclass, should take probabilities
+            data_part += ('--oaa %s --loss_function=logistic --probabilities '
+                          % (self.labels_clf_count))
         self.train_command = ' '.join([data_part, self.param_suffix])
 
     def compose_vw_validate_command(self):
         data_part = 'vw -t -d %s -i %s -p %s --holdout_off -c' \
                     % (self.holdout_set, self.train_model, self.holdout_pred)
+        if self.labels_clf_count > 2: # multiclass
+            data_part += ' --loss_function=logistic --probabilities'
         self.validate_command = data_part
 
     def fit_vw(self):
@@ -240,35 +244,38 @@ class HyperOptimizer(object):
         self.logger.info("executing the following command (validation): %s" % self.validate_command)
         subprocess.call(shlex.split(self.validate_command))
 
-    def get_y_true_train(self):
-        self.logger.info("loading true train class labels...")
-        yh = open(self.train_set, 'r')
-        self.y_true_train = []
-        for line in yh:
-            self.y_true_train.append(int(line.strip()[0:2]))
-        if not self.is_regression:
-            self.y_true_train = [(i + 1.) / 2 for i in self.y_true_train]
-        self.logger.info("train length: %d" % len(self.y_true_train))
-
     def get_y_true_holdout(self):
         self.logger.info("loading true holdout class labels...")
         yh = open(self.holdout_set, 'r')
         self.y_true_holdout = []
         for line in yh:
-            #self.y_true_holdout.append(float(line.split('|')[0]))
-            self.y_true_holdout.append(float(line.split('|')[0].split(' ')[0]))
+            self.y_true_holdout.append(float(line.split()[0]))
         if not self.is_regression:
-            self.y_true_holdout = [int((i + 1.) / 2) for i in self.y_true_holdout]
+            self.labels_clf_count = len(set(self.y_true_holdout))
+            if self.labels_clf_count > 2 and self.outer_loss_function != 'logistic':
+                raise KeyError('Only logistic loss function is available for multiclass clf')
+            if self.labels_clf_count <= 2:
+                self.y_true_holdout = [int((i + 1.) / 2) for i in self.y_true_holdout]
         self.logger.info("holdout length: %d" % len(self.y_true_holdout))
 
-    def validation_metric_vw(self):
-        v = open('%s' % self.holdout_pred, 'r')
+    def get_y_pred_holdout(self):
         y_pred_holdout = []
-        for line in v:
-            y_pred_holdout.append(float(line.split()[0].strip()))
+        with open('%s' % self.holdout_pred, 'r') as v:
+            for line in v:
+                if self.labels_clf_count > 2:
+                    y_pred_holdout.append(list(map(lambda x: float(x.split(':')[1]), line.split())))
+                else:
+                    y_pred_holdout.append(float(line.split()[0].strip()))
+        return y_pred_holdout
+
+    def validation_metric_vw(self):
+        y_pred_holdout = self.get_y_pred_holdout()
 
         if self.outer_loss_function == 'logistic':
-            y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
+            if self.labels_clf_count > 2:
+                y_pred_holdout_proba = y_pred_holdout
+            else:
+                y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             loss = log_loss(self.y_true_holdout, y_pred_holdout_proba)
 
         elif self.outer_loss_function == 'squared':
@@ -284,6 +291,9 @@ class HyperOptimizer(object):
             y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             fpr, tpr, _ = roc_curve(self.y_true_holdout, y_pred_holdout_proba)
             loss = -auc(fpr, tpr)
+
+        else:
+            raise KeyError('Invalide outer loss function')
 
         self.logger.info('parameter suffix: %s' % self.param_suffix)
         self.logger.info('loss value: %.6f' % loss)
@@ -321,6 +331,8 @@ class HyperOptimizer(object):
             algo = tpe.suggest
         elif self.searcher == 'rand':
             algo = rand.suggest
+        else:
+            raise KeyError('Invalid searcher')
 
         logging.debug("starting hypersearch...")
         best_params = fmin(objective, space=self.space, trials=self.trials, algo=algo, max_evals=self.max_evals)
@@ -373,7 +385,7 @@ def main():
     h = HyperOptimizer(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
                        max_evals=args.max_evals,
                        outer_loss_function=args.outer_loss_function,
-                       searcher=args.searcher, is_regression=args.regression, features=args.features)
+                       searcher=args.searcher, is_regression=args.regression)
     h.get_y_true_holdout()
     h.hyperopt_search()
     if args.plot:
@@ -382,4 +394,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
