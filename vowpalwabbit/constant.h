@@ -10,6 +10,8 @@ const int cubic_constant2 = 37663;
 const int affix_constant = 13903957;
 const uint64_t constant = 11650396;
 
+const float probability_tolerance = 1e-5f;
+
 // FNV-like hash constant for 32bit
 // http://www.isthe.com/chongo/tech/comp/fnv/#FNV-param
 const uint32_t FNV_prime = 16777619;

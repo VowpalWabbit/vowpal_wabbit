@@ -69,6 +69,7 @@ class TC_parser
   bool* spelling_features;
   v_array<char> spelling;
   uint32_t hash_seed;
+  uint64_t parse_mask;
 
   vector<feature_dict*>* namespace_dictionaries;
 
@@ -76,9 +77,17 @@ class TC_parser
 
   inline void parserWarning(const char* message, char* begin, char* pos, const char* message2)
   {
-    cerr << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
-         << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
-         << endl;
+    std::stringstream ss;
+    ss << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
+       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << endl;
+    if (p->strict_parse)
+    {
+      THROW_EX(VW::strict_parse_exception, ss.str());
+    }
+    else
+    {
+      cerr << ss.str();
+    }
   }
 
   inline float featureValue()
@@ -138,7 +147,7 @@ class TC_parser
       v = cur_channel_v * featureValue();
       uint64_t word_hash;
       if (feature_name.end != feature_name.begin)
-        word_hash = (p->hasher(feature_name, channel_hash));
+        word_hash = (p->hasher(feature_name, channel_hash) & parse_mask);
       else
         word_hash = channel_hash + anon++;
       if (v == 0)
@@ -407,6 +416,7 @@ class TC_parser
       this->namespace_dictionaries = all.namespace_dictionaries;
       this->base = nullptr;
       this->hash_seed = all.hash_seed;
+      this->parse_mask = all.parse_mask;
       listNameSpace();
       if (base != nullptr)
         free(base);
@@ -457,20 +467,21 @@ void substring_to_example(vw* all, example* ae, substring example)
     TC_parser<false> parser_line(bar_location, example.end, *all, ae);
 }
 
-std::vector<std::string> split(char* phrase, std::string delimiter){
-    std::vector<std::string> list;
-    std::string s = std::string(phrase);
-    size_t pos = 0;
-    std::string token;
-    while ((pos = s.find(delimiter)) != std::string::npos) {
-        token = s.substr(0, pos);
-        list.push_back(token);
-        s.erase(0, pos + delimiter.length());
-    }
-    list.push_back(s);
-    return list;
+std::vector<std::string> split(char* phrase, std::string delimiter)
+{
+  std::vector<std::string> list;
+  std::string s = std::string(phrase);
+  size_t pos = 0;
+  std::string token;
+  while ((pos = s.find(delimiter)) != std::string::npos)
+  {
+    token = s.substr(0, pos);
+    list.push_back(token);
+    s.erase(0, pos + delimiter.length());
+  }
+  list.push_back(s);
+  return list;
 }
-
 
 namespace VW
 {
@@ -484,16 +495,15 @@ void read_line(vw& all, example* ex, char* line)
 void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples)
 {
   auto lines = split(line, "\n");
-  for(size_t i = 0; i < lines.size(); i++)
+  for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.
-    if(examples.size() < i + 1)
+    if (examples.size() < i + 1)
     {
       examples.push_back(&VW::get_unused_example(all));
     }
     read_line(*all, examples[i], const_cast<char*>(lines[i].c_str()));
   }
 }
-
 
 }  // namespace VW

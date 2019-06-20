@@ -161,6 +161,7 @@
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="recall_tree.h" />
+    <ClInclude Include="memory_tree.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="io_buf.h" />
@@ -258,6 +259,7 @@
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
     <ClCompile Include="recall_tree.cc" />
+    <ClCompile Include="memory_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="io_buf.cc" />

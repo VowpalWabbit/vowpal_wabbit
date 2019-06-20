@@ -270,7 +270,7 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
     isTest = true;
   else
     isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[0]->l);
-  for (const auto & ec : ec_seq)
+  for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
@@ -288,7 +288,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   vector<COST_SENSITIVE::wclass*> all_costs;
-  for (const auto & example : ec_seq) all_costs.push_back(&example->l.cs.costs[0]);
+  for (const auto& example : ec_seq) all_costs.push_back(&example->l.cs.costs[0]);
   compute_wap_values(all_costs);
 
   for (size_t k1 = 0; k1 < K; k1++)
@@ -348,7 +348,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   float min_cost = FLT_MAX;
   float max_cost = -FLT_MAX;
 
-  for (const auto & example : ec_seq)
+  for (const auto& example : ec_seq)
   {
     float ec_cost = example->l.cs.costs[0].x;
     if (ec_cost < min_cost)
@@ -357,7 +357,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
       max_cost = ec_cost;
   }
 
-  for (const auto & ec : ec_seq)
+  for (const auto& ec : ec_seq)
   {
     // save original variables
     label save_cs_label = ec->l.cs;
@@ -504,7 +504,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   if (data.is_probabilities)
   {
     float sum_prob = 0;
-    for (const auto & example : ec_seq)
+    for (const auto& example : ec_seq)
     {
       // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
       // but partial_prediction is lower for better classes (we are predicting the cost),

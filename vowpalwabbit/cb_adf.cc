@@ -36,10 +36,10 @@ struct cb_adf
   COST_SENSITIVE::label cs_labels;
   v_array<COST_SENSITIVE::label> prepped_cs_labels;
 
-  action_scores a_s;  // temporary storage for mtr and sm
-  action_scores prob_s;  // temporary storage for sm; stores softmax values
-  v_array<uint32_t> backup_nf; // temporary storage for sm; backup for numFeatures in examples
-  v_array<uint32_t> backup_weights;  // temporary storage for sm; backup for weights in examples
+  action_scores a_s;              // temporary storage for mtr and sm
+  action_scores prob_s;           // temporary storage for sm; stores softmax values
+  v_array<uint32_t> backup_nf;    // temporary storage for sm; backup for numFeatures in examples
+  v_array<float> backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t offset;
   bool no_predict;
@@ -84,7 +84,8 @@ void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
-void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
+void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
+{
   gen_cs_test_example(examples, mydata.cs_labels);  // create test labels.
   call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 
@@ -104,7 +105,7 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
     mydata.prob_s.push_back({examples[0]->pred.a_s[i].action, 0.0});
   }
 
-  float sign_offset = 1.0;    // To account for negative rewards/costs
+  float sign_offset = 1.0;  // To account for negative rewards/costs
   uint32_t chosen_action = 0;
   float example_weight = 1.0;
 
@@ -129,8 +130,10 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
 
   gen_cs_example_sm(examples, chosen_action, sign_offset, mydata.a_s, mydata.cs_labels);
 
-  // Lambda is -1 in the call to generate_softmax because in vw, lower score is better; for softmax higher score is better.
-  generate_softmax(-1.0, begin_scores(mydata.a_s), end_scores(mydata.a_s), begin_scores(mydata.prob_s), end_scores(mydata.prob_s));
+  // Lambda is -1 in the call to generate_softmax because in vw, lower score is better; for softmax higher score is
+  // better.
+  generate_softmax(
+      -1.0, begin_scores(mydata.a_s), end_scores(mydata.a_s), begin_scores(mydata.prob_s), end_scores(mydata.prob_s));
 
   // TODO: Check Marco's example that causes VW to report prob > 1.
 
@@ -145,14 +148,14 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
 
   mydata.backup_weights.clear();
   mydata.backup_nf.clear();
-    for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
+  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
   {
     uint32_t current_action = mydata.prob_s[i].action;
     mydata.backup_weights.push_back(examples[current_action]->weight);
-    mydata.backup_nf.push_back(examples[current_action]->num_features);
+    mydata.backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action]->weight = example_weight * (1.0 - mydata.prob_s[i].score);
+      examples[current_action]->weight = example_weight * (1.0f - mydata.prob_s[i].score);
     else
       examples[current_action]->weight = example_weight * mydata.prob_s[i].score;
 
@@ -160,10 +163,10 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples) {
       examples[current_action]->weight = 0;
   }
 
-  //Do actual training
+  // Do actual training
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 
-  //Restore example weights and numFeatures
+  // Restore example weights and numFeatures
   for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
   {
     uint32_t current_action = mydata.prob_s[i].action;
@@ -203,7 +206,7 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability *
       ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
 
-  //TODO!!! mydata.cb_labels are not getting properly restored (empty costs are dropped)
+  // TODO!!! mydata.cb_labels are not getting properly restored (empty costs are dropped)
   GEN_CS::call_cs_ldf<true>(
       base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
@@ -300,8 +303,7 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   size_t num_features = 0;
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (const auto & example : *ec_seq)
-    num_features += example->num_features;
+  for (const auto& example : *ec_seq) num_features += example->num_features;
 
   float loss = 0.;
 
@@ -442,7 +444,9 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", ld->rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", ld->no_predict).help("Do not do a prediction when training"))
-      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
+      .add(make_option("cb_type", type_string)
+               .keep()
+               .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_adf_option)

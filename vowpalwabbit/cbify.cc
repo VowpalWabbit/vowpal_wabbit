@@ -69,8 +69,10 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
 {
   float cost = 0.;
   for (auto costs : cs_costs)
-  { if (costs[0].class_index == final_prediction)
-    { cost = costs[0].x;
+  {
+    if (costs[0].class_index == final_prediction)
+    {
+      cost = costs[0].x;
       break;
     }
   }
@@ -92,16 +94,15 @@ void finish(cbify& data)
   if (data.use_adf)
   {
     for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-      {
-        data.adf_data.ecs[a]->pred.a_s.delete_v();
-        VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
-        free_it(data.adf_data.ecs[a]);
-      }
+    {
+      data.adf_data.ecs[a]->pred.a_s.delete_v();
+      VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
+      free_it(data.adf_data.ecs[a]);
+    }
     data.adf_data.ecs.~vector<example*>();
     data.cs_costs.~vector<v_array<COST_SENSITIVE::wclass>>();
     data.cb_costs.~vector<v_array<CB::cb_class>>();
-    for (auto as : data.cb_as)
-      as.delete_v();
+    for (auto as : data.cb_as) as.delete_v();
     data.cb_as.~vector<ACTION_SCORE::action_scores>();
   }
 }
@@ -275,14 +276,15 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   auto& out_ec = *ec_seq[0];
 
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s), end_scores(out_ec.pred.a_s), chosen_action))
+  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
+          end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
   CB::cb_class cl;
   cl.action = out_ec.pred.a_s[chosen_action].action + 1;
   cl.probability = out_ec.pred.a_s[chosen_action].score;
 
-  if(!cl.action)
+  if (!cl.action)
     THROW("No action with non-zero probability found!");
 
   cl.cost = loss_csldf(data, data.cs_costs, cl.action);
@@ -290,7 +292,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   // add cb label to chosen action
   data.cb_label.costs.clear();
   data.cb_label.costs.push_back(cl);
-  data.cb_costs[cl.action-1] = ec_seq[cl.action-1]->l.cb.costs;
+  data.cb_costs[cl.action - 1] = ec_seq[cl.action - 1]->l.cb.costs;
   ec_seq[cl.action - 1]->l.cb = data.cb_label;
 
   base.learn(ec_seq);
@@ -299,8 +301,8 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    data.cb_as[i]=ec.pred.a_s;//store action_score vector for later reuse.
-    if (i == cl.action -1 )
+    data.cb_as[i] = ec.pred.a_s;  // store action_score vector for later reuse.
+    if (i == cl.action - 1)
       data.cb_label = ec.l.cb;
     else
       data.cb_costs[i] = ec.l.cb.costs;
@@ -317,8 +319,10 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
   COST_SENSITIVE::label& ld = ec.l.cs;
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
-  if (example_is_newline(ec)) return;
-  if (COST_SENSITIVE::ec_is_example_header(ec)) return;
+  if (example_is_newline(ec))
+    return;
+  if (COST_SENSITIVE::ec_is_example_header(ec))
+    return;
 
   all.sd->total_features += ec.num_features;
 
@@ -328,9 +332,10 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (size_t j=0; j<costs.size(); j++)
+    for (size_t j = 0; j < costs.size(); j++)
     {
-      if (hit_loss) break;
+      if (hit_loss)
+        break;
       if (predicted_class == costs[j].class_index)
       {
         loss = costs[j].x;
@@ -342,8 +347,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (int sink : all.final_prediction_sink)
-    all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -351,10 +355,11 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0)
+        outputStringStream << ' ';
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
-    //outputStringStream << endl;
+    // outputStringStream << endl;
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
@@ -363,22 +368,22 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
 void output_example_seq(vw& all, multi_ex& ec_seq)
 {
-  if (ec_seq.size() == 0) return;
+  if (ec_seq.size() == 0)
+    return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
   all.sd->example_number++;
 
   bool hit_loss = false;
-  for (example* ec : ec_seq)
-    output_example(all, *ec, hit_loss, &(ec_seq));
+  for (example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq));
 
   if (all.raw_prediction > 0)
   {
-    v_array<char> empty = { nullptr, nullptr, nullptr, 0 };
+    v_array<char> empty = {nullptr, nullptr, nullptr, 0};
     all.print_text(all.raw_prediction, "", empty);
   }
 }
 
-void finish_multiline_example(vw& all, cbify& , multi_ex& ec_seq)
+void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
@@ -479,7 +484,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->all = &all;
-  data->use_adf=true;
+  data->use_adf = true;
 
   if (!options.was_supplied("cb_explore_adf"))
   {
@@ -496,7 +501,8 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));
-  learner<cbify,multi_ex>& l = init_learner(data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass);
+  learner<cbify, multi_ex>& l = init_learner(
+      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass);
 
   l.set_finish(finish);
   l.set_finish_example(finish_multiline_example);

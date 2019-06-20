@@ -22,7 +22,7 @@ set(vw_install_headers
 
 set(vw_all_headers
   ${vw_install_headers} accumulate.h options.h options_types.h options_boost_po.h
-  options_serializer_boost_po.h correctedMath.h rand48.h log_multi.h recall_tree.h active_cover.h
+  options_serializer_boost_po.h correctedMath.h rand48.h log_multi.h recall_tree.h memory_tree.h active_cover.h
   reductions.h active.h cs_active.h lrqfa.h scorer.h csoaa.h lrq.h search_dep_parser.h
   array_parameters_dense.h ect.h marginal.h search_entityrelationtask.h array_parameters.h
   error_reporting.h search_graph.h audit_regressor.h mf.h search.h autolink.h example_predict.h
@@ -45,7 +45,7 @@ set(vw_all_sources
   search_multiclasstask.cc search_entityrelationtask.cc search_graph.cc parse_example.cc scorer.cc
   network.cc parse_args.cc accumulate.cc gd.cc learner.cc mwt.cc lda_core.cc gd_mf.cc mf.cc bfgs.cc
   noop.cc print.cc example.cc parser.cc loss_functions.cc sender.cc nn.cc confidence.cc bs.cc
-  cbify.cc warm_cb.cc explore_eval.cc topk.cc stagewise_poly.cc log_multi.cc recall_tree.cc active.cc
+  cbify.cc warm_cb.cc explore_eval.cc topk.cc stagewise_poly.cc log_multi.cc recall_tree.cc memory_tree.cc active.cc
   active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
   action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc
@@ -136,7 +136,12 @@ endif()
 
 # This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
-  add_library(vw_c_wrapper SHARED vwdll.cpp)
+  if(STATIC_LINK_VW)
+    add_library(vw_c_wrapper vwdll.cpp)
+  else()
+    add_library(vw_c_wrapper SHARED vwdll.cpp)
+  endif()
+
   target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
   target_link_libraries(vw_c_wrapper PUBLIC vw)
 
