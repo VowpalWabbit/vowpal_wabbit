@@ -267,7 +267,7 @@ class LabelObjectState : public BaseState<audit>
       }
       inc.clear();
 
-      if ((actions.size() != 0) && (probs.size() != 0) && (cb_label.cost != 0.f))
+      if ((actions.size() != 0) && (probs.size() != 0))
       {
         auto outcome = new CCB::conditional_contexual_bandit_outcome();
         outcome->cost = cb_label.cost;
@@ -1028,6 +1028,8 @@ class CCBOutcomeList : public BaseState<audit>
   BaseState<audit>* old_root;
 
  public:
+  DecisionServiceInteraction* interactions;
+
   CCBOutcomeList() : BaseState<audit>("CCBOutcomeList") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
@@ -1070,6 +1072,19 @@ class CCBOutcomeList : public BaseState<audit>
 
   BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
   {
+    // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
+    for (auto ex : *ctx.examples)
+    {
+      if (ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+      {
+        if (ex->l.conditional_contextual_bandit.outcome)
+        {
+          interactions->actions.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].action);
+          interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
+        }
+      }
+    }
+
     ctx.root_state = old_root;
     return &ctx.decision_service_state;
   }
@@ -1149,6 +1164,7 @@ class DecisionServiceState : public BaseState<audit>
       }
       else if (length == 9 && !strncmp(str, "_outcomes", 9))
       {
+        ctx.ccb_outcome_list_state.interactions = data;
         return &ctx.ccb_outcome_list_state;
       }
     }
