@@ -9,7 +9,7 @@
 #include "cb_adf.h"
 #include "cb_algs.h"
 #include "constant.h"
-#include "object_pool.h"
+#include "v_array_pool.h"
 
 #include <numeric>
 #include <algorithm>
@@ -21,44 +21,10 @@ using namespace VW;
 using namespace VW::config;
 
 template <typename T>
-struct v_array_initializer
-{
-  v_array<T>* operator()(v_array<T>* array)
-  {
-    *array = v_array<T>();
-    return array;
-  }
-};
-
-template <typename T>
-struct v_array_cleanup
-{
-  void operator()(v_array<T>* array) { array->delete_v(); }
-};
-
-template <typename T>
-using v_array_pool = VW::no_lock_object_pool<v_array<T>, v_array_initializer<T>, v_array_cleanup<T>>;
-
-template <typename T>
-void return_v_array(v_array<T>& array, std::queue<v_array<T>*>& in_use_queue, v_array_pool<T>& pool)
+void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
-  auto return_item = in_use_queue.front();
-  in_use_queue.pop();
-  return_item->_begin = array._begin;
-  return_item->_end = array._end;
-  return_item->end_array = array.end_array;
-  return_item->erase_count = array.erase_count;
-  pool.return_object(return_item);
-}
-
-// Intentionally returns shallow copy of pooled array
-template <typename T>
-v_array<T> get_v_array(std::queue<v_array<T>*>& in_use_queue, v_array_pool<T>& pool)
-{
-  auto pooled_item = pool.get_object();
-  in_use_queue.push(pooled_item);
-  return *pooled_item;
+  pool.return_object(array);
 }
 
 struct ccb
@@ -73,23 +39,9 @@ struct ccb
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
 
-  // In order to reuse the v_arrays in this reduction we are using a combination of object pooling
-  // and tracking queues. Since the v_arrays are used by value we need to shallow copy them into
-  // place. Therefore, we can't use the pooled object directly but must use the buffer within.
-  // 1. Remove object from pool
-  // 2. Shallow copy into location to be used
-  // 3. Place onto corresponding queue When done:
-  // 1. Shallow copy onto an item from queue
-  // 2. Return pooled queue item to pool
-  //
-  // It doesn't matter which queue object is used to return it as it is essentially just a container
-  // for the internal buffer that we are using.
-  std::queue<v_array<CB::cb_class>*> in_use_cb_label;
-  std::queue<v_array<ACTION_SCORE::action_score>*> in_use_action_score;
-  std::queue<v_array<ACTION_SCORE::action_scores>*> in_use_action_scores;
-  v_array_pool<CB::cb_class> cb_label_pool;
-  v_array_pool<ACTION_SCORE::action_score> action_score_pool;
-  v_array_pool<ACTION_SCORE::action_scores> action_scores_pool;
+  VW::v_array_pool<CB::cb_class> cb_label_pool;
+  VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
+  VW::v_array_pool<ACTION_SCORE::action_scores> action_scores_pool;
 };
 
 namespace CCB
@@ -150,22 +102,22 @@ void sanity_checks(ccb& data)
 // create empty/default cb labels
 void create_cb_labels(ccb& data)
 {
-  data.shared->l.cb.costs = get_v_array(data.in_use_cb_label, data.cb_label_pool);
+  data.shared->l.cb.costs = data.cb_label_pool.get_object();
   data.shared->l.cb.costs.push_back(data.default_cb_label);
   for (example* action : data.actions)
   {
-    action->l.cb.costs = get_v_array(data.in_use_cb_label, data.cb_label_pool);
+    action->l.cb.costs = data.cb_label_pool.get_object();
   }
 }
 
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  return_v_array(data.shared->l.cb.costs, data.in_use_cb_label, data.cb_label_pool);
+  return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
 
   for (example* action : data.actions)
   {
-    return_v_array(action->l.cb.costs, data.in_use_cb_label, data.cb_label_pool);
+    return_v_array(action->l.cb.costs, data.cb_label_pool);
   }
 }
 
@@ -184,7 +136,7 @@ void attach_label_to_example(
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   // save a copy
-  auto copy = get_v_array(data.in_use_action_score, data.action_score_pool);
+  auto copy = data.action_score_pool.get_object();
   copy_array(copy, data.shared->pred.a_s);
   decision_scores.push_back(copy);
 
@@ -201,7 +153,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 
 void clear_pred_and_label(ccb& data)
 {
-  return_v_array(data.shared->pred.a_s, data.in_use_action_score, data.action_score_pool);
+  return_v_array(data.shared->pred.a_s, data.action_score_pool);
 
   // This just needs to be cleared as it is reused.
   data.actions[data.action_with_label]->l.cb.costs.clear();
@@ -339,7 +291,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   }
 
   // Must reset this in case the pooled example has stale data here.
-  data.shared->pred.a_s = get_v_array(data.in_use_action_score, data.action_score_pool);
+  data.shared->pred.a_s = data.action_score_pool.get_object();
 
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
   // example.
@@ -372,7 +324,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
-  auto decision_scores = get_v_array(data.in_use_action_scores, data.action_scores_pool);
+  auto decision_scores = data.action_scores_pool.get_object();
 
   // for each slot, re-build the cb example and call cb_explore_adf
   for (example* slot : data.slots)
@@ -409,7 +361,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     else
     {
       // the cb example contains no action => cannot decide
-      decision_scores.push_back(get_v_array(data.in_use_action_score, data.action_score_pool));
+      decision_scores.push_back(data.action_score_pool.get_object());
     }
 
     data.shared->interactions = data.original_interactions;
@@ -584,9 +536,9 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
 
   for (auto a_s : ec_seq[0]->pred.decision_scores)
   {
-    return_v_array(a_s, data.in_use_action_score, data.action_score_pool);
+    return_v_array(a_s, data.action_score_pool);
   }
-  return_v_array(ec_seq[0]->pred.decision_scores, data.in_use_action_scores, data.action_scores_pool);
+  return_v_array(ec_seq[0]->pred.decision_scores, data.action_scores_pool);
   ec_seq[0]->pred.decision_scores = {0,0,0,0};
 
   VW::clear_seq_and_finish_examples(all, ec_seq);
@@ -607,10 +559,6 @@ void finish(ccb& data)
   data.action_score_pool.~v_array_pool<ACTION_SCORE::action_score>();
   data.action_scores_pool.~v_array_pool<ACTION_SCORE::action_scores>();
   data.cb_label_pool.~v_array_pool<CB::cb_class>();
-
-  data.in_use_cb_label.~queue<v_array<CB::cb_class>*>();
-  data.in_use_action_score.~queue<v_array<ACTION_SCORE::action_score>*>();
-  data.in_use_action_scores.~queue<v_array<ACTION_SCORE::action_scores>*>();
 }
 
 // Prediction deleter is intentionally a nullopt as it is handled by the reduction.

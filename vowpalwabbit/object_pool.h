@@ -2,6 +2,7 @@
 
 #include <set>
 #include <queue>
+#include <stack>
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
@@ -19,7 +20,6 @@
 
 namespace VW
 {
-
 template <typename T>
 struct default_cleanup
 {
@@ -121,6 +121,51 @@ struct no_lock_object_pool
   TCleanup m_cleanup;
   size_t m_initial_chunk_size = 0;
   size_t m_chunk_size = 8;
+};
+
+template <typename T, typename TAllocator, typename TDeleter>
+struct value_object_pool
+{
+  value_object_pool() = default;
+
+  ~value_object_pool()
+  {
+    while (!m_pool.empty())
+    {
+      auto& item = m_pool.top();
+      m_deleter(item);
+      m_pool.pop();
+    }
+  }
+
+  void return_object(T obj)
+  {
+    m_pool.push(obj);
+  }
+
+  T get_object()
+  {
+    if (m_pool.empty())
+    {
+      return m_allocator();
+    }
+
+    auto obj = m_pool.top();
+    m_pool.pop();
+    return obj;
+  }
+
+  bool empty() const { return m_pool.empty(); }
+
+  size_t size() const
+  {
+    return m_pool.size();
+  }
+
+ private:
+  std::stack<T> m_pool;
+  TAllocator m_allocator;
+  TDeleter m_deleter;
 };
 
 template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
