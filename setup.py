@@ -17,6 +17,7 @@ from shutil import rmtree
 system = platform.system()
 version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
+pkg_path = os.path.join(here, 'python')
 
 class Distribution(_distribution):
     if system == 'Windows':
@@ -75,13 +76,17 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         # example of cmake args
         config = 'Debug' if self.debug else 'Release'
-    
+        
         cmake_args = [
             '-DCMAKE_BUILD_TYPE=' + config,
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
             '-DBUILD_PYTHON=On',
+            '-DBUILD_TESTS=Off',
             '-DWARNINGS=Off'
         ]
+        if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
+            cmake_args.append('-DBOOST_ROOT={}'.format(os.environ['CONDA_PREFIX']))
+    
         # example of build args
         build_args = [
             '--config', config
@@ -118,9 +123,8 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 "pylibvw"
             ]
 
-        cmake_directory = os.path.join(here, '..')
         os.chdir(str(self.build_temp))
-        self.spawn(['cmake', str(cmake_directory)] + cmake_args)
+        self.spawn(['cmake'] + cmake_args + [str(here)])
         if not self.dry_run:
             self.spawn(['cmake', '--build', '.'] + build_args)
         os.chdir(str(here))
@@ -173,11 +177,11 @@ class Tox(_test):
 
 
 # Get the long description from the README file
-with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(os.path.join(pkg_path, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Get the current version for the python package from the configure.ac file
-config_path = os.path.join(here, '..', 'version.txt')
+config_path = os.path.join(here, 'version.txt')
 with open(config_path, encoding='utf-8') as f:
     version = f.readline().strip()
 
@@ -203,7 +207,8 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     keywords='fast machine learning online classification regression',
-    packages=find_packages(),
+    package_dir={'' : os.path.relpath(pkg_path)},
+    packages=find_packages(where=pkg_path),
     platforms='any',
     zip_safe=False,
     include_package_data=True,
