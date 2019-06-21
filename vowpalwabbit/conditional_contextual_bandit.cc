@@ -191,6 +191,7 @@ void inject_slot_id(ccb& data, example* shared, int id)
   }
 
   shared->feature_space[ccb_id_namespace].push_back(1., index);
+  shared->indices.push_back(ccb_id_namespace);
 
   if (audit)
   {
@@ -205,6 +206,7 @@ void remove_slot_id(example* shared)
 {
   shared->feature_space[ccb_id_namespace].indicies.pop();
   shared->feature_space[ccb_id_namespace].values.pop();
+  shared->indices.pop();
 
   if (audit)
   {
