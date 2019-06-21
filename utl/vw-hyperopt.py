@@ -31,7 +31,7 @@ def read_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--searcher', type=str, default='tpe', choices=['tpe', 'rand'])
-    parser.add_argument('--features', type=str, help="namespaces to be used while tuning hyper params. E.g.: '--keep a --keep b'")
+    parser.add_argument('--additional_cmd', type=str, help="Additional arguments to be passed to vw while tuning hyper params. E.g.: '--keep a --keep b'")
     parser.add_argument('--max_evals', type=int, default=100)
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
@@ -152,7 +152,7 @@ class HyperoptSpaceConstructor(object):
 class HyperOptimizer(object):
     def __init__(self, train_set, holdout_set, command, max_evals=100,
                  outer_loss_function='logistic',
-                 searcher='tpe', is_regression=False, features=''):
+                 searcher='tpe', is_regression=False, additional_cmd=''):
         self.train_set = train_set
         self.holdout_set = holdout_set
 
@@ -176,7 +176,7 @@ class HyperOptimizer(object):
         self.space = self._get_space(command)
         self.max_evals = max_evals
         self.searcher = searcher
-        self.features = features
+        self.additional_cmd = additional_cmd
         self.is_regression = is_regression
         self.labels_clf_count = 0
 
@@ -221,7 +221,7 @@ class HyperOptimizer(object):
 
     def compose_vw_train_command(self):
         data_part = ('vw -d %s -f %s --holdout_off -c %s'
-                     % (self.train_set, self.train_model, self.features))
+                     % (self.train_set, self.train_model, self.additional_cmd))
         if self.labels_clf_count > 2: # multiclass, should take probabilities
             data_part += ('--oaa %s --loss_function=logistic --probabilities '
                           % (self.labels_clf_count))
