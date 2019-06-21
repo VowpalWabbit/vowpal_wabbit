@@ -20,6 +20,10 @@ IF NOT DEFINED Tag (
     SET Tag=-INTERNALONLY
 )
 
+IF /I "%SuppressTag%" == "TRUE" (
+    SET "Tag="
+)
+
 SET RootRelativeOutputDirX64=%vwRoot%\vowpalwabbit\out\target\
 SET RootRelativeOutputDirAnyCPU=%vwRoot%\vowpalwabbit\out\target\
 SET SolutionDir=%vwRoot%\vowpalwabbit\
