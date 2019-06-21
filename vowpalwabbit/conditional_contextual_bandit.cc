@@ -31,7 +31,7 @@ struct ccb
 {
   example* shared;
   std::vector<example*> actions, slots;
-  std::map<uint32_t, uint32_t> origin_index;
+  std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list /*, include_list*/;
   std::vector<std::string> generated_interactions;
@@ -264,6 +264,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   // set the available actions in the cb multi-example
   uint32_t index = 0;
   data.origin_index.clear();
+  data.origin_index.resize(data.actions.size(), 0);
   for (size_t i = 0; i < data.actions.size(); i++)
   {
     // For V0, include list is not supported
@@ -548,7 +549,7 @@ void finish(ccb& data)
 {
   data.actions.~vector<example*>();
   data.slots.~vector<example*>();
-  data.origin_index.~map<uint32_t, uint32_t>();
+  data.origin_index.~vector<uint32_t>();
   data.exclude_list.~vector<bool>();
   // data.include_list.~unordered_set<uint32_t>();
   data.cb_label.~cb_class();
