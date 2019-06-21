@@ -37,6 +37,7 @@ const unsigned char dictionary_namespace = 135;    // this is \x87
 const unsigned char node_id_namespace = 136;       // this is \x88
 const unsigned char message_namespace = 137;       // this is \x89
 const unsigned char ccb_slot_namespace = 139;
+const unsigned char ccb_id_namespace = 140;
 
 typedef union {
   no_label::no_label empty;
