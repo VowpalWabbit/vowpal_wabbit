@@ -238,7 +238,8 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   // Explore tau times, then act according to optimal.
-  if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr)
+  bool is_learn_example = is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr;
+  if (is_learn_example)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -250,7 +251,8 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
   {
     float prob = 1.f / (float)num_actions;
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
-    data.tau--;
+    if (is_learn_example)
+      data.tau--;
   }
   else
   {
