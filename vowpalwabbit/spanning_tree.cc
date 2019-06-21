@@ -81,7 +81,7 @@ void fail_send(const socket_t fd, const void* buf, const int count)
 
 namespace VW
 {
-SpanningTree::SpanningTree(uint16_t port) : m_stop(false), m_port(port), m_future(nullptr)
+SpanningTree::SpanningTree(uint16_t port, bool quiet) : m_stop(false), m_port(port), m_future(nullptr), m_quiet(quiet)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -181,40 +181,47 @@ void SpanningTree::Run()
     if (getnameinfo((sockaddr*)&client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0))
       THROWERRNO("getnameinfo: ");
 
-    cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
-         << ") serv=" << servInfo << endl;
+    if (!m_quiet)
+      cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
+           << ") serv=" << servInfo << endl;
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
     {
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce read failed, exiting" << endl;
-      exit(1);
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce read failed, exiting");
     }
     else
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << endl;
+    {
+      if (!m_quiet)
+        cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << endl;
+    }
     size_t total = 0;
     if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total))
     {
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total node count read failed, exiting"
-           << endl;
-      exit(1);
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total node count read failed, exiting");
     }
     else
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << endl;
+    {
+      if (!m_quiet)
+        cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << endl;
+    }
     size_t id = 0;
     if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id))
     {
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id read failed, exiting" << endl;
-      exit(1);
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id read failed, exiting");
     }
     else
-      cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << endl;
+    {
+      if (!m_quiet)
+        cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << endl;
+    }
 
     int ok = true;
     if (id >= total)
     {
-      cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total
-           << " !" << endl;
+      if (!m_quiet)
+        cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total
+             << " !" << endl;
       ok = false;
     }
     partial partial_nodeset;
@@ -248,8 +255,9 @@ void SpanningTree::Run()
       {
         if (partial_nodeset.nodes[i].client_ip == (uint32_t)-1)
         {
-          cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled) << " nodes out of "
-               << total << " for example node " << i << endl;
+          if (!m_quiet)
+            cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled) << " nodes out of "
+                 << total << " for example node " << i << endl;
           break;
         }
       }
@@ -277,7 +285,9 @@ void SpanningTree::Run()
         int done = 0;
         if (recv(partial_nodeset.nodes[i].socket, (char*)&(client_ports[i]), sizeof(client_ports[i]), 0) <
             (int)sizeof(client_ports[i]))
-          cerr << " Port read failed for node " << i << " read " << done << endl;
+
+          if (!m_quiet)
+            cerr << " Port read failed for node " << i << " read " << done << endl;
       }  // all clients have bound to their ports.
 
       for (size_t i = 0; i < total; i++)
