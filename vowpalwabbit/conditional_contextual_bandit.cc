@@ -34,6 +34,7 @@ struct ccb
   // All of these hashes are with a hasher seeded with the below namespace hash.
   std::vector<uint64_t> hashes;
   uint64_t id_namespace_hash;
+  std::string id_namespace_str;
 };
 
 namespace CCB
@@ -168,6 +169,7 @@ void inject_slot_features(example* shared, example* slot)
   }
 }
 
+template <bool audit>
 void inject_slot_id(ccb& data, example* shared, int id)
 {
   // id is zero based, so the vector must be of size id + 1
@@ -189,13 +191,25 @@ void inject_slot_id(ccb& data, example* shared, int id)
   }
 
   shared->feature_space[ccb_id_namespace].push_back(1., index);
+
+  if (audit)
+  {
+    auto current_index_str = "index"+std::to_string(id);
+    shared->feature_space[ccb_id_namespace].space_names.push_back(audit_strings_ptr(new audit_strings(data.id_namespace_str, current_index_str)));
+  }
 }
 
 // Since the slot id is the only thing in this namespace, the popping the value off will work correctly.
+template<bool audit>
 void remove_slot_id(example* shared)
 {
   shared->feature_space[ccb_id_namespace].indicies.pop();
   shared->feature_space[ccb_id_namespace].values.pop();
+
+  if (audit)
+  {
+    shared->feature_space[ccb_id_namespace].space_names.pop();
+  }
 }
 
 void remove_slot_features(example* shared, example* slot)
@@ -348,7 +362,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     multi_ex cb_ex;
     build_cb_example<is_learn>(cb_ex, slot, data);
 
-    inject_slot_id(data, data.shared, slot_id);
+    if(data.all->audit)
+      inject_slot_id<true>(data, data.shared, slot_id);
+    else
+      inject_slot_id<false>(data, data.shared, slot_id);
+
 
     if (has_action(cb_ex))
     {
@@ -370,7 +388,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = data.original_interactions;
     }
     remove_slot_features(data.shared, slot);
-    remove_slot_id(data.shared);
+
+    if(data.all->audit)
+      remove_slot_id<true>(data.shared);
+    else
+      remove_slot_id<false>(data.shared);
 
     // Put back the original shared example tag.
     std::swap(data.shared->tag, slot->tag);
@@ -599,8 +621,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->original_interactions = &all.interactions;
   data->all = &all;
 
-  auto namespace_str = std::to_string(ccb_id_namespace) + "id";
-  data->id_namespace_hash = VW::hash_space(all, namespace_str);
+  data->id_namespace_str.push_back((char)ccb_id_namespace);
+  data->id_namespace_str.append("_id");
+  data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
