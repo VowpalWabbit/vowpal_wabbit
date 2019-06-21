@@ -32,7 +32,7 @@ struct ccb
   size_t action_with_label;
 
   // All of these hashes are with a hasher seeded with the below namespace hash.
-  std::map<std::string, uint64_t> hashes;
+  std::vector<uint64_t> hashes;
   uint64_t id_namespace_hash;
 };
 
@@ -170,38 +170,32 @@ void inject_slot_features(example* shared, example* slot)
 
 void inject_slot_id(ccb& data, example* shared, int id)
 {
-  auto current_index_str = "index"+id;
-  uint64_t index;
-  if(data.hashes.count(current_index_str) == 0)
+  // id is zero based, so the vector must be of size id + 1
+  if(id + 1 > data.hashes.size())
   {
+    data.hashes.resize(id + 1, 0);
+  }
+
+  uint64_t index;
+  if(data.hashes[id] == 0)
+  {
+    auto current_index_str = "index"+std::to_string(id);
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
-    data.hashes[current_index_str] = index;
+    data.hashes[id] = index;
   }
   else
   {
-    index = data.hashes[current_index_str];
+    index = data.hashes[id];
   }
 
   shared->feature_space[ccb_id_namespace].push_back(1., index);
 }
 
-void remove_slot_id(ccb& data, example* shared, int id)
+// Since the slot id is the only thing in this namespace, the popping the value off will work correctly.
+void remove_slot_id(example* shared)
 {
-  auto current_index_str = "index"+id;
-  uint64_t index;
-  if(data.hashes.count(current_index_str) == 0)
-  {
-    index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
-    data.hashes[current_index_str] = index;
-  }
-  else
-  {
-    index = data.hashes[current_index_str];
-  }
-
-  auto& indices = shared->feature_space[ccb_id_namespace].indicies;
-  auto val_index = std::distance(indices.begin(), std::find(indices.begin(), indices.end(), index));
-  shared->feature_space[ccb_id_namespace].values[val_index] = 0.f;
+  shared->feature_space[ccb_id_namespace].indicies.pop();
+  shared->feature_space[ccb_id_namespace].values.pop();
 }
 
 void remove_slot_features(example* shared, example* slot)
@@ -225,8 +219,8 @@ void remove_slot_features(example* shared, example* slot)
   }
 }
 
-// Generates interaction between all namespaces and interactions with the slot id namespace.
-void calculate_and_insert_interactions(example* shared, example* slot, std::vector<example*> actions, std::vector<std::string>& vec)
+// Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
+void calculate_and_insert_interactions(example* shared, std::vector<example*> actions, std::vector<std::string>& vec)
 {
   std::vector<std::string> new_interactions;
   for(auto interaction : vec)
@@ -343,7 +337,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       data.generated_interactions.clear();
       std::copy(data.original_interactions->begin(), data.original_interactions->end(),
           std::back_inserter(data.generated_interactions));
-      calculate_and_insert_interactions(data.shared, slot, data.actions, data.generated_interactions);
+      calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
       data.shared->interactions = &data.generated_interactions;
       for (auto ex : data.actions)
       {
@@ -376,7 +370,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = data.original_interactions;
     }
     remove_slot_features(data.shared, slot);
-    remove_slot_id(data, data.shared, slot_id);
+    remove_slot_id(data.shared);
 
     // Put back the original shared example tag.
     std::swap(data.shared->tag, slot->tag);
@@ -605,8 +599,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->original_interactions = &all.interactions;
   data->all = &all;
 
-  auto id_ds = ccb_id_namespace;
-  auto namespace_str = static_cast<char>(140) + "id";
+  auto namespace_str = std::to_string(ccb_id_namespace) + "id";
   data->id_namespace_hash = VW::hash_space(all, namespace_str);
 
   learner<ccb, multi_ex>& l =
