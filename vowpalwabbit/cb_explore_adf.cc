@@ -773,31 +773,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
 
   all.delete_prediction = delete_action_scores;
 
-  size_t problem_multiplier = 1;
-
-  if (options.was_supplied("cover"))
-  {
-    data->explore_type = COVER;
-    problem_multiplier = data->cover_size + 1;
-  }
-  else if (options.was_supplied("bag"))
-  {
-    data->explore_type = BAG_EXPLORE;
-    problem_multiplier = data->bag_size;
-  }
-  else if (options.was_supplied("first"))
-    data->explore_type = EXPLORE_FIRST;
-  else if (softmax)
-    data->explore_type = SOFTMAX;
-  else if (regcb || (options.was_supplied("regcbopt") && data->regcbopt))
-    data->explore_type = REGCB;
-  else
-  {
-    if (!options.was_supplied("epsilon"))
-      data->epsilon = 0.05f;
-    data->explore_type = EPS_GREEDY;
-  }
-
+  // Set cb_type
   if (type_string.compare("dr") == 0)
     data->gen_cs.cb_type = CB_TYPE_DR;
   else if (type_string.compare("ips") == 0)
@@ -816,12 +792,39 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
     data->gen_cs.cb_type = CB_TYPE_MTR;
   }
 
-  if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
+  // Set explore_type
+  size_t problem_multiplier = 1;
+  if (options.was_supplied("cover"))
+  {
+    data->explore_type = COVER;
+    problem_multiplier = data->cover_size + 1;
+  }
+  else if (options.was_supplied("bag"))
+  {
+    data->explore_type = BAG_EXPLORE;
+    problem_multiplier = data->bag_size;
+  }
+  else if (options.was_supplied("first"))
+    data->explore_type = EXPLORE_FIRST;
+  else if (softmax)
+    data->explore_type = SOFTMAX;
+  else if (regcb || (options.was_supplied("regcbopt") && data->regcbopt))
+  {
+    data->explore_type = REGCB;
+
+    if (data->gen_cs.cb_type != CB_TYPE_MTR)
     {
       all.trace_message << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
       options.replace("cb_type", "mtr");
       data->gen_cs.cb_type = CB_TYPE_MTR;
     }
+  }
+  else
+  {
+    if (!options.was_supplied("epsilon"))
+      data->epsilon = 0.05f;
+    data->explore_type = EPS_GREEDY;
+  }
 
   multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
