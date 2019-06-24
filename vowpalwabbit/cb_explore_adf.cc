@@ -754,7 +754,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   if (!cb_explore_adf_option)
     return nullptr;
 
-  // Ensure serialization of this option in all cases.
+  // Ensure serialization of cb_type in all cases.
   if (!options.was_supplied("cb_type"))
   {
     options.insert("cb_type", type_string);
@@ -762,9 +762,10 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   }
 
   data->all = &all;
-  if (data->lambda < 0)  // Lambda should always be negative because we are using a cost basis.
+  if (data->lambda < 0)  // Lambda should always be postive because we are using a cost basis.
     data->lambda = -data->lambda;
 
+  // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))
   {
     options.insert("cb_adf", "");
