@@ -415,6 +415,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // Put back the original shared example tag.
     std::swap(data.shared->tag, slot->tag);
     slot_id++;
+    cb_ex.clear();
   }
 
   delete_cb_labels(data);
@@ -428,7 +429,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // Save the predictions
   examples[0]->pred.decision_scores = decision_scores;
-  cb_ex.clear();
+
 }
 
 void print_decision_scores(int f, decision_scores_t& decision_scores)
