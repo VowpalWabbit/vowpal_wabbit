@@ -151,15 +151,10 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
 
     COST_SENSITIVE::wclass wc = {0, 0, 0, 0};
 
-    bool keep_example = false;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       wc.x = ld.costs[0].cost;
       c.mtr_example = (uint32_t)i;
-      keep_example = true;
-    }
-    if (keep_example)
-    {
       c.mtr_ec_seq.push_back(ec_seq[i]);
       cs_labels.costs.push_back(wc);
     }
