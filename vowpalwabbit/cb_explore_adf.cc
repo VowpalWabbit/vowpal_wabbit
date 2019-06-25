@@ -762,7 +762,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   }
 
   data->all = &all;
-  if (data->lambda < 0)  // Lambda should always be postive because we are using a cost basis.
+  if (data->lambda < 0)  // Lambda should always be positive because we are using a cost basis.
     data->lambda = -data->lambda;
 
   // Ensure serialization of cb_adf in all cases.
