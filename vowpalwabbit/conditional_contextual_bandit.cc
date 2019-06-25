@@ -63,10 +63,11 @@ void clear_all(ccb& data)
   // data.exclude_list.clear();
   // data.include_list.clear();
   data.action_with_label = 0;
+  data.stored_labels.clear();
 }
 
 // split the slots, the actions and the shared example from the multiline example
-void split_multi_example(const multi_ex& examples, ccb& data)
+void split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
   for (auto ex : examples)
   {
@@ -84,6 +85,10 @@ void split_multi_example(const multi_ex& examples, ccb& data)
       default:
         THROW("ccb_adf_explore: badly formatted example - invalid example type");
     }
+
+    // Stash the CCB labels before rewriting them.
+    data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type,
+        ex->l.conditional_contextual_bandit.outcome, ex->l.conditional_contextual_bandit.explicit_included_actions});
   }
 }
 
@@ -183,7 +188,7 @@ void inject_slot_features(example* shared, example* slot)
     }
     else if (index == default_namespace)  // slot default namespace has a special namespace in shared
     {
-      LabelDict::add_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[32]);
+      LabelDict::add_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]);
     }
     else
     {
@@ -259,10 +264,10 @@ void remove_slot_features(example* shared, example* slot)
 }
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
-void calculate_and_insert_interactions(example* shared, std::vector<example*> actions, std::vector<std::string>& vec)
+void calculate_and_insert_interactions(example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions)
 {
-  std::set<std::string> new_interactions;
-  for(auto interaction : vec)
+  static thread_local std::set<std::string> new_interactions;
+  for(auto interaction : generated_interactions)
   {
     interaction.push_back((char)ccb_id_namespace);
     new_interactions.insert(interaction);
@@ -280,7 +285,8 @@ void calculate_and_insert_interactions(example* shared, std::vector<example*> ac
   {
     new_interactions.insert({(char)shared_index, (char)ccb_id_namespace});
   }
-  vec.insert(vec.end(), new_interactions.begin(), new_interactions.end());
+  generated_interactions.insert(generated_interactions.end(), new_interactions.begin(), new_interactions.end());
+  new_interactions.clear();
 }
 
 // build a cb example from the ccb example
@@ -344,19 +350,11 @@ template <bool is_learn>
 void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 {
   clear_all(data);
-  split_multi_example(examples, data);  // split shared, actions and slots
+  split_multi_example_and_stash_labels(examples, data);  // split shared, actions and slots
 
 #ifndef NDEBUG
   sanity_checks<is_learn>(data);
 #endif
-
-  // Stash the CCB labels before rewriting them.
-  data.stored_labels.clear();
-  for (auto ex : examples)
-  {
-    data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type, ex->l.conditional_contextual_bandit.outcome,
-        ex->l.conditional_contextual_bandit.explicit_included_actions});
-  }
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
@@ -381,14 +379,13 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = &data.generated_interactions;
     }
 
-    multi_ex cb_ex;
+    static thread_local multi_ex cb_ex;
     build_cb_example<is_learn>(cb_ex, slot, data);
 
     if(data.all->audit)
       inject_slot_id<true>(data, data.shared, slot_id);
     else
       inject_slot_id<false>(data, data.shared, slot_id);
-
 
     if (has_action(cb_ex))
     {
@@ -431,6 +428,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // Save the predictions
   examples[0]->pred.decision_scores = decision_scores;
+  cb_ex.clear();
 }
 
 void print_decision_scores(int f, decision_scores_t& decision_scores)
