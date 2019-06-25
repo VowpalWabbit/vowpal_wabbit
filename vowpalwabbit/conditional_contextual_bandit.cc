@@ -429,7 +429,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // Save the predictions
   examples[0]->pred.decision_scores = decision_scores;
-
 }
 
 void print_decision_scores(int f, decision_scores_t& decision_scores)
