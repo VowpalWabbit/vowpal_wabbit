@@ -44,7 +44,7 @@ struct ccb
   std::vector<uint64_t> hashes;
   uint64_t id_namespace_hash;
   std::string id_namespace_str;
-  
+
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
   VW::v_array_pool<ACTION_SCORE::action_scores> action_scores_pool;
@@ -261,26 +261,26 @@ void remove_slot_features(example* shared, example* slot)
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
 void calculate_and_insert_interactions(example* shared, std::vector<example*> actions, std::vector<std::string>& vec)
 {
-  std::vector<std::string> new_interactions;
+  std::set<std::string> new_interactions;
   for(auto interaction : vec)
   {
     interaction.push_back((char)ccb_id_namespace);
-    new_interactions.push_back(interaction);
+    new_interactions.insert(interaction);
   }
-  vec.insert(vec.end(), new_interactions.begin(), new_interactions.end());
 
   for (auto& action : actions)
   {
     for (auto& action_index : action->indices)
     {
-      vec.push_back({(char)action_index, (char)ccb_id_namespace});
+      new_interactions.insert({(char)action_index, (char)ccb_id_namespace});
     }
   }
 
   for (auto& shared_index : shared->indices)
   {
-    vec.push_back({(char)shared_index, (char)ccb_id_namespace});
+    new_interactions.insert({(char)shared_index, (char)ccb_id_namespace});
   }
+  vec.insert(vec.end(), new_interactions.begin(), new_interactions.end());
 }
 
 // build a cb example from the ccb example
@@ -371,18 +371,14 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   for (example* slot : data.slots)
   {
     // Namespace crossing for slot features.
-    // If the slot example only has the constant namespace, there will be no extra crossing and so skip that logic.
-    if (!(slot->indices.size() == 1 && slot->indices[0] == constant_namespace))
+    data.generated_interactions.clear();
+    std::copy(data.original_interactions->begin(), data.original_interactions->end(),
+        std::back_inserter(data.generated_interactions));
+    calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
+    data.shared->interactions = &data.generated_interactions;
+    for (auto ex : data.actions)
     {
-      data.generated_interactions.clear();
-      std::copy(data.original_interactions->begin(), data.original_interactions->end(),
-          std::back_inserter(data.generated_interactions));
-      calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
-      data.shared->interactions = &data.generated_interactions;
-      for (auto ex : data.actions)
-      {
-        ex->interactions = &data.generated_interactions;
-      }
+      ex->interactions = &data.generated_interactions;
     }
 
     multi_ex cb_ex;
