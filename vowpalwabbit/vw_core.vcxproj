@@ -207,6 +207,7 @@
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="v_array.h" />
     <ClInclude Include="v_hashmap.h" />
+    <ClInclude Include="version.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
     <ClInclude Include="vw_validate.h" />

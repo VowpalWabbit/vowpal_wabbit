@@ -368,7 +368,7 @@ void parse_diagnostics(options_i& options, vw& all)
   // Upon direct query for version -- spit it out to stdout
   if (version_arg)
   {
-    cout << version.to_string() << "\n";
+    cout << VW::version.to_string() << "\n";
     exit(0);
   }
 
