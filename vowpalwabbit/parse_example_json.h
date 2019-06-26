@@ -256,8 +256,7 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
-    if (jsonp->mode == json_parser_mode::ccb)
+    if (ctx.all->label_type == label_type::ccb)
     {
       auto ld = (CCB::label*)&ctx.ex->l;
 
@@ -444,10 +443,8 @@ struct MultiState : BaseState<audit>
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
-    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
-
     // mark shared example
-    if (jsonp->mode == json_parser_mode::cb)
+    if (ctx.all->label_type == label_type::cb)
     {
       CB::label* ld = &ctx.ex->l.cb;
       CB::cb_class f;
@@ -459,7 +456,7 @@ struct MultiState : BaseState<audit>
 
       ld->costs.push_back(f);
     }
-    else if (jsonp->mode == json_parser_mode::ccb)
+    else if (ctx.all->label_type == label_type::ccb)
     {
       CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
       ld->type = CCB::example_type::shared;
@@ -475,8 +472,7 @@ struct MultiState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
-    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
-    if (jsonp->mode == json_parser_mode::ccb)
+    if (ctx.all->label_type == label_type::ccb)
     {
       ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
     }
@@ -841,8 +837,7 @@ class DefaultState : public BaseState<audit>
 
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
-      auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
-      if (jsonp->mode == json_parser_mode::ccb)
+      if (ctx.all->label_type == label_type::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
             [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
@@ -1354,11 +1349,8 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 template <bool audit>
 struct json_parser
 {
-  json_parser(json_parser_mode mode) : mode{mode} {}
-
   rapidjson::Reader reader;
   VWReaderHandler<audit> handler;
-  json_parser_mode mode;
 };
 
 namespace VW
@@ -1403,12 +1395,6 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   InsituStringStream ss(line);
   json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
-
-  // As long as VW was configured correctly this should not occur.
-  if (parser->mode == json_parser_mode::standard)
-  {
-    THROW("dsjson does not support standard json parser mode.")
-  }
 
   VWReaderHandler<audit>& handler = parser->handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
