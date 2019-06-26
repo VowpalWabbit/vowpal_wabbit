@@ -7,5 +7,5 @@ namespace CB_ADF
 {
 CB::cb_class get_observed_cost(multi_ex& examples);
 void global_print_newline(vw& all);
-example* test_adf_sequence(std::vector<example*>& ec_seq);
+example* test_adf_sequence(multi_ex& ec_seq);
 }  // namespace CB_ADF
