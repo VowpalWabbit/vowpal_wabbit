@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cb_explore_adf_test.cc" />
+    <ClCompile Include="ccb_test.cc" />
     <ClCompile Include="ccb_parser_test.cc" />
     <ClCompile Include="dsjson_parser_test.cc" />
     <ClCompile Include="explore_test.cc" />

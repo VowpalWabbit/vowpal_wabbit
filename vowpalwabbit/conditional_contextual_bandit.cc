@@ -41,7 +41,7 @@ struct ccb
   size_t action_with_label;
 
   // All of these hashes are with a hasher seeded with the below namespace hash.
-  std::vector<uint64_t> hashes;
+  std::vector<uint64_t> slot_id_hashes;
   uint64_t id_namespace_hash;
   std::string id_namespace_str;
 
@@ -171,7 +171,7 @@ void clear_pred_and_label(ccb& data)
 }
 
 // true if there exists at least 1 action in the cb multi-example
-bool has_action(multi_ex& cb_ex) { return cb_ex.size() > 1; }
+bool has_action(multi_ex& cb_ex) { return !cb_ex.empty(); }
 
 // This function intentionally does not handle increasing the num_features of the example because
 // the output_example function has special logic to ensure the number of feaures is correctly calculated.
@@ -201,21 +201,21 @@ template <bool audit>
 void inject_slot_id(ccb& data, example* shared, int id)
 {
   // id is zero based, so the vector must be of size id + 1
-  if(id + 1 > data.hashes.size())
+  if(id + 1 > data.slot_id_hashes.size())
   {
-    data.hashes.resize(id + 1, 0);
+    data.slot_id_hashes.resize(id + 1, 0);
   }
 
   uint64_t index;
-  if(data.hashes[id] == 0)
+  if(data.slot_id_hashes[id] == 0)
   {
     auto current_index_str = "index"+std::to_string(id);
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
-    data.hashes[id] = index;
+    data.slot_id_hashes[id] = index;
   }
   else
   {
-    index = data.hashes[id];
+    index = data.slot_id_hashes[id];
   }
 
   shared->feature_space[ccb_id_namespace].push_back(1., index);
@@ -589,19 +589,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
 
 void finish(ccb& data)
 {
-  data.actions.~vector<example*>();
-  data.slots.~vector<example*>();
-  data.origin_index.~vector<uint32_t>();
-  data.exclude_list.~vector<bool>();
-  // data.include_list.~unordered_set<uint32_t>();
-  data.cb_label.~cb_class();
-  data.default_cb_label.~cb_class();
-  data.generated_interactions.~vector<std::string>();
-  data.stored_labels.~vector<CCB::label>();
-
-  data.action_score_pool.~v_array_pool<ACTION_SCORE::action_score>();
-  data.action_scores_pool.~v_array_pool<ACTION_SCORE::action_scores>();
-  data.cb_label_pool.~v_array_pool<CB::cb_class>();
+  data.~ccb();
 }
 
 // Prediction deleter is intentionally a nullopt as it is handled by the reduction.

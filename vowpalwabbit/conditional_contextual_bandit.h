@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
 #include "v_array.h"
 #include "action_score.h"
@@ -14,8 +15,12 @@ namespace LEARNER {
 }
 
 struct vw;
+struct example;
 
 namespace CCB {
+  void calculate_and_insert_interactions(
+    example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions);
+
   // Each positon in outer array is implicitly the decision corresponding to that index. Each inner array is the result of CB for that call.
   typedef v_array<ACTION_SCORE::action_scores> decision_scores_t;
   
