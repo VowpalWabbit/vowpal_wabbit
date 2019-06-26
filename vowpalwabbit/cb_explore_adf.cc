@@ -238,10 +238,11 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   // Explore tau times, then act according to optimal.
-  if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr)
+  bool is_learn_example = is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr;
+  if (is_learn_example)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
-    multiline_learn_or_predict<true>(base, examples, data.offset);
+    multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -250,7 +251,8 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
   {
     float prob = 1.f / (float)num_actions;
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
-    data.tau--;
+    if (is_learn_example)
+      data.tau--;
   }
   else
   {
@@ -630,10 +632,6 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all);
   }
 
-  for (auto x : ec_seq)
-  {
-    x->l.cb.costs.clear();
-  }
 
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
