@@ -9,14 +9,19 @@ CALL %~dp0init.cmd
 
 PUSHD %~dp0..
 
-REM TODO: these should be read from the version props file, or similar, with the ability to overload via env
-REM Tracked by https://github.com/VowpalWabbit/vowpal_wabbit/issues/1714
+REM This is here to ensure that unless it is explicitly overriden we will generate a prerelease
+REM "internal-only" package.
 IF NOT DEFINED Version (
-    SET Version=8.6.1
+    REM Read version in from version.txt
+    SET /P Version=<%vwRoot%\version.txt
 )
 
 IF NOT DEFINED Tag (
     SET Tag=-INTERNALONLY
+)
+
+IF /I "%SuppressTag%" == "TRUE" (
+    SET "Tag="
 )
 
 SET RootRelativeOutputDirX64=%vwRoot%\vowpalwabbit\out\target\
