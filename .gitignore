@@ -16,6 +16,11 @@ libtool
 ltmain.sh
 missing
 vowpalwabbit/Makefile.in
+CMakeFiles
+CMakeCache.txt
+CTestCostData.txt
+CTestTestfile.cmake
+cmake_install.cmake
 config.h
 *.la
 *.lo
