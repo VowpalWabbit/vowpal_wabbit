@@ -44,6 +44,7 @@ namespace VW {
   };
 
   const version_struct version(PACKAGE_VERSION);
+  const std::string git_commit(COMMIT_VERSION);
 }
 
 
