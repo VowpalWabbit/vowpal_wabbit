@@ -214,24 +214,33 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
-bool test_adf_sequence(multi_ex& ec_seq)
+// Validates a multiline example collection as a valid sequence for action dependent features format.
+example* test_adf_sequence(multi_ex& ec_seq)
 {
+  if (ec_seq.size() == 0)
+    THROW("cb_adf: At least one action must be provided for an example to be valid.");
+
   uint32_t count = 0;
+  example* ret = nullptr;
   for (size_t k = 0; k < ec_seq.size(); k++)
   {
     example* ec = ec_seq[k];
+
+    // Check if there is more than one cost for this example.
     if (ec->l.cb.costs.size() > 1)
       THROW("cb_adf: badly formatted example, only one cost can be known.");
 
+    // Check whether the cost was initialized to a value.
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
+    {
+      ret = ec;
       count += 1;
+      if (count > 1)
+        THROW("cb_adf: badly formatted example, only one line can have a cost");
+    }
   }
-  if (count == 0)
-    return true;
-  else if (count == 1)
-    return false;
-  else
-    THROW("cb_adf: badly formatted example, only one line can have a cost");
+
+  return ret;
 }
 
 template <bool is_learn>
@@ -239,7 +248,7 @@ void do_actual_learning(cb_adf& data, multi_learner& base, multi_ex& ec_seq)
 {
   data.offset = ec_seq[0]->ft_offset;
   data.gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
-  if (is_learn && !test_adf_sequence(ec_seq))
+  if (is_learn && test_adf_sequence(ec_seq) != nullptr)
   {
     /*	v_array<float> temp_scores;
     temp_scores = v_init<float>();
