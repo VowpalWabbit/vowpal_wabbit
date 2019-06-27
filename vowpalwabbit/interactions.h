@@ -13,10 +13,16 @@ namespace INTERACTIONS
  *  Interactions preprocessing
  */
 
-const unsigned char printable_start = ' ';
-const unsigned char printable_end = '~';
-const uint64_t valid_ns_size =
+constexpr unsigned char printable_start = ' ';
+constexpr unsigned char printable_end = '~';
+constexpr unsigned char printable_ns_size = printable_end - printable_start;
+constexpr uint64_t valid_ns_size =
     printable_end - printable_start - 1;  // -1 to skip characters ':' and '|' excluded in is_valid_ns()
+
+inline constexpr bool is_printable_namespace(const unsigned char ns)
+{
+  return ns >= printable_start && ns <= printable_end;
+}
 
 // exand all wildcard namespaces in vector<string>
 // req_length must be 0 if interactions of any length are allowed, otherwise contains required length

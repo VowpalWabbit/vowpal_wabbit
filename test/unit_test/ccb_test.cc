@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
 
   std::vector<std::string> interactions;
   std::vector<std::string> compare_set = {{'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
-      {'O', (char)ccb_id_namespace}, {(char)constant_namespace, (char)ccb_id_namespace}};
+      {'O', (char)ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   interactions = {"UA", "UO", "UOA"};
   compare_set = {"UA", "UO", "UOA", {'U', 'A', (char)ccb_id_namespace}, {'U', 'O', (char)ccb_id_namespace},
       {'U', 'O', 'A', (char)ccb_id_namespace}, {'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
-      {'O', (char)ccb_id_namespace}, {(char)constant_namespace, (char)ccb_id_namespace}};
+      {'O', (char)ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
