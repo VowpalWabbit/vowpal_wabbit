@@ -1362,13 +1362,13 @@ void read_line_json(
   // string line_copy(line);
   // destructive parsing
   InsituStringStream ss(line);
-  json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
+  json_parser<audit> parser;
 
-  VWReaderHandler<audit>& handler = parser->handler;
+  VWReaderHandler<audit>& handler = parser.handler;
   handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context);
 
   ParseResult result =
-      parser->reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+      parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
   if (!result.IsError())
     return;
 
@@ -1394,14 +1394,14 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   }
 
   InsituStringStream ss(line);
-  json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
+  json_parser<audit> parser;
 
-  VWReaderHandler<audit>& handler = parser->handler;
+  VWReaderHandler<audit>& handler = parser.handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
   handler.ctx.SetStartStateToDecisionService(data);
 
   ParseResult result =
-      parser->reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+      parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
 
   if (!result.IsError())
     return;
