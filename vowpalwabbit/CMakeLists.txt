@@ -17,7 +17,7 @@ set(vw_install_headers
   crossplat_compat.h parse_example.h floatbits.h global_data.h io_buf.h learner.h loss_functions.h
   parse_primitives.h parser.h simple_label.h v_array.h vw.h vwdll.h label_parser.h multiclass.h
   cost_sensitive.h cb.h v_hashmap.h memory.h vw_exception.h vw_validate.h multilabel.h constant.h
-  ezexample.h
+  ezexample.h version.h
 )
 
 set(vw_all_headers
@@ -49,7 +49,7 @@ set(vw_all_sources
   active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
   action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc
-  vw_exception.cc no_label.cc shared_feature_merger.cc
+  vw_exception.cc no_label.cc shared_feature_merger.cc version.cc
 )
 
 set(explore_all_headers
