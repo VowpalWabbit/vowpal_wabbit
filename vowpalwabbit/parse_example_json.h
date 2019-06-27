@@ -52,16 +52,6 @@ template <bool audit>
 struct Context;
 
 template <bool audit>
-struct json_parser;
-
-enum json_parser_mode
-{
-  standard,
-  cb,
-  ccb
-};
-
-template <bool audit>
 struct Namespace
 {
   char feature_group;
@@ -496,9 +486,9 @@ struct MultiState : BaseState<audit>
 
 // This state makes the assumption we are in CCB
 template <bool audit>
-struct DfState : BaseState<audit>
+struct SlotsState : BaseState<audit>
 {
-  DfState() : BaseState<audit>("Slots") {}
+  SlotsState() : BaseState<audit>("Slots") {}
   BaseState<audit>* saved;
   BaseState<audit>* saved_root_state;
 
@@ -736,7 +726,7 @@ class DefaultState : public BaseState<audit>
         return &ctx.multi_state;
 
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots"))
-        return &ctx.df_state;
+        return &ctx.slots_state;
 
       if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag"))
         return &ctx.tag_state;
@@ -1207,7 +1197,7 @@ struct Context
   MultiState<audit> multi_state;
   IgnoreState<audit> ignore_state;
   ArrayState<audit> array_state;
-  DfState<audit> df_state;
+  SlotsState<audit> slots_state;
 
   // DecisionServiceState
   DecisionServiceState<audit> decision_service_state;
