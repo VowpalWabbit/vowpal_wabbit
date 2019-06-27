@@ -112,8 +112,10 @@ bool sanity_checks(ccb& data)
     {
       if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
           slot->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+      {
         std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
-      return false;
+        return false;
+      }
     }
   }
   return true;
