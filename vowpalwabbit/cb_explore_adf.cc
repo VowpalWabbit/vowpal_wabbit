@@ -272,13 +272,13 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
     }
 
     multiline_learn_or_predict<true>(base, examples, data.offset);
+    ++data.counter;
   }
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
-  ++data.counter;
 
   const float max_range = data.max_cb_cost - data.min_cb_cost;
   // threshold on empirical loss difference
@@ -491,7 +491,8 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   do_sort(data);
   for (size_t i = 0; i < num_actions; i++) preds[i] = probs[i];
 
-  ++data.counter;
+  if (is_learn)
+    ++data.counter;
 }
 
 template <bool is_learn>
