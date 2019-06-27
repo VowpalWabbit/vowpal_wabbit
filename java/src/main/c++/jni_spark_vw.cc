@@ -83,7 +83,6 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRem
   {
     if (all->numpasses > 1)
     {
-      adjust_used_index(*all);
       all->do_reset_source = true;
       VW::start_parser(*all);
       LEARNER::generic_driver(*all);
@@ -148,8 +147,15 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
 
   try
   {
+    // note: this code duplication seems bound for trouble
+    // from parse_dispatch_loop.h:26
+    // from learner.cc:41
+    reset_source(*all, all->num_bits);
+    all->do_reset_source = false;
+    all->passes_complete++;
+
+    all->current_pass++;
     all->l->end_pass();
-    VW::sync_stats(*all);
   }
   catch (...)
   {
@@ -163,6 +169,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_finish(JNI
 
   try
   {
+    VW::sync_stats(*all);
     VW::finish(*all);
   }
   catch (...)
