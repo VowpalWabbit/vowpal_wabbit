@@ -1,4 +1,3 @@
-name: "MacOS CI"
 pool:
   vmImage: 'macOS-10.14'
 

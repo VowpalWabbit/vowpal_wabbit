@@ -4,6 +4,9 @@ resources:
     image:  vowpalwabbit/travis-base:20190501.1
     endpoint: DockerHub
 
+pr:
+- master
+
 pool:
   vmImage: 'ubuntu-16.04'
 
