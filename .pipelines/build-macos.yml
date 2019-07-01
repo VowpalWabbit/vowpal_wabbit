@@ -1,0 +1,6 @@
+pool:
+  vmImage: 'macOS-10.14'
+
+steps:
+- bash: ./.pipelines/build-and-test-macos.sh $(Build.SourcesDirectory)
+  displayName: Upgrade CMake
