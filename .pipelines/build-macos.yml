@@ -2,7 +2,7 @@ name: "MacOS CI"
 pool:
   vmImage: 'macOS-10.14'
 
-pr: "master"
+pr: master
 
 steps:
 - bash: $(Build.SourcesDirectory)/.pipelines/build-and-test-macos.sh $(Build.SourcesDirectory)
