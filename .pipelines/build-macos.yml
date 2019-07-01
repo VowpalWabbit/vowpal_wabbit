@@ -2,5 +2,5 @@ pool:
   vmImage: 'macOS-10.14'
 
 steps:
-- bash: sudo $(Build.SourcesDirectory)/.pipelines/build-and-test-macos.sh $(Build.SourcesDirectory)
+- bash: $(Build.SourcesDirectory)/.pipelines/build-and-test-macos.sh $(Build.SourcesDirectory)
   displayName: Build + Test
