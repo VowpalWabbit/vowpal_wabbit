@@ -82,7 +82,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
 
 void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
-  gen_cs_example_ips(examples, mydata.cs_labels);
+  gen_cs_example_ips(examples, mydata.cs_labels, mydata.clip_p);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
@@ -179,7 +179,7 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 
 void learn_DR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
-  gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels);
+  gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels, mydata.clip_p);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
@@ -499,8 +499,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     ld->gen_cs.cb_type = CB_TYPE_MTR;
   }
 
-  if (ld->clip_p > 0.f && ld->gen_cs.cb_type != CB_TYPE_MTR)
-    all.trace_message << "warning: clipping probability is only implemented for cb_type mtr; p will not be clipped." << std::endl; 
+  if (ld->clip_p > 0.f && ld->gen_cs.cb_type == CB_TYPE_SM)
+    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped." << std::endl; 
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
