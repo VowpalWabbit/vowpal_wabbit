@@ -4,7 +4,7 @@
 
     <groupId>com.github.vowpalwabbit</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>@PACKAGE_VERSION@-SNAPSHOT</version>
+    <version>8.7.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
@@ -17,7 +17,8 @@
         <connection>scm:git:git://github.com/VowpalWabbit/vowpal_wabbit.git</connection>
         <developerConnection>scm:git:git@github.com/VowpalWabbit/vowpal_wabbit.git</developerConnection>
         <url>https://github.com/VowpalWabbit/vowpal_wabbit/tree/master</url>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <distributionManagement>
         <snapshotRepository>
@@ -265,15 +266,14 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <pushChanges>false</pushChanges>
+                </configuration>
+            </plugin>
         </plugins>
-        <!-- don't push tags and other changes back into git repo -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-release-plugin</artifactId>
-            <configuration>
-                <pushChanges>false</pushChanges>
-            </configuration>
-        </plugin>
     </build>
 
     <profiles>
