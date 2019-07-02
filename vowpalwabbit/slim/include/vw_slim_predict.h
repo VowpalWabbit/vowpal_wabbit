@@ -393,9 +393,8 @@ namespace vw_slim {
 			return S_VW_PREDICT_OK;
 		}
 
-	private:
 		template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-		int sort_by_scores(	PdfIt pdf_first, PdfIt pdf_last,
+		static int sort_by_scores(	PdfIt pdf_first, PdfIt pdf_last,
 							InputScoreIt scores_first, InputScoreIt scores_last,
 							OutputIt ranking_begin, OutputIt ranking_last)
 		{
@@ -416,7 +415,7 @@ namespace vw_slim {
 			// in the order specified by scores, we need to apply the same transform to pdf.
 			using PdfVal = typename std::iterator_traits<PdfIt>::value_type;
 			static thread_local typename std::vector<PdfVal> sorted_pdf(pdf_size);
-			sorted_pdf.clear();
+			sorted_pdf.resize(pdf_size);
 
 			int idx = 0;
 			for (auto idx_iter = ranking_begin; idx_iter != ranking_last; ++idx_iter, ++idx) {
