@@ -1,12 +1,6 @@
-add_executable(vw-slim-test
-  ut_main.cc ut_explore.cc ut_opts.cc ut_vw.cc vw_util.cc ut_util.h vw_util.h
-)
-
-# Add the include directories from vw target for testing
-target_link_libraries(vw-slim-test PRIVATE Boost::unit_test_framework Boost::system)
-
-add_test(
-  NAME vw_unit_test
-  COMMAND ./vw-unit-test
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
+cmake_minimum_required(VERSION 3.10)
+enable_testing()
+find_package(GTest REQUIRED)
+add_executable(vw-slim-test ut_main.cc ut_explore.cc ut_opts.cc ut_vw.cc vw_util.cc ut_util.h vw_util.h)
+target_link_libraries(vw-slim-test vwslim GTest::GTest GTest::Main)
+add_test(vw_unit_test)
