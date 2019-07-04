@@ -385,6 +385,7 @@ def main():
     h = HyperOptimizer(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
                        max_evals=args.max_evals,
                        outer_loss_function=args.outer_loss_function,
+                       additional_cmd=args.additional_cmd,
                        searcher=args.searcher, is_regression=args.regression)
     h.get_y_true_holdout()
     h.hyperopt_search()
@@ -394,3 +395,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
