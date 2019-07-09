@@ -21,6 +21,24 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
+# Grab git commitish into variable
+IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  FIND_PACKAGE(Git)
+  IF(GIT_FOUND)
+    EXECUTE_PROCESS(
+      COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      OUTPUT_VARIABLE "vw_GIT_COMMIT"
+      ERROR_QUIET
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    MESSAGE( STATUS "Git Version: ${vw_GIT_COMMIT}" )
+  ELSE(GIT_FOUND)
+    SET(vw_GIT_COMMIT "")
+  ENDIF(GIT_FOUND)
+ELSE(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  SET(vw_GIT_COMMIT "")
+ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+
 include(ProcessorCount)
 ProcessorCount(NumProcessors)
 message(STATUS "Number of processors: ${NumProcessors}")

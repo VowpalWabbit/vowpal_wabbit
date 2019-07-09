@@ -361,10 +361,14 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
+  // pass all.quiet around
+  if (all.all_reduce)
+    all.all_reduce->quiet = all.quiet;
+
   // Upon direct query for version -- spit it out to stdout
   if (version_arg)
   {
-    cout << version.to_string() << "\n";
+    cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
     exit(0);
   }
 
@@ -1361,7 +1365,8 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     if (options.was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg);
+      all.all_reduce =
+          new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.quiet);
     }
 
     parse_diagnostics(options, all);

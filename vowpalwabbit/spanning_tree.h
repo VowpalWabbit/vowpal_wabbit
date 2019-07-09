@@ -50,8 +50,10 @@ class SpanningTree
   // Need a pointer since C++/CLI doesn't like futures yet
   std::future<void>* m_future;
 
+  bool m_quiet;
+
  public:
-  SpanningTree(short unsigned int port = 26543);
+  SpanningTree(short unsigned int port = 26543, bool quiet = false);
   ~SpanningTree();
 
   short unsigned int BoundPort();

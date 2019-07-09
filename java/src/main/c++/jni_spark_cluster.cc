@@ -2,11 +2,12 @@
 #include "util.h"
 #include "spanning_tree.h"
 
-JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_ClusterSpanningTree_create(JNIEnv *env, jclass, jint port)
+JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_ClusterSpanningTree_create(
+    JNIEnv *env, jclass, jint port, jboolean quiet)
 {
   try
   {
-    return (jlong) new VW::SpanningTree(port);
+    return (jlong) new VW::SpanningTree(port, quiet);
   }
   catch (...)
   {

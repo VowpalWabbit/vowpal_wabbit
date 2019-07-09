@@ -101,8 +101,8 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 
     std::vector<char> t(v_length);
     buf->read_file(filepointer, t.data(), v_length);
-    version_struct v_tmp(t.data());
-    if (v_tmp != version)
+    VW::version_struct v_tmp(t.data());
+    if (v_tmp != VW::version)
     {
       //      cout << "cache has possibly incompatible version, rebuilding" << endl;
       return 0;
@@ -248,10 +248,10 @@ void make_write_cache(vw& all, string& newname, bool quiet)
     return;
   }
 
-  size_t v_length = (uint64_t)version.to_string().length() + 1;
+  size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
   output->write_file(f, &v_length, sizeof(v_length));
-  output->write_file(f, version.to_string().c_str(), v_length);
+  output->write_file(f, VW::version.to_string().c_str(), v_length);
   output->write_file(f, "c", 1);
   output->write_file(f, &all.num_bits, sizeof(all.num_bits));
 
