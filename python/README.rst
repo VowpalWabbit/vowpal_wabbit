@@ -30,20 +30,30 @@ Installation
 
 From PyPI:
 
+Linux/Mac OSX:
+
 .. code-block:: bash
 
     $ pip install vowpalwabbit
+
+Windows:
+
+.. code-block:: bat
+
+    > pip install --global-option="--vcpkg-root=path\to\vcpkg" vowpalwabbit
+    
+
 
 From local repo (useful when making modifications):
 
 .. code-block:: bash
 
     # Dependencies
-    $ sudo apt-get install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
+    $ sudo apt install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
     
     # Build and install package
-    $ cd python
     $ python setup.py install
+
 
 Usage
 -----
@@ -95,7 +105,7 @@ For Ubuntu/Debian/Mint
 
 .. code-block:: bash
 
-    $ apt-get install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
+    $ apt install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
 
 For Mac OSX
 
@@ -107,6 +117,18 @@ For Mac OSX
     brew install boost-python
     #If you want to build with python 3 support
     brew install boost-python3
+    
+For Windows
+
+    1. Install vcpkg_
+
+    2. Run
+
+.. code-block:: bat
+
+    > vcpkg --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-python boost-math boost-thread python3 boost-python
+
+.. _vcpkg: https://github.com/microsoft/vcpkg
 
 Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be done using the following steps:
 
@@ -119,6 +141,15 @@ Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be 
     # install necessary boost dependencies
     $ conda install -y -c anaconda boost
     $ pip install -e vowpal_wabbit/python
+    
+**For python3 on Ubuntu 16.04 LTS**: Ubuntu 16.04 defaults to an old, custom-built version of boost. As such, the boost_python library names do not follow the standard naming convention adopted by offical boost releases for the boost_python libraries.
+You may need to manually create the relevant symlinks in this case. Example commands for python 3.5 follows: 
+
+.. code-block:: bash
+
+    $ cd /usr/lib/x86_64-linux-gnu/
+    $ sudo ln -s libboost_python-py35.so libboost_python3.so
+    $ sudo ln -s libboost_python-py35.a libboost_python3.a
 
 Development
 -----------
@@ -135,7 +166,7 @@ Tests can be run using setup.py:
 
 .. code-block:: bash
 
-    $ python setup.py test
+    $ python setup.py python/tests
 
 
 Directory Structure:
@@ -173,7 +204,7 @@ Python3
 
 .. code-block:: bat
 
-    > python setup.py --vcpkg-root=[vcpkg-dir] install
+    > python setup.py --vcpkg-root=path\to\vcpkg install
 
 Python2
 ~~~~~~~
@@ -194,6 +225,6 @@ Due to limitations in the current version of boost-python, some manual changes m
 
 .. code-block:: bat
 
-    > python setup.py --vcpkg-root=[vcpkg-dir] install
+    > python setup.py --vcpkg-root=path\to\vcpkg install
     
 .. _experimental Windows CMake build: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building#experimental-using-cmake-on-windows
