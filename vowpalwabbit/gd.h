@@ -76,9 +76,9 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 {
   return all.weights.sparse
       ? foreach_feature<R, S, T, sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-            all.ignore_linear, all.interactions, all.permutations, ec, dat)
+            all.ignore_linear, *ec.interactions , all.permutations, ec, dat)
       : foreach_feature<R, S, T, dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            all.interactions, all.permutations, ec, dat);
+            *ec.interactions , all.permutations, ec, dat);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,
@@ -98,9 +98,9 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 inline float inline_predict(vw& all, example& ec)
 {
   return all.weights.sparse ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-                                  all.ignore_linear, all.interactions, all.permutations, ec, ec.l.simple.initial)
+                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial)
                             : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear,
-                                  all.ignore_linear, all.interactions, all.permutations, ec, ec.l.simple.initial);
+                                  all.ignore_linear, *ec.interactions , all.permutations, ec, ec.l.simple.initial);
 }
 
 inline float sign(float w)

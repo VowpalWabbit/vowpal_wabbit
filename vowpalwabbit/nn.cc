@@ -71,6 +71,7 @@ void finish_setup(nn& n, vw& all)
   // TODO: output_layer audit
 
   memset(&n.output_layer, 0, sizeof(n.output_layer));
+  n.output_layer.interactions = &all.interactions;
   n.output_layer.indices.push_back(nn_output_namespace);
   uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
@@ -100,6 +101,7 @@ void finish_setup(nn& n, vw& all)
 
   // TODO: not correct if --noconstant
   memset(&n.hiddenbias, 0, sizeof(n.hiddenbias));
+  n.hiddenbias.interactions = &all.interactions;
   n.hiddenbias.indices.push_back(constant_namespace);
   n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
   if (all.audit || all.hash_inv)
@@ -111,6 +113,7 @@ void finish_setup(nn& n, vw& all)
   n.hiddenbias.in_use = true;
 
   memset(&n.outputweight, 0, sizeof(n.outputweight));
+  n.outputweight.interactions = &all.interactions;
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
