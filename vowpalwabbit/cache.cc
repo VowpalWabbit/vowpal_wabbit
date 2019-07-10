@@ -209,3 +209,12 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
 
   for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
 }
+
+uint32_t VW::convert(size_t number)
+{
+  if (number > UINT32_MAX)
+  {
+    THROW("size_t value is out of bounds of uint32_t.")
+  }
+  return static_cast<uint32_t>(number);
+}

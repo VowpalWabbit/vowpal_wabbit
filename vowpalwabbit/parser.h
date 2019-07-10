@@ -102,7 +102,6 @@ struct parser
 
   bool audit = false;
   bool decision_service_json = false;
-  std::shared_ptr<void> jsonp;
 
   bool strict_parse;
   std::exception_ptr exc_ptr;

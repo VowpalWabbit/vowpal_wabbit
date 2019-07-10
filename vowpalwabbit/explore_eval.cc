@@ -68,7 +68,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = get_unbiased_cost(&c.known_cost, preds[i].action);
+      float l = get_cost_estimate(&c.known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }

@@ -16,3 +16,8 @@ void cache_tag(io_buf& cache, v_array<char> tag);
 void cache_features(io_buf& cache, example* ae, uint64_t mask);
 void output_byte(io_buf& cache, unsigned char s);
 void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask);
+
+namespace VW
+{
+  uint32_t convert(size_t number);
+}
