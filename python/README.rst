@@ -166,7 +166,7 @@ Tests can be run using setup.py:
 
 .. code-block:: bash
 
-    $ python setup.py python/tests
+    $ python setup.py test
 
 
 Directory Structure:
