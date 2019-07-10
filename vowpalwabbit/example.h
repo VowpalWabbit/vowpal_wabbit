@@ -18,8 +18,11 @@ license as described in the file LICENSE.
 #include "feature_group.h"
 #include "action_score.h"
 #include "example_predict.h"
+#include "conditional_contextual_bandit.h"
+#include "ccb_label.h"
 #include <vector>
 
+const unsigned char default_namespace = 32;
 const unsigned char wap_ldf_namespace = 126;
 const unsigned char history_namespace = 127;
 const unsigned char constant_namespace = 128;
@@ -33,6 +36,8 @@ const unsigned char conditioning_namespace = 134;  // this is \x86
 const unsigned char dictionary_namespace = 135;    // this is \x87
 const unsigned char node_id_namespace = 136;       // this is \x88
 const unsigned char message_namespace = 137;       // this is \x89
+const unsigned char ccb_slot_namespace = 139;
+const unsigned char ccb_id_namespace = 140;
 
 typedef union {
   no_label::no_label empty;
@@ -40,6 +45,7 @@ typedef union {
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
+  CCB::label conditional_contextual_bandit;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;
@@ -54,6 +60,7 @@ typedef union {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  CCB::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc
