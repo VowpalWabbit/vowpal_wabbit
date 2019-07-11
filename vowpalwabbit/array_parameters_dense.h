@@ -9,7 +9,7 @@ template <typename T>
 class dense_iterator
 {
 private:
-  T * _current;
+  T* _current;
   T* _begin;
   uint32_t _stride;
 
@@ -17,8 +17,8 @@ public:
   typedef std::forward_iterator_tag iterator_category;
   typedef T value_type;
   typedef std::ptrdiff_t difference_type;
-  typedef  T* pointer;
-  typedef  T& reference;
+  typedef T* pointer;
+  typedef T& reference;
 
   dense_iterator(T* current, T* begin, uint32_t stride)
     : _current(current), _begin(begin), _stride(stride)
@@ -41,7 +41,7 @@ public:
 class dense_parameters
 {
 private:
-  weight * _begin;
+  weight* _begin;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
   uint32_t _stride_shift;
   bool _seeded; // whether the instance is sharing model state with others
@@ -62,7 +62,7 @@ public:
 
   bool not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
-  dense_parameters(const dense_parameters &other) { shallow_copy(other); }
+  dense_parameters(const dense_parameters& other) { shallow_copy(other); }
   dense_parameters(dense_parameters &&) = delete;
 
   weight* first() { return _begin; } //TODO: Temporary fix for allreduce.

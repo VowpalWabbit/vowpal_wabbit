@@ -40,8 +40,8 @@ struct v_array
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
 
-  inline T* const cbegin() const { return _begin; }
-  inline T* const cend() const { return _end; }
+  inline T* cbegin() const { return _begin; }
+  inline T* cend() const { return _end; }
 
   // v_array cannot have a user-defined constructor, because it participates in various unions.
   // union members cannot have user-defined constructors.
@@ -63,13 +63,13 @@ struct v_array
   T& get(size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
   void resize(size_t length)
-  { 
+  {
   	if ((size_t)(end_array-_begin) != length)
-    { 
+    {
       size_t old_len = _end-_begin;
       T* temp = (T *)realloc(_begin, sizeof(T) * length);
       if ((temp == nullptr) && ((sizeof(T)*length) > 0))
-      { 
+      {
 #ifdef VW_NOEXCEPT
 	return;
 #else
@@ -92,7 +92,7 @@ struct v_array
       resize(_end - _begin);
       erase_count = 0;
     }
-    for (T* item = _begin; item != _end; ++item) 
+    for (T* item = _begin; item != _end; ++item)
 	  item->~T();
     _end = _begin;
   }
@@ -100,7 +100,7 @@ struct v_array
   {
     if (_begin != nullptr)
     {
-      for (T* item = _begin; item != _end; ++item) 
+      for (T* item = _begin; item != _end; ++item)
 	    item->~T();
       free(_begin);
     }
@@ -112,7 +112,7 @@ struct v_array
       resize(2 * (end_array - _begin) + 3);
     new (_end++) T(new_ele);
   }
-  void push_back_unchecked(const T& new_ele) 
+  void push_back_unchecked(const T& new_ele)
   { new (_end++) T(new_ele); }
 
   size_t find_sorted(const T& ele) const  // index of the smallest element >= ele, return true if element is in the
@@ -230,7 +230,7 @@ template <class T>
 void push_many(v_array<T>& v, const T* _begin, size_t num)
 {
   if (v._end + num >= v.end_array)
-    v.resize(max(2 * (size_t)(v.end_array - v._begin) + 3, 
+    v.resize(max(2 * (size_t)(v.end_array - v._begin) + 3,
                  v._end - v._begin + num));
 #ifdef _WIN32
   memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
