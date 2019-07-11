@@ -5,5 +5,7 @@ pr:
 - master
 
 steps:
+- bash: pip install six
+  displayName: Install six
 - bash: $(Build.SourcesDirectory)/.pipelines/build-and-test-macos.sh $(Build.SourcesDirectory)
   displayName: Build + Test
