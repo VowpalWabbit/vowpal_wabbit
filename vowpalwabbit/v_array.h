@@ -60,7 +60,6 @@ struct v_array
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
-  T& get(size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
   void resize(size_t length)
   {
