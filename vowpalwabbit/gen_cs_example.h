@@ -11,8 +11,6 @@
 #include "cb_algs.h"
 #include "vw_exception.h"
 
-using namespace std;
-
 namespace GEN_CS
 {
 struct cb_to_cs
