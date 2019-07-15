@@ -10,8 +10,6 @@
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 
-using namespace std;
-
 namespace GEN_CS
 {
 using namespace LEARNER;
