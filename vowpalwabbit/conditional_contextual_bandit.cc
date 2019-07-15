@@ -611,7 +611,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   return_v_array(ec_seq[0]->pred.decision_scores, data.action_scores_pool);
   ec_seq[0]->pred.decision_scores = {0, 0, 0, 0};
 
-  VW::clear_seq_and_finish_examples(all, ec_seq);
+  VW::finish_example(all, ec_seq);
 }
 
 void finish(ccb& data) { data.~ccb(); }
