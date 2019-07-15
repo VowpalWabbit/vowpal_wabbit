@@ -343,7 +343,8 @@ enum label_type_t
   cb_eval,  // contextual-bandit evaluation
   cs,       // cost-sensitive
   multi,
-  mc
+  mc,
+  ccb       // conditional contextual-bandit
 };
 }
 
@@ -429,8 +430,12 @@ struct vw
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
+
+  // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::string> interactions;
+  // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> pairs;    // pairs of features to cross.
+  // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
   bool ignore[256];  // a set of namespaces to ignore

@@ -1,0 +1,7 @@
+shared seed=1234| s_1 s_2
+| a:1 b:1 c:1
+| a:0.5 b:2 c:1
+
+shared seed=1234| s_1 s_2
+0:1.0:0.5 | a:1 b:1 c:1
+| a:0.5 b:2 c:1

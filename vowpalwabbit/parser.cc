@@ -22,7 +22,7 @@ license as described in the file LICENSE.
 #include <io.h>
 typedef int socklen_t;
 
-int daemon(int a, int b)
+int daemon(int /*a*/, int /*b*/)
 {
   exit(0);
   return 0;
@@ -542,6 +542,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       if (input_options.json || input_options.dsjson)
       {
+
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
@@ -549,14 +550,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           all.p->reader = &read_features_json<true>;
           all.p->text_reader = &line_to_examples_json<true>;
           all.p->audit = true;
-          all.p->jsonp = std::make_shared<json_parser<true>>();
         }
         else
         {
           all.p->reader = &read_features_json<false>;
           all.p->text_reader = &line_to_examples_json<false>;
           all.p->audit = false;
-          all.p->jsonp = std::make_shared<json_parser<false>>();
         }
 
         all.p->decision_service_json = input_options.dsjson;
@@ -747,6 +746,9 @@ void setup_example(vw& all, example* ae)
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
+
+  // Set the interactions for this example to the global set.
+  ae->interactions = &all.interactions;
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
@@ -973,9 +975,7 @@ example* example_initializer::operator()(example* ex)
   return ex;
 }
 
-void adjust_used_index(vw&)
-{ /* no longer used */
-}
+void adjust_used_index(vw&) { /* no longer used */ }
 
 namespace VW
 {
