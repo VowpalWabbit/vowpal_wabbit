@@ -24,6 +24,10 @@ IF /I "%SuppressTag%" == "TRUE" (
     SET "Tag="
 )
 
+IF NOT DEFINED SourceInfo (
+    SET "Built without source info. Official builds should have git commit id here."
+)
+
 SET RootRelativeOutputDirX64=%vwRoot%\vowpalwabbit\out\target\
 SET RootRelativeOutputDirAnyCPU=%vwRoot%\vowpalwabbit\out\target\
 SET SolutionDir=%vwRoot%\vowpalwabbit\
