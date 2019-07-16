@@ -8,6 +8,6 @@ steps:
 - bash: .scripts/macos/restore.sh $(Build.SourcesDirectory)
   displayName: 'Restore dependencies'
 - bash: .scripts/macos/build.sh $(Build.SourcesDirectory)
-  displayName: 'Build vw.sln'
+  displayName: 'Build'
 - bash: .scripts/macos/test.sh $(Build.SourcesDirectory)
   displayName: 'Run tests'
