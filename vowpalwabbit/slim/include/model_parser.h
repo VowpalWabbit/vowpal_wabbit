@@ -28,7 +28,7 @@ namespace vw_slim {
 		model_parser(const char* model, size_t length);
 
 		int read(const char* field_name, size_t field_length, const char** ret);
-		
+
 		int skip(size_t bytes);
 
 		const char* position();
@@ -42,7 +42,7 @@ namespace vw_slim {
 			RETURN_ON_FAIL(read<uint32_t COMMA compute_checksum>("string.len", str_len));
 #ifdef MODEL_PARSER_DEBUG
 			{
-				std::fstream log("c:\\temp\\skype.log", std::fstream::app);
+				std::fstream log("vwslim-debug.log", std::fstream::app);
 				log << std::setw(18) << field_name << " length " << str_len << std::endl;
 			}
 #endif
@@ -57,7 +57,7 @@ namespace vw_slim {
 			s = std::string(data, str_len - 1);
 #ifdef MODEL_PARSER_DEBUG
 			{
-				std::fstream log("c:\\temp\\skype.log", std::fstream::app);
+				std::fstream log("vwslim-debug.log", std::fstream::app);
 				log << std::setw(18) << field_name << " '" << s << '\'' << std::endl;
 			}
 #endif
@@ -73,18 +73,18 @@ namespace vw_slim {
 		int read(const char* field_name, T& val)
 		{
 #ifdef MODEL_PARSER_DEBUG
-			std::fstream log("c:\\temp\\skype.log", std::fstream::app);
-			log << std::setw(18) << field_name 
-				<< " 0x" << std::hex << std::setw(8) << (uint64_t)_model 
+			std::fstream log("vwslim-debug.log", std::fstream::app);
+			log << std::setw(18) << field_name
+				<< " 0x" << std::hex << std::setw(8) << (uint64_t)_model
 				<< "-" << std::hex << std::setw(8) << (uint64_t)_model_end
-				<< " " << std::setw(4) << (_model - _model_begin) 
+				<< " " << std::setw(4) << (_model - _model_begin)
 				<< " field: " << std::setw(8) << (uint64_t)&val
 				<< std::dec;
 #endif
 
 			const char* data;
 			RETURN_ON_FAIL(read(field_name, sizeof(T), &data));
-			
+
 			// avoid alignment issues for 32/64bit types on e.g. Android/ARM
 			memcpy(&val, data, sizeof(T));
 

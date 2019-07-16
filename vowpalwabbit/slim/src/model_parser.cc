@@ -30,7 +30,7 @@ namespace vw_slim {
 			return E_VW_PREDICT_ERR_INVALID_MODEL;
 
 #ifdef MODEL_PARSER_DEBUG
-		std::fstream log("c:\\temp\\skype.log", std::fstream::app);
+		std::fstream log("vwslim-debug.log", std::fstream::app);
 		log << "reading " << field_name << std::endl;
 #endif
 

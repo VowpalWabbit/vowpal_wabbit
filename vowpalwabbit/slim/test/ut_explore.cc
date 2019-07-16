@@ -162,7 +162,7 @@ TEST(ExploreTestSuite, sampling_rank)
   std::vector<float> histogram(scores.size() * scores.size());
   std::vector<int> ranking(3);
 
-  // std::fstream log("c:\\temp\\skype.log", std::fstream::app);
+  // std::fstream log("vwslim-debug.log", std::fstream::app);
 
   size_t rep = 50000;
   for (size_t i = 0; i < rep; i++)
@@ -238,7 +238,7 @@ TEST(ExploreTestSuite, sampling_rank_zero_pdf)
   uint32_t chosen_index;
 
   EXPECT_THAT( S_EXPLORATION_OK, exploration::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
-  
+
   EXPECT_THAT(expected_pdf, Pointwise(FloatNearPointwise(1e-2f), pdf));
 }
 

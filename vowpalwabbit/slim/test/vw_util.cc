@@ -1,4 +1,4 @@
-#include "vw_util.h" 
+#include "vw_util.h"
 #include "hash.h"
 #include "constant.h"
 
@@ -10,7 +10,7 @@
 #include <boost/spirit/include/phoenix_stl.hpp>
 #include <boost/bind.hpp>
 
-#endif 
+#endif
 
 using namespace vw_slim;
 
@@ -63,7 +63,7 @@ bool try_parse_examples(Iterator first, Iterator last, safe_example_predict& ex)
       // namespaces
       >> +( +ascii::space
         >> '|' >> (
-					qi::int_[phx::ref(current_ns_hash) = phx::ref(current_ns) = qi::_1] 
+					qi::int_[phx::ref(current_ns_hash) = phx::ref(current_ns) = qi::_1]
 					| (+ascii::graph)[phx::ref(current_ns_hash) = vw_hash(qi::_1), phx::ref(current_ns) = first_char(qi::_1)]
 			      )
 				  [phx::push_back(phx::ref(ex.indices), phx::ref(current_ns))]
@@ -77,7 +77,7 @@ bool try_parse_examples(Iterator first, Iterator last, safe_example_predict& ex)
       )
     );
 
-  //std::ofstream log("c:\\temp\\skype.txt");
+  //std::ofstream log("vwslim-debug.log");
   //log << "label: " << label << std::endl;
   //for (auto& ns : ex.indices)
   //{
@@ -97,4 +97,4 @@ bool try_parse_examples(std::string line, safe_example_predict& ex)
   return try_parse_examples(std::begin(line), std::end(line), ex);
 }
 
-#endif 
+#endif

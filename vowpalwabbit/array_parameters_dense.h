@@ -63,10 +63,9 @@ public:
   bool not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
   dense_parameters(const dense_parameters& other) { shallow_copy(other); }
-  dense_parameters(dense_parameters &&) = delete;
+  dense_parameters(dense_parameters&&) = delete;
 
   weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
-
                                      //iterator with stride
   iterator begin() { return iterator(_begin, _begin, stride()); }
   iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride()); }

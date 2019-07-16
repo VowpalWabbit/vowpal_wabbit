@@ -18,7 +18,7 @@ using namespace ::testing;
 using namespace vw_slim;
 using namespace exploration;
 
-// #define VW_SLIM_TEST_DEBUG "c:\\temp\\skype.log"
+// #define VW_SLIM_TEST_DEBUG "vwslim-debug.log"
 
 // some gymnastics to re-use the float reading code
 struct membuf : std::streambuf
