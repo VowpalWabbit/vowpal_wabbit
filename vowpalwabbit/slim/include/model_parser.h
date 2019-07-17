@@ -39,7 +39,7 @@ namespace vw_slim {
 		int read_string(const char* field_name, std::string& s)
 		{
 			uint32_t str_len;
-			RETURN_ON_FAIL(read<uint32_t COMMA compute_checksum>("string.len", str_len));
+			RETURN_ON_FAIL((read<uint32_t, compute_checksum>("string.len", str_len)));
 #ifdef MODEL_PARSER_DEBUG
 			{
 				std::fstream log("vwslim-debug.log", std::fstream::app);
@@ -113,12 +113,12 @@ namespace vw_slim {
 			while (_model < _model_end)
 			{
 				T idx;
-				RETURN_ON_FAIL(read<T COMMA false>("gd.weight.index", idx));
+				RETURN_ON_FAIL((read<T, false>("gd.weight.index", idx)));
 				if (idx > weight_length)
 					return E_VW_PREDICT_ERR_WEIGHT_INDEX_OUT_OF_RANGE;
 
 				float& w = (*weights)[idx];
-				RETURN_ON_FAIL(read<float COMMA false>("gd.weight.value", w));
+				RETURN_ON_FAIL((read<float, false>("gd.weight.value", w)));
 
 #ifdef MODEL_PARSER_DEBUG
 				std::cout << "weight. idx: " << idx << ":" << (*weights)[idx] << std::endl;
@@ -138,11 +138,11 @@ namespace vw_slim {
 
 			if (num_bits < 31)
 			{
-				RETURN_ON_FAIL(read_weights<uint32_t COMMA W>(weights, weight_length));
+				RETURN_ON_FAIL((read_weights<uint32_t, W>(weights, weight_length)));
 			}
 			else
 			{
-				RETURN_ON_FAIL(read_weights<uint64_t COMMA W>(weights, weight_length));
+				RETURN_ON_FAIL((read_weights<uint64_t, W>(weights, weight_length)));
 			}
 
 			return S_VW_PREDICT_OK;

@@ -192,12 +192,12 @@ class vw_predict
 
     // perform check sum check
     uint32_t check_sum_len;
-    RETURN_ON_FAIL(mp.read<uint32_t COMMA false>("check_sum_len", check_sum_len));
+    RETURN_ON_FAIL((mp.read<uint32_t, false>("check_sum_len", check_sum_len)));
     if (check_sum_len != sizeof(uint32_t))
       return E_VW_PREDICT_ERR_INVALID_MODEL;
 
     uint32_t check_sum;
-    RETURN_ON_FAIL(mp.read<uint32_t COMMA false>("check_sum", check_sum));
+    RETURN_ON_FAIL((mp.read<uint32_t, false>("check_sum", check_sum)));
 
     if (check_sum_computed != check_sum)
       return E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM;
