@@ -13,9 +13,9 @@
 #include "model_parser.h"
 #include "opts.h"
 
-namespace vw_slim {
-
- /**
+namespace vw_slim
+{
+/**
  * @brief Exploration algorithm specified by the model.
  */
 enum vw_predict_exploration
@@ -34,6 +34,7 @@ class namespace_copy_guard
   example_predict& _ex;
   unsigned char _ns;
   bool _remove_ns;
+
  public:
   namespace_copy_guard(example_predict& ex, unsigned char ns);
   ~namespace_copy_guard();
@@ -41,11 +42,11 @@ class namespace_copy_guard
   void feature_push_back(feature_value v, feature_index idx);
 };
 
-
 class feature_offset_guard
 {
   example_predict& _ex;
   uint64_t _old_ft_offset;
+
  public:
   feature_offset_guard(example_predict& ex, uint64_t ft_offset);
   ~feature_offset_guard();
@@ -55,6 +56,7 @@ class stride_shift_guard
 {
   example_predict& _ex;
   uint64_t _shift;
+
  public:
   stride_shift_guard(example_predict& ex, uint64_t shift);
   ~stride_shift_guard();
@@ -63,7 +65,7 @@ class stride_shift_guard
 /**
  * @brief Vowpal Wabbit slim predictor. Supports: regression, multi-class classification and contextual bandits.
  */
-template<typename W>
+template <typename W>
 class vw_predict
 {
   std::unique_ptr<W> _weights;
@@ -85,9 +87,7 @@ class vw_predict
   bool _model_loaded;
 
  public:
-		vw_predict()
-			: _model_loaded(false)
-		{ }
+  vw_predict() : _model_loaded(false) {}
 
   /**
    * @brief Reads the Vowpal Wabbit model from the supplied buffer (produced using vw -f <modelname>)
@@ -114,13 +114,13 @@ class vw_predict
     // read model id
     RETURN_ON_FAIL(mp.read_string<true>("model_id", _id));
 
-		RETURN_ON_FAIL(mp.skip(sizeof(char))); // "model character"
-		RETURN_ON_FAIL(mp.skip(sizeof(float))); // "min_label"
-		RETURN_ON_FAIL(mp.skip(sizeof(float))); // "max_label"
+    RETURN_ON_FAIL(mp.skip(sizeof(char)));   // "model character"
+    RETURN_ON_FAIL(mp.skip(sizeof(float)));  // "min_label"
+    RETURN_ON_FAIL(mp.skip(sizeof(float)));  // "max_label"
 
     RETURN_ON_FAIL(mp.read("num_bits", _num_bits));
 
-    RETURN_ON_FAIL(mp.skip(sizeof(uint32_t))); // "lda"
+    RETURN_ON_FAIL(mp.skip(sizeof(uint32_t)));  // "lda"
 
     uint32_t ngram_len;
     RETURN_ON_FAIL(mp.read("ngram_len", ngram_len));
@@ -146,7 +146,7 @@ class vw_predict
     find_opt(_command_line_arguments, "--cubic", _interactions);
     find_opt(_command_line_arguments, "--interactions", _interactions);
 
-    // VW performs the following transformation as a side-effec of looking for duplicates.
+    // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
     std::vector<std::string> vec_sorted;
     for (const std::string& interaction : _interactions)
@@ -176,7 +176,7 @@ class vw_predict
       {
         if (find_opt_float(_command_line_arguments, "--lambda", _lambda))
         {
-          if (_lambda > 0) // Lambda should always be negative because we are using a cost basis.
+          if (_lambda > 0)  // Lambda should always be negative because we are using a cost basis.
             _lambda = -_lambda;
           _exploration = vw_predict_exploration::softmax;
         }
@@ -204,8 +204,8 @@ class vw_predict
 
     if (_command_line_arguments.find("--cb_adf") != std::string::npos)
     {
-      RETURN_ON_FAIL(mp.skip(sizeof(uint64_t))); // cb_adf.cc: event_sum
-      RETURN_ON_FAIL(mp.skip(sizeof(uint64_t))); // cb_adf.cc: action_sum
+      RETURN_ON_FAIL(mp.skip(sizeof(uint64_t)));  // cb_adf.cc: event_sum
+      RETURN_ON_FAIL(mp.skip(sizeof(uint64_t)));  // cb_adf.cc: action_sum
     }
 
     // gd.cc: save_load
@@ -233,10 +233,7 @@ class vw_predict
    * @return true True if contextual bandit predict method can be used.
    * @return false False if contextual bandit predict method cannot be used.
    */
-		bool is_cb_explore_adf()
-		{
-			return _command_line_arguments.find("--cb_explore_adf") != std::string::npos;
-		}
+  bool is_cb_explore_adf() { return _command_line_arguments.find("--cb_explore_adf") != std::string::npos; }
 
   /**
    * @brief True if the model describes a cost sensitive one-against-all (csoaa). This is also true for cb_explore_adf
@@ -245,10 +242,7 @@ class vw_predict
    * @return true True if csoaa predict method can be used.
    * @return false False if csoaa predict method cannot be used.
    */
-		bool is_csoaa_ldf()
-		{
-			return _command_line_arguments.find("--csoaa_ldf") != std::string::npos;
-		}
+  bool is_csoaa_ldf() { return _command_line_arguments.find("--csoaa_ldf") != std::string::npos; }
 
   /**
    * @brief Predicts a score (as in regression) for the provided example.
@@ -290,7 +284,7 @@ class vw_predict
     out_scores.resize(num_actions);
 
     example_predict* action = actions;
-    for (size_t i = 0; i<num_actions; i++, action++)
+    for (size_t i = 0; i < num_actions; i++, action++)
     {
       std::vector<std::unique_ptr<namespace_copy_guard>> ns_copy_guards;
 
@@ -301,8 +295,7 @@ class vw_predict
         auto ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, ns));
 
         // copy features
-					for (auto fs : shared.feature_space[ns])
-						ns_copy_guard->feature_push_back(fs.value(), fs.index());
+        for (auto fs : shared.feature_space[ns]) ns_copy_guard->feature_push_back(fs.value(), fs.index());
 
         // keep guard around
         ns_copy_guards.push_back(std::move(ns_copy_guard));
@@ -314,7 +307,8 @@ class vw_predict
     return S_VW_PREDICT_OK;
   }
 
-	int predict(const char* event_id, example_predict& shared, example_predict* actions, size_t num_actions, std::vector<float>& pdf, std::vector<int>& ranking)
+  int predict(const char* event_id, example_predict& shared, example_predict* actions, size_t num_actions,
+      std::vector<float>& pdf, std::vector<int>& ranking)
   {
     if (!_model_loaded)
       return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
@@ -340,7 +334,8 @@ class vw_predict
         auto top_action_iterator = std::min_element(std::begin(scores), std::end(scores));
         uint32_t top_action = (uint32_t)(top_action_iterator - std::begin(scores));
 
-				RETURN_EXPLORATION_ON_FAIL(exploration::generate_epsilon_greedy(_epsilon, top_action, std::begin(pdf), std::end(pdf)));
+        RETURN_EXPLORATION_ON_FAIL(
+            exploration::generate_epsilon_greedy(_epsilon, top_action, std::begin(pdf), std::end(pdf)));
         break;
       }
       case vw_predict_exploration::softmax:
@@ -349,7 +344,8 @@ class vw_predict
         RETURN_ON_FAIL(predict(shared, actions, num_actions, scores));
 
         // generate exploration distribution
-				RETURN_EXPLORATION_ON_FAIL(exploration::generate_softmax(_lambda, std::begin(scores), std::end(scores), std::begin(pdf), std::end(pdf)));
+        RETURN_EXPLORATION_ON_FAIL(exploration::generate_softmax(
+            _lambda, std::begin(scores), std::end(scores), std::begin(pdf), std::end(pdf)));
         break;
       }
       case vw_predict_exploration::bag:
@@ -358,30 +354,35 @@ class vw_predict
 
         // apply stride shifts
         std::vector<std::unique_ptr<stride_shift_guard>> stride_shift_guards;
-				stride_shift_guards.push_back(std::unique_ptr<stride_shift_guard>(new stride_shift_guard(shared, _stride_shift)));
+        stride_shift_guards.push_back(
+            std::unique_ptr<stride_shift_guard>(new stride_shift_guard(shared, _stride_shift)));
         example_predict* actions_end = actions + num_actions;
         for (example_predict* action = actions; action != actions_end; ++action)
-					stride_shift_guards.push_back(std::unique_ptr<stride_shift_guard>(new stride_shift_guard(*action, _stride_shift)));
+          stride_shift_guards.push_back(
+              std::unique_ptr<stride_shift_guard>(new stride_shift_guard(*action, _stride_shift)));
 
-				for (size_t i = 0; i < _bag_size; i++)
-				{
-					std::vector<std::unique_ptr<feature_offset_guard>> feature_offset_guards;
-					for (example_predict* action = actions; action != actions_end; ++action)
-						feature_offset_guards.push_back(std::unique_ptr<feature_offset_guard>(new feature_offset_guard(*action, i)));
+        for (size_t i = 0; i < _bag_size; i++)
+        {
+          std::vector<std::unique_ptr<feature_offset_guard>> feature_offset_guards;
+          for (example_predict* action = actions; action != actions_end; ++action)
+            feature_offset_guards.push_back(
+                std::unique_ptr<feature_offset_guard>(new feature_offset_guard(*action, i)));
 
-					RETURN_ON_FAIL(predict(shared, actions, num_actions, scores));
+          RETURN_ON_FAIL(predict(shared, actions, num_actions, scores));
 
-					auto top_action_iterator = std::min_element(std::begin(scores), std::end(scores));
-					uint32_t top_action = (uint32_t)(top_action_iterator - std::begin(scores));
+          auto top_action_iterator = std::min_element(std::begin(scores), std::end(scores));
+          uint32_t top_action = (uint32_t)(top_action_iterator - std::begin(scores));
 
-					top_actions[top_action]++;
-				}
+          top_actions[top_action]++;
+        }
 
-				// generate exploration distribution
-				RETURN_EXPLORATION_ON_FAIL(exploration::generate_bag(std::begin(top_actions), std::end(top_actions), std::begin(pdf), std::end(pdf)));
+        // generate exploration distribution
+        RETURN_EXPLORATION_ON_FAIL(
+            exploration::generate_bag(std::begin(top_actions), std::end(top_actions), std::begin(pdf), std::end(pdf)));
 
         if (_minimum_epsilon > 0)
-					RETURN_EXPLORATION_ON_FAIL(exploration::enforce_minimum_probability(_minimum_epsilon, true, std::begin(pdf), std::end(pdf)));
+          RETURN_EXPLORATION_ON_FAIL(
+              exploration::enforce_minimum_probability(_minimum_epsilon, true, std::begin(pdf), std::end(pdf)));
 
         break;
       }
@@ -389,11 +390,13 @@ class vw_predict
         return E_VW_PREDICT_ERR_NOT_A_CB_MODEL;
     }
 
-		RETURN_EXPLORATION_ON_FAIL(sort_by_scores(std::begin(pdf), std::end(pdf), std::begin(scores), std::end(scores), std::begin(ranking), std::end(ranking)));
+    RETURN_EXPLORATION_ON_FAIL(sort_by_scores(
+        std::begin(pdf), std::end(pdf), std::begin(scores), std::end(scores), std::begin(ranking), std::end(ranking)));
 
     // Sample from the pdf
     uint32_t chosen_action_idx;
-		RETURN_EXPLORATION_ON_FAIL(exploration::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), chosen_action_idx));
+    RETURN_EXPLORATION_ON_FAIL(
+        exploration::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), chosen_action_idx));
 
     // Swap top element with chosen one (unless chosen is the top)
     if (chosen_action_idx != 0)
@@ -405,9 +408,8 @@ class vw_predict
     return S_VW_PREDICT_OK;
   }
 
-		template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-		static int sort_by_scores(	PdfIt pdf_first, PdfIt pdf_last,
-							InputScoreIt scores_first, InputScoreIt scores_last,
+  template <typename PdfIt, typename InputScoreIt, typename OutputIt>
+  static int sort_by_scores(PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last,
       OutputIt ranking_begin, OutputIt ranking_last)
   {
     size_t pdf_size = pdf_last - pdf_first;
@@ -430,12 +432,14 @@ class vw_predict
     sorted_pdf.resize(pdf_size);
 
     int idx = 0;
-		for (auto idx_iter = ranking_begin; idx_iter != ranking_last; ++idx_iter, ++idx) {
+    for (auto idx_iter = ranking_begin; idx_iter != ranking_last; ++idx_iter, ++idx)
+    {
       sorted_pdf[idx] = pdf_first[*idx_iter];
     }
 
     // Since std::copy does not get built on windows, we do element by element copy.
-		for (int i = 0; i < pdf_size; ++i) {
+    for (int i = 0; i < pdf_size; ++i)
+    {
       *(pdf_first + i) = sorted_pdf[i];
     }
 

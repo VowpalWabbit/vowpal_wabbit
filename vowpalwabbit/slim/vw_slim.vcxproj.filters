@@ -29,9 +29,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\vw_exception.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\example_predict.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

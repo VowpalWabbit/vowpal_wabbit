@@ -179,28 +179,11 @@ bool launchDebugger();
 
 #endif
 
+#define EXPAND( x ) x
 #define GET_MACRO(_1, _2, NAME, ...) NAME
-#define THROW_OR_RETURN(...) GET_MACRO(__VA_ARGS__, THROW_OR_RETURN_NORMAL, THROW_OR_RETURN_VOID)(__VA_ARGS__)
+#define THROW_OR_RETURN(...) EXPAND(GET_MACRO(__VA_ARGS__, THROW_OR_RETURN_NORMAL, THROW_OR_RETURN_VOID)(__VA_ARGS__))
 
-#ifndef VW_NOEXCEPT
-
-#define THROW_OR_RETURN_NORMAL(args, retval)                 \
-  do                                                         \
-  {                                                          \
-    std::stringstream __msg;                                 \
-    __msg << args;                                           \
-    throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
-  } while (0)
-
-#define THROW_OR_RETURN_VOID(args)                           \
-  do                                                         \
-  {                                                          \
-    std::stringstream __msg;                                 \
-    __msg << args;                                           \
-    throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
-  } while (0)
-
-#else  // VW_NOEXCEPT defined
+#ifdef VW_NOEXCEPT
 
 #define THROW_OR_RETURN_NORMAL(args, retval) \
   do                                         \
@@ -212,6 +195,24 @@ bool launchDebugger();
   do                               \
   {                                \
     return;                        \
-  } while(0)
+  } while (0)
+
+#else  // VW_NOEXCEPT defined
+
+#define THROW_OR_RETURN_NORMAL(args, retval)                 \
+  do                                                         \
+  {                                                          \
+    std::stringstream __msgA;                                 \
+    __msgA << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
+  } while (0)
+
+#define THROW_OR_RETURN_VOID(args)                           \
+  do                                                         \
+  {                                                          \
+    std::stringstream __msgB;                                 \
+    __msgB << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \
+  } while (0)
 
 #endif
