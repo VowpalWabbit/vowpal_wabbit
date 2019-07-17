@@ -5,6 +5,9 @@ license as described in the file LICENSE.
 */
 
 #pragma once
+
+#ifndef VW_NOEXCEPT
+
 #include <stdexcept>
 #include <sstream>
 
@@ -166,7 +169,6 @@ bool launchDebugger();
     __msg << args;                             \
     throw ex(__FILE__, __LINE__, __msg.str()); \
   }
-
 }  // namespace VW
 
 #define VW_ASSERT(condition, args) \
@@ -174,3 +176,42 @@ bool launchDebugger();
   {                                \
     THROW(args);                   \
   }
+
+#endif
+
+#define GET_MACRO(_1, _2, NAME, ...) NAME
+#define THROW_OR_RETURN(...) GET_MACRO(__VA_ARGS__, THROW_OR_RETURN_NORMAL, THROW_OR_RETURN_VOID)(__VA_ARGS__)
+
+#ifndef VW_NOEXCEPT
+
+#define THROW_OR_RETURN_NORMAL(args, retval)                 \
+  do                                                         \
+  {                                                          \
+    std::stringstream __msg;                                 \
+    __msg << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
+  } while (0)
+
+#define THROW_OR_RETURN_VOID(args)                           \
+  do                                                         \
+  {                                                          \
+    std::stringstream __msg;                                 \
+    __msg << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
+  } while (0)
+
+#else  // VW_NOEXCEPT defined
+
+#define THROW_OR_RETURN_NORMAL(args, retval) \
+  do                                         \
+  {                                          \
+    return retval;                           \
+  } while (0)
+
+#define THROW_OR_RETURN_VOID(args) \
+  do                               \
+  {                                \
+    return;                        \
+  } while(0)
+
+#endif
