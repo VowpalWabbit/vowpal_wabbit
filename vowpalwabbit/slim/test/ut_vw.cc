@@ -7,6 +7,7 @@
 #include <set>
 #include <stdlib.h>
 #include <streambuf>
+#include <array>
 
 #include "vw_util.h"
 #include <fstream>
@@ -426,7 +427,6 @@ TEST(VowpalWabbitSlim, interaction_num_bits_bug) {
   input.seekg(0, std::ios::beg);
   std::unique_ptr<char> buffer_ptr(new char[length]);
   input.read(buffer_ptr.get(), length); // Extract how many bytes need to be decoded and resize the payload based on those bytes.
-  std::string dst = "serialize_model";
 
   vw_slim::vw_predict<sparse_parameters> vw;
 
@@ -708,3 +708,42 @@ TYPED_TEST_P(VwSlimTest, model_corrupted)
 
 REGISTER_TYPED_TEST_CASE_P(VwSlimTest, model_not_loaded, model_reduction_mismatch, model_corrupted);
 INSTANTIATE_TYPED_TEST_CASE_P(VowpalWabbitSlim, VwSlimTest, WeightParameters);
+
+TEST(ColdStartModel, action_set_not_reordered)
+{
+  std::ifstream input("data/cold_start.model", std::ios::in | std::ios::binary);
+  input.seekg(0, std::ios::end);
+  auto length = input.tellg();
+  input.seekg(0, std::ios::beg);
+  std::unique_ptr<char> buffer_ptr(new char[length]);
+  input.read(buffer_ptr.get(), length);
+
+  vw_slim::vw_predict<sparse_parameters> vw;
+
+  int result = vw.load(buffer_ptr.get(), length);
+  EXPECT_EQ(result, 0);
+
+  safe_example_predict features;
+
+  vw_slim::example_predict_builder bOa(&features, "Features", vw.feature_index_num_bits());
+  bOa.push_feature_string("f1", 1.f);
+
+  const int NUM_ACTIONS = 5;
+  std::array<safe_example_predict, NUM_ACTIONS> actions;
+  for (int i = 0; i < actions.size(); i++)
+  {
+    vw_slim::example_predict_builder bOe(&actions[i], "ActionFeatures");
+    bOe.push_feature(i, 1.f);
+  }
+
+  std::string uuidString("EventId_0");
+
+  std::vector<float> pdfs;
+  std::vector<int> rankings;
+
+  result = vw.predict(uuidString.c_str(), features, actions.data(), NUM_ACTIONS, pdfs, rankings);
+
+  EXPECT_GT(pdfs[0], 0.8);
+  EXPECT_GT(pdfs[0], pdfs[1]);
+  EXPECT_THAT(rankings, ElementsAre(0, 1, 2, 3, 4));
+}
