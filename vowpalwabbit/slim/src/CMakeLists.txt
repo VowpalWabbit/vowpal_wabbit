@@ -1,7 +1,5 @@
-find_package(Boost)
-	if (Boost_FOUND)
-	add_definitions(-D BOOST_FOUND)
-endif()
+add_library(vwslim example_predict_builder.cc model_parser.cc opts.cc vw_slim_predict.cc ../../example_predict.cc)
+target_include_directories(vwslim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_CURRENT_SOURCE_DIR}/../../ ${CMAKE_CURRENT_SOURCE_DIR}/../../../explore)
+target_compile_definitions(vwslim PUBLIC EXPLORE_NOEXCEPT VW_NOEXCEPT)
 
-add_library(vwslim example_predict_builder.cc model_parser.cc opts.cc vw_slim_predict.cc ../../example_predict.cc ../../vw_exception.cc)
 install(TARGETS vwslim DESTINATION lib)

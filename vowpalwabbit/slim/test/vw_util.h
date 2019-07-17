@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "..\include\vw_slim_predict.h"
+#include "vw_slim_predict.h"
 #include <fstream>
 
 template<typename W>

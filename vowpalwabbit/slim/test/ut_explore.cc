@@ -5,61 +5,61 @@
 
 #include <vector>
 #include <sstream>
-#include "../../../explore/explore.h"
+#include "explore.h"
 #include "vw_slim_predict.h"
 using namespace ::testing;
 
 TEST(ExploreTestSuite, EpsilonGreedy)
 {
-    std::vector<float> pdf(4);
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_epsilon_greedy(0.4f, 2, begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-6f), std::vector<float>{ 0.1f, 0.1f, 0.7f, 0.1f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-6f), std::vector<float>{ 0.1f, 0.1f, 0.7f, 0.1f }));
 }
 
 TEST(ExploreTestSuite, EpsilonGreedyTopActionOutOfBounds)
 {
-    std::vector<float> pdf(4);
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_epsilon_greedy(0.4f, 8, begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-6f), std::vector<float>{ 0.1f, 0.1f, 0.1f, 0.7f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-6f), std::vector<float>{ 0.1f, 0.1f, 0.1f, 0.7f }));
 }
 
 TEST(ExploreTestSuite, EpsilonGreedy_bad_range)
 {
-    std::vector<float> pdf;
+  std::vector<float> pdf;
   float x;
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_epsilon_greedy(0.4f, 0, begin(pdf), end(pdf)));
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_epsilon_greedy(0.4f, 0, &x, &x - 3));
-    EXPECT_THAT(pdf.size(), 0);
+  EXPECT_THAT(pdf.size(), 0);
 }
 
 TEST(ExploreTestSuite, Softmax)
 {
-    std::vector<float> scores = { 1, 2, 3, 8 };
-    std::vector<float> pdf(4);
+  std::vector<float> scores = { 1, 2, 3, 8 };
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0.128f, 0.157f, 0.192f, 0.522f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0.128f, 0.157f, 0.192f, 0.522f }));
 }
 
 TEST(ExploreTestSuite, SoftmaxInBalanced)
 {
-    std::vector<float> scores = { 1, 2, 3 };
-    std::vector<float> pdf(4);
+  std::vector<float> scores = { 1, 2, 3 };
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0.269f, 0.328f, 0.401f, 0 }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0.269f, 0.328f, 0.401f, 0 }));
 }
 
 TEST(ExploreTestSuite, SoftmaxInBalanced2)
 {
-    std::vector<float> scores = { 1, 2, 3, 8, 4 };
-    std::vector<float> pdf(4);
+  std::vector<float> scores = { 1, 2, 3, 8, 4 };
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0.128f, 0.157f, 0.192f, 0.522f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0.128f, 0.157f, 0.192f, 0.522f }));
 }
 
 TEST(ExploreTestSuite, Softmax_bad_range)
 {
-    std::vector<float> scores;
-    std::vector<float> pdf;
+  std::vector<float> scores;
+  std::vector<float> pdf;
   float x;
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_softmax(0.2f, begin(scores), end(scores), &x, &x - 3));
@@ -67,26 +67,26 @@ TEST(ExploreTestSuite, Softmax_bad_range)
 
 TEST(ExploreTestSuite, Bag)
 {
-    std::vector<uint16_t> top_actions = { 0, 0, 1, 1 };
-    std::vector<float> pdf(4);
+  std::vector<uint16_t> top_actions = { 0, 0, 1, 1 };
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0, 0, 0.5, 0.5f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 0, 0, 0.5, 0.5f }));
 }
 
 TEST(ExploreTestSuite, Bag10)
 {
-    std::vector<uint16_t> top_actions = { 10 };
-    std::vector<float> pdf(4);
+  std::vector<uint16_t> top_actions = { 10 };
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 1.f, 0, 0, 0 }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 1.f, 0, 0, 0 }));
 }
 
 TEST(ExploreTestSuite, BagEmpty)
 {
-    std::vector<uint16_t> top_actions;
-    std::vector<float> pdf(4);
+  std::vector<uint16_t> top_actions;
+  std::vector<float> pdf(4);
   EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 1.f, 0, 0, 0 }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ 1.f, 0, 0, 0 }));
 }
 
 TEST(ExploreTestSuite, Bag_bad_range)
@@ -101,30 +101,30 @@ TEST(ExploreTestSuite, Bag_bad_range)
 
 TEST(ExploreTestSuite, enforce_minimum_probability)
 {
-    std::vector<float> pdf = { 1.f, 0, 0 };
-    exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .8f, .1f, .1f }));
+  std::vector<float> pdf = { 1.f, 0, 0 };
+  exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .8f, .1f, .1f }));
 }
 
 TEST(ExploreTestSuite, enforce_minimum_probability_no_zeros)
 {
-    std::vector<float> pdf = { 0.9f, 0.1f, 0 };
+  std::vector<float> pdf = { 0.9f, 0.1f, 0 };
   EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .8f, .2f, .0f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .8f, .2f, .0f }));
 }
 
 TEST(ExploreTestSuite, enforce_minimum_probability_uniform)
 {
-    std::vector<float> pdf = { 0.9f, 0.1f, 0, 0 };
+  std::vector<float> pdf = { 0.9f, 0.1f, 0, 0 };
   EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(1.f, true, begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .25f, .25f, .25f, .25f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .25f, .25f, .25f, .25f }));
 }
 
 TEST(ExploreTestSuite, enforce_minimum_probability_uniform_no_zeros)
 {
-    std::vector<float> pdf = { 0.9f, 0.1f, 0 };
+  std::vector<float> pdf = { 0.9f, 0.1f, 0 };
   EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(1.f, false, begin(pdf), end(pdf)));
-    EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .5f, .5f, .0f }));
+  EXPECT_THAT(pdf, Pointwise(FloatNearPointwise(1e-3f), std::vector<float>{ .5f, .5f, .0f }));
 }
 
 TEST(ExploreTestSuite, enforce_minimum_probability_bad_range)
