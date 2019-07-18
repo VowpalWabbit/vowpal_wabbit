@@ -80,6 +80,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
+  dst->interactions = src->interactions;
 }
 
 void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))

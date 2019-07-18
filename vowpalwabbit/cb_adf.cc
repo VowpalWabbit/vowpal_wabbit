@@ -318,7 +318,7 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = true;
   if (c.gen_cs.known_cost.probability > 0)
-    loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
+    loss = get_cost_estimate(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
   else
     labeled_example = false;
 
