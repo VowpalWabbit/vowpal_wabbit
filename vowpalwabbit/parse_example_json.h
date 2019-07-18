@@ -28,6 +28,8 @@ license as described in the file LICENSE.
 #endif
 
 #include "cb.h"
+#include "conditional_contextual_bandit.h"
+
 #include "best_constant.h"
 
 #include <algorithm>
@@ -155,11 +157,15 @@ class LabelObjectState : public BaseState<audit>
 {
  private:
   BaseState<audit>* return_state;
+
+ public:
   CB::cb_class cb_label;
   bool found;
   bool found_cb;
+  std::vector<unsigned int> actions;
+  std::vector<float> probs;
+  std::vector<unsigned int> inc;
 
- public:
   LabelObjectState() : BaseState<audit>("LabelObject") {}
 
   void init(vw* /* all */)
@@ -169,7 +175,7 @@ class LabelObjectState : public BaseState<audit>
     cb_label = {0., 0, 0., 0.};
   }
 
-  BaseState<audit>* StartObject(Context<audit>& ctx)
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
     ctx.all->p->lp.default_label(&ctx.ex->l);
 
@@ -186,14 +192,14 @@ class LabelObjectState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool /* copy */)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool /* copy */) override
   {
     ctx.key = str;
     ctx.key_length = len;
     return this;
   }
 
-  BaseState<audit>* Float(Context<audit>& ctx, float v)
+  BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     // simple
     if (!_stricmp(ctx.key, "Label"))
@@ -236,11 +242,41 @@ class LabelObjectState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) { return Float(ctx, (float)v); }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override { return Float(ctx, (float)v); }
 
-  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType)
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    if (found_cb)
+    if (ctx.all->label_type == label_type::ccb)
+    {
+      auto ld = (CCB::label*)&ctx.ex->l;
+
+      for (auto id : inc)
+      {
+        ld->explicit_included_actions.push_back(id);
+      }
+      inc.clear();
+
+      if ((actions.size() != 0) && (probs.size() != 0))
+      {
+        auto outcome = new CCB::conditional_contexual_bandit_outcome();
+        outcome->cost = cb_label.cost;
+        if (actions.size() != probs.size())
+        {
+          THROW("Actions and probabilties must be the same length.");
+        }
+
+        for (size_t i = 0; i < this->actions.size(); i++)
+        {
+          outcome->probabilities.push_back({actions[i], probs[i]});
+        }
+        actions.clear();
+        probs.clear();
+
+        ld->outcome = outcome;
+        cb_label = {0., 0, 0., 0.};
+      }
+    }
+    else if (found_cb)
     {
       CB::label* ld = (CB::label*)&ctx.ex->l;
       ld->costs.push_back(cb_label);
@@ -266,7 +302,7 @@ struct LabelSinglePropertyState : BaseState<audit>
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
 
   // forward _label
-  BaseState<audit>* Float(Context<audit>& ctx, float v)
+  BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     // skip "_label_"
     ctx.key += 7;
@@ -278,7 +314,7 @@ struct LabelSinglePropertyState : BaseState<audit>
     return ctx.previous_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v)
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
   {
     // skip "_label_"
     ctx.key += 7;
@@ -298,7 +334,7 @@ struct LabelIndexState : BaseState<audit>
 
   LabelIndexState() : BaseState<audit>("LabelIndex"), index(-1) {}
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned int v)
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned int v) override
   {
     index = v;
     return ctx.previous_state;
@@ -312,25 +348,22 @@ struct LabelState : BaseState<audit>
 {
   LabelState() : BaseState<audit>("Label") {}
 
-  BaseState<audit>* StartObject(Context<audit>& ctx) { return ctx.label_object_state.StartObject(ctx); }
+  BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool copy)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     VW::parse_example_label(*ctx.all, *ctx.ex, str);
     return ctx.previous_state;
   }
 
-  BaseState<audit>* Float(Context<audit>& ctx, float v)
+  BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     // TODO: once we introduce label types, check here
     ctx.ex->l.simple.label = v;
     return ctx.previous_state;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v)
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
   {
     // TODO: once we introduce label types, check here
     ctx.ex->l.simple.label = (float)v;
@@ -344,11 +377,8 @@ struct TextState : BaseState<audit>
 {
   TextState() : BaseState<audit>("text") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     auto& ns = ctx.CurrentNamespace();
 
     // split into individual features
@@ -388,11 +418,8 @@ struct TagState : BaseState<audit>
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool copy)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     push_many(ctx.ex->tag, str, length);
 
     return ctx.previous_state;
@@ -404,7 +431,7 @@ struct MultiState : BaseState<audit>
 {
   MultiState() : BaseState<audit>("Multi") {}
 
-  BaseState<audit>* StartArray(Context<audit>& ctx)
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     // mark shared example
     if (ctx.all->label_type == label_type::cb)
@@ -419,17 +446,27 @@ struct MultiState : BaseState<audit>
 
       ld->costs.push_back(f);
     }
+    else if (ctx.all->label_type == label_type::ccb)
+    {
+      CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
+      ld->type = CCB::example_type::shared;
+    }
     else
-      THROW("label type is not CB")
+      THROW("label type is not CB or CCB")
 
     return this;
   }
 
-  BaseState<audit>* StartObject(Context<audit>& ctx)
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
+    if (ctx.all->label_type == label_type::ccb)
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
+    }
+
     ctx.examples->push_back(ctx.ex);
 
     // setup default namespace
@@ -438,10 +475,58 @@ struct MultiState : BaseState<audit>
     return &ctx.default_state;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType)
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
   {
     // return to shared example
     ctx.ex = (*ctx.examples)[0];
+
+    return &ctx.default_state;
+  }
+};
+
+// This state makes the assumption we are in CCB
+template <bool audit>
+struct SlotsState : BaseState<audit>
+{
+  SlotsState() : BaseState<audit>("Slots") {}
+  BaseState<audit>* saved;
+  BaseState<audit>* saved_root_state;
+
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
+  {
+    // drain existing added namespace
+    // todo check bounds
+    saved = ctx.PopNamespace();
+    saved_root_state = ctx.root_state;
+    ctx.root_state = this;
+    return this;
+  }
+
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
+  {
+    // allocate new example
+    ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+
+    ctx.examples->push_back(ctx.ex);
+
+    // The end object logic assumes shared example so we need to take an extra one here.
+    ctx.label_index_state.index = ctx.examples->size() - 2;
+
+    // setup default namespace
+    ctx.PushNamespace(" ", this);
+
+    return &ctx.default_state;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    // return to shared example
+    ctx.ex = (*ctx.examples)[0];
+
+    ctx.PushNamespace(" ", saved);
+    ctx.root_state = saved_root_state;
 
     return &ctx.default_state;
   }
@@ -456,7 +541,7 @@ class ArrayState : public BaseState<audit>
  public:
   ArrayState() : BaseState<audit>("Array") {}
 
-  BaseState<audit>* StartArray(Context<audit>& ctx)
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     if (ctx.previous_state == this)
     {
@@ -471,7 +556,7 @@ class ArrayState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* Float(Context<audit>& ctx, float f)
+  BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     if (audit)
     {
@@ -487,15 +572,15 @@ class ArrayState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) { return Float(ctx, (float)f); }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) override { return Float(ctx, (float)f); }
 
-  BaseState<audit>* Null(Context<audit>& /* ctx */)
+  BaseState<audit>* Null(Context<audit>& /* ctx */) override
   {
     // ignore null values and stay in current state
     return this;
   }
 
-  BaseState<audit>* StartObject(Context<audit>& ctx)
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
     // parse properties
     ctx.PushNamespace(ctx.namespace_path.size() > 0 ? ctx.CurrentNamespace().name : " ", this);
@@ -503,7 +588,10 @@ class ArrayState : public BaseState<audit>
     return &ctx.default_state;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType /* elementCount */) { return ctx.PopNamespace(); }
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType /* elementCount */) override
+  {
+    return ctx.PopNamespace();
+  }
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
@@ -512,7 +600,7 @@ struct IgnoreState : BaseState<audit>
 {
   IgnoreState() : BaseState<audit>("Ignore") {}
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned) { return ctx.previous_state; }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned) override { return ctx.previous_state; }
 };
 
 template <bool audit>
@@ -607,41 +695,62 @@ class DefaultState : public BaseState<audit>
     return &ctx.ignore_state;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
     ctx.key = str;
     ctx.key_length = length;
 
     if (length > 0 && str[0] == '_')
     {
       // match _label*
-      if (ctx.key_length >= 6 && !strncmp(str, "_label", 6))
+      if (ctx.key_length >= 6 && !strncmp(ctx.key, "_label", 6))
       {
         if (ctx.key_length >= 7 && ctx.key[6] == '_')
           return &ctx.label_single_property_state;
         else if (ctx.key_length == 6)
           return &ctx.label_state;
-        else if (ctx.key_length == 11 && !_stricmp(str, "_labelIndex"))
+        else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex"))
           return &ctx.label_index_state;
         else
         {
-          ctx.error() << "Unsupported key '" << str << "' len: " << length;
+          ctx.error() << "Unsupported key '" << ctx.key << "' len: " << length;
           return nullptr;
         }
       }
 
-      if (ctx.key_length == 5 && !strcmp(str, "_text"))
+      if (ctx.key_length == 5 && !strcmp(ctx.key, "_text"))
         return &ctx.text_state;
 
       // TODO: _multi in _multi...
-      if (ctx.key_length == 6 && !strcmp(str, "_multi"))
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi"))
         return &ctx.multi_state;
+
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots"))
+        return &ctx.slots_state;
 
       if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag"))
         return &ctx.tag_state;
+
+      if (ctx.key_length == 4 && !_stricmp(ctx.key, "_inc"))
+      {
+        ctx.array_uint_state.output_array = &ctx.label_object_state.inc;
+        ctx.array_uint_state.return_state = this;
+        return &ctx.array_uint_state;
+      }
+
+      if (ctx.key_length == 2 && ctx.key[1] == 'a')
+      {
+        ctx.array_uint_state.output_array = &ctx.label_object_state.actions;
+        ctx.array_uint_state.return_state = this;
+        return &ctx.array_uint_state;
+      }
+
+      if (ctx.key_length == 2 && ctx.key[1] == 'p')
+      {
+        ctx.array_float_state.output_array = &ctx.label_object_state.probs;
+        ctx.array_float_state.return_state = this;
+        return &ctx.array_float_state;
+      }
 
       return Ignore(ctx, length);
     }
@@ -649,10 +758,8 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
   {
-    assert(!copy);
-
     // string escape
     const char* end = str + length;
     for (char* p = (char*)str; p != end; p++)
@@ -675,7 +782,7 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* Bool(Context<audit>& ctx, bool b)
+  BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
   {
     if (b)
       ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key);
@@ -683,13 +790,13 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* StartObject(Context<audit>& ctx)
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
     ctx.PushNamespace(ctx.key, this);
     return this;
   }
 
-  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount)
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount) override
   {
     BaseState<audit>* return_state = ctx.PopNamespace();
 
@@ -717,13 +824,34 @@ class DefaultState : public BaseState<audit>
 
       // inject label
       ctx.label_object_state.EndObject(ctx, memberCount);
+
+      // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
+      // case this is CB, so generate a single slot with this info.
+      if (ctx.all->label_type == label_type::ccb)
+      {
+        auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
+            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+        if (num_slots == 0 && ctx.label_object_state.found_cb)
+        {
+          ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+          ctx.all->p->lp.default_label(&ctx.ex->l);
+          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+          ctx.examples->push_back(ctx.ex);
+
+          auto outcome = new CCB::conditional_contexual_bandit_outcome();
+          outcome->cost = ctx.label_object_state.cb_label.cost;
+          outcome->probabilities.push_back(
+              {ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
+          ctx.ex->l.conditional_contextual_bandit.outcome = outcome;
+        }
+      }
     }
 
     // if we're at the top-level go back to ds_state
     return ctx.namespace_path.empty() ? ctx.root_state : return_state;
   }
 
-  BaseState<audit>* Float(Context<audit>& ctx, float f)
+  BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     auto& ns = ctx.CurrentNamespace();
     ns.AddFeature(f, VW::hash_feature(*ctx.all, ctx.key, ns.namespace_hash), ctx.key);
@@ -731,9 +859,9 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) { return Float(ctx, (float)f); }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) override { return Float(ctx, (float)f); }
 
-  BaseState<audit>* StartArray(Context<audit>& ctx) { return ctx.array_state.StartArray(ctx); }
+  BaseState<audit>* StartArray(Context<audit>& ctx) override { return ctx.array_state.StartArray(ctx); }
 };
 
 template <bool audit, typename T>
@@ -743,8 +871,12 @@ class ArrayToVectorState : public BaseState<audit>
   ArrayToVectorState() : BaseState<audit>("ArrayToVectorState") {}
 
   std::vector<T>* output_array;
+  BaseState<audit>* return_state;
 
-  BaseState<audit>* StartArray(Context<audit>& ctx)
+  // Allows for single value handling.
+  bool has_seen_array_start = false;
+
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     if (ctx.previous_state == this)
     {
@@ -752,31 +884,53 @@ class ArrayToVectorState : public BaseState<audit>
       return nullptr;
     }
 
+    has_seen_array_start = true;
+
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& /* ctx */, unsigned f)
+  BaseState<audit>* Uint(Context<audit>& /* ctx */, unsigned f) override
   {
-    output_array->push_back((T)f);
+    output_array->push_back(static_cast<T>(f));
+
+    if (!has_seen_array_start)
+    {
+      has_seen_array_start = false;
+      return return_state;
+    }
+
     return this;
   }
 
-  BaseState<audit>* Float(Context<audit>& /* ctx */, float f)
+  BaseState<audit>* Float(Context<audit>& /* ctx */, float f) override
   {
-    output_array->push_back((T)f);
+    output_array->push_back(static_cast<T>(f));
+
+    if (!has_seen_array_start)
+    {
+      has_seen_array_start = false;
+      return return_state;
+    }
+
     return this;
   }
 
-  BaseState<audit>* Null(Context<audit>& /* ctx */)
+  BaseState<audit>* Null(Context<audit>& /* ctx */) override
   {
+    if (!has_seen_array_start)
+    {
+      has_seen_array_start = false;
+      return return_state;
+    }
+
     // ignore null values and stay in current state
     return this;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType)
+  BaseState<audit>* EndArray(Context<audit>& /*ctx*/, rapidjson::SizeType /*length*/) override
   {
-    // TODO: introduce return_state
-    return &ctx.decision_service_state;
+    has_seen_array_start = false;
+    return return_state;
   }
 };
 
@@ -787,21 +941,16 @@ class StringToStringState : public BaseState<audit>
   StringToStringState() : BaseState<audit>("StringToStringState") {}
 
   std::string* output_string;
+  BaseState<audit>* return_state;
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */)
+  BaseState<audit>* String(
+      Context<audit>& /*ctx*/, const char* str, rapidjson::SizeType length, bool /* copy */) override
   {
     output_string->assign(str, str + length);
-
-    // TODO: introduce return_state
-    return &ctx.decision_service_state;
+    return return_state;
   }
 
-  BaseState<audit>* Null(Context<audit>& ctx)
-  {
-    // ignore null values and stay in current state
-    // TODO: introduce return_state
-    return &ctx.decision_service_state;
-  }
+  BaseState<audit>* Null(Context<audit>& /*ctx*/) override { return return_state; }
 };
 
 template <bool audit>
@@ -811,21 +960,18 @@ class FloatToFloatState : public BaseState<audit>
   FloatToFloatState() : BaseState<audit>("FloatToFloatState") {}
 
   float* output_float;
+  BaseState<audit>* return_state;
 
-  BaseState<audit>* Float(Context<audit>& ctx, float f)
+  BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
     *output_float = f;
-
-    // TODO: introduce return_state
-    return &ctx.decision_service_state;
+    return return_state;
   }
 
-  BaseState<audit>* Null(Context<audit>& ctx)
+  BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
     *output_float = 0.f;
-
-    // TODO: introduce return_state
-    return &ctx.decision_service_state;
+    return return_state;
   }
 };
 
@@ -836,13 +982,12 @@ class BoolToBoolState : public BaseState<audit>
   BoolToBoolState() : BaseState<audit>("BoolToBoolState") {}
 
   bool* output_bool;
+  BaseState<audit>* return_state;
 
-  BaseState<audit>* Bool(Context<audit>& ctx, bool b)
+  BaseState<audit>* Bool(Context<audit>& /*ctx*/, bool b) override
   {
     *output_bool = b;
-
-    // TODO: introduce return_state
-    return &ctx.decision_service_state;
+    return return_state;
   }
 };
 
@@ -857,6 +1002,80 @@ struct DecisionServiceInteraction
 };
 
 template <bool audit>
+class CCBOutcomeList : public BaseState<audit>
+{
+  int slot_object_index = 0;
+
+  std::vector<uint32_t> actions;
+  std::vector<float> probs;
+  float cost;
+
+  BaseState<audit>* old_root;
+
+ public:
+  DecisionServiceInteraction* interactions;
+
+  CCBOutcomeList() : BaseState<audit>("CCBOutcomeList") {}
+
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
+  {
+    slot_object_index = 0;
+
+    // Find start index of slot objects by iterating until we find the first slot example.
+    for (auto ex : *ctx.examples)
+    {
+      if (ex->l.conditional_contextual_bandit.type != CCB::example_type::slot)
+      {
+        slot_object_index++;
+      }
+    }
+    old_root = ctx.root_state;
+    ctx.root_state = this;
+
+    if (slot_object_index == 0)
+    {
+      THROW("Badly formed ccb example. Shared example is required.")
+    }
+
+    return this;
+  }
+
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
+  {
+    // Set current example so that default state correctly sets the label.
+    ctx.ex = (*ctx.examples)[slot_object_index];
+    // The end object logic assumes shared example so we need to take one here.
+    ctx.label_index_state.index = slot_object_index - 1;
+
+    slot_object_index++;
+
+    // Push a namespace so that default state can get back here when it reaches the end of the object.
+    ctx.PushNamespace(" ", this);
+
+    return &ctx.default_state;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
+    for (auto ex : *ctx.examples)
+    {
+      if (ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+      {
+        if (ex->l.conditional_contextual_bandit.outcome)
+        {
+          interactions->actions.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].action);
+          interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
+        }
+      }
+    }
+
+    ctx.root_state = old_root;
+    return &ctx.decision_service_state;
+  }
+};
+
+template <bool audit>
 class DecisionServiceState : public BaseState<audit>
 {
  public:
@@ -864,19 +1083,19 @@ class DecisionServiceState : public BaseState<audit>
 
   DecisionServiceInteraction* data;
 
-  BaseState<audit>* StartObject(Context<audit>& /* ctx */)
+  BaseState<audit>* StartObject(Context<audit>& /* ctx */) override
   {
     // TODO: improve validation
     return this;
   }
 
-  BaseState<audit>* EndObject(Context<audit>& /* ctx */, rapidjson::SizeType /* memberCount */)
+  BaseState<audit>* EndObject(Context<audit>& /*ctx*/, rapidjson::SizeType /* memberCount */) override
   {
     // TODO: improve validation
     return this;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
   {
     if (length == 1)
     {
@@ -884,9 +1103,11 @@ class DecisionServiceState : public BaseState<audit>
       {
         case 'a':
           ctx.array_uint_state.output_array = &data->actions;
+          ctx.array_uint_state.return_state = this;
           return &ctx.array_uint_state;
         case 'p':
           ctx.array_float_state.output_array = &data->probabilities;
+          ctx.array_float_state.return_state = this;
           return &ctx.array_float_state;
         case 'c':
           ctx.key = " ";
@@ -897,11 +1118,13 @@ class DecisionServiceState : public BaseState<audit>
     else if (length == 5 && !strcmp(str, "pdrop"))
     {
       ctx.float_state.output_float = &data->probabilityOfDrop;
+      ctx.float_state.return_state = this;
       return &ctx.float_state;
     }
     else if (length == 7 && !strcmp(str, "EventId"))
     {
       ctx.string_state.output_string = &data->eventId;
+      ctx.string_state.return_state = this;
       return &ctx.string_state;
     }
     else if (length > 0 && str[0] == '_')
@@ -921,7 +1144,13 @@ class DecisionServiceState : public BaseState<audit>
       else if (length == 10 && !strncmp(str, "_skipLearn", 10))
       {
         ctx.bool_state.output_bool = &data->skipLearn;
+        ctx.bool_state.return_state = this;
         return &ctx.bool_state;
+      }
+      else if (length == 9 && !strncmp(str, "_outcomes", 9))
+      {
+        ctx.ccb_outcome_list_state.interactions = data;
+        return &ctx.ccb_outcome_list_state;
       }
     }
 
@@ -933,10 +1162,10 @@ class DecisionServiceState : public BaseState<audit>
 template <bool audit>
 struct Context
 {
-private:
+ private:
   std::unique_ptr<std::stringstream> error_ptr;
 
-public:
+ public:
   vw* all;
 
   // last "<key>": encountered
@@ -968,6 +1197,7 @@ public:
   MultiState<audit> multi_state;
   IgnoreState<audit> ignore_state;
   ArrayState<audit> array_state;
+  SlotsState<audit> slots_state;
 
   // DecisionServiceState
   DecisionServiceState<audit> decision_service_state;
@@ -976,6 +1206,7 @@ public:
   StringToStringState<audit> string_state;
   FloatToFloatState<audit> float_state;
   BoolToBoolState<audit> bool_state;
+  CCBOutcomeList<audit> ccb_outcome_list_state;
 
   BaseState<audit>* root_state;
 
@@ -1029,7 +1260,7 @@ public:
     {
       auto feature_group = ns.feature_group;
       // Do not insert feature_group if it already exists.
-      if(std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
+      if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
       {
         ex->indices.push_back(feature_group);
       }
@@ -1121,13 +1352,13 @@ void read_line_json(
   // string line_copy(line);
   // destructive parsing
   InsituStringStream ss(line);
-  json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
+  json_parser<audit> parser;
 
-  VWReaderHandler<audit>& handler = parser->handler;
+  VWReaderHandler<audit>& handler = parser.handler;
   handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context);
 
   ParseResult result =
-      parser->reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+      parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
   if (!result.IsError())
     return;
 
@@ -1172,12 +1403,87 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
                                    "Handler: "
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));
-}
 }  // namespace VW
+}  // namespace VW
+
+template <bool audit>
+bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+{
+  if (all->p->decision_service_json)
+  {
+    // Skip lines that do not start with "{"
+    if (line[0] != '{')
+    {
+      return false;
+    }
+
+    DecisionServiceInteraction interaction;
+    VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
+        reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+    // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
+    // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
+    // for counterfactual. (@marco)
+    if (interaction.skipLearn)
+    {
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
+      return false;
+    }
+
+    // let's ask to continue reading data until we find a line with actions provided
+    if (interaction.actions.size() == 0)
+    {
+      // VW::return_multiple_example(*all, examples);
+      // examples.push_back(&VW::get_unused_example(all));
+      return false;
+    }
+  }
+  else
+    VW::template read_line_json<audit>(
+        *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+
+  return true;
+}
+
+inline void prepare_for_learner(vw* all, v_array<example*>& examples)
+{
+  // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
+  // since the communication between the parsing thread the main learner expects examples to be requested in order (as
+  // they're layed out in memory) there is no way to determine upfront if a shared example exists thus even if there are
+  // no features for the shared example, still an empty example is returned.
+
+  // insert new line example at the end
+  if (examples.size() > 1)
+  {
+    example& ae = VW::get_unused_example(all);
+    char empty = '\0';
+    substring example = {&empty, &empty};
+    substring_to_example(all, &ae, example);
+
+    examples.push_back(&ae);
+  }
+}
+
+// This is used by the python parser
+template <bool audit>
+void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+{
+  bool good_example = parse_line_json<audit>(all, line, num_chars, examples);
+  if (!good_example)
+  {
+    VW::return_multiple_example(*all, examples);
+    examples.push_back(&VW::get_unused_example(all));
+    return;
+  }
+
+  prepare_for_learner(all, examples);
+}
 
 template <bool audit>
 int read_features_json(vw* all, v_array<example*>& examples)
 {
+  // Keep reading lines until a valid set of examples is produced.
   bool reread;
   do
   {
@@ -1189,50 +1495,13 @@ int read_features_json(vw* all, v_array<example*>& examples)
     if (num_chars_initial < 1)
       return (int)num_chars_initial;
 
+    // Ensure there is a null terminator.
     line[num_chars] = '\0';
-    if (all->p->decision_service_json)
-    {
-      // Skip lines that do not start with "{"
-      if (line[0] != '{')
-      {
-        reread = true;
-        continue;
-      }
 
-      DecisionServiceInteraction interaction;
-      VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
-          reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
-
-      if (interaction.skipLearn)
-      {
-        VW::return_multiple_example(*all, examples);
-        examples.push_back(&VW::get_unused_example(all));
-        reread = true;
-      }
-
-      // let's continue reading data until we find a line with actions provided
-      if (interaction.actions.size() == 0)
-        reread = true;
-    }
-    else
-      VW::template read_line_json<audit>(
-          *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+    reread = !parse_line_json<audit>(all, line, num_chars, examples);
   } while (reread);
 
-  // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
-  // since the communication between the parsing thread the main learner expects examples to be requested in order (as
-  // they're layed out in memory) there is no way to determine upfront if a shared example exists thus even if there are
-  // no features for the shared example, still an empty example is returned.
-
-  if (examples.size() > 1)
-  {  // insert new line example at the end
-    example& ae = VW::get_unused_example(all);
-    char empty = '\0';
-    substring example = {&empty, &empty};
-    substring_to_example(all, &ae, example);
-
-    examples.push_back(&ae);
-  }
+  prepare_for_learner(all, examples);
 
   return 1;
 }

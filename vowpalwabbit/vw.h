@@ -147,7 +147,7 @@ inline uint64_t hash_feature(vw& all, std::string s, uint64_t u)
   ss.end = ss.begin + s.length();
   return all.p->hasher(ss, u) & all.parse_mask;
 }
-inline uint64_t hash_feature_static(std::string s, unsigned long u, std::string h, uint32_t num_bits)
+inline uint64_t hash_feature_static(std::string s, uint64_t u, std::string h, uint32_t num_bits)
 {
   substring ss;
   ss.begin = (char*)s.c_str();
@@ -156,7 +156,7 @@ inline uint64_t hash_feature_static(std::string s, unsigned long u, std::string 
   return getHasher(h)(ss, u) & parse_mark;
 }
 
-inline uint64_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
+inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
   substring ss;
   ss.begin = fstr;
@@ -177,4 +177,16 @@ inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
 inline uint32_t num_weights(vw& all) { return (uint32_t)all.length(); }
 
 inline uint32_t get_stride(vw& all) { return all.weights.stride(); }
+
+inline void init_features(primitive_feature_space& fs, size_t features_count)
+{
+  fs.fs = new feature[features_count];
+  fs.len = features_count;
+}
+
+inline void set_feature(primitive_feature_space& fs, size_t index, uint64_t feature_hash, float value)
+{
+  fs.fs[index].weight_index = feature_hash;
+  fs.fs[index].x = value;
+}
 }  // namespace VW

@@ -100,9 +100,8 @@ inline bool example_is_newline_not_header(example& ec) { return (example_is_newl
 bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
 {
   const bool is_test_ec = all.p->lp.test_label(&ec->l);
-  const bool need_to_break = VW::is_ring_example(all, ec) && (ec_seq.size() >= all.p->ring_size - 2);
 
-  if ((example_is_newline_not_header(*ec) && is_test_ec) || need_to_break)
+  if (example_is_newline_not_header(*ec) && is_test_ec)
   {
     VW::finish_example(all, *ec);
     if (ec_seq.size() == 0)

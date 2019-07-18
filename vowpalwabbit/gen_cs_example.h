@@ -45,6 +45,8 @@ struct cb_to_cs_adf
 
 CB::cb_class* get_observed_cost(CB::label& ld);
 
+float safe_probability(float prob);
+
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
 
 template <bool is_learn>
@@ -188,14 +190,13 @@ void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
 
+void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_offset,
+    ACTION_SCORE::action_scores action_vals, COST_SENSITIVE::label& cs_labels);
+
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {  // size_t mysize = examples.size();
   c.pred_scores.costs.clear();
-  bool shared = CB::ec_is_example_header(*examples[0]);
-  int startK = 0;
-  if (shared)
-    startK = 1;
 
   cs_labels.costs.clear();
   for (size_t i = 0; i < examples.size(); i++)
@@ -203,9 +204,9 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
     if (CB_ALGS::example_is_newline_not_header(*examples[i]))
       continue;
 
-    COST_SENSITIVE::wclass wc = {0., 0, 0., 0.};
+    COST_SENSITIVE::wclass wc = {0., (uint32_t)i, 0., 0.};
 
-    if (c.known_cost.action + startK == i)
+    if (c.known_cost.action == i)
     {
       int known_index = c.known_cost.action;
       c.known_cost.action = 0;
@@ -218,22 +219,12 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
     else
       wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
 
-    if (shared)
-      wc.class_index = (uint32_t)i - 1;
-    else
-      wc.class_index = (uint32_t)i;
     c.pred_scores.costs.push_back(wc);  // done
 
     // add correction if we observed cost for this action and regressor is wrong
-    if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
+    if (c.known_cost.probability != -1 && c.known_cost.action == i)
       wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
     cs_labels.costs.push_back(wc);
-  }
-
-  if (shared)  // take care of shared examples
-  {
-    cs_labels.costs[0].class_index = 0;
-    cs_labels.costs[0].x = -FLT_MAX;
   }
 }
 

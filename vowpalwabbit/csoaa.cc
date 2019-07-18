@@ -263,16 +263,15 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   ec.l.cs = ld;
 }
 
-bool test_ldf_sequence(ldf& data, size_t start_K, multi_ex& ec_seq)
+bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
 {
   bool isTest;
-  if (start_K == ec_seq.size())
+  if (0 == ec_seq.size())
     isTest = true;
   else
-    isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[start_K]->l);
-  for (size_t k = start_K; k < ec_seq.size(); k++)
+    isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[0]->l);
+  for (const auto& ec : ec_seq)
   {
-    example* ec = ec_seq[k];
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
@@ -281,20 +280,18 @@ bool test_ldf_sequence(ldf& data, size_t start_K, multi_ex& ec_seq)
       isTest = true;
       data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
-    if (ec_is_example_header(*ec))
-      THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
   return isTest;
 }
 
-void do_actual_learning_wap(ldf& data, single_learner& base, size_t start_K, multi_ex& ec_seq)
+void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   vector<COST_SENSITIVE::wclass*> all_costs;
-  for (size_t k = start_K; k < K; k++) all_costs.push_back(&ec_seq[k]->l.cs.costs[0]);
+  for (const auto& example : ec_seq) all_costs.push_back(&example->l.cs.costs[0]);
   compute_wap_values(all_costs);
 
-  for (size_t k1 = start_K; k1 < K; k1++)
+  for (size_t k1 = 0; k1 < K; k1++)
   {
     example* ec1 = ec_seq[k1];
 
@@ -346,25 +343,22 @@ void do_actual_learning_wap(ldf& data, single_learner& base, size_t start_K, mul
   }
 }
 
-void do_actual_learning_oaa(ldf& data, single_learner& base, size_t start_K, multi_ex& ec_seq)
+void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
-  size_t K = ec_seq.size();
   float min_cost = FLT_MAX;
   float max_cost = -FLT_MAX;
 
-  for (size_t k = start_K; k < K; k++)
+  for (const auto& example : ec_seq)
   {
-    float ec_cost = ec_seq[k]->l.cs.costs[0].x;
+    float ec_cost = example->l.cs.costs[0].x;
     if (ec_cost < min_cost)
       min_cost = ec_cost;
     if (ec_cost > max_cost)
       max_cost = ec_cost;
   }
 
-  for (size_t k = start_K; k < K; k++)
+  for (const auto& ec : ec_seq)
   {
-    example* ec = ec_seq[k];
-
     // save original variables
     label save_cs_label = ec->l.cs;
     v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
@@ -440,30 +434,22 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   /////////////////////// add headers
   uint32_t K = (uint32_t)ec_seq.size();
-  uint32_t start_K = 0;
 
-  if (ec_is_example_header(*ec_seq[0]))
-  {
-    start_K = 1;
-    for (uint32_t k = 1; k < K; k++) LabelDict::add_example_namespaces_from_example(*ec_seq[k], *ec_seq[0]);
-  }
-  bool isTest = test_ldf_sequence(data, start_K, ec_seq);
+  bool isTest = test_ldf_sequence(data, ec_seq);
   /////////////////////// do prediction
-  uint32_t predicted_K = start_K;
+  uint32_t predicted_K = 0;
   if (data.rank)
   {
     data.a_s.clear();
     data.stored_preds.clear();
-    if (start_K > 0)
-      data.stored_preds.push_back(ec_seq[0]->pred.a_s);
-    for (uint32_t k = start_K; k < K; k++)
+    for (uint32_t k = 0; k < K; k++)
     {
-      data.stored_preds.push_back(ec_seq[k]->pred.a_s);
       example* ec = ec_seq[k];
+      data.stored_preds.push_back(ec->pred.a_s);
       make_single_prediction(data, base, *ec);
       action_score s;
       s.score = ec->partial_prediction;
-      s.action = k - start_K;
+      s.action = k;
       data.a_s.push_back(s);
     }
 
@@ -472,7 +458,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   else
   {
     float min_score = FLT_MAX;
-    for (uint32_t k = start_K; k < K; k++)
+    for (uint32_t k = 0; k < K; k++)
     {
       example* ec = ec_seq[k];
       make_single_prediction(data, base, *ec);
@@ -488,28 +474,24 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   if (is_learn && !isTest)
   {
     if (data.is_wap)
-      do_actual_learning_wap(data, base, start_K, ec_seq);
+      do_actual_learning_wap(data, base, ec_seq);
     else
-      do_actual_learning_oaa(data, base, start_K, ec_seq);
+      do_actual_learning_oaa(data, base, ec_seq);
   }
 
   if (data.rank)
   {
     data.stored_preds[0].clear();
-    if (start_K > 0)
-    {
-      ec_seq[0]->pred.a_s = data.stored_preds[0];
-    }
-    for (size_t k = start_K; k < K; k++)
+    for (size_t k = 0; k < K; k++)
     {
       ec_seq[k]->pred.a_s = data.stored_preds[k];
-      ec_seq[0]->pred.a_s.push_back(data.a_s[k - start_K]);
+      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
     }
   }
   else
   {
     // Mark the predicted subexample with its class_index, all other with 0
-    for (size_t k = start_K; k < K; k++)
+    for (size_t k = 0; k < K; k++)
     {
       if (k == predicted_K)
         ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
@@ -517,28 +499,25 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
         ec_seq[k]->pred.multiclass = 0;
     }
   }
-  /////////////////////// remove header
-  if (start_K > 0)
-    for (size_t k = 1; k < K; k++) LabelDict::del_example_namespaces_from_example(*ec_seq[k], *ec_seq[0]);
 
   ////////////////////// compute probabilities
   if (data.is_probabilities)
   {
     float sum_prob = 0;
-    for (size_t k = start_K; k < K; k++)
+    for (const auto& example : ec_seq)
     {
       // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
       // but partial_prediction is lower for better classes (we are predicting the cost),
       // so we need to take score = -partial_prediction,
       // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-      float prob = 1.f / (1.f + correctedExp(ec_seq[k]->partial_prediction));
-      ec_seq[k]->pred.prob = prob;
+      float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
+      example->pred.prob = prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
-    for (size_t k = start_K; k < K; k++)
+    for (const auto& example : ec_seq)
     {
-      ec_seq[k]->pred.prob /= sum_prob;
+      example->pred.prob /= sum_prob;
     }
   }
 }
@@ -564,8 +543,6 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
   if (example_is_newline(ec))
     return;
-  if (ec_is_example_header(ec))
-    return;
   if (ec_is_label_definition(ec))
     return;
 
@@ -579,13 +556,9 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     // predicted_K was already computed in do_actual_learning(),
     // but we cannot store it in ec.pred union because we store ec.pred.prob there.
     // So we must compute it again.
-    size_t start_K = 0;
-    size_t K = ec_seq->size();
-    if (ec_is_example_header(*(*ec_seq)[0]))
-      start_K = 1;
-    uint32_t predicted_K = (uint32_t)start_K;
+    uint32_t predicted_K = 0;
     float min_score = FLT_MAX;
-    for (size_t k = start_K; k < K; k++)
+    for (size_t k = 0; k < ec_seq->size(); k++)
     {
       example* ec_k = (*ec_seq)[k];
       if (ec_k->partial_prediction < min_score)
@@ -656,8 +629,6 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     size_t idx = 0;
     for (example* ex : *ec_seq)
     {
-      if (ec_is_example_header(*ex))
-        continue;
       if (hit_loss)
         break;
       if (preds[0].action == idx)
@@ -696,10 +667,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
   size_t K = ec_seq.size();
   if ((K > 0) && !ec_seq_is_label_definition(ec_seq))
   {
-    size_t start_K = 0;
-    if (ec_is_example_header(*(ec_seq[0])))
-      start_K = 1;
-    if (test_ldf_sequence(data, start_K, ec_seq))
+    if (test_ldf_sequence(data, ec_seq))
       all.sd->weighted_unlabeled_examples += ec_seq[0]->weight;
     else
       all.sd->weighted_labeled_examples += ec_seq[0]->weight;
@@ -719,11 +687,10 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
     if (data.is_probabilities)
     {
-      size_t start_K = ec_is_example_header(*ec_seq[0]) ? 1 : 0;
       float min_cost = FLT_MAX;
-      size_t correct_class_k = start_K;
+      size_t correct_class_k = 0;
 
-      for (size_t k = start_K; k < K; k++)
+      for (size_t k = 0; k < K; k++)
       {
         float ec_cost = ec_seq[k]->l.cs.costs[0].x;
         if (ec_cost < min_cost)
