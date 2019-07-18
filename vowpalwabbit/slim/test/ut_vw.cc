@@ -289,7 +289,7 @@ std::vector<PredictParam> GenerateTestParams()
   return fixtures;
 }
 
-INSTANTIATE_TEST_CASE_P(VowpalWabbitSlim, PredictTest, ::testing::ValuesIn(GenerateTestParams()));
+INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, PredictTest, ::testing::ValuesIn(GenerateTestParams()));
 
 struct InvalidModelParam
 {
@@ -344,7 +344,7 @@ InvalidModelParam invalid_model_param[] = {
         PredictParamWeightType::Sparse}  // 4 weights
 };
 
-INSTANTIATE_TEST_CASE_P(VowpalWabbitSlim, InvalidModelTest, ::testing::ValuesIn(invalid_model_param));
+INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, InvalidModelTest, ::testing::ValuesIn(invalid_model_param));
 
 TEST(VowpalWabbitSlim, multiclass_data_4)
 {
@@ -639,7 +639,7 @@ CBPredictParam cb_predict_params[] = {
         }},
 };
 
-INSTANTIATE_TEST_CASE_P(VowpalWabbitSlim, CBPredictTest, ::testing::ValuesIn(cb_predict_params));
+INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, CBPredictTest, ::testing::ValuesIn(cb_predict_params));
 
 // Test fixture to allow for both sparse and dense parameters
 template <typename W>
@@ -647,7 +647,7 @@ class VwSlimTest : public ::testing::Test
 {
 };
 
-TYPED_TEST_CASE_P(VwSlimTest);
+TYPED_TEST_SUITE_P(VwSlimTest);
 
 typedef ::testing::Types<sparse_parameters, dense_parameters> WeightParameters;
 
@@ -706,8 +706,8 @@ TYPED_TEST_P(VwSlimTest, model_corrupted)
   }
 }
 
-REGISTER_TYPED_TEST_CASE_P(VwSlimTest, model_not_loaded, model_reduction_mismatch, model_corrupted);
-INSTANTIATE_TYPED_TEST_CASE_P(VowpalWabbitSlim, VwSlimTest, WeightParameters);
+REGISTER_TYPED_TEST_SUITE_P(VwSlimTest, model_not_loaded, model_reduction_mismatch, model_corrupted);
+INSTANTIATE_TYPED_TEST_SUITE_P(VowpalWabbitSlim, VwSlimTest, WeightParameters);
 
 TEST(ColdStartModel, action_set_not_reordered)
 {
