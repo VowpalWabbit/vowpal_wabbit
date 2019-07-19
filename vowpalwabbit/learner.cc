@@ -81,19 +81,8 @@ void process_multi_ex(vw& all, multi_ex& ec_seq)
   as_multiline(all.l)->finish_example(all, ec_seq);
 }
 
-/* example headers have the word "shared" */
-bool ec_is_example_header(example& ec)
-{
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
-  if (costs.size() != 1)
-    return false;
-  if (costs[0].probability == -1.f)
-    return true;
-  return false;
-}
-
 /* is this just a newline */
-inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !ec_is_example_header(ec)); }
+inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !VW::ec_is_example_header(ec)); }
 
 /* Adds an example to multiline collection
  * Returns: true if complete and false if incomplete example */

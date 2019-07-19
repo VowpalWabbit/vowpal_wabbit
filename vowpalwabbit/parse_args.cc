@@ -557,6 +557,13 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   return nullptr;
 }
+
+// Compares the header against CB, CCB and CS header formats.
+bool ec_is_example_header(example& ec)
+{
+  return CB::ec_is_example_header(ec) || COST_SENSITIVE::ec_is_example_header(ec) || CCB::ec_is_example_header(ec);
+}
+
 }  // namespace VW
 // return a copy of string replacing \x00 sequences in it
 string spoof_hex_encoded_namespaces(const string& arg)
