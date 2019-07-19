@@ -18,6 +18,7 @@ enum prediction_type_t
   scalar,
   scalars,
   action_scores,
+  prob_dist,
   action_probs,
   multiclass,
   multilabels,

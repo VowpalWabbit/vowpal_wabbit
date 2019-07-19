@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "multilabel.h"
 #include "cost_sensitive.h"
 #include "cb.h"
+#include "cb_continuous.h"
 #include "constant.h"
 #include "feature_group.h"
 #include "action_score.h"
@@ -21,6 +22,7 @@ license as described in the file LICENSE.
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
 #include <vector>
+#include "prob_dist_cont.h"
 
 const unsigned char default_namespace = 32;
 const unsigned char wap_ldf_namespace = 126;
@@ -45,6 +47,7 @@ typedef union {
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
+  CB_CONT::label cb_cont;
   CCB::label conditional_contextual_bandit;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
@@ -60,6 +63,7 @@ typedef union {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  PDF::prob_dists p_d;
   CCB::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;

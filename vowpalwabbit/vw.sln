@@ -1,9 +1,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.757
 MinimumVisualStudioVersion = 14.0.25420.1
-
-# !!!! Please do NOT check in VS-Modifications to this file without fixing them up by hand
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{F867BBEE-0FA3-41E5-AE01-4808D75936D3}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
@@ -177,10 +175,10 @@ Global
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Debug|x64.Build.0 = Debug|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Release|x64.ActiveCfg = Release|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Release|x64.Build.0 = Release|x64
-		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.ActiveCfg = Debug|x64
-		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.Build.0 = Debug|x64
-		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Release|x64.ActiveCfg = Release|x64
-		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Release|x64.Build.0 = Release|x64
+		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Debug|x64.Build.0 = Debug|Any CPU
+		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Release|x64.ActiveCfg = Release|Any CPU
+		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E}.Release|x64.Build.0 = Release|Any CPU
 		{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}.Debug|x64.ActiveCfg = Debug|x64
 		{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}.Debug|x64.Build.0 = Debug|x64
 		{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}.Release|x64.ActiveCfg = Release|x64
@@ -201,7 +199,7 @@ Global
 		{7D381808-CC76-4A1A-A8E6-3F71278858BB} = {5AF0ECDA-A523-4F8E-8537-E741983119CC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
+		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 	EndGlobalSection
 EndGlobal
