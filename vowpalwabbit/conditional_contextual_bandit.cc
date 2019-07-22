@@ -279,8 +279,7 @@ void remove_slot_features(example* shared, example* slot)
 void calculate_and_insert_interactions(
     example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions)
 {
-  static thread_local std::array<bool, INTERACTIONS::printable_ns_size> found_namespaces;
-  found_namespaces.fill(false);
+  std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
   const auto original_size = generated_interactions.size();
   for (auto i = 0; i < original_size; i++)
