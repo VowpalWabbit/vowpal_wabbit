@@ -42,7 +42,7 @@ float safe_probability(float prob)
 }
 
 // Multiline version
-void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -51,7 +51,7 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-      wc.x = ld.costs[0].cost / safe_probability(ld.costs[0].probability);
+      wc.x = ld.costs[0].cost / safe_probability((std::max)(ld.costs[0].probability, clip_p));
     cs_labels.costs.push_back(wc);
   }
 }
@@ -83,7 +83,7 @@ void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 }
 
 // single line version
-void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p)
 {
   // this implements the inverse propensity score method, where cost are importance weighted by the probability of the
   // chosen action generate cost-sensitive example
@@ -97,9 +97,9 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
       COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
       if (c.known_cost != nullptr && i == c.known_cost->action)
       {
-        wc.x = c.known_cost->cost /
-            safe_probability(
-                c.known_cost->probability);  // use importance weighted cost for observed action, 0 otherwise
+        // use importance weighted cost for observed action, 0 otherwise
+        wc.x = c.known_cost->cost / safe_probability((std::max)(c.known_cost->probability, clip_p));
+
         // ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         // update the loss of this regressor
         c.nb_ex_regressors++;
@@ -120,9 +120,8 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
       COST_SENSITIVE::wclass wc = {0., cl.action, 0., 0.};
       if (c.known_cost != nullptr && cl.action == c.known_cost->action)
       {
-        wc.x = c.known_cost->cost /
-            safe_probability(
-                c.known_cost->probability);  // use importance weighted cost for observed action, 0 otherwise
+        // use importance weighted cost for observed action, 0 otherwise
+        wc.x = c.known_cost->cost / safe_probability((std::max)(c.known_cost->probability, clip_p));
 
         // ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         // update the loss of this regressor
