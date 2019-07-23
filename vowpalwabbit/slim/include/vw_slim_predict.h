@@ -428,7 +428,7 @@ class vw_predict
     // Pdf starts out in the same order as ranking.  Now that ranking has been sorted
     // in the order specified by scores, we need to apply the same transform to pdf.
     using PdfVal = typename std::iterator_traits<PdfIt>::value_type;
-    static thread_local typename std::vector<PdfVal> sorted_pdf(pdf_size);
+    static std::vector<PdfVal> sorted_pdf(pdf_size);
     sorted_pdf.resize(pdf_size);
 
     int idx = 0;
