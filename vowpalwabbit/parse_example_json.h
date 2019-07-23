@@ -350,7 +350,7 @@ struct LabelState : BaseState<audit>
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool) override
   {
     VW::parse_example_label(*ctx.all, *ctx.ex, str);
     return ctx.previous_state;
@@ -512,7 +512,7 @@ struct SlotsState : BaseState<audit>
     ctx.examples->push_back(ctx.ex);
 
     // The end object logic assumes shared example so we need to take an extra one here.
-    ctx.label_index_state.index = ctx.examples->size() - 2;
+    ctx.label_index_state.index = static_cast<int>(ctx.examples->size()) - 2;
 
     // setup default namespace
     ctx.PushNamespace(" ", this);
@@ -695,7 +695,7 @@ class DefaultState : public BaseState<audit>
     return &ctx.ignore_state;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool) override
   {
     ctx.key = str;
     ctx.key_length = length;
@@ -758,7 +758,7 @@ class DefaultState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool) override
   {
     // string escape
     const char* end = str + length;
