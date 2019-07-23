@@ -204,3 +204,5 @@ bool launchDebugger();
   {                                \
     THROW(args);                   \
   }
+
+#define _UNUSED(x) ((void)(x))
