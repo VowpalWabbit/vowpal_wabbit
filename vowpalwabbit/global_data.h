@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
+#include <stack>
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -41,112 +42,7 @@ license as described in the file LICENSE.
 #include "error_reporting.h"
 
 #include "options.h"
-
-struct version_struct
-{
-  int32_t major;
-  int32_t minor;
-  int32_t rev;
-  version_struct(int maj = 0, int min = 0, int rv = 0)
-  {
-    major = maj;
-    minor = min;
-    rev = rv;
-  }
-  version_struct(const char* v_str) { from_string(v_str); }
-  void operator=(version_struct v)
-  {
-    major = v.major;
-    minor = v.minor;
-    rev = v.rev;
-  }
-  version_struct(const version_struct& v)
-  {
-    major = v.major;
-    minor = v.minor;
-    rev = v.rev;
-  }
-  void operator=(const char* v_str) { from_string(v_str); }
-  bool operator==(version_struct v) { return (major == v.major && minor == v.minor && rev == v.rev); }
-  bool operator==(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this == v_tmp);
-  }
-  bool operator!=(version_struct v) { return !(*this == v); }
-  bool operator!=(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this != v_tmp);
-  }
-  bool operator>=(version_struct v)
-  {
-    if (major < v.major)
-      return false;
-    if (major > v.major)
-      return true;
-    if (minor < v.minor)
-      return false;
-    if (minor > v.minor)
-      return true;
-    if (rev >= v.rev)
-      return true;
-    return false;
-  }
-  bool operator>=(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this >= v_tmp);
-  }
-  bool operator>(version_struct v)
-  {
-    if (major < v.major)
-      return false;
-    if (major > v.major)
-      return true;
-    if (minor < v.minor)
-      return false;
-    if (minor > v.minor)
-      return true;
-    if (rev > v.rev)
-      return true;
-    return false;
-  }
-  bool operator>(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this > v_tmp);
-  }
-  bool operator<=(version_struct v) { return !(*this > v); }
-  bool operator<=(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this <= v_tmp);
-  }
-  bool operator<(version_struct v) { return !(*this >= v); }
-  bool operator<(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this < v_tmp);
-  }
-  std::string to_string() const
-  {
-    char v_str[128];
-    sprintf_s(v_str, sizeof(v_str), "%d.%d.%d", major, minor, rev);
-    std::string s = v_str;
-    return s;
-  }
-  void from_string(const char* str)
-  {
-#ifdef _WIN32
-    sscanf_s(str, "%d.%d.%d", &major, &minor, &rev);
-#else
-    std::sscanf(str, "%d.%d.%d", &major, &minor, &rev);
-#endif
-  }
-};
-
-const version_struct version(PACKAGE_VERSION);
+#include "version.h"
 
 typedef float weight;
 
@@ -164,14 +60,13 @@ inline void deleter(substring ss, uint64_t /* label */) { free_it(ss.begin); }
 class namedlabels
 {
  private:
-  v_array<substring> id2name;
+  std::vector<substring> id2name;
   v_hashmap<substring, uint64_t> name2id;
   uint32_t K;
 
  public:
   namedlabels(std::string label_list)
   {
-    id2name = v_init<substring>();
     char* temp = calloc_or_throw<char>(1 + label_list.length());
     memcpy(temp, label_list.c_str(), strlen(label_list.c_str()));
     substring ss = {temp, nullptr};
@@ -202,7 +97,6 @@ class namedlabels
       free(id2name[0].begin);
     name2id.iter(deleter);
     name2id.delete_v();
-    id2name.delete_v();
   }
 
   uint32_t getK() { return K; }
@@ -449,7 +343,8 @@ enum label_type_t
   cb_eval,  // contextual-bandit evaluation
   cs,       // cost-sensitive
   multi,
-  mc
+  mc,
+  ccb       // conditional contextual-bandit
 };
 }
 
@@ -499,7 +394,7 @@ struct vw
   bool preserve_performance_counters;
   std::string id;
 
-  version_struct model_file_ver;
+  VW::version_struct model_file_ver;
   double normalized_sum_norm_x;
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
@@ -535,8 +430,12 @@ struct vw
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
+
+  // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::string> interactions;
+  // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> pairs;    // pairs of features to cross.
+  // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
   bool ignore[256];  // a set of namespaces to ignore
@@ -591,7 +490,7 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  v_array<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
   v_array<int> final_prediction_sink;  // set to send global predictions to.

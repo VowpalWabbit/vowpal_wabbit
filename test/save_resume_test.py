@@ -153,8 +153,9 @@ if __name__ == '__main__':
         errors += do_test(filename, '--loss_function logistic --link logistic')
         errors += do_test(filename, '--nn 2')
         errors += do_test(filename, '--binary')
-        errors += do_test(filename, '--ftrl', known_failure=True)
-        errors += do_test(filename, '--pistol', known_failure=True)
+        errors += do_test(filename, '--ftrl')
+        errors += do_test(filename, '--pistol')
+        errors += do_test(filename, '--coin')
 
         # this one also fails but pollutes output
         #errors += do_test(filename, '--ksvm', known_failure=True)

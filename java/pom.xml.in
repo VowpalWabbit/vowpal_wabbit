@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.johnlangford</groupId>
+    <groupId>com.github.vowpalwabbit</groupId>
     <artifactId>vw-jni</artifactId>
     <version>@PACKAGE_VERSION@-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -11,12 +11,12 @@
         A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper requires that the vw_jni platform
         specific library is installed on your java.library.path.
     </description>
-    <url>https://github.com/JohnLangford/vowpal_wabbit</url>
+    <url>https://github.com/VowpalWabbit/vowpal_wabbit</url>
 
     <scm>
-        <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
-        <developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
-        <url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
+        <connection>scm:git:git://github.com/VowpalWabbit/vowpal_wabbit.git</connection>
+        <developerConnection>scm:git:git@github.com/VowpalWabbit/vowpal_wabbit.git</developerConnection>
+        <url>https://github.com/VowpalWabbit/vowpal_wabbit/tree/master</url>
     </scm>
 
     <distributionManagement>
@@ -33,7 +33,7 @@
     <licenses>
         <license>
             <name>Vowpal Wabbit License</name>
-            <url>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</url>
+            <url>https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/LICENSE</url>
         </license>
     </licenses>
 
@@ -49,6 +49,10 @@
         <developer>
             <name>John Langford</name>
             <email>jl@hunch.net</email>
+        </developer>
+        <developer>
+            <name>Markus Cozowicz</name>
+            <email>marcozo@microsoft.com</email>
         </developer>
     </developers>
 
@@ -79,6 +83,11 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>target/bin</directory>
+            </resource>
+        </resources>
         <testResources>
             <testResource>
                 <directory>${project.build.directory}</directory>
@@ -97,6 +106,9 @@
                         <fileset>
                             <directory>${project.build.directory}</directory>
                             <excludes>
+                                <!-- files created by CMake -->
+                                <exclude>bin/**</exclude>
+                                <exclude>test-classes/vw-bin.txt</exclude>
                                 <exclude>*vw_jni*</exclude>
                             </excludes>
                             <followSymlinks>false</followSymlinks>
@@ -107,7 +119,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.2</version>
+                <version>3.8.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -154,6 +166,19 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.19.1</version>
+                <executions>
+                <execution>
+                    <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                    </goals>
+                </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.17</version>
                 <executions>
@@ -175,7 +200,7 @@
                     <!--<forkMode>once</forkMode>-->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <argLine>-Djava.library.path=${project.build.directory}</argLine>
+                    <argLine>-Djava.library.path=${project.build.directory}/bin</argLine>
 
                 </configuration>
             </plugin>
@@ -217,7 +242,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.8.1</version>
+                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -239,6 +264,14 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- don't push tags and other changes back into git repo -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+            	<pushChanges>false</pushChanges>
+                </configuration>
             </plugin>
         </plugins>
     </build>

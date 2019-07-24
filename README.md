@@ -3,10 +3,11 @@
 [![Build Status](https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master)](https://travis-ci.org/VowpalWabbit/vowpal_wabbit)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit/branch/master)
 
-[![Coverage Status](https://coveralls.io/repos/JohnLangford/vowpal_wabbit/badge.svg)](https://coveralls.io/r/JohnLangford/vowpal_wabbit)
+[![Coverage Status](https://coveralls.io/repos/github/VowpalWabbit/vowpal_wabbit/badge.svg?branch=master)](https://coveralls.io/github/VowpalWabbit/vowpal_wabbit?branch=master)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/JohnLangford/vowpal_wabbit.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/JohnLangford/vowpal_wabbit/alerts/)
+[![Gitter chat](https://badges.gitter.im/VowpalWabbit.png)](https://gitter.im/VowpalWabbit)
 
-This is the *Vowpal Wabbit* fast online learning code. For Windows specific info, look at [README.windows.md](./README.windows.md)
+This is the *Vowpal Wabbit* fast online learning code. For Windows specific info, look at [README.Windows.md](./README.Windows.md)
 
 ## Why Vowpal Wabbit?
 Vowpal Wabbit is a machine learning system which pushes the frontier of machine learning with techniques such as online, hashing, allreduce, reductions, learning2search, active, and interactive learning. There is a specific focus on reinforcement learning with several contextual bandit algorithms implemented and the online nature lending to the problem well. Vowpal Wabbit is a destination for implementing and maturing state of the art algorithms with performance in mind.

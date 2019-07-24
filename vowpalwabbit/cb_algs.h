@@ -14,6 +14,7 @@ LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
 #define CB_TYPE_DM 1
 #define CB_TYPE_IPS 2
 #define CB_TYPE_MTR 3
+#define CB_TYPE_SM 4
 
 namespace CB_ALGS
 {
@@ -54,19 +55,26 @@ float get_cost_pred(
   return pred;
 }
 
-inline float get_unbiased_cost(CB::cb_class* observation, uint32_t action, float offset = 0.)
+inline float get_cost_estimate(CB::cb_class* observation, uint32_t action, float offset = 0.)
 {
   if (action == observation->action)
     return (observation->cost - offset) / observation->probability;
   return 0.;
 }
 
-inline float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
+inline float get_cost_estimate(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)
     if (cl.class_index == action)
-      return get_unbiased_cost(observation, action, cl.x) + cl.x;
-  return get_unbiased_cost(observation, action);
+      return get_cost_estimate(observation, action, cl.x) + cl.x;
+  return get_cost_estimate(observation, action);
+}
+
+inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
+{
+  if (action == a_s.action)
+    return (cost - offset) / a_s.score;
+  return 0.;
 }
 
 inline bool example_is_newline_not_header(example& ec)

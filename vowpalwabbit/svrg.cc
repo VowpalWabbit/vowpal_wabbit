@@ -154,8 +154,9 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
+    double temp = 0.;
     if (resume)
-      GD::save_load_online_state(*s.all, model_file, read, text);
+      GD::save_load_online_state(*s.all, model_file, read, text, temp);
     else
       GD::save_load_regressor(*s.all, model_file, read, text);
   }

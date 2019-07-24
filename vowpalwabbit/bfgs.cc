@@ -457,18 +457,19 @@ double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
     }
 
   // if we're not regularizing the intercept term, then subtract it off from the result above
+  // when accessing weights[constant], always use weights.strided_index(constant)
   if (all.no_bias)
   {
     if (b.regularizers == nullptr)
     {
-      (&weights[constant])[W_GT] -= regularization * weights[constant];
-      ret -= 0.5 * regularization * (weights[constant]) * (weights[constant]);
+      (&weights.strided_index(constant))[W_GT] -= regularization * (weights.strided_index(constant));
+      ret -= 0.5 * regularization * (weights.strided_index(constant)) * (weights.strided_index(constant));
     }
     else
     {
       uint64_t i = constant >> weights.stride_shift();
-      weight delta_weight = weights[constant] - b.regularizers[2 * i + 1];
-      (&weights[constant])[W_GT] -= b.regularizers[2 * i] * delta_weight;
+      weight delta_weight = (weights.strided_index(constant)) - b.regularizers[2 * i + 1];
+      (&weights.strided_index(constant))[W_GT] -= b.regularizers[2 * i] * delta_weight;
       ret -= 0.5 * b.regularizers[2 * i] * delta_weight * delta_weight;
     }
   }
@@ -942,12 +943,16 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
+template <bool audit>
 void predict(bfgs& b, base_learner&, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
+  if (audit)
+    GD::print_audit_features(*(b.all), ec);
 }
 
+template <bool audit>
 void learn(bfgs& b, base_learner& base, example& ec)
 {
   vw* all = b.all;
@@ -956,7 +961,7 @@ void learn(bfgs& b, base_learner& base, example& ec)
   if (b.current_pass <= b.final_pass)
   {
     if (test_example(ec))
-      predict(b, base, ec);
+      predict<audit>(b, base, ec);
     else
       process_example(*all, b, ec);
   }
@@ -1146,11 +1151,22 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   all.bfgs = true;
   all.weights.stride_shift(2);
 
-  learner<bfgs, example>& l = init_learner(b, learn, predict, all.weights.stride());
-  l.set_save_load(save_load);
-  l.set_init_driver(init_driver);
-  l.set_end_pass(end_pass);
-  l.set_finish(finish);
+  void (*learn_ptr)(bfgs&, base_learner&, example&) = nullptr;
+  if (all.audit)
+    learn_ptr = learn<true>;
+  else
+    learn_ptr = learn<false>;
 
-  return make_base(l);
+  learner<bfgs, example>* l;
+  if (all.audit || all.hash_inv)
+    l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride());
+  else
+    l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride());
+
+  l->set_save_load(save_load);
+  l->set_init_driver(init_driver);
+  l->set_end_pass(end_pass);
+  l->set_finish(finish);
+
+  return make_base(*l);
 }
