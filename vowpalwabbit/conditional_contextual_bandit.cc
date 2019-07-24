@@ -209,7 +209,7 @@ void inject_slot_features(example* shared, example* slot)
 }
 
 template <bool audit>
-void inject_slot_id(ccb& data, example* shared, int id)
+void inject_slot_id(ccb& data, example* shared, size_t id)
 {
   // id is zero based, so the vector must be of size id + 1
   if (id + 1 > data.slot_id_hashes.size())
@@ -283,7 +283,7 @@ void calculate_and_insert_interactions(
   found_namespaces.fill(false);
 
   const auto original_size = generated_interactions.size();
-  for (auto i = 0; i < original_size; i++)
+  for (size_t i = 0; i < original_size; i++)
   {
     auto interaction_copy = generated_interactions[i];
     interaction_copy.push_back((char)ccb_id_namespace);
@@ -392,7 +392,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   auto decision_scores = data.action_scores_pool.get_object();
 
   // for each slot, re-build the cb example and call cb_explore_adf
-  int slot_id = 0;
+  size_t slot_id = 0;
   for (example* slot : data.slots)
   {
     // Namespace crossing for slot features.
