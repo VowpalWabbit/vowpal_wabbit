@@ -7,7 +7,6 @@ export PATH="/opt/miniconda/bin:$PATH"
 
 # Run python build and tests
 cd $1
-cd python
 source activate test-python27
 sudo pip install pytest readme_renderer pandas
 python setup.py check -mrs

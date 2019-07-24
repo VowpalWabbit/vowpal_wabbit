@@ -1,16 +1,13 @@
-resources:
-  containers:
-  - container: travisbase
-    image:  vowpalwabbit/travis-base:20190501.1
-    endpoint: DockerHub
-
 pr:
 - master
 
 pool:
   vmImage: 'ubuntu-16.04'
 
-container: travisbase
+container:
+  image: vowpalwabbit/travis-base:20190501.1
+  endpoint: DockerHub
+
 steps:
 - bash: ./.pipelines/linux/upgrade-cmake.sh $(Build.SourcesDirectory)
   displayName: Upgrade CMake
