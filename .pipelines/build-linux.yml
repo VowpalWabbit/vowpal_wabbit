@@ -5,12 +5,10 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 container:
-  image: vowpalwabbit/travis-base:20190501.1
+  image: vowpalwabbit/ubuntu1604-build:latest
   endpoint: DockerHub
 
 steps:
-- bash: ./.pipelines/linux/upgrade-cmake.sh $(Build.SourcesDirectory)
-  displayName: Upgrade CMake
 - bash: ./.pipelines/linux/clang-format-check.sh $(Build.SourcesDirectory)
   displayName: Clang format check
 - bash: ./.pipelines/linux/build.sh $(Build.SourcesDirectory)
@@ -27,4 +25,3 @@ steps:
   displayName: Test with coverage C++
 # - script: docker run -e TRAVIS_JOB_ID -e TRAVIS_BRANCH -a STDOUT -v `pwd`:/vw -t vowpalwabbit/travis-base:20190202.1 /bin/bash -c "cd /vw && coveralls --include explore --include vowpalwabbit --gcov-options '\-lp'"
 
-#   displayName: Upgrade CMake
