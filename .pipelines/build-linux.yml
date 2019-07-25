@@ -9,19 +9,19 @@ container:
   endpoint: DockerHub
 
 steps:
-- bash: ./.pipelines/linux/clang-format-check.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/clang-format-check.sh $(Build.SourcesDirectory)
   displayName: Clang format check
-- bash: ./.pipelines/linux/build.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/build.sh $(Build.SourcesDirectory)
   displayName: Build C++
-- bash: ./.pipelines/linux/test.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/test.sh $(Build.SourcesDirectory)
   displayName: Test C++
-- bash: ./.pipelines/linux/java.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/java.sh $(Build.SourcesDirectory)
   displayName: Build + test Java
-- bash: ./.pipelines/linux/python.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/python.sh $(Build.SourcesDirectory)
   displayName: Build + test Python
-- bash: ./.pipelines/linux/build-with-coverage.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/build-with-coverage.sh $(Build.SourcesDirectory)
   displayName: Build with coverage C++
-- bash: ./.pipelines/linux/test-with-coverage.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/test-with-coverage.sh $(Build.SourcesDirectory)
   displayName: Test with coverage C++
 # - script: docker run -e TRAVIS_JOB_ID -e TRAVIS_BRANCH -a STDOUT -v `pwd`:/vw -t vowpalwabbit/travis-base:20190202.1 /bin/bash -c "cd /vw && coveralls --include explore --include vowpalwabbit --gcov-options '\-lp'"
 
