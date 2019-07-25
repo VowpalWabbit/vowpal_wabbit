@@ -47,7 +47,7 @@ CB::cb_class* get_observed_cost(CB::label& ld);
 
 float safe_probability(float prob);
 
-void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
+void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p=0.f);
 
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
@@ -121,7 +121,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 }
 
 template <bool is_learn>
-void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action)
+void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action, float clip_p=0.f)
 {
   COST_SENSITIVE::wclass wc = {0., action, 0., 0.};
 
@@ -137,14 +137,14 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
         ((c.known_cost->cost - wc.x) * (c.known_cost->cost - wc.x) - c.avg_loss_regressors);
     c.last_pred_reg = wc.x;
     c.last_correct_cost = c.known_cost->cost;
-    wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
+    wc.x += (c.known_cost->cost - wc.x) / (std::max)(c.known_cost->probability, clip_p);
   }
 
   cs_ld.costs.push_back(wc);
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p=0.f)
 {  // this implements the doubly robust method
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
@@ -184,7 +184,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 
 void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p=0.f);
 
 void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
@@ -194,7 +194,7 @@ void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_of
     ACTION_SCORE::action_scores action_vals, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f)
 {  // size_t mysize = examples.size();
   c.pred_scores.costs.clear();
 
@@ -223,7 +223,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
 
     // add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action == i)
-      wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
+      wc.x += (c.known_cost.cost - wc.x) / (std::max)(c.known_cost.probability, clip_p);
     cs_labels.costs.push_back(wc);
   }
 }
