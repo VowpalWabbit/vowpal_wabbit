@@ -19,18 +19,12 @@ BOOST_AUTO_TEST_CASE(is_example_header_cb) {
 
   BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[0]), true);
   BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[0]), false);
-  BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[0]), false);
-  BOOST_CHECK_EQUAL(VW::ec_is_example_header(*examples[0]), true);
 
   BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[1]), false);
   BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[1]), false);
-  BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[1]), false);
-  BOOST_CHECK_EQUAL(VW::ec_is_example_header(*examples[1]), false);
 
   BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[2]), false);
   BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[2]), false);
-  BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[2]), false);
-  BOOST_CHECK_EQUAL(VW::ec_is_example_header(*examples[2]), false);
 }
 
 BOOST_AUTO_TEST_CASE(is_example_header_ccb) {
@@ -39,15 +33,8 @@ BOOST_AUTO_TEST_CASE(is_example_header_ccb) {
   examples.push_back(VW::read_example(vw, "ccb shared |User f"));
   examples.push_back(VW::read_example(vw, "ccb action |Action f"));
 
-  BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[0]), false);
-  BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[0]), false);
   BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[0]), true);
-  BOOST_CHECK_EQUAL(VW::ec_is_example_header(*examples[0]), true);
-
-  BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[1]), false);
-  BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[1]), false);
   BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[1]), false);
-  BOOST_CHECK_EQUAL(VW::ec_is_example_header(*examples[1]), false);
 }
 
 BOOST_AUTO_TEST_CASE(is_example_header_csoaa) {
@@ -58,11 +45,7 @@ BOOST_AUTO_TEST_CASE(is_example_header_csoaa) {
 
   BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[0]), false);
   BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[0]), true);
-  BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[0]), false);
-  BOOST_CHECK_EQUAL(VW::ec_is_example_header(*examples[0]), true);
 
   BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[1]), false);
   BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[1]), false);
-  BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[1]), false);
-  BOOST_CHECK_EQUAL(VW::ec_is_example_header(*examples[1]), false);
 }

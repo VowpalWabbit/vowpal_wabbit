@@ -82,7 +82,22 @@ void process_multi_ex(vw& all, multi_ex& ec_seq)
 }
 
 /* is this just a newline */
-inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !VW::ec_is_example_header(ec)); }
+inline bool example_is_newline_not_header(example& ec, vw& all)
+{
+  // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
+  bool is_header = false;
+  if (all.label_type == label_type::ccb)
+  {
+    is_header = CCB::ec_is_example_header(ec);
+  }
+  else
+  {
+    is_header = CB::ec_is_example_header(ec);
+  }
+
+  return example_is_newline(ec) && !is_header;
+}
+
 
 /* Adds an example to multiline collection
  * Returns: true if complete and false if incomplete example */
@@ -90,7 +105,7 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
 {
   const bool is_test_ec = all.p->lp.test_label(&ec->l);
 
-  if (example_is_newline_not_header(*ec) && is_test_ec)
+  if (example_is_newline_not_header(*ec, all) && is_test_ec)
   {
     VW::finish_example(all, *ec);
     if (ec_seq.size() == 0)
