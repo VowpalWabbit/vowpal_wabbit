@@ -670,4 +670,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   l.set_finish(CCB::finish);
   return make_base(l);
 }
+
+bool ec_is_example_header(example& ec)
+{
+  return ec.l.conditional_contextual_bandit.type == example_type::shared;
+}
 }  // namespace CCB
