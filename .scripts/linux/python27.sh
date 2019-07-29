@@ -2,7 +2,7 @@
 set -e
 set -x
 
-# Miniconda is installed to root in docker file
+# Miniconda is installed to home in docker file
 export PATH="~/miniconda/bin:$PATH"
 
 # Clear build dir as it uses the conda deps.
