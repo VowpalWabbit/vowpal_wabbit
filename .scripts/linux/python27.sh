@@ -13,6 +13,6 @@ rm -rf build
 cd $1
 source activate test-python27
 python setup.py check -mrs
-python setup.py install
+python setup.py install --user
 py.test ./python/tests/
 source deactivate
