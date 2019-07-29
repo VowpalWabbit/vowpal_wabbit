@@ -99,7 +99,7 @@ endif()
 
 # gcov configuration
 if(GCOV)
-  set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg)
+  set(linux_flags ${linux_flags} -fprofile-arcs -ftest-coverage)
 endif()
 
 # Use folders in VS solution
