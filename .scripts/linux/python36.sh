@@ -3,13 +3,11 @@ set -e
 set -x
 
 # Miniconda is installed to home in docker file
-export PATH="~/miniconda/bin:$PATH"
+export PATH="/usr/local/miniconda/bin:$PATH"
 
 # Clear build dir as it uses the conda deps.
 cd $1
-rm -fr build
-mkdir build
-cd build
+rm -rf build
 
 # Run python build and tests
 source activate test-python36
