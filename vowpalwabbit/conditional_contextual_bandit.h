@@ -25,4 +25,5 @@ namespace CCB {
   typedef v_array<ACTION_SCORE::action_scores> decision_scores_t;
   
   LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
-}
+  bool ec_is_example_header(example& ec);
+  }

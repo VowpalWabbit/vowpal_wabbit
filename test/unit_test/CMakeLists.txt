@@ -1,5 +1,5 @@
 add_executable(vw-unit-test.out
-  main.cc options_test.cc options_boost_po_test.cc cb_explore_adf_test.cc explore_test.cc
+  main.cc options_test.cc options_boost_po_test.cc cb_explore_adf_test.cc example_header_test.cc explore_test.cc
   stable_unique_tests.cc test_common.h object_pool_test.cc ccb_parser_test.cc json_parser_test.cc
   dsjson_parser_test.cc ccb_test.cc
 )
