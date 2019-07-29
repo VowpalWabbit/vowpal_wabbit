@@ -3,7 +3,7 @@ set -e
 set -x
 
 # Miniconda is installed to root in docker file
-export PATH="/opt/miniconda/bin:$PATH"
+export PATH="~/miniconda/bin:$PATH"
 
 # Clear build dir as it uses the conda deps.
 cd $1
