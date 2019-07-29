@@ -9,18 +9,20 @@ container:
   endpoint: DockerHub
 
 steps:
-- bash: ./.scripts/linux/clang-format-check.sh $(Build.SourcesDirectory)
-  displayName: Clang format check
-- bash: ./.scripts/linux/build.sh $(Build.SourcesDirectory)
-  displayName: Build C++
-- bash: ./.scripts/linux/test.sh $(Build.SourcesDirectory)
-  displayName: Test C++
-- bash: ./.scripts/linux/java.sh $(Build.SourcesDirectory)
-  displayName: Build + test Java
-- bash: ./.scripts/linux/python27.sh $(Build.SourcesDirectory)
-  displayName: Build + test Python 2.7
-- bash: ./.scripts/linux/python36.sh $(Build.SourcesDirectory)
-  displayName: Build + test Python 3.6
+# - bash: ./.scripts/linux/clang-format-check.sh $(Build.SourcesDirectory)
+#   displayName: Clang format check
+# - bash: ./.scripts/linux/build.sh $(Build.SourcesDirectory)
+#   displayName: Build C++
+# - bash: ./.scripts/linux/test.sh $(Build.SourcesDirectory)
+#   displayName: Test C++
+# - bash: ./.scripts/linux/java.sh $(Build.SourcesDirectory)
+#   displayName: Build + test Java
+# - bash: ./.scripts/linux/python27.sh $(Build.SourcesDirectory)
+#   displayName: Build + test Python 2.7
+# - bash: ./.scripts/linux/python36.sh $(Build.SourcesDirectory)
+#   displayName: Build + test Python 3.6
+
+# TODO: Turn on build with coverage once Azure Pipelines is reporting test coverage instead of Travis CI.
 - bash: ./.scripts/linux/build-with-coverage.sh $(Build.SourcesDirectory)
   displayName: Build with coverage C++
 - bash: ./.scripts/linux/test-with-coverage.sh $(Build.SourcesDirectory)
