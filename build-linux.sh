@@ -2,17 +2,11 @@
 set -e
 set -x
 
-# Miniconda is installed to root in docker file
-export PATH="/root/miniconda/bin:$PATH"
-
-ls /root/
-ls /root/miniconda
-ls /root/miniconda/bin
-
+export PATH="$HOME/miniconda/bin:$PATH"
 
 # Check if any clang-formatting necessary
 
-cd $1
+cd /vw
 ./utl/clang-format check
 
 sudo apt remove --yes --force-yes cmake
@@ -27,7 +21,7 @@ sudo mkdir /opt/cmake
 sudo sh cmake-$version.$build-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
 sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
 
-cd $1
+cd /vw
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DWARNINGS=Off -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_JAVA=On -DBUILD_PYTHON=On -DBUILD_TESTS=On
