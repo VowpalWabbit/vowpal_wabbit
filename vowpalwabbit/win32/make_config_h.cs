@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.ComponentModel;
 using System.Diagnostics;
 
 public class Program
@@ -9,22 +10,30 @@ public class Program
     private static Process StartGitRevParse()
     {
         Process gitProcess = new Process();
-        gitProcess.StartInfo.FileName = "git";
-        gitProcess.StartInfo.Arguments = "rev-parse --short HEAD";
-        gitProcess.StartInfo.WorkingDirectory = Path.GetDirectoryName(VersionFilePath);
-        gitProcess.StartInfo.UseShellExecute = false; // Should we use ShellExec()?
-        gitProcess.StartInfo.CreateNoWindow = true;
+        
+        try
+        {
+            gitProcess.StartInfo.FileName = "git";
+            gitProcess.StartInfo.Arguments = "rev-parse --short HEAD";
+            gitProcess.StartInfo.WorkingDirectory = Path.GetDirectoryName(VersionFilePath);
+            gitProcess.StartInfo.UseShellExecute = false; // Should we use ShellExec()?
+            gitProcess.StartInfo.CreateNoWindow = true;
 
-        gitProcess.StartInfo.RedirectStandardOutput = true;
+            gitProcess.StartInfo.RedirectStandardOutput = true;
 
-        gitProcess.Start();
+            gitProcess.Start();
 
+        }
+        catch (Win32Exception)
+        {
+            gitProcess = null;
+        }
+        
         return gitProcess;
     }
 
     public static void Main(string[] args)
     {
-
         using (Process p = StartGitRevParse())
         try
         {
@@ -37,10 +46,15 @@ public class Program
 
             string version = lines[0].Trim();
 
-            string gitCommit = p.StandardOutput.ReadToEnd().Trim();
+            string gitCommit = String.Empty;
             
-            // Needed?
-            p.WaitForExit();
+            if (p != null) 
+            {
+                gitCommit = p.StandardOutput.ReadToEnd().Trim();
+            
+                // Needed?
+                p.WaitForExit();
+            }
 
             string config = "#define PACKAGE_VERSION \"" + version + "\"\n"
                           + "#define COMMIT_VERSION \"" + gitCommit + "\"\n";
