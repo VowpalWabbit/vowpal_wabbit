@@ -144,7 +144,7 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p=0.f)
+void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ =0.f)
 {  // this implements the doubly robust method
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
