@@ -305,7 +305,7 @@ bool example_is_test(example& ec)
   return true;
 }
 
-bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
+bool ec_is_example_header(example& ec)  // example headers look like "shared"
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
   if (costs.size() != 1)

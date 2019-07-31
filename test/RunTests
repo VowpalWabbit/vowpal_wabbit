@@ -25,7 +25,7 @@ my $VW;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
-$ENV{'PATH'} .= ':test:../vowpalwabbit:vowpalwabbit:.';
+$ENV{'PATH'} .= ':../build/vowpalwabbit:test:../vowpalwabbit:vowpalwabbit:.';
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
