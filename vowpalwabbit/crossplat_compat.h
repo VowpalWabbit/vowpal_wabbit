@@ -12,9 +12,9 @@ license as described in the file LICENSE.
 #define sprintf_s snprintf
 #define vsprintf_s vsnprintf
 
-const uint64_t UINT64_ZERO = 0ULL;
-const uint64_t UINT64_ONE = 1ULL;
+constexpr uint64_t UINT64_ZERO = 0ULL;
+constexpr uint64_t UINT64_ONE = 1ULL;
 #else
-const uint64_t UINT64_ONE = 1i64;
-const uint64_t UINT64_32ONES = 0x00000000ffffffffi64;
+constexpr uint64_t UINT64_ONE = 1i64;
+constexpr uint64_t UINT64_32ONES = 0x00000000ffffffffi64;
 #endif

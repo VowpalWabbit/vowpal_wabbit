@@ -56,7 +56,7 @@ class curv_exception : public exception
 // w[2] = step direction
 // w[3] = preconditioner
 
-const float max_precond_ratio = 10000.f;
+constexpr float max_precond_ratio = 10000.f;
 
 struct bfgs
 {
@@ -104,7 +104,7 @@ struct bfgs
   bool preconditioner_pass;
 };
 
-const char* curv_message =
+constexpr char* curv_message =
     "Zero or negative curvature detected.\n"
     "To increase curvature you can increase regularization or rescale features.\n"
     "It is also possible that you have reached numerical accuracy\n"

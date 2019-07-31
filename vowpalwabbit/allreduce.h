@@ -45,7 +45,7 @@ typedef int socket_t;
 #include "vw_exception.h"
 #include <assert.h>
 
-const size_t ar_buf_size = 1 << 16;
+constexpr size_t ar_buf_size = 1 << 16;
 
 struct node_socks
 {
