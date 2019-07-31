@@ -42,7 +42,7 @@ license as described in the file LICENSE.
 #else                                       // Other compilers
 #   include <stdint.h>   // defines uint32_t etc
 
-inline uint32_t rotl32(uint32_t x, int8_t r)
+constexpr inline uint32_t rotl32(uint32_t x, int8_t r) noexcept
 { return (x << r) | (x >> (32 - r));
 }
 
@@ -57,7 +57,7 @@ namespace MURMUR_HASH_3
 //-----------------------------------------------------------------------------
 // Finalization mix - force all bits of a hash block to avalanche
 
-static inline uint32_t fmix(uint32_t h)
+static inline uint32_t fmix(uint32_t h) noexcept
 { h ^= h >> 16;
   h *= 0x85ebca6b;
   h ^= h >> 13;
@@ -72,7 +72,7 @@ static inline uint32_t fmix(uint32_t h)
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here
 
-static inline uint32_t getblock(const uint32_t * p, int i)
+constexpr static inline uint32_t getblock(const uint32_t * p, int i) noexcept
 {
   return p[i];
 }

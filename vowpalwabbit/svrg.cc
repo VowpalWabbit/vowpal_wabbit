@@ -12,9 +12,9 @@ using namespace VW::config;
 
 namespace SVRG
 {
-#define W_INNER 0       // working "inner-loop" weights, updated per example
-#define W_STABLE 1      // stable weights, updated per stage
-#define W_STABLEGRAD 2  // gradient corresponding to stable weights
+constexpr uint32_t W_INNER = 0;       // working "inner-loop" weights, updated per example
+constexpr uint32_t W_STABLE = 1;      // stable weights, updated per stage
+constexpr uint32_t W_STABLEGRAD = 2;  // gradient corresponding to stable weights
 
 struct svrg
 {

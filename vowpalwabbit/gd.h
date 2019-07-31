@@ -14,6 +14,11 @@
 #include "array_parameters.h"
 #include "gd_predict.h"
 
+constexpr inline float sign(float w) noexcept
+{
+  return (w < 0.f) ? -1.f : 1.f;
+}
+
 namespace GD
 {
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
@@ -101,14 +106,6 @@ inline float inline_predict(vw& all, example& ec)
                                   all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial)
                             : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear,
                                   all.ignore_linear, *ec.interactions , all.permutations, ec, ec.l.simple.initial);
-}
-
-inline float sign(float w)
-{
-  if (w < 0.)
-    return -1.;
-  else
-    return 1.;
 }
 
 inline float trunc_weight(const float w, const float gravity)

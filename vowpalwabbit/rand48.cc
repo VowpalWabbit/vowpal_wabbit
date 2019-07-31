@@ -9,10 +9,10 @@
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++11-long-long"
 #endif
-const uint64_t a = 0xeece66d5deece66dULL;
-const uint64_t c = 2147483647;
+constexpr uint64_t a = 0xeece66d5deece66dULL;
+constexpr uint64_t c = 2147483647;
 
-const int bias = 127 << 23;
+constexpr int bias = 127 << 23;
 
 float merand48(uint64_t& initial)
 {

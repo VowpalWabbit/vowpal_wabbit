@@ -135,7 +135,7 @@ void reset_state(vw& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-bool test_example(example& ec) { return ec.l.simple.label == FLT_MAX; }
+constexpr bool test_example(example& ec) noexcept { return ec.l.simple.label == FLT_MAX; }
 
 float bfgs_predict(vw& all, example& ec)
 {
