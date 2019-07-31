@@ -628,7 +628,7 @@ void reset_search_structure(search_private& priv)
   if (priv.adaptive_beta)
   {
     float x = -log1pf(-priv.alpha) * (float)priv.total_examples_generated;
-    static const float log_of_2 = (float)0.6931471805599453;
+    static constexpr float log_of_2 = (float)0.6931471805599453;
     priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1 - expf(-x));  // numerical stability
     // float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
     // assert( fabs(priv_beta - priv.beta) < 1e-2 );
