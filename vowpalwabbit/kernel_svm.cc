@@ -26,7 +26,6 @@ license as described in the file LICENSE.
 #include "memory.h"
 #include "vw_allreduce.h"
 #include "rand48.h"
-#include "floatbits.h"
 #include "reductions.h"
 
 #define SVM_KER_LIN 0

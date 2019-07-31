@@ -28,7 +28,6 @@ license as described in the file LICENSE.
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
-#include "floatbits.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
@@ -70,9 +69,10 @@ inline float quake_InvSqrt(float x)
 {
   // Carmack/Quake/SGI fast method:
   float xhalf = 0.5f * x;
-  int i = float_to_bits(x);        // store floating-point bits in integer
+  static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
+  int i = reinterpret_cast<int&>(x);        // store floating-point bits in integer
   i = 0x5f3759d5 - (i >> 1);       // initial guess for Newton's method
-  x = bits_to_float(i);            // convert new bits into float
+  x =  reinterpret_cast<float&>(i);            // convert new bits into float
   x = x * (1.5f - xhalf * x * x);  // One round of Newton's method
   return x;
 }
@@ -338,7 +338,7 @@ void print_audit_features(vw& all, example& ec)
 
 float finalize_prediction(shared_data* sd, float ret)
 {
-  if (nanpattern(ret))
+  if (std::isnan(ret))
   {
     ret = 0.;
     cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << endl;

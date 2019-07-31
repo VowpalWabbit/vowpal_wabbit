@@ -2,6 +2,7 @@
 #include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
+#include <cmath>
 
 using namespace std;
 namespace COST_SENSITIVE
@@ -18,7 +19,7 @@ void name_value(substring& s, v_array<substring>& name, float& v)
       break;
     case 2:
       v = float_of_substring(name[1]);
-      if (nanpattern(v))
+      if (std::isnan(v))
         THROW("error NaN value for: " << name[0]);
       break;
     default:
