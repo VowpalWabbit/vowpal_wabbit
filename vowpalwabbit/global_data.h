@@ -529,9 +529,13 @@ struct vw
 
   vw();
 
-  vw(const vw&);
-  // private://disable copying.
-  // vw& operator=(const vw& );
+  vw(const vw&) = delete;
+  vw& operator=(const vw&) = delete;
+
+  // vw object cannot be moved as many objects hold a pointer to it.
+  // That pointer would be invalidated if it were to be moved.
+  vw(const vw&&) = delete;
+  vw& operator=(const vw&&) = delete;
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);
