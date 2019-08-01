@@ -480,9 +480,9 @@ struct norm_data
   float extra_state[4];
 };
 
-const float x_min = 1.084202e-19f;
-const float x2_min = x_min * x_min;
-const float x2_max = FLT_MAX;
+constexpr float x_min = 1.084202e-19f;
+constexpr float x2_min = x_min * x_min;
+constexpr float x2_max = FLT_MAX;
 
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
