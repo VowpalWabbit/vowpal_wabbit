@@ -1,3 +1,4 @@
+#include <cmath>
 #include <errno.h>
 #include "reductions.h"
 #include "rand48.h"
@@ -104,7 +105,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
 
   p = sqrt(q2) / (1 + sqrt(q2));
 
-  if (nanpattern(p))
+  if (std::isnan(p))
   {
     p = 1.f;
   }

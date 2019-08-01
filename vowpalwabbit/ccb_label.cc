@@ -13,6 +13,7 @@
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
+#include <cmath>
 
 using namespace LEARNER;
 using namespace VW;
@@ -194,7 +195,7 @@ ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, cons
 {
   auto action_id = static_cast<uint32_t>(int_of_substring(action_id_str));
   auto probability = float_of_substring(probability_str);
-  if (nanpattern(probability))
+  if (std::isnan(probability))
     THROW("error NaN probability: " << probability_str);
 
   if (probability > 1.0)
@@ -229,7 +230,7 @@ CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
   ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
 
   ccb_outcome.cost = float_of_substring(split_colons[1]);
-  if (nanpattern(ccb_outcome.cost))
+  if (std::isnan(ccb_outcome.cost))
     THROW("error NaN cost: " << split_colons[1]);
 
   split_colons.clear();
