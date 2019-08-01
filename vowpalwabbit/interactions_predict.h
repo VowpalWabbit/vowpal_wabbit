@@ -20,7 +20,7 @@ namespace INTERACTIONS
  * Previous behaviour was: include interactions of feature with itself only if its value != value^2.
  *
  */
-const bool feature_self_interactions = true;
+constexpr bool feature_self_interactions = true;
 // must return logical expression
 /*old: ft_value != 1.0 && feature_self_interactions_for_value_other_than_1*/
 #define PROCESS_SELF_INTERACTIONS(ft_value) feature_self_interactions
