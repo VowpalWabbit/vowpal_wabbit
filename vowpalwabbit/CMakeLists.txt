@@ -66,7 +66,7 @@ add_library(vw ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 target_link_libraries(vw PUBLIC rapidjson Boost::program_options ${LINK_THREADS} ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
 
 if(GCOV)
-  target_link_libraries(vw PUBLIC gcov)
+  target_link_libraries(vw PUBLIC gcov --coverage)
 endif()
 
 target_include_directories(vw PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
