@@ -7,6 +7,7 @@
 #include "explore.h"
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -147,7 +148,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
-    if (ec->pred.scalar < cmin || nanpattern(sens) || infpattern(sens))
+    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens))
       min_costs[a] = cmin;
     else
     {
@@ -161,7 +162,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
     {
       ec->l.simple.label = cmax + 1;
       sens = base.sensitivity(*ec);
-      if (ec->pred.scalar > cmax || nanpattern(sens) || infpattern(sens))
+      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens))
       {
         max_costs[a] = cmax;
       }

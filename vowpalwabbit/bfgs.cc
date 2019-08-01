@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
  */
+#include <cmath>
 #include <fstream>
 #include <float.h>
 #ifndef _WIN32
@@ -280,7 +281,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
     float beta = (float)(g_Hy / g_Hg);
 
-    if (beta < 0.f || nanpattern(beta))
+    if (beta < 0.f || std::isnan(beta))
       beta = 0.f;
 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -513,7 +514,7 @@ void finalize_preconditioner(vw& /* all */, bfgs& b, float regularization, T& we
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
-    if (infpattern(*w) || *w > max_precond)
+    if (std::isinf(*w) || *w > max_precond)
       (&(*w))[W_COND] = max_precond;
   }
 }
@@ -714,7 +715,7 @@ int process_pass(vw& all, bfgs& b)
     /********************************************************************/
     /* B0) DERIVATIVE ZERO: MINIMUM FOUND *******************************/
     /********************************************************************/
-    if (nanpattern((float)wolfe1))
+    if (std::isnan((float)wolfe1))
     {
       fprintf(stderr, "\n");
       fprintf(stdout, "Derivative 0 detected.\n");
@@ -747,7 +748,7 @@ int process_pass(vw& all, bfgs& b)
     else
     {
       double rel_decrease = (b.previous_loss_sum - b.loss_sum) / b.previous_loss_sum;
-      if (!nanpattern((float)rel_decrease) && b.backstep_on && fabs(rel_decrease) < b.rel_threshold)
+      if (!std::isnan((float)rel_decrease) && b.backstep_on && fabs(rel_decrease) < b.rel_threshold)
       {
         fprintf(stdout,
             "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
