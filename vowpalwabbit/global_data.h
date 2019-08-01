@@ -168,18 +168,18 @@ struct shared_data
   float second_observed_label;
 
   // Column width, precision constants:
-  static const int col_avg_loss = 8;
-  static const int prec_avg_loss = 6;
-  static const int col_since_last = 8;
-  static const int prec_since_last = 6;
-  static const int col_example_counter = 12;
-  static const int col_example_weight = col_example_counter + 2;
-  static const int prec_example_weight = 1;
-  static const int col_current_label = 8;
-  static const int prec_current_label = 4;
-  static const int col_current_predict = 8;
-  static const int prec_current_predict = 4;
-  static const int col_current_features = 8;
+  static constexpr int col_avg_loss = 8;
+  static constexpr int prec_avg_loss = 6;
+  static constexpr int col_since_last = 8;
+  static constexpr int prec_since_last = 6;
+  static constexpr int col_example_counter = 12;
+  static constexpr int col_example_weight = col_example_counter + 2;
+  static constexpr int prec_example_weight = 1;
+  static constexpr int col_current_label = 8;
+  static constexpr int prec_current_label = 4;
+  static constexpr int col_current_predict = 8;
+  static constexpr int prec_current_predict = 4;
+  static constexpr int col_current_features = 8;
 
   double weighted_examples() { return weighted_labeled_examples + weighted_unlabeled_examples; }
 
@@ -529,9 +529,13 @@ struct vw
 
   vw();
 
-  vw(const vw&);
-  // private://disable copying.
-  // vw& operator=(const vw& );
+  vw(const vw&) = delete;
+  vw& operator=(const vw&) = delete;
+
+  // vw object cannot be moved as many objects hold a pointer to it.
+  // That pointer would be invalidated if it were to be moved.
+  vw(const vw&&) = delete;
+  vw& operator=(const vw&&) = delete;
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);

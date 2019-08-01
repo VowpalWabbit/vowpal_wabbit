@@ -66,8 +66,8 @@ class io_buf
   v_array<char> currentname;
   v_array<char> finalname;
 
-  static const int READ = 1;
-  static const int WRITE = 2;
+  static constexpr int READ = 1;
+  static constexpr int WRITE = 2;
 
   void init()
   {

@@ -17,7 +17,7 @@ using scored_example = pair<float, v_array<char>>;
 
 struct compare_scored_examples
 {
-  bool operator()(scored_example const& a, scored_example const& b) const { return a.first > b.first; }
+  constexpr bool operator()(scored_example const& a, scored_example const& b) const { return a.first > b.first; }
 };
 
 struct topk

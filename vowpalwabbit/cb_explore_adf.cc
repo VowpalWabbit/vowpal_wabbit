@@ -86,14 +86,6 @@ struct cb_explore_adf
   std::vector<v_array<CB::cb_class>> ex_costs;
 };
 
-template <class T>
-void swap(T& ele1, T& ele2)
-{
-  T temp = ele2;
-  ele2 = ele1;
-  ele1 = temp;
-}
-
 // TODO: same as cs_active.cc, move to shared place
 float binary_search(float fhat, float delta, float sens, float tol = 1e-6)
 {
