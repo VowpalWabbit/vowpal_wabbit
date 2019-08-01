@@ -9,23 +9,23 @@ container:
   endpoint: DockerHub
 
 steps:
-- bash: ./.scripts/linux/clang-format-check.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/clang-format-check.sh
   displayName: Clang format check
-- bash: ./.scripts/linux/build.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/build.sh
   displayName: Build C++
-- bash: ./.scripts/linux/test.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/test.sh
   displayName: Test C++
-- bash: ./.scripts/linux/java.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
-- bash: ./.scripts/linux/python27.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/python27.sh
   displayName: Build + test Python 2.7
-- bash: ./.scripts/linux/python36.sh $(Build.SourcesDirectory)
+- bash: ./.scripts/linux/python36.sh
   displayName: Build + test Python 3.6
 
 # TODO: Turn on build with coverage once Azure Pipelines is reporting test coverage instead of Travis CI.
-# - bash: ./.scripts/linux/build-with-coverage.sh $(Build.SourcesDirectory)
+# - bash: ./.scripts/linux/build-with-coverage.sh
 #   displayName: Build with coverage C++
-# - bash: ./.scripts/linux/test-with-coverage.sh $(Build.SourcesDirectory)
+# - bash: ./.scripts/linux/test-with-coverage.sh
 #   displayName: Test with coverage C++
 
 # TODO: incorporate coverall coverage uploading. See below for command used on Travis CI

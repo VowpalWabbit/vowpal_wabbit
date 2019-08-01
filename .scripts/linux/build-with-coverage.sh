@@ -2,8 +2,11 @@
 set -e
 set -x
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR=$SCRIPT_DIR/../../
+cd $REPO_DIR
+
 # Clear out build directory then build using GCov and run one set of tests again
-cd $1
 rm -rf build
 mkdir build
 cd build
