@@ -110,6 +110,8 @@ inline uint64_t uniform_hash(const void * key, size_t len, uint64_t seed)
 
   uint32_t k1 = 0;
 
+  // The 'fall through' comments below silence the implicit-fallthrough warning introduced in GCC 7.
+  // Once we move to C++17 these should be replaced with the [[fallthrough]] attribute.
   switch (len & 3)
   {
   case 3:
