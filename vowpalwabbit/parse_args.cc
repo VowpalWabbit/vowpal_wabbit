@@ -557,6 +557,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   return nullptr;
 }
+
 }  // namespace VW
 // return a copy of string replacing \x00 sequences in it
 string spoof_hex_encoded_namespaces(const string& arg)
