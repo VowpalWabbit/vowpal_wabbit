@@ -12,12 +12,12 @@ using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
-constexpr uint32_t W_XT = 0;  // current parameter
-constexpr uint32_t W_ZT = 1;  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
-constexpr uint32_t W_G2 = 2;  // accumulated gradient information
-constexpr uint32_t W_MX = 3;  // maximum absolute value
-constexpr uint32_t W_WE = 4;  // Wealth
-constexpr uint32_t W_MG = 5;  // maximum gradient
+#define W_XT 0  // current parameter
+#define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
+#define W_G2 2  // accumulated gradient information
+#define W_MX 3  // maximum absolute value
+#define W_WE 4  // Wealth
+#define W_MG 5  // maximum gradient
 
 struct update_data
 {
