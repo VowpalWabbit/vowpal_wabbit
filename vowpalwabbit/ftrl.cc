@@ -54,6 +54,14 @@ struct uncertainty
   }
 };
 
+inline float sign(float w)
+{
+  if (w < 0.)
+    return -1.;
+  else
+    return 1.;
+}
+
 inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
 {
   float* w = &fw;
@@ -62,7 +70,6 @@ inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
   float uncertain = ((d.b.data.ftrl_beta + sqrtf_ng2) / d.b.data.ftrl_alpha + d.b.data.l2_lambda);
   d.score += (1 / uncertain) * sign(fx);
 }
-
 float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 {
   uncertainty uncetain(b);
