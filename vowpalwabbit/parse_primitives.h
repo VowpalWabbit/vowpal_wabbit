@@ -54,7 +54,7 @@ bool substring_equal(const substring& ss, const char* str);
 
 size_t substring_len(substring& s);
 
-inline char* safe_index(char* start, char v, char* max)
+inline const char* safe_index(const char* start, char v, const char* max)
 {
   while (start != max && *start != v) start++;
   return start;

@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include <cmath>
 #include <math.h>
 #include <ctype.h>
+#include <boost/utility/string_view.hpp>
 #include "parse_example.h"
 #include "hash.h"
 #include "unique_sort.h"
@@ -43,6 +44,7 @@ int read_features_string(vw* all, v_array<example*>& examples)
     return (int)num_chars_initial;
 
   substring example = {line, line + num_chars};
+  // boost::string_view example(line, num_chars);
   substring_to_example(all, examples[0], example);
 
   return (int)num_chars_initial;
@@ -425,31 +427,58 @@ class TC_parser
   }
 };
 
-void substring_to_example(vw* all, example* ae, substring example)
+std::vector<boost::string_view> split(boost::string_view phrase, char delimiter)
+{
+  std::vector<boost::string_view> list;
+  size_t start_pos = 0;
+  size_t end_pos = 0;
+
+  while ((end_pos = phrase.find(delimiter, start_pos)) != boost::string_view::npos)
+  {
+    // don't insert empty elements
+    if (start_pos != end_pos)
+      list.emplace_back(phrase.begin() + start_pos, end_pos - start_pos);
+    start_pos = end_pos + 1;
+  }
+  // don't insert empty string
+  if (start_pos < phrase.size() - 1)
+    list.emplace_back(phrase.begin() + start_pos, phrase.size() - start_pos);
+  return list;
+}
+
+void substring_to_example(vw* all, example* ae, boost::string_view example)
 {
   all->p->lp.default_label(&ae->l);
-  char* bar_location = safe_index(example.begin, '|', example.end);
-  char* tab_location = safe_index(example.begin, '\t', bar_location);
-  substring label_space;
-  if (tab_location != bar_location)
-  {
-    label_space.begin = tab_location + 1;
-  }
-  else
-  {
-    label_space.begin = example.begin;
-  }
-  label_space.end = bar_location;
 
-  if (*example.begin == '|')
+  size_t bar_idx = example.find('|');
+  char* bar_location = (char*)example.end();
+  if (bar_idx != boost::string_view::npos)
+    bar_location = (char*)example.begin() + bar_idx;
+
+  all->p->words.clear();
+  if (bar_idx != 0)
   {
-    all->p->words.clear();
-  }
-  else
-  {
-    tokenize(' ', label_space, all->p->words);
+    boost::string_view label_space(example);
+    if (bar_idx != boost::string_view::npos)
+    {
+      // a little bit iffy since bar_idx is based on example and we're working off label_space
+      // but safe as long as this is the first manipulation after the copy
+      label_space.remove_suffix(label_space.size() - bar_idx);
+    }
+    size_t tab_idx = label_space.find('\t');
+    if (tab_idx != boost::string_view::npos)
+    {
+      label_space.remove_prefix(tab_idx + 1);
+    }
+    // TODO: don't copy, its dumb and temporary. If somebody sees this comment, I screwed up
+    const auto& tokenized = split(label_space, ' ');
+    for (const auto& tmp_str : tokenized)
+    {
+      substring temp = {(char*)tmp_str.begin(), (char*)tmp_str.end()};
+      all->p->words.push_back(temp);
+    }
     if (all->p->words.size() > 0 &&
-        (all->p->words.last().end == label_space.end ||
+        (all->p->words.last().end == label_space.end() ||
             *(all->p->words.last().begin) == '\''))  // The last field is a tag, so record and strip it off
     {
       substring tag = all->p->words.pop();
@@ -463,39 +492,30 @@ void substring_to_example(vw* all, example* ae, substring example)
     all->p->lp.parse_label(all->p, all->sd, &ae->l, all->p->words);
 
   if (all->audit || all->hash_inv)
-    TC_parser<true> parser_line(bar_location, example.end, *all, ae);
+    TC_parser<true> parser_line(bar_location, (char*)example.end(), *all, ae);
   else
-    TC_parser<false> parser_line(bar_location, example.end, *all, ae);
+    TC_parser<false> parser_line(bar_location, (char*)example.end(), *all, ae);
 }
 
-std::vector<std::string> split(char* phrase, std::string delimiter)
+void substring_to_example(vw* all, example* ae, substring example)
 {
-  std::vector<std::string> list;
-  std::string s = std::string(phrase);
-  size_t pos = 0;
-  std::string token;
-  while ((pos = s.find(delimiter)) != std::string::npos)
-  {
-    token = s.substr(0, pos);
-    list.push_back(token);
-    s.erase(0, pos + delimiter.length());
-  }
-  list.push_back(s);
-  return list;
+  boost::string_view strview(example.begin, example.end - example.begin);
+  substring_to_example(all, ae, strview);
 }
 
 namespace VW
 {
-void read_line(vw& all, example* ex, char* line)
+void read_line(vw& all, example* ex, boost::string_view line)
 {
-  substring ss = {line, line + strlen(line)};
-  while ((ss.end >= ss.begin) && (*(ss.end - 1) == '\n')) ss.end--;
-  substring_to_example(&all, ex, ss);
+  while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
+  substring_to_example(&all, ex, line);
 }
+
+void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, boost::string_view(line)); }
 
 void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples)
 {
-  auto lines = split(line, "\n");
+  auto lines = split(line, '\n');
   for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.
@@ -503,7 +523,7 @@ void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples
     {
       examples.push_back(&VW::get_unused_example(all));
     }
-    read_line(*all, examples[i], const_cast<char*>(lines[i].c_str()));
+    read_line(*all, examples[i], lines[i]);
   }
 }
 

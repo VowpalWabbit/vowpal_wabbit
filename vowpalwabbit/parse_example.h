@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #pragma once
 #include <stdint.h>
+#include <boost/utility/string_view_fwd.hpp>
 #include "parse_primitives.h"
 #include "example.h"
 #include "vw.h"
@@ -21,7 +22,7 @@ void substring_to_example(vw* all, example* ae, substring example);
 namespace VW
 {
 example& get_unused_example(vw* all);
-void read_line(vw& all, example* ex, char* line);  // read example from the line.
+void read_line(vw& all, example* ex, char * line);  // read example from the line.
 void read_lines(vw* all, char* line, size_t len,
     v_array<example*>& examples);  // read examples from the new line separated strings.
 
