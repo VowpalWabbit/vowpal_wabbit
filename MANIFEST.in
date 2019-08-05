@@ -1,4 +1,4 @@
-include *.txt *.in CMakeSettings.json
+include *.txt *.in CMakeSettings.json LICENSE
 include python/README.rst python/*.txt python/*.bat
 recursive-include python *
 recursive-include python/vowpalwabbit *

@@ -13,12 +13,12 @@ using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
-static const uint32_t parent_bit = 1;
-static const uint32_t cycle_bit = 2;
-static const uint32_t tree_atomics = 134;
-static const float tolerance = 1e-9f;
-static const uint32_t indicator_bit = 128;
-static const uint32_t default_depth = 127;
+static constexpr uint32_t parent_bit = 1;
+static constexpr uint32_t cycle_bit = 2;
+static constexpr uint32_t tree_atomics = 134;
+static constexpr float tolerance = 1e-9f;
+static constexpr uint32_t indicator_bit = 128;
+static constexpr uint32_t default_depth = 127;
 
 struct sort_data
 {
@@ -359,6 +359,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.weight = ec.weight;
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
+  poly.synth_ec.interactions = &poly.all->interactions;
 
   /**
    * Some comments on ft_offset.

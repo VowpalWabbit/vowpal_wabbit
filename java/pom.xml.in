@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.johnlangford</groupId>
+    <groupId>com.github.vowpalwabbit</groupId>
     <artifactId>vw-jni</artifactId>
     <version>@PACKAGE_VERSION@-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -11,12 +11,12 @@
         A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper requires that the vw_jni platform
         specific library is installed on your java.library.path.
     </description>
-    <url>https://github.com/JohnLangford/vowpal_wabbit</url>
+    <url>https://github.com/VowpalWabbit/vowpal_wabbit</url>
 
     <scm>
-        <connection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</connection>
-        <developerConnection>scm:git:git@github.com:JohnLangford/vowpal_wabbit.git</developerConnection>
-        <url>git@github.com:JohnLangford/vowpal_wabbit.git</url>
+        <connection>scm:git:git://github.com/VowpalWabbit/vowpal_wabbit.git</connection>
+        <developerConnection>scm:git:git@github.com/VowpalWabbit/vowpal_wabbit.git</developerConnection>
+        <url>https://github.com/VowpalWabbit/vowpal_wabbit/tree/master</url>
     </scm>
 
     <distributionManagement>
@@ -33,7 +33,7 @@
     <licenses>
         <license>
             <name>Vowpal Wabbit License</name>
-            <url>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</url>
+            <url>https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/LICENSE</url>
         </license>
     </licenses>
 
@@ -106,6 +106,9 @@
                         <fileset>
                             <directory>${project.build.directory}</directory>
                             <excludes>
+                                <!-- files created by CMake -->
+                                <exclude>bin/**</exclude>
+                                <exclude>test-classes/vw-bin.txt</exclude>
                                 <exclude>*vw_jni*</exclude>
                             </excludes>
                             <followSymlinks>false</followSymlinks>
@@ -248,6 +251,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <source>${java.version}</source>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -261,6 +267,14 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- don't push tags and other changes back into git repo -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+            	<pushChanges>false</pushChanges>
+                </configuration>
             </plugin>
         </plugins>
     </build>

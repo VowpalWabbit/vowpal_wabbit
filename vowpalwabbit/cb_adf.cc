@@ -5,6 +5,7 @@
 */
 #include <float.h>
 #include <errno.h>
+#include <algorithm>
 
 #include "reductions.h"
 #include "v_hashmap.h"
@@ -44,6 +45,7 @@ struct cb_adf
   uint64_t offset;
   bool no_predict;
   bool rank_all;
+  float clip_p;
 };
 
 CB::cb_class get_observed_cost(multi_ex& examples)
@@ -80,7 +82,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
 
 void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
-  gen_cs_example_ips(examples, mydata.cs_labels);
+  gen_cs_example_ips(examples, mydata.cs_labels, mydata.clip_p);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
@@ -177,7 +179,7 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 
 void learn_DR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
-  gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels);
+  gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels, mydata.clip_p);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
@@ -203,7 +205,8 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   gen_cs_example_mtr(mydata.gen_cs, examples, mydata.cs_labels);
   uint32_t nf = (uint32_t)examples[mydata.gen_cs.mtr_example]->num_features;
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
-  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability *
+  const float clipped_p = (std::max)(examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability, mydata.clip_p);
+  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / clipped_p *
       ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
 
   // TODO!!! mydata.cb_labels are not getting properly restored (empty costs are dropped)
@@ -318,7 +321,7 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = true;
   if (c.gen_cs.known_cost.probability > 0)
-    loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
+    loss = get_cost_estimate(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
   else
     labeled_example = false;
 
@@ -453,6 +456,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", ld->rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", ld->no_predict).help("Do not do a prediction when training"))
+      .add(make_option("clip_p", ld->clip_p).keep().default_value(0.f).help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
@@ -494,6 +498,9 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     all.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr." << std::endl;
     ld->gen_cs.cb_type = CB_TYPE_MTR;
   }
+
+  if (ld->clip_p > 0.f && ld->gen_cs.cb_type == CB_TYPE_SM)
+    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped." << std::endl; 
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

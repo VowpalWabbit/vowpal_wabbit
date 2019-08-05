@@ -22,6 +22,17 @@ bool substring_equal(const substring& a, const substring& b)
       && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
 }
 
+bool substring_equal(const substring& ss, const char* str)
+{
+  size_t len_ss = ss.end - ss.begin;
+  size_t len_str = strlen(str);
+  if (len_ss != len_str)
+    return false;
+  return (strncmp(ss.begin, str, len_ss) == 0);
+}
+
+size_t substring_len(substring& s) { return s.end - s.begin; }
+
 uint64_t hashstring(substring s, uint64_t h)
 {
   // trim leading whitespace but not UTF-8

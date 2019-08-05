@@ -1,3 +1,4 @@
+#include <cmath>
 #include <errno.h>
 #include "reductions.h"
 #include "v_hashmap.h"
@@ -144,7 +145,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
   base.predict(ec, i - 1);
   float sens = base.sensitivity(ec, i - 1);
 
-  if (cs_a.t <= 1 || nanpattern(sens) || infpattern(sens))
+  if (cs_a.t <= 1 || std::isnan(sens) || std::isinf(sens))
   {
     min_pred = cs_a.cost_min;
     max_pred = cs_a.cost_max;

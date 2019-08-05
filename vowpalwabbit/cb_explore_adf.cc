@@ -7,6 +7,7 @@
 #include "explore.h"
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -85,14 +86,6 @@ struct cb_explore_adf
   std::vector<v_array<CB::cb_class>> ex_costs;
 };
 
-template <class T>
-void swap(T& ele1, T& ele2)
-{
-  T temp = ele2;
-  ele2 = ele1;
-  ele1 = temp;
-}
-
 // TODO: same as cs_active.cc, move to shared place
 float binary_search(float fhat, float delta, float sens, float tol = 1e-6)
 {
@@ -155,7 +148,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
-    if (ec->pred.scalar < cmin || nanpattern(sens) || infpattern(sens))
+    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens))
       min_costs[a] = cmin;
     else
     {
@@ -169,7 +162,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
     {
       ec->l.simple.label = cmax + 1;
       sens = base.sensitivity(*ec);
-      if (ec->pred.scalar > cmax || nanpattern(sens) || infpattern(sens))
+      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens))
       {
         max_costs[a] = cmax;
       }
@@ -553,7 +546,7 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
+      float l = get_cost_estimate(&c.gen_cs.known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }

@@ -14,7 +14,7 @@ endif()
 
 set(vw_install_headers
   allreduce.h comp_io.h example.h action_score.h feature_group.h cb_explore.h
-  crossplat_compat.h parse_example.h floatbits.h global_data.h io_buf.h learner.h loss_functions.h
+  crossplat_compat.h parse_example.h global_data.h io_buf.h learner.h loss_functions.h
   parse_primitives.h parser.h simple_label.h v_array.h vw.h vwdll.h label_parser.h multiclass.h
   cost_sensitive.h cb.h v_hashmap.h memory.h vw_exception.h vw_validate.h multilabel.h constant.h
   ezexample.h version.h
@@ -33,7 +33,8 @@ set(vw_all_headers
   gen_cs_example.h parse_args.h topk.h cb_explore_adf.h parse_dispatch_loop.h unique_sort.h
   interact.h interactions.h parse_example_json.h cbify.h warm_cb.h interactions_predict.h vw_allreduce.h
   classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
-  config.h.in primitives.h lda_core.h print.h vw_versions.h shared_feature_merger.h
+  config.h.in primitives.h lda_core.h print.h vw_versions.h shared_feature_merger.h conditional_contextual_bandit.h
+  ccb_label.h
 )
 
 set(vw_all_sources
@@ -49,7 +50,7 @@ set(vw_all_sources
   active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
   action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc
-  vw_exception.cc no_label.cc shared_feature_merger.cc version.cc
+  vw_exception.cc no_label.cc shared_feature_merger.cc conditional_contextual_bandit.cc cb_sample.cc ccb_label.cc version.cc
 )
 
 set(explore_all_headers
@@ -65,7 +66,7 @@ add_library(vw ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 target_link_libraries(vw PUBLIC rapidjson Boost::program_options ${LINK_THREADS} ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
 
 if(GCOV)
-  target_link_libraries(vw PUBLIC gcov)
+  target_link_libraries(vw PUBLIC gcov --coverage)
 endif()
 
 target_include_directories(vw PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
