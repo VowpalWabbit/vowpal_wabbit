@@ -1,4 +1,4 @@
-add_executable(vw-slim-test ut_main.cc ut_explore.cc ut_opts.cc ut_vw.cc vw_util.cc ut_util.h vw_util.h)
+add_executable(vw-slim-test ut_main.cc ut_explore.cc ut_opts.cc ut_vw.cc ut_util.h)
 
 find_package(GTest REQUIRED)
 find_package(Boost)

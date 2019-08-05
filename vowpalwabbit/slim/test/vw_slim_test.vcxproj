@@ -92,7 +92,6 @@
     <ClCompile Include="ut_main.cc" />
     <ClCompile Include="ut_opts.cc" />
     <ClCompile Include="ut_vw.cc" />
-    <ClCompile Include="vw_util.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

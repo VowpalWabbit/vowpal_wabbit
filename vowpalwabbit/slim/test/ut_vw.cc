@@ -9,7 +9,6 @@
 #include <streambuf>
 #include <array>
 
-#include "vw_util.h"
 #include <fstream>
 #include "example_predict_builder.h"
 #include "array_parameters.h"
