@@ -156,7 +156,6 @@
       <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
     <Compile Include="RunTestsHelper.cs" />
-    <Compile Include="TestAzure.cs" />
     <Compile Include="TestConfidence.cs" />
     <Compile Include="TestMultiClassPredictionFactory.cs" />
     <Compile Include="TestTelemetryProcessor.cs" />
