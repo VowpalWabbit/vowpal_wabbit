@@ -130,10 +130,9 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
     }
   }
 
-  auto serialized_keep_options = serializer.str().c_str();
-
   // move it to Java
-  jstring args = env->NewStringUTF(serialized_keep_options);
+  // Note: don't keep serializer.str().c_str() around in some variable. it get's deleted after str() is de-allocated
+  jstring args = env->NewStringUTF(serializer.str().c_str());
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitArguments");
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;)V");
@@ -357,6 +356,12 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   }
 }
 
+// re-use prediction conversation methods
+jobject multilabel_predictor(example* vec, JNIEnv* env);
+jfloatArray scalars_predictor(example* vec, JNIEnv* env);
+jobject action_scores_prediction(example* vec, JNIEnv* env);
+jobject action_probs_prediction(example* vec, JNIEnv* env);
+
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(JNIEnv* env, jobject exampleObj)
 {
   INIT_VARS
@@ -377,12 +382,24 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPre
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-      /*
-         case prediction_type::prediction_type_t::action_probs:
-         case prediction_type::prediction_type_t::action_scores:
-         case prediction_type::prediction_type_t::multiclass:
-         case prediction_type::prediction_type_t::multilabels:
-         case prediction_type::prediction_type_t::scalars:*/
+    case prediction_type::prediction_type_t::multiclass:
+      predClass = env->FindClass("java/lang/Integer");
+      ctr = env->GetMethodID(predClass, "<init>", "(I)V");
+
+      return env->NewObject(predClass, ctr, ex->pred.multiclass);
+
+    case prediction_type::prediction_type_t::scalars:
+      return scalars_predictor(ex, env);
+
+    case prediction_type::prediction_type_t::action_probs:
+      return action_probs_prediction(ex, env);
+
+    case prediction_type::prediction_type_t::action_scores:
+      return action_scores_prediction(ex, env);
+
+    case prediction_type::prediction_type_t::multilabels:
+      return multilabel_predictor(ex, env);
+
     default:
       return nullptr;
   }
