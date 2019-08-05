@@ -27,7 +27,7 @@ test_script:
 
     {
        cd c:\vowpal_wabbit
-       vstest.console /logger:Appveyor /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
+       vstest.console /logger:Appveyor /Platform:x64 /inIsolation vowpalwabbit\AnyCPU\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
     }
 on_failure:
 - ps: Get-ChildItem C:\Users\appveyor\AppData\Local\CrashDumps\\*.dmp | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
