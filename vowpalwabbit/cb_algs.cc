@@ -89,7 +89,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 
   cb_to_cs& c = data.cbcs;
   if (!CB::cb_label.test_label(&ld))
-    loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
+    loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
   all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 

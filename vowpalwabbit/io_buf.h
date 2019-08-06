@@ -82,8 +82,8 @@ class io_buf
   v_array<char> currentname;
   v_array<char> finalname;
 
-  static const int READ = 1;
-  static const int WRITE = 2;
+  static constexpr int READ = 1;
+  static constexpr int WRITE = 2;
 
   void init()
   {
@@ -337,3 +337,18 @@ inline size_t bin_text_read_write_fixed_validated(
   }
   return nbytes;
 }
+
+#define writeit(what, str)                                                                  \
+  do                                                                                        \
+  {                                                                                         \
+    msg << str << " = " << what << " ";                                                     \
+    bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
+  } while (0);
+
+#define writeitvar(what, str, mywhat)                                                           \
+  auto mywhat = (what);                                                                         \
+  do                                                                                            \
+  {                                                                                             \
+    msg << str << " = " << mywhat << " ";                                                       \
+    bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), "", read, msg, text); \
+  } while (0);

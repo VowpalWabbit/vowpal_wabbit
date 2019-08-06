@@ -22,13 +22,14 @@ license as described in the file LICENSE.
 #include <io.h>
 typedef int socklen_t;
 
-int daemon(int a, int b)
+int daemon(int /*a*/, int /*b*/)
 {
   exit(0);
   return 0;
 }
 
-// Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just use the actual isocpp version.
+// Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
+// use the actual isocpp version.
 #if _MSC_VER >= 1920
 #define getpid _getpid
 #else
@@ -101,8 +102,8 @@ uint32_t cache_numbits(io_buf* buf, io_adapter* filepointer)
 
     std::vector<char> t(v_length);
     buf->read_file(filepointer, t.data(), v_length);
-    version_struct v_tmp(t.data());
-    if (v_tmp != version)
+    VW::version_struct v_tmp(t.data());
+    if (v_tmp != VW::version)
     {
       //      cout << "cache has possibly incompatible version, rebuilding" << endl;
       return 0;
@@ -248,10 +249,10 @@ void make_write_cache(vw& all, string& newname, bool quiet)
     return;
   }
 
-  size_t v_length = (uint64_t)version.to_string().length() + 1;
+  size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
   output->write_file(f, &v_length, sizeof(v_length));
-  output->write_file(f, version.to_string().c_str(), v_length);
+  output->write_file(f, VW::version.to_string().c_str(), v_length);
   output->write_file(f, "c", 1);
   output->write_file(f, &all.num_bits, sizeof(all.num_bits));
 
@@ -570,6 +571,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       if (input_options.json || input_options.dsjson)
       {
+
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
@@ -577,14 +579,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           all.p->reader = &read_features_json<true>;
           all.p->text_reader = &line_to_examples_json<true>;
           all.p->audit = true;
-          all.p->jsonp = std::make_shared<json_parser<true>>();
         }
         else
         {
           all.p->reader = &read_features_json<false>;
           all.p->text_reader = &line_to_examples_json<false>;
           all.p->audit = false;
-          all.p->jsonp = std::make_shared<json_parser<false>>();
         }
 
         all.p->decision_service_json = input_options.dsjson;
@@ -775,6 +775,9 @@ void setup_example(vw& all, example* ae)
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
+
+  // Set the interactions for this example to the global set.
+  ae->interactions = &all.interactions;
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
@@ -1007,7 +1010,7 @@ example* example_initializer::operator()(example* ex)
   return ex;
 }
 
-void adjust_used_index(vw& all) { /* no longer used */ }
+void adjust_used_index(vw&) { /* no longer used */ }
 
 namespace VW
 {
@@ -1028,6 +1031,17 @@ void free_parser(vw& all)
     output->currentname.delete_v();
   }
 
+  while (!all.p->example_pool.empty())
+  {
+    example* temp = all.p->example_pool.get_object();
+    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+  }
+
+  while (all.p->ready_parsed_examples.size() != 0)
+  {
+    example* temp = all.p->ready_parsed_examples.pop();
+    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+  }
   all.p->counts.delete_v();
 }
 

@@ -13,10 +13,16 @@ namespace INTERACTIONS
  *  Interactions preprocessing
  */
 
-const unsigned char printable_start = ' ';
-const unsigned char printable_end = '~';
-const uint64_t valid_ns_size =
+constexpr unsigned char printable_start = ' ';
+constexpr unsigned char printable_end = '~';
+constexpr unsigned char printable_ns_size = printable_end - printable_start;
+constexpr uint64_t valid_ns_size =
     printable_end - printable_start - 1;  // -1 to skip characters ':' and '|' excluded in is_valid_ns()
+
+inline constexpr bool is_printable_namespace(const unsigned char ns)
+{
+  return ns >= printable_start && ns <= printable_end;
+}
 
 // exand all wildcard namespaces in vector<string>
 // req_length must be 0 if interactions of any length are allowed, otherwise contains required length
@@ -40,10 +46,10 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 {
   if (all.weights.sparse)
     generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+        *ec.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
   else
     generate_interactions<R, S, T, audit, audit_func, dense_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
+        *ec.interactions, all.permutations, ec, dat, all.weights.dense_weights);
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6

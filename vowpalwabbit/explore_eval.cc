@@ -68,7 +68,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = get_unbiased_cost(&c.known_cost, preds[i].action);
+      float l = get_cost_estimate(&c.known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }
@@ -123,7 +123,7 @@ void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
 template <bool is_learn>
 void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
 {
-  example* label_example = CB_EXPLORE_ADF::test_adf_sequence(ec_seq);
+  example* label_example = CB_ADF::test_adf_sequence(ec_seq);
 
   if (label_example != nullptr)  // extract label
   {

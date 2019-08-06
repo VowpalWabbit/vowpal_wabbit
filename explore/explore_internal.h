@@ -229,6 +229,8 @@ namespace exploration
 	  return enforce_minimum_probability(minimum_uniform, update_zero_elements, pdf_first, pdf_last, pdf_category());
   }
 
+  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds will result in a very biased distribution.
+  // If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
   template<typename It>
   int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index, std::input_iterator_tag /* pdf_category */)
   {
@@ -277,6 +279,8 @@ namespace exploration
     return S_EXPLORATION_OK;
   }
 
+  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds will result in a very biased distribution.
+  // If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
   template<typename It>
   int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index)
   {
@@ -284,6 +288,8 @@ namespace exploration
     return sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category());
   }
 
+  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds will result in a very biased distribution.
+  // If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
   template<typename It>
   int sample_after_normalizing(const char* seed, It pdf_first, It pdf_last, uint32_t& chosen_index, std::random_access_iterator_tag pdf_category)
   {
@@ -291,6 +297,8 @@ namespace exploration
     return sample_after_normalizing(seed_hash, pdf_first, pdf_last, chosen_index, pdf_category);
   }
 
+  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds will result in a very biased distribution.
+  // If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
   template<typename It>
   int sample_after_normalizing(const char* seed, It pdf_first, It pdf_last, uint32_t& chosen_index)
   {

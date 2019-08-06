@@ -40,9 +40,9 @@ search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &Seque
 search_metatask* all_metatasks[] = {
     &DebugMT::metatask, &SelectiveBranchingMT::metatask, nullptr};  // must nullptr terminate!
 
-const bool PRINT_UPDATE_EVERY_EXAMPLE = 0;
-const bool PRINT_UPDATE_EVERY_PASS = 0;
-const bool PRINT_CLOCK_TIME = 0;
+constexpr bool PRINT_UPDATE_EVERY_EXAMPLE = false;
+constexpr bool PRINT_UPDATE_EVERY_PASS = false;
+constexpr bool PRINT_CLOCK_TIME = false;
 
 string neighbor_feature_space("neighbor");
 string condition_feature_space("search_condition");
@@ -628,7 +628,7 @@ void reset_search_structure(search_private& priv)
   if (priv.adaptive_beta)
   {
     float x = -log1pf(-priv.alpha) * (float)priv.total_examples_generated;
-    static const float log_of_2 = (float)0.6931471805599453;
+    static constexpr float log_of_2 = (float)0.6931471805599453;
     priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1 - expf(-x));  // numerical stability
     // float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
     // assert( fabs(priv_beta - priv.beta) < 1e-2 );

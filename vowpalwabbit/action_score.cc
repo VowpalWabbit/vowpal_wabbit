@@ -1,10 +1,11 @@
 #include "v_array.h"
 #include "action_score.h"
 #include "io_buf.h"
+#include "global_data.h"
 using namespace std;
 namespace ACTION_SCORE
 {
-void print_action_score(io_adapter* f, v_array<action_score>& a_s, v_array<char>&)
+void print_action_score(io_adapter* f, v_array<action_score>& a_s, v_array<char>& tag)
 {
   if (f >= 0)
   {
@@ -16,6 +17,7 @@ void print_action_score(io_adapter* f, v_array<action_score>& a_s, v_array<char>
         ss << ',';
       ss << a_s[i].action << ':' << a_s[i].score;
     }
+    print_tag(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);

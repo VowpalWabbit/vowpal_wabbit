@@ -88,12 +88,7 @@ struct lda
   double example_t;
   vw *all;  // regressor, lda
 
-  // constexpr is not supported in VS2013 (except in one CTP release)
-  // if it makes it into VS 2015 change the next ifdef to check Visual Studio Release
-
-  // static constexpr float underflow_threshold = 1.0e-10f;
-  inline float underflow_threshold() { return 1.0e-10f; }
-
+  static constexpr float underflow_threshold = 1.0e-10f;
   inline float digamma(float x);
   inline float lgamma(float x);
   inline float powf(float x, float p);
@@ -596,13 +591,13 @@ void lda::expdigammify(vw &all, float *gamma)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold(), 0.0f);
+      ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold, 0.0f);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold(), 0.0f);
+      ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold, 0.0f);
       break;
     case USE_SIMD:
-      ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold(), 0.0f);
+      ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold, 0.0f);
       break;
     default:
       std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
@@ -615,13 +610,13 @@ void lda::expdigammify_2(vw &all, float *gamma, float *norm)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold());
+      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold());
+      ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold);
       break;
     case USE_SIMD:
-      ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold());
+      ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold);
       break;
     default:
       std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -1354,10 +1349,11 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);
-  if(minibatch2 > all.p->ring_size)
+  if (minibatch2 > all.p->ring_size)
   {
+    bool previous_strict_parse = all.p->strict_parse;
     delete all.p;
-    all.p = new parser{minibatch2};
+    all.p = new parser{minibatch2, previous_strict_parse};
   }
 
   ld->v.resize(all.lda * ld->minibatch);

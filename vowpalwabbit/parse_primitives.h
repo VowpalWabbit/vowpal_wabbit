@@ -4,11 +4,11 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+#include <cmath>
 #include <iostream>
 #include <stdint.h>
 #include <math.h>
 #include "v_array.h"
-#include "floatbits.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -50,6 +50,9 @@ void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false
 }
 
 bool substring_equal(const substring& a, const substring& b);
+bool substring_equal(const substring& ss, const char* str);
+
+size_t substring_len(substring& s);
 
 inline char* safe_index(char* start, char v, char* max)
 {
@@ -135,14 +138,11 @@ inline float parseFloat(char* p, char** end, char* endLine = nullptr)
     return (float)strtod(start, end);
 }
 
-inline bool nanpattern(float value) { return (float_to_bits(value) & 0x7fC00000) == 0x7fC00000; }
-inline bool infpattern(float value) { return (float_to_bits(value) & 0x7fC00000) == 0x7f800000; }
-
 inline float float_of_substring(substring s)
 {
   char* endptr = s.end;
   float f = parseFloat(s.begin, &endptr);
-  if ((endptr == s.begin && s.begin != s.end) || nanpattern(f))
+  if ((endptr == s.begin && s.begin != s.end) || std::isnan(f))
   {
     std::cout << "warning: " << std::string(s.begin, s.end - s.begin).c_str()
               << " is not a good float, replacing with 0" << std::endl;

@@ -10,10 +10,10 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-const size_t int_size = 11;
-const size_t char_size = 2;
-const size_t neg_1 = 1;
-const size_t general = 2;
+constexpr size_t int_size = 11;
+constexpr size_t char_size = 2;
+constexpr size_t neg_1 = 1;
+constexpr size_t general = 2;
 
 inline char* run_len_decode(char* p, uint64_t& i)
 {
@@ -208,4 +208,13 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
   output_byte(cache, (unsigned char)ae->indices.size());
 
   for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
+}
+
+uint32_t VW::convert(size_t number)
+{
+  if (number > UINT32_MAX)
+  {
+    THROW("size_t value is out of bounds of uint32_t.")
+  }
+  return static_cast<uint32_t>(number);
 }

@@ -17,12 +17,14 @@ var lines = File.ReadAllLines(Path.Combine(testRoot, "RunTests"))
 
 var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
 	25, 26, // crash
-	92, 95, 96, 98,	91, 99, 118, 119, 120, 
+	92, 95, 96, 98,	91, 99, 118, 119, 120,
 	176, 177, //depend on shell scripts for input/output
 	14, 16, 17, 31, 33, 34,53, 101, 102, 103, 105, 106, 111, 112, // float delta
 	71, // --examples to test parser
-	143, 144, 146, 158, // native json parsing 
-	149, 152, 156 // bash script
+	143, 144, 146, 158, 189, // native json parsing
+	149, 152, 156, 193, 194, // bash script
+	188, // possibly float delta
+	195 //--onethread is a shell option, not available via library
 	};
 
 var outputModels = new Dictionary<string, TestCase>();
@@ -112,8 +114,8 @@ namespace cs_unittest
     [TestClass]
     public partial class RunTests : TestBase
     {
-<# foreach (var mainTestcase in testcases.Values) { 
-		if (mainTestcase.Id == 0) 
+<# foreach (var mainTestcase in testcases.Values) {
+		if (mainTestcase.Id == 0)
 			continue;
 #>
         [TestMethod]

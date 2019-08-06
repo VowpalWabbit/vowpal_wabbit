@@ -202,10 +202,10 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 #endif
 
 // lookup table of factorials up tu 21!
-int64_t fast_factorial[] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800,
+constexpr int64_t fast_factorial[] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800,
     87178291200, 1307674368000, 20922789888000, 355687428096000, 6402373705728000, 121645100408832000,
     2432902008176640000};
-const size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_factorial);
+constexpr size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_factorial);
 
 // helper factorial function that allows to perform:
 // n!/(n-k)! = (n-k+1)*(n-k+2)..*(n-1)*n
@@ -237,7 +237,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
   if (all.permutations)
   {
     // just multiply precomputed values for all namespaces
-    for (std::string& inter : all.interactions)
+    for (std::string& inter : *ec.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -266,7 +266,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
     generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
 #endif
 
-    for (std::string& inter : all.interactions)
+    for (std::string& inter : *ec.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;

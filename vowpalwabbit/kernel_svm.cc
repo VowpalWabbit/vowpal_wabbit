@@ -26,7 +26,6 @@ license as described in the file LICENSE.
 #include "memory.h"
 #include "vw_allreduce.h"
 #include "rand48.h"
-#include "floatbits.h"
 #include "reductions.h"
 
 #define SVM_KER_LIN 0
@@ -553,15 +552,15 @@ bool update(svm_params& params, size_t pos)
   return overshoot;
 }
 
-void copy_char(char& c1, const char& c2)
+void copy_char(char& c1, const char& c2) noexcept
 {
   if (c2 != '\0')
     c1 = c2;
 }
 
-void add_size_t(size_t& t1, const size_t& t2) { t1 += t2; }
+void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
 
-void add_double(double& t1, const double& t2) { t1 += t2; }
+void add_double(double& t1, const double& t2) noexcept { t1 += t2; }
 
 void sync_queries(vw& all, svm_params& params, bool* train_pool)
 {

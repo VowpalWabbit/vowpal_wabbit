@@ -25,7 +25,7 @@ my $VW;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
-$ENV{'PATH'} .= ':test:../vowpalwabbit:vowpalwabbit:.';
+$ENV{'PATH'} .= ':../build/vowpalwabbit:test:../vowpalwabbit:vowpalwabbit:.';
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
@@ -1701,3 +1701,51 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm
     train-sets/ref/cb_adf_sm.stderr
     pred-sets/ref/cb_adf_sm.predict
+
+# Test 189 test dsjson parser correctly processes checkpoint and dangling observation lines
+{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --cb_explore_adf -P 1
+    train-sets/ref/b1848_dsjson_parser_regression.stderr
+
+# Test 190: one-against-all with subsampling
+{VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
+    train-sets/ref/oaa_subsample.stderr
+
+# Test 191: train coin betting
+{VW} -k -d train-sets/0001.dat -f models/ftrl_coin.model --passes 1 --coin
+    train-sets/ref/ftrl_coin.stderr
+
+# Test 192: test coin betting
+{VW} -k -t -d train-sets/0001.dat -i models/ftrl_coin.model -p ftrl_coin.predict
+    test-sets/ref/ftrl_coin.stderr
+    pred-sets/ref/ftrl_coin.predict
+
+# Test 193: malformed examples, onethread, strict_parse failure
+./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse
+    train-sets/ref/malformed-onethread-strict_parse.stderr
+
+# Test 194: malformed examples, strict_parse failure
+./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse
+    train-sets/ref/malformed-strict_parse.stderr
+
+# Test 195: malformed examples success
+{VW} -d train-sets/malformed.dat --onethread
+    train-sets/ref/malformed.stderr
+
+# Test 196: online contextual memory tree
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_online.stderr
+
+# Test 197: offline contextual memory tree
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_offline.stderr
+
+# Test 198: test cb_sample
+{VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234
+    pred-sets/ref/cb_sample_seed.predict
+
+# Test 199: CCB train then test
+{VW} -d train-sets/ccb_test.dat --ccb_explore_adf -p ccb_test.predict
+    train-sets/ref/ccb_test.stderr
+    train-sets/ref/ccb_test.predict
+
+# Do not delete this line or the empty line above it
