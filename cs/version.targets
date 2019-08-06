@@ -70,11 +70,11 @@
             $(WriteTargets);
             WriteVersionToAssemblyInfoCs
         </WriteTargets>
-        <WriteTargets Condition="'$(WriteAssemblyInfoCpp.ToLower()'=='true'">
+        <WriteTargets Condition="'$(WriteAssemblyInfoCpp.ToLower())'=='true'">
             $(WriteTargets);
             WriteVersionToAssemblyInfoCpp
         </WriteTargets>
-        <WriteTargets Condition="'$(WriteResourceRc.ToLower()'=='true'">
+        <WriteTargets Condition="'$(WriteResourceRc.ToLower())'=='true'">
             $(WriteTargets);
             WriteVersionToResourceRc
         </WriteTargets>
