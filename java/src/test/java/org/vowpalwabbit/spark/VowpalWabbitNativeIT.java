@@ -164,6 +164,9 @@ public class VowpalWabbitNativeIT {
         try 
         {
             vw = new VowpalWabbitNative("--loss_function=logistic --bfgs --passes 2 -k --cache_file=" + cachePath);
+            // make sure getArguments works
+            assertTrue(vw.getArguments().getArgs().contains("--bfgs"));
+
             ex = vw.createExample();
 
             for (int i=0;i<10;i++) {
