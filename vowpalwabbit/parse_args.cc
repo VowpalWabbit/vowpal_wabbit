@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <exception>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -1740,13 +1741,6 @@ vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_l
   return new_model;
 }
 
-void delete_dictionary_entry(substring ss, features* A)
-{
-  free(ss.begin);
-  A->delete_v();
-  delete A;
-}
-
 void sync_stats(vw& all)
 {
   if (all.all_reduce != nullptr)
@@ -1766,7 +1760,7 @@ void sync_stats(vw& all)
   }
 }
 
-void finish(vw& all, bool delete_all)
+void output_end_of_run_statistcs(vw& all)
 {
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.quiet && !all.options->was_supplied("audit_regressor"))
@@ -1819,80 +1813,44 @@ void finish(vw& all, bool delete_all)
       all.trace_message << endl << "total queries = " << all.sd->queries;
     all.trace_message << endl;
   }
+}
+
+// The purpose of this function is to print final statistics, close all open files and allow for
+// the reduction stack to finish, then delete all which cleans up memory.
+void finish(vw& all, bool delete_all)
+{
+  output_end_of_run_statistcs(all);
 
   // implement finally.
   // finalize_regressor can throw if it can't write the file.
   // we still want to free up all the memory.
-  vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
-  bool finalize_regressor_exception_thrown = false;
+  std::exception_ptr finalize_regressor_exception;
   try
   {
     finalize_regressor(all, all.final_regressor_name);
   }
-  catch (vw_exception& e)
+  catch (vw_exception&)
   {
-    finalize_regressor_exception = e;
-    finalize_regressor_exception_thrown = true;
+    finalize_regressor_exception = std::current_exception();
   }
 
+  // Let reduction stack finish.
   if (all.l != nullptr)
   {
     all.l->finish();
-    free_it(all.l);
   }
 
-  // Check if options object lifetime is managed internally.
-  if (all.should_delete_options)
-    delete all.options;
-
-  // TODO: migrate all finalization into parser destructor
-  free_parser(all);
+  // Close files
   finalize_source(all.p);
-  all.p->parse_name.clear();
-  all.p->parse_name.delete_v();
-  delete all.p;
-  bool seeded;
-  if (all.weights.seeded() > 0)
-    seeded = true;
-  else
-    seeded = false;
-  if (!seeded)
-  {
-    if (all.sd->ldict)
-    {
-      all.sd->ldict->~namedlabels();
-      free(all.sd->ldict);
-    }
-    free(all.sd);
-  }
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
   all.final_prediction_sink.delete_v();
-  for (size_t i = 0; i < all.loaded_dictionaries.size(); i++)
-  {
-    // Warning C6001 is triggered by the following:
-    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using
-    // 'free(all.loaded_dictionaries[i].name)'
-    //
-    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the
-    // warning goes away. Disable SDL warning.
-    //    #pragma warning(disable:6001)
-    free_it(all.loaded_dictionaries[i].name);
-    //#pragma warning(default:6001)
-
-    all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
-    all.loaded_dictionaries[i].dict->delete_v();
-    free_it(all.loaded_dictionaries[i].dict);
-  }
-  delete all.loss;
-
-  delete all.all_reduce;
 
   if (delete_all)
     delete &all;
 
-  if (finalize_regressor_exception_thrown)
-    throw finalize_regressor_exception;
+  if (finalize_regressor_exception)
+    std::rethrow_exception(finalize_regressor_exception);
 }
 }  // namespace VW

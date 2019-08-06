@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "gd.h"
 #include "vw_exception.h"
+#include "allreduce.h"
 
 using namespace std;
 
@@ -283,7 +284,6 @@ vw::vw()
   current_pass = 0;
 
   data_filename = "";
-  delete_prediction = nullptr;
 
   bfgs = false;
   no_bias = false;
@@ -384,4 +384,45 @@ vw::vw()
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
+}
+
+vw::~vw()
+{
+  if (l != nullptr)
+  {
+    free_it(l);
+  }
+
+  // Check if options object lifetime is managed internally.
+  if (should_delete_options)
+    delete options;
+
+  delete p;
+
+  const bool seeded = weights.seeded() > 0;
+  if (!seeded)
+  {
+    if (sd->ldict)
+    {
+      sd->ldict->~namedlabels();
+      free(sd->ldict);
+    }
+    free(sd);
+  }
+
+  for (size_t i = 0; i < loaded_dictionaries.size(); i++)
+  {
+    free_it(loaded_dictionaries[i].name);
+    loaded_dictionaries[i].dict->iter(
+      [](substring ss, features * A) {
+        free(ss.begin);
+        A->delete_v();
+        delete A;
+      });
+    loaded_dictionaries[i].dict->delete_v();
+    free_it(loaded_dictionaries[i].dict);
+  }
+
+  delete loss;
+  delete all_reduce;
 }

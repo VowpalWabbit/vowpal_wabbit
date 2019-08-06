@@ -655,7 +655,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
         data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
 
   l->set_finish(finish);
-  all.delete_prediction = nullptr;
+  all.p->delete_prediction = nullptr;
 
   return make_base(*l);
 }

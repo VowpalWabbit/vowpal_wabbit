@@ -252,7 +252,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   auto base = as_singleline(setup_base(options, all));
   if (probabilities || scores)
   {
-    all.delete_prediction = delete_scalars;
+    all.p->delete_prediction = delete_scalars;
     if (probabilities)
     {
       auto loss_function_type = all.loss->getType();

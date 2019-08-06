@@ -463,7 +463,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
       l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
   }
   l->set_finish(finish);
-  all.delete_prediction = nullptr;
+  all.p->delete_prediction = nullptr;
 
   return make_base(*l);
 }
@@ -508,7 +508,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   l.set_finish(finish);
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;
-  all.delete_prediction = nullptr;
+  all.p->delete_prediction = nullptr;
 
   return make_base(l);
 }

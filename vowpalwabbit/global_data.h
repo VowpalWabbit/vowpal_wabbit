@@ -55,8 +55,6 @@ struct dictionary_info
   feature_dict* dict;
 };
 
-inline void deleter(substring ss, uint64_t /* label */) { free_it(ss.begin); }
-
 class namedlabels
 {
  private:
@@ -95,7 +93,7 @@ class namedlabels
   {
     if (id2name.size() > 0)
       free(id2name[0].begin);
-    name2id.iter(deleter);
+    name2id.iter([](substring ss, uint64_t /* label */) { free_it(ss.begin); });
     name2id.delete_v();
   }
 
@@ -457,7 +455,6 @@ struct vw
   std::vector<feature_dict*> namespace_dictionaries[256];  // each namespace has a list of dictionaries attached to it
   std::vector<dictionary_info> loaded_dictionaries;        // which dictionaries have we loaded from a file to memory?
 
-  void (*delete_prediction)(void*);
   bool audit;     // should I print lots of debugging information?
   bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?
@@ -528,6 +525,7 @@ struct vw
   label_type::label_type_t label_type;
 
   vw();
+  ~vw();
 
   vw(const vw&) = delete;
   vw& operator=(const vw&) = delete;

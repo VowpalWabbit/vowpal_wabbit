@@ -664,7 +664,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
-  all.delete_prediction = nullopt_delete;
+  all.p->delete_prediction = nullopt_delete;
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(CCB::finish);

@@ -1325,7 +1325,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     return nullptr;
 
   all.lda = (uint32_t)ld->topics;
-  all.delete_prediction = delete_scalars;
+  all.p->delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = 0;
   ld->all = &all;

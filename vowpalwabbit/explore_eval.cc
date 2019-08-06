@@ -206,7 +206,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   if (!options.was_supplied("cb_explore_adf"))
     options.insert("cb_explore_adf", "");
 
-  all.delete_prediction = nullptr;
+  all.p->delete_prediction = nullptr;
 
   multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;

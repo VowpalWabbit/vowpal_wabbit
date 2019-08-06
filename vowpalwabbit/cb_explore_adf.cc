@@ -735,7 +735,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
     options.insert("cb_adf", "");
   }
 
-  all.delete_prediction = delete_action_scores;
+  all.p->delete_prediction = delete_action_scores;
 
   // Set cb_type
   if (type_string.compare("dr") == 0)

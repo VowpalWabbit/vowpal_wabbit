@@ -981,44 +981,53 @@ example* example_initializer::operator()(example* ex)
   return ex;
 }
 
+[[deprecated]]
 void adjust_used_index(vw&) { /* no longer used */ }
 
 namespace VW
 {
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
-void free_parser(vw& all)
+
+[[deprecated]]
+void free_parser(vw&) {}
+
+namespace VW
 {
-  all.p->words.delete_v();
-  all.p->name.delete_v();
+void end_parser(vw& all) { all.parse_thread.join(); }
 
-  if (all.ngram_strings.size() > 0)
-    all.p->gram_mask.delete_v();
+[[deprecated("Use parser variant of is_ring_example instead.")]]
+bool is_ring_example(vw& all, example* ae) { return all.p->example_pool.is_from_pool(ae); }
 
-  io_buf* output = all.p->output;
+bool is_ring_example(parser& p, example* ae) { return p.example_pool.is_from_pool(ae); }
+}  // namespace VW
+
+parser::~parser()
+{
+  words.delete_v();
+  name.delete_v();
+  gram_mask.delete_v();
+
   if (output != nullptr)
   {
     output->finalname.delete_v();
     output->currentname.delete_v();
   }
 
-  while (!all.p->example_pool.empty())
+  while (!example_pool.empty())
   {
-    example* temp = all.p->example_pool.get_object();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    example* temp = example_pool.get_object();
+    VW::dealloc_example(lp.delete_label, *temp, delete_prediction);
   }
 
-  while (all.p->ready_parsed_examples.size() != 0)
+  while (ready_parsed_examples.size() != 0)
   {
-    example* temp = all.p->ready_parsed_examples.pop();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    example* temp = ready_parsed_examples.pop();
+    VW::dealloc_example(lp.delete_label, *temp, delete_prediction);
   }
-  all.p->counts.delete_v();
+  counts.delete_v();
+  parse_name.delete_v();
+
+  delete input;
+  delete output;
 }
-
-namespace VW
-{
-void end_parser(vw& all) { all.parse_thread.join(); }
-
-bool is_ring_example(vw& all, example* ae) { return all.p->example_pool.is_from_pool(ae); }
-}  // namespace VW

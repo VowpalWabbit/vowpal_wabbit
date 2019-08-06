@@ -52,11 +52,7 @@ struct parser
     this->counts = v_init<size_t>();
   }
 
-  ~parser()
-  {
-    delete input;
-    delete output;
-  }
+  ~parser();
 
   // helper(s) for text parsing
   v_array<substring> words;
@@ -98,7 +94,8 @@ struct parser
 
   v_array<substring> parse_name;
 
-  label_parser lp;  // moved from vw
+  label_parser lp;
+  void (*delete_prediction)(void*) = nullptr;
 
   bool audit = false;
   bool decision_service_json = false;

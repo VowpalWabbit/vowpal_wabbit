@@ -1293,7 +1293,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
 
     // all.p->lp = MULTILABEL::multilabel;
     // all.label_type = label_type::multi;
-    // all.delete_prediction = MULTILABEL::multilabel.delete_label;
+    // all.p->delete_prediction = MULTILABEL::multilabel.delete_label;
     // srand(time(0));
     l.set_end_pass(end_pass);
     l.set_save_load(save_load_memory_tree);
@@ -1302,7 +1302,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
 
     all.p->lp = MULTILABEL::multilabel;
     all.label_type = label_type::multi;
-    all.delete_prediction = MULTILABEL::multilabel.delete_label;
+    all.p->delete_prediction = MULTILABEL::multilabel.delete_label;
 
     return make_base(l);
   }

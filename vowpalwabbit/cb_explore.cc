@@ -304,7 +304,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     options.insert("cb", ss.str());
   }
 
-  all.delete_prediction = delete_action_scores;
+  all.p->delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
 
   single_learner* base = as_singleline(setup_base(options, all));

@@ -837,7 +837,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   if (options.was_supplied("ldf_override"))
     ldf_arg = ldf_override;
   if (ld->rank)
-    all.delete_prediction = delete_action_scores;
+    all.p->delete_prediction = delete_action_scores;
 
   all.p->lp = COST_SENSITIVE::cs_label;
   all.label_type = label_type::cs;
