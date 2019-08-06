@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <math.h>
 #include "v_array.h"
+#include <boost/utility/string_view.hpp>
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -69,9 +70,14 @@ namespace VW
 typedef example& (*example_factory_t)(void*);
 }
 
-uint64_t hashstring(substring s, uint64_t h);
+uint64_t hashstring(boost::string_view s, uint64_t h);
+inline uint64_t hashstring(substring s, uint64_t h)
+{
+  boost::string_view strview(s.begin, s.end-s.begin);
+  return hashstring(strview, h);
+}
 
-typedef uint64_t (*hash_func_t)(substring, uint64_t);
+typedef uint64_t (*hash_func_t)(boost::string_view, uint64_t);
 
 hash_func_t getHasher(const std::string& s);
 
@@ -136,6 +142,15 @@ inline float parseFloat(char* p, char** end, char* endLine = nullptr)
   }
   else
     return (float)strtod(start, end);
+}
+
+inline float parse_float_string_view(boost::string_view strview, size_t& end_idx)
+{
+  // const casting is bad, but no way around it for now
+  char* end = nullptr;
+  float ret = parseFloat((char*)strview.begin(), &end, (char*)strview.end());
+  end_idx = std::distance((char*)strview.begin(), end);
+  return ret;
 }
 
 inline float float_of_substring(substring s)
