@@ -315,7 +315,13 @@ struct learner
 
     if (base != nullptr)
     {  // a reduction
+
+      // This is a copy assignment into the current object. The purpose is to copy all of the
+      // function data objects so that if this reduction does not define a function such as
+      // save_load then calling save_load on this object will essentially result in forwarding the
+      // call the next reduction that actually implements it.
       ret = *(learner<T, E>*)(base);
+
       ret.learn_fd.base = make_base(*base);
       ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)recur_sensitivity;
       ret.finisher_fd.data = dat;
