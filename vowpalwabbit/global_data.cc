@@ -17,20 +17,6 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-struct global_prediction
-{
-  float p;
-  float weight;
-};
-
-void get_prediction(io_adapter* sock, float& res, float& weight)
-{
-  global_prediction p;
-  sock->read((char*)&p, sizeof(p));
-  res = p.p;
-  weight = p.weight;
-}
-
 void binary_print_result(io_adapter* f, float res, float weight, v_array<char>)
 {
   if (f != nullptr)

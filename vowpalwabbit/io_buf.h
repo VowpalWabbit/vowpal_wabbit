@@ -107,39 +107,11 @@ class io_buf
     return _hash;
   }
 
-  virtual void add_file(io_adapter* file) {
+  void add_file(io_adapter* file) {
     files.push_back(file);
   }
 
-  virtual int open_file(const char* name, bool stdin_off, int flag = READ)
-  {
-    // TODO throw on fail or catch and return
-    int ret = -1;
-    switch (flag)
-    {
-      case READ:
-        if (*name != '\0')
-        {
-          files.push_back(new file_adapter(name));
-        }
-        else if (!stdin_off)
-          files.push_back(new stdio_adapter());
-        break;
-
-      case WRITE:
-        files.push_back(new file_adapter(name));
-        break;
-
-      default:
-        std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
-        ret = -1;
-    }
-    if (ret == -1 && *name != '\0')
-      THROWERRNO("can't open: " << name);
-    return ret;
-  }
-
-  virtual void reset_file(io_adapter* f)
+  void reset_file(io_adapter* f)
   {
     f->reset();
     space.end() = space.begin();
@@ -148,7 +120,7 @@ class io_buf
 
   io_buf() { init(); }
 
-  virtual ~io_buf()
+  ~io_buf()
   {
     files.delete_v();
     space.delete_v();
@@ -156,9 +128,9 @@ class io_buf
 
   void set(char* p) { head = p; }
 
-  virtual size_t num_files() { return files.size(); }
+  size_t num_files() { return files.size(); }
 
-  virtual ssize_t read_file(io_adapter* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
+  ssize_t read_file(io_adapter* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
 
   ssize_t fill(io_adapter* f)
   {  // if the loaded values have reached the allocated space
@@ -179,10 +151,10 @@ class io_buf
       return 0;
   }
 
-  virtual ssize_t write_file(io_adapter* f, void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
-  virtual ssize_t write_file(io_adapter* f, const void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
+  ssize_t write_file(io_adapter* f, void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
+  ssize_t write_file(io_adapter* f, const void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
 
-  virtual void flush()
+  void flush()
   {
     if (files.size() > 0)
     {
@@ -192,7 +164,7 @@ class io_buf
     }
   }
 
-  virtual bool close_file()
+  bool close_file()
   {
     if (files.size() > 0)
     {
@@ -202,7 +174,7 @@ class io_buf
     return false;
   }
 
-  virtual bool compressed() { return false; }
+  bool compressed() { return false; }
 
   void close_files()
   {

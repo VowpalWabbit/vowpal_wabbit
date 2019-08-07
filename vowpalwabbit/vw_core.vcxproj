@@ -18,7 +18,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1E205806-7F80-47DD-A38D-FC08083F3593}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -41,7 +40,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(ProjectDir)Build.props" />
-  
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <LinkIncremental>true</LinkIncremental>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
@@ -103,7 +101,6 @@
       <Command>win32\make_config_h.exe</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
-
   <PropertyGroup>
     <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\</OutDir>
     <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
@@ -132,7 +129,6 @@
     <ClInclude Include="cbify.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="classweight.h" />
-    <ClInclude Include="comp_io.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -243,7 +239,6 @@
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="classweight.cc" />
-    <ClCompile Include="comp_io.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="cost_sensitive.cc" />
