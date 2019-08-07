@@ -141,7 +141,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
 
 void print_scalars(io_adapter* f, v_array<float>& scalars, v_array<char>& tag)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
 

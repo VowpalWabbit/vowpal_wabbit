@@ -1,4 +1,7 @@
 #pragma once
+
+#include "io_adapter.h"
+
 namespace ACTION_SCORE
 {
 struct action_score

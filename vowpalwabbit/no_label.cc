@@ -58,10 +58,9 @@ void output_and_account_no_label_example(vw& all, example& ec)
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.num_features);
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for (auto& sink : all.final_prediction_sink)
   {
-    int f = (int)all.final_prediction_sink[i];
-    all.print(f, ec.pred.scalar, 0, ec.tag);
+    all.print(sink, ec.pred.scalar, 0, ec.tag);
   }
 
   print_no_label_update(all, ec);

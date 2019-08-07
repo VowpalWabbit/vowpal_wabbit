@@ -29,7 +29,7 @@ struct topk
 
 void print_result(io_adapter* f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples>& pr_queue)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     char temp[30];
     std::stringstream ss;
@@ -47,7 +47,7 @@ void print_result(io_adapter* f, priority_queue<scored_example, vector<scored_ex
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-    f->write(ss.str().c_str(), len)
+    auto t = f->write(ss.str().c_str(), len);
     if (t != len)
       cerr << "write error: " << strerror(errno) << endl;
   }

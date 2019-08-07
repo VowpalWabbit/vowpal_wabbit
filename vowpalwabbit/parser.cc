@@ -82,10 +82,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 void set_compressed(parser* par)
 {
   finalize_source(par);
-  delete par->input;
-  par->input = new comp_io_buf;
-  delete par->output;
-  par->output = new comp_io_buf;
+  // todo handle this
 }
 
 uint32_t cache_numbits(io_buf* buf, io_adapter* filepointer)
@@ -142,26 +139,15 @@ void reset_source(vw& all, size_t numbits)
     all.p->output->flush();
     all.p->write_cache = false;
     all.p->output->close_file();
+
+    // This deletes the file.
     remove(all.p->output->finalname.begin());
 
     if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
       THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
                                                                           << all.p->output->finalname);
-
-    while (input->num_files() > 0)
-      if (input->compressed())
-        input->close_file();
-      else
-      {
-        auto fd = input->files.pop();
-        const auto& fps = all.final_prediction_sink;
-
-        // If the current popped file is not in the list of final predictions sinks, close it.
-        if(std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
-          delete fd;
-      }
-    input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
-                                                                                      // open_file
+    input->close_files();
+    input->add_file(VW::io::open_file(all.p->output->finalname.cbegin()).release());
     all.p->reader = read_cached_features;
   }
   if (all.p->resettable == true)
@@ -215,12 +201,6 @@ void reset_source(vw& all, size_t numbits)
 
 void finalize_source(parser* p)
 {
-#ifdef _WIN32
-  int f = _fileno(stdin);
-#else
-  int f = fileno(stdin);
-#endif
-  while (!p->input->files.empty() && p->input->files.last() == f) p->input->files.pop();
   p->input->close_files();
 
   delete p->input;
@@ -242,12 +222,14 @@ void make_write_cache(vw& all, string& newname, bool quiet)
   string temp = newname + string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
-  int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
-  if (f == -1)
-  {
-    all.trace_message << "can't create cache file !" << endl;
-    return;
-  }
+  // todo handle failure
+  auto f = VW::io::open_file(temp).release();
+  output->add_file(f);
+  // if (f == -1)
+  // {
+  //   all.trace_message << "can't create cache file !" << endl;
+  //   return;
+  // }
 
   size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
@@ -268,17 +250,18 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
   for (auto& file : cache_files)
   {
-    int f = -1;
+    io_adapter* f = nullptr;
     if (!kill_cache)
       try
       {
-        f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
+        f = VW::io::open_file(file).release();
+        all.p->input->add_file(f);
       }
       catch (const exception&)
       {
-        f = -1;
+        f = nullptr;
       }
-    if (f == -1)
+    if (f == nullptr)
       make_write_cache(all, file, quiet);
     else
     {
@@ -528,11 +511,11 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       try
       {
         io_adapter* adapter = nullptr;
-        if(temp.c_str() != "")
+        if(temp != "")
         {
           adapter = should_use_compressed
-            ? new gzip_file_adapter(temp.c_str(), file_mode::read)
-            : new file_adapter(temp.c_str(), file_mode::read);
+            ? static_cast<io_adapter*>(new gzip_file_adapter(temp.c_str(), file_mode::read))
+            : static_cast<io_adapter*>(new file_adapter(temp));
         }
         else if(!all.stdin_off)
         {
@@ -540,9 +523,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           if(should_use_compressed)
           {
 #ifdef _WIN32
-            adapter = new gzip_file_adapter(_fileno(stdin), file_mode::read)
+            adapter = new gzip_file_adapter(_fileno(stdin), file_mode::read);
 #else
-            adapter = new gzip_file_adapter(fileno(stdin), file_mode::read)
+            adapter = new gzip_file_adapter(fileno(stdin), file_mode::read);
 #endif
           }
           else

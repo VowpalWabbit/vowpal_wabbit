@@ -33,3 +33,4 @@ LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
 
 std::string spoof_hex_encoded_namespaces(const std::string& arg);
 // char** get_argv_from_string(string s, int& argc);
+bool ends_with(std::string const& fullString, std::string const& ending);

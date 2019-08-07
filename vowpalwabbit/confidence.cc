@@ -42,7 +42,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
 
-void confidence_print_result(int f, float res, float confidence, v_array<char> tag)
+void confidence_print_result(io_adapter* f, float res, float confidence, v_array<char> tag)
 {
   if (f >= 0)
   {
@@ -54,7 +54,7 @@ void confidence_print_result(int f, float res, float confidence, v_array<char> t
       ss << ' ';
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
       cerr << "write error: " << strerror(errno) << endl;
   }
@@ -72,8 +72,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
   {
-    int f = (int)all.final_prediction_sink[i];
-    confidence_print_result(f, ec.pred.scalar, ec.confidence, ec.tag);
+    confidence_print_result(all.final_prediction_sink[i], ec.pred.scalar, ec.confidence, ec.tag);
   }
 
   print_update(all, ec);

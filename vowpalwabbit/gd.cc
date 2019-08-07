@@ -331,7 +331,7 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    print_result(all.stdout_fileno, ec.pred.scalar, -1, ec.tag);
+    print_result(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }

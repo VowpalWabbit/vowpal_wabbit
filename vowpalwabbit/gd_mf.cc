@@ -79,7 +79,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
+  print_result(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 

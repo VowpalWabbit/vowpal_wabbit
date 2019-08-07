@@ -459,9 +459,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   examples[0]->pred.decision_scores = decision_scores;
 }
 
-void print_decision_scores(int f, decision_scores_t& decision_scores)
+void print_decision_scores(io_adapter* f, decision_scores_t& decision_scores)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
     for (auto slot : decision_scores)
@@ -475,7 +475,7 @@ void print_decision_scores(int f, decision_scores_t& decision_scores)
       ss << '\n';
     }
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
       std::cerr << "write error: " << strerror(errno) << std::endl;
   }

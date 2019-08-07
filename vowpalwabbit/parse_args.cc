@@ -1107,21 +1107,14 @@ void parse_output_preds(options_i& options, vw& all)
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back((size_t)1);  // stdout
+      all.final_prediction_sink.push_back(VW::io::open_stdio().release());  // stdout
     }
     else
     {
-      const char* fstr = predictions.c_str();
-      int f;
-      // TODO can we migrate files to fstreams?
-#ifdef _WIN32
-      _sopen_s(&f, fstr, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-      f = open(fstr, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-      if (f < 0)
-        all.trace_message << "Error opening the predictions file: " << fstr << endl;
-      all.final_prediction_sink.push_back((size_t)f);
+      auto f = VW::io::open_file(predictions).release();
+      // if (f < 0)
+      //   all.trace_message << "Error opening the predictions file: " << fstr << endl;
+      all.final_prediction_sink.push_back(f);
     }
   }
 
@@ -1135,7 +1128,7 @@ void parse_output_preds(options_i& options, vw& all)
                           << endl;
     }
     if (raw_predictions == "stdout")
-      all.raw_prediction = new stdio_adapter()();  // stdout
+      all.raw_prediction = new stdio_adapter();  // stdout
     else
     {
       all.raw_prediction = new file_adapter(raw_predictions.c_str());
@@ -1853,10 +1846,12 @@ void finish(vw& all, bool delete_all)
     }
     free(all.sd);
   }
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
-    if (all.final_prediction_sink[i] != 1)
-      io_buf::close_file_or_socket(all.final_prediction_sink[i]);
-  all.final_prediction_sink.delete_v();
+
+  for(auto& sink : all.final_prediction_sink)
+  {
+    delete sink;
+  }
+
   for (size_t i = 0; i < all.loaded_dictionaries.size(); i++)
   {
     // Warning C6001 is triggered by the following:

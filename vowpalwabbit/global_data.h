@@ -31,7 +31,6 @@ license as described in the file LICENSE.
 #include "array_parameters.h"
 #include "parse_primitives.h"
 #include "loss_functions.h"
-#include "comp_io.h"
 #include "example.h"
 #include "config.h"
 #include "learner.h"
@@ -409,7 +408,7 @@ struct vw
 
   uint32_t wpp;
 
-  int stdout_fileno;
+  std::unique_ptr<io_adapter> stdout_adapter;
 
   std::vector<std::string> initial_regressors;
 
@@ -541,7 +540,7 @@ struct vw
 void print_result(io_adapter* f, float res, float weight, v_array<char> tag);
 void binary_print_result(io_adapter* f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
-void get_prediction(int sock, float& res, float& weight);
+void get_prediction(io_adapter* sock, float& res, float& weight);
 void compile_gram(std::vector<std::string> grams, uint32_t* dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);

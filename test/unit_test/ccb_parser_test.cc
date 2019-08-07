@@ -82,7 +82,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
 BOOST_AUTO_TEST_CASE(ccb_cache_label)
 {
   io_buf io;
-  io.init();
   io.space.resize(1000);
   io.space.end() = io.space.begin() + 1000;
 

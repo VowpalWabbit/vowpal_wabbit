@@ -4,10 +4,6 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#ifndef _WIN32
-#include <sys/types.h>
-#include <unistd.h>
-#endif
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -19,16 +15,6 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
-
-#ifndef O_LARGEFILE  // for OSX
-#define O_LARGEFILE 0
-#endif
-
-#ifdef _WIN32
-#define ssize_t int64_t
-#include <io.h>
-#include <sys/stat.h>
-#endif
 
 #include "io_adapter.h"
 
@@ -54,12 +40,17 @@ license as described in the file LICENSE.
 
 namespace VW {
   namespace io {
-    std::unique_ptr<io_adapter> open_file(std::string& file_path)
+    inline std::unique_ptr<io_adapter> open_file(std::string& file_path)
     {
       return std::unique_ptr<io_adapter>(new file_adapter(file_path));
     }
 
-    std::unique_ptr<io_adapter> open_stdio()
+    inline std::unique_ptr<io_adapter> open_file(const char* file_path)
+    {
+      return std::unique_ptr<io_adapter>(new file_adapter(file_path));
+    }
+
+    inline std::unique_ptr<io_adapter> open_stdio()
     {
       return std::unique_ptr<io_adapter>(new stdio_adapter());
     }
@@ -90,6 +81,7 @@ class io_buf
     space = v_init<char>();
     currentname = v_init<char>();
     finalname = v_init<char>();
+    files = v_init<io_adapter*>();
     size_t s = 1 << 16;
     space.resize(s);
     current = 0;
@@ -115,7 +107,11 @@ class io_buf
     return _hash;
   }
 
-   virtual int open_file(const char* name, bool stdin_off, int flag = READ)
+  virtual void add_file(io_adapter* file) {
+    files.push_back(file);
+  }
+
+  virtual int open_file(const char* name, bool stdin_off, int flag = READ)
   {
     // TODO throw on fail or catch and return
     int ret = -1;
@@ -184,6 +180,7 @@ class io_buf
   }
 
   virtual ssize_t write_file(io_adapter* f, void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
+  virtual ssize_t write_file(io_adapter* f, const void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
 
   virtual void flush()
   {

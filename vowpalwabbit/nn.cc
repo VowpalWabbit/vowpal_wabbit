@@ -138,7 +138,7 @@ void end_pass(nn& n)
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
-  bool shouldOutput = n.all->raw_prediction;
+  bool shouldOutput = n.all->raw_prediction != nullptr;
   if (!n.finished_setup)
     finish_setup(n, *(n.all));
   shared_data sd;
