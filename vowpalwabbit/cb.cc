@@ -120,14 +120,14 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     if (p->parse_name.size() > 1)
       f.cost = float_of_substring(p->parse_name[1]);
 
-    if (nanpattern(f.cost))
+    if (std::isnan(f.cost))
       THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
     f.probability = .0;
     if (p->parse_name.size() > 2)
       f.probability = float_of_substring(p->parse_name[2]);
 
-    if (nanpattern(f.probability))
+    if (std::isnan(f.probability))
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
 
     if (f.probability > 1.0)

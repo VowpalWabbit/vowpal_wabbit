@@ -1,5 +1,5 @@
 version: 1.0.{build}
-os: Windows Server 2012 R2
+image: Visual Studio 2017
 configuration:
 - Release
 platform: x64
@@ -14,7 +14,7 @@ build_script:
 # Set up vowpal_wabbit repo root
 - SET vwRoot=C:\vowpal_wabbit
 # Set up toolchain integration
-- SET "msbuildPath=C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe"
+#- SET "msbuildPath=C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\MSBuild.exe"
 - SET nugetPath=%vwRoot%\vowpalwabbit\.nuget\nuget
 # Restore and build
 - cd %vwRoot%
@@ -24,10 +24,9 @@ build_script:
 test_script:
 - ps: >-
     if($env:PLATFORM -eq "x64")
-
     {
        cd c:\vowpal_wabbit
-       vstest.console /logger:Appveyor /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
+       vstest.console /logger:Appveyor /Platform:x64 /inIsolation vowpalwabbit\AnyCPU\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
     }
 on_failure:
 - ps: Get-ChildItem C:\Users\appveyor\AppData\Local\CrashDumps\\*.dmp | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }

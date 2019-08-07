@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 
+#include <cmath>
 #include <math.h>
 #include <ctype.h>
 #include "parse_example.h"
@@ -105,7 +106,7 @@ class TC_parser
       {
         parserWarning("malformed example! Float expected after : \"", beginLine, reading_head, "\"");
       }
-      if (nanpattern(v))
+      if (std::isnan(v))
       {
         v = 0.f;
         parserWarning("warning: invalid feature value:\"", reading_head, end_read, "\" read as NaN. Replacing with 0.");
@@ -285,7 +286,7 @@ class TC_parser
       {
         parserWarning("malformed example! Float expected after : \"", beginLine, reading_head, "\"");
       }
-      if (nanpattern(cur_channel_v))
+      if (std::isnan(cur_channel_v))
       {
         cur_channel_v = 1.f;
         parserWarning(

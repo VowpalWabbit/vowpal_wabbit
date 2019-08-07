@@ -10,10 +10,10 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-const size_t int_size = 11;
-const size_t char_size = 2;
-const size_t neg_1 = 1;
-const size_t general = 2;
+constexpr size_t int_size = 11;
+constexpr size_t char_size = 2;
+constexpr size_t neg_1 = 1;
+constexpr size_t general = 2;
 
 inline char* run_len_decode(char* p, uint64_t& i)
 {

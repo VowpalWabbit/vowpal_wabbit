@@ -140,7 +140,7 @@ void initialize_regressor(vw& all)
     initialize_regressor(all, all.weights.dense_weights);
 }
 
-const size_t default_buf_size = 512;
+constexpr size_t default_buf_size = 512;
 
 bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
 {

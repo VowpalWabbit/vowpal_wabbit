@@ -2,7 +2,7 @@
 
 using namespace VW::config;
 
-const int autoconstant = 524267083;
+constexpr int autoconstant = 524267083;
 
 struct autolink
 {

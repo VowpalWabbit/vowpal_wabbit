@@ -17,9 +17,9 @@ using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
-const float hidden_min_activation = -3;
-const float hidden_max_activation = 3;
-const uint64_t nn_constant = 533357803;
+constexpr float hidden_min_activation = -3;
+constexpr float hidden_max_activation = 3;
+constexpr uint64_t nn_constant = 533357803;
 
 struct nn
 {
