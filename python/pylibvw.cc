@@ -13,6 +13,7 @@
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
+#include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 //Brings VW_DLL_MEMBER to help control exports
@@ -722,7 +723,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::docstring_options local_docstring_options(true, true, false);
 
   // define the vw class
-  py::class_<vw, vw_ptr>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
+  py::class_<vw, vw_ptr, boost::noncopyable>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
   .def("__init__", py::make_constructor(my_initialize))
   //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
   .def("run_parser", &my_run_parser, "parse external data file")

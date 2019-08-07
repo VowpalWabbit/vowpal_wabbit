@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <queue>
+#include <bitset>
 
 using namespace LEARNER;
 using namespace VW;
@@ -40,6 +41,8 @@ struct ccb
   std::vector<std::string>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
+
+  multi_ex cb_ex;
 
   // All of these hashes are with a hasher seeded with the below namespace hash.
   std::vector<uint64_t> slot_id_hashes;
@@ -279,8 +282,7 @@ void remove_slot_features(example* shared, example* slot)
 void calculate_and_insert_interactions(
     example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions)
 {
-  static thread_local std::array<bool, INTERACTIONS::printable_ns_size> found_namespaces;
-  found_namespaces.fill(false);
+  std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
   const auto original_size = generated_interactions.size();
   for (size_t i = 0; i < original_size; i++)
@@ -406,18 +408,17 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = &data.generated_interactions;
     }
 
-    static thread_local multi_ex cb_ex;
-    build_cb_example<is_learn>(cb_ex, slot, data);
+    build_cb_example<is_learn>(data.cb_ex, slot, data);
 
     if (data.all->audit)
       inject_slot_id<true>(data, data.shared, slot_id);
     else
       inject_slot_id<false>(data, data.shared, slot_id);
 
-    if (has_action(cb_ex))
+    if (has_action(data.cb_ex))
     {
       // the cb example contains at least 1 action
-      multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
+      multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
       save_action_scores(data, decision_scores);
       clear_pred_and_label(data);
     }
@@ -442,7 +443,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // Put back the original shared example tag.
     std::swap(data.shared->tag, slot->tag);
     slot_id++;
-    cb_ex.clear();
+    data.cb_ex.clear();
   }
 
   delete_cb_labels(data);
@@ -668,5 +669,10 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   l.set_finish_example(finish_multiline_example);
   l.set_finish(CCB::finish);
   return make_base(l);
+}
+
+bool ec_is_example_header(example& ec)
+{
+  return ec.l.conditional_contextual_bandit.type == example_type::shared;
 }
 }  // namespace CCB

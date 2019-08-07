@@ -65,15 +65,21 @@ namespace LEARNER
     VW::finish_example(all, ec);
   }
   
-  /* example headers have the word "shared" */
-  bool ec_is_example_header(example& ec)
+/* is this just a newline */
+inline bool example_is_newline_not_header(example& ec, vw& all)
   {
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
-    if (costs.size() != 1)
-      return false;
-    if (costs[0].probability == -1.f)
-      return true;
-    return false;
+  // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
+  bool is_header = false;
+  if (all.label_type == label_type::ccb)
+  {
+    is_header = CCB::ec_is_example_header(ec);
+  }
+  else
+  {
+    is_header = CB::ec_is_example_header(ec);
+  }
+
+  return example_is_newline(ec) && !is_header;
   }
   
   bool inline is_save_cmd(example* ec)
@@ -81,8 +87,6 @@ namespace LEARNER
     return (ec->tag.size() >= 4) && (0 == strncmp((const char*)ec->tag.begin(), "save", 4));
   }
   
-  /* is this just a newline */
-  inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !ec_is_example_header(ec)); }
 
   void drain_examples(vw& all) {
     if (all.early_terminate) { // drain any extra examples from parser.
