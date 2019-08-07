@@ -154,7 +154,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
     {
       auto& master = _context.get_master();
       const bool is_test_ec = master.p->lp.test_label(&ec->l);
-      const bool is_newline = (example_is_newline_not_header(*ec) && is_test_ec);
+      const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
       if (!is_newline) {
         ec_seq.push_back(ec);
       } else {
