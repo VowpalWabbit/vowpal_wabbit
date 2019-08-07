@@ -28,7 +28,7 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
     if(examples[i]->l.cb.costs.size() > 0)
     {
       // Must remove 1 because of shared example index.
-      labelled_action = i;
+      labelled_action = static_cast<uint32_t>(i);
     }
   }
 
@@ -42,7 +42,7 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
       auto& a_s = action_scores[i];
       if (a_s.action == static_cast<uint32_t>(labelled_action))
       {
-        chosen_action = i;
+        chosen_action = static_cast<uint32_t>(i);
         break;
       }
     }
