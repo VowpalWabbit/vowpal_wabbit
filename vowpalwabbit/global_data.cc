@@ -262,8 +262,6 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
-vw::vw(const vw&) { THROW("Copy constructor not supported"); }
-
 vw::vw()
 {
   sd = &calloc_or_throw<shared_data>();
@@ -274,9 +272,6 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
-  p = new_parser();
-  p->emptylines_separate_examples = false;
-  p->lp = simple_label;
   label_type = label_type::simple;
 
   l = nullptr;

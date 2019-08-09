@@ -31,17 +31,15 @@ make test_with_output
 cd ..
 
 # Run Java build and test
-mvn clean test -f java/pom.xml
+mvn verify -f java/pom.xml
 
 # Run python build and tests
-cd python
 source activate test-python27
 pip install pytest readme_renderer pandas
 python setup.py check -mrs
 python setup.py install
-py.test tests
+py.test python/tests
 source deactivate
-cd ..
 
 # Clear out build directory then build using GCov and run one set of tests again
 rm -rf build

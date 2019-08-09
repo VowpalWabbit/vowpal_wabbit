@@ -5,6 +5,8 @@
 
 #include <vector>
 
+constexpr float FLOAT_TOL = 0.0001f;
+
 void inline check_float_vectors(const std::vector<float>& lhs, const std::vector<float>& rhs, const float tolerance_percent) {
   BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
   for (auto l = begin(lhs), r = begin(rhs); l < end(lhs); ++l, ++r) {

@@ -31,6 +31,7 @@ def read_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--searcher', type=str, default='tpe', choices=['tpe', 'rand'])
+    parser.add_argument('--additional_cmd', type=str, help="Additional arguments to be passed to vw while tuning hyper params. E.g.: '--keep a --keep b'", default='')
     parser.add_argument('--max_evals', type=int, default=100)
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
@@ -151,7 +152,7 @@ class HyperoptSpaceConstructor(object):
 class HyperOptimizer(object):
     def __init__(self, train_set, holdout_set, command, max_evals=100,
                  outer_loss_function='logistic',
-                 searcher='tpe', is_regression=False):
+                 searcher='tpe', is_regression=False, additional_cmd=''):
         self.train_set = train_set
         self.holdout_set = holdout_set
 
@@ -175,6 +176,7 @@ class HyperOptimizer(object):
         self.space = self._get_space(command)
         self.max_evals = max_evals
         self.searcher = searcher
+        self.additional_cmd = additional_cmd
         self.is_regression = is_regression
         self.labels_clf_count = 0
 
@@ -218,16 +220,16 @@ class HyperOptimizer(object):
         self.param_suffix += ' %s' % (kwargs['argument'])
 
     def compose_vw_train_command(self):
-        data_part = ('vw -d %s -f %s --holdout_off -c '
-                     % (self.train_set, self.train_model))
+        data_part = ('vw -d %s -f %s --holdout_off -c %s'
+                     % (self.train_set, self.train_model, self.additional_cmd))
         if self.labels_clf_count > 2: # multiclass, should take probabilities
             data_part += ('--oaa %s --loss_function=logistic --probabilities '
                           % (self.labels_clf_count))
         self.train_command = ' '.join([data_part, self.param_suffix])
 
     def compose_vw_validate_command(self):
-        data_part = 'vw -t -d %s -i %s -p %s --holdout_off -c' \
-                    % (self.holdout_set, self.train_model, self.holdout_pred)
+        data_part = 'vw -t -d %s -i %s -p %s --holdout_off -c %s' \
+                    % (self.holdout_set, self.train_model, self.holdout_pred, self.additional_cmd)
         if self.labels_clf_count > 2: # multiclass
             data_part += ' --loss_function=logistic --probabilities'
         self.validate_command = data_part
@@ -274,6 +276,7 @@ class HyperOptimizer(object):
                 y_pred_holdout_proba = y_pred_holdout
             else:
                 y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
+
             loss = log_loss(self.y_true_holdout, y_pred_holdout_proba)
 
         elif self.outer_loss_function == 'squared':
@@ -383,6 +386,7 @@ def main():
     h = HyperOptimizer(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
                        max_evals=args.max_evals,
                        outer_loss_function=args.outer_loss_function,
+                       additional_cmd=args.additional_cmd,
                        searcher=args.searcher, is_regression=args.regression)
     h.get_y_true_holdout()
     h.hyperopt_search()
@@ -392,3 +396,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

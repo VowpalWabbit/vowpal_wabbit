@@ -569,6 +569,17 @@ def tovw(x, y=None, sample_weight=None):
     -------
     out : {array-like}, shape (n_samples, 1)
           Training vectors in VW string format
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from sklearn.feature_extraction.text import HashingVectorizer
+    >>> from vowpalwabbit.sklearn_vw import tovw
+    >>> X = pd.Series(['cat', 'dog', 'cat', 'cat'], name='catdog')
+    >>> y = pd.Series([-1, 1, -1, -1], name='label')
+    >>> hv = HashingVectorizer()
+    >>> hashed = hv.fit_transform(X)
+    >>> tovw(x=hashed, y=y)
     """
 
     use_truth = y is not None

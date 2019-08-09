@@ -131,6 +131,11 @@ int main(int argc, char* argv[])
 
     for (vw* v : alls)
     {
+      if (v->p->exc_ptr)
+      {
+        std::rethrow_exception(v->p->exc_ptr);
+      }
+
       VW::sync_stats(*v);
       VW::finish(*v);
     }
@@ -138,6 +143,7 @@ int main(int argc, char* argv[])
   catch (VW::vw_exception& e)
   {
     cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
+    exit(1);
   }
   catch (exception& e)
   {

@@ -97,16 +97,16 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
                 actionScore(1, 0)
             ),
             actionScores(
-                actionScore(0, 0.14991696f),
-                actionScore(1, 0.14991696f)
+                actionScore(0, 0.11246802f),
+                actionScore(1, 0.11246802f)
             ),
             actionScores(
-                actionScore(0, 0.27180168f),
-                actionScore(1, 0.31980497f)
+                actionScore(0, 0.3682006f),
+                actionScore(1, 0.5136312f)
             ),
             actionScores(
-                actionScore(1, 0.35295868f),
-                actionScore(0, 0.3869971f)
+                actionScore(0, 0.58848584f),
+                actionScore(1, 0.6244352f)
             )
         };
         vw.close();
@@ -117,8 +117,8 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
         ActionScores[] expectedTestPreds = new ActionScores[]{
             actionScores(
-                actionScore(0, 0.33543912f),
-                actionScore(1, 0.37897447f)
+                actionScore(0, 0.39904374f),
+                actionScore(1, 0.49083984f)
             )
         };
 

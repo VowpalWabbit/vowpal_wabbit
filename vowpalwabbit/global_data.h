@@ -42,112 +42,7 @@ license as described in the file LICENSE.
 #include "error_reporting.h"
 
 #include "options.h"
-
-struct version_struct
-{
-  int32_t major;
-  int32_t minor;
-  int32_t rev;
-  version_struct(int maj = 0, int min = 0, int rv = 0)
-  {
-    major = maj;
-    minor = min;
-    rev = rv;
-  }
-  version_struct(const char* v_str) { from_string(v_str); }
-  void operator=(version_struct v)
-  {
-    major = v.major;
-    minor = v.minor;
-    rev = v.rev;
-  }
-  version_struct(const version_struct& v)
-  {
-    major = v.major;
-    minor = v.minor;
-    rev = v.rev;
-  }
-  void operator=(const char* v_str) { from_string(v_str); }
-  bool operator==(version_struct v) { return (major == v.major && minor == v.minor && rev == v.rev); }
-  bool operator==(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this == v_tmp);
-  }
-  bool operator!=(version_struct v) { return !(*this == v); }
-  bool operator!=(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this != v_tmp);
-  }
-  bool operator>=(version_struct v)
-  {
-    if (major < v.major)
-      return false;
-    if (major > v.major)
-      return true;
-    if (minor < v.minor)
-      return false;
-    if (minor > v.minor)
-      return true;
-    if (rev >= v.rev)
-      return true;
-    return false;
-  }
-  bool operator>=(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this >= v_tmp);
-  }
-  bool operator>(version_struct v)
-  {
-    if (major < v.major)
-      return false;
-    if (major > v.major)
-      return true;
-    if (minor < v.minor)
-      return false;
-    if (minor > v.minor)
-      return true;
-    if (rev > v.rev)
-      return true;
-    return false;
-  }
-  bool operator>(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this > v_tmp);
-  }
-  bool operator<=(version_struct v) { return !(*this > v); }
-  bool operator<=(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this <= v_tmp);
-  }
-  bool operator<(version_struct v) { return !(*this >= v); }
-  bool operator<(const char* v_str)
-  {
-    version_struct v_tmp(v_str);
-    return (*this < v_tmp);
-  }
-  std::string to_string() const
-  {
-    char v_str[128];
-    sprintf_s(v_str, sizeof(v_str), "%d.%d.%d", major, minor, rev);
-    std::string s = v_str;
-    return s;
-  }
-  void from_string(const char* str)
-  {
-#ifdef _WIN32
-    sscanf_s(str, "%d.%d.%d", &major, &minor, &rev);
-#else
-    std::sscanf(str, "%d.%d.%d", &major, &minor, &rev);
-#endif
-  }
-};
-
-const version_struct version(PACKAGE_VERSION);
+#include "version.h"
 
 typedef float weight;
 
@@ -273,18 +168,18 @@ struct shared_data
   float second_observed_label;
 
   // Column width, precision constants:
-  static const int col_avg_loss = 8;
-  static const int prec_avg_loss = 6;
-  static const int col_since_last = 8;
-  static const int prec_since_last = 6;
-  static const int col_example_counter = 12;
-  static const int col_example_weight = col_example_counter + 2;
-  static const int prec_example_weight = 1;
-  static const int col_current_label = 8;
-  static const int prec_current_label = 4;
-  static const int col_current_predict = 8;
-  static const int prec_current_predict = 4;
-  static const int col_current_features = 8;
+  static constexpr int col_avg_loss = 8;
+  static constexpr int prec_avg_loss = 6;
+  static constexpr int col_since_last = 8;
+  static constexpr int prec_since_last = 6;
+  static constexpr int col_example_counter = 12;
+  static constexpr int col_example_weight = col_example_counter + 2;
+  static constexpr int prec_example_weight = 1;
+  static constexpr int col_current_label = 8;
+  static constexpr int prec_current_label = 4;
+  static constexpr int col_current_predict = 8;
+  static constexpr int prec_current_predict = 4;
+  static constexpr int col_current_features = 8;
 
   double weighted_examples() { return weighted_labeled_examples + weighted_unlabeled_examples; }
 
@@ -448,7 +343,8 @@ enum label_type_t
   cb_eval,  // contextual-bandit evaluation
   cs,       // cost-sensitive
   multi,
-  mc
+  mc,
+  ccb       // conditional contextual-bandit
 };
 }
 
@@ -498,7 +394,7 @@ struct vw
   bool preserve_performance_counters;
   std::string id;
 
-  version_struct model_file_ver;
+  VW::version_struct model_file_ver;
   double normalized_sum_norm_x;
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
@@ -534,8 +430,12 @@ struct vw
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
+
+  // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::string> interactions;
+  // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> pairs;    // pairs of features to cross.
+  // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
   bool ignore[256];  // a set of namespaces to ignore
@@ -629,9 +529,13 @@ struct vw
 
   vw();
 
-  vw(const vw&);
-  // private://disable copying.
-  // vw& operator=(const vw& );
+  vw(const vw&) = delete;
+  vw& operator=(const vw&) = delete;
+
+  // vw object cannot be moved as many objects hold a pointer to it.
+  // That pointer would be invalidated if it were to be moved.
+  vw(const vw&&) = delete;
+  vw& operator=(const vw&&) = delete;
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);

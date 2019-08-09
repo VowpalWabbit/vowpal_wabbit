@@ -140,7 +140,7 @@ void initialize_regressor(vw& all)
     initialize_regressor(all, all.weights.dense_weights);
 }
 
-const size_t default_buf_size = 512;
+constexpr size_t default_buf_size = 512;
 
 bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
 {
@@ -196,10 +196,10 @@ void save_load_header(
     {
       size_t bytes_read_write = 0;
 
-      uint32_t v_length = (uint32_t)version.to_string().length() + 1;
+      uint32_t v_length = (uint32_t)VW::version.to_string().length() + 1;
       stringstream msg;
-      msg << "Version " << version.to_string() << "\n";
-      memcpy(buff2, version.to_string().c_str(), min(v_length, buf2_size));
+      msg << "Version " << VW::version.to_string() << "\n";
+      memcpy(buff2, VW::version.to_string().c_str(), min(v_length, buf2_size));
       if (read)
       {
         v_length = (uint32_t)buf2_size;

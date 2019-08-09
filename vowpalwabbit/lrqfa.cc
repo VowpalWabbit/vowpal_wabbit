@@ -23,7 +23,7 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
+constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
 void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)

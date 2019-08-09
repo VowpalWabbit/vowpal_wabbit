@@ -4,9 +4,9 @@
 
 namespace LabelDict
 {
-size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
+constexpr size_t hash_lab(size_t lab) noexcept { return 328051 + 94389193 * lab; }
 
-void del_example_namespace(example& ec, char ns, features& fs)
+void del_example_namespace(example& ec, namespace_index ns, features& fs)
 {
   // print_update is called after this del_example_namespace,
   // so we need to keep the ec.num_features correct,
@@ -23,7 +23,7 @@ void del_example_namespace(example& ec, char ns, features& fs)
   del_target.sum_feat_sq -= fs.sum_feat_sq;
 }
 
-void add_example_namespace(example& ec, char ns, features& fs)
+void add_example_namespace(example& ec, namespace_index ns, features& fs)
 {
   bool has_ns = false;
   for (size_t i = 0; i < ec.indices.size(); i++)
@@ -55,7 +55,7 @@ void add_example_namespaces_from_example(example& target, example& source)
   {
     if (idx == constant_namespace)
       continue;
-    add_example_namespace(target, (char)idx, source.feature_space[idx]);
+    add_example_namespace(target, idx, source.feature_space[idx]);
   }
 }
 
@@ -69,7 +69,7 @@ void del_example_namespaces_from_example(example& target, example& source)
   {
     if (*idx == constant_namespace)
       continue;
-    del_example_namespace(target, (char)*idx, source.feature_space[*idx]);
+    del_example_namespace(target, *idx, source.feature_space[*idx]);
   }
 }
 
@@ -79,7 +79,7 @@ void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size
   features& res = lfm.get(lab, lab_hash);
   if (res.size() == 0)
     return;
-  add_example_namespace(ec, 'l', res);
+  add_example_namespace(ec, static_cast<unsigned char>('l'), res);
 }
 
 void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
@@ -88,7 +88,7 @@ void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size
   features& res = lfm.get(lab, lab_hash);
   if (res.size() == 0)
     return;
-  del_example_namespace(ec, 'l', res);
+  del_example_namespace(ec, static_cast<unsigned char>('l'), res);
 }
 
 void set_label_features(label_feature_map& lfm, size_t lab, features& fs)

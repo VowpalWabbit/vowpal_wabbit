@@ -35,7 +35,7 @@ my_pred = my_predict(vw, ex)
 print('     my partial prediction =', my_pred)
 ensure_close(updated_pred, my_pred)
 print('')
-ex.finish()
+vw.finish_example(ex)
 
 ###############################################################################
 print('# make our own example from scratch')
@@ -54,7 +54,8 @@ ex.learn() ; ex.learn() ; ex.learn() ; ex.learn()
 print('  final partial prediction =', ex.get_updated_prediction())
 ensure_close(ex.get_updated_prediction(), my_predict(vw,ex))
 print('')
-ex.finish()
+vw.finish_example(ex)
+
 
 ###############################################################################
 exList = []
@@ -64,7 +65,7 @@ for i in range(120):    # note: if this is >=129, we hang!!!
 
 # this is the safe way to delete the examples for VW to reuse:
 for ex in exList:
-    ex.finish()
+    vw.finish_example(ex)
 
 exList = [] # this should __del__ the examples, we hope :)
 for i in range(120):    # note: if this is >=129, we hang!!!
@@ -72,7 +73,8 @@ for i in range(120):    # note: if this is >=129, we hang!!!
     exList.append(ex)
 
 for ex in exList:
-    ex.finish()
+    vw.finish_example(ex)
+
 
 ###############################################################################
 
@@ -84,7 +86,8 @@ for i in range(2):
     print('loss =', ex.get_loss())
 
     print('label =', ex.get_label())
-    ex.finish()
+    vw.finish_example(ex)
+
 
 
 # to be safe, finish explicity (should happen by default anyway)
@@ -98,7 +101,8 @@ ex = vw.example("1 |x a b |y c")
 ex.learn() ; ex.learn() ; ex.learn() ; ex.learn()
 before_save = ex.get_updated_prediction()
 print('before saving, prediction =', before_save)
-ex.finish()
+vw.finish_example(ex)
+
 vw.finish()   # this should create the file
 
 # now re-start vw by loading that model
@@ -107,7 +111,8 @@ ex = vw.example("1 |x a b |y c")  # test example
 ex.learn()
 after_save = ex.get_partial_prediction()
 print(' after saving, prediction =', after_save)
-ex.finish()
+vw.finish_example(ex)
+
 ensure_close(before_save, after_save)
 vw.finish()   # this should create the file
 

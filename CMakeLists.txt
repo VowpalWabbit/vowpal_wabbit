@@ -6,24 +6,43 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-project(vowpal_wabbit C CXX)
-set(CMAKE_CXX_STANDARD 11)
-
 # VW targets Windows 8.1 SDK
+# CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
+# https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
   set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
 endif()
+
+project(vowpal_wabbit C CXX)
+set(CMAKE_CXX_STANDARD 11)
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
+# Grab git commitish into variable
+IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  FIND_PACKAGE(Git)
+  IF(GIT_FOUND)
+    EXECUTE_PROCESS(
+      COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      OUTPUT_VARIABLE "vw_GIT_COMMIT"
+      ERROR_QUIET
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    MESSAGE( STATUS "Git Version: ${vw_GIT_COMMIT}" )
+  ELSE(GIT_FOUND)
+    SET(vw_GIT_COMMIT "")
+  ENDIF(GIT_FOUND)
+ELSE(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  SET(vw_GIT_COMMIT "")
+ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+
 include(ProcessorCount)
 ProcessorCount(NumProcessors)
 message(STATUS "Number of processors: ${NumProcessors}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nprocs.txt ${NumProcessors})
-
 
 option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
@@ -40,6 +59,10 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
+
+if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
+  message(FATAL_ERROR "Unsupported option enabled on Windows build")
+endif()
 
 # Add -ffast-math for speed, remove for testability.
 set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse)
@@ -80,14 +103,6 @@ if(GCOV)
   set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg)
 endif()
 
-set(windows_release_config /GL /O2 /Gy /Oi /Ob2 /Ot /Oy /GT /MD)
-set(windows_debug_config /INCREMENTAL /Od /Zi /analyze-)
-set(windows_flags $<$<CONFIG:DEBUG>:${windows_debug_config}> $<$<CONFIG:RELEASE>:${windows_release_config}>)
-
-# TODO move to consuming vcpkg of this dependency
-add_library(rapidjson INTERFACE)
-target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
-
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -99,6 +114,10 @@ if(STATIC_LINK_VW)
   SET(BUILD_SHARED_LIBS OFF)
 else()
   set(Boost_USE_STATIC_LIBS OFF)
+  if(WIN32)
+    # Windows links everything dynamically
+    add_definitions( -DBOOST_ALL_DYN_LINK )
+  endif()
 endif()
 
 set(Boost_USE_MULTITHREADED ON)
@@ -109,12 +128,44 @@ find_package(Threads REQUIRED)
 
 set(LINK_THREADS Threads::Threads)
 if(STATIC_LINK_VW)
-  set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
+  if(APPLE)
+    set(unix_static_flag "")
+    #Guess ZLIB_LIBRARY to be the one provided by homebrew if none was provided
+    if(NOT ZLIB_LIBRARY)
+      file(GLOB ZLIB_LIBRARY /usr/local/Cellar/zlib/*/lib/libz.a)
+    endif()
+  else()
+    set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
+    set(unix_static_flag -static)
+  endif()
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
 find_package(ZLIB REQUIRED)
+
+# Ensure rapidjson submodule is ready
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  # Update submodules as needed
+  option(GIT_SUBMODULE "Check submodules during build" ON)
+  if(GIT_SUBMODULE)
+    message(STATUS "Submodule update")
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+    endif()
+  endif()
+endif()
+
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
+  message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
+add_library(rapidjson INTERFACE)
+target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
 
 add_subdirectory(cluster)
 add_subdirectory(library)
@@ -155,6 +206,10 @@ endif()
 
 # PkgConfig
 if(VW_INSTALL)
+  FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
+    SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
+  ENDFOREACH()
+
   configure_file(libvw.pc.in libvw.pc)
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)

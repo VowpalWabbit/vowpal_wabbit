@@ -12,8 +12,8 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <OutputPath>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\</OutputPath>
-    <IntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntermediateOutputPath>
+    <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(ProjectName)\</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>

@@ -64,7 +64,9 @@ BOOST_AUTO_TEST_CASE(create_argument_group) {
   std::vector<std::string> loc2;
   option_group_definition ag("g1");
   ag(make_option("opt1", loc).keep());
-  ag.add(make_option("opt2", loc2));
+  ag(make_option("opt2", loc));
+  ag.add(make_option("opt3", loc2));
+  ag.add(make_option("opt4", loc2).keep());
 
   BOOST_CHECK_EQUAL(ag.m_name, "g1");
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_name, "opt1");
@@ -72,5 +74,12 @@ BOOST_AUTO_TEST_CASE(create_argument_group) {
   BOOST_CHECK_EQUAL(ag.m_options[0]->m_type_hash, typeid(decltype(loc)).hash_code());
 
   BOOST_CHECK_EQUAL(ag.m_options[1]->m_name, "opt2");
-  BOOST_CHECK_EQUAL(ag.m_options[1]->m_type_hash, typeid(decltype(loc2)).hash_code());
+  BOOST_CHECK_EQUAL(ag.m_options[1]->m_type_hash, typeid(decltype(loc)).hash_code());
+
+  BOOST_CHECK_EQUAL(ag.m_options[2]->m_name, "opt3");
+  BOOST_CHECK_EQUAL(ag.m_options[2]->m_type_hash, typeid(decltype(loc2)).hash_code());
+
+  BOOST_CHECK_EQUAL(ag.m_options[3]->m_name, "opt4");
+  BOOST_CHECK_EQUAL(ag.m_options[3]->m_keep, true);
+  BOOST_CHECK_EQUAL(ag.m_options[3]->m_type_hash, typeid(decltype(loc2)).hash_code());
 }

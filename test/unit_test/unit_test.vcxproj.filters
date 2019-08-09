@@ -21,6 +21,9 @@
     <ClCompile Include="stable_unique_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="example_header_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -33,13 +36,31 @@
     <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClCompile Include="ccb_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="json_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dsjson_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="object_pool_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vwdll_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ccb_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
