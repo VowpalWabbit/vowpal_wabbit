@@ -7,6 +7,7 @@
 #include "explore.h"
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -85,44 +86,6 @@ struct cb_explore_adf
   std::vector<v_array<CB::cb_class>> ex_costs;
 };
 
-template <class T>
-void swap(T& ele1, T& ele2)
-{
-  T temp = ele2;
-  ele2 = ele1;
-  ele1 = temp;
-}
-
-// Validates a multiline example collection as a valid sequence for action dependent features format.
-example* test_adf_sequence(multi_ex& ec_seq)
-{
-  if (ec_seq.size() == 0)
-    THROW("cb_adf: At least one action must be provided for an example to be valid.");
-
-  uint32_t count = 0;
-  example* ret = nullptr;
-  for (size_t k = 0; k < ec_seq.size(); k++)
-  {
-    example* ec = ec_seq[k];
-
-    // Check if there is more than one cost for this example.
-    if (ec->l.cb.costs.size() > 1)
-      THROW("cb_adf: badly formatted example, only one cost can be known.");
-
-    // Check whether the cost was initialized to a value.
-    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
-    {
-      ret = ec;
-      count += 1;
-    }
-  }
-
-  if (count > 1)
-    THROW("cb_adf: badly formatted example, only one line can have a cost");
-
-  return ret;
-}
-
 // TODO: same as cs_active.cc, move to shared place
 float binary_search(float fhat, float delta, float sens, float tol = 1e-6)
 {
@@ -185,7 +148,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
-    if (ec->pred.scalar < cmin || nanpattern(sens) || infpattern(sens))
+    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens))
       min_costs[a] = cmin;
     else
     {
@@ -199,7 +162,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
     {
       ec->l.simple.label = cmax + 1;
       sens = base.sensitivity(*ec);
-      if (ec->pred.scalar > cmax || nanpattern(sens) || infpattern(sens))
+      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens))
       {
         max_costs[a] = cmax;
       }
@@ -238,10 +201,11 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   // Explore tau times, then act according to optimal.
-  if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr)
+  bool is_learn_example = is_learn && CB_ADF::test_adf_sequence(examples) != nullptr;
+  if (is_learn_example)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
-    multiline_learn_or_predict<true>(base, examples, data.offset);
+    multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -250,7 +214,8 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
   {
     float prob = 1.f / (float)num_actions;
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
-    data.tau--;
+    if (is_learn_example)
+      data.tau--;
   }
   else
   {
@@ -267,7 +232,7 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
   data.offset = examples[0]->ft_offset;
   // Explore uniform random an epsilon fraction of the time.
 
-  if (is_learn && test_adf_sequence(examples) != nullptr)
+  if (is_learn && CB_ADF::test_adf_sequence(examples) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -290,7 +255,7 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
 template <bool is_learn>
 void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-  if (is_learn && test_adf_sequence(examples) != nullptr)
+  if (is_learn && CB_ADF::test_adf_sequence(examples) != nullptr)
   {
     for (size_t i = 0; i < examples.size() - 1; ++i)
     {
@@ -300,13 +265,13 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
     }
 
     multiline_learn_or_predict<true>(base, examples, data.offset);
+    ++data.counter;
   }
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
-  ++data.counter;
 
   const float max_range = data.max_cb_cost - data.min_cb_cost;
   // threshold on empirical loss difference
@@ -391,7 +356,7 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
   for (uint32_t i = 0; i < num_actions; i++) data.scores.push_back(0.f);
   vector<float>& top_actions = data.top_actions;
   top_actions.assign(num_actions, 0);
-  bool test_sequence = test_adf_sequence(examples) == nullptr;
+  bool test_sequence = CB_ADF::test_adf_sequence(examples) == nullptr;
   for (uint32_t i = 0; i < data.bag_size; i++)
   {
     // avoid updates to the random num generator
@@ -519,13 +484,14 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   do_sort(data);
   for (size_t i = 0; i < num_actions; i++) preds[i] = probs[i];
 
-  ++data.counter;
+  if (is_learn)
+    ++data.counter;
 }
 
 template <bool is_learn>
 void predict_or_learn_softmax(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-  if (is_learn && test_adf_sequence(examples) != nullptr)
+  if (is_learn && CB_ADF::test_adf_sequence(examples) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -580,7 +546,7 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
+      float l = get_cost_estimate(&c.gen_cs.known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }
@@ -630,10 +596,6 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all);
   }
 
-  for (auto x : ec_seq)
-  {
-    x->l.cb.costs.clear();
-  }
 
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
@@ -641,7 +603,7 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
 template <bool is_learn>
 void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_seq)
 {
-  example* label_example = test_adf_sequence(ec_seq);
+  example* label_example = CB_ADF::test_adf_sequence(ec_seq);
   data.gen_cs.known_cost = CB_ADF::get_observed_cost(ec_seq);
 
   if (label_example == nullptr || !is_learn)
@@ -756,7 +718,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   if (!cb_explore_adf_option)
     return nullptr;
 
-  // Ensure serialization of this option in all cases.
+  // Ensure serialization of cb_type in all cases.
   if (!options.was_supplied("cb_type"))
   {
     options.insert("cb_type", type_string);
@@ -764,9 +726,10 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   }
 
   data->all = &all;
-  if (data->lambda < 0)  // Lambda should always be negative because we are using a cost basis.
+  if (data->lambda < 0)  // Lambda should always be positive because we are using a cost basis.
     data->lambda = -data->lambda;
 
+  // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))
   {
     options.insert("cb_adf", "");
@@ -774,8 +737,27 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
 
   all.delete_prediction = delete_action_scores;
 
-  size_t problem_multiplier = 1;
+  // Set cb_type
+  if (type_string.compare("dr") == 0)
+    data->gen_cs.cb_type = CB_TYPE_DR;
+  else if (type_string.compare("ips") == 0)
+    data->gen_cs.cb_type = CB_TYPE_IPS;
+  else if (type_string.compare("mtr") == 0)
+  {
+    if (options.was_supplied("cover"))
+      all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
+                        << endl;
+    data->gen_cs.cb_type = CB_TYPE_MTR;
+  }
+  else
+  {
+    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
+    options.replace("cb_type", "mtr");
+    data->gen_cs.cb_type = CB_TYPE_MTR;
+  }
 
+  // Set explore_type
+  size_t problem_multiplier = 1;
   if (options.was_supplied("cover"))
   {
     data->explore_type = COVER;
@@ -791,39 +773,21 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   else if (softmax)
     data->explore_type = SOFTMAX;
   else if (regcb || (options.was_supplied("regcbopt") && data->regcbopt))
+  {
     data->explore_type = REGCB;
+
+    if (data->gen_cs.cb_type != CB_TYPE_MTR)
+    {
+      all.trace_message << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
+      options.replace("cb_type", "mtr");
+      data->gen_cs.cb_type = CB_TYPE_MTR;
+    }
+  }
   else
   {
     if (!options.was_supplied("epsilon"))
       data->epsilon = 0.05f;
     data->explore_type = EPS_GREEDY;
-  }
-
-  data->gen_cs.cb_type = CB_TYPE_IPS;
-  if (options.was_supplied("cb_type"))
-  {
-    if (type_string.compare("dr") == 0)
-      data->gen_cs.cb_type = CB_TYPE_DR;
-    else if (type_string.compare("ips") == 0)
-      data->gen_cs.cb_type = CB_TYPE_IPS;
-    else if (type_string.compare("mtr") == 0)
-    {
-      if (options.was_supplied("cover"))
-        all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
-                          << endl;
-      data->gen_cs.cb_type = CB_TYPE_MTR;
-    }
-    else
-    {
-      all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
-      options.replace("cb_type", "mtr");
-    }
-
-    if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
-      {
-        all.trace_message << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
-        options.replace("cb_type", "mtr");
-      }
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));

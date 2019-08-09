@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -20,16 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cb_explore_adf_test.cc" />
+    <ClCompile Include="ccb_test.cc" />
+    <ClCompile Include="ccb_parser_test.cc" />
+    <ClCompile Include="dsjson_parser_test.cc" />
+    <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="explore_test.cc" />
+    <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="vwdll_test.cc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)libvw.vcxproj">
@@ -42,37 +44,40 @@
   <ItemGroup>
     <ClInclude Include="test_common.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E02E3869-D9AD-4513-B352-93F90B7D6FE3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>unit_test</RootNamespace>
     <ProjectName>vw_unit_test</ProjectName>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -139,7 +144,7 @@
   </ImportGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -148,21 +153,25 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets')" />
-    <Import Project="$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
-    <Import Project="$(SolutionDir)packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets')" />
-    <Import Project="$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
+    <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
+    <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
+    <Import Project="$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets')" />
+    <Import Project="$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
+    <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost.1.63.0.0\build\native\boost.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\build\boost_unit_test_framework-vc141.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
   </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -170,8 +179,7 @@
     </ClCompile>
     <PostBuildEvent>
       <!-- This goes away if we switch to pulling in all of our boost dependencies via vcpkg -->
-      <Command Condition="'$(Platform)'=='x64'">xcopy /Y $(SolutionDir)packages\boost_unit_test_framework-vc140.1.63.0.0\lib\native\address-model-64\lib\*.dll $(OutDir)</Command>
-      <Command Condition="'$(Platform)'=='Win32'">xcopy /Y $(SolutionDir)packages\boost_unit_test_framework-vc140.1.63.0.0\lib\native\address-model-32\lib\*.dll $(OutDir)</Command>
+      <Command>xcopy /Y $(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\lib\native\*.dll $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 </Project>

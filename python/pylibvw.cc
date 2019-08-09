@@ -13,6 +13,7 @@
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
+#include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 //Brings VW_DLL_MEMBER to help control exports
@@ -148,6 +149,7 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 { label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = VW::alloc_examples(lp->label_size, 1);
   lp->default_label(&ec->l);
+  ec->interactions = &vw->interactions;
   if (labelType == lCOST_SENSITIVE)
   { COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
     ec->l.cs.costs.push_back(zero);
@@ -721,7 +723,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::docstring_options local_docstring_options(true, true, false);
 
   // define the vw class
-  py::class_<vw, vw_ptr>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
+  py::class_<vw, vw_ptr, boost::noncopyable>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
   .def("__init__", py::make_constructor(my_initialize))
   //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
   .def("run_parser", &my_run_parser, "parse external data file")

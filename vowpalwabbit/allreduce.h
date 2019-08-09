@@ -45,7 +45,7 @@ typedef int socket_t;
 #include "vw_exception.h"
 #include <assert.h>
 
-const size_t ar_buf_size = 1 << 16;
+constexpr size_t ar_buf_size = 1 << 16;
 
 struct node_socks
 {
@@ -78,8 +78,12 @@ class AllReduce
  public:
   const size_t total;  // total number of nodes
   const size_t node;   // node id number
+  bool quiet;
 
-  AllReduce(size_t ptotal, const size_t pnode) : total(ptotal), node(pnode) { assert(node < total); }
+  AllReduce(size_t ptotal, const size_t pnode, bool pquiet = false) : total(ptotal), node(pnode), quiet(pquiet)
+  {
+    assert(node < total);
+  }
 
   virtual ~AllReduce() {}
 };
@@ -122,9 +126,9 @@ class AllReduceThreads : public AllReduce
   bool m_syncOwner;
 
  public:
-  AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode);
+  AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode, bool quiet = false);
 
-  AllReduceThreads(const size_t ptotal, const size_t pnode);
+  AllReduceThreads(const size_t ptotal, const size_t pnode, bool quiet = false);
 
   virtual ~AllReduceThreads();
 
@@ -278,10 +282,13 @@ class AllReduceSockets : public AllReduce
   void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos);
   void broadcast(char* buffer, const size_t n);
 
+  socket_t sock_connect(const uint32_t ip, const int port);
+  socket_t getsock();
+
  public:
-  AllReduceSockets(
-      std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal, const size_t pnode)
-      : AllReduce(ptotal, pnode), span_server(pspan_server), port(pport), unique_id(punique_id)
+  AllReduceSockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
+      const size_t pnode, bool pquiet)
+      : AllReduce(ptotal, pnode, pquiet), span_server(pspan_server), port(pport), unique_id(punique_id)
   {
   }
 

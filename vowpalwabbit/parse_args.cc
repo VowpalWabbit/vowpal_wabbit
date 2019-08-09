@@ -74,6 +74,7 @@ license as described in the file LICENSE.
 #include "explore_eval.h"
 #include "baseline.h"
 #include "classweight.h"
+#include "cb_sample.h"
 #include "warm_cb.h"
 #include "shared_feature_merger.h"
 // #include "cntk.h"
@@ -361,10 +362,14 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
+  // pass all.quiet around
+  if (all.all_reduce)
+    all.all_reduce->quiet = all.quiet;
+
   // Upon direct query for version -- spit it out to stdout
   if (version_arg)
   {
-    cout << version.to_string() << "\n";
+    cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
     exit(0);
   }
 
@@ -552,6 +557,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   return nullptr;
 }
+
 }  // namespace VW
 // return a copy of string replacing \x00 sequences in it
 string spoof_hex_encoded_namespaces(const string& arg)
@@ -1272,7 +1278,9 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(mwt_setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
+  all.reduction_stack.push(CCB::ccb_explore_adf_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);
@@ -1361,7 +1369,8 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     if (options.was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg);
+      all.all_reduce =
+          new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.quiet);
     }
 
     parse_diagnostics(options, all);

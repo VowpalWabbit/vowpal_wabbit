@@ -2,6 +2,7 @@
 #include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
+#include <cmath>
 
 using namespace std;
 namespace COST_SENSITIVE
@@ -18,7 +19,7 @@ void name_value(substring& s, v_array<substring>& name, float& v)
       break;
     case 2:
       v = float_of_substring(name[1]);
-      if (nanpattern(v))
+      if (std::isnan(v))
         THROW("error NaN value for: " << name[0]);
       break;
     default:
@@ -118,16 +119,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-bool substring_eq(substring ss, const char* str)
-{
-  size_t len_ss = ss.end - ss.begin;
-  size_t len_str = strlen(str);
-  if (len_ss != len_str)
-    return false;
-  return (strncmp(ss.begin, str, len_ss) == 0);
-}
-
-void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -137,12 +129,12 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
     float fx;
     name_value(words[0], p->parse_name, fx);
-    bool eq_shared = substring_eq(p->parse_name[0], "***shared***");
-    bool eq_label = substring_eq(p->parse_name[0], "***label***");
+    bool eq_shared = substring_equal(p->parse_name[0], "***shared***");
+    bool eq_label = substring_equal(p->parse_name[0], "***label***");
     if (!sd->ldict)
     {
-      eq_shared |= substring_eq(p->parse_name[0], "shared");
-      eq_label |= substring_eq(p->parse_name[0], "label");
+      eq_shared |= substring_equal(p->parse_name[0], "shared");
+      eq_label |= substring_equal(p->parse_name[0], "label");
     }
     if (eq_shared || eq_label)
     {
@@ -313,7 +305,7 @@ bool example_is_test(example& ec)
   return true;
 }
 
-bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
+bool ec_is_example_header(example& ec)  // example headers look like "shared"
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
   if (costs.size() != 1)

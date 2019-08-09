@@ -43,11 +43,11 @@ namespace DepParserTask
 {
 using namespace Search;
 
-const action SHIFT = 1;
-const action REDUCE_RIGHT = 2;
-const action REDUCE_LEFT = 3;
-const action REDUCE = 4;
-const uint32_t my_null = 9999999; /*representing_defalut*/
+constexpr action SHIFT = 1;
+constexpr action REDUCE_RIGHT = 2;
+constexpr action REDUCE_LEFT = 3;
+constexpr action REDUCE = 4;
+constexpr uint32_t my_null = 9999999; /*representing_default*/
 
 void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &options)
 {
@@ -81,6 +81,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   data->ex->indices.push_back(val_namespace);
   for (size_t i = 1; i < 14; i++) data->ex->indices.push_back((unsigned char)i + 'A');
   data->ex->indices.push_back(constant_namespace);
+  data->ex->interactions = &sch.get_vw_pointer_unsafe().interactions;
 
   if (data->one_learner)
     sch.set_num_learners(1);

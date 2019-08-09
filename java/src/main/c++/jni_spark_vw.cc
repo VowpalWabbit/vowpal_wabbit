@@ -83,7 +83,6 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRem
   {
     if (all->numpasses > 1)
     {
-      adjust_used_index(*all);
       all->do_reset_source = true;
       VW::start_parser(*all);
       LEARNER::generic_driver(*all);
@@ -131,10 +130,9 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
     }
   }
 
-  auto serialized_keep_options = serializer.str().c_str();
-
   // move it to Java
-  jstring args = env->NewStringUTF(serialized_keep_options);
+  // Note: don't keep serializer.str().c_str() around in some variable. it get's deleted after str() is de-allocated
+  jstring args = env->NewStringUTF(serializer.str().c_str());
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitArguments");
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;)V");
@@ -148,8 +146,15 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
 
   try
   {
+    // note: this code duplication seems bound for trouble
+    // from parse_dispatch_loop.h:26
+    // from learner.cc:41
+    reset_source(*all, all->num_bits);
+    all->do_reset_source = false;
+    all->passes_complete++;
+
+    all->current_pass++;
     all->l->end_pass();
-    VW::sync_stats(*all);
   }
   catch (...)
   {
@@ -163,6 +168,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_finish(JNI
 
   try
   {
+    VW::sync_stats(*all);
     VW::finish(*all);
   }
   catch (...)
@@ -194,6 +200,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
   try
   {
     example* ex = VW::alloc_examples(0, 1);
+    ex->interactions = &all->interactions;
 
     if (isEmpty)
     {
@@ -350,6 +357,12 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   }
 }
 
+// re-use prediction conversation methods
+jobject multilabel_predictor(example* vec, JNIEnv* env);
+jfloatArray scalars_predictor(example* vec, JNIEnv* env);
+jobject action_scores_prediction(example* vec, JNIEnv* env);
+jobject action_probs_prediction(example* vec, JNIEnv* env);
+
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(JNIEnv* env, jobject exampleObj)
 {
   INIT_VARS
@@ -370,12 +383,24 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPre
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-      /*
-         case prediction_type::prediction_type_t::action_probs:
-         case prediction_type::prediction_type_t::action_scores:
-         case prediction_type::prediction_type_t::multiclass:
-         case prediction_type::prediction_type_t::multilabels:
-         case prediction_type::prediction_type_t::scalars:*/
+    case prediction_type::prediction_type_t::multiclass:
+      predClass = env->FindClass("java/lang/Integer");
+      ctr = env->GetMethodID(predClass, "<init>", "(I)V");
+
+      return env->NewObject(predClass, ctr, ex->pred.multiclass);
+
+    case prediction_type::prediction_type_t::scalars:
+      return scalars_predictor(ex, env);
+
+    case prediction_type::prediction_type_t::action_probs:
+      return action_probs_prediction(ex, env);
+
+    case prediction_type::prediction_type_t::action_scores:
+      return action_scores_prediction(ex, env);
+
+    case prediction_type::prediction_type_t::multilabels:
+      return multilabel_predictor(ex, env);
+
     default:
       return nullptr;
   }
