@@ -1,4 +1,4 @@
-#include "parser.h"
+    #include "parser.h"
 #include "vw.h"
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
@@ -91,7 +91,10 @@ namespace LEARNER
     }
     all.l->end_examples();
   }
-  
+
+  //single_instance_context / multi_instance_context - classes incapsulating single/multiinstance example processing
+  //get_master - returns main vw instance for owner's example manipulations (i.e. finish)
+  //process<process_impl> - call process_impl for all vw instances
   class single_instance_context {
   public:
     single_instance_context(vw& all)
@@ -122,7 +125,9 @@ namespace LEARNER
   private:
     std::vector<vw*> _all;
   };
-  
+
+  //single_example_handler / multi_example_handler - consumer classes with on_example handle method, incapsulating
+  //creation of example / multi_ex and passing it to context.process
   template<typename context_type>
   class single_example_handler {
   public:
@@ -192,7 +197,9 @@ namespace LEARNER
     context_type _context;
     multi_ex ec_seq;
   };
-  
+
+  //ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop
+  //for single- and multi-threaded scenarios
   class ready_examples_queue {
   public:
     ready_examples_queue(vw& master)
