@@ -9,7 +9,7 @@ cd $REPO_DIR
 # Run Java build and test
 mvn clean test -f java/pom.xml
 
-if [ -z "$ossrh_username" ]
+if [ ! -z "$ossrh_username" ]
 then
 	# template for username/password for sonatype repository server
 	cp java/settings.xml ~/.m2/settings.xml
