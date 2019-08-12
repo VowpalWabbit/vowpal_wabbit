@@ -10,7 +10,7 @@ cd $REPO_DIR
 mvn clean test -f java/pom.xml
 
 # publish snapshot jar to staging repository
-if [ ! -z "$ossrh_username" ]
+if [ -v ossrh_username ]
 then
 	# template for username/password for sonatype repository server
 	cp java/settings.xml ~/.m2/settings.xml
