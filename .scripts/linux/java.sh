@@ -10,8 +10,10 @@ cd $REPO_DIR
 mvn clean test -f java/pom.xml
 
 # publish snapshot jar to staging repository
-if [ -v ossrh_username ]
+if [ -z "$ossrh_username" ]
 then
+	echo "Skipping package publishing"
+else
 	# template for username/password for sonatype repository server
 	cp java/settings.xml ~/.m2/settings.xml
 
