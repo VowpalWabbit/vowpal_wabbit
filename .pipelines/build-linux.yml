@@ -13,8 +13,8 @@ steps:
   displayName: Clang format check
 - bash: ./.scripts/linux/build.sh
   displayName: Build C++
-- bash: ./.scripts/linux/test.sh
-  displayName: Test C++
+# - bash: ./.scripts/linux/test.sh
+#   displayName: Test C++
 - bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
 - bash: ./.scripts/linux/python27.sh
