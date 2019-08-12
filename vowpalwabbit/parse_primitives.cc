@@ -16,6 +16,12 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "vw_exception.h"
 
+bool substring_equal(const substring& a, const substring& b)
+{
+  return (a.end - a.begin == b.end - b.begin)  // same length
+      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
+}
+
 bool substring_equal(const substring& ss, const char* str)
 {
   size_t len_ss = ss.end - ss.begin;
