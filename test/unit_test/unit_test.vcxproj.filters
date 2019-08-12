@@ -21,6 +21,9 @@
     <ClCompile Include="stable_unique_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="example_header_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -48,13 +51,16 @@
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClCompile Include="ccb_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

@@ -42,7 +42,7 @@ license as described in the file LICENSE.
 #else                                       // Other compilers
 #   include <stdint.h>   // defines uint32_t etc
 
-inline uint32_t rotl32(uint32_t x, int8_t r)
+constexpr inline uint32_t rotl32(uint32_t x, int8_t r) noexcept
 { return (x << r) | (x >> (32 - r));
 }
 
@@ -57,7 +57,7 @@ namespace MURMUR_HASH_3
 //-----------------------------------------------------------------------------
 // Finalization mix - force all bits of a hash block to avalanche
 
-static inline uint32_t fmix(uint32_t h)
+static inline uint32_t fmix(uint32_t h) noexcept
 { h ^= h >> 16;
   h *= 0x85ebca6b;
   h ^= h >> 13;
@@ -72,7 +72,7 @@ static inline uint32_t fmix(uint32_t h)
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here
 
-static inline uint32_t getblock(const uint32_t * p, int i)
+constexpr static inline uint32_t getblock(const uint32_t * p, int i) noexcept
 {
   return p[i];
 }
@@ -110,12 +110,20 @@ inline uint64_t uniform_hash(const void * key, size_t len, uint64_t seed)
 
   uint32_t k1 = 0;
 
+  // The 'fall through' comments below silence the implicit-fallthrough warning introduced in GCC 7.
+  // Once we move to C++17 these should be replaced with the [[fallthrough]] attribute.
   switch (len & 3)
   {
-  case 3: k1 ^= tail[2] << 16;
-  case 2: k1 ^= tail[1] << 8;
+  case 3:
+    k1 ^= tail[2] << 16;
+    // fall through
+  case 2:
+    k1 ^= tail[1] << 8;
+    // fall through
   case 1: k1 ^= tail[0];
-    k1 *= c1; k1 = ROTL32(k1, 15); k1 *= c2; h1 ^= k1;
+    k1 *= c1;
+    k1 = ROTL32(k1, 15);
+    k1 *= c2; h1 ^= k1;
   }
 
   // --- finalization

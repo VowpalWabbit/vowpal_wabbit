@@ -16,7 +16,7 @@ using namespace LEARNER;
 using namespace CB_ALGS;
 using namespace CB;
 
-inline bool observed_cost(cb_class* cl)
+constexpr inline bool observed_cost(cb_class* cl)
 {
   // cost observed for this action if it has non zero probability and cost != FLT_MAX
   return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
