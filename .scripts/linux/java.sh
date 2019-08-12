@@ -9,6 +9,7 @@ cd $REPO_DIR
 # Run Java build and test
 mvn clean test -f java/pom.xml
 
+# publish snapshot jar to staging repository
 if [ ! -z "$ossrh_username" ]
 then
 	# template for username/password for sonatype repository server
@@ -20,6 +21,16 @@ then
 	echo $ossrh_gpg | base64 -d | gpg --import -
 
 	MAVEN_OPTS="-Dossrh.username=$ossrh_username -Dossrh.password=$ossrh_password"
-	# mvn -f java/pom.xml release:prepare $MAVEN_OPTS
+
+	# to use the snapshot from oss.sonatype.org 
+	# * add http://oss.sonatype.org/content/repositories/snapshots 
+	# * reference com.github.vowpalwabbit:vw-jni:8.7.0-SNAPSHORT
+	# 
+	# more details at https://stackoverflow.com/questions/7715321/how-to-download-snapshot-version-from-maven-snapshot-repository
+
+	# For a proper release:
+	# * remove -SNAPSHOT in pom.xml
+	# * visit https://oss.sonatype.org/#stagingRepositories and "close & release" the staged .jar
+	# * see https://oss.sonatype.org/#stagingRepositories
 	mvn -f java/pom.xml verify gpg:sign deploy:deploy -Dmaven.test.skip=true $MAVEN_OPTS
 fi
