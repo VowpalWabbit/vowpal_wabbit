@@ -10,7 +10,7 @@ cd $REPO_DIR
 mvn clean test -f java/pom.xml
 
 # publish snapshot jar to staging repository
-if ["$ossrh_username" = "$(ossrh_username)"] || [ -z "$ossrh_username" ]
+if ["$ossrh_username" = "\$(ossrh_username)"] || [ -z "$ossrh_username" ]
 then
 	echo "Skipping package publishing"
 else
