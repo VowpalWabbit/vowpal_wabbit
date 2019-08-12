@@ -9,6 +9,7 @@ typedef unsigned char namespace_index;
 
 #include "v_array.h"
 #include "feature_group.h"
+#include <vector>
 
 struct example_predict
 {

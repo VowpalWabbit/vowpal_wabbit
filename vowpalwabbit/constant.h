@@ -16,6 +16,7 @@ constexpr float probability_tolerance = 1e-5f;
 // http://www.isthe.com/chongo/tech/comp/fnv/#FNV-param
 constexpr uint32_t FNV_prime = 16777619;
 
+constexpr unsigned char default_namespace = 32;
 constexpr unsigned char wap_ldf_namespace = 126;
 constexpr unsigned char history_namespace = 127;
 constexpr unsigned char constant_namespace = 128;
@@ -28,5 +29,7 @@ constexpr unsigned char conditioning_namespace = 134;// this is \x86
 constexpr unsigned char dictionary_namespace = 135; // this is \x87
 constexpr unsigned char node_id_namespace = 136; // this is \x88
 constexpr unsigned char message_namespace = 137; // this is \x89
+constexpr unsigned char ccb_slot_namespace = 139;
+constexpr unsigned char ccb_id_namespace = 140;
 
 typedef float weight;
