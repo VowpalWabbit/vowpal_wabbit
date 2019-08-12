@@ -17,6 +17,10 @@ steps:
 #   displayName: Test C++
 - bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
+  env:
+    ossrh_gpg: $(ossrh_gpg)
+    ossrh_username: $(ossrh_username)
+    ossrh_password: $(ossrh_password)
 - bash: ./.scripts/linux/python27.sh
   displayName: Build + test Python 2.7
 - bash: ./.scripts/linux/python36.sh

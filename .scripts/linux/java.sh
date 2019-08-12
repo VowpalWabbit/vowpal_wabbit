@@ -15,6 +15,7 @@ then
 	cp java/settings.xml ~/.m2/settings.xml
 
 	# import signing key
+	# this is how to export them
 	# gpg --export-secret-keys 'Markus Cozowicz <marcozo@microsoft.com>' | base64 -w 0
 	echo $ossrh_gpg | base64 -d | gpg --import -
 
