@@ -16,6 +16,7 @@ using namespace std;
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <stdarg.h>
 #include <numeric>
@@ -74,9 +75,9 @@ void truncate(vw& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
   for_each(weights.begin(), weights.end(), [](float& v) {
-    if (abs(v) > sd * 2)
+    if (std::fabs(v) > sd * 2)
     {
-      v = (float)std::remainder(v, sd * 2);
+      v = (float)std::remainder(static_cast<double>(v), sd * 2);
     }
   });
 }
