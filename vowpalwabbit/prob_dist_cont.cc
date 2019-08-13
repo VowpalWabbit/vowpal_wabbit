@@ -1,22 +1,13 @@
-#include <float.h>
-#include <vector>
-
-#include "reductions.h"
-#include "cb_algs.h"
-#include "rand48.h"
-#include "bs.h"
 #include "vw.h"
-#include "hash.h"
-#include "explore.h"
 #include "v_array.h"
 #include "prob_dist_cont.h"
 #include "io_buf.h"
 
 using namespace std;
 // TODO: below check
-namespace PDF
+namespace VW { namespace actions_pdf
 {
-void print_prob_dist(int f, v_array<prob_dist>& p_d, v_array<char>&)
+void print_prob_dist(int f, v_array<pdf_segment>& p_d, v_array<char>&)
 {
   if (f >= 0)
   {
@@ -38,10 +29,10 @@ void print_prob_dist(int f, v_array<prob_dist>& p_d, v_array<char>&)
 
 void delete_prob_dist(void* v)
 {
-  v_array<prob_dist>* cs = (v_array<prob_dist>*)v;
+  v_array<pdf_segment>* cs = (v_array<pdf_segment>*)v;
   cs->delete_v();
 }
 
-} // namespase PDF
+}} // namespace vw::pdf
 
 
