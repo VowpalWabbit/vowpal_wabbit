@@ -7,7 +7,7 @@
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/JohnLangford/vowpal_wabbit.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/JohnLangford/vowpal_wabbit/alerts/)
 [![Gitter chat](https://badges.gitter.im/VowpalWabbit.png)](https://gitter.im/VowpalWabbit)
 
-This is the *Vowpal Wabbit* fast online learning code. For Windows specific info, look at [README.Windows.md](./README.Windows.md)
+This is the *Vowpal Wabbit* fast online learning code.
 
 ## Why Vowpal Wabbit?
 Vowpal Wabbit is a machine learning system which pushes the frontier of machine learning with techniques such as online, hashing, allreduce, reductions, learning2search, active, and interactive learning. There is a specific focus on reinforcement learning with several contextual bandit algorithms implemented and the online nature lending to the problem well. Vowpal Wabbit is a destination for implementing and maturing state of the art algorithms with performance in mind.
