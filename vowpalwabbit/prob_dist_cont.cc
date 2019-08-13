@@ -14,9 +14,9 @@
 
 using namespace std;
 // TODO: below check
-namespace VW { namespace pdf
+namespace VW { namespace actions
 {
-void print_prob_dist(int f, v_array<prob_dist>& p_d, v_array<char>&)
+void print_prob_dist(int f, v_array<pdf_segment>& p_d, v_array<char>&)
 {
   if (f >= 0)
   {
@@ -38,7 +38,7 @@ void print_prob_dist(int f, v_array<prob_dist>& p_d, v_array<char>&)
 
 void delete_prob_dist(void* v)
 {
-  v_array<prob_dist>* cs = (v_array<prob_dist>*)v;
+  v_array<pdf_segment>* cs = (v_array<pdf_segment>*)v;
   cs->delete_v();
 }
 
