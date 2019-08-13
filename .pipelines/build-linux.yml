@@ -18,6 +18,8 @@ steps:
 - bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
   env:
+    # these are credentials used to publish to oss.sonatype.org
+    # credentials are stored as secrets in the build definition
     ossrh_gpg: $(ossrh_gpg)
     ossrh_username: $(ossrh_username)
     ossrh_password: $(ossrh_password)
