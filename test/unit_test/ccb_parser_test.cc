@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
 BOOST_AUTO_TEST_CASE(ccb_cache_label)
 {
   io_buf io;
-  io.init();
+  //io.init();      TODO: figure out and fix leak caused by double init()
 
   parser p{8 /*ring_size*/, false /*strict parse*/};
   p.words = v_init<substring>();
@@ -128,8 +128,8 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   auto lp = CCB::ccb_label_parser;
   CCB::label label;
   parse_label(lp, &p, "ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", label);
-
   lp.cache_label(&label, io);
+  io.space.end() = io.head;
   io.head = io.space.begin();
 
   CCB::label uncached_label;
