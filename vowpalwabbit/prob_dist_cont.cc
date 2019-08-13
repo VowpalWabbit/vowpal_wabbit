@@ -5,7 +5,7 @@
 
 using namespace std;
 // TODO: below check
-namespace VW { namespace actions
+namespace VW { namespace actions_pdf
 {
 void print_prob_dist(int f, v_array<pdf_segment>& p_d, v_array<char>&)
 {

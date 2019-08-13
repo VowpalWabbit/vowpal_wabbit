@@ -49,7 +49,7 @@ struct reduction_test_harness
   void test_learn(single_learner& base, example& ec)
   {
     ec.l.cb_cont.costs.clear();
-    ec.l.cb_cont.costs.push_back(CB_CONT::cb_cont_class{_action.cost, _action.action, _action.prob, 0.f});
+    ec.l.cb_cont.costs.push_back(VW::cb_continuous::cb_cont_class{_action.cost, _action.action, _action.prob, 0.f});
     cout << "ec.l.cb_cont.costs before:" << endl;
     cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
          << " , " << ec.l.cb_cont.costs[0].partial_prediction << "), " << endl;
@@ -88,9 +88,9 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   action_triple.set_action(1010.17, 0.5, 0.1);
   predictions_t prediction_scores;
   prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
-  
+
   const auto test_harness = get_test_harness_reduction(prediction_scores, action_triple);
-  
+
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb.costs = v_init<CB::cb_class>();
@@ -107,8 +107,8 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   cout << "ec.pred.p_d (PDF): " << endl;
   for (uint32_t i = 0; i < k; i++)
   {
-    cout << "(" << ec.pred.p_d[i].action << " : " << ec.pred.p_d[i].value << "), " << endl;
-    sum += ec.pred.p_d[i].value;
+    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), " << endl;
+    sum += ec.pred.prob_dist[i].value;
   }
   cout << "sum = " << sum << endl;
 

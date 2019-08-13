@@ -38,8 +38,8 @@ namespace VW { namespace pmf_to_pdf {
       }
     }
     ec.pred.a_s.clear();
-    auto& p_dist = ec.pred.p_d;
-    p_dist = v_init<actions::pdf_segment>();
+    auto& p_dist = ec.pred.prob_dist;
+    p_dist = v_init<actions_pdf::pdf_segment>();
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
       float action = data.min_value + i * continuous_range / data.num_actions;
@@ -146,8 +146,8 @@ namespace VW { namespace pmf_to_pdf {
 
     if (get_observed_cost(ec.l.cb) != nullptr)
       for (auto& cbc: ec.l.cb.costs)
-        for (uint32_t i = 0; i < ec.pred.p_d.size(); i++)
-          loss += (cbc.cost / cbc.probability) * ec.pred.p_d[i].value;
+        for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
+          loss += (cbc.cost / cbc.probability) * ec.pred.prob_dist[i].value;
    
     all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
      
@@ -155,13 +155,13 @@ namespace VW { namespace pmf_to_pdf {
     std::stringstream ss, sso;
     float maxprob = 0.;
     uint32_t maxid = 0;
-    for (uint32_t i = 0; i < ec.pred.p_d.size(); i++)
+    for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
     {
-      sprintf(temp_str, "%f ", ec.pred.p_d[i].value);
+      sprintf(temp_str, "%f ", ec.pred.prob_dist[i].value);
       ss << temp_str;
-      if (ec.pred.p_d[i].value > maxprob)
+      if (ec.pred.prob_dist[i].value > maxprob)
       {
-        maxprob = ec.pred.p_d[i].value;
+        maxprob = ec.pred.prob_dist[i].value;
         maxid = i + 1;
       }
     }

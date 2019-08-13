@@ -1,5 +1,5 @@
 #pragma once
-namespace VW { namespace actions
+namespace VW { namespace actions_pdf
 {
 struct pdf_segment
 {

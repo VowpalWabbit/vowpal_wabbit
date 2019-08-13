@@ -47,7 +47,7 @@ typedef union {
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
-  CB_CONT::label cb_cont;
+  VW::cb_continuous::label cb_cont;
   CCB::label conditional_contextual_bandit;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
@@ -63,7 +63,7 @@ typedef union {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  VW::actions::pdf p_d;
+  VW::actions_pdf::pdf prob_dist;
   CCB::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
