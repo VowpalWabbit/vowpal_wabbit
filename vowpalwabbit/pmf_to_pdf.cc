@@ -38,7 +38,7 @@ void predict(PMF_TO_PDF::pdf_data& data, single_learner& base, example& ec)
   }
   ec.pred.a_s.clear();
   auto& p_dist = ec.pred.p_d;
-  p_dist = v_init<PDF::prob_dist>();
+  p_dist = v_init<pdf::prob_dist>();
   for (uint32_t i = 0; i < data.num_actions; i++)
   {
     float action = data.min_value + i * continuous_range / data.num_actions;

@@ -1,5 +1,5 @@
 #pragma once
-namespace PDF
+namespace VW { namespace pdf
 {
 struct prob_dist
 {
@@ -52,7 +52,7 @@ inline prob_iterator begin_probs(prob_dists& p_d) { return prob_iterator(p_d.beg
 
 inline prob_iterator end_probs(prob_dists& p_d) { return prob_iterator(p_d.end()); }
 
-inline int cmp(size_t a, size_t b)
+inline int cmp(float a, float b)
 {
   if (a == b)
     return 0;
@@ -79,4 +79,4 @@ inline int prob_comp(const void* p1, const void* p2)
 inline int reverse_order(const void* p1, const void* p2) { return prob_comp(p2, p1); }
 
 
-}  // namespace PDF
+}}  // namespace vw::pdf

@@ -14,7 +14,7 @@
 
 using namespace std;
 // TODO: below check
-namespace PDF
+namespace VW { namespace pdf
 {
 void print_prob_dist(int f, v_array<prob_dist>& p_d, v_array<char>&)
 {
@@ -42,6 +42,6 @@ void delete_prob_dist(void* v)
   cs->delete_v();
 }
 
-} // namespase PDF
+}} // namespace vw::pdf
 
 
