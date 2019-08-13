@@ -21,8 +21,8 @@ struct cb_triple
   }
 };
 
-void learn(VW::PMF_TO_PDF::pdf_data& data, single_learner& base, example& ec);
-void predict(VW::PMF_TO_PDF::pdf_data& data, single_learner& base, example& ec);
+void learn(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
+void predict(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
 
 struct reduction_test_harness
 {
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb.costs = v_init<CB::cb_class>();
 
-  auto data = scoped_calloc_or_throw<VW::PMF_TO_PDF::pdf_data>();
+  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::pdf_data>();
   data->set_num_actions(k);
   data->set_bandwidth(h);
   data->set_min_value(min_val);

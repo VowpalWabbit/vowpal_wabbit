@@ -78,5 +78,4 @@ inline int prob_comp(const void* p1, const void* p2)
 
 inline int reverse_order(const void* p1, const void* p2) { return prob_comp(p2, p1); }
 
-
-}}  // namespace vw::pdf
+}}  // namespace VW::actions
