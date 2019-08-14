@@ -61,6 +61,7 @@ static constexpr uint32_t TOP_ACTION_INDEX = 0;
 
 void clear_all(ccb& data)
 {
+  // data.include_list and data.exclude_list aren't cleared here but are assigned in the predict/learn function
   data.shared = nullptr;
   data.actions.clear();
   data.slots.clear();
