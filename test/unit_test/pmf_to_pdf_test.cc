@@ -21,6 +21,7 @@ struct cb_triple
   }
 };
 
+namespace VW { namespace pmf_to_pdf {
 void learn(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
 void predict(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
 
@@ -39,7 +40,7 @@ struct reduction_test_harness
       ec.pred.a_s.push_back(ACTION_SCORE::action_score{i, _predictions[i]});
     }
 
-    cout << "ec.pred.a_s (PMF): " << endl;
+    cout << "\nec.pred.a_s (PMF): " << endl;
     for (uint32_t i = 0; i < _predictions.size(); i++)
     {
       cout << "(" << ec.pred.a_s[i].action << " : " << ec.pred.a_s[i].score << "), " << endl;
@@ -76,7 +77,8 @@ using predictions_t = vector<float>;
 
 test_learner_t* get_test_harness_reduction(
     const predictions_t& base_reduction_predictions, const cb_triple& action_triple);
-
+}  // namespace pmf_to_pdf
+}  // namespace VW
 BOOST_AUTO_TEST_CASE(continuous_action_basic)
 {
   uint32_t k = 4;
@@ -85,11 +87,11 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   float max_val = 1100;
 
   cb_triple action_triple;
-  action_triple.set_action(1010.17, 0.5, 0.1);
-  predictions_t prediction_scores;
+  action_triple.set_action(1010.17f, 0.5f, 0.1f);
+  VW::pmf_to_pdf::predictions_t prediction_scores;
   prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
 
-  const auto test_harness = get_test_harness_reduction(prediction_scores, action_triple);
+  const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores, action_triple);
 
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
@@ -101,7 +103,7 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   data->set_min_value(min_val);
   data->set_max_value(max_val);
 
-  predict(*data, *as_singleline(test_harness), ec);
+  VW::pmf_to_pdf::predict(*data, *as_singleline(test_harness), ec);
 
   float sum = 0;
   cout << "ec.pred.p_d (PDF): " << endl;
@@ -112,7 +114,7 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   }
   cout << "sum = " << sum << endl;
 
-  learn(*data, *as_singleline(test_harness), ec);
+  VW::pmf_to_pdf::learn(*data, *as_singleline(test_harness), ec);
 
   cout << "ec.l.cb.costs after:" << endl;
   for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
@@ -123,6 +125,7 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   cout << "here" << endl;
 }
 
+namespace VW { namespace pmf_to_pdf {
 test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions, const cb_triple& action_triple)
 {
   // Setup a test harness base reduction
@@ -137,3 +140,4 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       );                                    // Create a learner using the base reduction.
   return &test_learner;
 }
+}}  // namespace VW::pmf_to_pdf

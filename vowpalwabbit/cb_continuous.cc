@@ -115,7 +115,7 @@ namespace VW { namespace cb_continuous
         THROW("malformed cost specification: " << p->parse_name);
 
       f.partial_prediction = 0.;
-      f.action = (uint32_t)hashstring(p->parse_name[0], 0);
+      f.action = (uint32_t)hashstring(p->parse_name[0], 0); //todo
       f.cost = FLT_MAX;
 
       if (p->parse_name.size() > 1)
@@ -216,7 +216,7 @@ namespace VW { namespace cb_continuous_eval
     size_t total = sizeof(uint32_t);
     if (cache.buf_read(c, total) < total)
       return 0;
-    ld->action = *(uint32_t*)c;
+    ld->action = *(uint32_t*)c; //todo
 
     return total + cb_continuous::read_cached_label(sd, &(ld->event), cache);
   }
@@ -226,7 +226,7 @@ namespace VW { namespace cb_continuous_eval
     char* c;
     cb_continuous_eval::label* ld = (cb_continuous_eval::label*)v;
     cache.buf_write(c, sizeof(uint32_t));
-    *(uint32_t*)c = ld->action;
+    *(uint32_t*)c = ld->action; //todo
 
     cb_continuous::cache_label(&(ld->event), cache);
   }
@@ -265,7 +265,7 @@ namespace VW { namespace cb_continuous_eval
     if (words.size() < 2)
       THROW("Evaluation can not happen without an action and an exploration");
 
-    ld->action = (uint32_t)hashstring(words[0], 0);
+    ld->action = (uint32_t)hashstring(words[0], 0); //todo
 
     words.begin()++;
 
