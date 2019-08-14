@@ -90,7 +90,7 @@ extern "C"
    * Method:    finish
    * Signature: ()J
    */
-  JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JNIEnv *, jobject);
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JNIEnv *, jobject);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitExample

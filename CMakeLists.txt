@@ -107,17 +107,17 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
-if(STATIC_LINK_VW)
+# if(STATIC_LINK_VW)
   set(Boost_USE_STATIC_LIBS ON)
   SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-  SET(BUILD_SHARED_LIBS OFF)
-else()
-  set(Boost_USE_STATIC_LIBS OFF)
-  if(WIN32)
-    # Windows links everything dynamically
-    add_definitions( -DBOOST_ALL_DYN_LINK )
-  endif()
-endif()
+  # SET(BUILD_SHARED_LIBS OFF)
+# else()
+  # set(Boost_USE_STATIC_LIBS OFF)
+  # if(WIN32)
+    # # Windows links everything dynamically
+    # add_definitions( -DBOOST_ALL_DYN_LINK )
+  # endif()
+# endif()
 
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)

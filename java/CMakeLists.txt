@@ -1,3 +1,5 @@
+set(JAVA_AWT_LIBRARY NotNeeded)
+set(JAVA_JVM_LIBRARY NotNeeded)
 
 find_package(JNI REQUIRED)
 
@@ -51,7 +53,10 @@ add_custom_command(TARGET vw_jni POST_BUILD
 )
 
 # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+# target_link_libraries(vw_jni PUBLIC -Wl,-Bstatic -static-libgcc -static-libstdc++ -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+# target_link_libraries(vw_jni PUBLIC -static -static-libgcc -static-libstdc++ -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+# target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -Wl,-whole-archive -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
 
 # Replace version number in POM
 configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
