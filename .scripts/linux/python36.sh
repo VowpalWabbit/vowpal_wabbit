@@ -10,8 +10,8 @@ cd $REPO_DIR
 rm -rf build
 
 # Run python build and tests
-conda activate test-python36
+source activate test-python36
 python setup.py check -mrs
 python setup.py install --user
 py.test ./python/tests/
-conda deactivate
+source deactivate

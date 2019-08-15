@@ -2,7 +2,7 @@
 set -e
 set -x
 
-export PATH="$HOME/miniconda/bin:$PATH"
+#export PATH="$HOME/miniconda/bin:$PATH"
 
 # Check if any clang-formatting necessary
 
@@ -22,12 +22,12 @@ cd ..
 mvn verify -f java/pom.xml
 
 # Run python build and tests
-conda activate test-python27
-pip install pytest readme_renderer pandas
+source activate test-python27
+#pip install pytest readme_renderer pandas
 python setup.py check -mrs
 python setup.py install
 py.test python/tests
-conda deactivate
+source deactivate
 
 # Clear out build directory then build using GCov and run one set of tests again
 rm -rf build
