@@ -22,12 +22,12 @@ cd ..
 mvn verify -f java/pom.xml
 
 # Run python build and tests
-source activate test-python27
+conda activate test-python27
 pip install pytest readme_renderer pandas
 python setup.py check -mrs
 python setup.py install
 py.test python/tests
-source deactivate
+conda deactivate
 
 # Clear out build directory then build using GCov and run one set of tests again
 rm -rf build
