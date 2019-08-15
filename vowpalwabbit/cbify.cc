@@ -6,6 +6,7 @@
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
+#include "prob_dist_cont.h"
 
 #include <vector>
 
@@ -27,8 +28,10 @@ struct cbify_adf_data
 struct cbify
 {
   CB::label cb_label;
+  VW::cb_continuous::label cb_cont_label;
   uint64_t app_seed;
   action_scores a_s;
+  VW::actions_pdf::pdf prob_dist;
   // used as the seed
   size_t example_counter;
   vw* all;
@@ -138,6 +141,40 @@ void copy_example_to_adf(cbify& data, example& ec)
       eca.tag.push_back('n');
     }
   }
+}
+
+// continuous action space predict_or_learn. Non-afd workflow only
+// Receives Regression example as input, sends cb_continuous example to base learn/predict
+template <bool is_learn>
+void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
+{
+  label_data regression_label = ec.l.simple;
+  data.cb_cont_label.costs.clear();
+  ec.l.cb_cont = data.cb_cont_label;
+  ec.pred.prob_dist = data.prob_dist;
+
+  base.predict(ec);
+
+  uint32_t chosen_action;
+  float pdf_value;
+  // pdf_value = sample_pdf(ec.pred.prob_dist, chosen_action)
+  // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
+  //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty
+  VW::cb_continuous::cb_cont_class cb_continuous;
+  // cb_continuous.action = chosen_action
+  cb_continuous.probability = ec.pred.prob_dist[chosen_action].value;
+
+  float diff = regression_label.label - pdf_value;
+  cb_continuous.cost = diff * diff;
+  data.cb_cont_label.costs.push_back(cb_continuous);
+
+  if (is_learn)
+    base.learn(ec);
+
+  data.prob_dist.clear();
+  data.prob_dist = ec.pred.prob_dist;
+
+  ec.pred.scalar = pdf_value;
 }
 
 template <bool is_learn, bool use_cs>
@@ -413,6 +450,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
   if (!options.was_supplied("cbify"))
     return nullptr;
 
+  bool cb_continuous = options.was_supplied("cb_continuous");
+
   data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
@@ -456,7 +495,12 @@ base_learner* cbify_setup(options_i& options, vw& all)
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
-    if (use_cs)
+    if (cb_continuous)
+    {
+      l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
+          prediction_type::prob_dist);
+    }
+    else if (use_cs)
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
     else
