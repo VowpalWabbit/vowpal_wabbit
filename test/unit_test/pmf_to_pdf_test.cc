@@ -22,6 +22,7 @@ struct cb_triple
 };
 
 namespace VW { namespace pmf_to_pdf {
+
 void learn(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
 void predict(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
 
@@ -77,8 +78,10 @@ using predictions_t = vector<float>;
 
 test_learner_t* get_test_harness_reduction(
     const predictions_t& base_reduction_predictions, const cb_triple& action_triple);
+
 }  // namespace pmf_to_pdf
 }  // namespace VW
+
 BOOST_AUTO_TEST_CASE(continuous_action_basic)
 {
   uint32_t k = 4;

@@ -10,7 +10,29 @@
 #include <vector>
 #include "../../explore/explore.h"
 
-BOOST_AUTO_TEST_CASE(sample_after_nomalizing_basic) {
+BOOST_AUTO_TEST_CASE(sample_continuous_action_basic) {
+  std::vector<float> scores = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+  float chosen_value;
+  const float range_min = .0f;
+  const float range_max = 100.0f;
+  const auto scode = exploration::sample_after_normalizing(7791, begin(scores), end(scores), 0.0f, 100.0f, chosen_value);
+  BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
+  BOOST_CHECK((range_min <= chosen_value) && ( chosen_value <= range_max));
+}
+
+//BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical){
+//  std::vector<float> pdf = {.1f, .2f, .25f, .15f, .3f};
+//  float chosen_value;
+//  const float range_min = .0f;
+//  const float range_max = 100.0f;
+//
+//  const auto scode =
+//      exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), 0.0f, 100.0f, chosen_value);
+//  BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
+//  BOOST_CHECK((range_min <= chosen_value) && (chosen_value <= range_max));
+//}
+
+ BOOST_AUTO_TEST_CASE(sample_after_nomalizing_basic) {
   std::vector<float> pdf = { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
   const std::vector<float> expected = { 0.066666667f,	0.133333333f,	0.2f,	0.266666667f,	0.333333333f };
   uint32_t chosen_index;

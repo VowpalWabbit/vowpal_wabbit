@@ -83,7 +83,8 @@ license as described in the file LICENSE.
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 #include "offset_tree.h"
-
+#include "pmf_to_pdf.h"
+#include "offset_tree_cont.h"
 using namespace std;
 using namespace VW::config;
 
@@ -1276,6 +1277,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_algs_setup);
   all.reduction_stack.push(cb_adf_setup);
   all.reduction_stack.push(mwt_setup);
+  all.reduction_stack.push(VW::offset_tree_cont::offset_tree_cont_setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(cb_explore_adf_setup);
   all.reduction_stack.push(cb_sample_setup);
@@ -1283,6 +1285,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
+  all.reduction_stack.push(VW::pmf_to_pdf::pmf_to_pdf_setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
   all.reduction_stack.push(VW::offset_tree::offset_tree_setup);
