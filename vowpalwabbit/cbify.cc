@@ -445,7 +445,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   uint32_t num_actions = 0;
   auto data = scoped_calloc_or_throw<cbify>();
   bool use_cs;
-  bool use_regression; //todo: check
+  bool use_reg; //todo: check
 
   option_group_definition new_options("Make Multiclass into Contextual Bandit");
   new_options
@@ -453,7 +453,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
                .keep()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
-      .add(make_option("cbify_regression", use_regression)
+      .add(make_option("cbify_reg", use_reg)
                .help("consume regression examples instead of multiclass and cost sensitive"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
@@ -470,13 +470,13 @@ base_learner* cbify_setup(options_i& options, vw& all)
 
   if (data->use_adf)
     init_adf_data(*data.get(), num_actions);
-  if (use_regression) //todo: check: we need more options passed to pmf_to_pdf
+  if (use_reg) //todo: check: we need more options passed to pmf_to_pdf
   {
-    if (!options.was_supplied("pmf_to_pdf") && !data->use_adf)
+    if (!options.was_supplied("cb_continuous") && !data->use_adf)
     {
       stringstream ss;
       ss << num_actions;
-      options.insert("pmf_to_pdf", ss.str());
+      options.insert("cb_continuous", ss.str());
     }
   }
   else
@@ -518,7 +518,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
-    if (use_regression)
+    if (use_reg)
     {
       l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
           prediction_type::prob_dist);
