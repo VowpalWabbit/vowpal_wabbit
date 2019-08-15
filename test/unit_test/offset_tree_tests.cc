@@ -13,7 +13,7 @@ namespace VW{ namespace offset_tree {
        << "}";
     return os;
   }
-}}
+
 
 struct reduction_test_harness {
   reduction_test_harness():
@@ -50,10 +50,12 @@ using scores_t = std::vector<float>;
 
 void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores);
 test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions);
+}}
+
 
 BOOST_AUTO_TEST_CASE(offset_tree_learn_basic){
   // Setup a test harness base reduction
-  const auto test_harness = get_test_harness_reduction({
+  const auto test_harness = VW::offset_tree::get_test_harness_reduction({
       {.9, .1},
       {.9, .1}
   });
@@ -67,31 +69,31 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic){
 
   tree.learn(*as_singleline(test_harness), ec);
 
-  destroy_free<test_learner_t>(test_harness);
+  destroy_free<VW::offset_tree::test_learner_t>(test_harness);
 }
 
 BOOST_AUTO_TEST_CASE(offset_tree_predict) {
   // 0 node tree
-  predict_test_helper({ {} }, {});
+  VW::offset_tree::predict_test_helper({{}}, {});
   // 1 node tree
-  predict_test_helper({ {} }, { 1.0f });
+  VW::offset_tree::predict_test_helper({{}}, {1.0f});
   // 2 node trees
-  predict_test_helper({ {.2f,.8f} }, { .2f,.8f });
-  predict_test_helper({ {.1f,.9f} }, { .1f,.9f });
-  predict_test_helper({ {0.0f,1.0f} }, { 0.0f,1.0f });
+  VW::offset_tree::predict_test_helper({{.2f, .8f}}, {.2f, .8f});
+  VW::offset_tree::predict_test_helper({{.1f, .9f}}, {.1f, .9f});
+  VW::offset_tree::predict_test_helper({{0.0f, 1.0f}}, {0.0f, 1.0f});
   // 3 node trees
-  predict_test_helper(
+  VW::offset_tree::predict_test_helper(
     { {.9f,.1f}, {.9f,.1f} },
     { .9f*.9f,.9f*.1f,.1f });
-  predict_test_helper(
+  VW::offset_tree::predict_test_helper(
     { {.2f,.8f}, {.2f,.8f} },
     { .2f*.2f,.2f*.8f,.8f });
   // 4 node tree
-  predict_test_helper(
+  VW::offset_tree::predict_test_helper(
     { {.9f,.1f}, {.9f,.1f}, {.9f,.1f} },
     { .9f*.9f,.9f*.1f,.1f*.9f,.1f*.1f });
   // 5 node tree
-  predict_test_helper(
+  VW::offset_tree::predict_test_helper(
     { {.9f,.1f}, {.9f,.1f}, {.9f,.1f}, {.9f,.1f} },
     { .9f*.9f*.9f,.9f*.9f*.1f,.9f*.1f*.9f,.9f*.1f*.1f,.1f});
 }
@@ -168,20 +170,27 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_too_big) {
   BOOST_CHECK_THROW(tree.build_tree(INT_MAX),VW::vw_exception);
 }
 
-test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions) {
+
+namespace VW
+{
+namespace offset_tree
+{
+test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+{
   // Setup a test harness base reduction
   auto test_harness = scoped_calloc_or_throw<reduction_test_harness>();
   test_harness->set_predict_response(base_reduction_predictions);
-  auto& test_learner = init_learner(
-    test_harness,                    // Data structure passed by vw_framework into test_harness predict/learn calls
-    reduction_test_harness::learn,   // test_harness learn
-    reduction_test_harness::predict, // test_harness predict
-    1                                // Number of regressors in test_harness (not used)
-  );                                // Create a learner using the base reduction.
+  auto& test_learner =
+      init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
+          reduction_test_harness::learn,  // test_harness learn
+          reduction_test_harness::predict,  // test_harness predict
+          1                                 // Number of regressors in test_harness (not used)
+      );                                    // Create a learner using the base reduction.
   return &test_learner;
 }
 
-void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores) {
+void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores)
+{
   const auto test_base = get_test_harness_reduction(base_reduction_predictions);
   VW::offset_tree::offset_tree tree;
   tree.init(expected_scores.size());
@@ -191,4 +200,8 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   auto& ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
   destroy_free<test_learner_t>(test_base);
+
+}
+}
+
 }

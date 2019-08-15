@@ -18,19 +18,10 @@
     <ClCompile Include="main.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stable_unique_tests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cb_explore_adf_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="options_boost_po_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ccb_parser_test.cc">
@@ -42,19 +33,31 @@
     <ClCompile Include="dsjson_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="object_pool_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vwdll_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ccb_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pmf_to_pdf_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="offset_tree_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="offset_tree_cont_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pmf_to_pdf_test.cc">
+    <ClCompile Include="object_pool_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="options_boost_po_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="options_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stable_unique_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

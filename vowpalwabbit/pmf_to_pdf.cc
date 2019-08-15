@@ -55,7 +55,7 @@ namespace VW { namespace pmf_to_pdf {
     float continuous_range = data.max_value - data.min_value;
     float action_cont = ec.l.cb_cont.costs[0].action;
     float ac = (action_cont - data.min_value) * data.num_actions / continuous_range;
-    int ic = floor(ac);
+    int ic = (int)floor(ac);
     bool cond1 = data.min_value + ic * continuous_range / data.num_actions <= action_cont;
     bool cond2 = action_cont < data.min_value + (ic + 1) * continuous_range / data.num_actions;
 

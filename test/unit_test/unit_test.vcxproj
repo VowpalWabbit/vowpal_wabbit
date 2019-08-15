@@ -22,15 +22,16 @@
     <ClCompile Include="cb_explore_adf_test.cc" />
     <ClCompile Include="ccb_test.cc" />
     <ClCompile Include="ccb_parser_test.cc" />
+    <ClCompile Include="object_pool_test.cc" />
+    <ClCompile Include="offset_tree_cont_tests.cc" />
+    <ClCompile Include="offset_tree_tests.cc" />
+    <ClCompile Include="options_boost_po_test.cc" />
+    <ClCompile Include="options_test.cc" />
     <ClCompile Include="pmf_to_pdf_test.cc" />
     <ClCompile Include="dsjson_parser_test.cc" />
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
-    <ClCompile Include="offset_tree_cont_tests.cc" />
-    <ClCompile Include="object_pool_test.cc" />
-    <ClCompile Include="options_boost_po_test.cc" />
-    <ClCompile Include="options_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="vwdll_test.cc" />
   </ItemGroup>

@@ -6,6 +6,7 @@
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
+#include "prob_dist_cont.h"
 
 #include <vector>
 
@@ -27,8 +28,10 @@ struct cbify_adf_data
 struct cbify
 {
   CB::label cb_label;
+  VW::cb_continuous::label cb_cont_label;
   uint64_t app_seed;
   action_scores a_s;
+  VW::actions_pdf::pdf prob_dist;
   // used as the seed
   size_t example_counter;
   vw* all;
@@ -138,6 +141,49 @@ void copy_example_to_adf(cbify& data, example& ec)
       eca.tag.push_back('n');
     }
   }
+}
+
+// continuous action space predict_or_learn. Non-afd workflow only
+// Receives Regression example as input, sends cb_continuous example to base learn/predict
+template <bool is_learn>
+void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
+{
+  label_data regression_label = ec.l.simple;
+  data.cb_cont_label.costs.clear();
+  ec.l.cb_cont = data.cb_cont_label;
+  ec.pred.prob_dist = data.prob_dist;
+
+  base.predict(ec);
+
+  float chosen_action;
+  // after having the function that samples the pdf and returns back a continuous action; replaces sample_after_normalizing
+ /* if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.prob_dist),
+          end_scores(out_ec.pred.prob_dist), chosen_action))
+    THROW("Failed to sample from pdf");*/
+  // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
+  //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty
+
+  float pdf_value;
+  // after having the function that gets PDF and returns pdf_value
+  //pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
+
+  VW::cb_continuous::cb_cont_class cb_cont;
+  
+  cb_cont.action = chosen_action;
+  cb_cont.probability = pdf_value;
+  
+  float diff = regression_label.label - chosen_action;
+  cb_cont.cost = diff * diff;
+  data.cb_cont_label.costs.push_back(cb_cont);
+
+  if (is_learn)
+    base.learn(ec);
+
+  data.prob_dist.clear();
+  data.prob_dist = ec.pred.prob_dist;
+
+  ec.l.simple = regression_label; // recovering regression label
+  ec.pred.scalar = cb_cont.action;
 }
 
 template <bool is_learn, bool use_cs>
@@ -399,6 +445,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   uint32_t num_actions = 0;
   auto data = scoped_calloc_or_throw<cbify>();
   bool use_cs;
+  bool use_reg; //todo: check
 
   option_group_definition new_options("Make Multiclass into Contextual Bandit");
   new_options
@@ -406,12 +453,15 @@ base_learner* cbify_setup(options_i& options, vw& all)
                .keep()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("cbify_reg", use_reg)
+               .help("consume regression examples instead of multiclass and cost sensitive"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))
     return nullptr;
+    
 
   data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
@@ -420,13 +470,25 @@ base_learner* cbify_setup(options_i& options, vw& all)
 
   if (data->use_adf)
     init_adf_data(*data.get(), num_actions);
-
-  if (!options.was_supplied("cb_explore") && !data->use_adf)
+  if (use_reg) //todo: check: we need more options passed to pmf_to_pdf
   {
-    stringstream ss;
-    ss << num_actions;
-    options.insert("cb_explore", ss.str());
+    if (!options.was_supplied("cb_continuous") && !data->use_adf)
+    {
+      stringstream ss;
+      ss << num_actions;
+      options.insert("cb_continuous", ss.str());
+    }
   }
+  else
+  {
+    if (!options.was_supplied("cb_explore") && !data->use_adf)
+    {
+      stringstream ss;
+      ss << num_actions;
+      options.insert("cb_explore", ss.str());
+    }
+  }
+  
 
   if (data->use_adf)
   {
@@ -456,7 +518,12 @@ base_learner* cbify_setup(options_i& options, vw& all)
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
-    if (use_cs)
+    if (use_reg)
+    {
+      l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
+          prediction_type::prob_dist);
+    }
+    else if (use_cs)
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
     else
