@@ -2,9 +2,6 @@
 set -e
 set -x
 
-# Miniconda is installed to home in docker file
-export PATH="/usr/local/miniconda/bin:$PATH"
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
