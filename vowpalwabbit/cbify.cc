@@ -142,6 +142,16 @@ void copy_example_to_adf(cbify& data, example& ec)
     }
   }
 }
+float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
+{
+  if (prob_dist.size() == 1)
+    return prob_dist[0].value;
+  float h = prob_dist[1].action - prob_dist[0].action;
+  uint32_t idx = floor((chosen_action - prob_dist[0].action) / h);
+  if (idx < 0 || idx >= prob_dist.size()) //todo: can chosen_action be max_value?
+    THROW("The chosen action is not in the domain of the pdf function");
+  return prob_dist[idx].value;
+}
 
 // continuous action space predict_or_learn. Non-afd workflow only
 // Receives Regression example as input, sends cb_continuous example to base learn/predict
@@ -163,9 +173,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
   //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty
 
-  float pdf_value;
-  // after having the function that gets PDF and returns pdf_value
-  //pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
+  float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
 
   VW::cb_continuous::cb_cont_class cb_cont;
   

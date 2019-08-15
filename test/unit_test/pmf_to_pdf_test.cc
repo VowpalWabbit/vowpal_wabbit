@@ -77,6 +77,19 @@ using predictions_t = vector<float>;
 
 test_learner_t* get_test_harness_reduction(
     const predictions_t& base_reduction_predictions, const cb_triple& action_triple);
+
+
+float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
+{
+  if (prob_dist.size() == 1)
+    return prob_dist[0].value;
+  float h = prob_dist[1].action - prob_dist[0].action;
+  uint32_t idx = floor((chosen_action - prob_dist[0].action) / h);
+  if (idx < 0 || idx >= prob_dist.size())
+    THROW("The chosen action is not in the domain of the pdf function");
+  return prob_dist[idx].value;
+}
+
 }  // namespace pmf_to_pdf
 }  // namespace VW
 BOOST_AUTO_TEST_CASE(continuous_action_basic)
@@ -122,6 +135,11 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
     cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " << ec.l.cb.costs[i].probability
          << " , " << ec.l.cb.costs[i].partial_prediction << "), " << endl;
   }
+
+  // float chosen_action = action_triple.action
+  float chosen_action = 1080; 
+  cout << "pdf value of " << chosen_action << " is = " << VW::pmf_to_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
+       << std::endl;
   cout << "here" << endl;
 }
 
