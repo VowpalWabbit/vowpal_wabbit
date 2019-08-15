@@ -21,8 +21,10 @@ struct cb_triple
   }
 };
 
-void learn(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
-void predict(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
+namespace VW { namespace pmf_to_pdf {
+  void learn(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
+  void predict(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
+}}
 
 struct reduction_test_harness
 {
@@ -85,7 +87,7 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   float max_val = 1100;
 
   cb_triple action_triple;
-  action_triple.set_action(1010.17, 0.5, 0.1);
+  action_triple.set_action(1010.17f, 0.5f, 0.1f);
   predictions_t prediction_scores;
   prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
 
