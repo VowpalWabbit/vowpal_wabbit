@@ -232,29 +232,6 @@ namespace exploration
   // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds will result in a very biased distribution.
   // If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
   template<typename It>
-  int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max,
-      float& chosen_value, std::input_iterator_tag pdf_category)
-  {
-    // Pick an interval from the
-    uint32_t chosen_index;
-    auto err_code = sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category);
-    if (err_code != S_EXPLORATION_OK)
-      return err_code;
-
-    // generate a new seed
-    uint64_t new_random_seed =  uniform_hash(&seed,sizeof(seed),seed);
-    // pick a uniform random number between 0.0 - 1.0
-    float random_draw = uniform_random_merand48(new_random_seed);
-
-    // Use the random number to pick an action value in the chosen range
-    float interval_size = (range_max - range_min) / (pdf_last - pdf_first);
-    chosen_value = interval_size*(random_draw + chosen_index);
-    return S_EXPLORATION_OK;
-  }
-
-  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds will result in a very biased distribution.
-  // If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
-  template<typename It>
   int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index, std::input_iterator_tag /* pdf_category */)
   {
     if (pdf_first == pdf_last || pdf_last < pdf_first)
@@ -299,6 +276,30 @@ namespace exploration
     if(!index_found)
       chosen_index = i - 1;
 
+    return S_EXPLORATION_OK;
+  }
+
+  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
+  // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
+  // be used to inplace mutate it.
+  template <typename It>
+  int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max,
+      float& chosen_value, std::input_iterator_tag pdf_category)
+  {
+    // Pick an interval from the
+    uint32_t chosen_index;
+    auto err_code = sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category);
+    if (err_code != S_EXPLORATION_OK)
+      return err_code;
+
+    // generate a new seed
+    uint64_t new_random_seed = uniform_hash(&seed, sizeof(seed), seed);
+    // pick a uniform random number between 0.0 - 1.0
+    float random_draw = uniform_random_merand48(new_random_seed);
+
+    // Use the random number to pick an action value in the chosen range
+    float interval_size = (range_max - range_min) / (pdf_last - pdf_first);
+    chosen_value = interval_size * (random_draw + chosen_index);
     return S_EXPLORATION_OK;
   }
 
