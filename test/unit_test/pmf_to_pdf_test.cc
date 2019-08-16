@@ -22,6 +22,7 @@ struct cb_triple
 };
 
 namespace VW { namespace pmf_to_pdf {
+
 void learn(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
 void predict(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
 
@@ -78,6 +79,7 @@ using predictions_t = vector<float>;
 test_learner_t* get_test_harness_reduction(
     const predictions_t& base_reduction_predictions, const cb_triple& action_triple);
 
+<<<<<<< HEAD
 
 float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
 {
@@ -90,8 +92,11 @@ float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
   return prob_dist[idx].value;
 }
 
+=======
+>>>>>>> d3bf35772c5cce8e31e41f184f456bf51dcdb7c5
 }  // namespace pmf_to_pdf
 }  // namespace VW
+
 BOOST_AUTO_TEST_CASE(continuous_action_basic)
 {
   uint32_t k = 4;

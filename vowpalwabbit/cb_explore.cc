@@ -300,7 +300,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   data->all = &all;
   uint32_t num_actions = data->cbcs.num_actions;
 
-  if (!options.was_supplied("cb"))
+  if (!options.was_supplied("cb")) //todo: if cb_continuous use the offset_tree_cont instead of cb
   {
     stringstream ss;
     ss << data->cbcs.num_actions;
