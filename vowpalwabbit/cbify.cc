@@ -25,13 +25,20 @@ struct cbify_adf_data
   size_t num_actions;
 };
 
+struct cbify_reg
+{
+  VW::cb_continuous::label cb_cont_label;
+  VW::actions_pdf::pdf prob_dist;
+  float min_value;
+  float max_value;
+};
+
 struct cbify
 {
   CB::label cb_label;
-  VW::cb_continuous::label cb_cont_label;
   uint64_t app_seed;
   action_scores a_s;
-  VW::actions_pdf::pdf prob_dist;
+  cbify_reg regression_data;
   // used as the seed
   size_t example_counter;
   vw* all;
@@ -159,38 +166,40 @@ template <bool is_learn>
 void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 {
   label_data regression_label = ec.l.simple;
-  data.cb_cont_label.costs.clear();
-  ec.l.cb_cont = data.cb_cont_label;
-  ec.pred.prob_dist = data.prob_dist;
+  data.regression_data.cb_cont_label.costs.clear();
+  ec.l.cb_cont = data.regression_data.cb_cont_label;
+  ec.pred.prob_dist = data.regression_data.prob_dist;
 
   base.predict(ec);
 
   float chosen_action;
-  // after having the function that samples the pdf and returns back a continuous action; replaces sample_after_normalizing
- /* if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.prob_dist),
-          end_scores(out_ec.pred.prob_dist), chosen_action))
-    THROW("Failed to sample from pdf");*/
+  // after having the function that samples the pdf and returns back a continuous action
+  if (S_EXPLORATION_OK != sample_after_normalizing(data.app_seed + data.example_counter++, begin_probs(ec.pred.prob_dist),
+          end_probs(ec.pred.prob_dist), data.regression_data.min_value, data.regression_data.max_value, chosen_action))
+    THROW("Failed to sample from pdf");
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
-  //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty
+  //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
+  //       If the function fails to find the index, it will actually return the second-to-last index
 
   float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
 
   VW::cb_continuous::cb_cont_class cb_cont;
-  
+
   cb_cont.action = chosen_action;
   cb_cont.probability = pdf_value;
-  
+
+  // mean squared loss
   float diff = regression_label.label - chosen_action;
   cb_cont.cost = diff * diff;
-  data.cb_cont_label.costs.push_back(cb_cont);
+  data.regression_data.cb_cont_label.costs.push_back(cb_cont);
 
   if (is_learn)
     base.learn(ec);
 
-  data.prob_dist.clear();
-  data.prob_dist = ec.pred.prob_dist;
+  data.regression_data.prob_dist.clear();
+  data.regression_data.prob_dist = ec.pred.prob_dist;
 
-  ec.l.simple = regression_label; // recovering regression label
+  ec.l.simple = regression_label;  // recovering regression label
   ec.pred.scalar = cb_cont.action;
 }
 
@@ -451,9 +460,10 @@ void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 base_learner* cbify_setup(options_i& options, vw& all)
 {
   uint32_t num_actions = 0;
+  uint32_t cb_continuous_num_actions = 0;
   auto data = scoped_calloc_or_throw<cbify>();
   bool use_cs;
-  bool use_reg; //todo: check
+  bool use_reg;  // todo: check
 
   option_group_definition new_options("Make Multiclass into Contextual Bandit");
   new_options
@@ -463,13 +473,18 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("cbify_reg", use_reg)
                .help("consume regression examples instead of multiclass and cost sensitive"))
+      .add(make_option("cb_continuous", cb_continuous_num_actions)
+               .default_value(0)
+               .keep()
+               .help("Convert discrete PDF into continuous PDF."))
+      .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
+      .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))
     return nullptr;
-    
 
   data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
@@ -478,9 +493,28 @@ base_learner* cbify_setup(options_i& options, vw& all)
 
   if (data->use_adf)
     init_adf_data(*data.get(), num_actions);
-  if (use_reg) //todo: check: we need more options passed to pmf_to_pdf
+  if (use_reg)  // todo: check: we need more options passed to pmf_to_pdf
   {
-    if (!options.was_supplied("cb_continuous") && !data->use_adf)
+    // Check invalid parameter combinations
+    if (data->use_adf)
+    {
+      THROW("error: incompatible options: cb_explore_adf and cbify_reg");
+    }
+    if (use_cs)
+    {
+      THROW("error: incompatible options: cbify_cs and cbify_reg");
+    }
+    if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
+    {
+      THROW("error: min and max values must be supplied with cbify_reg");
+    }
+
+    if (options.was_supplied("cb_continuous"))
+    {
+      if (cb_continuous_num_actions != num_actions)
+        THROW("error: different number of actions specified for cbify and cb_continuous");
+    }
+    else
     {
       stringstream ss;
       ss << num_actions;
@@ -496,7 +530,6 @@ base_learner* cbify_setup(options_i& options, vw& all)
       options.insert("cb_explore", ss.str());
     }
   }
-  
 
   if (data->use_adf)
   {
