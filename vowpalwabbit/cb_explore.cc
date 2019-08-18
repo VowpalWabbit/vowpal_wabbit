@@ -81,11 +81,20 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
     base.predict(ec);
 
   // pre-allocate pdf
+
+  cout << "ec.pred.multiclass = " << ec.pred.multiclass << endl;
+
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
 
   ec.pred.a_s = probs;
+
+  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+  {
+    cout << "ec.pred.prob_dist[" << i << "] = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score
+         << endl;
+  }
 }
 
 template <bool is_learn>
@@ -273,7 +282,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
 void finish_example(vw& all, cb_explore& c, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb);
+  //output_example(all, c, ec, ec.l.cb); // todo: uncomment and debug
   VW::finish_example(all, ec);
 }
 }  // namespace CB_EXPLORE

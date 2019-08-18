@@ -17,6 +17,10 @@ namespace VW { namespace pmf_to_pdf {
   void predict(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
   {
     base.predict(ec, 0);
+    for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+    {
+      std::cout << "pmf_to_pdf:\nec.pred.a_s[" << i << "] = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << std::endl;
+    }
     auto& action_scores = ec.pred.a_s;
     auto& continuous_scores = data.scores;
     continuous_scores.clear();
@@ -45,11 +49,17 @@ namespace VW { namespace pmf_to_pdf {
       float action = data.min_value + i * continuous_range / data.num_actions;
       p_dist.push_back({action, continuous_scores[i]});
     }
+
+    for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
+    {
+      std::cout << "pmf_to_pdf:\nec.pred.prob_dist[" << i << "] = " << ec.pred.prob_dist[i].action << ", " << ec.pred.prob_dist[i].value
+           << std::endl;
+    }
+  
   }
 
   void learn(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
   {
-    base.learn(ec, 0);
     float cost = ec.l.cb_cont.costs[0].cost;
     float prob = ec.l.cb_cont.costs[0].probability;
     float continuous_range = data.max_value - data.min_value;
@@ -95,6 +105,8 @@ namespace VW { namespace pmf_to_pdf {
       uint32_t bandwidth_range = max_h - min_h;
       ec.l.cb.costs.push_back({cost, j, prob * bandwidth_range, 0.0f});
     }
+
+    base.learn(ec, 0);
   }
 
   // TODO: below check: important

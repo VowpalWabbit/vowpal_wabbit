@@ -94,7 +94,7 @@ const uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
   auto& nodes = binary_tree.nodes;
 
   // Handle degenerate cases of zero node trees
-  if (binary_tree.leaf_node_count() == 0)
+  if (binary_tree.leaf_node_count() == 0) // todo: chnage this to throw error at some point
     return 0;
 
   static thread_local CB::label saved_label;
@@ -118,6 +118,7 @@ const uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
   ec.l.cb = saved_label;
   return (cur_node.id - binary_tree.internal_node_count() + 1);  // 1 to k
+  std::cout << "@predict: nodes.size() = " << nodes.size() << std::endl;
 }
 
 
@@ -139,7 +140,8 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
   auto& nodes = binary_tree.nodes;
   auto& ac = ec.l.cb.costs;
-  
+  std::cout << "@learn: nodes.size() = " << nodes.size() << std::endl;
+
   for (uint32_t i = 0; i < ac.size(); i++)
   {
     uint32_t node_id = ac[i].action + binary_tree.internal_node_count();
@@ -148,12 +150,12 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
     if (nodes[node_id].depth < binary_tree.depth())
     {
       node_costs_buffer.push_back({node_id, ac[i].cost / ac[i].probability});
-      std::cout << "nodes[leaf_id].depth < binary_tree.depth()" << std::endl;
+      std::cout << "nodes[node_id].depth < binary_tree.depth()" << std::endl;
     }
     else
     {
       node_costs.push_back({node_id, ac[i].cost / ac[i].probability});
-      std::cout << "nodes[leaf_id].depth == binary_tree.depth()" << std::endl;
+      std::cout << "nodes[node_id].depth == binary_tree.depth()" << std::endl;
     }
   }
   std::cout << "node_cost.size() = " << node_costs.size() << std::endl;
@@ -248,8 +250,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
 void predict(offset_tree& ot, single_learner& base, example& ec)
 {
-  ec.pred.multiclass = ot.predict(base, ec) -
-      1;  // TODO: check: making the prediction zero-based, 0-node tree would have max value of uint32_t (-1)
+  ec.pred.multiclass = ot.predict(base, ec);  // TODO: check: making the prediction zero-based?
 }
 
 void learn(offset_tree& tree, single_learner& base, example& ec)
@@ -274,7 +275,7 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
   new_options.add(make_option("otc", num_actions).keep().help("Offset tree continuous with <k> labels"));  // TODO: oct
   options.add_and_parse(new_options);
 
-  if (!options.was_supplied("otc"))
+  if (!options.was_supplied("otc")) // todo: if num_actions = 0 throw error
     return nullptr;
 
   // Ensure that cb_explore will be the base reduction
