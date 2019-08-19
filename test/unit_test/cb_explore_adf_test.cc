@@ -13,4 +13,5 @@ BOOST_AUTO_TEST_CASE(cb_explore_adf_should_throw_empty_multi_example) {
 
   // An empty example collection is invalid and so should throw.
   BOOST_REQUIRE_THROW(vw->learn(example_collection), VW::vw_exception);
+  VW::finish(*vw);
 }
