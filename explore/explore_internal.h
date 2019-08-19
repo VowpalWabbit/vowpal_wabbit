@@ -299,7 +299,10 @@ int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, float ran
 
   // Use the random number to pick an action value in the chosen range
   float interval_size = (range_max - range_min) / (pdf_last - pdf_first);
-  chosen_value = interval_size * (random_draw + chosen_index) + range_min;
+
+  ////// TODO:  add back random sampling in the chosen interval
+  //  chosen_value = interval_size * (random_draw + chosen_index);
+  chosen_value = interval_size * (1.0 + chosen_index);
 
   return S_EXPLORATION_OK;
 }
