@@ -49,6 +49,7 @@ option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
+option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
@@ -107,15 +108,21 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
-if(STATIC_LINK_VW)
+
+if(STATIC_LINK_VW_JAVA)
   set(Boost_USE_STATIC_LIBS ON)
   SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-  SET(BUILD_SHARED_LIBS OFF)
 else()
-  set(Boost_USE_STATIC_LIBS OFF)
-  if(WIN32)
-    # Windows links everything dynamically
-    add_definitions( -DBOOST_ALL_DYN_LINK )
+  if(STATIC_LINK_VW)
+    set(Boost_USE_STATIC_LIBS ON)
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    SET(BUILD_SHARED_LIBS OFF)
+  else()
+    set(Boost_USE_STATIC_LIBS OFF)
+    if(WIN32)
+      # Windows links everything dynamically
+      add_definitions( -DBOOST_ALL_DYN_LINK )
+    endif()
   endif()
 endif()
 

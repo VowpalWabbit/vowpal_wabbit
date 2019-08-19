@@ -1,4 +1,7 @@
 
+set(JAVA_AWT_LIBRARY NotNeeded)
+set(JAVA_JVM_LIBRARY NotNeeded)
+
 find_package(JNI REQUIRED)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -51,7 +54,7 @@ add_custom_command(TARGET vw_jni POST_BUILD
 )
 
 # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
 
 # Replace version number in POM
 configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
@@ -97,7 +100,6 @@ if(NOT WIN32)
   # add_dependencies(javaheaders javacompile)
 
   add_custom_command(TARGET vw_jni POST_BUILD
-      COMMAND ldd $<TARGET_FILE:vw_jni> | grep -E 'boost|libz' | grep -oP '=> \\K\\S+' | xargs -i cp {} target/bin/natives/linux_64
       COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
       COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
       COMMAND mvn verify
