@@ -53,6 +53,7 @@ namespace VW { namespace offset_tree_cont {
     int32_t learner_count() const;
     const uint32_t predict(LEARNER::single_learner& base, example& ec);
     void learn(LEARNER::single_learner& base, example& ec);
+    void finish();
   private:
     min_depth_binary_tree binary_tree;
   };

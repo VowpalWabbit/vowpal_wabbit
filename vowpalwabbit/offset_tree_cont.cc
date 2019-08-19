@@ -94,18 +94,21 @@ const uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
   auto& nodes = binary_tree.nodes;
 
   // Handle degenerate cases of zero node trees
-  if (binary_tree.leaf_node_count() == 0) // todo: chnage this to throw error at some point
+  if (binary_tree.leaf_node_count() == 0)  // todo: chnage this to throw error at some point
     return 0;
 
   static thread_local CB::label saved_label;
   saved_label = ec.l.cb;
   ec.l.cb.costs.clear();
+  ec.l.simple.label = FLT_MAX; // says it is a test example
 
   auto cur_node = nodes[0];
 
   while (!(cur_node.is_leaf))
   {
+    /*std::cout << "tree predict: before binary precit:\n " << std::endl;*/
     base.predict(ec, cur_node.id);
+    /*std::cout << "tree predict: after binary predict:\n " << std::endl;*/
     if (ec.pred.scalar == -1)  // TODO: check
     {
       cur_node = nodes[cur_node.left_id];
@@ -118,14 +121,10 @@ const uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
   ec.l.cb = saved_label;
   return (cur_node.id - binary_tree.internal_node_count() + 1);  // 1 to k
-  std::cout << "@predict: nodes.size() = " << nodes.size() << std::endl;
+  /*std::cout << "@predict: nodes.size() = " << nodes.size() << std::endl;*/
 }
 
-
-bool compareByid(const node_cost& a, const node_cost& b)
-{
-  return a.node_id < b.node_id;
-}
+bool compareByid(const node_cost& a, const node_cost& b) { return a.node_id < b.node_id; }
 
 void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 {
@@ -133,14 +132,12 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   const auto saved_label = ec.l.cb;  // TODO save ec.l.cb and restore later shallow copy: check
   const auto saved_weight = ec.weight;
 
-  /*std::map<uint32_t, float> node_cost;
-  std::map<uint32_t, float> node_cost_buffer;*/
   std::vector<VW::offset_tree_cont::node_cost> node_costs;
   std::vector<VW::offset_tree_cont::node_cost> node_costs_buffer;
 
   auto& nodes = binary_tree.nodes;
   auto& ac = ec.l.cb.costs;
-  std::cout << "@learn: nodes.size() = " << nodes.size() << std::endl;
+  /*std::cout << "@learn: nodes.size() = " << nodes.size() << std::endl;*/
 
   for (uint32_t i = 0; i < ac.size(); i++)
   {
@@ -150,16 +147,16 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
     if (nodes[node_id].depth < binary_tree.depth())
     {
       node_costs_buffer.push_back({node_id, ac[i].cost / ac[i].probability});
-      std::cout << "nodes[node_id].depth < binary_tree.depth()" << std::endl;
+      /*std::cout << "nodes[node_id].depth < binary_tree.depth()" << std::endl;*/
     }
     else
     {
       node_costs.push_back({node_id, ac[i].cost / ac[i].probability});
-      std::cout << "nodes[node_id].depth == binary_tree.depth()" << std::endl;
+      /*std::cout << "nodes[node_id].depth == binary_tree.depth()" << std::endl;*/
     }
   }
-  std::cout << "node_cost.size() = " << node_costs.size() << std::endl;
-  std::cout << "node_cost_buffer.size() = " << node_costs_buffer.size() << std::endl;
+  /*std::cout << "node_cost.size() = " << node_costs.size() << std::endl;
+  std::cout << "node_cost_buffer.size() = " << node_costs_buffer.size() << std::endl;*/
   std::sort(node_costs_buffer.begin(), node_costs_buffer.end(), compareByid);
   std::sort(node_costs.begin(), node_costs.end(), compareByid);
 
@@ -170,7 +167,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
     while (!node_costs.empty())
     {
       auto& n = *--node_costs.end();
-      //auto& n = *node_costs.begin();
+      // auto& n = *node_costs.begin();
       auto& v = nodes[n.node_id];
       auto& cost_v = n.cost;
       if (v.id == v.parent_id)  // if v is the root
@@ -179,42 +176,50 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       auto& w = nodes[(v.id == v_parent.left_id) ? v_parent.right_id : v_parent.left_id];  // w is sibling of v
       float cost_w = 0.0f;
       float local_action = 1;
+      std::cout << "\n\nv.id = " << v.id << std::endl;
       std::cout << "cost_v = " << cost_v << std::endl;
-      if (node_costs.size() > 1 && (*(node_costs.end()-2)).node_id == w.id)
+      std::cout << "w.id = " << w.id << std::endl;
+      if (node_costs.size() > 1 && (*(node_costs.end() - 2)).node_id == w.id)
       {
         std::cout << "found the sibling" << std::endl;
         cost_w = (*(node_costs.end() - 2)).cost;
         if (cost_v != cost_w)
         {
           std::cout << "cost_v != cost_w" << std::endl;
-          if (((cost_v < cost_w) ? v : w).id == v_parent.left_id)
+          if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) ////
             local_action = -1;
         }
         node_costs.erase(node_costs.end() - 2);  // TODO
       }
-      else 
+      else
       {
         std::cout << "no sibling" << std::endl;
-        if (v.id == v_parent.right_id)
+        if (v.id == v_parent.right_id) ////
           local_action = -1;
       }
       float cost_parent = 0.0f;
+      std::cout << "cost_w = " << cost_w << std::endl;
       if (cost_v != cost_w)  // learn and update the cost of the parent
       {
         ec.l.simple.label = local_action;  // TODO:scalar label type
         ec.weight = abs(cost_v - cost_w);
+        /*std::cout << "before binary learn:\n " << std::endl;*/
+        std::cout << "binary learning the node " << v.parent_id << std::endl;
         base.learn(ec, v.parent_id);
+        /*std::cout << "after binary learn:\n " << std::endl;
+        std::cout << "before binary predict:\n " << std::endl;*/
         base.predict(ec, v.parent_id);
+        std::cout << "after binary predict:\n " << std::endl;
         std::cout << "ec.pred.scalar = " << (ec.pred.scalar) << std::endl;
         std::cout << "local_action = " << (local_action) << std::endl;
         if (ec.pred.scalar == local_action)
         {
-          cost_parent = min(cost_v, cost_w);
+          cost_parent = min(cost_v, cost_w); ////
           std::cout << "ec.pred.scalar == local_action" << std::endl;
         }
         else
         {
-          cost_parent = max(cost_v, cost_w);
+          cost_parent = max(cost_v, cost_w); ////
           std::cout << "ec.pred.scalar != local_action" << std::endl;
         }
       }
@@ -233,7 +238,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       std::sort(node_costs_new.begin(), node_costs_new.end(), compareByid);
       node_costs_new.insert(node_costs_new.end(), std::make_move_iterator(node_costs_buffer.begin()),
           std::make_move_iterator(node_costs_buffer.end()));
-    }   
+    }
     // node_costs_new = node_costs_buffer;
     iter_count++;
     node_costs = node_costs_new;
@@ -268,6 +273,18 @@ void learn(offset_tree& tree, single_learner& base, example& ec)
   ec.pred.multiclass = saved_label;  // TODO: instead of above
 }
 
+void offset_tree::finish()
+{
+  binary_tree.nodes.clear();
+  //binary_tree.nodes.resize(0);
+  binary_tree.nodes.shrink_to_fit();
+}
+
+void finish(offset_tree& t)
+{
+  t.finish();
+}
+
 base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
 {
   option_group_definition new_options("Offset tree continuous Options");
@@ -275,7 +292,7 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
   new_options.add(make_option("otc", num_actions).keep().help("Offset tree continuous with <k> labels"));  // TODO: oct
   options.add_and_parse(new_options);
 
-  if (!options.was_supplied("otc")) // todo: if num_actions = 0 throw error
+  if (!options.was_supplied("otc"))  // todo: if num_actions = 0 throw error
     return nullptr;
 
   // Ensure that cb_explore will be the base reduction
@@ -299,6 +316,8 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
   learner<offset_tree, example>& l =
       init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type::multiclass);
   // TODO: changed to prediction_type::multiclass
+
+  l.set_finish(finish);
   return make_base(l);
 }
 
