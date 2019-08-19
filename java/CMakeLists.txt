@@ -53,8 +53,12 @@ add_custom_command(TARGET vw_jni POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/linux_64/
 )
 
-# enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+if(STATIC_LINK_VW_JAVA)
+  target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC vw)
+else()
+  # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
+  target_link_libraries(vw_jni PUBLIC -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+endif()
 
 # Replace version number in POM
 configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
