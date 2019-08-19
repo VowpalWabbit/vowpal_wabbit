@@ -9,14 +9,19 @@
 #include "conditional_contextual_bandit.h"
 #include "parse_example_json.h"
 
-v_array<example*> parse_json(vw& all, std::string line)
+multi_ex parse_json(vw& all, std::string line)
 {
   auto examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(&all));
   VW::read_line_json<true>(
       all, examples, (char*)line.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
 
-  return examples;
+  multi_ex result;
+  for (size_t i = 0; i < examples.size(); ++i) {
+	  result.push_back(examples[i]);
+  }
+  examples.delete_v();
+  return result;
 }
 
 // TODO: Make unit test dig out and verify features.
@@ -38,6 +43,8 @@ BOOST_AUTO_TEST_CASE(parse_json_simple)
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 1.f, FLOAT_TOL);
+  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish(*vw);
 }
 
 // TODO: Make unit test dig out and verify features.
@@ -86,6 +93,8 @@ BOOST_AUTO_TEST_CASE(parse_json_cb)
   BOOST_CHECK_CLOSE(examples[1]->l.cb.costs[0].probability, 0.5, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[1]->l.cb.costs[0].cost, 1.0, FLOAT_TOL);
   BOOST_CHECK_EQUAL(examples[1]->l.cb.costs[0].action, 1);
+  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish(*vw);
 }
 
 // TODO: Make unit test dig out and verify features.
@@ -175,6 +184,8 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb)
   BOOST_CHECK_CLOSE(label3.outcome->probabilities[0].score, .75f, .0001f);
   BOOST_CHECK_EQUAL(label3.outcome->probabilities[1].action, 1);
   BOOST_CHECK_CLOSE(label3.outcome->probabilities[1].score, .25f, .0001f);
+  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish(*vw);
 }
 
 BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
@@ -223,4 +234,6 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
   BOOST_CHECK_EQUAL(label1.outcome->probabilities.size(), 1);
   BOOST_CHECK_EQUAL(label1.outcome->probabilities[0].action, 1);
   BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .5f, .0001f);
+  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish(*vw);
 }
