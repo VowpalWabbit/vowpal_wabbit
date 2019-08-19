@@ -1,8 +1,6 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-
 #include "ut_util.h"
-
 #include <vector>
 #include <sstream>
 #include "explore.h"
