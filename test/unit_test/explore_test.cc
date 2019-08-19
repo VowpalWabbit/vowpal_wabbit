@@ -9,15 +9,17 @@
 
 #include <vector>
 #include "../../explore/explore.h"
-
-BOOST_AUTO_TEST_CASE(sample_continuous_action_basic) {
-  std::vector<float> scores = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+bool continuous_action_range_check(std::vector<float> scores, float range_min, float range_max) {
   float chosen_value;
-  const float range_min = .0f;
-  const float range_max = 100.0f;
-  const auto scode = exploration::sample_after_normalizing(7791, begin(scores), end(scores), 0.0f, 100.0f, chosen_value);
+  const auto scode =
+      exploration::sample_after_normalizing(7791, begin(scores), end(scores), 0.0f, 100.0f, chosen_value);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  BOOST_CHECK((range_min <= chosen_value) && ( chosen_value <= range_max));
+  return((range_min <= chosen_value) && (chosen_value <= range_max));
+}
+
+BOOST_AUTO_TEST_CASE(sample_continuous_action) {
+  BOOST_CHECK(continuous_action_range_check({1.0f, 2.0f, 3.0f, 4.0f, 5.0f}, .0f, 100.f));
+  BOOST_CHECK(continuous_action_range_check({1.0f, 2.0f, 3.0f, 4.0f, 5.0f}, 1000.0f, 1100.f));
 }
 
 //BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical){
