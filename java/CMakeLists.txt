@@ -1,6 +1,4 @@
-set(JAVA_AWT_LIBRARY NotNeeded)
-set(JAVA_JVM_LIBRARY NotNeeded)
-
+# make sure it works with OpenJDK
 set(JAVA_AWT_LIBRARY NotNeeded)
 set(JAVA_JVM_LIBRARY NotNeeded)
 

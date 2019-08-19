@@ -6,7 +6,6 @@ pool:
 
 container:
   image: eisber/centos7.6.1810-build:0.1.0
-  # vowpalwabbit/ubuntu1604-build:0.1.0
   endpoint: DockerHub
 
 steps:
