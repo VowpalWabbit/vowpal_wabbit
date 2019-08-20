@@ -92,9 +92,9 @@ namespace VW { namespace pmf_to_pdf {
     uint32_t min_value = max(0, ic - data.bandwidth + 1);
     uint32_t max_value = min(data.num_actions - 1, ic + data.bandwidth);
 
-    std::cout << "ic after = " << ic << std::endl;
+    /*std::cout << "ic after = " << ic << std::endl;
     std::cout << "min_value = " << min_value << std::endl;
-    std::cout << "max_value = " << max_value << std::endl;
+    std::cout << "max_value = " << max_value << std::endl;*/
 
     ec.l.cb_cont.costs.clear();
     ec.l.cb.costs = v_init<CB::cb_class>();
