@@ -1092,7 +1092,7 @@ template <bool sqrt_rate, uint64_t adaptive, uint64_t spare>
 uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
-  if (all.normalized_updates)
+  if (g.normalized)
     return set_learn<sqrt_rate, adaptive, adaptive + 1, adaptive + 2, adaptive + 3>(all, feature_mask_off, g);
   else
     return set_learn<sqrt_rate, adaptive, 0, spare, spare + 1>(all, feature_mask_off, g);
@@ -1101,7 +1101,7 @@ uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 template <bool sqrt_rate>
 uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {
-  if (all.adaptive)
+  if (g.adaptive)
     return set_learn<sqrt_rate, 1, 2>(all, feature_mask_off, g);
   else
     return set_learn<sqrt_rate, 0, 0>(all, feature_mask_off, g);
