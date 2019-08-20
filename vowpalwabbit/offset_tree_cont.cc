@@ -166,8 +166,9 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
     std::vector<VW::offset_tree_cont::node_cost> node_costs_new;
     while (!node_costs.empty())
     {
-      auto& n = *--node_costs.end();
-      // auto& n = *node_costs.begin();
+      auto n = node_costs.back();
+      node_costs.pop_back();
+      //auto& n = *node_costs.begin();
       auto& v = nodes[n.node_id];
       auto& cost_v = n.cost;
       if (v.id == v.parent_id)  // if v is the root
@@ -178,18 +179,17 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       float local_action = 1;
       std::cout << "\n\nv.id = " << v.id << std::endl;
       std::cout << "cost_v = " << cost_v << std::endl;
-      std::cout << "w.id = " << w.id << std::endl;
-      if (node_costs.size() > 1 && (*(node_costs.end() - 2)).node_id == w.id)
+      if (!node_costs.empty() && node_costs.back().node_id == w.id)
       {
         std::cout << "found the sibling" << std::endl;
-        cost_w = (*(node_costs.end() - 2)).cost;
+        cost_w = node_costs.back().cost;
         if (cost_v != cost_w)
         {
           std::cout << "cost_v != cost_w" << std::endl;
           if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) ////
             local_action = -1;
         }
-        node_costs.erase(node_costs.end() - 2);  // TODO
+        node_costs.pop_back();  // TODO
       }
       else
       {
@@ -197,7 +197,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
         if (v.id == v_parent.right_id) ////
           local_action = -1;
       }
-      float cost_parent = 0.0f;
+      float cost_parent = cost_v;
       std::cout << "cost_w = " << cost_w << std::endl;
       if (cost_v != cost_w)  // learn and update the cost of the parent
       {
@@ -223,15 +223,10 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
           std::cout << "ec.pred.scalar != local_action" << std::endl;
         }
       }
-      else  // cost_v == cost_w -> just update the cost of the parent
-      {
-        cost_parent = cost_v;
-      }
       if (cost_parent > 0.0f)
       {
         node_costs_new.push_back({v.parent_id, cost_parent});
       }
-      node_costs.erase(--node_costs.end());  // TODO: moved it here
     }
     if (iter_count == 0)
     {
