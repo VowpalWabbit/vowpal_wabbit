@@ -169,7 +169,8 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
     std::vector<VW::offset_tree_cont::node_cost> node_costs_new;
     while (!node_costs.empty())
     {
-      auto& n = *--node_costs.end();
+      auto n = node_costs.back();
+      node_costs.pop_back();
       //auto& n = *node_costs.begin();
       auto& v = nodes[n.node_id];
       auto& cost_v = n.cost;
@@ -180,17 +181,17 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       float cost_w = 0.0f;
       float local_action = 1;
       std::cout << "cost_v = " << cost_v << std::endl;
-      if (node_costs.size() > 1 && (*(node_costs.end()-2)).node_id == w.id)
+      if (!node_costs.empty() && node_costs.back().node_id == w.id)
       {
         std::cout << "found the sibling" << std::endl;
-        cost_w = (*(node_costs.end() - 2)).cost;
+        cost_w = node_costs.back().cost;
         if (cost_v != cost_w)
         {
           std::cout << "cost_v != cost_w" << std::endl;
           if (((cost_v < cost_w) ? v : w).id == v_parent.left_id)
             local_action = -1;
         }
-        node_costs.erase(node_costs.end() - 2);  // TODO
+        node_costs.pop_back();  // TODO
       }
       else 
       {
@@ -226,7 +227,6 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       {
         node_costs_new.push_back({v.parent_id, cost_parent});
       }
-      node_costs.erase(--node_costs.end());  // TODO: moved it here
     }
     if (iter_count == 0)
     {
