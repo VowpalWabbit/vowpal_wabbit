@@ -105,6 +105,7 @@ const uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
   while (!(cur_node.is_leaf))
   {
+    std::cout << "base.predict.nodeid = " << cur_node.id << std::endl;
     base.predict(ec, cur_node.id);
     if (ec.pred.scalar == -1)  // TODO: check
     {
@@ -186,6 +187,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
         cost_w = (*(node_costs.end() - 2)).cost;
         if (cost_v != cost_w)
         {
+          std::cout << "cost_w = " << cost_w << std::endl;
           std::cout << "cost_v != cost_w" << std::endl;
           if (((cost_v < cost_w) ? v : w).id == v_parent.left_id)
             local_action = -1;
@@ -203,6 +205,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       {
         ec.l.simple.label = local_action;  // TODO:scalar label type
         ec.weight = abs(cost_v - cost_w);
+        std::cout << "base.learn.nodeid = " << v.parent_id << std::endl; 
         base.learn(ec, v.parent_id);
         base.predict(ec, v.parent_id);
         std::cout << "ec.pred.scalar = " << (ec.pred.scalar) << std::endl;

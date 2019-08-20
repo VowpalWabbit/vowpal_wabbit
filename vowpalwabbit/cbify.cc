@@ -165,6 +165,7 @@ float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
 template <bool is_learn>
 void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 {
+  cout << "-------------------predict_or_learn_regression-------------------------" << endl;
   label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
