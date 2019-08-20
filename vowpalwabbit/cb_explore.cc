@@ -282,7 +282,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
 void finish_example(vw& all, cb_explore& c, example& ec)
 {
-  //output_example(all, c, ec, ec.l.cb); // todo: uncomment and debug
+  output_example(all, c, ec, ec.l.cb); // todo: uncomment and debug
   VW::finish_example(all, ec);
 }
 }  // namespace CB_EXPLORE

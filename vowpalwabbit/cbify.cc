@@ -155,7 +155,7 @@ float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
     return prob_dist[0].value;
   float h = prob_dist[1].action - prob_dist[0].action;
   uint32_t idx = (uint32_t)floor((chosen_action - prob_dist[0].action) / h);
-  if (idx < 0 || idx >= prob_dist.size()) //todo: can chosen_action be max_value?
+  if (idx < 0 || idx >= prob_dist.size())  // todo: can chosen_action be max_value?
     THROW("The chosen action is not in the domain of the pdf function");
   return prob_dist[idx].value;
 }
@@ -163,10 +163,10 @@ float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
 float get01loss(VW::actions_pdf::pdf& prob_dist, float chosen_action, float label)
 {
   if (prob_dist.size() == 1)
-    return 0.0f; ////
+    return 0.0f;  ////
   float h = prob_dist[1].action - prob_dist[0].action;
   if (abs(chosen_action - label) < h)
-    return 0.0f; ////
+    return 0.0f;  ////
   return 1.0f;
 }
 
@@ -184,12 +184,14 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   /*cout << "cbify:\nec.pred.prob_dist size = " << ec.pred.prob_dist.size() << endl;
   for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
   {
-    cout << "ec.pred.prob_dist[" << i << "] = " << ec.pred.prob_dist[i].action << ", " << ec.pred.prob_dist[i].value << endl;
+    cout << "ec.pred.prob_dist[" << i << "] = " << ec.pred.prob_dist[i].action << ", " << ec.pred.prob_dist[i].value <<
+  endl;
   }*/
-  
+
   float chosen_action;
   // after having the function that samples the pdf and returns back a continuous action
-  if (S_EXPLORATION_OK != sample_after_normalizing(data.app_seed + data.example_counter++, begin_probs(ec.pred.prob_dist),
+  if (S_EXPLORATION_OK !=
+      sample_after_normalizing(data.app_seed + data.example_counter++, begin_probs(ec.pred.prob_dist),
           end_probs(ec.pred.prob_dist), data.regression_data.min_value, data.regression_data.max_value, chosen_action))
     THROW("Failed to sample from pdf");
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
@@ -467,6 +469,11 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   }
 }
 
+void finish_example(vw& all, cbify&, example& ec)
+{
+  VW::finish_example(all, ec);
+}
+
 void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
@@ -582,7 +589,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
     if (use_reg)
     {
       l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-          prediction_type::scalar); // todo: check prediction type
+          prediction_type::scalar);  // todo: check prediction type
+      l->set_finish_example(finish_example);
     }
     else if (use_cs)
       l = &init_cost_sensitive_learner(

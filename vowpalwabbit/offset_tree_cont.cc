@@ -277,7 +277,7 @@ void offset_tree::finish()
 
 void finish(offset_tree& t)
 {
-  t.finish();
+  t.~offset_tree();
 }
 
 base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
