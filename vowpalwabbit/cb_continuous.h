@@ -32,14 +32,3 @@ namespace VW { namespace cb_continuous
 
   void print_update(vw& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool action_scores); // TODO: why it says it has not defined
 }}  // namespace VW::cb_continuous
-
-namespace VW { namespace cb_continuous_eval
-{
-  struct label
-  {
-    float action;
-    cb_continuous::label event;
-  };
-
-  extern label_parser cb_cont_eval;  // for evaluation of an arbitrary policy.
-}}  // namespace VW::cb_continuous_eval
