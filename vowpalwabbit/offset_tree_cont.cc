@@ -106,9 +106,8 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
   while (!(cur_node.is_leaf))
   {
-    /*std::cout << "tree predict: before binary precit:\n " << std::endl;*/
+    std::cout << "base.predict.nodeid = " << cur_node.id << std::endl;
     base.predict(ec, cur_node.id);
-    /*std::cout << "tree predict: after binary predict:\n " << std::endl;*/
     if (ec.pred.scalar == -1)  // TODO: check
     {
       cur_node = nodes[cur_node.left_id];
@@ -121,7 +120,6 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
   ec.l.cb = saved_label;
   return (cur_node.id - binary_tree.internal_node_count() + 1);  // 1 to k
-  /*std::cout << "@predict: nodes.size() = " << nodes.size() << std::endl;*/
 }
 
 bool compareByid(const node_cost& a, const node_cost& b) { return a.node_id < b.node_id; }
@@ -185,6 +183,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
         cost_w = node_costs.back().cost;
         if (cost_v != cost_w)
         {
+          std::cout << "cost_w = " << cost_w << std::endl;
           std::cout << "cost_v != cost_w" << std::endl;
           if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) ////
             local_action = -1;
@@ -203,11 +202,8 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       {
         ec.l.simple.label = local_action;  // TODO:scalar label type
         ec.weight = abs(cost_v - cost_w);
-        /*std::cout << "before binary learn:\n " << std::endl;*/
         std::cout << "binary learning the node " << v.parent_id << std::endl;
         base.learn(ec, v.parent_id);
-        /*std::cout << "after binary learn:\n " << std::endl;
-        std::cout << "before binary predict:\n " << std::endl;*/
         base.predict(ec, v.parent_id);
         std::cout << "after binary predict:\n " << std::endl;
         std::cout << "ec.pred.scalar = " << (ec.pred.scalar) << std::endl;
