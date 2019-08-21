@@ -1,3 +1,5 @@
+find_package(Boost REQUIRED COMPONENTS program_options)
+
 add_executable(ezexample_predict ezexample_predict.cc)
 target_link_libraries(ezexample_predict PRIVATE vw)
 set_target_properties(ezexample_predict PROPERTIES FOLDER Examples)
