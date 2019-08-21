@@ -142,14 +142,14 @@ namespace VW { namespace offset_tree {
       return scores;
     }
 
-    // Save and clear example label.  
+    // Save and clear example label.
     // (CB algs predict_or_learn checks for valid label during learn.)
     static thread_local CB::label saved_label;
     saved_label = ec.l.cb;
     ec.l.cb.costs.clear();
 
     // Get predictions for all internal nodes
-    for (auto idx = 0; idx < t.internal_node_count(); ++idx)
+    for (uint32_t idx = 0; idx < t.internal_node_count(); ++idx)
     {
       base.predict(ec, idx);
       prediction_buffer.emplace_back(ec.pred.a_s[0].score, ec.pred.a_s[1].score);
@@ -205,7 +205,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec) {
   const auto global_weight = ec.weight;
 
   // for brevity
-  auto& nodes = binary_tree.nodes; 
+  auto& nodes = binary_tree.nodes;
 
   tree_node node = nodes[global_action - 1];
   do

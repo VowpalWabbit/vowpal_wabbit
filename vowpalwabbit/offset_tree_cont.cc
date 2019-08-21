@@ -86,7 +86,7 @@ void offset_tree::init(uint32_t num_actions) { binary_tree.build_tree(num_action
 
 int32_t offset_tree::learner_count() const { return binary_tree.internal_node_count(); }
 
-const uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
+uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 {
   // - static thread_local ensures only one copy per calling thread.  This is to reduce
   //   memory allocations in steady state.
