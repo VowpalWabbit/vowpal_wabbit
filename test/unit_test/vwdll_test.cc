@@ -70,6 +70,9 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 
   VW_ReleaseFeatureSpace(fs, 2);
 
+  VW_FinishExample(handle1, example_parsed);
+  VW_FinishExample(handle2, example_constructed);
+
   VW_Finish(handle1);
   VW_Finish(handle2);
 }
