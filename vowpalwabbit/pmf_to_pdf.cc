@@ -17,10 +17,7 @@ namespace VW { namespace pmf_to_pdf {
   void predict(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
   {
     base.predict(ec, 0);
-    for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-    {
-      std::cout << "pmf_to_pdf:\nec.pred.a_s[" << i << "] = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << std::endl;
-    }
+    std::cout << "pmf_to_pdf.predict" << a_s_pred_to_string(ec) << std::endl;
     auto& action_scores = ec.pred.a_s;
     auto& continuous_scores = data.scores;
     continuous_scores.clear();
@@ -50,12 +47,7 @@ namespace VW { namespace pmf_to_pdf {
       p_dist.push_back({action, continuous_scores[i]});
     }
 
-    for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
-    {
-      std::cout << "pmf_to_pdf:\nec.pred.prob_dist[" << i << "] = " << ec.pred.prob_dist[i].action << ", " << ec.pred.prob_dist[i].value
-           << std::endl;
-    }
-  
+    std::cout << "pmf_to_pdf.predict" << prob_dist_pred_to_string(ec) << std::endl;
   }
 
   void learn(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)

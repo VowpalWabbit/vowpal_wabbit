@@ -146,3 +146,8 @@ void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);
 
 void return_multiple_example(vw& all, v_array<example*>& examples);
 }  // namespace VW
+std::string features_to_string(const example& ec);
+std::string simple_label_to_string(const example& ec);
+std::string scalar_pred_to_string(const example& ec);
+std::string a_s_pred_to_string(const example& ec);
+std::string prob_dist_pred_to_string(const example& ec);

@@ -12,7 +12,7 @@
 bool continuous_action_range_check(std::vector<float> scores, float range_min, float range_max) {
   float chosen_value;
   const auto scode =
-      exploration::sample_after_normalizing(7791, begin(scores), end(scores), 0.0f, 100.0f, chosen_value);
+      exploration::sample_after_normalizing(7791, begin(scores), end(scores), range_min, range_max, chosen_value);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
   return((range_min <= chosen_value) && (chosen_value <= range_max));
 }
