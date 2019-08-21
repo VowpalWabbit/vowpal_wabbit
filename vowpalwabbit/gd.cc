@@ -1174,8 +1174,10 @@ base_learner* setup(options_i& options, vw& all)
   {
     // nondefault
     all.adaptive = all.training && adaptive;
+    g->adaptive = g->adaptive && adaptive;
     all.invariant_updates = all.training && invariant;
     all.normalized_updates = all.training && normalized;
+    g->normalized = g->normalized && normalized;
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
         !(all.adaptive && all.normalized_updates))
