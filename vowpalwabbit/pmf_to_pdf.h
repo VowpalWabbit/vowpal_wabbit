@@ -20,5 +20,7 @@ namespace VW { namespace pmf_to_pdf
     void set_bandwidth(uint32_t x) { bandwidth = x; }
     void set_min_value(float x) { min_value = x; }
     void set_max_value(float x) { max_value = x; }
+
+    ~pdf_data();
   };
 }}  // namespace VW::pmf_to_pdf
