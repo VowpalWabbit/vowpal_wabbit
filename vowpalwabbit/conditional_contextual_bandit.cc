@@ -49,6 +49,8 @@ struct ccb
   uint64_t id_namespace_hash;
   std::string id_namespace_str;
 
+  size_t base_learner_stride;
+
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
   VW::v_array_pool<ACTION_SCORE::action_scores> action_scores_pool;
@@ -225,6 +227,9 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   {
     auto current_index_str = "index" + std::to_string(id);
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
+
+    // To maintain the striding and weights per problem (wpp), we must scale the index of the feature by ft_offset and stride.
+    index *= (shared->ft_offset * data.base_learner_stride);
     data.slot_id_hashes[id] = index;
   }
   else
@@ -650,6 +655,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
   all.label_type = label_type::ccb;
+
+  // Stash the base learners stride so we can properly add a feature later.
+  data->base_learner_stride = 1 << all.weights.stride_shift();
 
   // Extract from lower level reductions
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
