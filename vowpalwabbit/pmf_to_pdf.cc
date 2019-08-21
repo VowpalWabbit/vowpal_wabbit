@@ -124,7 +124,8 @@ namespace VW { namespace pmf_to_pdf {
   {
     data.temp_cb.costs.delete_v();
     data.temp_probs.delete_v();
-    data.scores.~vector<float>();
+    data.~pdf_data();
+//    data.scores.~vector<float>();
   }
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
