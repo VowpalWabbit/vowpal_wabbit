@@ -98,7 +98,8 @@ inline void delete_it(T* p)
 
 void finish_cbify_reg(cbify_reg& data)
 {
-  VW::cb_continuous::cb_cont_label.delete_label(&data.cb_cont_label);
+  //VW::cb_continuous::cb_cont_label.delete_label(&data.cb_cont_label); // todo: this line gives error in Linux
+  data.cb_cont_label.costs.delete_v(); // todo: instead of above
   data.prob_dist.delete_v();
 }
 
