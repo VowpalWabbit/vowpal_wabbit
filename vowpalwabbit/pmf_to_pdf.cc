@@ -125,12 +125,12 @@ namespace VW { namespace pmf_to_pdf {
     ec.l.cb_cont = temp;
   }
 
-    void finish(pdf_data& data)
-    {
-      data.temp_cb.costs.delete_v();
-      data.temp_probs.delete_v();
-      data.scores.~vector<float>();
-    }
+  void finish(pdf_data& data)
+  {
+    data.temp_cb.costs.delete_v();
+    data.temp_probs.delete_v();
+    data.scores.~vector<float>();
+  }
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
   {
