@@ -96,10 +96,17 @@ inline void delete_it(T* p)
     delete p;
 }
 
+void finish_cbify_reg(cbify_reg& data)
+{
+  VW::cb_continuous::cb_cont_label.delete_label(&data.cb_cont_label);
+  data.prob_dist.delete_v();
+}
+
 void finish(cbify& data)
 {
   CB::cb_label.delete_label(&data.cb_label);
   data.a_s.delete_v();
+  finish_cbify_reg(data.regression_data);
 
   if (data.use_adf)
   {
@@ -471,6 +478,7 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
 
 void finish_example(vw& all, cbify&, example& ec)
 {
+  // add output example
   VW::finish_example(all, ec);
 }
 

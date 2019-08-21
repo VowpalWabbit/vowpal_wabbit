@@ -268,12 +268,12 @@ void learn(offset_tree& tree, single_learner& base, example& ec)
   ec.pred.multiclass = saved_label;  // TODO: instead of above
 }
 
-void offset_tree::finish()
-{
-  binary_tree.nodes.clear();
-  //binary_tree.nodes.resize(0);
-  binary_tree.nodes.shrink_to_fit();
-}
+//void offset_tree::finish()
+//{
+//  binary_tree.nodes.clear();
+//  //binary_tree.nodes.resize(0);
+//  binary_tree.nodes.shrink_to_fit();
+//}
 
 void finish(offset_tree& t)
 {
