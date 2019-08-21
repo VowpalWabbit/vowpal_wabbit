@@ -31,7 +31,7 @@ namespace VW { namespace offset_tree_cont {
 
     std::vector<tree_node> nodes;
     uint32_t root_idx = 0;
-        
+
     private:
     uint32_t _num_leaf_nodes = 0;
     bool _initialized = false;
@@ -45,13 +45,13 @@ namespace VW { namespace offset_tree_cont {
   };
 
   bool compareByid(const node_cost& a, const node_cost& b);
-  
+
   struct offset_tree
   {
     /*using scores_t = std::vector<float>;*/
     void init(uint32_t num_actions);
     int32_t learner_count() const;
-    const uint32_t predict(LEARNER::single_learner& base, example& ec);
+    uint32_t predict(LEARNER::single_learner& base, example& ec);
     void learn(LEARNER::single_learner& base, example& ec);
     void finish();
   private:

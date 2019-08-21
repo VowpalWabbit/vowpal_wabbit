@@ -14,18 +14,16 @@ using namespace VW;
 using namespace VW::config;
 
 namespace VW { namespace pmf_to_pdf {
-  void predict(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
+
+  void transform(pmf_to_pdf::pdf_data& data, example& ec)
   {
-    base.predict(ec, 0);
-    std::cout << "pmf_to_pdf.predict" << a_s_pred_to_string(ec) << std::endl;
-    auto& action_scores = ec.pred.a_s;
     auto& continuous_scores = data.scores;
     continuous_scores.clear();
     continuous_scores.resize(data.num_actions, 0.f);
     float continuous_range = data.max_value - data.min_value;
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
-      auto& a_s = action_scores[i];
+      auto& a_s = data.temp_probs[i];
       uint32_t min_h = max(0, (int)i - (int)data.bandwidth);
       uint32_t max_h = min(data.num_actions, i + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
@@ -35,17 +33,29 @@ namespace VW { namespace pmf_to_pdf {
       {
         continuous_scores[j] += continuous_mass;
         /*std::cout << "j = " << j << ", continuous_mass = " << continuous_mass << ", continuous_scores[" << j << "] = "
-                  << continuous_scores[j] << std::endl;  */
+          << continuous_scores[j] << std::endl;  */
       }
     }
-    ec.pred.a_s.clear();
     auto& p_dist = ec.pred.prob_dist;
-    p_dist = v_init<actions_pdf::pdf_segment>();
+    p_dist.clear();
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
       float action = data.min_value + i * continuous_range / data.num_actions;
       p_dist.push_back({action, continuous_scores[i]});
     }
+  }
+
+  void predict(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
+  {
+    auto temp = ec.pred.prob_dist;
+    ec.pred.a_s = data.temp_probs;
+    base.predict(ec, 0);
+
+    std::cout << "pmf_to_pdf.predict" << a_s_pred_to_string(ec) << std::endl;
+
+    data.temp_probs = ec.pred.a_s;
+    ec.pred.prob_dist = temp;
+    transform(data, ec);
 
     std::cout << "pmf_to_pdf.predict" << prob_dist_pred_to_string(ec) << std::endl;
   }
@@ -88,8 +98,9 @@ namespace VW { namespace pmf_to_pdf {
     std::cout << "min_value = " << min_value << std::endl;
     std::cout << "max_value = " << max_value << std::endl;*/
 
-    ec.l.cb_cont.costs.clear();
-    ec.l.cb.costs = v_init<CB::cb_class>();
+    auto temp = ec.l.cb_cont;
+    ec.l.cb = data.temp_cb;
+    ec.l.cb.costs.clear();
     for (uint32_t j = min_value; j <= max_value; j++)
     {
       uint32_t min_h = max(0, (int)j - (int)data.bandwidth);
@@ -98,20 +109,23 @@ namespace VW { namespace pmf_to_pdf {
       ec.l.cb.costs.push_back({cost, j, prob * bandwidth_range, 0.0f});
     }
 
+    auto temp_pd = ec.pred.prob_dist;
+    ec.pred.a_s = data.temp_probs;
     base.learn(ec, 0);
+    data.temp_probs = ec.pred.a_s;
+    ec.pred.prob_dist = temp_pd;
+    transform(data, ec);
+
+    data.temp_cb = ec.l.cb;
+    ec.l.cb_cont = temp;
   }
 
-  // TODO: below check: important
-  // void finish(cb_explore& data)
-  //{
-  //  data.preds.delete_v();
-  //  data.cover_probs.delete_v();
-  //  cb_to_cs& c = data.cbcs;
-  //  COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
-  //  COST_SENSITIVE::cs_label.delete_label(&data.cs_label);
-  //  COST_SENSITIVE::cs_label.delete_label(&data.second_cs_label);
-  //}
-
+  void finish(pdf_data& data)
+  {
+    data.temp_cb.costs.delete_v();
+    data.temp_probs.delete_v();
+    data.scores.~vector<float>();
+  }
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
   {
@@ -144,7 +158,7 @@ namespace VW { namespace pmf_to_pdf {
     return nullptr;
   }
 
-  void output_example(vw& all, pdf_data& data, example& ec, CB::label& ld)
+  void output_example(vw& all, pdf_data& , example& ec, CB::label& ld)
   {
     float loss = 0.;
 
@@ -152,9 +166,9 @@ namespace VW { namespace pmf_to_pdf {
       for (auto& cbc: ec.l.cb.costs)
         for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
           loss += (cbc.cost / cbc.probability) * ec.pred.prob_dist[i].value;
-   
+
     all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
-     
+
     char temp_str[20];
     std::stringstream ss, sso;
     float maxprob = 0.;
