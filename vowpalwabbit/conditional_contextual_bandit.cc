@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <queue>
+#include <bitset>
 
 using namespace LEARNER;
 using namespace VW;
@@ -35,11 +36,13 @@ struct ccb
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
-  std::vector<bool> exclude_list /*, include_list*/;
+  std::vector<bool> exclude_list, include_list;
   std::vector<std::string> generated_interactions;
   std::vector<std::string>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
+
+  multi_ex cb_ex;
 
   // All of these hashes are with a hasher seeded with the below namespace hash.
   std::vector<uint64_t> slot_id_hashes;
@@ -58,11 +61,10 @@ static constexpr uint32_t TOP_ACTION_INDEX = 0;
 
 void clear_all(ccb& data)
 {
+  // data.include_list and data.exclude_list aren't cleared here but are assigned in the predict/learn function
   data.shared = nullptr;
   data.actions.clear();
   data.slots.clear();
-  // data.exclude_list.clear();
-  // data.include_list.clear();
   data.action_with_label = 0;
   data.stored_labels.clear();
 }
@@ -209,7 +211,7 @@ void inject_slot_features(example* shared, example* slot)
 }
 
 template <bool audit>
-void inject_slot_id(ccb& data, example* shared, int id)
+void inject_slot_id(ccb& data, example* shared, size_t id)
 {
   // id is zero based, so the vector must be of size id + 1
   if (id + 1 > data.slot_id_hashes.size())
@@ -279,11 +281,10 @@ void remove_slot_features(example* shared, example* slot)
 void calculate_and_insert_interactions(
     example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions)
 {
-  static thread_local std::array<bool, INTERACTIONS::printable_ns_size> found_namespaces;
-  found_namespaces.fill(false);
+  std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
   const auto original_size = generated_interactions.size();
-  for (auto i = 0; i < original_size; i++)
+  for (size_t i = 0; i < original_size; i++)
   {
     auto interaction_copy = generated_interactions[i];
     interaction_copy.push_back((char)ccb_id_namespace);
@@ -325,11 +326,21 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
-  // For V0, include list is not supported
-  // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
-  // data.include_list.clear();
-  // for (uint32_t included_action_id : slot->l.conditional_contextual_bandit.explicit_included_actions)
-  //   data.include_list.insert(included_action_id);
+  // Retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
+  auto& explicit_includes = slot->l.conditional_contextual_bandit.explicit_included_actions;
+  if (explicit_includes.size() != 0)
+  {
+    // First time seeing this, initialize the vector with falses so we can start setting each included action.
+    if (data.include_list.size() == 0)
+    {
+      data.include_list.assign(data.actions.size(), false);
+    }
+
+    for (uint32_t included_action_id : explicit_includes)
+    {
+      data.include_list[included_action_id] = true;
+    }
+  }
 
   // set the available actions in the cb multi-example
   uint32_t index = 0;
@@ -337,22 +348,21 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   data.origin_index.resize(data.actions.size(), 0);
   for (size_t i = 0; i < data.actions.size(); i++)
   {
-    // For V0, include list is not supported
-    // filter actions that are not explicitly included
-    // if (!data.include_list.empty() && data.include_list.find((uint32_t)i) == data.include_list.end())
-    //   continue;
+    // Filter actions that are not explicitly included. If the list is empty though, everything is included.
+    if (!data.include_list.empty() && !data.include_list[i])
+      continue;
 
-    // filter actions chosen by previous slots
+    // Filter actions chosen by previous slots
     if (data.exclude_list[i])
       continue;
 
-    // select the action
+    // Select the action
     cb_ex.push_back(data.actions[i]);
 
-    // save the original index from the root multi-example
+    // Save the original index from the root multi-example
     data.origin_index[index++] = (uint32_t)i;
 
-    // remember the index of the chosen action
+    // Remember the index of the chosen action
     if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
     {
       // This is used to remove the label later.
@@ -392,7 +402,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   auto decision_scores = data.action_scores_pool.get_object();
 
   // for each slot, re-build the cb example and call cb_explore_adf
-  int slot_id = 0;
+  size_t slot_id = 0;
   for (example* slot : data.slots)
   {
     // Namespace crossing for slot features.
@@ -406,18 +416,18 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = &data.generated_interactions;
     }
 
-    static thread_local multi_ex cb_ex;
-    build_cb_example<is_learn>(cb_ex, slot, data);
+    data.include_list.clear();
+    build_cb_example<is_learn>(data.cb_ex, slot, data);
 
     if (data.all->audit)
       inject_slot_id<true>(data, data.shared, slot_id);
     else
       inject_slot_id<false>(data, data.shared, slot_id);
 
-    if (has_action(cb_ex))
+    if (has_action(data.cb_ex))
     {
       // the cb example contains at least 1 action
-      multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
+      multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
       save_action_scores(data, decision_scores);
       clear_pred_and_label(data);
     }
@@ -442,7 +452,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // Put back the original shared example tag.
     std::swap(data.shared->tag, slot->tag);
     slot_id++;
-    cb_ex.clear();
+    data.cb_ex.clear();
   }
 
   delete_cb_labels(data);
@@ -669,4 +679,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   l.set_finish(CCB::finish);
   return make_base(l);
 }
+
+bool ec_is_example_header(example& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
 }  // namespace CCB

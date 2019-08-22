@@ -28,7 +28,7 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
     if(examples[i]->l.cb.costs.size() > 0)
     {
       // Must remove 1 because of shared example index.
-      labelled_action = i;
+      labelled_action = static_cast<uint32_t>(i);
     }
   }
 
@@ -40,9 +40,9 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
     for (size_t i = 0; i < action_scores.size(); i++)
     {
       auto& a_s = action_scores[i];
-      if (a_s.action == labelled_action)
+      if (a_s.action == static_cast<uint32_t>(labelled_action))
       {
-        chosen_action = i;
+        chosen_action = static_cast<uint32_t>(i);
         break;
       }
     }
@@ -67,6 +67,7 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
     auto result = exploration::sample_after_normalizing(
         seed, ACTION_SCORE::begin_scores(action_scores), ACTION_SCORE::end_scores(action_scores), chosen_action);
     assert(result == S_EXPLORATION_OK);
+    _UNUSED(result);
 
     // Update the seed state in place if it was used for this example.
     if (!tag_provided_seed)
@@ -77,6 +78,7 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
 
   auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
   assert(result == S_EXPLORATION_OK);
+  _UNUSED(result);
 }
 
 base_learner* cb_sample_setup(options_i& options, vw& all)

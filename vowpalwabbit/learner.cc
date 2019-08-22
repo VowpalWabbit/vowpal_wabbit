@@ -1,4 +1,4 @@
-#include "parser.h"
+    #include "parser.h"
 #include "vw.h"
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
@@ -65,15 +65,21 @@ namespace LEARNER
     VW::finish_example(all, ec);
   }
   
-  /* example headers have the word "shared" */
-  bool ec_is_example_header(example& ec)
+/* is this just a newline */
+inline bool example_is_newline_not_header(example& ec, vw& all)
   {
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
-    if (costs.size() != 1)
-      return false;
-    if (costs[0].probability == -1.f)
-      return true;
-    return false;
+  // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
+  bool is_header = false;
+  if (all.label_type == label_type::ccb)
+  {
+    is_header = CCB::ec_is_example_header(ec);
+  }
+  else
+  {
+    is_header = CB::ec_is_example_header(ec);
+  }
+
+  return example_is_newline(ec) && !is_header;
   }
   
   bool inline is_save_cmd(example* ec)
@@ -81,8 +87,6 @@ namespace LEARNER
     return (ec->tag.size() >= 4) && (0 == strncmp((const char*)ec->tag.begin(), "save", 4));
   }
   
-  /* is this just a newline */
-  inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !ec_is_example_header(ec)); }
 
   void drain_examples(vw& all) {
     if (all.early_terminate) { // drain any extra examples from parser.
@@ -91,7 +95,10 @@ namespace LEARNER
     }
     all.l->end_examples();
   }
-  
+
+  //single_instance_context / multi_instance_context - classes incapsulating single/multiinstance example processing
+  //get_master - returns main vw instance for owner's example manipulations (i.e. finish)
+  //process<process_impl> - call process_impl for all vw instances
   class single_instance_context {
   public:
     single_instance_context(vw& all)
@@ -122,7 +129,9 @@ namespace LEARNER
   private:
     std::vector<vw*> _all;
   };
-  
+
+  //single_example_handler / multi_example_handler - consumer classes with on_example handle method, incapsulating
+  //creation of example / multi_ex and passing it to context.process
   template<typename context_type>
   class single_example_handler {
   public:
@@ -150,7 +159,7 @@ namespace LEARNER
     {
       auto& master = _context.get_master();
       const bool is_test_ec = master.p->lp.test_label(&ec->l);
-      const bool is_newline = (example_is_newline_not_header(*ec) && is_test_ec);
+      const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
       if (!is_newline) {
         ec_seq.push_back(ec);
       } else {
@@ -192,7 +201,9 @@ namespace LEARNER
     context_type _context;
     multi_ex ec_seq;
   };
-  
+
+  //ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop
+  //for single- and multi-threaded scenarios
   class ready_examples_queue {
   public:
     ready_examples_queue(vw& master)
