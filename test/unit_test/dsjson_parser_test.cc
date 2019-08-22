@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
   BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].probability, 0.8166667, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].cost, -1.0, FLOAT_TOL);
   BOOST_CHECK_EQUAL(examples[2]->l.cb.costs[0].action, 2);
-  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, .75f, .0001f);
   BOOST_CHECK_EQUAL(label2.outcome->probabilities[1].action, 1);
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[1].score, .25f, .0001f);
-  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
@@ -273,6 +273,6 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
   BOOST_CHECK_EQUAL(label2.outcome->probabilities.size(), 1);
   BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 2);
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, 0.8166667f, .0001f);
-  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }

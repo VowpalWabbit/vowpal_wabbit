@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(is_example_header_cb) {
 
   BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[2]), false);
   BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[2]), false);
-  VW::clear_seq_and_finish_examples(vw, examples);
+  VW::finish_example(vw, examples);
   VW::finish(vw);
 }
 
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(is_example_header_ccb) {
 
   BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[0]), true);
   BOOST_CHECK_EQUAL(CCB::ec_is_example_header(*examples[1]), false);
-  VW::clear_seq_and_finish_examples(vw, examples);
+  VW::finish_example(vw, examples);
   VW::finish(vw);
 }
 
@@ -52,6 +52,6 @@ BOOST_AUTO_TEST_CASE(is_example_header_csoaa) {
 
   BOOST_CHECK_EQUAL(CB::ec_is_example_header(*examples[1]), false);
   BOOST_CHECK_EQUAL(COST_SENSITIVE::ec_is_example_header(*examples[1]), false);
-  VW::clear_seq_and_finish_examples(vw, examples);
+  VW::finish_example(vw, examples);
   VW::finish(vw);
 }
