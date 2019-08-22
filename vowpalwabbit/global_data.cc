@@ -347,9 +347,6 @@ vw::vw()
     spelling_features[i] = 0;
   }
 
-  // by default use invariant normalized adaptive updates
-  adaptive = true;
-  normalized_updates = true;
   invariant_updates = true;
   normalized_idx = 2;
 

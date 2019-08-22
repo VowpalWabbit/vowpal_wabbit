@@ -166,7 +166,7 @@ void end_pass(gd& g)
     sync_weights(all);
   if (all.all_reduce != nullptr)
   {
-    if (all.adaptive)
+    if (g.adaptive)
       accumulate_weighted_avg(all, all.weights);
     else
       accumulate_avg(all, all.weights, 0);
@@ -253,7 +253,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     tempstream << ':' << (index >> stride_shift) << ':' << ft_weight << ':'
                << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
 
-    if (dat.all.adaptive)
+    if (stride_shift > 0) // adaptive
       tempstream << '@' << (&weights[index])[1];
 
     string_value sv = {weights[index] * ft_weight, ns_pre + tempstream.str()};
@@ -995,7 +995,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   {
     initialize_regressor(all);
 
-    if (all.adaptive && all.initial_t > 0)
+    if (g.adaptive && all.initial_t > 0)
     {
       float init_weight = all.initial_weight;
       pair<float, float> p = make_pair(init_weight, all.initial_t);
@@ -1146,10 +1146,11 @@ base_learner* setup(options_i& options, vw& all)
   g->all->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
   g->total_weight = 0.;
-  g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
+  g->adaptive = true;
+  g->normalized = true;
+  g->neg_norm_power = (g->adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.power_t;
-  g->adaptive = all.adaptive;
-  g->normalized = all.normalized_updates;
+
 
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
@@ -1173,18 +1174,16 @@ base_learner* setup(options_i& options, vw& all)
   if (sgd || adaptive || invariant || normalized)
   {
     // nondefault
-    all.adaptive = all.training && adaptive;
-    g->adaptive = g->adaptive && adaptive;
+    g->adaptive = all.training && adaptive;
     all.invariant_updates = all.training && invariant;
-    all.normalized_updates = all.training && normalized;
-    g->normalized = g->normalized && normalized;
+    g->normalized = all.training && normalized;
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
-        !(all.adaptive && all.normalized_updates))
+        !(g->adaptive && g->normalized))
       all.eta = 10;  // default learning rate to 10 for non default update rule
 
     // if not using normalized or adaptive, default initial_t to 1 instead of 0
-    if (!all.adaptive && !all.normalized_updates)
+    if (!g->adaptive && !g->normalized)
     {
       if (!options.was_supplied("initial_t"))
       {
@@ -1196,15 +1195,15 @@ base_learner* setup(options_i& options, vw& all)
   }
   else
   {
-    all.adaptive = all.training;
+    g->adaptive = all.training;
     all.invariant_updates = all.training;
-    all.normalized_updates = all.training;
+    g->normalized = all.training;
   }
 
   if (adax)
     g->adax = all.training && adax;
 
-  if (g->adax && !all.adaptive)
+  if (g->adax && !g->adaptive)
     THROW("Cannot use adax without adaptive");
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)

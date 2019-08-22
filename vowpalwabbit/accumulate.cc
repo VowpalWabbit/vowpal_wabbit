@@ -105,7 +105,7 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
       local_weights[i] = weight[0] * ratio;
       weight[0] *= ratio;
       weight[1] *= ratio;  // A crude max
-      if (all.normalized_updates)
+      if (all.normalized_idx > 0)
         weight[all.normalized_idx] *= ratio;  // A crude max
     }
     else
@@ -118,11 +118,6 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
 
 void accumulate_weighted_avg(vw& all, parameters& weights)
 {
-  if (!all.adaptive)
-  {
-    all.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
-    return;
-  }
   uint32_t length = 1 << all.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 
