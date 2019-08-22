@@ -217,9 +217,9 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   cb_cont.probability = pdf_value;
 
   // mean squared loss
-  /*float diff = regression_label.label - chosen_action;
-  cb_cont.cost = diff * diff;*/
-  cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
+  float diff = regression_label.label - chosen_action;
+  cb_cont.cost = diff * diff;
+  //cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
   data.regression_data.cb_cont_label.costs.push_back(cb_cont);
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
@@ -478,9 +478,25 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   }
 }
 
-void finish_example(vw& all, cbify&, example& ec)
+void output_example_regression(vw& all, cbify& data, example& ec)
+{
+  // data contains the cb_cont vector, which store among other things, loss
+  // ec contains a simple label type
+  label_data& ld = ec.l.simple;
+  const auto& cb_cont_costs= data.regression_data.cb_cont_label.costs;
+  if (cb_cont_costs.size() > 0)
+    all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
+
+  if (ld.label != FLT_MAX)
+    all.sd->weighted_labels += ((double)cb_cont_costs[0].action) * ec.weight;
+
+  print_update(all, ec);
+}
+
+void finish_example(vw& all, cbify& data, example& ec)
 {
   // add output example
+  output_example_regression(all, data, ec);
   VW::finish_example(all, ec);
 }
 
