@@ -36,7 +36,7 @@ struct ccb
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
-  std::vector<bool> exclude_list /*, include_list*/;
+  std::vector<bool> exclude_list, include_list;
   std::vector<std::string> generated_interactions;
   std::vector<std::string>* original_interactions;
   std::vector<CCB::label> stored_labels;
@@ -48,6 +48,8 @@ struct ccb
   std::vector<uint64_t> slot_id_hashes;
   uint64_t id_namespace_hash;
   std::string id_namespace_str;
+
+  size_t base_learner_stride_shift;
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -61,11 +63,10 @@ static constexpr uint32_t TOP_ACTION_INDEX = 0;
 
 void clear_all(ccb& data)
 {
+  // data.include_list and data.exclude_list aren't cleared here but are assigned in the predict/learn function
   data.shared = nullptr;
   data.actions.clear();
   data.slots.clear();
-  // data.exclude_list.clear();
-  // data.include_list.clear();
   data.action_with_label = 0;
   data.stored_labels.clear();
 }
@@ -225,6 +226,9 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   {
     auto current_index_str = "index" + std::to_string(id);
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
+
+    // To maintain indicies consistent with what the parser does we must scale.
+    index *= static_cast<uint64_t>(data.all->wpp) << data.base_learner_stride_shift;
     data.slot_id_hashes[id] = index;
   }
   else
@@ -327,11 +331,21 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
-  // For V0, include list is not supported
-  // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
-  // data.include_list.clear();
-  // for (uint32_t included_action_id : slot->l.conditional_contextual_bandit.explicit_included_actions)
-  //   data.include_list.insert(included_action_id);
+  // Retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
+  auto& explicit_includes = slot->l.conditional_contextual_bandit.explicit_included_actions;
+  if (explicit_includes.size() != 0)
+  {
+    // First time seeing this, initialize the vector with falses so we can start setting each included action.
+    if (data.include_list.size() == 0)
+    {
+      data.include_list.assign(data.actions.size(), false);
+    }
+
+    for (uint32_t included_action_id : explicit_includes)
+    {
+      data.include_list[included_action_id] = true;
+    }
+  }
 
   // set the available actions in the cb multi-example
   uint32_t index = 0;
@@ -339,22 +353,21 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   data.origin_index.resize(data.actions.size(), 0);
   for (size_t i = 0; i < data.actions.size(); i++)
   {
-    // For V0, include list is not supported
-    // filter actions that are not explicitly included
-    // if (!data.include_list.empty() && data.include_list.find((uint32_t)i) == data.include_list.end())
-    //   continue;
+    // Filter actions that are not explicitly included. If the list is empty though, everything is included.
+    if (!data.include_list.empty() && !data.include_list[i])
+      continue;
 
-    // filter actions chosen by previous slots
+    // Filter actions chosen by previous slots
     if (data.exclude_list[i])
       continue;
 
-    // select the action
+    // Select the action
     cb_ex.push_back(data.actions[i]);
 
-    // save the original index from the root multi-example
+    // Save the original index from the root multi-example
     data.origin_index[index++] = (uint32_t)i;
 
-    // remember the index of the chosen action
+    // Remember the index of the chosen action
     if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
     {
       // This is used to remove the label later.
@@ -408,6 +421,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = &data.generated_interactions;
     }
 
+    data.include_list.clear();
     build_cb_example<is_learn>(data.cb_ex, slot, data);
 
     if (data.all->audit)
@@ -612,7 +626,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   return_v_array(ec_seq[0]->pred.decision_scores, data.action_scores_pool);
   ec_seq[0]->pred.decision_scores = {0, 0, 0, 0};
 
-  VW::clear_seq_and_finish_examples(all, ec_seq);
+  VW::finish_example(all, ec_seq);
 }
 
 void finish(ccb& data) { data.~ccb(); }
@@ -651,6 +665,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   all.p->lp = CCB::ccb_label_parser;
   all.label_type = label_type::ccb;
 
+  // Stash the base learners stride_shift so we can properly add a feature later.
+  data->base_learner_stride_shift = all.weights.stride_shift();
+
   // Extract from lower level reductions
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
@@ -671,8 +688,5 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-bool ec_is_example_header(example& ec)
-{
-  return ec.l.conditional_contextual_bandit.type == example_type::shared;
-}
+bool ec_is_example_header(example& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
 }  // namespace CCB
