@@ -49,6 +49,8 @@ struct ccb
   uint64_t id_namespace_hash;
   std::string id_namespace_str;
 
+  size_t base_learner_stride_shift;
+
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
   VW::v_array_pool<ACTION_SCORE::action_scores> action_scores_pool;
@@ -224,6 +226,9 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   {
     auto current_index_str = "index" + std::to_string(id);
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
+
+    // To maintain indicies consistent with what the parser does we must scale.
+    index *= static_cast<uint64_t>(data.all->wpp) << data.base_learner_stride_shift;
     data.slot_id_hashes[id] = index;
   }
   else
@@ -621,7 +626,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   return_v_array(ec_seq[0]->pred.decision_scores, data.action_scores_pool);
   ec_seq[0]->pred.decision_scores = {0, 0, 0, 0};
 
-  VW::clear_seq_and_finish_examples(all, ec_seq);
+  VW::finish_example(all, ec_seq);
 }
 
 void finish(ccb& data) { data.~ccb(); }
@@ -659,6 +664,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
   all.label_type = label_type::ccb;
+
+  // Stash the base learners stride_shift so we can properly add a feature later.
+  data->base_learner_stride_shift = all.weights.stride_shift();
 
   // Extract from lower level reductions
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};

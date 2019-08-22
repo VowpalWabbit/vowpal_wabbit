@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(parse_json_simple)
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 1.f, FLOAT_TOL);
-  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cb)
   BOOST_CHECK_CLOSE(examples[1]->l.cb.costs[0].probability, 0.5, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[1]->l.cb.costs[0].cost, 1.0, FLOAT_TOL);
   BOOST_CHECK_EQUAL(examples[1]->l.cb.costs[0].action, 1);
-  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb)
   BOOST_CHECK_CLOSE(label3.outcome->probabilities[0].score, .75f, .0001f);
   BOOST_CHECK_EQUAL(label3.outcome->probabilities[1].action, 1);
   BOOST_CHECK_CLOSE(label3.outcome->probabilities[1].score, .25f, .0001f);
-  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
@@ -234,6 +234,6 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
   BOOST_CHECK_EQUAL(label1.outcome->probabilities.size(), 1);
   BOOST_CHECK_EQUAL(label1.outcome->probabilities[0].action, 1);
   BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .5f, .0001f);
-  VW::clear_seq_and_finish_examples(*vw, examples);
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
