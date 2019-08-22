@@ -14,6 +14,10 @@ using namespace VW;
 using namespace VW::config;
 
 namespace VW { namespace pmf_to_pdf {
+  pdf_data::~pdf_data() {
+    temp_cb.costs.delete_v();
+    temp_probs.delete_v();
+  }
 
   void transform(pmf_to_pdf::pdf_data& data, example& ec)
   {
@@ -120,12 +124,8 @@ namespace VW { namespace pmf_to_pdf {
     ec.l.cb_cont = temp;
   }
 
-  void finish(pdf_data& data)
-  {
-    data.temp_cb.costs.delete_v();
-    data.temp_probs.delete_v();
+  void finish(pdf_data& data) {
     data.~pdf_data();
-//    data.scores.~vector<float>();
   }
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
@@ -227,10 +227,10 @@ namespace VW { namespace pmf_to_pdf {
       options.insert("cb_explore", ss.str());
     }
 
-    // todo: enforce the right kind of base reduction
+    learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn, predict,
+        data->num_actions /* weights */, prediction_type::prob_dist);
 
-    return make_base(init_learner(data, as_singleline(setup_base(options, all)), learn, predict,
-        data->num_actions /* weights */, prediction_type::prob_dist));
+    return make_base(l);
   }
 
 }}  // namespace VW::pmf_to_pdf
