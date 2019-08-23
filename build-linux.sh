@@ -24,7 +24,7 @@ sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
 cd /vw
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DWARNINGS=Off -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_JAVA=On -DBUILD_PYTHON=On -DBUILD_TESTS=On
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DWARNINGS=Off -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_JAVA=On -DBUILD_PYTHON=On -DBUILD_TESTS=On cmake .. -DCMAKE_BUILD_TYPE=Release -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DDO_NOT_BUILD_VW_C_WRAPPER=On
 NUM_PROCESSORS=$(cat nprocs.txt)
 make all -j ${NUM_PROCESSORS}
 make test_with_output
