@@ -47,8 +47,7 @@ mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DDO_NOT_BUILD_VW_C_WRAPPER=On
 make vw-bin vw-unit-test.out -j ${NUM_PROCESSORS}
-cd ..
-cd test
-./unit_test/vw-unit-test.out
+./test/unit_test/vw-unit-test.out
+cd ../test
 ./RunTests -d -fe -E 0.001
 cd ..
