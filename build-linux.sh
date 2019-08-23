@@ -46,8 +46,9 @@ rm -rf build
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On
-make vw-bin -j ${NUM_PROCESSORS}
+make vw-bin vw-unit-test.out -j ${NUM_PROCESSORS}
 cd ..
 cd test
-export PATH=../build/vowpalwabbit/:$PATH && ./RunTests -d -fe -E 0.001
+./unit_test/vw-unit-test.out
+./RunTests -d -fe -E 0.001
 cd ..
