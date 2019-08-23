@@ -58,6 +58,8 @@ struct gd
   void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
   bool normalized;
   bool adaptive;
+  bool adaptive_input;
+  bool normalized_input;
   bool adax;
 
   vw* all;  // parallel, features, parameters
@@ -800,9 +802,9 @@ void save_load_online_state(
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
-        else if (g == NULL || (!g->adaptive && !g->normalized))
+        else if (g == NULL || (!g->adaptive_input && !g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
-        else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+        else if ((g->adaptive_input && !g->normalized_input) || (!g->adaptive_input && g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
         else  // adaptive and normalized
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 3, "");
@@ -1174,9 +1176,9 @@ base_learner* setup(options_i& options, vw& all)
   if (sgd || adaptive || invariant || normalized)
   {
     // nondefault
-    g->adaptive = all.training && adaptive;
+    g->adaptive = adaptive;
     all.invariant_updates = all.training && invariant;
-    g->normalized = all.training && normalized;
+    g->normalized = normalized;
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
         !(g->adaptive && g->normalized))
@@ -1195,10 +1197,13 @@ base_learner* setup(options_i& options, vw& all)
   }
   else
   {
-    g->adaptive = all.training;
     all.invariant_updates = all.training;
-    g->normalized = all.training;
   }
+  g->adaptive_input = g->adaptive;
+  g->normalized_input = g->normalized;
+
+  g->adaptive = g->adaptive && all.training;
+  g->normalized = g->normalized && all.training;
 
   if (adax)
     g->adax = all.training && adax;
