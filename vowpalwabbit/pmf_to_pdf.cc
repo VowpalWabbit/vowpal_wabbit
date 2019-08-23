@@ -230,6 +230,8 @@ namespace VW { namespace pmf_to_pdf {
     learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn, predict,
         data->num_actions /* weights */, prediction_type::prob_dist);
 
+    l.set_finish(finish);
+
     return make_base(l);
   }
 
