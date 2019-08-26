@@ -98,7 +98,7 @@ void print_result(int f, float res, float, v_array<char> tag)
     auto saved_precision = ss.precision();
     if (floorf(res) == res)
       ss << std::setprecision(0);
-    ss << res << std::setprecision(saved_precision);
+    ss << std::fixed << res << std::setprecision(saved_precision);
     print_tag(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();

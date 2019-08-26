@@ -250,7 +250,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   uint32_t maxid = 0;
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
   {
-    ss << ec.pred.a_s[i].score << " ";
+    ss << std::fixed << ec.pred.a_s[i].score << " ";
     if (ec.pred.a_s[i].score > maxprob)
     {
       maxprob = ec.pred.a_s[i].score;
@@ -260,7 +260,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   for (int sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
 
   std::stringstream sso;
-  sso << maxid << ":" << maxprob;
+  sso << maxid << ":" << std::fixed << maxprob;
   print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
 }
 

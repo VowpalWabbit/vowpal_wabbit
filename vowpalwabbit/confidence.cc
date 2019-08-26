@@ -47,7 +47,7 @@ void confidence_print_result(int f, float res, float confidence, v_array<char> t
   if (f >= 0)
   {
     std::stringstream ss;
-    ss << res << " " << confidence;
+    ss << std::fixed << res << " " << confidence;
     if (!print_tag(ss, tag))
       ss << ' ';
     ss << '\n';

@@ -37,7 +37,7 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
     {
       tmp_example = pr_queue.top();
       pr_queue.pop();
-      ss << tmp_example.first << " ";
+      ss << std::fixed << tmp_example.first << " ";
       print_tag(ss, tmp_example.second);
       ss << " \n";
     }

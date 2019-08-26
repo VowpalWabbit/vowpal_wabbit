@@ -90,11 +90,11 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
   if (f >= 0)
   {
     std::stringstream ss;
-    ss << res;
+    ss << std::fixed << res;
     if (!print_tag(ss, tag))
       ss << ' ';
     if (weight >= 0)
-      ss << " " << weight;
+      ss << " " << std::fixed << weight;
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
