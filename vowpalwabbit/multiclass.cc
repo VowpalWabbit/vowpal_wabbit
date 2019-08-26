@@ -3,6 +3,7 @@
 #include "global_data.h"
 #include "vw.h"
 #include "vw_exception.h"
+#include <boost/utility/string_view.hpp>
 
 #ifndef _WIN32
 #define sprintf_s snprintf
@@ -71,7 +72,7 @@ bool test_label(void* v)
 
 void delete_label(void*) {}
 
-void parse_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser*, shared_data* sd, void* v, v_array<boost::string_view>& words)
 {
   label_t* ld = (label_t*)v;
 
@@ -80,12 +81,12 @@ void parse_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
     case 0:
       break;
     case 1:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      ld->weight = float_of_string(words[1]);
       break;
     default:
       cerr << "malformed example!\n";
@@ -101,11 +102,11 @@ label_parser mc_label = {default_label, parse_label, cache_label, read_cached_la
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
-  substring ss_label = all.sd->ldict->get(ec.l.multi.label);
-  substring ss_pred = all.sd->ldict->get(prediction);
+  boost::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
+  boost::string_view sv_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(all.holdout_set_off, all.current_pass,
-      !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
-      !ss_pred.begin ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.num_features,
+      sv_label.empty() ? "unknown" : std::string(sv_label),
+      sv_pred.empty() ? "unknown" : std::string(sv_pred), ec.num_features,
       all.progress_add, all.progress_arg);
 }
 
@@ -170,8 +171,8 @@ void finish_example(vw& all, example& ec, bool update_loss)
       all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
-      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      boost::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      all.print_text(sink, std::string(sv_pred), ec.tag);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);

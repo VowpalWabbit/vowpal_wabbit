@@ -108,6 +108,13 @@ class v_hashmap
   {
     if (num_occupants == 0)
       return;
+
+    for (hash_elem* elem = iterator(); elem != nullptr; elem = iterator_next(elem))
+    {
+      elem->key.~K();
+      elem->val.~V();
+    }
+
     memset(dat.begin(), 0, base_size() * sizeof(hash_elem));
     last_position = 0;
     num_occupants = 0;

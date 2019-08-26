@@ -15,6 +15,9 @@ license as described in the file LICENSE.
 #include <inttypes.h>
 #include <climits>
 #include <stack>
+#include <unordered_map>
+#include <string>
+#include <boost/utility/string_view.hpp>
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -35,7 +38,6 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "config.h"
 #include "learner.h"
-#include "v_hashmap.h"
 #include <time.h>
 #include "hash.h"
 #include "crossplat_compat.h"
@@ -46,83 +48,66 @@ license as described in the file LICENSE.
 
 typedef float weight;
 
-typedef v_hashmap<substring, features*> feature_dict;
+typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
 
 struct dictionary_info
 {
-  char* name;
+  std::string name;
   uint64_t file_hash;
-  feature_dict* dict;
+  std::shared_ptr<feature_dict> dict;
 };
-
-inline void deleter(substring ss, uint64_t /* label */) { free_it(ss.begin); }
 
 class namedlabels
 {
  private:
-  std::vector<substring> id2name;
-  v_hashmap<substring, uint64_t> name2id;
-  uint32_t K;
+  // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
+  const std::string m_label_list;
+  std::vector<boost::string_view> m_id2name;
+  std::unordered_map<boost::string_view, uint64_t> m_name2id;
+  uint32_t m_K;
 
  public:
-  namedlabels(std::string label_list)
+  namedlabels(const std::string& label_list) : m_label_list(label_list)
   {
-    char* temp = calloc_or_throw<char>(1 + label_list.length());
-    memcpy(temp, label_list.c_str(), strlen(label_list.c_str()));
-    substring ss = {temp, nullptr};
-    ss.end = ss.begin + label_list.length();
-    tokenize(',', ss, id2name);
+    tokenize(',', m_label_list, m_id2name);
 
-    K = (uint32_t)id2name.size();
-    name2id.delete_v();  // delete automatically allocated vector.
-    name2id.init(4 * K + 1, 0, substring_equal);
-    for (size_t k = 0; k < K; k++)
+    m_K = (uint32_t)m_id2name.size();
+    m_name2id.max_load_factor(0.25);
+    m_name2id.reserve(m_K);
+
+    for (size_t k = 0; k < m_K; k++)
     {
-      substring& l = id2name[k];
-      uint64_t hash = uniform_hash((unsigned char*)l.begin, l.end - l.begin, 378401);
-      uint64_t id = name2id.get(l, hash);
-      if (id != 0)  // TODO: memory leak: char* temp
+      const boost::string_view& l = m_id2name[k];
+      auto iter = m_name2id.find(l);
+      if (iter != m_name2id.end())
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
-      size_t len = l.end - l.begin;
-      substring l_copy = {calloc_or_throw<char>(len), nullptr};
-      memcpy(l_copy.begin, l.begin, len * sizeof(char));
-      l_copy.end = l_copy.begin + len;
-      name2id.put(l_copy, hash, k + 1);
+      m_name2id.emplace(l, k + 1);
     }
   }
 
-  ~namedlabels()
-  {
-    if (id2name.size() > 0)
-      free(id2name[0].begin);
-    name2id.iter(deleter);
-    name2id.delete_v();
-  }
+  uint32_t getK() { return m_K; }
+  const
 
-  uint32_t getK() { return K; }
-
-  uint64_t get(substring& s)
+      uint64_t
+      get(const boost::string_view& s) const
   {
-    uint64_t hash = uniform_hash((unsigned char*)s.begin, s.end - s.begin, 378401);
-    uint64_t v = name2id.get(s, hash);
-    if (v == 0)
+    auto iter = m_name2id.find(s);
+    if (iter == m_name2id.end())
     {
-      std::cerr << "warning: missing named label '";
-      for (char* c = s.begin; c != s.end; c++) std::cerr << *c;
-      std::cerr << '\'' << std::endl;
+      std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
     }
-    return v;
+    return iter->second;
   }
 
-  substring get(uint32_t v)
+  boost::string_view get(uint32_t v) const
   {
-    if ((v == 0) || (v > K))
+    if ((v == 0) || (v > m_K))
     {
-      substring ss = {nullptr, nullptr};
-      return ss;
+      boost::string_view strview;
+      return strview;
     }
     else
-      return id2name[v - 1];
+      return m_id2name[v - 1];
   }
 };
 
@@ -344,7 +329,7 @@ enum label_type_t
   cs,       // cost-sensitive
   multi,
   mc,
-  ccb       // conditional contextual-bandit
+  ccb  // conditional contextual-bandit
 };
 }
 
@@ -434,7 +419,7 @@ struct vw
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::string> interactions;
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> pairs;    // pairs of features to cross.
+  std::vector<std::string> pairs;  // pairs of features to cross.
   // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
@@ -454,8 +439,9 @@ struct vw
   uint64_t affix_features[256];              // affixes to generate (up to 16 per namespace - 4 bits per affix)
   bool spelling_features[256];               // generate spelling features for which namespace
   std::vector<std::string> dictionary_path;  // where to look for dictionaries
-  std::vector<feature_dict*> namespace_dictionaries[256];  // each namespace has a list of dictionaries attached to it
+  // feature_dict* owner is loaded_dictionaries
   std::vector<dictionary_info> loaded_dictionaries;        // which dictionaries have we loaded from a file to memory?
+  std::array<std::vector<std::shared_ptr<feature_dict>>, 256> namespace_dictionaries;  // each namespace has a list of dictionaries attached to it
 
   void (*delete_prediction)(void*);
   bool audit;     // should I print lots of debugging information?

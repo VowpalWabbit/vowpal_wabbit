@@ -247,9 +247,7 @@ class TC_parser
         for (auto map : m_namespace_dictionaries[m_index])
         {
           uint64_t hash = uniform_hash(feature_name.begin(), feature_name.size(), quadratic_constant);
-          // TODO: string_view-ify
-          substring tmp = {(char*)feature_name.begin(), (char*)feature_name.end()};
-          features* feats = map->get(tmp, hash);
+          features* feats = map->get(feature_name, hash);
           if ((feats != nullptr) && (feats->values.size() > 0))
           {
             features& dict_fs = m_ae->feature_space[dictionary_namespace];
@@ -420,25 +418,6 @@ class TC_parser
   }
 };
 
-std::vector<boost::string_view> split(boost::string_view phrase, char delimiter)
-{
-  std::vector<boost::string_view> list;
-  size_t start_pos = 0;
-  size_t end_pos = 0;
-
-  while ((end_pos = phrase.find(delimiter, start_pos)) != boost::string_view::npos)
-  {
-    // don't insert empty elements
-    if (start_pos != end_pos)
-      list.emplace_back(phrase.begin() + start_pos, end_pos - start_pos);
-    start_pos = end_pos + 1;
-  }
-  // don't insert empty string
-  if (start_pos < phrase.size() - 1)
-    list.emplace_back(phrase.begin() + start_pos, phrase.size() - start_pos);
-  return list;
-}
-
 void substring_to_example(vw* all, example* ae, boost::string_view example)
 {
   all->p->lp.default_label(&ae->l);
@@ -460,21 +439,17 @@ void substring_to_example(vw* all, example* ae, boost::string_view example)
     {
       label_space.remove_prefix(tab_idx + 1);
     }
-    // TODO: don't copy, its dumb and temporary. If somebody sees this comment, I screwed up
-    const auto& tokenized = split(label_space, ' ');
-    for (const auto& tmp_str : tokenized)
-    {
-      substring temp = {(char*)tmp_str.begin(), (char*)tmp_str.end()};
-      all->p->words.push_back(temp);
-    }
+
+    std::vector<boost::string_view> tokenized;
+    tokenize(' ', label_space, all->p->words);
     if (all->p->words.size() > 0 &&
         (all->p->words.last().end == label_space.end() ||
             *(all->p->words.last().begin) == '\''))  // The last field is a tag, so record and strip it off
     {
-      substring tag = all->p->words.pop();
+      boost::string_view tag = all->p->words.pop();
       if (*tag.begin == '\'')
         tag.begin++;
-      push_many(ae->tag, tag.begin, tag.end - tag.begin);
+      push_many(ae->tag, tag.begin(), tag.size());
     }
   }
 
@@ -502,7 +477,8 @@ void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, boo
 
 void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples)
 {
-  auto lines = split(line, '\n');
+  std::vector<boost::string_view> lines;
+  tokenize('\n', line, lines);
   for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.

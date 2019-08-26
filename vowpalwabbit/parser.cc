@@ -855,10 +855,9 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, string label)
 {
-  v_array<substring> words = v_init<substring>();
-  char* cstr = (char*)label.c_str();
-  substring str = {cstr, cstr + label.length()};
-  tokenize(' ', str, words);
+  v_array<boost::string_view> words = v_init<boost::string_view>();
+
+  tokenize(' ', label, words);
   all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
   words.clear();
   words.delete_v();

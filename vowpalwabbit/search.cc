@@ -33,6 +33,8 @@ namespace MC = MULTICLASS;
 
 namespace Search
 {
+typedef std::unique_ptr<uint8_t[]> byte_array;
+
 search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
     &EntityRelationTask::task, &HookTask::task, &GraphTask::task, nullptr};  // must nullptr terminate!
@@ -139,6 +141,31 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
 
 struct search_private
 {
+ private:
+  struct cached_item_equivalent
+  {
+    bool operator()(const byte_array& A, const byte_array& B) const
+    {
+      size_t sz_A = *A.get();
+      size_t sz_B = *B.get();
+      if (sz_A != sz_B)
+        return false;
+      return memcmp(A.get(), B.get(), sz_A) == 0;
+    }
+  };
+  struct cached_item_hash
+  {
+    size_t operator()(const byte_array& key) const
+    {
+      size_t sz = *key.get();
+      return uniform_hash(key.get(), sz, 3419);
+    }
+  };
+
+ public:
+  typedef std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent> cache_map;
+
+ public:
   vw* all;
 
   uint64_t offset;
@@ -236,7 +263,7 @@ struct search_private
   size_t total_predictions_made;
   size_t total_cache_hits;
 
-  v_hashmap<unsigned char*, scored_action> cache_hash_map;
+  cache_map cache_hash_map;
 
   // for foreach_feature temporary storage for conditioning
   uint64_t dat_new_feature_idx;
@@ -1345,22 +1372,6 @@ int choose_policy(search_private& priv, bool advance_prng = true)
   }
 }
 
-bool cached_item_equivalent(unsigned char* const& A, unsigned char* const& B)
-{
-  size_t sz_A = *A;
-  size_t sz_B = *B;
-  if (sz_A != sz_B)
-    return false;
-  return memcmp(A, B, sz_A) == 0;
-}
-
-void free_key(unsigned char* mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
-void clear_cache_hash_map(search_private& priv)
-{
-  priv.cache_hash_map.iter(free_key);
-  priv.cache_hash_map.clear();
-}
-
 // returns true if found and do_store is false. if do_store is true, always returns true.
 bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on,
     const char* condition_on_names, action_repr* condition_on_actions, size_t condition_on_cnt, int policy,
@@ -1376,8 +1387,8 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   if (sz % 4 != 0)
     sz += 4 - (sz % 4);  // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-  unsigned char* item = calloc_or_throw<unsigned char>(sz);
-  unsigned char* here = item;
+  byte_array item(new uint8_t[sz]);
+  uint8_t* here = item.get();
   *here = (unsigned char)sz;
   here += sizeof(size_t);
   *here = mytag;
@@ -1397,19 +1408,17 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
   }
-  uint64_t hash = uniform_hash(item, sz, 3419);
-
+  uint64_t hash = uniform_hash(item.get(), sz, 3419);
   if (do_store)
   {
-    priv.cache_hash_map.put(item, hash, scored_action(a, a_cost));
+    priv.cache_hash_map.emplace(std::move(item), scored_action(a, a_cost));
     return true;
   }
   else  // its a find
   {
-    scored_action sa = priv.cache_hash_map.get(item, hash);
-    a = sa.a;
-    a_cost = sa.s;
-    free(item);
+    auto sa_iter = priv.cache_hash_map.find(item);
+    a = sa_iter->second.a;
+    a_cost = sa_iter->second.s;
     return a != (action)-1;
   }
 }
@@ -2441,9 +2450,7 @@ void search_initialize(vw* all, search& sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa((action)-1, 0.);
-  new (&priv.cache_hash_map) v_hashmap<unsigned char*, scored_action>();
-  priv.cache_hash_map.set_default_value(sa);
-  priv.cache_hash_map.set_equivalent(cached_item_equivalent);
+  new (&priv.cache_hash_map) search_private::cache_map();
 
   sch.task_data = nullptr;
 
@@ -2463,12 +2470,10 @@ void search_finish(search& sch)
   search_private& priv = *sch.priv;
   cdbg << "search_finish" << endl;
 
-  clear_cache_hash_map(priv);
-
   delete priv.truth_string;
   delete priv.pred_string;
   delete priv.bad_string_stream;
-  priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
+  priv.cache_hash_map.clear();
   priv.rawOutputString.~string();
   priv.test_action_sequence.~vector<action>();
   priv.dat_new_feature_audit_ss.~stringstream();
@@ -3083,8 +3088,8 @@ string search::pretty_label(action a)
 {
   if (this->priv->all->sd->ldict)
   {
-    substring ss = this->priv->all->sd->ldict->get(a);
-    return string(ss.begin, ss.end - ss.begin);
+    auto sv = this->priv->all->sd->ldict->get(a);
+    return sv.to_string();
   }
   else
   {

@@ -2,6 +2,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <boost/utility/string_view.hpp>
 
 #include "cache.h"
 #include "accumulate.h"
@@ -76,7 +77,7 @@ bool test_label(void* v)
 
 void delete_simple_label(void*) {}
 
-void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
+void parse_simple_label(parser*, shared_data* sd, void* v, v_array<boost::string_view>& words)
 {
   label_data* ld = (label_data*)v;
 
@@ -85,20 +86,20 @@ void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& w
     case 0:
       break;
     case 1:
-      ld->label = float_of_substring(words[0]);
+      ld->label = float_of_string(words[0]);
       break;
     case 2:
-      ld->label = float_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
+      ld->label = float_of_string(words[0]);
+      ld->weight = float_of_string(words[1]);
       break;
     case 3:
-      ld->label = float_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
-      ld->initial = float_of_substring(words[2]);
+      ld->label = float_of_string(words[0]);
+      ld->weight = float_of_string(words[1]);
+      ld->initial = float_of_string(words[2]);
       break;
     default:
       cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
+      for (const auto & word : words) std::cout << word;
       cout << endl;
   }
   count_label(sd, ld->label);

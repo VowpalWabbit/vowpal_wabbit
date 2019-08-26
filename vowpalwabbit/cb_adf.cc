@@ -8,7 +8,6 @@
 #include <algorithm>
 
 #include "reductions.h"
-#include "v_hashmap.h"
 #include "label_dictionary.h"
 #include "vw.h"
 #include "cb_algs.h"

@@ -275,7 +275,7 @@ struct features
   }
 
   // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
-  // ~features() { ... }
+  ~features() { delete_v(); }
 
   inline size_t size() const { return values.size(); }
 

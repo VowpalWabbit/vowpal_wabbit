@@ -3,11 +3,12 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include <cmath>
+#include <boost/utility/string_view.hpp>
 
 using namespace std;
 namespace COST_SENSITIVE
 {
-void name_value(substring& s, v_array<substring>& name, float& v)
+void name_value(boost::string_view& s, v_array<boost::string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -18,7 +19,7 @@ void name_value(substring& s, v_array<substring>& name, float& v)
       v = 1.;
       break;
     case 2:
-      v = float_of_substring(name[1]);
+      v = float_of_string(name[1]);
       if (std::isnan(v))
         THROW("error NaN value for: " << name[0]);
       break;
@@ -119,7 +120,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<boost::string_view>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -129,12 +130,12 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
   {
     float fx;
     name_value(words[0], p->parse_name, fx);
-    bool eq_shared = substring_equal(p->parse_name[0], "***shared***");
-    bool eq_label = substring_equal(p->parse_name[0], "***label***");
+    bool eq_shared = p->parse_name[0] == "***shared***";
+    bool eq_label = p->parse_name[0] == "***label***";
     if (!sd->ldict)
     {
-      eq_shared |= substring_equal(p->parse_name[0], "shared");
-      eq_label |= substring_equal(p->parse_name[0], "label");
+      eq_shared |= p->parse_name[0] == "shared";
+      eq_label |= p->parse_name[0] == "label";
     }
     if (eq_shared || eq_label)
     {
@@ -154,7 +155,7 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
           cerr << "label feature vectors should have exactly one cost on: " << words[0] << endl;
         else
         {
-          wclass f = {float_of_substring(p->parse_name[1]), 0, 0., 0.};
+          wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
           ld->costs.push_back(f);
         }
       }
@@ -268,8 +269,8 @@ void output_example(vw& all, example& ec)
       all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
-      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      boost::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      all.print_text(sink, string(sv_pred), ec.tag);
     }
 
   if (all.raw_prediction > 0)

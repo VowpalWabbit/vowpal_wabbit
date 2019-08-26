@@ -91,7 +91,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<boost::string_view>& words)
 {
   labels* ld = (labels*)v;
 
@@ -103,16 +103,15 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     case 1:
       tokenize(',', words[0], p->parse_name);
 
-      for (size_t i = 0; i < p->parse_name.size(); i++)
+      for (const auto & parse_name : p->parse_name)
       {
-        *(p->parse_name[i].end) = '\0';
-        uint32_t n = atoi(p->parse_name[i].begin);
+        uint32_t n = int_of_string(parse_name);
         ld->label_v.push_back(n);
       }
       break;
     default:
       cerr << "example with an odd label, what is ";
-      for (size_t i = 0; i < words.size(); i++) cerr << words[i].begin << " ";
+      for (const auto & word : words) cerr << word << " ";
       cerr << endl;
   }
 }

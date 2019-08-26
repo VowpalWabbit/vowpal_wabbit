@@ -101,7 +101,7 @@ void copy_label(void* dst, void* src)
   copy_array(ldD->costs, ldS->costs);
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<boost::string_view>& words)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
@@ -118,14 +118,14 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     f.cost = FLT_MAX;
 
     if (p->parse_name.size() > 1)
-      f.cost = float_of_substring(p->parse_name[1]);
+      f.cost = float_of_string(p->parse_name[1]);
 
     if (std::isnan(f.cost))
       THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
     f.probability = .0;
     if (p->parse_name.size() > 2)
-      f.probability = float_of_substring(p->parse_name[2]);
+      f.probability = float_of_string(p->parse_name[2]);
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
@@ -140,7 +140,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
       f.probability = .0;
     }
-    if (substring_equal(p->parse_name[0], "shared"))
+    if (p->parse_name[0] == "shared")
     {
       if (p->parse_name.size() == 1)
       {
@@ -257,7 +257,7 @@ void copy_label(void* dst, void* src)
   ldD->action = ldS->action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<boost::string_view>& words)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 

@@ -2,6 +2,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <boost/utility/string_view.hpp>
 
 #include "cache.h"
 #include "accumulate.h"
@@ -27,7 +28,7 @@ bool test_label(void*) { return false; }
 
 void delete_no_label(void*) {}
 
-void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
+void parse_no_label(parser*, shared_data*, void*, v_array<boost::string_view>& words)
 {
   switch (words.size())
   {
@@ -35,7 +36,7 @@ void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
       break;
     default:
       cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
+      for (const auto & word : words) std::cout << word;
       cout << endl;
   }
 }

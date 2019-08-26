@@ -8,7 +8,6 @@ license as described in the file LICENSE.
 
 #include "correctedMath.h"
 #include "reductions.h"
-#include "v_hashmap.h"
 #include "label_dictionary.h"
 #include "vw.h"
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
@@ -732,7 +731,7 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
 
 void finish(ldf& data)
 {
-  LabelDict::free_label_features(data.label_features);
+  data.label_features.clear();
   data.a_s.delete_v();
   data.stored_preds.delete_v();
 }
@@ -871,8 +870,8 @@ base_learner* csldf_setup(options_i& options, vw& all)
   all.p->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
   features fs;
-  ld->label_features.init(256, fs, LabelDict::size_t_eq);
-  ld->label_features.get(1, 94717244);  // TODO: figure this out
+  ld->label_features.max_load_factor(0.25);
+  ld->label_features.reserve(256);
   prediction_type::prediction_type_t pred_type;
 
   if (ld->rank)

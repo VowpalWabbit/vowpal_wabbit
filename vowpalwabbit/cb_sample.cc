@@ -3,6 +3,7 @@
 #include "explore.h"
 
 #include "rand48.h"
+#include <boost/utility/string_view.hpp>
 
 using namespace LEARNER;
 using namespace VW;
@@ -23,9 +24,9 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
 
   int labelled_action = -1;
   // Find that chosen action in the learning case, skip the shared example.
-  for(size_t i = 0; i < examples.size(); i++)
+  for (size_t i = 0; i < examples.size(); i++)
   {
-    if(examples[i]->l.cb.costs.size() > 0)
+    if (examples[i]->l.cb.costs.size() > 0)
     {
       // Must remove 1 because of shared example index.
       labelled_action = static_cast<uint32_t>(i);
@@ -57,8 +58,8 @@ void learn_or_predict(cb_sample_data& data, multi_learner& base, multi_ex& examp
       if (strncmp(examples[0]->tag.begin(), SEED_IDENTIFIER.c_str(), SEED_IDENTIFIER.size()) == 0 &&
           examples[0]->tag.size() > SEED_IDENTIFIER.size())
       {
-        substring tag_seed{examples[0]->tag.begin() + 5, examples[0]->tag.begin() + examples[0]->tag.size()};
-        seed = uniform_hash(tag_seed.begin, substring_len(tag_seed), 0);
+        boost::string_view tag_seed(examples[0]->tag.begin() + 5, examples[0]->tag.size());
+        seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
         tag_provided_seed = true;
       }
     }
