@@ -433,16 +433,19 @@ void to_short_string(string in, size_t max_len, char* out)
   out[max_len] = 0;
 }
 
-void number_to_natural(size_t big, char* c)
+std::string number_to_natural(size_t big)
 {
+  std::stringstream ss;
   if (big > 9999999999)
-    sprintf(c, "%dg", (int)(big / 1000000000));
+    ss << big / 1000000000 << "g";
   else if (big > 9999999)
-    sprintf(c, "%dm", (int)(big / 1000000));
+    ss << big / 1000000 << "m";
   else if (big > 9999)
-    sprintf(c, "%dk", (int)(big / 1000));
+    ss << big / 1000 << "k";
   else
-    sprintf(c, "%d", (int)(big));
+    ss << big;
+
+  return ss.str();
 }
 
 void print_update(search_private& priv)
@@ -490,18 +493,14 @@ void print_update(search_private& priv)
         (float)(all.sd->weighted_labeled_examples - all.sd->old_weighted_labeled_examples));
   }
 
-  char inst_cntr[9];
-  number_to_natural((size_t)all.sd->example_number, inst_cntr);
-  char total_pred[8];
-  number_to_natural(priv.total_predictions_made, total_pred);
-  char total_cach[8];
-  number_to_natural(priv.total_cache_hits, total_cach);
-  char total_exge[8];
-  number_to_natural(priv.total_examples_generated, total_exge);
+  auto const inst_cntr = number_to_natural((size_t)all.sd->example_number);
+  auto const total_pred = number_to_natural(priv.total_predictions_made);
+  auto const total_cach = number_to_natural(priv.total_cache_hits);
+  auto const total_exge = number_to_natural(priv.total_examples_generated);
 
-  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since, inst_cntr,
-      true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy, total_pred, total_cach,
-      total_exge, priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
+  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since, inst_cntr.c_str(),
+      true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy, total_pred.c_str(), total_cach.c_str(),
+      total_exge.c_str(), priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
 
   if (PRINT_CLOCK_TIME)
   {
