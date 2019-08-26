@@ -206,3 +206,5 @@ bool launchDebugger();
   }
 
 #define _UNUSED(x) ((void)(x))
+
+#define DBG(x) do { std::cerr << "(" << __FILENAME__ << ":" << __LINE__ << "," << __func__ <<") " << #x << ": " << x << std::endl; } while (0)
