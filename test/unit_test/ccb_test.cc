@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   std::sort(interactions.begin(), interactions.end());
 
   check_vectors(interactions, compare_set);
-  VW::clear_seq_and_finish_examples(vw, actions);
+  VW::finish_example(vw, actions);
   VW::finish_example(vw, *shared_ex);
   VW::finish(vw);
 }
