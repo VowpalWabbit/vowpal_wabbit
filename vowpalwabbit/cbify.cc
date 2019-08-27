@@ -183,19 +183,13 @@ float get01loss(VW::actions_pdf::pdf& prob_dist, float chosen_action, float labe
 template <bool is_learn>
 void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 {
-  cout << "-------------------predict_or_learn_regression-------------------------" << endl;
+  cout << "cbify-reg: ----- is_learn = " << is_learn << simple_label_to_string(ec) <<  features_to_string(ec) << endl;
   label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
 
   base.predict(ec);
-  /*cout << "cbify:\nec.pred.prob_dist size = " << ec.pred.prob_dist.size() << endl;
-  for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
-  {
-    cout << "ec.pred.prob_dist[" << i << "] = " << ec.pred.prob_dist[i].action << ", " << ec.pred.prob_dist[i].value <<
-  endl;
-  }*/
 
   float chosen_action;
   // after having the function that samples the pdf and returns back a continuous action
@@ -206,8 +200,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
   //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
   //       If the function fails to find the index, it will actually return the second-to-last index
-  cout << "cbify: ec.l.simple.label = " << regression_label.label << endl;
-  cout << "cbify: chosen_action = " << chosen_action << endl;
+  cout << "cbify-reg: predict before learn  = " << chosen_action << endl;
 
   float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
 
@@ -217,9 +210,9 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   cb_cont.probability = pdf_value;
 
   // mean squared loss
-  float diff = regression_label.label - chosen_action;
-  cb_cont.cost = diff * diff;
-  //cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
+  //float diff = regression_label.label - chosen_action;
+  //cb_cont.cost = diff * diff;
+  cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
   data.regression_data.cb_cont_label.costs.push_back(cb_cont);
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
