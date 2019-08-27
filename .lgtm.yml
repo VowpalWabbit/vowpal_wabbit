@@ -1,0 +1,5 @@
+
+extraction:
+  java:
+    after_prepare:
+      - sed 's/@PACKAGE_VERSION@-SNAPSHOT/0-lgtmdummyver/g' $LGTM_SRC/java/pom.xml.in > $LGTM_SRC/java/pom.xml
