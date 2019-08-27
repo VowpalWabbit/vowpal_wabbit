@@ -72,7 +72,10 @@ class dense_parameters
   const_iterator cbegin() { return const_iterator(_begin, _begin, stride()); }
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
-  inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
+  inline weight& operator[](size_t i) const { 
+    size_t idx = i & _weight_mask;
+    return _begin[idx];
+  }
   void shallow_copy(const dense_parameters& input)
   {
     if (!_seeded)

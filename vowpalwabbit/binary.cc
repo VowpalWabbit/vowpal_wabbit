@@ -9,15 +9,15 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
   {
-    cout << "b.before-learn " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    cout << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
     base.learn(ec);
-    cout << "b.after-learn " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    cout << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
   }
   else
   {
-    cout << "b.before-predict " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    cout << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
     base.predict(ec);
-    cout << "b.after-predict " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    cout << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
   }
 
   if (ec.pred.scalar > 0)
@@ -25,7 +25,7 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   else
     ec.pred.scalar = -1;
 
-  cout << "binary.final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+  cout << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
 
   if (ec.l.simple.label != FLT_MAX)
   {

@@ -1,7 +1,6 @@
 #include "offset_tree_cont.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
-#include "action_score.h"
 #include <algorithm>
 
 using namespace VW::config;
@@ -106,8 +105,8 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
   while (!(cur_node.is_leaf))
   {
-    std::cout << "base.predict.nodeid = " << cur_node.id << std::endl;
     base.predict(ec, cur_node.id);
+    std::cout << "otree_c: " << scalar_pred_to_string(ec) << " base.predict().nodeid = " << cur_node.id << std::endl;
     if (ec.pred.scalar == -1)  // TODO: check
     {
       cur_node = nodes[cur_node.left_id];
@@ -140,8 +139,8 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   for (uint32_t i = 0; i < ac.size(); i++)
   {
     uint32_t node_id = ac[i].action + binary_tree.internal_node_count();
-    std::cout << "\nac[" << i << "].action  = " << ac[i].action << std::endl;
-    std::cout << "node_id  = " << node_id << std::endl;
+    std::cout << std::endl << "otree_c: ac[" << i << "].action  = " << ac[i].action << std::endl;
+    std::cout << "otree_c: node_id  = " << node_id << std::endl;
     if (nodes[node_id].depth < binary_tree.depth())
     {
       node_costs_buffer.push_back({node_id, ac[i].cost / ac[i].probability});
@@ -175,16 +174,16 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       auto& w = nodes[(v.id == v_parent.left_id) ? v_parent.right_id : v_parent.left_id];  // w is sibling of v
       float cost_w = 0.0f;
       float local_action = 1;
-      std::cout << "\n\nv.id = " << v.id << std::endl;
-      std::cout << "cost_v = " << cost_v << std::endl;
+      std::cout << std::endl << "otree_c: v.id = " << v.id << std::endl;
+      std::cout << "otree_c: cost_v = " << cost_v << std::endl;
       if (!node_costs.empty() && node_costs.back().node_id == w.id)
       {
-        std::cout << "found the sibling" << std::endl;
+        std::cout << "otree_c: found the sibling" << std::endl;
         cost_w = node_costs.back().cost;
         if (cost_v != cost_w)
         {
-          std::cout << "cost_w = " << cost_w << std::endl;
-          std::cout << "cost_v != cost_w" << std::endl;
+          std::cout << "otree_c: cost_w = " << cost_w << std::endl;
+          std::cout << "otree_c: cost_v != cost_w" << std::endl;
           if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) ////
             local_action = -1;
         }
@@ -192,31 +191,31 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       }
       else
       {
-        std::cout << "no sibling" << std::endl;
+        std::cout << "otree_c: no sibling" << std::endl;
         if (v.id == v_parent.right_id) ////
           local_action = -1;
       }
       float cost_parent = cost_v;
-      std::cout << "cost_w = " << cost_w << std::endl;
+      std::cout << "otree_c: cost_w = " << cost_w << std::endl;
       if (cost_v != cost_w)  // learn and update the cost of the parent
       {
         ec.l.simple.label = local_action;  // TODO:scalar label type
         ec.weight = abs(cost_v - cost_w);
-        std::cout << "binary learning the node " << v.parent_id << std::endl;
+        std::cout << "otree_c: binary learning the node " << v.parent_id << std::endl;
         base.learn(ec, v.parent_id);
         base.predict(ec, v.parent_id);
-        std::cout << "after binary predict:\n " << std::endl;
-        std::cout << "ec.pred.scalar = " << (ec.pred.scalar) << std::endl;
-        std::cout << "local_action = " << (local_action) << std::endl;
+        std::cout << "otree_c: after binary predict:\n " << std::endl;
+        std::cout << "otree_c: ec.pred.scalar = " << (ec.pred.scalar) << std::endl;
+        std::cout << "otree_c: local_action = " << (local_action) << std::endl;
         if (ec.pred.scalar == local_action)
         {
           cost_parent = min(cost_v, cost_w); ////
-          std::cout << "ec.pred.scalar == local_action" << std::endl;
+          std::cout << "otree_c: ec.pred.scalar == local_action" << std::endl;
         }
         else
         {
           cost_parent = max(cost_v, cost_w); ////
-          std::cout << "ec.pred.scalar != local_action" << std::endl;
+          std::cout << "otree_c: ec.pred.scalar != local_action" << std::endl;
         }
       }
       if (cost_parent > 0.0f)
