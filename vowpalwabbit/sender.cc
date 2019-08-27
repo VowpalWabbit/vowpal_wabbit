@@ -31,6 +31,14 @@ struct sender
   example** delay_ring;
   size_t sent_index;
   size_t received_index;
+
+  ~sender()
+  {
+    buf->files.delete_v();
+    buf->space.delete_v();
+    free(delay_ring);
+    delete buf;
+  }
 };
 
 void open_sockets(sender& s, string host)
@@ -89,14 +97,6 @@ void end_examples(sender& s)
   shutdown(s.buf->files[0], SHUT_WR);
 }
 
-void finish(sender& s)
-{
-  s.buf->files.delete_v();
-  s.buf->space.delete_v();
-  free(s.delay_ring);
-  delete s.buf;
-}
-
 LEARNER::base_learner* sender_setup(options_i& options, vw& all)
 {
   string host;
@@ -118,7 +118,6 @@ LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   s->delay_ring = calloc_or_throw<example*>(all.p->ring_size);
 
   LEARNER::learner<sender, example>& l = init_learner(s, learn, learn, 1);
-  l.set_finish(finish);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   return make_base(l);

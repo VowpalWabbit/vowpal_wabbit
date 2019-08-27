@@ -39,6 +39,11 @@ struct data
       expert_state;  // pair of weights on marginal and feature based predictors, one per marginal feature
 
   vw* all;
+
+  ~data()
+  {
+    for (size_t i = 0; i < 256; i++) temp[i].delete_v();
+  }
 };
 
 float get_adanormalhedge_weights(float R, float C)
@@ -237,14 +242,6 @@ void predict_or_learn(data& sm, LEARNER::single_learner& base, example& ec)
   undo_marginal(sm, ec);
 }
 
-void finish(data& sm)
-{
-  sm.marginals.~unordered_map();
-  if (sm.compete)
-    sm.expert_state.~unordered_map();
-  for (size_t i = 0; i < 256; i++) sm.temp[i].delete_v();
-}
-
 void save_load(data& sm, io_buf& io, bool read, bool text)
 {
   uint64_t stride_shift = sm.all->weights.stride_shift();
@@ -385,7 +382,6 @@ LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
 
   LEARNER::learner<MARGINAL::data, example>& ret =
       init_learner(d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
-  ret.set_finish(finish);
   ret.set_save_load(save_load);
 
   return make_base(ret);

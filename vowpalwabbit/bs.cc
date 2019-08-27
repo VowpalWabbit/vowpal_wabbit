@@ -28,6 +28,11 @@ struct bs
   float ub;
   vector<double>* pred_vec;
   vw* all;  // for raw prediction and loss
+
+  ~bs()
+  {
+    delete pred_vec;
+  }
 };
 
 void bs_predict_mean(vw& all, example& ec, vector<double>& pred_vec)
@@ -233,8 +238,6 @@ void finish_example(vw& all, bs& d, example& ec)
   VW::finish_example(all, ec);
 }
 
-void finish(bs& d) { delete d.pred_vec; }
-
 base_learner* bs_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<bs>();
@@ -272,7 +275,6 @@ base_learner* bs_setup(options_i& options, vw& all)
   learner<bs, example>& l = init_learner(
       data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->B);
   l.set_finish_example(finish_example);
-  l.set_finish(finish);
 
   return make_base(l);
 }

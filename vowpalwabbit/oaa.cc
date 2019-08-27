@@ -23,6 +23,12 @@ struct oaa
   uint64_t num_subsample;     // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id;        // for randomized subsampling, where do we live in the list
+
+  ~oaa()
+  {
+    free(pred);
+    free(subsample_order);
+  }
 };
 
 void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
@@ -124,12 +130,6 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
     ec.pred.multiclass = prediction;
 
   ec.l.multi = mc_label_data;
-}
-
-void finish(oaa& o)
-{
-  free(o.pred);
-  free(o.subsample_order);
 }
 
 // TODO: partial code duplication with multiclass.cc:finish_example
@@ -283,7 +283,6 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
   }
-  l->set_finish(finish);
 
   return make_base(*l);
 }

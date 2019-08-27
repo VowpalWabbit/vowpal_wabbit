@@ -65,6 +65,18 @@ struct stagewise_poly
 #ifdef MAGIC_ARGUMENT
   float magic_argument;
 #endif  // MAGIC_ARGUMENT
+
+  ~stagewise_poly()
+  {
+#ifdef DEBUG
+    cout << "total feature number (after poly expansion!) = " << sum_sparsity << endl;
+#endif  // DEBUG
+
+    synth_ec.feature_space[tree_atomics].delete_v();
+    synth_ec.indices.delete_v();
+    free(sd);
+    free(depthsbits);
+  }
 };
 
 inline uint64_t stride_shift(const stagewise_poly &poly, uint64_t idx)
@@ -121,8 +133,6 @@ void depthsbits_create(stagewise_poly &poly)
     poly.depthsbits[i + 1] = indicator_bit;
   }
 }
-
-void depthsbits_destroy(stagewise_poly &poly) { free(poly.depthsbits); }
 
 inline bool parent_get(const stagewise_poly &poly, uint64_t wid)
 {
@@ -239,8 +249,6 @@ void sort_data_ensure_sz(stagewise_poly &poly, size_t len)
   }
   assert(len <= poly.sd_len);
 }
-
-void sort_data_destroy(stagewise_poly &poly) { free(poly.sd); }
 
 #ifdef DEBUG
 int sort_data_compar(const void *a_v, const void *b_v)
@@ -629,18 +637,6 @@ void finish_example(vw &all, stagewise_poly &poly, example &ec)
   VW::finish_example(all, ec);
 }
 
-void finish(stagewise_poly &poly)
-{
-#ifdef DEBUG
-  cout << "total feature number (after poly expansion!) = " << poly.sum_sparsity << endl;
-#endif  // DEBUG
-
-  poly.synth_ec.feature_space[tree_atomics].delete_v();
-  poly.synth_ec.indices.delete_v();
-  sort_data_destroy(poly);
-  depthsbits_destroy(poly);
-}
-
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)
@@ -699,7 +695,6 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->next_batch_sz = poly->batch_sz;
 
   learner<stagewise_poly, example> &l = init_learner(poly, as_singleline(setup_base(options, all)), learn, predict);
-  l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
