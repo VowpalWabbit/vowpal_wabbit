@@ -53,7 +53,7 @@ namespace VW { namespace pmf_to_pdf {
   {
     auto temp = ec.pred.prob_dist;
     ec.pred.a_s = data.temp_probs;
-    base.predict(ec, 0);
+    base.predict(ec);
 
     std::cout << "pmf_to_pdf.predict" << a_s_pred_to_string(ec) << std::endl;
 
@@ -115,7 +115,7 @@ namespace VW { namespace pmf_to_pdf {
 
     auto temp_pd = ec.pred.prob_dist;
     ec.pred.a_s = data.temp_probs;
-    base.learn(ec, 0);
+    base.learn(ec);
     data.temp_probs = ec.pred.a_s;
     ec.pred.prob_dist = temp_pd;
     transform(data, ec);
@@ -227,8 +227,11 @@ namespace VW { namespace pmf_to_pdf {
       options.insert("cb_explore", ss.str());
     }
 
-    learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn, predict,
-        data->num_actions /* weights */, prediction_type::prob_dist);
+    //learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn, predict,
+    //    data->num_actions /* weights */, prediction_type::prob_dist);
+
+    learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn,
+        predict, 1, prediction_type::prob_dist);
 
     l.set_finish(finish);
 
