@@ -1,4 +1,3 @@
-
 extraction:
   java:
     after_prepare:
