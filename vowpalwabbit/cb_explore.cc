@@ -16,6 +16,8 @@ using namespace VW::config;
 
 namespace CB_EXPLORE
 {
+ostream* vw_log = nullstream();
+
 struct cb_explore
 {
   vw* all;
@@ -82,19 +84,13 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   // pre-allocate pdf
 
-  cout << "\n\ncb_explore: ec.pred.multiclass = " << ec.pred.multiclass << endl;
+  *vw_log << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
 
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
 
   ec.pred.a_s = probs;
-
-  /*for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  {
-    cout << "ec.pred.prob_dist[" << i << "] = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score
-         << endl;
-  }*/
 }
 
 template <bool is_learn>

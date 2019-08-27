@@ -4,20 +4,22 @@
 using namespace std;
 using namespace VW::config;
 
+ostream* vw_log = &cout;
+
 template <bool is_learn>
 void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
   {
-    cout << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    *vw_log << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
     base.learn(ec);
-    cout << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    *vw_log << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
   }
   else
   {
-    cout << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    *vw_log << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
     base.predict(ec);
-    cout << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    *vw_log << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
   }
 
   if (ec.pred.scalar > 0)
@@ -25,7 +27,7 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   else
     ec.pred.scalar = -1;
 
-  cout << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+  *vw_log << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
 
   if (ec.l.simple.label != FLT_MAX)
   {

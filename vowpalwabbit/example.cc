@@ -242,6 +242,13 @@ std::string a_s_pred_to_string(const example& ec)
   return strstream.str();
 }
 
+std::string multiclass_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
+  return strstream.str();
+}
+
 std::string prob_dist_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
