@@ -53,7 +53,6 @@ struct ccb
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
-  VW::v_array_pool<ACTION_SCORE::action_scores> action_scores_pool;
 };
 
 namespace CCB
@@ -404,7 +403,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
-  auto decision_scores = data.action_scores_pool.get_object();
+  auto decision_scores = examples[0]->pred.decision_scores;
 
   // for each slot, re-build the cb example and call cb_explore_adf
   size_t slot_id = 0;
@@ -623,8 +622,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   {
     return_v_array(a_s, data.action_score_pool);
   }
-  return_v_array(ec_seq[0]->pred.decision_scores, data.action_scores_pool);
-  ec_seq[0]->pred.decision_scores = {0, 0, 0, 0};
+  ec_seq[0]->pred.decision_scores.clear();
 
   VW::finish_example(all, ec_seq);
 }
@@ -681,7 +679,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
-  all.delete_prediction = nullopt_delete;
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(CCB::finish);
