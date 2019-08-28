@@ -299,8 +299,6 @@ search::~search()
   if (this->priv && this->priv->all)
   {
     search_private& priv = *this->priv;
-    cdbg << "search_finish" << endl;
-
     clear_cache_hash_map(priv);
 
     delete priv.truth_string;
@@ -359,18 +357,10 @@ search::~search()
     priv.learn_condition_on.delete_v();
     priv.learn_condition_on_act.delete_v();
 
-    if (priv.active_csoaa)
-      std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
-
-    if (priv.task->finish)
-      priv.task->finish(*this);
-    if (priv.metatask && priv.metatask->finish)
-      priv.metatask->finish(*this);
-
     free(priv.allowed_actions_cache);
     delete priv.rawOutputStringStream;
-    free(this->priv);
   }
+  free(this->priv);
 }
 
 string audit_feature_space("conditional");
@@ -2566,6 +2556,20 @@ void handle_condition_options(vw& all, auto_condition_settings& acset)
   all.options->add_and_parse(new_options);
 }
 
+void search_finish(search& sch)
+{
+  search_private& priv = *sch.priv;
+  cdbg << "search_finish" << endl;
+
+  if (priv.active_csoaa)
+    std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
+
+  if (priv.task->finish)
+    priv.task->finish(sch);
+  if (priv.metatask && priv.metatask->finish)
+    priv.metatask->finish(sch);
+}
+
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
   FILE* f = fopen(filename, "r");
@@ -2926,6 +2930,7 @@ base_learner* setup(options_i& options, vw& all)
       do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners);
   l.set_finish_example(finish_multiline_example);
   l.set_end_examples(end_examples);
+  l.set_finish(search_finish);
   l.set_end_pass(end_pass);
   return make_base(l);
 }

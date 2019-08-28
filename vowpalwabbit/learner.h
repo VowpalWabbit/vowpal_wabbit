@@ -268,8 +268,8 @@ struct learner
     if (finisher_fd.data)
     {
       finisher_fd.func(finisher_fd.data);
-      learner_data.~shared_ptr<void>();
     }
+    learner_data.~shared_ptr<void>();
     if (finisher_fd.base)
     {
       finisher_fd.base->finish();
