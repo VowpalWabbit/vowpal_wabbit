@@ -14,7 +14,7 @@ license as described in the file LICENSE.
 #ifndef _NOEXCEPT
 // _NOEXCEPT is required on Mac OS
 // making sure other platforms don't barf
-#define _NOEXCEPT throw()
+#define _NOEXCEPT noexcept
 #endif
 
 #include <string.h>
