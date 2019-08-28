@@ -493,10 +493,10 @@ void print_update(search_private& priv)
         (float)(all.sd->weighted_labeled_examples - all.sd->old_weighted_labeled_examples));
   }
 
-  auto const inst_cntr = number_to_natural((size_t)all.sd->example_number);
-  auto const total_pred = number_to_natural(priv.total_predictions_made);
-  auto const total_cach = number_to_natural(priv.total_cache_hits);
-  auto const total_exge = number_to_natural(priv.total_examples_generated);
+  auto const& inst_cntr = number_to_natural((size_t)all.sd->example_number);
+  auto const& total_pred = number_to_natural(priv.total_predictions_made);
+  auto const& total_cach = number_to_natural(priv.total_cache_hits);
+  auto const& total_exge = number_to_natural(priv.total_examples_generated);
 
   fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since, inst_cntr.c_str(),
       true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy, total_pred.c_str(), total_cach.c_str(),
