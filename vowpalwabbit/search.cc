@@ -116,6 +116,14 @@ struct action_repr
       repr = nullptr;
   }
   action_repr(action _a) : a(_a), repr(nullptr) {}
+  ~action_repr()
+  {
+    if (repr != nullptr)
+    {
+      repr->delete_v();
+      delete repr;
+    }
+  }
 };
 
 struct action_cache
@@ -333,15 +341,6 @@ search::~search()
       priv.allowed_actions_cache->cs.costs.delete_v();
 
     priv.train_trajectory.delete_v();
-    for (Search::action_repr& ar : priv.ptag_to_action)
-    {
-      if (ar.repr != nullptr)
-      {
-        ar.repr->delete_v();
-        delete ar.repr;
-        cdbg << "delete_v" << endl;
-      }
-    }
     priv.ptag_to_action.delete_v();
     clear_memo_foreach_action(priv);
     priv.memo_foreach_action.delete_v();
