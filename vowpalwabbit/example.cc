@@ -216,6 +216,32 @@ std::string features_to_string(const example& ec)
   return strstream.str();
 }
 
+std::string cb_label_to_string(const example& ec) {
+  std::stringstream strstream;
+  strstream << "[l.cb={";
+  auto& costs = ec.l.cb.costs;
+  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
+  {
+    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction << "}";
+  }
+  strstream << "}]";
+  return strstream.str();
+}
+
+std::string cont_label_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[l.cb_cont={";
+  auto& costs = ec.l.cb_cont.costs;
+  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
+  {
+    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability 
+              << ",pp=" << c->partial_prediction << "}";
+  }
+  strstream << "}]";
+  return strstream.str();
+}
+
 std::string simple_label_to_string(const example& ec)
 {
   std::stringstream strstream;
@@ -223,10 +249,21 @@ std::string simple_label_to_string(const example& ec)
   return strstream.str();
 }
 
+std::string depth_indent_string(const example& ec)
+{
+  std::stringstream strstream;
+  for (uint32_t i = 0; i < ec.stack_depth - 1; i++)
+  {
+    strstream << "| ";
+  }
+  strstream << "+ ";
+  return strstream.str();
+}
+
 std::string scalar_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
-  strstream << "[p=" << ec.pred.scalar << "]";
+  strstream << "[p=" << ec.pred.scalar << ", pp=" << ec.partial_prediction << "]";
   return strstream.str();
 }
 

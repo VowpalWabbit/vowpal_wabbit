@@ -1257,7 +1257,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(scorer_setup);
   // Reductions
   all.reduction_stack.push(bs_setup);
-  all.reduction_stack.push(binary_setup);
+  all.reduction_stack.push(VW::binary::binary_setup);
 
   all.reduction_stack.push(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
   all.reduction_stack.push(topk_setup);

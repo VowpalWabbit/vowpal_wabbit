@@ -37,6 +37,7 @@ struct example_predict
   v_array<namespace_index> indices;
   features feature_space[256];  // Groups of feature values.
   uint64_t ft_offset;           // An offset for all feature values.
+  uint32_t stack_depth;
 
   // Interactions are specified by this vector of strings, where each string is an interaction and each char is a namespace.
   std::vector<std::string>* interactions;

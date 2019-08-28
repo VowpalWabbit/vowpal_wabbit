@@ -17,3 +17,5 @@ namespace po = boost::program_options;
 
 #include <fstream>
 std::ostream* nullstream();
+
+#define VWLOG(e) if(VW_DEBUG_LOG) std::cout << depth_indent_string(e)

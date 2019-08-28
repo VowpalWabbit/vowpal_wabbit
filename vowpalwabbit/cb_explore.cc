@@ -16,7 +16,7 @@ using namespace VW::config;
 
 namespace CB_EXPLORE
 {
-ostream* vw_log = nullstream();
+bool VW_DEBUG_LOG = true;
 
 struct cb_explore
 {
@@ -84,7 +84,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   // pre-allocate pdf
 
-  *vw_log << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
+  VWLOG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
 
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
