@@ -13,6 +13,7 @@ from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.test import test as _test
 from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import rmtree
+import multiprocessing
 
 system = platform.system()
 version_info = sys.version_info
@@ -28,12 +29,12 @@ class Distribution(_distribution):
     def __init__(self, attrs=None):
         self.vcpkg_root = None
         _distribution.__init__(self, attrs)
-        
+
 class CMakeExtension(Extension):
     def __init__(self, name):
         # don't invoke the original build_ext for this special extension
         Extension.__init__(self, name, sources=[])
-        
+
 def get_ext_filename_without_platform_suffix(filename):
     from distutils.sysconfig import get_config_var
     ext_suffix = get_config_var('EXT_SUFFIX')
@@ -76,7 +77,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         # example of cmake args
         config = 'Debug' if self.debug else 'Release'
-        
+
         cmake_args = [
             '-DCMAKE_BUILD_TYPE=' + config,
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
@@ -86,7 +87,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         ]
         if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
             cmake_args.append('-DBOOST_ROOT={}'.format(os.environ['CONDA_PREFIX']))
-    
+
         # example of build args
         build_args = [
             '--config', config
@@ -118,7 +119,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(lib_output_dir),
             ]
             build_args += [
-                '--', '-j8',
+                '--', '-j{}'.format(multiprocessing.cpu_count()),
                 # Build the pylibvw target
                 "pylibvw"
             ]
