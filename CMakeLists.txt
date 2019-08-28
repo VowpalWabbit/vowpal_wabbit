@@ -57,6 +57,7 @@ option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
+option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -187,6 +188,10 @@ endif()
 
 if(BUILD_PYTHON)
   add_subdirectory(python)
+endif()
+
+if(BUILD_SLIM_VW)
+  add_subdirectory(vowpalwabbitslim)
 endif()
 
 if(BUILD_TESTS)
