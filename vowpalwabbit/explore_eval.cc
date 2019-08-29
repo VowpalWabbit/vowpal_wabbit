@@ -2,7 +2,6 @@
 #include "cb_algs.h"
 #include "vw.h"
 #include "cb_adf.h"
-#include "cb_explore_adf.h"
 #include "rand48.h"
 #include "gen_cs_example.h"
 
