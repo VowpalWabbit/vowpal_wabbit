@@ -139,18 +139,10 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
 {
   if (f >= 0)
   {
-    char temp[30];
-    sprintf(temp, "%f", res);
     std::stringstream ss;
-    ss << temp;
+    ss << std::fixed << res;
     print_tag(ss, tag);
-    ss << ' ';
-    sprintf(temp, "%f", lb);
-    ss << temp;
-    ss << ' ';
-    sprintf(temp, "%f", ub);
-    ss << temp;
-    ss << '\n';
+    ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)

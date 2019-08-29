@@ -169,7 +169,6 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     zero_one_loss = ec.weight;
 
   // === Print probabilities for all classes
-  char temp_str[10];
   ostringstream outputStringStream;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -182,8 +181,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     }
     else
       outputStringStream << i + 1;
-    sprintf(temp_str, "%f", ec.pred.scalars[i]);  // 0.123 -> 0.123000
-    outputStringStream << ':' << temp_str;
+    outputStringStream << ':' << ec.pred.scalars[i];
   }
   for (int sink : all.final_prediction_sink) all.print_text(sink, outputStringStream.str(), ec.tag);
 
