@@ -132,13 +132,6 @@ float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fi
 }
 
 template <class T>
-inline void delete_it(T* p)
-{
-  if (p != nullptr)
-    delete p;
-}
-
-template <class T>
 uint32_t find_min(vector<T> arr)
 {
   T min_val = FLT_MAX;
