@@ -5,13 +5,16 @@ license as described in the file LICENSE.
 */
 
 #pragma once
+
+#ifndef VW_NOEXCEPT
+
 #include <stdexcept>
 #include <sstream>
 
 #ifndef _NOEXCEPT
 // _NOEXCEPT is required on Mac OS
 // making sure other platforms don't barf
-#define _NOEXCEPT throw()
+#define _NOEXCEPT noexcept
 #endif
 
 #include <string.h>
@@ -196,7 +199,6 @@ bool launchDebugger();
     __msg << args;                                 \
     throw ex(__FILENAME__, __LINE__, __msg.str()); \
   }
-
 }  // namespace VW
 
 #define VW_ASSERT(condition, args) \
@@ -205,6 +207,45 @@ bool launchDebugger();
     THROW(args);                   \
   }
 
+#endif
+
+#define EXPAND( x ) x
+#define GET_MACRO(_1, _2, NAME, ...) NAME
+#define THROW_OR_RETURN(...) EXPAND(GET_MACRO(__VA_ARGS__, THROW_OR_RETURN_NORMAL, THROW_OR_RETURN_VOID)(__VA_ARGS__))
+
+#ifdef VW_NOEXCEPT
+
+#define THROW_OR_RETURN_NORMAL(args, retval) \
+  do                                         \
+  {                                          \
+    return retval;                           \
+  } while (0)
+
+#define THROW_OR_RETURN_VOID(args) \
+  do                               \
+  {                                \
+    return;                        \
+  } while (0)
+
+#else  // VW_NOEXCEPT defined
+
+#define THROW_OR_RETURN_NORMAL(args, retval)                 \
+  do                                                         \
+  {                                                          \
+    std::stringstream __msgA;                                 \
+    __msgA << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
+  } while (0)
+
+#define THROW_OR_RETURN_VOID(args)                           \
+  do                                                         \
+  {                                                          \
+    std::stringstream __msgB;                                 \
+    __msgB << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \
+  } while (0)
+
+#endif
 #define _UNUSED(x) ((void)(x))
 
 #define DBG(x) do { std::cerr << "(" << __FILENAME__ << ":" << __LINE__ << "," << __func__ <<") " << #x << ": " << x << std::endl; } while (0)
