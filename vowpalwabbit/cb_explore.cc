@@ -245,26 +245,22 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
-  char temp_str[20];
-  stringstream ss, sso;
+  stringstream ss;
   float maxprob = 0.;
   uint32_t maxid = 0;
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
   {
-    sprintf(temp_str, "%f ", ec.pred.a_s[i].score);
-    ss << temp_str;
+    ss << std::fixed << ec.pred.a_s[i].score << " ";
     if (ec.pred.a_s[i].score > maxprob)
     {
       maxprob = ec.pred.a_s[i].score;
       maxid = i + 1;
     }
   }
-
-  sprintf(temp_str, "%d:%f", maxid, maxprob);
-  sso << temp_str;
-
   for (int sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
 
+  std::stringstream sso;
+  sso << maxid << ":" << std::fixed << maxprob;
   print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
 }
 

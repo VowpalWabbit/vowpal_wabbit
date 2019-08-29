@@ -4,10 +4,6 @@
 #include "vw.h"
 #include "vw_exception.h"
 
-#ifndef _WIN32
-#define sprintf_s snprintf
-#endif
-
 using namespace std;
 
 namespace MULTICLASS
@@ -111,26 +107,26 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
 
 void print_probability(vw& all, example& ec, uint32_t prediction)
 {
-  char temp_str[10];
-  sprintf_s(temp_str, 10, "%d(%2.0f%%)", prediction, 100 * ec.pred.scalars[prediction - 1]);
+  std::stringstream pred_ss;
+  pred_ss << prediction << "(" << std::setw(2) << std::setprecision(0) << std::fixed << 100 * ec.pred.scalars[prediction - 1] << "%)";
 
-  char label_str[512];
-  sprintf_s(label_str, 512, "%u", ec.l.multi.label);
+  std::stringstream label_ss;
+  label_ss << ec.l.multi.label;
 
   all.sd->print_update(
-      all.holdout_set_off, all.current_pass, label_str, temp_str, ec.num_features, all.progress_add, all.progress_arg);
+      all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features, all.progress_add, all.progress_arg);
 }
 
 void print_score(vw& all, example& ec, uint32_t prediction)
 {
-  char temp_str[10];
-  sprintf_s(temp_str, 10, "%d", prediction);
+  std::stringstream pred_ss;
+  pred_ss << prediction;
 
-  char label_str[512];
-  sprintf_s(label_str, 512, "%u", ec.l.multi.label);
+  std::stringstream label_ss;
+  label_ss << ec.l.multi.label;
 
   all.sd->print_update(
-      all.holdout_set_off, all.current_pass, label_str, temp_str, ec.num_features, all.progress_add, all.progress_arg);
+      all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features, all.progress_add, all.progress_arg);
 }
 
 void direct_print_update(vw& all, example& ec, uint32_t prediction)

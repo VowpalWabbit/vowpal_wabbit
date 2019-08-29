@@ -93,12 +93,15 @@ endif(WARNINGS)
 if(NOT WIN32)
   add_executable(active_interactor active_interactor.cc)
 
+  if(GCOV)
+    target_link_libraries(active_interactor PUBLIC gcov --coverage)
+  endif()
+
   if(VW_INSTALL)
     install(TARGETS active_interactor
       RUNTIME DESTINATION bin
     )
   endif()
-
 
   target_compile_definitions(active_interactor PUBLIC _FILE_OFFSET_BITS=64)
   target_compile_definitions(active_interactor PUBLIC $<$<CONFIG:RELEASE>:NDEBUG>)
