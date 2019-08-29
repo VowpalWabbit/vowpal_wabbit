@@ -337,7 +337,7 @@ void do_sort(cb_explore_adf& data)
 {
   // We want to preserve the score order in the returned action_probs if possible.  To do this,
   // sort top_actions and data.action_probs by the order induced in data.scores.
-  sort(data.action_probs.begin(), data.action_probs.end(), [&data](action_score as1, action_score as2) {
+  sort(data.action_probs.begin(), data.action_probs.end(), [&data](action_score& as1, action_score& as2) {
     if (as1.score > as2.score)
       return true;
     else if (as1.score < as2.score)
