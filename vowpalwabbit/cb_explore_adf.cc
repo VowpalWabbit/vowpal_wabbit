@@ -84,6 +84,18 @@ struct cb_explore_adf
   // for backing up cb example data when computing sensitivities
   std::vector<ACTION_SCORE::action_scores> ex_as;
   std::vector<v_array<CB::cb_class>> ex_costs;
+
+  ~cb_explore_adf()
+  {
+    action_probs.delete_v();
+    cs_labels.costs.delete_v();
+    cs_labels_2.costs.delete_v();
+    cb_labels.delete_v();
+    for (auto& prepped_cs_label : prepped_cs_labels)
+      prepped_cs_label.costs.delete_v();
+    prepped_cs_labels.delete_v();
+    gen_cs.pred_scores.costs.delete_v();
+  }
 };
 
 // TODO: same as cs_active.cc, move to shared place
@@ -502,24 +514,6 @@ void predict_or_learn_softmax(cb_explore_adf& data, multi_learner& base, multi_e
   enforce_minimum_probability(data.epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-void finish(cb_explore_adf& data)
-{
-  data.top_actions.~vector<float>();
-  data.scores.~vector<float>();
-  data.min_costs.~vector<float>();
-  data.max_costs.~vector<float>();
-  data.ex_as.~vector<action_scores>();
-  data.ex_costs.~vector<v_array<CB::cb_class>>();
-  data.action_probs.delete_v();
-  data.cs_labels.costs.delete_v();
-  data.cs_labels_2.costs.delete_v();
-  data.cb_labels.delete_v();
-  for (size_t i = 0; i < data.prepped_cs_labels.size(); i++) data.prepped_cs_labels[i].costs.delete_v();
-  data.prepped_cs_labels.delete_v();
-  data.gen_cs.pred_scores.costs.delete_v();
-  data.gen_cs.mtr_ec_seq.~multi_ex();
-}
-
 // Semantics: Currently we compute the IPS loss no matter what flags
 // are specified. We print the first action and probability, based on
 // ordering by scores in the final output.
@@ -802,6 +796,5 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
       CB_EXPLORE_ADF::do_actual_learning<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
-  l.set_finish(CB_EXPLORE_ADF::finish);
   return make_base(l);
 }
