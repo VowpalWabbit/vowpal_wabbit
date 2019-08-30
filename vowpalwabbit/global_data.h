@@ -357,10 +357,10 @@ class rand_state
  public:
   rand_state() : random_state(0) {}
   rand_state(uint64_t initial) : random_state(initial) {}
-  uint64_t get_current_state() const { return random_state; }
+  constexpr uint64_t get_current_state() const noexcept { return random_state; }
   float get_and_update_random() { return merand48(random_state); }
   float get_random() const { return merand48_noadvance(random_state); }
-  void set_random_state(uint64_t initial) { random_state = initial; }
+  void set_random_state(uint64_t initial) noexcept { random_state = initial; }
 };
 
 struct vw

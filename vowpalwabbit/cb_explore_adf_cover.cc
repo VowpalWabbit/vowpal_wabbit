@@ -126,10 +126,10 @@ void cb_explore_adf_cover::predict_or_learn(
     cb_explore_adf_cover& data, LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
-    cb_explore_adf_base::learn(data, &cb_explore_adf_cover::predict_or_learn_impl<true>,
+    data.learn(data, &cb_explore_adf_cover::predict_or_learn_impl<true>,
         &cb_explore_adf_cover::predict_or_learn_impl<false>, base, examples);
   else
-    cb_explore_adf_base::predict(data, &cb_explore_adf_cover::predict_or_learn_impl<false>, base, examples);
+    data.predict(data, &cb_explore_adf_cover::predict_or_learn_impl<false>, base, examples);
 }
 
 void finish_multiline_example(vw& all, cb_explore_adf_cover& data, multi_ex& ec_seq)

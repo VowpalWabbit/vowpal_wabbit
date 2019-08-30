@@ -57,7 +57,7 @@ void cb_explore_adf_base::output_example(vw& all, multi_ex& ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (int sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.a_s, ec.tag);
 
   if (all.raw_prediction > 0)
   {
