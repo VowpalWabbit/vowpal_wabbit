@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "vw_example.h"
 #include "vw_prediction.h"
 #include "gd.h"
+#include <algorithm>
 
 namespace VW
 {
@@ -158,7 +159,7 @@ bool FloatEqual(float a, float b)
   { return true;
   }
 
-  return abs(a - b) / max(a, b) < 1e-6;
+  return abs(a - b) / std::max(a, b) < 1e-6;
 }
 
 System::String^ FormatFeatures(vw* vw, features& arr)
@@ -315,7 +316,7 @@ String^ VowpalWabbitContextualBanditLabelComparator::Diff(VowpalWabbitExample^ e
     { return System::String::Format("Cost differ: {0} vs {1}", c1.cost, c2.cost);
     }
 
-    if (abs(c1.probability - c2.probability) / max(c1.probability, c2.probability) > 0.01)
+    if (abs(c1.probability - c2.probability) / std::max(c1.probability, c2.probability) > 0.01)
     { return System::String::Format("Probability differ: {0} vs {1}", c1.probability, c2.probability);
     }
   }

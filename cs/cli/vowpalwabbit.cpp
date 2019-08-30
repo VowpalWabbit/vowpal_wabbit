@@ -763,10 +763,10 @@ size_t hashstring(String^ s, size_t u)
 
 Func<String^, size_t, size_t>^ VowpalWabbit::GetHasher()
 { //feature manipulation
-  string hash_function("strings");
+  std::string hash_function("strings");
   if (m_vw->options->was_supplied("hash"))
   {
-    hash_function = m_vw->options->get_typed_option<string>("hash").value();
+    hash_function = m_vw->options->get_typed_option<std::string>("hash").value();
   }
 
   if (hash_function == "strings")
