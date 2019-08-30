@@ -274,11 +274,12 @@ struct search_private
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 };
 
-search::search() { priv = &calloc_or_throw<search_private>(); }
-search::~search() { free(priv); }
-
-string audit_feature_space("conditional");
-uint64_t conditional_constant = 8290743;
+void free_key(unsigned char* mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
+void clear_cache_hash_map(search_private& priv)
+{
+  priv.cache_hash_map.iter(free_key);
+  priv.cache_hash_map.clear();
+}
 
 void clear_memo_foreach_action(search_private& priv)
 {
@@ -290,6 +291,80 @@ void clear_memo_foreach_action(search_private& priv)
     }
   priv.memo_foreach_action.clear();
 }
+
+search::search() { priv = &calloc_or_throw<search_private>(); }
+
+search::~search()
+{
+  if (this->priv && this->priv->all)
+  {
+    search_private& priv = *this->priv;
+    clear_cache_hash_map(priv);
+
+    delete priv.truth_string;
+    delete priv.pred_string;
+    delete priv.bad_string_stream;
+    priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
+    priv.rawOutputString.~string();
+    priv.test_action_sequence.~vector<action>();
+    priv.dat_new_feature_audit_ss.~stringstream();
+    priv.neighbor_features.delete_v();
+    priv.timesteps.delete_v();
+    if (priv.cb_learner)
+      priv.learn_losses.cb.costs.delete_v();
+    else
+      priv.learn_losses.cs.costs.delete_v();
+    if (priv.cb_learner)
+      priv.gte_label.cb.costs.delete_v();
+    else
+      priv.gte_label.cs.costs.delete_v();
+
+    priv.condition_on_actions.delete_v();
+    priv.learn_allowed_actions.delete_v();
+    priv.ldf_test_label.costs.delete_v();
+    priv.last_action_repr.delete_v();
+    priv.active_uncertainty.delete_v();
+    for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
+    priv.active_known.delete_v();
+
+    if (priv.cb_learner)
+      priv.allowed_actions_cache->cb.costs.delete_v();
+    else
+      priv.allowed_actions_cache->cs.costs.delete_v();
+
+    priv.train_trajectory.delete_v();
+    for (Search::action_repr& ar : priv.ptag_to_action)
+    {
+      if (ar.repr != nullptr)
+      {
+        ar.repr->delete_v();
+        delete ar.repr;
+        cdbg << "delete_v" << endl;
+      }
+    }
+    priv.ptag_to_action.delete_v();
+    clear_memo_foreach_action(priv);
+    priv.memo_foreach_action.delete_v();
+
+    // destroy copied examples if we needed them
+    if (!priv.examples_dont_change)
+    {
+      void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
+      for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
+      priv.learn_ec_copy.delete_v();
+    }
+    priv.learn_condition_on_names.delete_v();
+    priv.learn_condition_on.delete_v();
+    priv.learn_condition_on_act.delete_v();
+
+    free(priv.allowed_actions_cache);
+    delete priv.rawOutputStringStream;
+  }
+  free(this->priv);
+}
+
+string audit_feature_space("conditional");
+uint64_t conditional_constant = 8290743;
 
 inline bool need_memo_foreach_action(search_private& priv)
 {
@@ -1352,14 +1427,6 @@ bool cached_item_equivalent(unsigned char* const& A, unsigned char* const& B)
     return false;
   return memcmp(A, B, sz_A) == 0;
 }
-
-void free_key(unsigned char* mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
-void clear_cache_hash_map(search_private& priv)
-{
-  priv.cache_hash_map.iter(free_key);
-  priv.cache_hash_map.clear();
-}
-
 // returns true if found and do_store is false. if do_store is true, always returns true.
 bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on,
     const char* condition_on_names, action_repr* condition_on_actions, size_t condition_on_cnt, int policy,
@@ -2457,82 +2524,6 @@ void search_initialize(vw* all, search& sch)
   new (&priv.dat_new_feature_audit_ss) stringstream();
 }
 
-void search_finish(search& sch)
-{
-  search_private& priv = *sch.priv;
-  cdbg << "search_finish" << endl;
-
-  clear_cache_hash_map(priv);
-
-  delete priv.truth_string;
-  delete priv.pred_string;
-  delete priv.bad_string_stream;
-  priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
-  priv.rawOutputString.~string();
-  priv.test_action_sequence.~vector<action>();
-  priv.dat_new_feature_audit_ss.~stringstream();
-  priv.neighbor_features.delete_v();
-  priv.timesteps.delete_v();
-  if (priv.cb_learner)
-    priv.learn_losses.cb.costs.delete_v();
-  else
-    priv.learn_losses.cs.costs.delete_v();
-  if (priv.cb_learner)
-    priv.gte_label.cb.costs.delete_v();
-  else
-    priv.gte_label.cs.costs.delete_v();
-
-  priv.condition_on_actions.delete_v();
-  priv.learn_allowed_actions.delete_v();
-  priv.ldf_test_label.costs.delete_v();
-  priv.last_action_repr.delete_v();
-  priv.active_uncertainty.delete_v();
-  for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
-  priv.active_known.delete_v();
-
-  if (priv.cb_learner)
-    priv.allowed_actions_cache->cb.costs.delete_v();
-  else
-    priv.allowed_actions_cache->cs.costs.delete_v();
-
-  priv.train_trajectory.delete_v();
-  for (Search::action_repr& ar : priv.ptag_to_action)
-  {
-    if (ar.repr != nullptr)
-    {
-      ar.repr->delete_v();
-      delete ar.repr;
-      cdbg << "delete_v" << endl;
-    }
-  }
-  priv.ptag_to_action.delete_v();
-  clear_memo_foreach_action(priv);
-  priv.memo_foreach_action.delete_v();
-
-  // destroy copied examples if we needed them
-  if (!priv.examples_dont_change)
-  {
-    void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-    for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
-    priv.learn_ec_copy.delete_v();
-  }
-  priv.learn_condition_on_names.delete_v();
-  priv.learn_condition_on.delete_v();
-  priv.learn_condition_on_act.delete_v();
-
-  if (priv.active_csoaa)
-    std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
-
-  if (priv.task->finish)
-    priv.task->finish(sch);
-  if (priv.metatask && priv.metatask->finish)
-    priv.metatask->finish(sch);
-
-  free(priv.allowed_actions_cache);
-  delete priv.rawOutputStringStream;
-  free(sch.priv);
-}
-
 void ensure_param(float& v, float lo, float hi, float def, const char* string)
 {
   if ((v < lo) || (v > hi))
@@ -2562,6 +2553,20 @@ void handle_condition_options(vw& all, auto_condition_settings& acset)
                       .keep()
                       .help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
   all.options->add_and_parse(new_options);
+}
+
+void search_finish(search& sch)
+{
+  search_private& priv = *sch.priv;
+  cdbg << "search_finish" << endl;
+
+  if (priv.active_csoaa)
+    std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
+
+  if (priv.task->finish)
+    priv.task->finish(sch);
+  if (priv.metatask && priv.metatask->finish)
+    priv.metatask->finish(sch);
 }
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
