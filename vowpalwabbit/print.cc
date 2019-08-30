@@ -2,7 +2,6 @@
 #include "float.h"
 #include "reductions.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct print
@@ -12,10 +11,10 @@ struct print
 
 void print_feature(vw& /* all */, float value, uint64_t index)
 {
-  cout << index;
+  std::cout << index;
   if (value != 1.)
-    cout << ":" << value;
-  cout << " ";
+    std::cout << ":" << value;
+  std::cout << " ";
 }
 
 void learn(print& p, LEARNER::base_learner&, example& ec)
@@ -23,22 +22,22 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
   label_data& ld = ec.l.simple;
   if (ld.label != FLT_MAX)
   {
-    cout << ld.label << " ";
+    std::cout << ld.label << " ";
     if (ec.weight != 1 || ld.initial != 0)
     {
-      cout << ec.weight << " ";
+      std::cout << ec.weight << " ";
       if (ld.initial != 0)
-        cout << ld.initial << " ";
+        std::cout << ld.initial << " ";
     }
   }
   if (ec.tag.size() > 0)
   {
-    cout << '\'';
-    cout.write(ec.tag.begin(), ec.tag.size());
+    std::cout << '\'';
+    std::cout.write(ec.tag.begin(), ec.tag.size());
   }
-  cout << "| ";
+  std::cout << "| ";
   GD::foreach_feature<vw, uint64_t, print_feature>(*(p.all), ec, *p.all);
-  cout << endl;
+  std::cout << std::endl;
 }
 
 LEARNER::base_learner* print_setup(options_i& options, vw& all)

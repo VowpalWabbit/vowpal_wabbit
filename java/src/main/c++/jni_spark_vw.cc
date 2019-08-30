@@ -64,7 +64,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
     int size = env->GetArrayLength(model);
     char* model0 = (char*)modelGuard.data();
 
-    // wrap the model inside a vector
+    // wrap the model inside a std::vector
     vector_io_buf buffer(model0, size);
 
     return (jlong)VW::initialize(g_args.c_str(), &buffer);

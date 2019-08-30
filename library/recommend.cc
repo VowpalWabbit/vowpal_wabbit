@@ -14,7 +14,6 @@
 
 #include "../vowpalwabbit/vw.h"
 
-using namespace std;
 namespace po = boost::program_options;
 
 int pairs = 0;
@@ -28,10 +27,10 @@ int show = 1;
 int b=16;
 int topk=10;
 int verbose=0;
-string blacklistfilename;
-string itemfilename;
-string userfilename;
-string vwparams;
+std::string blacklistfilename;
+std::string itemfilename;
+std::string userfilename;
+std::string vwparams;
 
 void progress()
 { fprintf(stderr, "%12d %8d %8d %8d %12d %s %s\n", pairs, users, items, recs, skipped, userfilename.c_str(), itemfilename.c_str());
@@ -74,8 +73,8 @@ int bf_hit(char *bf, char *line)
   return 1;
 }
 
-typedef pair<float, string> scored_example;
-vector<scored_example> scored_examples;
+typedef std::pair<float, std::string> scored_example;
+std::vector<scored_example> scored_examples;
 
 struct compare_scored_examples
 { bool operator()(scored_example const& lhs, scored_example const& rhs) const
@@ -83,7 +82,7 @@ struct compare_scored_examples
   }
 };
 
-priority_queue<scored_example, vector<scored_example>, compare_scored_examples > pr_queue;
+std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples> pr_queue;
 
 int main(int argc, char *argv[])
 { po::variables_map vm;
@@ -93,28 +92,28 @@ int main(int argc, char *argv[])
   ("topk", po::value<int>(&topk), "number of items to recommend per user")
   ("verbose,v", po::value<int>(&verbose), "increase verbosity (can be repeated)")
   ("bf_bits,b", po::value<int>(&b), "number of items to recommend")
-  ("blacklist,B", po::value<string>(&blacklistfilename), "user item pairs (in vw format) that we should not recommend (have been seen before)")
-  ("users,U", po::value<string>(&userfilename), "users portion in vw format to make recs for")
-  ("items,I", po::value<string>(&itemfilename), "items (in vw format) to recommend from")
-  ("vwparams", po::value<string>(&vwparams), "vw parameters for model instantiation (-i model ...)")
+  ("blacklist,B", po::value<std::string>(&blacklistfilename), "user item pairs (in vw format) that we should not recommend (have been seen before)")
+  ("users,U", po::value<std::string>(&userfilename), "users portion in vw format to make recs for")
+  ("items,I", po::value<std::string>(&itemfilename), "items (in vw format) to recommend from")
+  ("vwparams", po::value<std::string>(&vwparams), "vw parameters for model instantiation (-i model ...)")
   ;
 
   try
   { po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
   }
-  catch(exception & e)
-  { cout << endl << argv[0] << ": " << e.what() << endl << endl << desc << endl;
+  catch(std::exception & e)
+  { std::cout << std::endl << argv[0] << ": " << e.what() << std::endl << std::endl << desc << std::endl;
     exit(2);
   }
 
   if (vm.count("help"))
-  { cout << desc << "\n";
+  { std::cout << desc << "\n";
     return 1;
   }
 
   if (blacklistfilename.empty() || userfilename.empty() || itemfilename.empty() || vwparams.empty())
-  { cout << desc << "\n";
+  { std::cout << desc << "\n";
     exit(2);
   }
 
@@ -124,17 +123,17 @@ int main(int argc, char *argv[])
 
   if((fB = fopen(blacklistfilename.c_str(), "r")) == NULL)
   { fprintf(stderr,"can't open %s: %s\n", blacklistfilename.c_str(), strerror(errno));
-    cerr << desc << endl;
+    std::cerr << desc << std::endl;
     exit(2);
   }
   if((fU = fopen(userfilename.c_str(), "r")) == NULL )
   { fprintf(stderr,"can't open %s: %s\n", userfilename.c_str(), strerror(errno));
-    cerr << desc << endl;
+    std::cerr << desc << std::endl;
     exit(2);
   }
   if((fI = fopen(itemfilename.c_str(), "r")) == NULL )
   { fprintf(stderr,"can't open %s: %s\n", itemfilename.c_str(), strerror(errno));
-    cerr << desc << endl;
+    std::cerr << desc << std::endl;
     exit(2);
   }
 
@@ -157,7 +156,7 @@ int main(int argc, char *argv[])
 
   /* print saturation etc */
   if (verbose)
-  { bf_info(bf,stderr);
+  { bf_info(bf, stderr);
     fprintf(stderr, "%d banned pairs\n", banned);
   }
 
@@ -187,20 +186,20 @@ int main(int argc, char *argv[])
       }
 
       free(estr);
-      estr = strdup((string(u)+string(i)).c_str());
+      estr = strdup((std::string(u)+std::string(i)).c_str());
 
       if (!bf_hit(bf,estr))
       { example *ex = VW::read_example(*model, estr);
         model->learn(*ex);
 
-        const string str(estr);
+        const std::string str(estr);
 
         if(pr_queue.size() < (size_t)topk)
-        { pr_queue.push(make_pair(ex->pred.scalar, str));
+        { pr_queue.push(std::make_pair(ex->pred.scalar, str));
         }
         else if(pr_queue.top().first < ex->pred.scalar)
         { pr_queue.pop();
-          pr_queue.push(make_pair(ex->pred.scalar, str));
+          pr_queue.push(std::make_pair(ex->pred.scalar, str));
         }
 
         VW::finish_example(*model, *ex);
@@ -210,11 +209,10 @@ int main(int argc, char *argv[])
         if(verbose>=2)
           fprintf(stderr,"skipping:#%s#\n", estr);
       }
-
     }
 
     while(!pr_queue.empty())
-    { cout << pr_queue.top().first << "\t" << pr_queue.top().second;
+    {std::cout << pr_queue.top().first << "\t" << pr_queue.top().second;
       pr_queue.pop();
       recs++;
     }
@@ -226,11 +224,5 @@ int main(int argc, char *argv[])
   VW::finish(*model);
   fclose(fI);
   fclose(fU);
-  exit(EXIT_SUCCESS);
-
+  return 0;
 }
-
-
-
-
-

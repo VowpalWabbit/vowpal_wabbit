@@ -13,7 +13,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "vw.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -157,7 +156,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   polyprediction* hiddenbias_pred = n.hiddenbias_pred;
   bool* dropped_out = n.dropped_out;
 
-  ostringstream outputStringStream;
+  std::ostringstream outputStringStream;
 
   n.all->set_minmax = noop_mm;
   n.all->loss = n.squared_loss;

@@ -2,7 +2,6 @@
 #include "gd.h"
 #include "vw.h"
 
-using namespace std;
 
 namespace MULTILABEL
 {
@@ -14,7 +13,7 @@ char* bufread_label(labels* ld, char* c, io_buf& cache)
   size_t total = sizeof(uint32_t) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    cout << "error in demarshal of cost data" << endl;
+    std::cout << "error in demarshal of cost data" << std::endl;
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -111,9 +110,9 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       }
       break;
     default:
-      cerr << "example with an odd label, what is ";
-      for (size_t i = 0; i < words.size(); i++) cerr << words[i].begin << " ";
-      cerr << endl;
+      std::cerr << "example with an odd label, what is ";
+      for (size_t i = 0; i < words.size(); i++) std::cerr << words[i].begin << " ";
+      std::cerr << std::endl;
   }
 }
 
@@ -124,13 +123,13 @@ void print_update(vw& all, bool is_test, example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
-    stringstream label_string;
+    std::stringstream label_string;
     if (is_test)
       label_string << " unknown";
     else
       for (size_t i = 0; i < ec.l.multilabels.label_v.size(); i++) label_string << " " << ec.l.multilabels.label_v[i];
 
-    stringstream pred_string;
+    std::stringstream pred_string;
     for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       pred_string << " " << ec.pred.multilabels.label_v[i];
 

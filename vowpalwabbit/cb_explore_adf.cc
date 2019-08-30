@@ -11,7 +11,7 @@
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
-using namespace std;
+
 using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
@@ -39,8 +39,8 @@ namespace CB_EXPLORE_ADF
 struct cb_explore_adf
 {
   v_array<action_score> action_probs;
-  vector<float> scores;
-  vector<float> top_actions;
+  std::vector<float> scores;
+  std::vector<float> top_actions;
 
   size_t explore_type;
 
@@ -89,7 +89,7 @@ struct cb_explore_adf
 // TODO: same as cs_active.cc, move to shared place
 float binary_search(float fhat, float delta, float sens, float tol = 1e-6)
 {
-  const float maxw = min(fhat / sens, FLT_MAX);
+  const float maxw = std::min(fhat / sens, FLT_MAX);
 
   if (maxw * fhat * fhat <= delta)
     return maxw;
@@ -153,7 +153,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
     else
     {
       w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
-      min_costs[a] = max(ec->pred.scalar - sens * w, cmin);
+      min_costs[a] = std::max(ec->pred.scalar - sens * w, cmin);
       if (min_costs[a] > cmax)
         min_costs[a] = cmax;
     }
@@ -169,7 +169,7 @@ void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_cost
       else
       {
         w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
-        max_costs[a] = min(ec->pred.scalar + sens * w, cmax);
+        max_costs[a] = std::min(ec->pred.scalar + sens * w, cmax);
         if (max_costs[a] < cmin)
           max_costs[a] = cmin;
       }
@@ -325,7 +325,7 @@ void do_sort(cb_explore_adf& data)
 {
   // We want to preserve the score order in the returned action_probs if possible.  To do this,
   // sort top_actions and data.action_probs by the order induced in data.scores.
-  sort(data.action_probs.begin(), data.action_probs.end(), [data](action_score as1, action_score as2) {
+  std::sort(data.action_probs.begin(), data.action_probs.end(), [data](action_score as1, action_score as2) {
     if (as1.score > as2.score)
       return true;
     else if (as1.score < as2.score)
@@ -354,7 +354,7 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
 
   data.scores.clear();
   for (uint32_t i = 0; i < num_actions; i++) data.scores.push_back(0.f);
-  vector<float>& top_actions = data.top_actions;
+  std::vector<float>& top_actions = data.top_actions;
   top_actions.assign(num_actions, 0);
   bool test_sequence = CB_ADF::test_adf_sequence(examples) == nullptr;
   for (uint32_t i = 0; i < data.bag_size; i++)
@@ -420,7 +420,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   const uint32_t num_actions = (uint32_t)preds.size();
 
   float additive_probability = 1.f / (float)data.cover_size;
-  const float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
+  const float min_prob = std::min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
   v_array<action_score>& probs = data.action_probs;
   probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) probs.push_back({i, 0.});
@@ -444,7 +444,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
       data.cs_labels_2.costs.clear();
       for (uint32_t j = 0; j < num_actions; j++)
       {
-        float pseudo_cost = data.cs_labels.costs[j].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
+        float pseudo_cost = data.cs_labels.costs[j].x - data.psi * min_prob / (std::max(probs[j].score, min_prob) / norm);
         data.cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
       GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2,
@@ -462,7 +462,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
       for (size_t i = 0; i < tied_actions; ++i)
       {
         if (probs[preds[i].action].score < min_prob)
-          norm += max(0, add_prob - (min_prob - probs[preds[i].action].score));
+          norm += std::max(0.f, add_prob - (min_prob - probs[preds[i].action].score));
         else
           norm += add_prob;
         probs[preds[i].action].score += add_prob;
@@ -472,7 +472,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
     {
       uint32_t action = preds[0].action;
       if (probs[action].score < min_prob)
-        norm += max(0, additive_probability - (min_prob - probs[action].score));
+        norm += std::max(0.f, additive_probability - (min_prob - probs[action].score));
       else
         norm += additive_probability;
       probs[action].score += additive_probability;
@@ -562,8 +562,8 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     v_array<CB::cb_class> costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
@@ -746,7 +746,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   {
     if (options.was_supplied("cover"))
       all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
-                        << endl;
+                        << std::endl;
     data->gen_cs.cb_type = CB_TYPE_MTR;
   }
   else

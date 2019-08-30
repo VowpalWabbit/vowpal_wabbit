@@ -11,7 +11,6 @@
 #define B_SEARCH_MAX_ITER 20
 
 using namespace LEARNER;
-using namespace std;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
 
@@ -60,7 +59,7 @@ struct cs_active
 
 float binarySearch(float fhat, float delta, float sens, float tol)
 {
-  float maxw = min(fhat / sens, FLT_MAX);
+  float maxw = std::min(fhat / sens, FLT_MAX);
 
   if (maxw * fhat * fhat <= delta)
     return maxw;
@@ -87,7 +86,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
     float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
-  // cerr << "base.predict ==> partial_prediction=" << ec.partial_prediction << endl;
+  // std::cerr << "base.predict ==> partial_prediction=" << ec.partial_prediction << std::endl;
   if (is_learn)
   {
     vw& all = *cs_a.all;
@@ -113,8 +112,8 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
       {
         ec.l.simple.label = cost;
         if ((cost < cs_a.cost_min) || (cost > cs_a.cost_max))
-          cerr << "warning: cost " << cost << " outside of cost range [" << cs_a.cost_min << ", " << cs_a.cost_max
-               << "]!" << endl;
+          std::cerr << "warning: cost " << cost << " outside of cost range [" << cs_a.cost_min << ", " << cs_a.cost_max
+               << "]!" << std::endl;
       }
       else
         ec.l.simple.label = FLT_MAX;
@@ -151,56 +150,56 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
     max_pred = cs_a.cost_max;
     is_range_large = true;
     if (cs_a.print_debug_stuff)
-      cerr << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
-           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
+      std::cerr << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
+           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << std::endl;
   }
   else
   {
     // finding max_pred and min_pred by binary search
     max_pred =
-        min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
+        std::min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
     min_pred =
-        max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+        std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
-      cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
-           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
+      std::cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
+           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << std::endl;
   }
 }
 
 template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
-  // cerr << "------------- passthrough" << endl;
+  // std::cerr << "------------- passthrough" << std::endl;
   COST_SENSITIVE::label ld = ec.l.cs;
 
-  // cerr << "is_learn=" << is_learn << " ld.costs.size()=" << ld.costs.size() << endl;
+  // std::cerr << "is_learn=" << is_learn << " ld.costs.size()=" << ld.costs.size() << std::endl;
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
   {
     // save regressor
-    stringstream filename;
+    std::stringstream filename;
     filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
              << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
-    cerr << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
+    std::cerr << std::endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
     {
-      cerr << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
+      std::cerr << std::endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
     }
 
-    cerr << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
-    cerr << endl << "average distance to range = " << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
-    cerr << endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
+    std::cerr << std::endl << "labels outside of cost range = " << cs_a.labels_outside_range;
+    std::cerr << std::endl << "average distance to range = " << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
+    std::cerr << std::endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
 
     /*
     for (size_t i=0; i<cs_a.all->sd->distance_to_range.size(); i++)
-    {  cerr << endl << "label " << i << ", average distance to range = " <<
+    {  std::cerr << std::endl << "label " << i << ", average distance to range = " <<
     cs_a.all->sd->distance_to_range[i]/((float)(cs_a.t-1));
     }*/
 
-    cerr << endl << endl;
+    std::cerr << std::endl << std::endl;
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes)
@@ -215,7 +214,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   float t_prev = t - 1.f;   // ec.weight; // last round
 
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / sqrt(t);  // threshold on cost range
-  float delta = cs_a.c0 * log((float)(cs_a.num_classes * max(t_prev, 1.f))) *
+  float delta = cs_a.c0 * log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
       pow(cs_a.cost_max - cs_a.cost_min, 2);  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
@@ -230,7 +229,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     for (lq_data& lqd : cs_a.query_data)
     {
       find_cost_range(cs_a, base, ec, lqd.cl.class_index, delta, eta, lqd.min_pred, lqd.max_pred, lqd.is_range_large);
-      min_max_cost = min(min_max_cost, lqd.max_pred);
+      min_max_cost = std::min(min_max_cost, lqd.max_pred);
     }
     for (lq_data& lqd : cs_a.query_data)
     {
@@ -238,15 +237,15 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       n_overlapped += (uint32_t)(lqd.is_range_overlapped);
       // large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
       // if(cl.is_range_overlapped && is_learn)
-      //{ cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ",
-      // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
+      //{ std::cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ",
+      // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << std::endl;
       //}
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
       if (lqd.cl.x > lqd.max_pred || lqd.cl.x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
-        // cs_a.all->sd->distance_to_range[cl.class_index-1] += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
-        cs_a.distance_to_range += max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
+        // cs_a.all->sd->distance_to_range[cl.class_index-1] += std::max(cl.x - cl.max_pred, cl.min_pred - cl.x);
+        cs_a.distance_to_range += std::max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
         cs_a.range += lqd.max_pred - lqd.min_pred;
       }
     }
@@ -263,11 +262,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       if (lqd.query_needed)
         ec.pred.multilabels.label_v.push_back(lqd.cl.class_index);
       if (cs_a.print_debug_stuff)
-        cerr << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction
+        std::cerr << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction
              << " score=" << score << " pp=" << lqd.cl.partial_prediction << " ql=" << query_label
              << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " ["
              << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped
-             << " is_baseline=" << cs_a.is_baseline << endl;
+             << " is_baseline=" << cs_a.is_baseline << std::endl;
     }
 
     // Need to pop metadata
@@ -357,7 +356,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
     THROW("error: you can't use --cs_active and --csoaa at the same time");
 
   if (!options.was_supplied("adax"))
-    all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+    all.trace_message << "WARNING: --cs_active should be used with --adax" << std::endl;
 
   all.p->lp = cs_label;  // assigning the label parser
   all.set_minmax(all.sd, data->cost_max);

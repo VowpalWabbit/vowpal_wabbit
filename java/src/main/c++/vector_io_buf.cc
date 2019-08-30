@@ -21,7 +21,7 @@ void vector_io_buf::reset_file(int f)
 
 ssize_t vector_io_buf::read_file(int f, void* buf, size_t nbytes)
 {  // make sure we don't go past the end
-  nbytes = min(_buffer.end() - _iterator, nbytes);
+  nbytes = std::min(_buffer.end() - _iterator, nbytes);
 
   memcpy(buf, &*_iterator, nbytes);
   _iterator += nbytes;

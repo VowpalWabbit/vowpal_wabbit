@@ -233,7 +233,7 @@ class features_value_index_audit_iterator : public features_value_index_iterator
   friend void swap(features_value_index_audit_iterator& lhs, features_value_index_audit_iterator& rhs)
   {
     swap(static_cast<features_value_index_iterator&>(lhs), static_cast<features_value_index_iterator&>(rhs));
-    swap(lhs._begin_audit, rhs._begin_audit);
+    std::swap(lhs._begin_audit, rhs._begin_audit);
   }
 };
 

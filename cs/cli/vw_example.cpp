@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -171,7 +171,7 @@ System::String^ FormatFeatures(vw* vw, features& arr)
 }
 
 System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned char ns)
-{ vector<size_t> fa_missing;
+{ std::vector<size_t> fa_missing;
   for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
   { auto masked_weight_index = fa.indicies[ia] & vw->weights.mask();
     auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();

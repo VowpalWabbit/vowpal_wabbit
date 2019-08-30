@@ -6,43 +6,41 @@
 #include <string.h>
 #include <boost/program_options.hpp>
 
-using namespace std;
 namespace po = boost::program_options;
 
-
 int main(int argc, char *argv[])
-{ string infile;
-  string outdir(".");
-  string vwparams;
+{ std::string infile;
+  std::string outdir(".");
+  std::string vwparams;
 
   po::variables_map vm;
   po::options_description desc("Allowed options");
   desc.add_options()
   ("help,h", "produce help message")
-  ("infile,I", po::value<string>(&infile), "input (in vw format) of weights to extract")
-  ("outdir,O", po::value<string>(&outdir), "directory to write model files to (default: .)")
-  ("vwparams", po::value<string>(&vwparams), "vw parameters for model instantiation (-i model.reg -t ...")
+  ("infile,I", po::value<std::string>(&infile), "input (in vw format) of weights to extract")
+  ("outdir,O", po::value<std::string>(&outdir), "directory to write model files to (default: .)")
+  ("vwparams", po::value<std::string>(&vwparams), "vw parameters for model instantiation (-i model.reg -t ...")
   ;
 
   try
   { po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
   }
-  catch(exception & e)
-  { cout << endl << argv[0] << ": " << e.what() << endl << endl << desc << endl;
+  catch(std::exception & e)
+  {std::cout << std::endl << argv[0] << ": " << e.what() << std::endl << std::endl << desc << std::endl;
     exit(2);
   }
 
   if (vm.count("help") || infile.empty() || vwparams.empty())
-  { cout << "Dumps weights for matrix factorization model (gd_mf)." << endl;
-    cout << "The constant will be written to <outdir>/constant." << endl;
-    cout << "Linear and quadratic weights corresponding to the input features will be " << endl;
-    cout << "written to <outdir>/<ns>.linear and <outdir>/<ns>.quadratic,respectively." << endl;
-    cout << endl;
-    cout << desc << "\n";
-    cout << "Example usage:" << endl;
-    cout << "    Extract weights for user 42 and item 7 under randomly initialized rank 10 model:" << endl;
-    cout << "    echo '|u 42 |i 7' | ./gd_mf_weights -I /dev/stdin --vwparams '-q ui --rank 10'" << endl;
+  { std::cout << "Dumps weights for matrix factorization model (gd_mf)." << std::endl;
+    std::cout << "The constant will be written to <outdir>/constant." << std::endl;
+    std::cout << "Linear and quadratic weights corresponding to the input features will be " << std::endl;
+    std::cout << "written to <outdir>/<ns>.linear and <outdir>/<ns>.quadratic,respectively." << std::endl;
+    std::cout << std::endl;
+    std::cout << desc << "\n";
+    std::cout << "Example usage:" << std::endl;
+    std::cout << "    Extract weights for user 42 and item 7 under randomly initialized rank 10 model:" << std::endl;
+    std::cout << "    echo '|u 42 |i 7' | ./gd_mf_weights -I /dev/stdin --vwparams '-q ui --rank 10'" << std::endl;
     return 1;
   }
 
@@ -50,7 +48,7 @@ int main(int argc, char *argv[])
   vw* model = VW::initialize(vwparams);
   model->audit = true;
 
-  string target("--rank ");
+  std::string target("--rank ");
   size_t loc = vwparams.find(target);
   const char* location = vwparams.c_str()+loc+target.size();
   size_t rank = atoi(location);
@@ -67,11 +65,11 @@ int main(int argc, char *argv[])
   ssize_t read;
 
   // output files
-  ofstream constant((outdir + string("/") + string("constant")).c_str()),
-           left_linear((outdir + string("/") + string(1, left_ns) + string(".linear")).c_str()),
-           left_quadratic((outdir + string("/") + string(1, left_ns) + string(".quadratic")).c_str()),
-           right_linear((outdir + string("/") + string(1, right_ns) + string(".linear")).c_str()),
-           right_quadratic((outdir + string("/") + string(1, right_ns) + string(".quadratic")).c_str());
+  std::ofstream constant((outdir + std::string("/") + std::string("constant")).c_str()),
+           left_linear((outdir + std::string("/") + std::string(1, left_ns) + std::string(".linear")).c_str()),
+           left_quadratic((outdir + std::string("/") + std::string(1, left_ns) + std::string(".quadratic")).c_str()),
+           right_linear((outdir + std::string("/") + std::string(1, right_ns) + std::string(".linear")).c_str()),
+           right_quadratic((outdir + std::string("/") + std::string(1, right_ns) + std::string(".quadratic")).c_str());
 
   example *ec = NULL;
   while ((read = getline(&line, &len, file)) != -1)
@@ -88,8 +86,8 @@ int main(int argc, char *argv[])
       for (size_t k = 1; k <= rank; k++)
         left_quadratic << '\t' << weights[(left.indicies[i] + k)];
     }
-    left_linear << endl;
-    left_quadratic << endl;
+    left_linear << std::endl;
+    left_quadratic << std::endl;
 
     // write out features for right namespace
     features& right = ec->feature_space[right_ns];
@@ -100,14 +98,14 @@ int main(int argc, char *argv[])
       for (size_t k = 1; k <= rank; k++)
         right_quadratic << '\t' << weights[(right.indicies[i] + k + rank)];
     }
-    right_linear << endl;
-    right_quadratic << endl;
+    right_linear << std::endl;
+    right_quadratic << std::endl;
 
     VW::finish_example(*model, *ec);
   }
 
   // write constant
-  constant << weights[ec->feature_space[constant_namespace].indicies[0]] << endl;
+  constant << weights[ec->feature_space[constant_namespace].indicies[0]] << std::endl;
 
   // clean up
   VW::finish(*model);

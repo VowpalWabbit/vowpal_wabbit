@@ -3,6 +3,7 @@
 #ifdef _WIN32
 
 #include <WinSock2.h>
+#define NOMINMAX
 #include <Windows.h>
 #include <WS2tcpip.h>
 #include <io.h>

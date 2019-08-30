@@ -76,8 +76,8 @@ namespace exploration
     if (num_actions_scores != num_actions_pdf)
     {
       // fallback to the minimum
-      scores_last = scores_first + ((std::min)(num_actions_scores, num_actions_pdf));
-      OutputIt pdf_new_last = pdf_first + ((std::min)(num_actions_scores, num_actions_pdf));
+      scores_last = scores_first + std::min(num_actions_scores, num_actions_pdf);
+      OutputIt pdf_new_last = pdf_first + std::min(num_actions_scores, num_actions_pdf);
 
       // zero out pdf
       for (OutputIt d = pdf_new_last; d != pdf_last; ++d)

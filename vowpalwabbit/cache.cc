@@ -8,8 +8,6 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "vw.h"
 
-using namespace std;
-
 constexpr size_t int_size = 11;
 constexpr size_t char_size = 2;
 constexpr size_t neg_1 = 1;
@@ -89,7 +87,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     unsigned char index = 0;
     if ((temp = input->buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
     {
-      all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
+      all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << std::endl;
       return 0;
     }
 
@@ -103,7 +101,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     total += storage;
     if (input->buf_read(c, storage) < storage)
     {
-      all->trace_message << "truncated example! wanted: " << storage << " bytes" << endl;
+      all->trace_message << "truncated example! wanted: " << storage << " bytes" << std::endl;
       return 0;
     }
 

@@ -23,7 +23,6 @@
 #include "vw.h"
 #include "rand48.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -58,7 +57,7 @@ struct boosting
 {
   int N;
   float gamma;
-  string alg;
+  std::string alg;
   vw* all;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
@@ -292,8 +291,8 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
-  stringstream os;
-  os << "boosts " << o.N << endl;
+  std::stringstream os;
+  os << "boosts " << o.N << std::endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
   if (read)
@@ -311,8 +310,8 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
-      os2 << "alpha " << o.alpha[i] << endl;
+      std::stringstream os2;
+      os2 << "alpha " << o.alpha[i] << std::endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
 
@@ -325,25 +324,25 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
-      os2 << "v " << o.v[i] << endl;
+      std::stringstream os2;
+      os2 << "v " << o.v[i] << std::endl;
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
 
   if (read)
   {
-    cerr << "Loading alpha and v: " << endl;
+    std::cerr << "Loading alpha and v: " << std::endl;
   }
   else
   {
-    cerr << "Saving alpha and v, current weighted_examples = "
-         << o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples << endl;
+    std::cerr << "Saving alpha and v, current weighted_examples = "
+         << o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples << std::endl;
   }
   for (int i = 0; i < o.N; i++)
   {
-    cerr << o.alpha[i] << " " << o.v[i] << endl;
+    std::cerr << o.alpha[i] << " " << o.v[i] << std::endl;
   }
-  cerr << endl;
+  std::cerr << std::endl;
 }
 
 void finish(boosting& o)
@@ -362,8 +361,8 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
-  stringstream os;
-  os << "boosts " << o.N << endl;
+  std::stringstream os;
+  os << "boosts " << o.N << std::endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
   if (read)
@@ -378,20 +377,20 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
-      os2 << "alpha " << o.alpha[i] << endl;
+      std::stringstream os2;
+      os2 << "alpha " << o.alpha[i] << std::endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
 
   if (!o.all->quiet)
   {
     if (read)
-      cerr << "Loading alpha: " << endl;
+      std::cerr << "Loading alpha: " << std::endl;
     else
-      cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples() << endl;
-    for (int i = 0; i < o.N; i++) cerr << o.alpha[i] << " " << endl;
+      std::cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples() << std::endl;
+    for (int i = 0; i < o.N; i++) std::cerr << o.alpha[i] << " " << std::endl;
 
-    cerr << endl;
+    std::cerr << std::endl;
   }
 }
 
@@ -421,9 +420,9 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // 	    using sampling rather than importance weighting)
 
   if (!all.quiet)
-    cerr << "Number of weak learners = " << data->N << endl;
+    std::cerr << "Number of weak learners = " << data->N << std::endl;
   if (!all.quiet)
-    cerr << "Gamma = " << data->gamma << endl;
+    std::cerr << "Gamma = " << data->gamma << std::endl;
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;

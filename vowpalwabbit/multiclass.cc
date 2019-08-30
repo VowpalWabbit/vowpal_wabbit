@@ -8,7 +8,6 @@
 #define sprintf_s snprintf
 #endif
 
-using namespace std;
 
 namespace MULTICLASS
 {
@@ -88,8 +87,8 @@ void parse_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
       ld->weight = float_of_substring(words[1]);
       break;
     default:
-      cerr << "malformed example!\n";
-      cerr << "words.size() = " << words.size() << endl;
+      std::cerr << "malformed example!\n";
+      std::cerr << "words.size() = " << words.size() << std::endl;
   }
   if (ld->label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
@@ -104,8 +103,8 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
   substring ss_label = all.sd->ldict->get(ec.l.multi.label);
   substring ss_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(all.holdout_set_off, all.current_pass,
-      !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
-      !ss_pred.begin ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.num_features,
+      !ss_label.begin ? "unknown" : std::string(ss_label.begin, ss_label.end - ss_label.begin),
+      !ss_pred.begin ? "unknown" : std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.num_features,
       all.progress_add, all.progress_arg);
 }
 
@@ -171,7 +170,7 @@ void finish_example(vw& all, example& ec, bool update_loss)
     else
     {
       substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      all.print_text(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);

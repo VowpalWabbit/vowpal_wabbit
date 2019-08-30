@@ -10,7 +10,6 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include <math.h>
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -327,7 +326,7 @@ struct OjaNewton
       }
       for (int j = 1; j <= m; ++j)
       {
-        // norm = max(norm, fabs(tmp[j]));
+        // norm = std::max(norm, fabs(tmp[j]));
         (&w)[j] = tmp[j];
       }
     }
@@ -516,7 +515,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
   if (model_file.files.size() > 0)
   {
     bool resume = all.save_resume;
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 

@@ -40,7 +40,6 @@ license as described in the file LICENSE.
 #define _stricmp strcasecmp
 #endif
 
-using namespace std;
 using namespace rapidjson;
 
 struct vw;
@@ -117,7 +116,7 @@ struct BaseState
 
   virtual BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool)
   {
-    ctx.error() << "Unexpected token: string('" << str << "' len: " << len << ")";
+    ctx.error() << "Unexpected token: std::string('" << str << "' len: " << len << ")";
     return nullptr;
   }
 
@@ -560,7 +559,7 @@ class ArrayState : public BaseState<audit>
   {
     if (audit)
     {
-      stringstream str;
+      std::stringstream str;
       str << '[' << (array_hash - ctx.CurrentNamespace().namespace_hash) << ']';
 
       ctx.CurrentNamespace().AddFeature(f, array_hash, str.str().c_str());

@@ -39,7 +39,6 @@ license as described in the file LICENSE.
 #include <boost/align/is_aligned.hpp>
 #endif
 
-using namespace std;
 using namespace VW::config;
 
 enum lda_math_mode
@@ -795,7 +794,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   if (model_file.files.size() > 0)
   {
     uint64_t i = 0;
-    stringstream msg;
+    std::stringstream msg;
     size_t brw = 1;
 
     do
@@ -1057,7 +1056,7 @@ void get_top_weights(vw *all, int top_words_count, int topic, std::vector<featur
   std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
   typename T::iterator iter = weights.begin();
 
-  for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
+  for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
     top_features.push({(&(*iter))[topic], iter.index()});
 
   for (uint64_t i = top_words_count; i < length; i++, ++iter)
@@ -1103,7 +1102,7 @@ void compute_coherence_metrics(lda &l, T &weights)
     auto cmp = [](feature &left, feature &right) { return left.x > right.x; };
     std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
     typename T::iterator iter = weights.begin();
-    for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
+    for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
       top_features.push(feature((&(*iter))[topic], iter.index()));
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
@@ -1114,7 +1113,7 @@ void compute_coherence_metrics(lda &l, T &weights)
       }
 
     // extract idx and sort descending
-    vector<uint64_t> top_features_idx;
+    std::vector<uint64_t> top_features_idx;
     top_features_idx.resize(top_features.size());
     for (int i = (int)top_features.size() - 1; i >= 0; i--)
     {
@@ -1345,7 +1344,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   if (all.eta > 1.)
   {
     std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
-    all.eta = min(all.eta, 1.f);
+    all.eta = std::min(all.eta, 1.f);
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);

@@ -12,7 +12,6 @@
 
 using namespace LEARNER;
 using namespace CB_ALGS;
-using namespace std;
 using namespace VW::config;
 
 namespace EXPLORE_EVAL
@@ -37,11 +36,11 @@ void finish(explore_eval& data)
 {
   if (!data.all->quiet)
   {
-    data.all->trace_message << "update count = " << data.update_count << endl;
+    data.all->trace_message << "update count = " << data.update_count << std::endl;
     if (data.violations > 0)
-      data.all->trace_message << "violation count = " << data.violations << endl;
+      data.all->trace_message << "violation count = " << data.violations << std::endl;
     if (!data.fixed_multiplier)
-      data.all->trace_message << "final multiplier = " << data.multiplier << endl;
+      data.all->trace_message << "final multiplier = " << data.multiplier << std::endl;
   }
 }
 
@@ -84,8 +83,8 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     v_array<CB::cb_class> costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
@@ -148,7 +147,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
     float threshold = action_probability / data.known_cost.probability;
 
     if (!data.fixed_multiplier)
-      data.multiplier = min(data.multiplier, 1 / threshold);
+      data.multiplier = std::min(data.multiplier, 1 / threshold);
     else
       threshold *= data.multiplier;
 

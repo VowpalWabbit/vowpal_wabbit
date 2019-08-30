@@ -7,7 +7,6 @@
 #include "vw_exception.h"
 
 using namespace LEARNER;
-using namespace std;
 using namespace VW::config;
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
@@ -15,7 +14,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
   float b, sb, rs, sl;
   b = (float)(c0 * (log(k + 1.) + 0.0001) / (k + 0.0001));
   sb = sqrt(b);
-  avg_loss = min(1.f, max(0.f, avg_loss));  // loss should be in [0,1]
+  avg_loss = std::min(1.f, std::max(0.f, avg_loss));  // loss should be in [0,1]
 
   sl = sqrt(avg_loss) + sqrt(avg_loss + g);
   if (g <= sb * sl + b)
@@ -104,7 +103,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 

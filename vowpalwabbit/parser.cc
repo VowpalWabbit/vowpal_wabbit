@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 
 #ifdef _WIN32
 #include <winsock2.h>
+#define NOMINMAX
 #include <Windows.h>
 #include <io.h>
 typedef int socklen_t;
@@ -59,7 +60,6 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
 
-using namespace std;
 
 // This should not? matter in a library mode.
 bool got_sigterm;
@@ -104,7 +104,7 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
     VW::version_struct v_tmp(t.data());
     if (v_tmp != VW::version)
     {
-      //      cout << "cache has possibly incompatible version, rebuilding" << endl;
+      //     std::cout << "cache has possibly incompatible version, rebuilding" << std::endl;
       return 0;
     }
 
@@ -229,22 +229,22 @@ void finalize_source(parser* p)
   p->output = nullptr;
 }
 
-void make_write_cache(vw& all, string& newname, bool quiet)
+void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
   io_buf* output = all.p->output;
   if (output->files.size() != 0)
   {
-    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << std::endl;
     return;
   }
 
-  string temp = newname + string(".writing");
+  std::string temp = newname + std::string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
   int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
   if (f == -1)
   {
-    all.trace_message << "can't create cache file !" << endl;
+    all.trace_message << "can't create cache file !" << std::endl;
     return;
   }
 
@@ -258,7 +258,7 @@ void make_write_cache(vw& all, string& newname, bool quiet)
   push_many(output->finalname, newname.c_str(), newname.length() + 1);
   all.p->write_cache = true;
   if (!quiet)
-    all.trace_message << "creating cache_file = " << newname << endl;
+    all.trace_message << "creating cache_file = " << newname << std::endl;
 }
 
 void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -273,7 +273,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       {
         f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (const exception&)
+      catch (const std::exception&)
       {
         f = -1;
       }
@@ -286,14 +286,14 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       {
         if (!quiet)
           all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
-                            << endl;
+                            << std::endl;
         all.p->input->close_file();
         make_write_cache(all, file, quiet);
       }
       else
       {
         if (!quiet)
-          all.trace_message << "using cache_file = " << file.c_str() << endl;
+          all.trace_message << "using cache_file = " << file.c_str() << std::endl;
         all.p->reader = read_cached_features;
         if (c == all.num_bits)
           all.p->sorted_cache = true;
@@ -308,7 +308,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   if (cache_files.size() == 0)
   {
     if (!quiet)
-      all.trace_message << "using no cache" << endl;
+      all.trace_message << "using no cache" << std::endl;
     all.p->output->space.delete_v();
   }
 }
@@ -334,20 +334,20 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
     if (all.p->bound_sock < 0)
     {
-      stringstream msg;
+      std::stringstream msg;
       msg << "socket: " << strerror(errno);
-      all.trace_message << msg.str() << endl;
+      all.trace_message << msg.str() << std::endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << std::endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << std::endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -371,14 +371,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.trace_message << "getsockname: " << strerror(errno) << endl;
+        all.trace_message << "getsockname: " << strerror(errno) << std::endl;
       }
-      ofstream port_file;
+      std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open())
         THROW("error writing port file: " << input_options.port_file);
 
-      port_file << ntohs(address.sin_port) << endl;
+      port_file << ntohs(address.sin_port) << std::endl;
       port_file.close();
     }
 
@@ -393,12 +393,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     // write pid file
     if (all.options->was_supplied("pid_file"))
     {
-      ofstream pid_file;
+      std::ofstream pid_file;
       pid_file.open(input_options.pid_file.c_str());
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
-      pid_file << getpid() << endl;
+      pid_file << getpid() << std::endl;
       pid_file.close();
     }
 
@@ -478,7 +478,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     socklen_t size = sizeof(client_address);
     all.p->max_fd = 0;
     if (!all.quiet)
-      all.trace_message << "calling accept" << endl;
+      all.trace_message << "calling accept" << std::endl;
     int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f < 0)
       THROWERRNO("accept");
@@ -489,9 +489,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.final_prediction_sink.push_back((size_t)f);
 
     all.p->input->files.push_back(f);
-    all.p->max_fd = max(f, all.p->max_fd);
+    all.p->max_fd = std::max(f, all.p->max_fd);
     if (!all.quiet)
-      all.trace_message << "reading data from port " << port << endl;
+      all.trace_message << "reading data from port " << port << std::endl;
 
     all.p->max_fd++;
     if (all.active)
@@ -516,23 +516,23 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (all.p->input->files.size() > 0)
     {
       if (!quiet)
-        all.trace_message << "ignoring text input in favor of cache input" << endl;
+        all.trace_message << "ignoring text input in favor of cache input" << std::endl;
     }
     else
     {
-      string temp = all.data_filename;
+      std::string temp = all.data_filename;
       if (!quiet)
-        all.trace_message << "Reading datafile = " << temp << endl;
+        all.trace_message << "Reading datafile = " << temp << std::endl;
       try
       {
         all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (exception const& ex)
+      catch (std::exception const& ex)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (temp.size() != 0)
         {
-          all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
+          all.trace_message << "can't open '" << temp << "', sailing on!" << std::endl;
         }
         else
         {
@@ -575,7 +575,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.p->input->files.size() << std::endl;
 }
 
 void lock_done(parser& p)
@@ -606,11 +606,11 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t init
       fs.push_back(1., new_index);
       if (fs.space_names.size() > 0)
       {
-        string feature_name(fs.space_names[i].get()->second);
+        std::string feature_name(fs.space_names[i].get()->second);
         for (size_t n = 1; n < gram_mask.size(); n++)
         {
-          feature_name += string("^");
-          feature_name += string(fs.space_names[i + gram_mask[n]].get()->second);
+          feature_name += std::string("^");
+          feature_name += std::string(fs.space_names[i + gram_mask[n]].get()->second);
         }
         fs.space_names.push_back(audit_strings_ptr(new audit_strings(fs.space_names[i].get()->first, feature_name)));
       }
@@ -779,7 +779,7 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
+example* read_example(vw& all, std::string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {
@@ -798,7 +798,7 @@ void add_label(example* ec, float label, float weight, float base)
   ec->weight = weight;
 }
 
-example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
+example* import_example(vw& all, std::string label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
   all.p->lp.default_label(&ret->l);
@@ -853,7 +853,7 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
   delete (features);
 }
 
-void parse_example_label(vw& all, example& ec, string label)
+void parse_example_label(vw& all, example& ec, std::string label)
 {
   v_array<substring> words = v_init<substring>();
   char* cstr = (char*)label.c_str();

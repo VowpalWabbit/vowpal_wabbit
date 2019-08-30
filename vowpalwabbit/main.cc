@@ -20,7 +20,6 @@ license as described in the file LICENSE.
 #include "options.h"
 #include "options_boost_po.h"
 
-using namespace std;
 using namespace VW::config;
 
 vw* setup(options_i& options)
@@ -30,14 +29,14 @@ vw* setup(options_i& options)
   {
     all = VW::initialize(options);
   }
-  catch (const exception& ex)
+  catch (const std::exception& ex)
   {
-    cout << ex.what() << endl;
+    std::cout << ex.what() << std::endl;
     throw;
   }
   catch (...)
   {
-    cout << "unknown exception" << endl;
+    std::cout << "unknown exception" << std::endl;
     throw;
   }
   all->vw_is_main = true;
@@ -72,8 +71,8 @@ int main(int argc, char* argv[])
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
-    vector<std::unique_ptr<options_boost_po>> arguments;
-    vector<vw*> alls;
+    std::vector<std::unique_ptr<options_boost_po>> arguments;
+    std::vector<vw*> alls;
     if (argc == 3 && !strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
@@ -86,8 +85,8 @@ int main(int argc, char* argv[])
         sstr << line << " -f model." << (line_count++);
         sstr << " --no_stdin";  // can't use stdin with multiple models
 
-        std::cout << sstr.str() << endl;
-        string str = sstr.str();
+        std::cout << sstr.str() << std::endl;
+        std::string str = sstr.str();
         const char* new_args = str.c_str();
 
         int l_argc;
@@ -142,16 +141,16 @@ int main(int argc, char* argv[])
   }
   catch (VW::vw_exception& e)
   {
-    cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
+    std::cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
     exit(1);
   }
-  catch (exception& e)
+  catch (std::exception& e)
   {
     // vw is implemented as a library, so we use 'throw runtime_error()'
     // error 'handling' everywhere.  To reduce stderr pollution
     // everything gets caught here & the error message is printed
     // sans the excess exception noise, and core dump.
-    cerr << "vw: " << e.what() << endl;
+    std::cerr << "vw: " << e.what() << std::endl;
     // cin.ignore();
     exit(1);
   }

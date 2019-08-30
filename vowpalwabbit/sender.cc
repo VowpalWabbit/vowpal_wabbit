@@ -20,7 +20,6 @@
 #include "network.h"
 #include "reductions.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct sender
@@ -33,7 +32,7 @@ struct sender
   size_t received_index;
 };
 
-void open_sockets(sender& s, string host)
+void open_sockets(sender& s, std::string host)
 {
   s.sd = open_socket(host.c_str());
   s.buf = new io_buf();
@@ -99,7 +98,7 @@ void finish(sender& s)
 
 LEARNER::base_learner* sender_setup(options_i& options, vw& all)
 {
-  string host;
+  std::string host;
 
   option_group_definition sender_options("Network sending");
   sender_options.add(make_option("sendto", host).keep().help("send examples to <host>"));

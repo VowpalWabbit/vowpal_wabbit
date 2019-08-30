@@ -10,10 +10,9 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
-using scored_example = pair<float, v_array<char>>;
+using scored_example = std::pair<float, v_array<char>>;
 
 struct compare_scored_examples
 {
@@ -23,11 +22,11 @@ struct compare_scored_examples
 struct topk
 {
   uint32_t K;  // rec number
-  priority_queue<scored_example, vector<scored_example>, compare_scored_examples> pr_queue;
+  std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples> pr_queue;
   vw* all;
 };
 
-void print_result(int f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples>& pr_queue)
+void print_result(int f, std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples>& pr_queue)
 {
   if (f >= 0)
   {
@@ -53,7 +52,7 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
     ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
 #endif
     if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -81,11 +80,11 @@ void predict_or_learn(topk& d, LEARNER::single_learner& base, multi_ex& ec_seq)
       base.predict(ec);
 
     if (d.pr_queue.size() < d.K)
-      d.pr_queue.push(make_pair(ec.pred.scalar, ec.tag));
+      d.pr_queue.push(std::make_pair(ec.pred.scalar, ec.tag));
     else if (d.pr_queue.top().first < ec.pred.scalar)
     {
       d.pr_queue.pop();
-      d.pr_queue.push(make_pair(ec.pred.scalar, ec.tag));
+      d.pr_queue.push(std::make_pair(ec.pred.scalar, ec.tag));
     }
 
     output_example(*d.all, ec);
@@ -99,7 +98,7 @@ void finish_example(vw& all, topk& d, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-void finish(topk& d) { d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples>(); }
+void finish(topk& d) { d.pr_queue = std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples>(); }
 
 LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {

@@ -62,7 +62,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
     {
       m_supplied_options.insert(option.string_key);
 
-      // If a string is later determined to be a value the erase it. This happens for negative numbers "-2"
+      // If a std::string is later determined to be a value the erase it. This happens for negative numbers "-2"
       for (auto& val : option.value)
       {
         m_ignore_supplied.insert(val);
@@ -114,7 +114,7 @@ bool options_boost_po::was_supplied(const std::string& key)
     return true;
   }
 
-  // Basic check, string match against command line.
+  // Basic check, std::string match against command line.
   auto it = std::find(m_command_line.begin(), m_command_line.end(), std::string("--" + key));
   return it != m_command_line.end();
 }

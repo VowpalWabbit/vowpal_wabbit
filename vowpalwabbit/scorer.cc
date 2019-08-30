@@ -3,7 +3,6 @@
 #include "reductions.h"
 #include "vw_exception.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct scorer
@@ -54,7 +53,7 @@ inline float id(float in) { return in; }
 LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<scorer>();
-  string link;
+  std::string link;
   option_group_definition new_options("scorer options");
   new_options.add(make_option("link", link)
                       .default_value("identity")

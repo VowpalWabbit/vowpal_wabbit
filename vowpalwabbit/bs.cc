@@ -16,7 +16,6 @@ license as described in the file LICENSE.
 #include "bs.h"
 #include "vw_exception.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -26,18 +25,18 @@ struct bs
   size_t bs_type;
   float lb;
   float ub;
-  vector<double>* pred_vec;
+  std::vector<double>* pred_vec;
   vw* all;  // for raw prediction and loss
 };
 
-void bs_predict_mean(vw& all, example& ec, vector<double>& pred_vec)
+void bs_predict_mean(vw& all, example& ec, std::vector<double>& pred_vec)
 {
   ec.pred.scalar = (float)accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
 
-void bs_predict_vote(example& ec, vector<double>& pred_vec)
+void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
 {
   // majority vote in linear time
   unsigned int counter = 0;
@@ -149,7 +148,7 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -187,7 +186,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
 
   float weight_temp = ec.weight;
 
-  stringstream outputStringStream;
+  std::stringstream outputStringStream;
   d.pred_vec->clear();
 
   for (size_t i = 1; i <= d.B; i++)
@@ -265,7 +264,7 @@ base_learner* bs_setup(options_i& options, vw& all)
   else  // by default use mean
     data->bs_type = BS_TYPE_MEAN;
 
-  data->pred_vec = new vector<double>();
+  data->pred_vec = new std::vector<double>();
   data->pred_vec->reserve(data->B);
   data->all = &all;
 

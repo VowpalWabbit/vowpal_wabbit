@@ -8,7 +8,6 @@
 #include "gd.h"
 #include "reductions.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -309,7 +308,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   if (model_file.files.size() > 0)
   {
     bool resume = all->save_resume;
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
@@ -378,7 +377,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
-  string algorithm_name;
+  std::string algorithm_name;
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
@@ -411,10 +410,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   if (!all.quiet)
   {
-    cerr << "Enabling FTRL based optimization" << endl;
-    cerr << "Algorithm used: " << algorithm_name << endl;
-    cerr << "ftrl_alpha = " << b->ftrl_alpha << endl;
-    cerr << "ftrl_beta = " << b->ftrl_beta << endl;
+    std::cerr << "Enabling FTRL based optimization" << std::endl;
+    std::cerr << "Algorithm used: " << algorithm_name << std::endl;
+    std::cerr << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
   if (!all.holdout_set_off)

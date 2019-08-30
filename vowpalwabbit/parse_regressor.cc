@@ -5,7 +5,6 @@ license as described in the file LICENSE.
  */
 #include <fstream>
 #include <iostream>
-using namespace std;
 
 #include "crossplat_compat.h"
 
@@ -74,7 +73,7 @@ template <class T>
 void truncate(vw& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
-  for_each(weights.begin(), weights.end(), [](float& v) {
+  std::for_each(weights.begin(), weights.end(), [](float& v) {
     if (std::fabs(v) > sd * 2)
     {
       v = (float)std::remainder(static_cast<double>(v), sd * 2);
@@ -86,11 +85,11 @@ template <class T>
 double calculate_sd(vw& /* all */, T& weights)
 {
   static int my_size = 0;
-  for_each(weights.begin(), weights.end(), [](float /* v */) { my_size += 1; });
-  double sum = accumulate(weights.begin(), weights.end(), 0.0);
+  std::for_each(weights.begin(), weights.end(), [](float /* v */) { my_size += 1; });
+  double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
   double mean = sum / my_size;
-  vector<double> diff(my_size);
-  transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
+  std::vector<double> diff(my_size);
+  std::transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
   double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
   return sqrt(sq_sum / my_size);
 }
@@ -197,14 +196,14 @@ void save_load_header(
     {
       size_t bytes_read_write = 0;
 
-      uint32_t v_length = (uint32_t)VW::version.to_string().length() + 1;
-      stringstream msg;
+      size_t v_length = (uint32_t)VW::version.to_string().length() + 1;
+      std::stringstream msg;
       msg << "Version " << VW::version.to_string() << "\n";
-      memcpy(buff2, VW::version.to_string().c_str(), min(v_length, buf2_size));
+      memcpy(buff2, VW::version.to_string().c_str(), std::min(v_length, buf2_size));
       if (read)
       {
-        v_length = (uint32_t)buf2_size;
-        buff2[min(v_length, default_buf_size) - 1] = '\0';
+        v_length = buf2_size;
+        buff2[std::min(v_length, default_buf_size) - 1] = '\0';
       }
       bytes_read_write += bin_text_read_write(model_file, buff2, v_length, "", read, msg, text);
       all.model_file_ver = buff2;  // stored in all to check save_resume fix in gd
@@ -215,10 +214,10 @@ void save_load_header(
 
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
       {
-        v_length = (uint32_t)all.id.length() + 1;
+        v_length = all.id.length() + 1;
 
         msg << "Id " << all.id << "\n";
-        memcpy(buff2, all.id.c_str(), min(v_length, default_buf_size));
+        memcpy(buff2, all.id.c_str(), std::min(v_length, default_buf_size));
         if (read)
           v_length = default_buf_size;
         bytes_read_write += bin_text_read_write(model_file, buff2, v_length, "", read, msg, text);
@@ -287,7 +286,7 @@ void save_load_header(
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
           if (read)
           {
-            string temp(pair);
+            std::string temp(pair);
             if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
               all.pairs.push_back(temp);
           }
@@ -315,7 +314,7 @@ void save_load_header(
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
           if (read)
           {
-            string temp(triple);
+            std::string temp(triple);
             if (count(all.triples.begin(), all.triples.end(), temp) == 0)
               all.triples.push_back(temp);
           }
@@ -356,7 +355,7 @@ void save_load_header(
 
             if (read)
             {
-              string temp(buff2, inter_len);
+              std::string temp(buff2, inter_len);
               all.interactions.push_back(temp);
             }
           }
@@ -391,7 +390,7 @@ void save_load_header(
           else
             all.trace_message << "WARNING: this model file contains 'rank: " << rank
                               << "' value but it will be ignored as another value specified via the command line."
-                              << endl;
+                              << std::endl;
         }
       }
 
@@ -411,7 +410,7 @@ void save_load_header(
         if (!read)
         {
           msg << all.ngram_strings[i] << " ";
-          memcpy(ngram, all.ngram_strings[i].c_str(), min(3, all.ngram_strings[i].size()));
+          memcpy(ngram, all.ngram_strings[i].c_str(), std::min(static_cast<size_t>(3), all.ngram_strings[i].size()));
         }
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3, "", read, msg, text);
         if (read)
@@ -439,7 +438,7 @@ void save_load_header(
         if (!read)
         {
           msg << all.skip_strings[i] << " ";
-          memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));
+          memcpy(skip, all.skip_strings[i].c_str(), std::min(static_cast<size_t>(3), all.skip_strings[i].size()));
         }
 
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3, "", read, msg, text);
@@ -472,7 +471,7 @@ void save_load_header(
           // probably happened is boost::program_options did the right thing, but now we have to construct the
           // input to it where we do not know whether a particular option key can have multiple values or not.
           //
-          // In some cases we end up with a string like: "--bit_precision 18 <something_not_an_int>", which will
+          // In some cases we end up with a std::string like: "--bit_precision 18 <something_not_an_int>", which will
           // cause a "bad program options value" exception, rather than the true "file is corrupted" issue. Only
           // pushing the contents of buff2 into file_options when it is valid will prevent this false error.
           file_options = file_options + " " + buff2;
@@ -550,11 +549,11 @@ void dump_regressor(vw& all, io_buf& buf, bool as_text)
   buf.close_file();
 }
 
-void dump_regressor(vw& all, string reg_name, bool as_text)
+void dump_regressor(vw& all, std::string reg_name, bool as_text)
 {
-  if (reg_name == string(""))
+  if (reg_name == std::string(""))
     return;
-  string start_name = reg_name + string(".writing");
+  std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
 
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
@@ -564,20 +563,20 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
   remove(reg_name.c_str());
 
   if (0 != rename(start_name.c_str(), reg_name.c_str()))
-    THROW("WARN: dump_regressor(vw& all, string reg_name, bool as_text): cannot rename: "
+    THROW("WARN: dump_regressor(vw& all, std::string reg_name, bool as_text): cannot rename: "
         << start_name.c_str() << " to " << reg_name.c_str());
 }
 
-void save_predictor(vw& all, string reg_name, size_t current_pass)
+void save_predictor(vw& all, std::string reg_name, size_t current_pass)
 {
-  stringstream filename;
+  std::stringstream filename;
   filename << reg_name;
   if (all.save_per_pass)
     filename << "." << current_pass;
   dump_regressor(all, filename.str(), false);
 }
 
-void finalize_regressor(vw& all, string reg_name)
+void finalize_regressor(vw& all, std::string reg_name)
 {
   if (!all.early_terminate)
   {
@@ -604,10 +603,10 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
     io_temp.open_file(all_intial[0].c_str(), all.stdin_off, io_buf::READ);
     if (!all.quiet)
     {
-      // all.trace_message << "initial_regressor = " << regs[0] << endl;
+      // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors" << endl;
+        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors" << std::endl;
       }
     }
   }
@@ -657,7 +656,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
 
 namespace VW
 {
-void save_predictor(vw& all, string reg_name) { dump_regressor(all, reg_name, false); }
+void save_predictor(vw& all, std::string reg_name) { dump_regressor(all, reg_name, false); }
 
 void save_predictor(vw& all, io_buf& buf) { dump_regressor(all, buf, false); }
 }  // namespace VW

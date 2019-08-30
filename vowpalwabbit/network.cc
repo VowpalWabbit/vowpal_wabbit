@@ -27,8 +27,6 @@ license as described in the file LICENSE.
 #include <stdexcept>
 #include "vw_exception.h"
 
-using namespace std;
-
 int open_socket(const char* host)
 {
 #ifdef _WIN32
@@ -41,7 +39,7 @@ int open_socket(const char* host)
   if (colon != nullptr)
   {
     port = atoi(colon + 1);
-    string hostname(host, colon - host);
+    std::string hostname(host, colon - host);
     he = gethostbyname(hostname.c_str());
   }
   else
@@ -70,6 +68,6 @@ int open_socket(const char* host)
       write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #endif
   )
-    cerr << "write failed!" << endl;
+    std::cerr << "write failed!" << std::endl;
   return sd;
 }

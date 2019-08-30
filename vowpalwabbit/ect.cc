@@ -16,7 +16,6 @@ license as described in the file LICENSE.
 
 #include "reductions.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -67,7 +66,7 @@ size_t final_depth(size_t eliminations)
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0)
       return i;
-  cerr << "too many eliminations" << endl;
+  std::cerr << "too many eliminations" << std::endl;
   return 31;
 }
 
@@ -85,10 +84,10 @@ void print_level(v_array<v_array<uint32_t>> level)
 {
   for (size_t t = 0; t < level.size(); t++)
   {
-    for (size_t i = 0; i < level[t].size(); i++) cout << " " << level[t][i];
-    cout << " | ";
+    for (size_t i = 0; i < level[t].size(); i++) std::cout << " " << level[t][i];
+    std::cout << " | ";
   }
-  cout << endl;
+  std::cout << std::endl;
 }
 
 size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
@@ -270,7 +269,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
   } while (id != 0);
 
   if (e.tournaments_won.size() < 1)
-    cout << "badness!" << endl;
+    std::cout << "badness!" << std::endl;
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -310,7 +309,7 @@ void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
-    cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << endl;
+    std::cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << std::endl;
   ec.pred.multiclass = ect_predict(e, base, ec);
   ec.l.multi = mc;
 }

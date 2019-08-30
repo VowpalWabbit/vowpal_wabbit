@@ -6,7 +6,6 @@
 #include "search_entityrelationtask.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
 #define R_NONE 10      // label for NONE relation
@@ -121,8 +120,8 @@ bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
 
 void decode_tag(v_array<char> tag, char& type, int& id1, int& id2)
 {
-  string s1;
-  string s2;
+  std::string s1;
+  std::string s2;
   type = tag[0];
   size_t idx = 2;
   while (idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0')
@@ -431,7 +430,7 @@ void run(Search::search& sch, multi_ex& ec)
       entity_first_decoding(sch, ec, predictions, true);  // LDF = true
       break;
     default:
-      cerr << "search order " << my_task_data->search_order << "is undefined." << endl;
+      std::cerr << "search order " << my_task_data->search_order << "is undefined." << std::endl;
   }
 
   for (size_t i = 0; i < ec.size(); i++)
