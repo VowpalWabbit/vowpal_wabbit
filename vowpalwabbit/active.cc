@@ -13,13 +13,13 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   float b, sb, rs, sl;
   b = (float)(c0 * (log(k + 1.) + 0.0001) / (k + 0.0001));
-  sb = sqrt(b);
+  sb = std::sqrt(b);
   avg_loss = std::min(1.f, std::max(0.f, avg_loss));  // loss should be in [0,1]
 
-  sl = sqrt(avg_loss) + sqrt(avg_loss + g);
+  sl = std::sqrt(avg_loss) + std::sqrt(avg_loss + g);
   if (g <= sb * sl + b)
     return 1;
-  rs = (sl + sqrt(sl * sl + 4 * g)) / (2 * g);
+  rs = (sl + std::sqrt(sl * sl + 4 * g)) / (2 * g);
   return b * rs * rs;
 }
 
@@ -31,7 +31,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
   else
   {
     weighted_queries = (float)a.all->sd->weighted_labeled_examples;
-    avg_loss = (float)(a.all->sd->sum_loss / k + sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
+    avg_loss = (float)(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
   if (merand48(a.all->random_state) < bias)

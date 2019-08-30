@@ -1,5 +1,5 @@
 #ifdef _WIN32
-
+#define NOMINMAX
 #include <immintrin.h>
 
 // typedef float(*sum_of_squares_func)(float*, float*);

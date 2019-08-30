@@ -37,7 +37,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   float first_loss = 0;
   unsigned int maxiter = (is_learn && !example_is_test(ec)) ? 2 : 1;
   unsigned int k = lrq.k;
-  float sqrtk = (float)sqrt(k);
+  float sqrtk = (float)std::sqrt(k);
 
   uint32_t stride_shift = lrq.all->weights.stride_shift();
   uint64_t weight_mask = lrq.all->weights.mask();

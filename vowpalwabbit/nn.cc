@@ -259,7 +259,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     // avoid saddle point at 0
     if (wf == 0)
     {
-      float sqrtk = sqrt((float)n.k);
+      float sqrtk = std::sqrt((float)n.k);
       n.outputweight.l.simple.label = (float)(merand48(n.all->random_state) - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;

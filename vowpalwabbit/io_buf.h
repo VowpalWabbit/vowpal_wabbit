@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #endif
 
 #ifdef _WIN32
+#define NOMINMAX
 #define ssize_t int64_t
 #include <io.h>
 #include <sys/stat.h>

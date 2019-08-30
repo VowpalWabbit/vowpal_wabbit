@@ -2098,7 +2098,7 @@ void run_task(search& sch, multi_ex& ec)
 void verify_active_csoaa(
     COST_SENSITIVE::label& losses, v_array<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
 {
-  float threshold = multiplier / sqrt((float)t);
+  float threshold = multiplier / std::sqrt((float)t);
   cdbg << "verify_active_csoaa, losses = [";
   for (COST_SENSITIVE::wclass& wc : losses.costs) cdbg << " " << wc.class_index << ":" << wc.x;
   cdbg << " ]" << std::endl;

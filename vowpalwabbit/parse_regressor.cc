@@ -91,7 +91,7 @@ double calculate_sd(vw& /* all */, T& weights)
   std::vector<double> diff(my_size);
   std::transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
   double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-  return sqrt(sq_sum / my_size);
+  return std::sqrt(sq_sum / my_size);
 }
 template <class T>
 void initialize_regressor(vw& all, T& weights)

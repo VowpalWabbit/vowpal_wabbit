@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include <cerrno>
 #include <cstdlib>
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #else
 #include <sys/types.h>

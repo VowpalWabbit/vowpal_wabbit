@@ -20,6 +20,7 @@ license as described in the file LICENSE.
 #include <boost/math/special_functions/gamma.hpp>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>

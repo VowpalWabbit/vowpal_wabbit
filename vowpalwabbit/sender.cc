@@ -1,5 +1,6 @@
 #include <vector>
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #ifndef SHUT_RD
 #define SHUT_RD SD_RECEIVE

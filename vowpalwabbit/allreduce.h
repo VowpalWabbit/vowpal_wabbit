@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include <algorithm>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 typedef unsigned int uint32_t;

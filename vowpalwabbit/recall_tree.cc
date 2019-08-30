@@ -158,11 +158,10 @@ void compute_recall_lbest(recall_tree& b, node* n)
   }
 
   float f = (float)mass_at_k / (float)n->n;
-  float stdf = sqrt(f * (1.f - f) / (float)n->n);
-  float diamf = 15.f / (sqrtf(18.f) * (float)n->n);
+  float stdf = std::sqrt(f * (1.f - f) / (float)n->n);
+  float diamf = 15.f / (std::sqrt(18.f) * (float)n->n);
 
-  // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
-  n->recall_lbest = std::max(0.f, f - sqrt(b.bern_hyper) * stdf - b.bern_hyper * diamf);
+  n->recall_lbest = std::max(0.f, f - std::sqrt(b.bern_hyper) * stdf - b.bern_hyper * diamf);
 }
 
 double plogp(double c, double n) { return (c == 0) ? 0 : (c / n) * log(c / n); }

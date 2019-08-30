@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "zlib.h"
 #include "comp_io.h"
 

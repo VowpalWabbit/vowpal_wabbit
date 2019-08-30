@@ -432,7 +432,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   const uint32_t num_actions = (uint32_t)preds.size();
 
   float additive_probability = 1.f / (float)data.cover_size;
-  const float min_prob = std::min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
+  const float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(data.counter * num_actions));
   v_array<action_score>& probs = data.action_probs;
   probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) probs.push_back({i, 0.});

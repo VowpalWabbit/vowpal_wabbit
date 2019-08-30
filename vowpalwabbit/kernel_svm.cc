@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <float.h>
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #else
 #include <netdb.h>

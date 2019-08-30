@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include <string.h>
 #include <stdio.h>
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>

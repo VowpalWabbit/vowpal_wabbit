@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 
 #pragma once
+#define NOMINMAX
 #include <iostream>
 #include <algorithm>
 #include <stdlib.h>

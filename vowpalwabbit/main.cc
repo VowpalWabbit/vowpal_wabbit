@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #else
 #include <sys/socket.h>

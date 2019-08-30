@@ -141,7 +141,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  float min_prob = std::min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
+  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(data.counter * num_actions));
 
   enforce_minimum_probability(min_prob * num_actions, false, begin_scores(probs), end_scores(probs));
 
@@ -169,7 +169,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   float additive_probability = 1.f / (float)cover_size;
 
-  float min_prob = std::min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
+  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(counter * num_actions));
 
   data.cb_label = ec.l.cb;
 

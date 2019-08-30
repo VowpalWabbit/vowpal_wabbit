@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 
 #include <float.h>
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #else
 #include <netdb.h>
@@ -126,7 +127,7 @@ float average_update(float total_weight, float normalized_sum_norm_x, float neg_
     {
       float avg_norm = (float)(total_weight / normalized_sum_norm_x);
       if (adaptive)
-        return sqrt(avg_norm);
+        return std::sqrt(avg_norm);
       else
         return avg_norm;
     }

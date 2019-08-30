@@ -218,7 +218,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   float t = (float)cs_a.t;  // ec.example_t;  // current round
   float t_prev = t - 1.f;   // ec.weight; // last round
 
-  float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / sqrt(t);  // threshold on cost range
+  float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / std::sqrt(t);  // threshold on cost range
   float delta = cs_a.c0 * log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
       pow(cs_a.cost_max - cs_a.cost_min, 2);  // threshold on empirical loss difference
 

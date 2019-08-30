@@ -306,7 +306,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
 void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions, bool isLdf = false)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
-  size_t n_ent = (size_t)(sqrt(ec.size() * 8 + 1) - 1) / 2;
+  size_t n_ent = (size_t)(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
   // Do entity recognition first
   for (size_t i = 0; i < ec.size(); i++)
   {
@@ -320,7 +320,7 @@ void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& p
 void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
-  uint32_t n_ent = (uint32_t)((sqrt(ec.size() * 8 + 1) - 1) / 2);
+  uint32_t n_ent = (uint32_t)((std::sqrt(ec.size() * 8 + 1) - 1) / 2);
   for (uint32_t t = 0; t < ec.size(); t++)
   {
     // Do entity recognition first
@@ -351,7 +351,7 @@ void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& 
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   // ec.size = #entity + #entity*(#entity-1)/2
-  size_t n_ent = (size_t)(sqrt(ec.size() * 8 + 1) - 1) / 2;
+  size_t n_ent = (size_t)(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
 
   bool must_predict = false;
   size_t n_predicts = 0;

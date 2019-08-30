@@ -87,7 +87,7 @@ struct OjaNewton
             r2 = merand48(all->random_state);
           } while (r1 == 0.f);
 
-          (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
+          (&w)[j] = std::sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
         }
       }
     }
@@ -107,7 +107,7 @@ struct OjaNewton
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
         norm += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[j];
-      norm = sqrt(norm);
+      norm = std::sqrt(norm);
       for (uint32_t i = 0; i < length; i++) (&(weights.strided_index(i)))[j] /= (float)norm;
     }
   }
@@ -377,7 +377,7 @@ void make_pred(update_data& data, float x, float& wref)
 
   if (data.ON->normalize)
   {
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
   }
 
   data.prediction += w[0] * x;
@@ -400,7 +400,7 @@ void update_Z_and_wbar(update_data& data, float x, float& wref)
   float* w = &wref;
   int m = data.ON->m;
   if (data.ON->normalize)
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
   float s = data.sketch_cnt * x;
 
   for (int i = 1; i <= m; i++)
@@ -415,7 +415,7 @@ void compute_Zx_and_norm(update_data& data, float x, float& wref)
   float* w = &wref;
   int m = data.ON->m;
   if (data.ON->normalize)
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
 
   for (int i = 1; i <= m; i++)
   {
@@ -429,7 +429,7 @@ void update_wbar_and_Zx(update_data& data, float x, float& wref)
   float* w = &wref;
   int m = data.ON->m;
   if (data.ON->normalize)
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
 
   float g = data.g * x;
 

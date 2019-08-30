@@ -17,8 +17,8 @@ license as described in the file LICENSE.
 #include <fstream>
 
 #ifdef _WIN32
-#include <winsock2.h>
 #define NOMINMAX
+#include <winsock2.h>
 #include <Windows.h>
 #include <io.h>
 typedef int socklen_t;
