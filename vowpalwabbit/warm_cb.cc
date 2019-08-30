@@ -247,7 +247,7 @@ void setup_lambdas(warm_cb& data)
 
 uint32_t generate_uar_action(warm_cb& data)
 {
-  float randf = merand48(data.all->random_state);
+  float randf = data.all->random_state.get_and_update_random();
 
   for (uint32_t i = 1; i <= data.num_actions; i++)
   {
@@ -269,7 +269,7 @@ uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
     cor_type = data.cor_type_ws;
   }
 
-  float randf = merand48(data.all->random_state);
+  float randf = data.all->random_state.get_and_update_random();
   if (randf < cor_prob)
   {
     if (cor_type == UAR)

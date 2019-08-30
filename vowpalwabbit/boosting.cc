@@ -210,7 +210,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
     o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
-  float stopping_point = merand48(o.all->random_state);
+  float stopping_point = o.all->random_state.get_and_update_random();
 
   for (int i = 0; i < o.N; i++)
   {

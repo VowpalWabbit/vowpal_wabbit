@@ -25,7 +25,7 @@ struct cb_explore_adf_bag : public cb_explore_adf_base
   size_t m_bag_size;
   bool m_greedify;
   bool m_first_only;
-  vw* m_all;
+  rand_state* m_random_state;
 
   v_array<ACTION_SCORE::action_score> m_action_probs;
   std::vector<float> m_scores;

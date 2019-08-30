@@ -679,7 +679,7 @@ void train(svm_params& params)
             (1.0f +
                 expf(
                     (float)(params.active_c * fabs(scores[i])) * (float)pow(params.pool[i]->ex.example_counter, 0.5f)));
-        if (merand48(params.all->random_state) < queryp)
+        if (params.all->random_state.get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
           fec->ex.l.simple.weight *= 1 / queryp;
@@ -734,7 +734,7 @@ void train(svm_params& params)
             break;
           // cout<<"reprocess: ";
           int randi = 1;
-          if (merand48(params.all->random_state) < 0.5)
+          if (params.all->random_state.get_and_update_random() < 0.5)
             randi = 0;
           if (randi)
           {
@@ -752,7 +752,7 @@ void train(svm_params& params)
           }
           else
           {
-            size_t rand_pos = (size_t)floorf(merand48(params.all->random_state) * model->num_support);
+            size_t rand_pos = (size_t)floorf(params.all->random_state.get_and_update_random() * model->num_support);
             update(params, rand_pos);
           }
         }

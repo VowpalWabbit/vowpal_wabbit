@@ -184,7 +184,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
 
   for (size_t i = 1; i <= d.B; i++)
   {
-    ec.weight = weight_temp * (float)BS::weight_gen(all);
+    ec.weight = weight_temp * (float)BS::weight_gen(all.random_state);
 
     if (is_learn)
       base.learn(ec, i - 1);

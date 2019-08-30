@@ -110,7 +110,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
     p = 1.f;
   }
 
-  if (merand48(a.all->random_state) <= p)
+  if (a.all->random_state.get_and_update_random() <= p)
   {
     return 1.f / p;
   }

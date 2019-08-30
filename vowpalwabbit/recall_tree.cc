@@ -380,7 +380,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       float which = train_node(b, base, ec, cn);
 
       if (b.randomized_routing)
-        which = (merand48(b.all->random_state) > to_prob(which) ? -1.f : 1.f);
+        which = (b.all->random_state.get_and_update_random() > to_prob(which) ? -1.f : 1.f);
 
       uint32_t newcn = descend(b.nodes[cn], which);
       bool cond = stop_recurse_check(b, cn, newcn);

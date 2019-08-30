@@ -154,7 +154,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
     if (threshold > 1. + 1e-6)
       data.violations++;
 
-    if (merand48(data.all->random_state) < threshold)
+    if (data.all->random_state.get_and_update_random() < threshold)
     {
       example* ec_found = nullptr;
       for (example*& ec : ec_seq)

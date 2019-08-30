@@ -36,7 +36,7 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
   {
     // avoid updates to the random num generator
     // for greedify, always update first policy once
-    uint32_t count = is_learn ? ((m_greedify && i == 0) ? 1 : BS::weight_gen(*m_all)) : 0;
+    uint32_t count = is_learn ? ((m_greedify && i == 0) ? 1 : BS::weight_gen(*m_random_state)) : 0;
 
     if (is_learn && count > 0)
       LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
@@ -115,7 +115,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!cb_explore_adf_option || !options.was_supplied("bag"))
     return nullptr;
 
-  data->m_all = &all;
+  data->m_random_state = &(all.random_state);
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))

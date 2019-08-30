@@ -84,8 +84,8 @@ struct OjaNewton
           // redraw until r1 should be strictly positive
           do
           {
-            r1 = merand48(all->random_state);
-            r2 = merand48(all->random_state);
+            r1 = all->random_state.get_and_update_random();
+            r2 = all->random_state.get_and_update_random();
           } while (r1 == 0.f);
 
           (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);

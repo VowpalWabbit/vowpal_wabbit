@@ -99,7 +99,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   float prob = 1.f / (float)data.bag_size;
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = BS::weight_gen(*data.all);
+    uint32_t count = BS::weight_gen(data.all->random_state);
     if (is_learn && count > 0)
       base.learn(ec, i);
     else

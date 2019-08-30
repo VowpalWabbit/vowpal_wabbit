@@ -40,6 +40,7 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
+#include "rand48.h"
 
 #include "options.h"
 #include "version.h"
@@ -344,9 +345,23 @@ enum label_type_t
   cs,       // cost-sensitive
   multi,
   mc,
-  ccb       // conditional contextual-bandit
+  ccb  // conditional contextual-bandit
 };
 }
+
+class rand_state
+{
+ private:
+  uint64_t random_state;
+
+ public:
+  rand_state() : random_state(0) {}
+  rand_state(uint64_t initial) : random_state(initial) {}
+  uint64_t get_current_state() const { return random_state; }
+  float get_and_update_random() { return merand48(random_state); }
+  float get_random() const { return merand48_noadvance(random_state); }
+  void set_random_state(uint64_t initial) { random_state = initial; }
+};
 
 struct vw
 {
@@ -434,7 +449,7 @@ struct vw
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::string> interactions;
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> pairs;    // pairs of features to cross.
+  std::vector<std::string> pairs;  // pairs of features to cross.
   // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
@@ -466,7 +481,7 @@ struct vw
   bool normalized_updates;  // Should every feature be normalized
   bool invariant_updates;   // Should we use importance aware/safe updates
   uint64_t random_seed;
-  uint64_t random_state;  // per instance random_state
+  rand_state random_state;  // per instance random_state
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
   bool normal_weights;

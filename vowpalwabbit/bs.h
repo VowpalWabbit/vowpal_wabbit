@@ -11,9 +11,9 @@ LEARNER::base_learner* bs_setup(VW::config::options_i& options, vw& all);
 
 namespace BS
 {
-inline uint32_t weight_gen(vw& all)  // sampling from Poisson with rate 1
+inline uint32_t weight_gen(rand_state & state)  // sampling from Poisson with rate 1
 {
-  float temp = merand48(all.random_state);
+  float temp = state.get_and_update_random();
   if (temp <= 0.3678794411714423215955)
     return 0;
   if (temp <= 0.735758882342884643191)

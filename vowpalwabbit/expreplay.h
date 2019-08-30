@@ -27,12 +27,12 @@ void predict_or_learn(expreplay& er, LEARNER::single_learner& base, example& ec)
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {
-    size_t n = (size_t)(merand48(er.all->random_state) * (float)er.N);
+    size_t n = (size_t)(er.all->random_state.get_and_update_random() * (float)er.N);
     if (er.filled[n])
       base.learn(er.buf[n]);
   }
 
-  size_t n = (size_t)(merand48(er.all->random_state) * (float)er.N);
+  size_t n = (size_t)(er.all->random_state.get_and_update_random() * (float)er.N);
   if (er.filled[n])
     base.learn(er.buf[n]);
 
