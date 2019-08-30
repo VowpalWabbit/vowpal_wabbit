@@ -28,20 +28,23 @@ T& calloc_or_throw()
   return *calloc_or_throw<T>(1);
 }
 
-typedef void (*free_fn)(void*);
+using free_fn = void (*)(void*);
+
 template <class T>
 using free_ptr = std::unique_ptr<T, free_fn>;
+
 template <class T>
 void destroy_free(void* temp)
 {
   ((T*)temp)->~T();
   free(temp);
 }
-template <class T>
-free_ptr<T> scoped_calloc_or_throw()
+
+template <class T, typename ...Args>
+free_ptr<T> scoped_calloc_or_throw(Args&& ...args)
 {
   T* temp = calloc_or_throw<T>(1);
-  new (temp) T();
+  new (temp) T(std::forward<Args>(args)...);
   return std::unique_ptr<T, free_fn>(temp, destroy_free<T>);
 }
 
