@@ -160,7 +160,7 @@ bool summarize_holdout_set(vw& all, size_t& no_win_counter)
   }
 
   if ((thisLoss != FLT_MAX) ||
-      (isfinite(
+      (std::isfinite(
           all.sd->holdout_best_loss)))  // it's only a loss if we're not infinite when the previous one wasn't infinite
     no_win_counter++;
   return false;
