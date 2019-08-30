@@ -30,6 +30,10 @@ struct gdmf
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
+  ~gdmf()
+  {
+    scalars.delete_v();
+  }
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
@@ -322,8 +326,6 @@ void learn(gdmf& d, single_learner&, example& ec)
     mf_train(d, ec);
 }
 
-void finish(gdmf& d) { d.scalars.delete_v(); }
-
 base_learner* gd_mf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<gdmf>();
@@ -380,7 +382,6 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
-  l.set_finish(finish);
 
   return make_base(l);
 }

@@ -93,6 +93,18 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, float *gamma, float *norm);
+
+  ~lda()
+  {
+    Elogtheta.delete_v();
+    decay_levels.delete_v();
+    total_new.delete_v();
+    examples.delete_v();
+    total_lambda.delete_v();
+    doc_lengths.delete_v();
+    digammas.delete_v();
+    v.delete_v();
+  }
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -1266,19 +1278,6 @@ void end_examples(lda &l)
 
 void finish_example(vw &, lda &, example &) {}
 
-void finish(lda &ld)
-{
-  ld.sorted_features.~vector<index_feature>();
-  ld.Elogtheta.delete_v();
-  ld.decay_levels.delete_v();
-  ld.total_new.delete_v();
-  ld.examples.delete_v();
-  ld.total_lambda.delete_v();
-  ld.doc_lengths.delete_v();
-  ld.digammas.delete_v();
-  ld.v.delete_v();
-}
-
 std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 {
   using namespace boost::program_options;
@@ -1369,7 +1368,6 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
-  l.set_finish(finish);
 
   return make_base(l);
 }

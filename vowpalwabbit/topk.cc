@@ -30,19 +30,15 @@ void print_result(int f, std::priority_queue<scored_example, std::vector<scored_
 {
   if (f >= 0)
   {
-    char temp[30];
     std::stringstream ss;
     scored_example tmp_example;
     while (!pr_queue.empty())
     {
       tmp_example = pr_queue.top();
       pr_queue.pop();
-      sprintf(temp, "%f", tmp_example.first);
-      ss << temp;
-      ss << ' ';
+      ss << std::fixed << tmp_example.first << " ";
       print_tag(ss, tmp_example.second);
-      ss << ' ';
-      ss << '\n';
+      ss << " \n";
     }
     ss << '\n';
     ssize_t len = ss.str().size();

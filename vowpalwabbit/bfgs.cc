@@ -103,6 +103,14 @@ struct bfgs
   bool first_pass;
   bool gradient_pass;
   bool preconditioner_pass;
+
+  ~bfgs()
+  {
+    predictions.delete_v();
+    free(mem);
+    free(rho);
+    free(alpha);
+  }
 };
 
 constexpr char* curv_message =
@@ -968,14 +976,6 @@ void learn(bfgs& b, base_learner& base, example& ec)
   }
 }
 
-void finish(bfgs& b)
-{
-  b.predictions.delete_v();
-  free(b.mem);
-  free(b.rho);
-  free(b.alpha);
-}
-
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
 {
   int c = 0;
@@ -1167,7 +1167,6 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
   l->set_end_pass(end_pass);
-  l->set_finish(finish);
 
   return make_base(*l);
 }

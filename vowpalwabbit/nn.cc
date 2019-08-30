@@ -43,6 +43,18 @@ struct nn
   polyprediction* hiddenbias_pred;
 
   vw* all;  // many things
+
+  ~nn()
+  {
+    delete squared_loss;
+    free(hidden_units);
+    free(dropped_out);
+    free(hidden_units_pred);
+    free(hiddenbias_pred);
+    VW::dealloc_example(nullptr, output_layer);
+    VW::dealloc_example(nullptr, hiddenbias);
+    VW::dealloc_example(nullptr, outputweight);
+  }
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -399,18 +411,6 @@ void finish_example(vw& all, nn&, example& ec)
   all.raw_prediction = save_raw_prediction;
 }
 
-void finish(nn& n)
-{
-  delete n.squared_loss;
-  free(n.hidden_units);
-  free(n.dropped_out);
-  free(n.hidden_units_pred);
-  free(n.hiddenbias_pred);
-  VW::dealloc_example(nullptr, n.output_layer);
-  VW::dealloc_example(nullptr, n.hiddenbias);
-  VW::dealloc_example(nullptr, n.outputweight);
-}
-
 base_learner* nn_setup(options_i& options, vw& all)
 {
   auto n = scoped_calloc_or_throw<nn>();
@@ -465,7 +465,6 @@ base_learner* nn_setup(options_i& options, vw& all)
       init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1);
   if (nv.multitask)
     l.set_multipredict(multipredict);
-  l.set_finish(finish);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
 

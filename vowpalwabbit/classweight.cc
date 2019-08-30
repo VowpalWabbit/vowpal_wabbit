@@ -65,8 +65,6 @@ static void predict_or_learn(classweights& cweights, LEARNER::single_learner& ba
   else
     base.predict(ec);
 }
-
-void finish(classweights& data) { data.weights.~unordered_map(); }
 }  // namespace CLASSWEIGHTS
 
 using namespace CLASSWEIGHTS;
@@ -98,6 +96,5 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
         predict_or_learn<false, prediction_type::multiclass>);
   else
     THROW("--classweight not implemented for this type of prediction");
-  ret->set_finish(finish);
   return make_base(*ret);
 }

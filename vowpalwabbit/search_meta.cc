@@ -81,10 +81,8 @@ struct task_data
     branches.delete_v();
     final.delete_v();
     trajectory.delete_v();
-    if (output_string)
-      delete output_string;
-    if (kbest_out)
-      delete kbest_out;
+    delete output_string;
+    delete kbest_out;
   }
 };
 
@@ -248,8 +246,7 @@ void run(Search::search& sch, multi_ex& ec)
     delete d.final[i].second;
   }
   d.final.clear();
-  if (d.kbest_out)
-    delete d.kbest_out;
+  delete d.kbest_out;
   d.kbest_out = nullptr;
 }
 }  // namespace SelectiveBranchingMT

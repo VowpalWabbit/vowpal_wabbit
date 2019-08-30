@@ -50,6 +50,21 @@ struct ect
   uint32_t last_pair;
 
   v_array<bool> tournaments_won;
+
+  ~ect()
+  {
+    for (size_t l = 0; l < all_levels.size(); l++)
+    {
+      for (size_t t = 0; t < all_levels[l].size(); t++) all_levels[l][t].delete_v();
+      all_levels[l].delete_v();
+    }
+    all_levels.delete_v();
+    final_nodes.delete_v();
+    up_directions.delete_v();
+    directions.delete_v();
+    down_directions.delete_v();
+    tournaments_won.delete_v();
+  }
 };
 
 bool exists(v_array<size_t> db)
@@ -326,21 +341,6 @@ void learn(ect& e, single_learner& base, example& ec)
   ec.pred.multiclass = pred;
 }
 
-void finish(ect& e)
-{
-  for (size_t l = 0; l < e.all_levels.size(); l++)
-  {
-    for (size_t t = 0; t < e.all_levels[l].size(); t++) e.all_levels[l][t].delete_v();
-    e.all_levels[l].delete_v();
-  }
-  e.all_levels.delete_v();
-  e.final_nodes.delete_v();
-  e.up_directions.delete_v();
-  e.directions.delete_v();
-  e.down_directions.delete_v();
-  e.tournaments_won.delete_v();
-}
-
 base_learner* ect_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
@@ -365,7 +365,6 @@ base_learner* ect_setup(options_i& options, vw& all)
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
   learner<ect, example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, all.p, wpp);
-  l.set_finish(finish);
 
   return make_base(l);
 }

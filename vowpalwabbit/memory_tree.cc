@@ -224,6 +224,16 @@ struct memory_tree
     test_time = 0;
     top_K = 1;
   }
+
+  ~memory_tree()
+  {
+    for (auto& node : nodes) node.examples_index.delete_v();
+    nodes.delete_v();
+    for (auto ex : examples) free_example(ex);
+    examples.delete_v();
+    if (kprod_ec)
+      free_example(kprod_ec);
+  }
 };
 
 float linear_kernel(const flat_example* fec1, const flat_example* fec2)
@@ -1065,17 +1075,6 @@ void end_pass(memory_tree& b)
        << ", with number of memories strored so far: " << b.examples.size() << std::endl;
 }
 
-void finish(memory_tree& b)
-{
-  for (size_t i = 0; i < b.nodes.size(); ++i) b.nodes[i].examples_index.delete_v();
-  b.nodes.delete_v();
-  for (size_t i = 0; i < b.examples.size(); i++) free_example(b.examples[i]);
-  b.examples.delete_v();
-  free_example(b.kprod_ec);
-  // std::cout<<b.max_nodes<< std::endl;
-  // std::cout<<b.construct_time<<" "<<b.test_time<< std::endl;
-}
-
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
@@ -1280,7 +1279,6 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
     l.set_end_pass(end_pass);
-    l.set_finish(finish);
 
     return make_base(l);
   }  // multi-label classification
@@ -1297,7 +1295,6 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     l.set_end_pass(end_pass);
     l.set_save_load(save_load_memory_tree);
     // l.set_end_pass(end_pass);
-    l.set_finish(finish);
 
     all.p->lp = MULTILABEL::multilabel;
     all.label_type = label_type::multi;

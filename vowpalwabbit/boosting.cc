@@ -345,12 +345,6 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   std::cerr << std::endl;
 }
 
-void finish(boosting& o)
-{
-  o.C.~vector();
-  o.alpha.~vector();
-}
-
 void return_example(vw& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
@@ -449,7 +443,6 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   else
     THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
 
-  l->set_finish(finish);
   l->set_finish_example(return_example);
 
   return make_base(*l);

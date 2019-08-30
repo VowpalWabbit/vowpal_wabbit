@@ -22,6 +22,12 @@ struct oaa
   uint64_t num_subsample;     // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id;        // for randomized subsampling, where do we live in the list
+
+  ~oaa()
+  {
+    free(pred);
+    free(subsample_order);
+  }
 };
 
 void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
@@ -125,12 +131,6 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   ec.l.multi = mc_label_data;
 }
 
-void finish(oaa& o)
-{
-  free(o.pred);
-  free(o.subsample_order);
-}
-
 // TODO: partial code duplication with multiclass.cc:finish_example
 template <bool probabilities>
 void finish_example_scores(vw& all, oaa& o, example& ec)
@@ -168,7 +168,6 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     zero_one_loss = ec.weight;
 
   // === Print probabilities for all classes
-  char temp_str[10];
   std::ostringstream outputStringStream;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -181,8 +180,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     }
     else
       outputStringStream << i + 1;
-    sprintf(temp_str, "%f", ec.pred.scalars[i]);  // 0.123 -> 0.123000
-    outputStringStream << ':' << temp_str;
+    outputStringStream << ':' << ec.pred.scalars[i];
   }
   for (int sink : all.final_prediction_sink) all.print_text(sink, outputStringStream.str(), ec.tag);
 
@@ -282,7 +280,6 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
   }
-  l->set_finish(finish);
 
   return make_base(*l);
 }
