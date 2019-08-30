@@ -77,6 +77,36 @@ struct warm_cb
   COST_SENSITIVE::label* csls;
   CB::label* cbls;
   bool use_cs;
+
+  ~warm_cb()
+  {
+    CB::cb_label.delete_label(&cb_label);
+    a_s.delete_v();
+
+    for (size_t a = 0; a < num_actions; ++a)
+    {
+      COST_SENSITIVE::cs_label.delete_label(&csls[a]);
+    }
+    free(csls);
+    free(cbls);
+
+    for (size_t a = 0; a < num_actions; ++a)
+    {
+      ecs[a]->pred.a_s.delete_v();
+      VW::dealloc_example(CB::cb_label.delete_label, *ecs[a]);
+      free_it(ecs[a]);
+    }
+
+    a_s_adf.delete_v();
+    for (size_t i = 0; i < ws_vali.size(); ++i)
+    {
+      if (use_cs)
+        VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *ws_vali[i]);
+      else
+        VW::dealloc_example(MULTICLASS::mc_label.delete_label, *ws_vali[i]);
+      free(ws_vali[i]);
+    }
+  }
 };
 
 float loss(warm_cb& data, uint32_t label, uint32_t final_prediction)
@@ -120,9 +150,6 @@ uint32_t find_min(vector<T> arr)
 
 void finish(warm_cb& data)
 {
-  CB::cb_label.delete_label(&data.cb_label);
-  data.a_s.delete_v();
-
   uint32_t argmin = find_min(data.cumulative_costs);
 
   if (!data.all->quiet)
@@ -132,35 +159,6 @@ void finish(warm_cb& data)
     cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
          << " to " << data.lambdas[data.choices_lambda - 1] << endl;
   }
-
-  for (size_t a = 0; a < data.num_actions; ++a)
-  {
-    COST_SENSITIVE::cs_label.delete_label(&data.csls[a]);
-  }
-  free(data.csls);
-  free(data.cbls);
-
-  for (size_t a = 0; a < data.num_actions; ++a)
-  {
-    data.ecs[a]->pred.a_s.delete_v();
-    VW::dealloc_example(CB::cb_label.delete_label, *data.ecs[a]);
-    free_it(data.ecs[a]);
-  }
-  data.ecs.~vector<example*>();
-
-  data.lambdas.~vector<float>();
-  data.cumulative_costs.~vector<float>();
-
-  data.a_s_adf.delete_v();
-  for (size_t i = 0; i < data.ws_vali.size(); ++i)
-  {
-    if (data.use_cs)
-      VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data.ws_vali[i]);
-    else
-      VW::dealloc_example(MULTICLASS::mc_label.delete_label, *data.ws_vali[i]);
-    free(data.ws_vali[i]);
-  }
-  data.ws_vali.~vector<example*>();
 }
 
 void copy_example_to_adf(warm_cb& data, example& ec)
