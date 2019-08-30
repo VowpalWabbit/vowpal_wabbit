@@ -79,13 +79,6 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-template <class T>
-inline void delete_it(T* p)
-{
-  if (p != nullptr)
-    delete p;
-}
-
 void finish(cbify& data)
 {
   CB::cb_label.delete_label(&data.cb_label);

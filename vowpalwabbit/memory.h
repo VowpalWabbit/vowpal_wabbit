@@ -17,7 +17,7 @@ T* calloc_or_throw(size_t nmemb)
     const char* msg = "internal error: memory allocation failed!\n";
     // use low-level function since we're already out of memory.
     fputs(msg, stderr);
-    THROW(msg);
+    THROW_OR_RETURN(msg, nullptr);
   }
   return (T*)data;
 }
