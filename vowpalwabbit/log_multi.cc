@@ -85,6 +85,13 @@ struct log_multi
   uint32_t swap_resist;
 
   uint32_t nbofswaps;
+
+  ~log_multi()
+  {
+    // save_node_stats(b);
+    for (auto& node : nodes) node.preds.delete_v();
+    nodes.delete_v();
+  }
 };
 
 inline void init_leaf(node& n)
@@ -388,13 +395,6 @@ void save_node_stats(log_multi& d)
   fclose(fp);
 }
 
-void finish(log_multi& b)
-{
-  // save_node_stats(b);
-  for (size_t i = 0; i < b.nodes.size(); i++) b.nodes[i].preds.delete_v();
-  b.nodes.delete_v();
-}
-
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)
@@ -522,7 +522,6 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   learner<log_multi, example>& l = init_multiclass_learner(
       data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors);
   l.set_save_load(save_load_tree);
-  l.set_finish(finish);
 
   return make_base(l);
 }

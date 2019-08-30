@@ -6,6 +6,7 @@
 
 namespace ExpReplay
 {
+template <label_parser& lp>
 struct expreplay
 {
   vw* all;
@@ -15,10 +16,21 @@ struct expreplay
   size_t replay_count;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in which
                         // case we're just permuting)
   LEARNER::single_learner* base;
+
+  ~expreplay()
+  {
+    for (size_t n = 0; n < N; n++)
+    {
+      lp.delete_label(&buf[n].l);
+      VW::dealloc_example(NULL, buf[n], NULL);  // TODO: need to free label
+    }
+    free(buf);
+    free(filled);
+  }
 };
 
 template <bool is_learn, label_parser& lp>
-void predict_or_learn(expreplay& er, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
 {  // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
@@ -44,13 +56,15 @@ void predict_or_learn(expreplay& er, LEARNER::single_learner& base, example& ec)
     er.buf[n].l = ec.l;
 }
 
-void multipredict(expreplay&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
+template <label_parser& lp>
+void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
     polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }
 
-void end_pass(expreplay& er)
+template <label_parser& lp>
+void end_pass(expreplay<lp>& er)
 {  // we need to go through and learn on everyone who remains
   // also need to clean up remaining examples
   for (size_t n = 0; n < er.N; n++)
@@ -61,18 +75,6 @@ void end_pass(expreplay& er)
     }
 }
 
-template <label_parser& lp>
-void finish(expreplay& er)
-{
-  for (size_t n = 0; n < er.N; n++)
-  {
-    lp.delete_label(&er.buf[n].l);
-    VW::dealloc_example(NULL, er.buf[n], NULL);  // TODO: need to free label
-  }
-  free(er.buf);
-  free(er.filled);
-}
-
 template <char er_level, label_parser& lp>
 LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
@@ -81,7 +83,7 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
   std::string replay_count_string = replay_string;
   replay_count_string += "_count";
 
-  auto er = scoped_calloc_or_throw<expreplay>();
+  auto er = scoped_calloc_or_throw<expreplay<lp>>();
   VW::config::option_group_definition new_options("Experience Replay");
   new_options
       .add(VW::config::make_option(replay_string, er->N)
@@ -110,10 +112,9 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
               << std::endl;
 
   er->base = LEARNER::as_singleline(setup_base(options, all));
-  LEARNER::learner<expreplay, example>* l =
+  LEARNER::learner<expreplay<lp>, example>* l =
       &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
-  l->set_finish(finish<lp>);
-  l->set_end_pass(end_pass);
+  l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);
 }
