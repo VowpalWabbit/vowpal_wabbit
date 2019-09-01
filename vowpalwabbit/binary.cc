@@ -4,20 +4,24 @@
 using namespace std;
 using namespace VW::config;
 
+namespace VW { namespace binary {
+
+bool VW_DEBUG_LOG=true;
+
 template <bool is_learn>
 void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
   {
-    cout << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    VWLOG(ec) << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
     base.learn(ec);
-    cout << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    VWLOG(ec) << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
   }
   else
   {
-    cout << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    VWLOG(ec) << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
     base.predict(ec);
-    cout << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    VWLOG(ec) << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
   }
 
   if (ec.pred.scalar > 0)
@@ -25,7 +29,7 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   else
     ec.pred.scalar = -1;
 
-  cout << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+  VWLOG(ec) << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
 
   if (ec.l.simple.label != FLT_MAX)
   {
@@ -52,3 +56,5 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
       LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }
+
+}}

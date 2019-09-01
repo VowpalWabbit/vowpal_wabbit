@@ -24,6 +24,7 @@ license as described in the file LICENSE.
 #endif
 #endif
 
+#include <string>
 #include "gd.h"
 #include "accumulate.h"
 #include "reductions.h"
@@ -41,6 +42,12 @@ using namespace VW::config;
 // 4. Factor various state out of vw&
 namespace GD
 {
+bool VW_DEBUG_LOG = true;
+bool GET_VW_DEBUG_LOG() { return VW_DEBUG_LOG; }
+
+std::string depth_str;
+std::string get_depth_str() { return depth_str; }
+
 struct gd
 {
   //  double normalized_sum_norm_x;
@@ -287,12 +294,12 @@ void print_lda_features(vw& all, example& ec)
   {
     for (features::iterator_all& f : fs.values_indices_audit())
     {
-      cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
-           << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
-      for (size_t k = 0; k < all.lda; k++) cout << ':' << (&weights[f.index()])[k];
+      VWLOG(ec) << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
+                << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+      for (size_t k = 0; k < all.lda; k++) VWLOG(ec) << ':' << (&weights[f.index()])[k];
     }
   }
-  cout << " total of " << count << " features." << endl;
+  VWLOG(ec) << " total of " << count << " features." << endl;
 }
 
 void print_features(vw& all, example& ec)
@@ -322,8 +329,9 @@ void print_features(vw& all, example& ec)
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
     {
-      for (string_value& sv : dat.results) cout << '\t' << sv.s;
-      cout << endl;
+      for (string_value& sv : dat.results)
+          std::cout << '\t' << sv.s;
+        std::cout << std::endl;
     }
   }
 }
@@ -378,6 +386,7 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
+  depth_str = depth_indent_string(ec);
   vw& all = *g.all;
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
@@ -386,6 +395,9 @@ void predict(gd& g, base_learner&, example& ec)
 
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
+
+  VWLOG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+
   if (audit)
     print_audit_features(all, ec);
 }

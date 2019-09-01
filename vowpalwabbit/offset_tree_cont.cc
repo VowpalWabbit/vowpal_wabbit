@@ -2,14 +2,14 @@
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
 #include <algorithm>
-
+#include "reductions.h"
 using namespace VW::config;
 using namespace LEARNER;
 
-namespace VW
-{
-namespace offset_tree_cont
-{
+namespace VW { namespace offset_tree_cont {
+
+bool VW_DEBUG_LOG = true;
+
 tree_node::tree_node(
     uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth, bool is_leaf)
     : id(node_id), left_id(left_node_id), right_id(right_node_id), parent_id(p_id), depth(depth), is_leaf(is_leaf)
@@ -87,17 +87,13 @@ int32_t offset_tree::learner_count() const { return binary_tree.internal_node_co
 
 uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 {
-  // - static thread_local ensures only one copy per calling thread.  This is to reduce
-  //   memory allocations in steady state.
-  // TODO: check below
   auto& nodes = binary_tree.nodes;
 
   // Handle degenerate cases of zero node trees
   if (binary_tree.leaf_node_count() == 0)  // todo: chnage this to throw error at some point
     return 0;
 
-  static thread_local CB::label saved_label;
-  saved_label = ec.l.cb;
+  const CB::label saved_label = ec.l.cb;
   ec.l.cb.costs.clear();
   ec.l.simple.label = FLT_MAX; // says it is a test example
 
@@ -105,8 +101,11 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
   while (!(cur_node.is_leaf))
   {
+    ec.partial_prediction = 0.f;
+    ec.pred.scalar = 0.f;
+    ec.l.simple.initial = 0.f;
     base.predict(ec, cur_node.id);
-    std::cout << "otree_c: " << scalar_pred_to_string(ec) << " base.predict().nodeid = " << cur_node.id << std::endl;
+    VWLOG(ec) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec) << ", nodeid = " << cur_node.id << std::endl;
     if (ec.pred.scalar == -1)  // TODO: check
     {
       cur_node = nodes[cur_node.left_id];
@@ -125,8 +124,7 @@ bool compareByid(const node_cost& a, const node_cost& b) { return a.node_id < b.
 
 void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 {
-  // TODO: check below
-  const auto saved_label = ec.l.cb;  // TODO save ec.l.cb and restore later shallow copy: check
+  const auto saved_label = ec.l.cb;
   const auto saved_weight = ec.weight;
 
   std::vector<VW::offset_tree_cont::node_cost> node_costs;
@@ -134,26 +132,22 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
   auto& nodes = binary_tree.nodes;
   auto& ac = ec.l.cb.costs;
-  /*std::cout << "@learn: nodes.size() = " << nodes.size() << std::endl;*/
 
+  VWLOG(ec) << "otree_c: learn() -- tree_traversal -- " << std::endl;
   for (uint32_t i = 0; i < ac.size(); i++)
   {
     uint32_t node_id = ac[i].action + binary_tree.internal_node_count();
-    std::cout << std::endl << "otree_c: ac[" << i << "].action  = " << ac[i].action << std::endl;
-    std::cout << "otree_c: node_id  = " << node_id << std::endl;
+    VWLOG(ec) << "otree_c: learn() ac[" << i << "].action  = " << ac[i].action << ", node_id  = " << node_id
+              << std::endl;
     if (nodes[node_id].depth < binary_tree.depth())
     {
       node_costs_buffer.push_back({node_id, ac[i].cost / ac[i].probability});
-      /*std::cout << "nodes[node_id].depth < binary_tree.depth()" << std::endl;*/
     }
     else
     {
       node_costs.push_back({node_id, ac[i].cost / ac[i].probability});
-      /*std::cout << "nodes[node_id].depth == binary_tree.depth()" << std::endl;*/
     }
   }
-  /*std::cout << "node_cost.size() = " << node_costs.size() << std::endl;
-  std::cout << "node_cost_buffer.size() = " << node_costs_buffer.size() << std::endl;*/
   std::sort(node_costs_buffer.begin(), node_costs_buffer.end(), compareByid);
   std::sort(node_costs.begin(), node_costs.end(), compareByid);
 
@@ -174,16 +168,14 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       auto& w = nodes[(v.id == v_parent.left_id) ? v_parent.right_id : v_parent.left_id];  // w is sibling of v
       float cost_w = 0.0f;
       float local_action = 1;
-      std::cout << std::endl << "otree_c: v.id = " << v.id << std::endl;
-      std::cout << "otree_c: cost_v = " << cost_v << std::endl;
+      VWLOG(ec) << "otree_c: learn() v.id = " << v.id << ", cost_v = " << cost_v << std::endl;
       if (!node_costs.empty() && node_costs.back().node_id == w.id)
       {
-        std::cout << "otree_c: found the sibling" << std::endl;
+        VWLOG(ec) << "otree_c: learn() found the sibling" << std::endl;
         cost_w = node_costs.back().cost;
         if (cost_v != cost_w)
         {
-          std::cout << "otree_c: cost_w = " << cost_w << std::endl;
-          std::cout << "otree_c: cost_v != cost_w" << std::endl;
+          VWLOG(ec) << "otree_c: learn() cost_w = " << cost_w << ", cost_v != cost_w" << std::endl;
           if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) ////
             local_action = -1;
         }
@@ -191,31 +183,31 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       }
       else
       {
-        std::cout << "otree_c: no sibling" << std::endl;
+        VWLOG(ec) << "otree_c: learn() no sibling" << std::endl;
         if (v.id == v_parent.right_id) ////
           local_action = -1;
       }
       float cost_parent = cost_v;
-      std::cout << "otree_c: cost_w = " << cost_w << std::endl;
+      VWLOG(ec) << "otree_c: learn() cost_w = " << cost_w << std::endl;
       if (cost_v != cost_w)  // learn and update the cost of the parent
       {
         ec.l.simple.label = local_action;  // TODO:scalar label type
+        ec.l.simple.initial = 0.f;
         ec.weight = abs(cost_v - cost_w);
-        std::cout << "otree_c: binary learning the node " << v.parent_id << std::endl;
+        VWLOG(ec) << "otree_c: learn() #_#_#_# binary learning the node " << v.parent_id << std::endl;
         base.learn(ec, v.parent_id);
         base.predict(ec, v.parent_id);
-        std::cout << "otree_c: after binary predict:\n " << std::endl;
-        std::cout << "otree_c: ec.pred.scalar = " << (ec.pred.scalar) << std::endl;
-        std::cout << "otree_c: local_action = " << (local_action) << std::endl;
+        VWLOG(ec) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
+                  << ", local_action = " << (local_action) << std::endl;
         if (ec.pred.scalar == local_action)
         {
-          cost_parent = min(cost_v, cost_w); ////
-          std::cout << "otree_c: ec.pred.scalar == local_action" << std::endl;
+          cost_parent = min(cost_v, cost_w);
+          VWLOG(ec) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
         }
         else
         {
-          cost_parent = max(cost_v, cost_w); ////
-          std::cout << "otree_c: ec.pred.scalar != local_action" << std::endl;
+          cost_parent = max(cost_v, cost_w);
+          VWLOG(ec) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
         }
       }
       if (cost_parent > 0.0f)
@@ -229,46 +221,27 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       node_costs_new.insert(node_costs_new.end(), std::make_move_iterator(node_costs_buffer.begin()),
           std::make_move_iterator(node_costs_buffer.end()));
     }
-    // node_costs_new = node_costs_buffer;
     iter_count++;
     node_costs = node_costs_new;
-    /*node_cost_new.clear();*/
   }
 
   ec.l.cb = saved_label;
   ec.weight = saved_weight;
 }
 
-// inline void copy_to_multiclass(const uint32_t& label, uint32_t& action) {
-//   action = label; // TODO: not using it
-//}
-
 void predict(offset_tree& ot, single_learner& base, example& ec)
 {
+  VWLOG(ec) << "otree_c: before tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec) << std::endl;
   ec.pred.multiclass = ot.predict(base, ec);  // TODO: check: making the prediction zero-based?
+  VWLOG(ec) << "otree_c: after tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec) << std::endl;
 }
 
 void learn(offset_tree& tree, single_learner& base, example& ec)
 {
-  static thread_local uint32_t saved_label;
-
-  // store predictions before learning
-  saved_label = tree.predict(base, ec);
-
-  // learn
+  VWLOG(ec) << "otree_c: before tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
   tree.learn(base, ec);
-
-  // restore predictions
-  // copy_to_action_scores(saved_scores, ec.pred.a_s); //rm
-  ec.pred.multiclass = saved_label;  // TODO: instead of above
+  VWLOG(ec) << "otree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
 }
-
-//void offset_tree::finish()
-//{
-//  binary_tree.nodes.clear();
-//  //binary_tree.nodes.resize(0);
-//  binary_tree.nodes.shrink_to_fit();
-//}
 
 void finish(offset_tree& t)
 {
@@ -284,12 +257,6 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
 
   if (!options.was_supplied("otc"))  // todo: if num_actions = 0 throw error
     return nullptr;
-
-  // Ensure that cb_explore will be the base reduction
-  /*if (!options.was_supplied("cb_explore")) //TODO
-  {
-    options.insert("cb_explore", "2");
-  }*/
 
   if (!options.was_supplied("binary"))  // TODO: instead of above
   {

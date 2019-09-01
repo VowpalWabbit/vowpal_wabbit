@@ -10,6 +10,9 @@ license as described in the file LICENSE.
 
 namespace GD
 {
+bool GET_VW_DEBUG_LOG();
+std::string get_depth_str();
+
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t), class W>
 void foreach_feature(W& /*weights*/, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
@@ -31,6 +34,9 @@ inline void foreach_feature(const W& weights, features& fs, R& dat, uint64_t off
   for (features::iterator& f : fs)
   {
     const weight& w = weights[(f.index() + offset)];
+    if(GET_VW_DEBUG_LOG())
+      std::cout << get_depth_str() << "gd: vect add: {pre_acc=" << dat << ", mult=" << mult << ", v=" << f.value() 
+                << ", w=" << w << " (f.idx=" << f.index() << ", offset" << offset << ")}" << std::endl;
     T(dat, mult * f.value(), w);
   }
 }

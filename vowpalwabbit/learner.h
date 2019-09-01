@@ -108,6 +108,7 @@ float recur_sensitivity(void*, base_learner&, example&);
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 {
+  ++ex.stack_depth;
   ex.ft_offset += static_cast<uint32_t>(increment * i);
 }
 
@@ -118,6 +119,7 @@ inline void increment_offset(multi_ex& ec_seq, const size_t increment, const siz
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
 {
+  --ex.stack_depth;
   assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
 }

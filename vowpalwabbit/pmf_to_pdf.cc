@@ -2,19 +2,17 @@
 #include "pmf_to_pdf.h"
 #include "explore.h"
 #include "vw.h"
-#include "vw_exception.h"
-//#include "cb.h"
-//#include "cb_algs.h"
-//#include "cb_adf.h"
-
-//#include "rand48.h"
 
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
 namespace VW { namespace pmf_to_pdf {
-  pdf_data::~pdf_data() {
+
+bool VW_DEBUG_LOG = true;
+
+pdf_data::~pdf_data()
+{
     temp_cb.costs.delete_v();
     temp_probs.delete_v();
   }
@@ -32,12 +30,9 @@ namespace VW { namespace pmf_to_pdf {
       uint32_t max_h = min(data.num_actions, i + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
       float continuous_mass = a_s.score * data.num_actions / ((float)bandwidth_range * continuous_range);
-      /*std::cout << "i = " << i << ", min_value = " << min_h << std::endl;*/
       for (uint32_t j = min_h; j < max_h; j++)
       {
         continuous_scores[j] += continuous_mass;
-        /*std::cout << "j = " << j << ", continuous_mass = " << continuous_mass << ", continuous_scores[" << j << "] = "
-          << continuous_scores[j] << std::endl;  */
       }
     }
     auto& p_dist = ec.pred.prob_dist;
@@ -55,13 +50,13 @@ namespace VW { namespace pmf_to_pdf {
     ec.pred.a_s = data.temp_probs;
     base.predict(ec);
 
-    std::cout << "pmf_to_pdf.predict" << a_s_pred_to_string(ec) << std::endl;
+    VWLOG(ec) << "pmf_to_pdf::predict base.predict()" << a_s_pred_to_string(ec) << std::endl;
 
     data.temp_probs = ec.pred.a_s;
     ec.pred.prob_dist = temp;
     transform(data, ec);
 
-    std::cout << "pmf_to_pdf.predict" << prob_dist_pred_to_string(ec) << std::endl;
+    VWLOG(ec) << "pmf_to_pdf::predict transform()" << prob_dist_pred_to_string(ec) << std::endl;
   }
 
   void learn(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
@@ -75,32 +70,21 @@ namespace VW { namespace pmf_to_pdf {
     bool cond1 = data.min_value + ic * continuous_range / data.num_actions <= action_cont;
     bool cond2 = action_cont < data.min_value + (ic + 1) * continuous_range / data.num_actions;
 
-    /*std::cout << "ac = " << ac << std::endl;
-    std::cout << "ic = " << ic << std::endl;
-    std::cout << "cond1 = " << cond1 << std::endl;
-    std::cout << "cond2 = " << cond2 << std::endl;*/
-
     if (!cond1 || !cond2)
     {
       if (!cond1)
       {
-        /*std::cout << "!cond1" << std::endl;*/
         ic--;
       }
 
       if (!cond2)
       {
-        /*std::cout << "!cond2" << std::endl;*/
         ic++;
       }
     }
 
     uint32_t min_value = max(0, ic - data.bandwidth + 1);
     uint32_t max_value = min(data.num_actions - 1, ic + data.bandwidth);
-
-    /*std::cout << "ic after = " << ic << std::endl;
-    std::cout << "min_value = " << min_value << std::endl;
-    std::cout << "max_value = " << max_value << std::endl;*/
 
     auto temp = ec.l.cb_cont;
     ec.l.cb = data.temp_cb;
@@ -226,9 +210,6 @@ namespace VW { namespace pmf_to_pdf {
       ss << data->num_actions;
       options.insert("cb_explore", ss.str());
     }
-
-    //learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn, predict,
-    //    data->num_actions /* weights */, prediction_type::prob_dist);
 
     learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn,
         predict, 1, prediction_type::prob_dist);

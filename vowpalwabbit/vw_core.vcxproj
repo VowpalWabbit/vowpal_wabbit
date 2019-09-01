@@ -222,6 +222,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cb_continuous.cc" />
+    <ClCompile Include="nullstream.cc" />
     <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
