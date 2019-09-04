@@ -5,15 +5,21 @@ license as described in the file LICENSE.
 */
 #pragma once
 #include <stdint.h>
-#include "v_array.h"
-
-#include "learner.h"
-#include "action_score.h"
-#include "cb.h"
-#include "cb_adf.h"
-#include "example.h"
-#include "gen_cs_example.h"
 #include <algorithm>
+
+// Most of these includes are required because templated functions are using the objects defined in them
+// A few options to get rid of them:
+// - Use virtual function calls in predict/learn to get rid of the templates entirely (con: virtual function calls)
+// - Cut out the portions of code that actually use the objects and put them into new functions
+//   defined in the cc file (con: can't inline those functions)
+// - templatize all input parameters (con: no type safety)
+#include "v_array.h"         // required by action_score.h
+#include "action_score.h"    // used in sort_action_probs
+#include "cb.h"              // required for CB::label
+#include "cb_adf.h"          // used for function call in predict/learn
+#include "example.h"         // used in predict
+#include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
+#include "reductions_fwd.h"
 
 namespace VW
 {
@@ -58,8 +64,8 @@ template <typename T>
 using PredictLearnFn = void (T::*)(LEARNER::multi_learner& base, multi_ex& examples);
 
 template <typename T>
-inline
-void cb_explore_adf_base::predict(T& data, PredictLearnFn<T> predict_p, LEARNER::multi_learner& base, multi_ex& examples)
+inline void cb_explore_adf_base::predict(
+    T& data, PredictLearnFn<T> predict_p, LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
   data.m_gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
@@ -81,8 +87,7 @@ void cb_explore_adf_base::predict(T& data, PredictLearnFn<T> predict_p, LEARNER:
 }
 
 template <typename T>
-inline
-void cb_explore_adf_base::learn(
+inline void cb_explore_adf_base::learn(
     T& data, PredictLearnFn<T> learn_p, PredictLearnFn<T> predict_p, LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
@@ -98,8 +103,7 @@ void cb_explore_adf_base::learn(
   }
 }
 
-inline
-void cb_explore_adf_base::sort_action_probs(
+inline void cb_explore_adf_base::sort_action_probs(
     v_array<ACTION_SCORE::action_score>& probs, const std::vector<float>& scores)
 {
   // We want to preserve the score order in the returned action_probs if possible.  To do this,

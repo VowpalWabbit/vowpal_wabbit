@@ -13,10 +13,12 @@
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
 
-namespace VW {
-namespace cb_explore_adf {
-namespace bag {
-
+namespace VW
+{
+namespace cb_explore_adf
+{
+namespace bag
+{
 template <bool is_learn>
 void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -72,13 +74,10 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
   for (size_t i = 0; i < num_actions; i++) preds[i] = m_action_probs[i];
 }
 
-cb_explore_adf_bag::~cb_explore_adf_bag() {
-  m_action_probs.delete_v();
-}
+cb_explore_adf_bag::~cb_explore_adf_bag() { m_action_probs.delete_v(); }
 
 template <bool is_learn>
-void cb_explore_adf_bag::predict_or_learn(
-    cb_explore_adf_bag& data, LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_bag::predict_or_learn(cb_explore_adf_bag& data, LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
     data.learn(data, &cb_explore_adf_bag::predict_or_learn_impl<true>,
