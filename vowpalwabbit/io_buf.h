@@ -56,6 +56,7 @@ class io_buf
   // used to check-sum i/o files for corruption detection
   bool _verify_hash;
   uint32_t _hash;
+  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
 
  public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
@@ -69,21 +70,6 @@ class io_buf
 
   static constexpr int READ = 1;
   static constexpr int WRITE = 2;
-
-  void init()
-  {
-    space = v_init<char>();
-    files = v_init<int>();
-    currentname = v_init<char>();
-    finalname = v_init<char>();
-    size_t s = 1 << 16;
-    space.resize(s);
-    current = 0;
-    count = 0;
-    head = space.begin();
-    _verify_hash = false;
-    _hash = 0;
-  }
 
   void verify_hash(bool verify)
   {
@@ -156,7 +142,19 @@ class io_buf
     head = space.begin();
   }
 
-  io_buf() { init(); }
+  io_buf() :
+    _verify_hash{false},
+    _hash{0},
+    count{0},
+    current{0}
+  {
+    space = v_init<char>();
+    files = v_init<int>();
+    currentname = v_init<char>();
+    finalname = v_init<char>();
+    space.resize(INITIAL_BUFF_SIZE);
+    head = space.begin();
+  }
 
   virtual ~io_buf()
   {
