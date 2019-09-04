@@ -74,6 +74,12 @@ struct recall_tree
   float bern_hyper;
 
   bool randomized_routing;
+
+  ~recall_tree()
+  {
+    for (auto& node : nodes) node.preds.delete_v();
+    nodes.delete_v();
+  }
 };
 
 float to_prob(float x)
@@ -425,12 +431,6 @@ void learn(recall_tree& b, single_learner& base, example& ec)
   }
 }
 
-void finish(recall_tree& b)
-{
-  for (size_t i = 0; i < b.nodes.size(); ++i) b.nodes[i].preds.delete_v();
-  b.nodes.delete_v();
-}
-
 void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)
@@ -537,7 +537,6 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
   learner<recall_tree, example>& l = init_multiclass_learner(
       tree, as_singleline(setup_base(options, all)), learn, predict, all.p, tree->max_routers + tree->k);
   l.set_save_load(save_load_tree);
-  l.set_finish(finish);
 
   return make_base(l);
 }
