@@ -37,6 +37,13 @@ struct mf
   features temp_features;
 
   vw* all;  // for pairs? and finalize
+
+  ~mf()
+  {
+    // clean up local v_arrays
+    indices.delete_v();
+    sub_predictions.delete_v();
+  }
 };
 
 template <bool cache_sub_predictions>
@@ -183,10 +190,6 @@ void finish(mf& o)
 {
   // restore global pairs
   o.all->pairs = o.pairs;
-
-  // clean up local v_arrays
-  o.indices.delete_v();
-  o.sub_predictions.delete_v();
 }
 
 base_learner* mf_setup(options_i& options, vw& all)

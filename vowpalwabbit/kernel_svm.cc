@@ -38,6 +38,9 @@ using namespace VW::config;
 
 struct svm_params;
 
+static size_t num_kernel_evals = 0;
+static size_t num_cache_evals = 0;
+
 struct svm_example
 {
   v_array<float> krow;
@@ -56,6 +59,30 @@ struct svm_model
   v_array<float> alpha;
   v_array<float> delta;
 };
+
+void free_svm_model(svm_model* model)
+{
+  for (size_t i = 0; i < model->num_support; i++)
+  {
+    model->support_vec[i]->~svm_example();
+    // Warning C6001 is triggered by the following:
+    // example is allocated using (a) '&calloc_or_throw<svm_example>()' and freed using (b)
+    // 'free(model->support_vec[i])'
+    //
+    // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete
+    // (model->support_vect[i])', the warning goes away. Disable SDL warning.
+    //    #pragma warning(disable:6001)
+    free_it(model->support_vec[i]);
+    //  #pragma warning(default:6001)
+
+    model->support_vec[i] = 0;
+  }
+
+  model->support_vec.delete_v();
+  model->alpha.delete_v();
+  model->delta.delete_v();
+  free(model);
+}
 
 struct svm_params
 {
@@ -87,10 +114,34 @@ struct svm_params
 
   vw* all;  // flatten, parallel
   rand_state* m_random_state;
-};
 
-static size_t num_kernel_evals = 0;
-static size_t num_cache_evals = 0;
+  ~svm_params()
+  {
+    free(pool);
+    if (all)
+    {
+      all->trace_message << "Num support = " << model->num_support << endl;
+      all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
+                         << "Number of cache queries = " << num_cache_evals << endl;
+      all->trace_message << "Total loss = " << loss_sum << endl;
+    }
+    if (model)
+    {
+      free_svm_model(model);
+    }
+    if (all)
+    {
+      all->trace_message << "Done freeing model" << endl;
+    }
+
+    free(kernel_params);
+    if (all)
+    {
+      all->trace_message << "Done freeing kernel params" << endl;
+      all->trace_message << "Done with finish " << endl;
+    }
+  }
+};
 
 void svm_example::init_svm_example(flat_example* fec)
 {
@@ -810,47 +861,6 @@ void learn(svm_params& params, single_learner&, example& ec)
   }
 }
 
-void free_svm_model(svm_model* model)
-{
-  for (size_t i = 0; i < model->num_support; i++)
-  {
-    model->support_vec[i]->~svm_example();
-    // Warning C6001 is triggered by the following:
-    // example is allocated using (a) '&calloc_or_throw<svm_example>()' and freed using (b)
-    // 'free(model->support_vec[i])'
-    //
-    // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete
-    // (model->support_vect[i])', the warning goes away. Disable SDL warning.
-    //    #pragma warning(disable:6001)
-    free_it(model->support_vec[i]);
-    //  #pragma warning(default:6001)
-
-    model->support_vec[i] = 0;
-  }
-
-  model->support_vec.delete_v();
-  model->alpha.delete_v();
-  model->delta.delete_v();
-  free(model);
-}
-
-void finish(svm_params& params)
-{
-  free(params.pool);
-
-  params.all->trace_message << "Num support = " << params.model->num_support << endl;
-  params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                            << "Number of cache queries = " << num_cache_evals << endl;
-  params.all->trace_message << "Total loss = " << params.loss_sum << endl;
-
-  free_svm_model(params.model);
-  params.all->trace_message << "Done freeing model" << endl;
-  if (params.kernel_params)
-    free(params.kernel_params);
-  params.all->trace_message << "Done freeing kernel params" << endl;
-  params.all->trace_message << "Done with finish " << endl;
-}
-
 LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 {
   auto params = scoped_calloc_or_throw<svm_params>();
@@ -935,6 +945,5 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   learner<svm_params, example>& l = init_learner(params, learn, predict, 1);
   l.set_save_load(save_load);
-  l.set_finish(finish);
   return make_base(l);
 }

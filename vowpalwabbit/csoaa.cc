@@ -27,6 +27,10 @@ struct csoaa
 {
   uint32_t num_classes;
   polyprediction* pred;
+  ~csoaa()
+  {
+    free(pred);
+  }
 };
 
 template <bool is_learn>
@@ -114,8 +118,6 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 
 void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
 
-void finish(csoaa& c) { free(c.pred); }
-
 base_learner* csoaa_setup(options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<csoaa>();
@@ -134,7 +136,6 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   all.label_type = label_type::cs;
 
   l.set_finish_example(finish_example);
-  l.set_finish(finish);
   all.cost_sensitive = make_base(l);
   return all.cost_sensitive;
 }
@@ -159,6 +160,13 @@ struct ldf
   uint64_t ft_offset;
 
   v_array<action_scores> stored_preds;
+
+  ~ldf()
+  {
+    LabelDict::free_label_features(label_features);
+    a_s.delete_v();
+    stored_preds.delete_v();
+  }
 };
 
 bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
@@ -730,13 +738,6 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-void finish(ldf& data)
-{
-  LabelDict::free_label_features(data.label_features);
-  data.a_s.delete_v();
-  data.stored_preds.delete_v();
-}
-
 /*
  * Process a single example as a label.
  * Note: example should already be confirmed as a label
@@ -886,7 +887,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
   learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>,
       do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
   l.set_end_pass(end_pass);
   all.cost_sensitive = make_base(l);
   return all.cost_sensitive;

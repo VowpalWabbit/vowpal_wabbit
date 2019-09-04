@@ -627,8 +627,6 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-void finish(ccb& data) { data.~ccb(); }
-
 // Prediction deleter is intentionally a nullopt as it is handled by the reduction.
 void nullopt_delete(void*) {}
 
@@ -682,7 +680,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(CCB::finish);
   return make_base(l);
 }
 
