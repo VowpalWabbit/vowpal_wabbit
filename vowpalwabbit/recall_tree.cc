@@ -62,6 +62,7 @@ struct node
 struct recall_tree
 {
   vw* all;
+  rand_state* m_random_state;
   uint32_t k;
   bool node_only;
 
@@ -380,7 +381,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       float which = train_node(b, base, ec, cn);
 
       if (b.randomized_routing)
-        which = (b.all->random_state.get_and_update_random() > to_prob(which) ? -1.f : 1.f);
+        which = (b.m_random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f);
 
       uint32_t newcn = descend(b.nodes[cn], which);
       bool cond = stop_recurse_check(b, cn, newcn);
@@ -517,6 +518,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
     return nullptr;
 
   tree->all = &all;
+  tree->m_random_state = &(all.random_state);
   tree->max_candidates = options.was_supplied("max_candidates")
       ? tree->max_candidates
       : (std::min)(tree->k, 4 * (uint32_t)(ceil(log(tree->k) / log(2.0))));

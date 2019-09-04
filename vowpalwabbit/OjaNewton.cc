@@ -32,6 +32,7 @@ struct update_data
 struct OjaNewton
 {
   vw* all;
+  rand_state* m_random_state;
   int m;
   int epoch_size;
   float alpha;
@@ -84,8 +85,8 @@ struct OjaNewton
           // redraw until r1 should be strictly positive
           do
           {
-            r1 = all->random_state.get_and_update_random();
-            r2 = all->random_state.get_and_update_random();
+            r1 = m_random_state->get_and_update_random();
+            r2 = m_random_state->get_and_update_random();
           } while (r1 == 0.f);
 
           (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
@@ -558,6 +559,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
     return nullptr;
 
   ON->all = &all;
+  ON->m_random_state = &(all.random_state);
 
   ON->normalize = normalize == "true";
   ON->random_init = random_init == "true";

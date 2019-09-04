@@ -86,6 +86,7 @@ struct svm_params
   float loss_sum;
 
   vw* all;  // flatten, parallel
+  rand_state* m_random_state;
 };
 
 static size_t num_kernel_evals = 0;
@@ -679,7 +680,7 @@ void train(svm_params& params)
             (1.0f +
                 expf(
                     (float)(params.active_c * fabs(scores[i])) * (float)pow(params.pool[i]->ex.example_counter, 0.5f)));
-        if (params.all->random_state.get_and_update_random() < queryp)
+        if (params.m_random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
           fec->ex.l.simple.weight *= 1 / queryp;
@@ -734,7 +735,7 @@ void train(svm_params& params)
             break;
           // cout<<"reprocess: ";
           int randi = 1;
-          if (params.all->random_state.get_and_update_random() < 0.5)
+          if (params.m_random_state->get_and_update_random() < 0.5)
             randi = 0;
           if (randi)
           {
@@ -752,7 +753,7 @@ void train(svm_params& params)
           }
           else
           {
-            size_t rand_pos = (size_t)floorf(params.all->random_state.get_and_update_random() * model->num_support);
+            size_t rand_pos = (size_t)floorf(params.m_random_state->get_and_update_random() * model->num_support);
             update(params, rand_pos);
           }
         }
@@ -891,6 +892,7 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   params->maxcache = 1024 * 1024 * 1024;
   params->loss_sum = 0.;
   params->all = &all;
+  params->m_random_state = &(all.random_state);
 
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and

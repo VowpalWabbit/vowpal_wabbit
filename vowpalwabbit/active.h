@@ -4,6 +4,7 @@ struct active
 {
   float active_c0;
   vw* all;  // statistics, loss
+  rand_state* m_random_state;
 };
 
 float query_decision(active& a, example& ec, float k);

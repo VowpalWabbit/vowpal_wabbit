@@ -44,6 +44,7 @@ struct nn
   polyprediction* hiddenbias_pred;
 
   vw* all;  // many things
+  rand_state* m_random_state;
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -181,7 +182,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
       {
-        n.hiddenbias.l.simple.label = (float)(n.all->random_state.get_and_update_random() - 0.5);
+        n.hiddenbias.l.simple.label = (float)(n.m_random_state->get_and_update_random() - 0.5);
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
@@ -249,7 +250,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     if (wf == 0)
     {
       float sqrtk = sqrt((float)n.k);
-      n.outputweight.l.simple.label = (float)(n.all->random_state.get_and_update_random() - 0.5) / sqrtk;
+      n.outputweight.l.simple.label = (float)(n.m_random_state->get_and_update_random() - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;
     }
@@ -430,6 +431,7 @@ base_learner* nn_setup(options_i& options, vw& all)
     return nullptr;
 
   n->all = &all;
+  n->m_random_state = &(all.random_state);
 
   if (n->multitask && !all.quiet)
     std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;

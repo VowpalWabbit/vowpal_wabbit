@@ -29,6 +29,7 @@ struct active_cover
   float* lambda_d;
 
   vw* all;  // statistics, loss
+  rand_state* m_random_state;
   LEARNER::base_learner* l;
 };
 
@@ -110,7 +111,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
     p = 1.f;
   }
 
-  if (a.all->random_state.get_and_update_random() <= p)
+  if (a.m_random_state->get_and_update_random() <= p)
   {
     return 1.f / p;
   }
@@ -249,6 +250,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->m_random_state = &(all.random_state);
   data->beta_scale *= data->beta_scale;
 
   if (data->oracular)
