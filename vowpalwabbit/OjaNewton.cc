@@ -340,33 +340,36 @@ struct OjaNewton
       A[i][i] = 1;
     }
   }
+
+  ~OjaNewton()
+  {
+    free(ev);
+    free(b);
+    free(D);
+    free(buffer);
+    free(weight_buffer);
+    free(zv);
+    free(vv);
+    free(tmp);
+    if (A)
+    {
+      for (int i = 1; i <= m; i++)
+      {
+        free(A[i]);
+        free(K[i]);
+      }
+    }
+
+    free(A);
+    free(K);
+
+    free(data.Zx);
+    free(data.AZx);
+    free(data.delta);
+  }
 };
 
 void keep_example(vw& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
-
-void finish(OjaNewton& ON)
-{
-  free(ON.ev);
-  free(ON.b);
-  free(ON.D);
-  free(ON.buffer);
-  free(ON.weight_buffer);
-  free(ON.zv);
-  free(ON.vv);
-  free(ON.tmp);
-
-  for (int i = 1; i <= ON.m; i++)
-  {
-    free(ON.A[i]);
-    free(ON.K[i]);
-  }
-  free(ON.A);
-  free(ON.K);
-
-  free(ON.data.Zx);
-  free(ON.data.AZx);
-  free(ON.data.delta);
-}
 
 void make_pred(update_data& data, float x, float& wref)
 {
@@ -598,6 +601,5 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
   learner<OjaNewton, example>& l = init_learner(ON, learn, predict, all.weights.stride());
   l.set_save_load(save_load);
   l.set_finish_example(keep_example);
-  l.set_finish(finish);
   return make_base(l);
 }

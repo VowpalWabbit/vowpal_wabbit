@@ -58,16 +58,14 @@ void print_result(int file_descriptor, std::vector<VW::topk::scored_example> con
 {
   if (file_descriptor >= 0)
   {
-    char temp[30];
     std::stringstream ss;
     for (auto& item : items)
     {
-      sprintf(temp, "%f", item.first);
-      ss << temp;
-      ss << ' ';
-      print_tag(ss, item.second);
-      ss << ' ';
-      ss << '\n';
+      tmp_example = m_pr_queue.top();
+      m_pr_queue.pop();
+      ss << std::fixed << tmp_example.first << " ";
+      print_tag(ss, tmp_example.second);
+      ss << " \n";
     }
     ss << '\n';
     ssize_t len = ss.str().size();

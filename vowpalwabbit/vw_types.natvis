@@ -16,4 +16,13 @@
       </ArrayItems>
     </Expand>
   </Type>
+  <Type Name="dense_parameters">
+    <Expand>
+      <Item Name="size">_weight_mask + 1</Item>
+      <ArrayItems>
+        <Size>_weight_mask + 1</Size>
+        <ValuePointer>_begin</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
 </AutoVisualizer>
