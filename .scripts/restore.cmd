@@ -49,6 +49,10 @@ ECHO Restoring "%vwRoot%\vowpalwabbit\packages.config"
 "%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\vowpalwabbit\packages.config"
 ECHO.
 
+ECHO Restoring "%vwRoot%\vowpalwabbit\slim\test\packages.config"
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\vowpalwabbit\slim\test\packages.config"
+ECHO.
+
 POPD
 
 ENDLOCAL

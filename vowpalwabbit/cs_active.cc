@@ -56,6 +56,11 @@ struct cs_active
   size_t labels_outside_range;
   float distance_to_range;
   float range;
+
+  ~cs_active()
+  {
+    examples_by_queries.delete_v();
+  }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -302,8 +307,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
 void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec); }
 
-void finish(cs_active& data) { data.examples_by_queries.delete_v(); }
-
 base_learner* cs_active_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cs_active>();
@@ -371,7 +374,6 @@ base_learner* cs_active_setup(options_i& options, vw& all)
             predict_or_learn<false, false>, data->num_classes, prediction_type::multilabels);
 
   l.set_finish_example(finish_example);
-  l.set_finish(finish);
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
