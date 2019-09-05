@@ -20,11 +20,13 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
 struct cb_explore_adf_greedy : public cb_explore_adf_base
 {
- public:
+ private:
   float m_epsilon;
   bool m_first_only;
 
  public:
+  cb_explore_adf_greedy(float epsilon, bool first_only);
+
   template <bool is_learn>
   static void predict_or_learn(cb_explore_adf_greedy& data, LEARNER::multi_learner& base, multi_ex& examples);
   cb_explore_adf_greedy() = default;

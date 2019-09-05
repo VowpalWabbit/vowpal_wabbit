@@ -19,9 +19,18 @@ namespace cb_explore_adf
 {
 namespace cover
 {
+cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, bool first_only,
+    LEARNER::multi_learner* cs_ldf_learner, LEARNER::single_learner* scorer, size_t cb_type)
+    : m_cover_size(cover_size), m_psi(psi), m_nounif(nounif), m_first_only(first_only), m_cs_ldf_learner(cs_ldf_learner)
+{
+  m_gen_cs.cb_type = cb_type;
+  m_gen_cs.scorer = scorer;
+}
+
 template <bool is_learn>
 void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
+  m_gen_cs.known_cost = m_known_cost;
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
   const bool is_mtr = m_gen_cs.cb_type == CB_TYPE_MTR;
@@ -119,6 +128,7 @@ cb_explore_adf_cover::~cb_explore_adf_cover()
   m_cs_labels_2.costs.delete_v();
   m_cs_labels.costs.delete_v();
   m_action_probs.delete_v();
+  m_gen_cs.pred_scores.costs.delete_v();
 }
 
 template <bool is_learn>
@@ -137,25 +147,30 @@ void finish_multiline_example(vw& all, cb_explore_adf_cover& data, multi_ex& ec_
   data.finish_multiline_example(all, ec_seq);
 }
 
-void finish(cb_explore_adf_cover& data) { data.~cb_explore_adf_cover(); }
-
 LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   using config::make_option;
 
-  auto data = scoped_calloc_or_throw<cb_explore_adf_cover>();
   bool cb_explore_adf_option = false;
   std::string type_string = "mtr";
+  size_t cover_size;
+  float psi;
+  bool nounif;
+  bool first_only;
+
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("cover", data->m_cover_size).keep().help("Online cover based exploration"))
-      .add(make_option("psi", data->m_psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
-      .add(make_option("nounif", data->m_nounif)
+      .add(make_option("cover", cover_size).keep().help("Online cover based exploration"))
+      .add(make_option("psi", psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
+      .add(make_option("nounif", nounif)
                .keep()
                .help("do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("first_only", first_only)
+               .keep()
+               .help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
@@ -180,40 +195,39 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   // Set cb_type
+  size_t cb_type_enum;
   if (type_string.compare("dr") == 0)
-    data->m_gen_cs.cb_type = CB_TYPE_DR;
+    cb_type_enum = CB_TYPE_DR;
   else if (type_string.compare("ips") == 0)
-    data->m_gen_cs.cb_type = CB_TYPE_IPS;
+    cb_type_enum = CB_TYPE_IPS;
   else if (type_string.compare("mtr") == 0)
   {
     all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
                       << std::endl;
-    data->m_gen_cs.cb_type = CB_TYPE_MTR;
+    cb_type_enum = CB_TYPE_MTR;
   }
   else
   {
     all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
     options.replace("cb_type", "mtr");
-    data->m_gen_cs.cb_type = CB_TYPE_MTR;
+    cb_type_enum = CB_TYPE_MTR;
   }
 
   // Set explore_type
-  size_t problem_multiplier = data->m_cover_size + 1;
+  size_t problem_multiplier = cover_size + 1;
 
   LEARNER::multi_learner* base = LEARNER::as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  // Extract from lower level reductions.
-  data->m_gen_cs.scorer = all.scorer;
-  data->m_cs_ldf_learner = as_multiline(all.cost_sensitive);
+  auto data = scoped_calloc_or_throw<cb_explore_adf_cover>(
+      cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
   LEARNER::learner<cb_explore_adf_cover, multi_ex>& l =
       init_learner(data, base, cb_explore_adf_cover::predict_or_learn<true>,
           cb_explore_adf_cover::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
   return make_base(l);
 }
 }  // namespace cover

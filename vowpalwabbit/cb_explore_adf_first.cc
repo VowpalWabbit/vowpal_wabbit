@@ -12,9 +12,14 @@
 #include <algorithm>
 #include <cmath>
 
-namespace VW {
-namespace cb_explore_adf {
-namespace first {
+namespace VW
+{
+namespace cb_explore_adf
+{
+namespace first
+{
+cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon)
+  : m_tau(tau), m_epsilon(epsilon) {}
 
 template <bool is_learn>
 void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
@@ -45,7 +50,8 @@ void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, m
 }
 
 template <bool is_learn>
-void cb_explore_adf_first::predict_or_learn(cb_explore_adf_first& data, LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_first::predict_or_learn(
+    cb_explore_adf_first& data, LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
     data.learn(data, &cb_explore_adf_first::predict_or_learn_impl<true>,
@@ -59,20 +65,19 @@ void finish_multiline_example(vw& all, cb_explore_adf_first& data, multi_ex& ec_
   data.finish_multiline_example(all, ec_seq);
 }
 
-void finish(cb_explore_adf_first& data) { data.~cb_explore_adf_first(); }
-
 LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   using config::make_option;
-  auto data = scoped_calloc_or_throw<cb_explore_adf_first>();
   bool cb_explore_adf_option = false;
+  size_t tau;
+  float epsilon;
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("first", data->m_tau).keep().help("tau-first exploration"))
-      .add(make_option("epsilon", data->m_epsilon).keep().help("epsilon-greedy exploration"));
+      .add(make_option("first", tau).keep().help("tau-first exploration"))
+      .add(make_option("epsilon", epsilon).keep().help("epsilon-greedy exploration"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option || !options.was_supplied("first"))
@@ -92,12 +97,13 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
+  auto data = scoped_calloc_or_throw<cb_explore_adf_first>(tau, epsilon);
+
   LEARNER::learner<cb_explore_adf_first, multi_ex>& l =
       LEARNER::init_learner(data, base, cb_explore_adf_first::predict_or_learn<true>,
           cb_explore_adf_first::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
   return make_base(l);
 }
 }  // namespace first

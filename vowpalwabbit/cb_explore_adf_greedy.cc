@@ -17,6 +17,9 @@ namespace cb_explore_adf
 {
 namespace greedy
 {
+cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
+ : m_epsilon(epsilon), m_first_only(first_only) {}
+
 template <bool is_learn>
 void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -55,22 +58,21 @@ void finish_multiline_example(vw& all, cb_explore_adf_greedy& data, multi_ex& ec
   data.finish_multiline_example(all, ec_seq);
 }
 
-void finish(cb_explore_adf_greedy& data) { data.~cb_explore_adf_greedy(); }
-
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   using namespace std::placeholders;
-  auto data = scoped_calloc_or_throw<cb_explore_adf_greedy>();
   bool cb_explore_adf_option = false;
+  float epsilon;
+  bool first_only;
 
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", data->m_epsilon).keep().help("epsilon-greedy exploration"))
-      .add(make_option("first_only", data->m_first_only)
+      .add(make_option("epsilon", epsilon).keep().help("epsilon-greedy exploration"))
+      .add(make_option("first_only", first_only)
                .keep()
                .help("Only explore the first action in a tie-breaking event"));
   options.add_and_parse(new_options);
@@ -94,21 +96,19 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   size_t problem_multiplier = 1;
 
   if (!options.was_supplied("epsilon"))
-    data->m_epsilon = 0.05f;
+    epsilon = 0.05f;
 
   LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  // Extract from lower level reductions.
-  data->m_gen_cs.scorer = all.scorer;
+  auto data = scoped_calloc_or_throw<cb_explore_adf_greedy>(epsilon, first_only);
 
   LEARNER::learner<cb_explore_adf_greedy, multi_ex>& l =
       LEARNER::init_learner(data, base, cb_explore_adf_greedy::predict_or_learn<true>,
           cb_explore_adf_greedy::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
   return make_base(l);
 }
 

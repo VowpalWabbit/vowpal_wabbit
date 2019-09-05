@@ -20,11 +20,12 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
 struct cb_explore_adf_softmax : public cb_explore_adf_base
 {
- public:
+ private:
   float m_epsilon;
   float m_lambda;
 
  public:
+  cb_explore_adf_softmax(float epsilon, float lambda);
   template <bool is_learn>
   static void predict_or_learn(cb_explore_adf_softmax& data, LEARNER::multi_learner& base, multi_ex& examples);
   ~cb_explore_adf_softmax() = default;

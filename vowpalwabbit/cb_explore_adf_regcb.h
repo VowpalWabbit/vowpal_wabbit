@@ -22,7 +22,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
 struct cb_explore_adf_regcb : public cb_explore_adf_base
 {
- public:
+ private:
   size_t m_counter;
   bool m_regcbopt;  // use optimistic variant of RegCB
   float m_c0;       // mellowness parameter for RegCB
@@ -38,6 +38,7 @@ struct cb_explore_adf_regcb : public cb_explore_adf_base
   std::vector<v_array<CB::cb_class>> m_ex_costs;
 
  public:
+  cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost);
   template <bool is_learn>
   static void predict_or_learn(cb_explore_adf_regcb& data, LEARNER::multi_learner& base, multi_ex& examples);
   ~cb_explore_adf_regcb() = default;

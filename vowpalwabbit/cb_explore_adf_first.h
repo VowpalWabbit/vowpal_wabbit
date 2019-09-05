@@ -19,11 +19,12 @@ namespace VW
 
   struct cb_explore_adf_first : public cb_explore_adf_base
   {
-   public:
+   private:
     size_t m_tau;
     float m_epsilon;
 
    public:
+    cb_explore_adf_first(size_t tau, float epsilon);
     template <bool is_learn>
     static void predict_or_learn(cb_explore_adf_first& data, LEARNER::multi_learner& base, multi_ex& examples);
     ~cb_explore_adf_first() = default;

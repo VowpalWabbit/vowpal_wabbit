@@ -15,6 +15,9 @@ namespace cb_explore_adf
 {
 namespace softmax
 {
+cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda)
+  : m_epsilon(epsilon), m_lambda(lambda) {}
+
 template <bool is_learn>
 void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -42,29 +45,28 @@ void finish_multiline_example(vw& all, cb_explore_adf_softmax& data, multi_ex& e
   data.finish_multiline_example(all, ec_seq);
 }
 
-void finish(cb_explore_adf_softmax& data) { data.~cb_explore_adf_softmax(); }
-
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
-  auto data = scoped_calloc_or_throw<cb_explore_adf_softmax>();
   bool cb_explore_adf_option = false;
   bool softmax = false;
+  float epsilon;
+  float lambda;
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", data->m_epsilon).keep().help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", epsilon).keep().help("epsilon-greedy exploration"))
       .add(make_option("softmax", softmax).keep().help("softmax exploration"))
-      .add(make_option("lambda", data->m_lambda).keep().default_value(1.f).help("parameter for softmax"));
+      .add(make_option("lambda", lambda).keep().default_value(1.f).help("parameter for softmax"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option || !softmax)
     return nullptr;
 
-  if (data->m_lambda < 0)  // Lambda should always be positive because we are using a cost basis.
-    data->m_lambda = -data->m_lambda;
+  if (lambda < 0)  // Lambda should always be positive because we are using a cost basis.
+    lambda = -lambda;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))
@@ -81,15 +83,12 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  // Extract from lower level reductions.
-  data->m_gen_cs.scorer = all.scorer;
-
+  auto data = scoped_calloc_or_throw<cb_explore_adf_softmax>(epsilon, lambda);
   LEARNER::learner<cb_explore_adf_softmax, multi_ex>& l =
       LEARNER::init_learner(data, base, cb_explore_adf_softmax::predict_or_learn<true>,
           cb_explore_adf_softmax::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
   return make_base(l);
 }
 }  // namespace softmax

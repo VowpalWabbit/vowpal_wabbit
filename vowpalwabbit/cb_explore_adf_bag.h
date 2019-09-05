@@ -21,7 +21,7 @@ license as described in the file LICENSE.
 
   struct cb_explore_adf_bag : public cb_explore_adf_base
   {
-   public:
+   private:
     float m_epsilon;
     size_t m_bag_size;
     bool m_greedify;
@@ -33,6 +33,7 @@ license as described in the file LICENSE.
     std::vector<float> m_top_actions;
 
    public:
+    cb_explore_adf_bag(float epsilon, size_t bag_size, bool greedify, bool first_only, rand_state * random_state);
     template <bool is_learn>
     static void predict_or_learn(cb_explore_adf_bag& data, LEARNER::multi_learner& base, multi_ex& examples);
     ~cb_explore_adf_bag();

@@ -19,6 +19,11 @@ namespace cb_explore_adf
 {
 namespace bag
 {
+cb_explore_adf_bag::cb_explore_adf_bag(
+    float epsilon, size_t bag_size, bool greedify, bool first_only, rand_state* random_state)
+    : m_epsilon(epsilon), m_bag_size(bag_size), m_greedify(greedify), m_random_state(random_state)
+{}
+
 template <bool is_learn>
 void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
@@ -91,30 +96,27 @@ void finish_multiline_example(vw& all, cb_explore_adf_bag& data, multi_ex& ec_se
   data.finish_multiline_example(all, ec_seq);
 }
 
-void finish(cb_explore_adf_bag& data) { data.~cb_explore_adf_bag(); }
-
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
-  auto data = scoped_calloc_or_throw<cb_explore_adf_bag>();
   bool cb_explore_adf_option = false;
+  float epsilon;
+  size_t bag_size;
+  bool greedify;
+  bool first_only;
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", data->m_epsilon).keep().help("epsilon-greedy exploration"))
-      .add(make_option("bag", data->m_bag_size).keep().help("bagging-based exploration"))
-      .add(make_option("greedify", data->m_greedify).keep().help("always update first policy once in bagging"))
-      .add(make_option("first_only", data->m_first_only)
-               .keep()
-               .help("Only explore the first action in a tie-breaking event"));
+      .add(make_option("epsilon", epsilon).keep().help("epsilon-greedy exploration"))
+      .add(make_option("bag", bag_size).keep().help("bagging-based exploration"))
+      .add(make_option("greedify", greedify).keep().help("always update first policy once in bagging"))
+      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option || !options.was_supplied("bag"))
     return nullptr;
-
-  data->m_random_state = &(all.random_state);
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))
@@ -124,22 +126,18 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
-  // Set explore_type
-  size_t problem_multiplier = data->m_bag_size;
-
+  size_t problem_multiplier = bag_size;
   LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  // Extract from lower level reductions.
-  data->m_gen_cs.scorer = all.scorer;
+  auto data = scoped_calloc_or_throw<cb_explore_adf_bag>(epsilon, bag_size, greedify, first_only, &(all.random_state));
 
   LEARNER::learner<cb_explore_adf_bag, multi_ex>& l =
       LEARNER::init_learner(data, base, cb_explore_adf_bag::predict_or_learn<true>,
           cb_explore_adf_bag::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
   return make_base(l);
 }
 

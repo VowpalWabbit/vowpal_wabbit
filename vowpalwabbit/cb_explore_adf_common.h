@@ -28,12 +28,17 @@ namespace cb_explore_adf
 // data common to all cb_explore_adf reductions
 struct cb_explore_adf_base
 {
- public:
-  GEN_CS::cb_to_cs_adf m_gen_cs;
+ protected:
+  CB::cb_class m_known_cost;  // needs to be protected because cover uses this variable
+
+ private:
+  // used in output_example
+  CB::label m_action_label;
+  CB::label m_empty_label;
 
  public:
   void finish_multiline_example(vw& all, multi_ex& ec_seq);
-  virtual ~cb_explore_adf_base();
+  virtual ~cb_explore_adf_base() = default;
 
   template <typename T>
   using PredictLearnFn = void (T::*)(LEARNER::multi_learner& base, multi_ex& examples);
@@ -44,11 +49,6 @@ struct cb_explore_adf_base
   template <typename T>
   void learn(T& data, PredictLearnFn<T> learn_p, PredictLearnFn<T> predict_p, LEARNER::multi_learner& base,
       multi_ex& examples);
-
- private:
-  // used in output_example
-  CB::label m_action_label;
-  CB::label m_empty_label;
 
  protected:
   size_t fill_tied(v_array<ACTION_SCORE::action_score>& preds);
@@ -68,13 +68,13 @@ inline void cb_explore_adf_base::predict(
     T& data, PredictLearnFn<T> predict_p, LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
-  data.m_gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
+  m_known_cost = CB_ADF::get_observed_cost(examples);
 
   if (label_example != nullptr)
   {
     // predict path, replace the label example with an empty one
-    data.m_action_label = label_example->l.cb;
-    label_example->l.cb = data.m_empty_label;
+    m_action_label = label_example->l.cb;
+    label_example->l.cb = m_empty_label;
   }
 
   (data.*predict_p)(base, examples);
@@ -82,7 +82,7 @@ inline void cb_explore_adf_base::predict(
   if (label_example != nullptr)
   {
     // predict path, restore label
-    label_example->l.cb = data.m_action_label;
+    label_example->l.cb = m_action_label;
   }
 }
 
@@ -93,7 +93,7 @@ inline void cb_explore_adf_base::learn(
   example* label_example = CB_ADF::test_adf_sequence(examples);
   if (label_example != nullptr)
   {
-    data.m_gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
+    m_known_cost = CB_ADF::get_observed_cost(examples);
     // learn iff label_example != nullptr
     (data.*learn_p)(base, examples);
   }

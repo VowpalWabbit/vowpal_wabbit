@@ -21,6 +21,11 @@ namespace cb_explore_adf
 {
 namespace regcb
 {
+cb_explore_adf_regcb::cb_explore_adf_regcb(
+    bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost)
+  : m_regcbopt(regcbopt), m_c0(c0), m_first_only(first_only), m_min_cb_cost(min_cb_cost), m_max_cb_cost(max_cb_cost)
+{}
+
 // TODO: same as cs_active.cc, move to shared place
 float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, float tol)
 {
@@ -178,7 +183,8 @@ void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, m
         else
           preds[i].score = 0;
         // explore uniformly on support
-        exploration::enforce_minimum_probability(1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
+        exploration::enforce_minimum_probability(
+            1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
       }
     }
   }
@@ -200,32 +206,29 @@ void finish_multiline_example(vw& all, cb_explore_adf_regcb& data, multi_ex& ec_
   data.finish_multiline_example(all, ec_seq);
 }
 
-void finish(cb_explore_adf_regcb& data) { data.~cb_explore_adf_regcb(); }
-
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
-  auto data = scoped_calloc_or_throw<cb_explore_adf_regcb>();
   bool cb_explore_adf_option = false;
   bool regcb = false;
   const std::string mtr = "mtr";
   std::string type_string(mtr);
+  bool regcbopt;
+  float c0;
+  bool first_only;
+  float min_cb_cost;
+  float max_cb_cost;
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
-      .add(make_option("regcbopt", data->m_regcbopt).keep().help("RegCB optimistic exploration"))
-      .add(make_option("mellowness", data->m_c0)
-               .keep()
-               .default_value(0.1f)
-               .help("RegCB mellowness parameter c_0. Default 0.1"))
-      .add(make_option("cb_min_cost", data->m_min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
-      .add(make_option("cb_max_cost", data->m_max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
-      .add(make_option("first_only", data->m_first_only)
-               .keep()
-               .help("Only explore the first action in a tie-breaking event"))
+      .add(make_option("regcbopt", regcbopt).keep().help("RegCB optimistic exploration"))
+      .add(make_option("mellowness", c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
+      .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
+      .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
+      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
@@ -254,15 +257,12 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  // Extract from lower level reductions.
-  data->m_gen_cs.scorer = all.scorer;
-
+  auto data = scoped_calloc_or_throw<cb_explore_adf_regcb>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
   LEARNER::learner<cb_explore_adf_regcb, multi_ex>& l =
       LEARNER::init_learner(data, base, cb_explore_adf_regcb::predict_or_learn<true>,
           cb_explore_adf_regcb::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
   return make_base(l);
 }
 

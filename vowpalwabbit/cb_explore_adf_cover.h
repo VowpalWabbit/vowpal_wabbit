@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "cost_sensitive.h"
 #include "v_array.h"
 #include "action_score.h"
+#include "gen_cs_example.h"
 #include "reductions_fwd.h"
 
 namespace VW
@@ -25,24 +26,26 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
 struct cb_explore_adf_cover : public cb_explore_adf_base
 {
- public:
-  v_array<ACTION_SCORE::action_score> m_action_probs;
-  std::vector<float> m_scores;
-
+ private:
   size_t m_cover_size;
   float m_psi;
   bool m_nounif;
   bool m_first_only;
   size_t m_counter;
-
   LEARNER::multi_learner* m_cs_ldf_learner;
+  GEN_CS::cb_to_cs_adf m_gen_cs;
 
+  v_array<ACTION_SCORE::action_score> m_action_probs;
+  std::vector<float> m_scores;
   COST_SENSITIVE::label m_cs_labels;
   COST_SENSITIVE::label m_cs_labels_2;
   v_array<COST_SENSITIVE::label> m_prepped_cs_labels;
   v_array<CB::label> m_cb_labels;
 
  public:
+  cb_explore_adf_cover(
+      size_t cover_size, float psi, bool nounif, bool first_only, LEARNER::multi_learner* cs_ldf_learner, LEARNER::single_learner * scorer, size_t cb_type
+  );
   template <bool is_learn>
   static void predict_or_learn(cb_explore_adf_cover& data, LEARNER::multi_learner& base, multi_ex& examples);
   ~cb_explore_adf_cover();
