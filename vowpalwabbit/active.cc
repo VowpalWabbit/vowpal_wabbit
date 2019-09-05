@@ -150,7 +150,7 @@ base_learner* active_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
-  data->m_random_state = &(all.random_state);
+  data->m_random_state = all.get_random_state();
 
   if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");

@@ -8,6 +8,7 @@ license as described in the file LICENSE.node
 #include <cstdio>
 #include <float.h>
 #include <sstream>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -62,7 +63,7 @@ struct node
 struct recall_tree
 {
   vw* all;
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
   uint32_t k;
   bool node_only;
 
@@ -518,7 +519,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
     return nullptr;
 
   tree->all = &all;
-  tree->m_random_state = &(all.random_state);
+  tree->m_random_state = all.get_random_state();
   tree->max_candidates = options.was_supplied("max_candidates")
       ? tree->max_candidates
       : (std::min)(tree->k, 4 * (uint32_t)(ceil(log(tree->k) / log(2.0))));

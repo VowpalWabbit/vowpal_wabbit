@@ -4,6 +4,7 @@
 #include "cb_adf.h"
 #include "rand48.h"
 #include "gen_cs_example.h"
+#include <memory>
 
 // Do evaluation of nonstationary policies.
 // input = contextual bandit label
@@ -20,7 +21,7 @@ struct explore_eval
 {
   CB::cb_class known_cost;
   vw* all;
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
   uint64_t offset;
   CB::label action_label;
   CB::label empty_label;
@@ -197,7 +198,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
-  data->m_random_state = &(all.random_state);
+  data->m_random_state = all.get_random_state();
 
   if (options.was_supplied("multiplier"))
     data->fixed_multiplier = true;

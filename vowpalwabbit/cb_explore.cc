@@ -4,6 +4,7 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "explore.h"
+#include <memory>
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -18,7 +19,7 @@ namespace CB_EXPLORE
 {
 struct cb_explore
 {
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
   cb_to_cs cbcs;
   v_array<uint32_t> preds;
   v_array<float> cover_probs;
@@ -108,7 +109,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   float prob = 1.f / (float)data.bag_size;
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = BS::weight_gen(*(data.m_random_state));
+    uint32_t count = BS::weight_gen(data.m_random_state);
     if (is_learn && count > 0)
       base.learn(ec, i);
     else
@@ -289,7 +290,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   if (!options.was_supplied("cb_explore"))
     return nullptr;
 
-  data->m_random_state = &(all.random_state);
+  data->m_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
   if (!options.was_supplied("cb"))

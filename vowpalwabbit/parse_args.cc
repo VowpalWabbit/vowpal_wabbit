@@ -1523,7 +1523,7 @@ void parse_modules(options_i& options, vw& all, vector<string>& dictionary_nses)
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
-  all.random_state.set_random_state(all.random_seed);
+  all.get_random_state()->set_random_state(all.random_seed);
 
   parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
 

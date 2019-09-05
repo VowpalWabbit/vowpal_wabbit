@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <memory>
 
 #include "parse_example.h"
 #include "constant.h"
@@ -113,7 +114,7 @@ struct svm_params
   float loss_sum;
 
   vw* all;  // flatten, parallel
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
 
   ~svm_params()
   {
@@ -902,7 +903,7 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   params->maxcache = 1024 * 1024 * 1024;
   params->loss_sum = 0.;
   params->all = &all;
-  params->m_random_state = &(all.random_state);
+  params->m_random_state = all.get_random_state();
 
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and

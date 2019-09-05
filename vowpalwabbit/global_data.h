@@ -44,6 +44,7 @@ license as described in the file LICENSE.
 
 #include "options.h"
 #include "version.h"
+#include <memory>
 
 typedef float weight;
 
@@ -365,6 +366,10 @@ class rand_state
 
 struct vw
 {
+ private:
+  std::shared_ptr<rand_state> m_random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+
+ public:
   shared_data* sd;
 
   parser* p;
@@ -481,7 +486,6 @@ struct vw
   bool normalized_updates;  // Should every feature be normalized
   bool invariant_updates;   // Should we use importance aware/safe updates
   uint64_t random_seed;
-  rand_state random_state;  // per instance random_state
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
   bool normal_weights;
@@ -543,6 +547,7 @@ struct vw
   label_type::label_type_t label_type;
 
   vw();
+  std::shared_ptr<rand_state> get_random_state() { return m_random_state_sp; }
 
   vw(const vw&) = delete;
   vw& operator=(const vw&) = delete;

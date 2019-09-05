@@ -3,6 +3,7 @@
 #include "vw.h"
 #include "parse_args.h"
 #include "rand48.h"
+#include <memory>
 
 namespace ExpReplay
 {
@@ -10,7 +11,7 @@ template <label_parser& lp>
 struct expreplay
 {
   vw* all;
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
   size_t N;             // how big is the buffer?
   example* buf;         // the deep copies of examples (N of them)
   bool* filled;         // which of buf[] is filled
@@ -100,7 +101,7 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
     return nullptr;
 
   er->all = &all;
-  er->m_random_state = &(all.random_state);
+  er->m_random_state = all.get_random_state();
   er->buf = VW::alloc_examples(1, er->N);
   er->buf->interactions = &all.interactions;
 

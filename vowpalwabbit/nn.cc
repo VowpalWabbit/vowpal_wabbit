@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include <stdio.h>
 #include <sstream>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -44,7 +45,7 @@ struct nn
   polyprediction* hiddenbias_pred;
 
   vw* all;  // many things
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
 
   ~nn()
   {
@@ -431,7 +432,7 @@ base_learner* nn_setup(options_i& options, vw& all)
     return nullptr;
 
   n->all = &all;
-  n->m_random_state = &(all.random_state);
+  n->m_random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
     std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;

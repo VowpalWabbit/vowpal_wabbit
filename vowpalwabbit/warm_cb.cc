@@ -9,6 +9,7 @@
 #include "vw_exception.h"
 
 #include <vector>
+#include <memory>
 
 using namespace LEARNER;
 using namespace exploration;
@@ -40,7 +41,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter;
   vw* all;
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
   multi_ex ecs;
   float loss0;
   float loss1;
@@ -612,7 +613,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
   data->all = &all;
-  data->m_random_state = &(all.random_state);
+  data->m_random_state = all.get_random_state();
   data->use_cs = use_cs;
 
   init_adf_data(*data.get(), num_actions);

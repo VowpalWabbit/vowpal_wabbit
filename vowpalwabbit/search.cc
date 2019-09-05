@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <string.h>
 #include <math.h>
+#include <memory>
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
@@ -140,7 +141,7 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
 struct search_private
 {
   vw* all;
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
 
   uint64_t offset;
   bool auto_condition_features;  // do you want us to automatically add conditioning features?
@@ -765,7 +766,7 @@ void cerr_print_array(string str, v_array<T>& A)
   std::cerr << " ]" << endl;
 }
 
-size_t random(rand_state& rs, size_t max) { return (size_t)(rs.get_and_update_random() * (float)max); }
+size_t random(std::shared_ptr<rand_state>& rs, size_t max) { return (size_t)(rs->get_and_update_random() * (float)max); }
 template <class T>
 bool array_contains(T target, const T* A, size_t n)
 {
@@ -1127,10 +1128,10 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         (priv.m_random_state->get_and_update_random() < priv.perturb_oracle))
       oracle_actions_cnt = 0;
     a = (oracle_actions_cnt > 0)
-        ? oracle_actions[random(*(priv.m_random_state), oracle_actions_cnt)]
-        : (allowed_actions_cnt > 0) ? allowed_actions[random(*(priv.m_random_state), allowed_actions_cnt)]
-                                    : priv.is_ldf ? (action)random(*(priv.m_random_state), ec_cnt)
-                                                  : (action)(1 + random(*(priv.m_random_state), priv.A));
+        ? oracle_actions[random(priv.m_random_state, oracle_actions_cnt)]
+        : (allowed_actions_cnt > 0) ? allowed_actions[random(priv.m_random_state, allowed_actions_cnt)]
+                                    : priv.is_ldf ? (action)random(priv.m_random_state, ec_cnt)
+                                                  : (action)(1 + random(priv.m_random_state, priv.A));
   }
   cdbg << "choose_oracle_action from oracle_actions = [";
   for (size_t i = 0; i < oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i];
@@ -2483,7 +2484,7 @@ void search_initialize(vw* all, search& sch)
 {
   search_private& priv = *sch.priv;  // priv is zero initialized by default
   priv.all = all;
-  priv.m_random_state = &(all->random_state);
+  priv.m_random_state = all->get_random_state();
 
   priv.active_csoaa = false;
   priv.label_is_test = mc_label_is_test;

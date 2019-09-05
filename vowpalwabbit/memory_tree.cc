@@ -5,6 +5,7 @@
 #include <time.h>
 #include <sstream>
 #include <ctime>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -169,7 +170,7 @@ struct node
 struct memory_tree
 {
   vw* all;
-  rand_state* m_random_state;
+  std::shared_ptr<rand_state> m_random_state;
 
   v_array<node> nodes;         // array of nodes.
   v_array<example*> examples;  // array of example points
@@ -1255,7 +1256,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   }
 
   tree->all = &all;
-  tree->m_random_state = &(all.random_state);
+  tree->m_random_state = all.get_random_state();
   tree->current_pass = 0;
   tree->final_pass = all.numpasses;
 

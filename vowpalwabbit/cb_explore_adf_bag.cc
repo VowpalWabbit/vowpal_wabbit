@@ -20,7 +20,7 @@ namespace cb_explore_adf
 namespace bag
 {
 cb_explore_adf_bag::cb_explore_adf_bag(
-    float epsilon, size_t bag_size, bool greedify, bool first_only, rand_state* random_state)
+    float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
     : m_epsilon(epsilon), m_bag_size(bag_size), m_greedify(greedify), m_random_state(random_state)
 {}
 
@@ -43,7 +43,7 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
   {
     // avoid updates to the random num generator
     // for greedify, always update first policy once
-    uint32_t count = is_learn ? ((m_greedify && i == 0) ? 1 : BS::weight_gen(*m_random_state)) : 0;
+    uint32_t count = is_learn ? ((m_greedify && i == 0) ? 1 : BS::weight_gen(m_random_state)) : 0;
 
     if (is_learn && count > 0)
       LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
@@ -131,7 +131,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  auto data = scoped_calloc_or_throw<cb_explore_adf_bag>(epsilon, bag_size, greedify, first_only, &(all.random_state));
+  auto data = scoped_calloc_or_throw<cb_explore_adf_bag>(epsilon, bag_size, greedify, first_only, all.get_random_state());
 
   LEARNER::learner<cb_explore_adf_bag, multi_ex>& l =
       LEARNER::init_learner(data, base, cb_explore_adf_bag::predict_or_learn<true>,
