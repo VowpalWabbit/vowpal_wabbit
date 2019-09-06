@@ -14,25 +14,21 @@ LEARNER::base_learner* topk_setup(VW::config::options_i& options, vw& all);
 
 namespace VW
 {
-  struct topk
+  class topk
   {
-    using scored_example = std::pair<float, v_array<char>>;
-
-    topk(uint32_t K);
+    using container_t = std::multimap<float, v_array<char>>;
+  public:
+    using const_iterator_t = container_t::const_iterator;
+    topk(uint32_t k_num);
 
     void predict(LEARNER::single_learner& base, multi_ex& ec_seq);
     void learn(LEARNER::single_learner& base, multi_ex& ec_seq);
-    std::vector<scored_example> drain_queue();
+    std::pair<const_iterator_t, const_iterator_t> get_container_view();
+    void clear_container();
   private:
-    struct compare_scored_examples
-    {
-      constexpr bool operator()(scored_example const& a, scored_example const& b) const { return a.first > b.first; }
-    };
-
     void update_priority_queue(float pred, v_array<char>& tag);
 
-    // rec number
-    const uint32_t m_K;
-    std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples> m_pr_queue;
+    const uint32_t _k_num;
+    container_t _pr_queue;
   };
 }
