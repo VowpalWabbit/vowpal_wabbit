@@ -2,8 +2,8 @@
 
 using namespace VW::config;
 
-VW::autolink::autolink(uint32_t d, uint32_t stride_shift)
-  : m_d(d), m_stride_shift(stride_shift)
+VW::autolink::autolink(uint32_t poly_degree, uint32_t stride_shift)
+  : _poly_degree(poly_degree), _stride_shift(stride_shift)
 {}
 
 void VW::autolink::predict(LEARNER::single_learner& base, example& ec)
@@ -28,11 +28,11 @@ void VW::autolink::prepare_example(LEARNER::single_learner& base, example& ec)
   // Add features of label.
   ec.indices.push_back(autolink_namespace);
   features& fs = ec.feature_space[autolink_namespace];
-  for (size_t i = 0; i < m_d; i++)
+  for (size_t i = 0; i < _poly_degree; i++)
   {
     if (base_pred != 0.)
     {
-      fs.push_back(base_pred, AUTOCONSTANT + (i << m_stride_shift));
+      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift));
       base_pred *= ec.pred.scalar;
     }
   }
@@ -43,7 +43,7 @@ void VW::autolink::reset_example(example& ec)
 {
   features& fs = ec.feature_space[autolink_namespace];
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
-  ec.feature_space[autolink_namespace].clear();
+  fs.clear();
   ec.indices.pop();
 }
 

@@ -17,8 +17,8 @@ namespace VW
     void reset_example(example& ec);
 
     // degree of the polynomial
-    const uint32_t m_d;
-    const uint32_t m_stride_shift;
+    const uint32_t _poly_degree;
+    const uint32_t _stride_shift;
     static constexpr int AUTOCONSTANT = 524267083;
   };
 }
