@@ -78,7 +78,7 @@ void make_marginal(data& sm, example& ec)
         uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-         std::cout << "warning: id feature namespace has " << sm.temp[n].size() << " features. Should be a multiple of 2"
+          std::cout << "warning: id feature namespace has " << sm.temp[n].size() << " features. Should be a multiple of 2"
                << std::endl;
           break;
         }

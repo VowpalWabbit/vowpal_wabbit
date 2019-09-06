@@ -29,6 +29,9 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "allreduce.h"
 #include "vw_exception.h"
 
+using std::cerr;
+using std::endl;
+
 // port is already in network order
 socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 {
@@ -54,7 +57,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
     if (!quiet)
-      std::cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << std::endl;
+      cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
   }
 
   size_t count = 0;
@@ -66,7 +69,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
     if (!quiet)
     {
       msg << "connect attempt " << count << " failed: " << strerror(errno);
-      std::cerr << msg.str() << std::endl;
+      cerr << msg.str() << endl;
     }
 #ifdef _WIN32
     Sleep(1);
@@ -92,7 +95,7 @@ socket_t AllReduceSockets::getsock()
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
   {
     if (!quiet)
-      std::cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << std::endl;
+      cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
   }
 #endif
 
@@ -101,7 +104,7 @@ socket_t AllReduceSockets::getsock()
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
   {
     if (!quiet)
-      std::cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << std::endl;
+      cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
   }
 
   return sock;
@@ -133,7 +136,7 @@ void AllReduceSockets::all_reduce_init()
   else
   {
     if (!quiet)
-      std::cerr << "wrote unique_id=" << unique_id << std::endl;
+      cerr << "wrote unique_id=" << unique_id << endl;
   }
   if (send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
   {
@@ -142,7 +145,7 @@ void AllReduceSockets::all_reduce_init()
   else
   {
     if (!quiet)
-      std::cerr << "wrote total=" << total << std::endl;
+      cerr << "wrote total=" << total << endl;
   }
   if (send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
   {
@@ -151,7 +154,7 @@ void AllReduceSockets::all_reduce_init()
   else
   {
     if (!quiet)
-      std::cerr << "wrote node=" << node << std::endl;
+      cerr << "wrote node=" << node << endl;
   }
   int ok;
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
@@ -161,7 +164,7 @@ void AllReduceSockets::all_reduce_init()
   else
   {
     if (!quiet)
-      std::cerr << "read ok=" << ok << std::endl;
+      cerr << "read ok=" << ok << endl;
   }
   if (!ok)
     THROW("mapper already connected");
@@ -177,7 +180,7 @@ void AllReduceSockets::all_reduce_init()
   else
   {
     if (!quiet)
-      std::cerr << "read kid_count=" << kid_count << std::endl;
+      cerr << "read kid_count=" << kid_count << endl;
   }
 
   socket_t sock = -1;
@@ -212,7 +215,7 @@ void AllReduceSockets::all_reduce_init()
         if (listen(sock, kid_count) < 0)
         {
           if (!quiet)
-            std::cerr << "listen: " << strerror(errno) << std::endl;
+            cerr << "listen: " << strerror(errno) << endl;
           CLOSESOCK(sock);
           sock = getsock();
         }
@@ -237,12 +240,12 @@ void AllReduceSockets::all_reduce_init()
     if (nullptr == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN))
     {
       if (!quiet)
-        std::cerr << "read parent_ip=" << parent_ip << "(inet_ntop: " << strerror(errno) << ")" << std::endl;
+        cerr << "read parent_ip=" << parent_ip << "(inet_ntop: " << strerror(errno) << ")" << endl;
     }
     else
     {
       if (!quiet)
-        std::cerr << "read parent_ip=" << dotted_quad << std::endl;
+        cerr << "read parent_ip=" << dotted_quad << endl;
     }
   }
   if (recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
@@ -252,7 +255,7 @@ void AllReduceSockets::all_reduce_init()
   else
   {
     if (!quiet)
-      std::cerr << "read parent_port=" << parent_port << std::endl;
+      cerr << "read parent_port=" << parent_port << endl;
   }
 
   CLOSESOCK(master_sock);
@@ -277,7 +280,7 @@ void AllReduceSockets::all_reduce_init()
     // char hostname[NI_MAXHOST];
     // char servInfo[NI_MAXSERV];
     // getnameinfo((sockaddr *) &child_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV,
-    // NI_NUMERICSERV); std::cerr << "connected to " << hostname << ':' << ntohs(port) << std::endl;
+    // NI_NUMERICSERV); cerr << "connected to " << hostname << ':' << ntohs(port) << endl;
     socks.children[i] = f;
   }
 
