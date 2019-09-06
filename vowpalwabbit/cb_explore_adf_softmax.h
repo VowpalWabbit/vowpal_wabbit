@@ -21,8 +21,8 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 struct cb_explore_adf_softmax : public cb_explore_adf_base
 {
  private:
-  float m_epsilon;
-  float m_lambda;
+  float _epsilon;
+  float _lambda;
 
  public:
   cb_explore_adf_softmax(float epsilon, float lambda);

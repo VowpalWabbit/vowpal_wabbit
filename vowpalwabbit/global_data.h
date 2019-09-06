@@ -367,7 +367,7 @@ class rand_state
 struct vw
 {
  private:
-  std::shared_ptr<rand_state> m_random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
 
  public:
   shared_data* sd;
@@ -547,7 +547,7 @@ struct vw
   label_type::label_type_t label_type;
 
   vw();
-  std::shared_ptr<rand_state> get_random_state() { return m_random_state_sp; }
+  std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
   vw(const vw&) = delete;
   vw& operator=(const vw&) = delete;

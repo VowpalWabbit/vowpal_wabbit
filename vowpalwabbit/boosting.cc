@@ -61,7 +61,7 @@ struct boosting
   float gamma;
   string alg;
   vw* all;
-  std::shared_ptr<rand_state> m_random_state;
+  std::shared_ptr<rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;
@@ -212,7 +212,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
     o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
-  float stopping_point = o.m_random_state->get_and_update_random();
+  float stopping_point = o._random_state->get_and_update_random();
 
   for (int i = 0; i < o.N; i++)
   {
@@ -424,7 +424,7 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
-  data->m_random_state = all.get_random_state();
+  data->_random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 

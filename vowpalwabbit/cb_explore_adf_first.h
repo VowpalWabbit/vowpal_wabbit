@@ -20,8 +20,8 @@ namespace VW
   struct cb_explore_adf_first : public cb_explore_adf_base
   {
    private:
-    size_t m_tau;
-    float m_epsilon;
+    size_t _tau;
+    float _epsilon;
 
    public:
     cb_explore_adf_first(size_t tau, float epsilon);

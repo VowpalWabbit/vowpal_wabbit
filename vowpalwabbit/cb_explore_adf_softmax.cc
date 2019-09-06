@@ -16,7 +16,7 @@ namespace cb_explore_adf
 namespace softmax
 {
 cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda)
-  : m_epsilon(epsilon), m_lambda(lambda) {}
+  : _epsilon(epsilon), _lambda(lambda) {}
 
 template <bool is_learn>
 void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
@@ -24,9 +24,9 @@ void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base,
   LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  exploration::generate_softmax(-m_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+  exploration::generate_softmax(-_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
-  exploration::enforce_minimum_probability(m_epsilon, true, begin_scores(preds), end_scores(preds));
+  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 template <bool is_learn>

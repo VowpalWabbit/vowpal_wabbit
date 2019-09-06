@@ -27,20 +27,20 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 struct cb_explore_adf_cover : public cb_explore_adf_base
 {
  private:
-  size_t m_cover_size;
-  float m_psi;
-  bool m_nounif;
-  bool m_first_only;
-  size_t m_counter;
-  LEARNER::multi_learner* m_cs_ldf_learner;
-  GEN_CS::cb_to_cs_adf m_gen_cs;
+  size_t _cover_size;
+  float _psi;
+  bool _nounif;
+  bool _first_only;
+  size_t _counter;
+  LEARNER::multi_learner* _cs_ldf_learner;
+  GEN_CS::cb_to_cs_adf _gen_cs;
 
-  v_array<ACTION_SCORE::action_score> m_action_probs;
-  std::vector<float> m_scores;
-  COST_SENSITIVE::label m_cs_labels;
-  COST_SENSITIVE::label m_cs_labels_2;
-  v_array<COST_SENSITIVE::label> m_prepped_cs_labels;
-  v_array<CB::label> m_cb_labels;
+  v_array<ACTION_SCORE::action_score> _action_probs;
+  std::vector<float> _scores;
+  COST_SENSITIVE::label _cs_labels;
+  COST_SENSITIVE::label _cs_labels_2;
+  v_array<COST_SENSITIVE::label> _prepped_cs_labels;
+  v_array<CB::label> _cb_labels;
 
  public:
   cb_explore_adf_cover(

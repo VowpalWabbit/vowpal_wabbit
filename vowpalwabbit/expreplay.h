@@ -11,7 +11,7 @@ template <label_parser& lp>
 struct expreplay
 {
   vw* all;
-  std::shared_ptr<rand_state> m_random_state;
+  std::shared_ptr<rand_state> _random_state;
   size_t N;             // how big is the buffer?
   example* buf;         // the deep copies of examples (N of them)
   bool* filled;         // which of buf[] is filled
@@ -41,12 +41,12 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {
-    size_t n = (size_t)(er.m_random_state->get_and_update_random() * (float)er.N);
+    size_t n = (size_t)(er._random_state->get_and_update_random() * (float)er.N);
     if (er.filled[n])
       base.learn(er.buf[n]);
   }
 
-  size_t n = (size_t)(er.m_random_state->get_and_update_random() * (float)er.N);
+  size_t n = (size_t)(er._random_state->get_and_update_random() * (float)er.N);
   if (er.filled[n])
     base.learn(er.buf[n]);
 
@@ -101,7 +101,7 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
     return nullptr;
 
   er->all = &all;
-  er->m_random_state = all.get_random_state();
+  er->_random_state = all.get_random_state();
   er->buf = VW::alloc_examples(1, er->N);
   er->buf->interactions = &all.interactions;
 

@@ -19,7 +19,7 @@ namespace cb_explore_adf
 namespace first
 {
 cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon)
-  : m_tau(tau), m_epsilon(epsilon) {}
+  : _tau(tau), _epsilon(epsilon) {}
 
 template <bool is_learn>
 void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
@@ -33,12 +33,12 @@ void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, m
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
 
-  if (m_tau)
+  if (_tau)
   {
     float prob = 1.f / (float)num_actions;
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
     if (is_learn)
-      m_tau--;
+      _tau--;
   }
   else
   {
@@ -46,7 +46,7 @@ void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, m
     preds[0].score = 1.0;
   }
 
-  exploration::enforce_minimum_probability(m_epsilon, true, begin_scores(preds), end_scores(preds));
+  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 template <bool is_learn>

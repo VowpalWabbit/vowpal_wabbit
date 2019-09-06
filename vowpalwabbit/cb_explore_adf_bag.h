@@ -24,15 +24,15 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 struct cb_explore_adf_bag : public cb_explore_adf_base
 {
  private:
-  float m_epsilon;
-  size_t m_bag_size;
-  bool m_greedify;
-  bool m_first_only;
-  std::shared_ptr<rand_state> m_random_state;
+  float _epsilon;
+  size_t _bag_size;
+  bool _greedify;
+  bool _first_only;
+  std::shared_ptr<rand_state> _random_state;
 
-  v_array<ACTION_SCORE::action_score> m_action_probs;
-  std::vector<float> m_scores;
-  std::vector<float> m_top_actions;
+  v_array<ACTION_SCORE::action_score> _action_probs;
+  std::vector<float> _scores;
+  std::vector<float> _top_actions;
 
  public:
   cb_explore_adf_bag(float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);

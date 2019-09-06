@@ -23,19 +23,19 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 struct cb_explore_adf_regcb : public cb_explore_adf_base
 {
  private:
-  size_t m_counter;
-  bool m_regcbopt;  // use optimistic variant of RegCB
-  float m_c0;       // mellowness parameter for RegCB
-  bool m_first_only;
-  float m_min_cb_cost;
-  float m_max_cb_cost;
+  size_t _counter;
+  bool _regcbopt;  // use optimistic variant of RegCB
+  float _c0;       // mellowness parameter for RegCB
+  bool _first_only;
+  float _min_cb_cost;
+  float _max_cb_cost;
 
-  std::vector<float> m_min_costs;
-  std::vector<float> m_max_costs;
+  std::vector<float> _min_costs;
+  std::vector<float> _max_costs;
 
   // for backing up cb example data when computing sensitivities
-  std::vector<ACTION_SCORE::action_scores> m_ex_as;
-  std::vector<v_array<CB::cb_class>> m_ex_costs;
+  std::vector<ACTION_SCORE::action_scores> _ex_as;
+  std::vector<v_array<CB::cb_class>> _ex_costs;
 
  public:
   cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost);

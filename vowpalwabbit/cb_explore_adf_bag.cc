@@ -21,7 +21,7 @@ namespace bag
 {
 cb_explore_adf_bag::cb_explore_adf_bag(
     float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
-    : m_epsilon(epsilon), m_bag_size(bag_size), m_greedify(greedify), m_random_state(random_state)
+    : _epsilon(epsilon), _bag_size(bag_size), _greedify(greedify), _random_state(random_state)
 {}
 
 template <bool is_learn>
@@ -36,14 +36,14 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
     return;
   }
 
-  m_scores.clear();
-  for (uint32_t i = 0; i < num_actions; i++) m_scores.push_back(0.f);
-  m_top_actions.assign(num_actions, 0);
-  for (uint32_t i = 0; i < m_bag_size; i++)
+  _scores.clear();
+  for (uint32_t i = 0; i < num_actions; i++) _scores.push_back(0.f);
+  _top_actions.assign(num_actions, 0);
+  for (uint32_t i = 0; i < _bag_size; i++)
   {
     // avoid updates to the random num generator
     // for greedify, always update first policy once
-    uint32_t count = is_learn ? ((m_greedify && i == 0) ? 1 : BS::weight_gen(m_random_state)) : 0;
+    uint32_t count = is_learn ? ((_greedify && i == 0) ? 1 : BS::weight_gen(_random_state)) : 0;
 
     if (is_learn && count > 0)
       LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
@@ -51,35 +51,35 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
       LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
 
     assert(preds.size() == num_actions);
-    for (auto e : preds) m_scores[e.action] += e.score;
+    for (auto e : preds) _scores[e.action] += e.score;
 
-    if (!m_first_only)
+    if (!_first_only)
     {
       size_t tied_actions = fill_tied(preds);
-      for (size_t i = 0; i < tied_actions; ++i) m_top_actions[preds[i].action] += 1.f / tied_actions;
+      for (size_t i = 0; i < tied_actions; ++i) _top_actions[preds[i].action] += 1.f / tied_actions;
     }
     else
-      m_top_actions[preds[0].action] += 1.f;
+      _top_actions[preds[0].action] += 1.f;
     if (is_learn)
       for (uint32_t j = 1; j < count; j++)
         LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
   }
 
-  m_action_probs.clear();
-  for (uint32_t i = 0; i < m_scores.size(); i++) m_action_probs.push_back({i, 0.});
+  _action_probs.clear();
+  for (uint32_t i = 0; i < _scores.size(); i++) _action_probs.push_back({i, 0.});
 
   // generate distribution over actions
   exploration::generate_bag(
-      begin(m_top_actions), end(m_top_actions), begin_scores(m_action_probs), end_scores(m_action_probs));
+      begin(_top_actions), end(_top_actions), begin_scores(_action_probs), end_scores(_action_probs));
 
-  exploration::enforce_minimum_probability(m_epsilon, true, begin_scores(m_action_probs), end_scores(m_action_probs));
+  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
 
-  sort_action_probs(m_action_probs, m_scores);
+  sort_action_probs(_action_probs, _scores);
 
-  for (size_t i = 0; i < num_actions; i++) preds[i] = m_action_probs[i];
+  for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 }
 
-cb_explore_adf_bag::~cb_explore_adf_bag() { m_action_probs.delete_v(); }
+cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
 
 template <bool is_learn>
 void cb_explore_adf_bag::predict_or_learn(cb_explore_adf_bag& data, LEARNER::multi_learner& base, multi_ex& examples)

@@ -21,8 +21,8 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 struct cb_explore_adf_greedy : public cb_explore_adf_base
 {
  private:
-  float m_epsilon;
-  bool m_first_only;
+  float _epsilon;
+  bool _first_only;
 
  public:
   cb_explore_adf_greedy(float epsilon, bool first_only);

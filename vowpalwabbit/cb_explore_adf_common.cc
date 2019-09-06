@@ -8,7 +8,7 @@ namespace cb_explore_adf
 /*
 cb_explore_adf_base::~cb_explore_adf_base()
 {
-  m_gen_cs.pred_scores.costs.delete_v();
+  _gen_cs.pred_scores.costs.delete_v();
 }
 */
 size_t cb_explore_adf_base::fill_tied(v_array<ACTION_SCORE::action_score>& preds)
@@ -42,11 +42,11 @@ void cb_explore_adf_base::output_example(vw& all, multi_ex& ec_seq)
   }
 
   bool labeled_example = true;
-  if (m_known_cost.probability > 0)
+  if (_known_cost.probability > 0)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = CB_ALGS::get_cost_estimate(&m_known_cost, preds[i].action);
+      float l = CB_ALGS::get_cost_estimate(&_known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }

@@ -21,114 +21,114 @@ namespace cover
 {
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, bool first_only,
     LEARNER::multi_learner* cs_ldf_learner, LEARNER::single_learner* scorer, size_t cb_type)
-    : m_cover_size(cover_size), m_psi(psi), m_nounif(nounif), m_first_only(first_only), m_cs_ldf_learner(cs_ldf_learner)
+    : _cover_size(cover_size), _psi(psi), _nounif(nounif), _first_only(first_only), _cs_ldf_learner(cs_ldf_learner)
 {
-  m_gen_cs.cb_type = cb_type;
-  m_gen_cs.scorer = scorer;
+  _gen_cs.cb_type = cb_type;
+  _gen_cs.scorer = scorer;
 }
 
 template <bool is_learn>
 void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
-  m_gen_cs.known_cost = m_known_cost;
+  _gen_cs.known_cost = _known_cost;
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
-  const bool is_mtr = m_gen_cs.cb_type == CB_TYPE_MTR;
+  const bool is_mtr = _gen_cs.cb_type == CB_TYPE_MTR;
   if (is_learn)
   {
     if (is_mtr)  // use DR estimates for non-ERM policies in MTR
-      GEN_CS::gen_cs_example_dr<true>(m_gen_cs, examples, m_cs_labels);
+      GEN_CS::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels);
     else
-      GEN_CS::gen_cs_example<false>(m_gen_cs, examples, m_cs_labels);
+      GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
     LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
   }
   else
   {
-    GEN_CS::gen_cs_example_ips(examples, m_cs_labels);
+    GEN_CS::gen_cs_example_ips(examples, _cs_labels);
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   const uint32_t num_actions = (uint32_t)preds.size();
 
-  float additive_probability = 1.f / (float)m_cover_size;
-  const float min_prob = (std::min)(1.f / num_actions, 1.f / (float)std::sqrt(m_counter * num_actions));
-  m_action_probs.clear();
-  for (uint32_t i = 0; i < num_actions; i++) m_action_probs.push_back({i, 0.});
-  m_scores.clear();
-  for (uint32_t i = 0; i < num_actions; i++) m_scores.push_back(preds[i].score);
+  float additive_probability = 1.f / (float)_cover_size;
+  const float min_prob = (std::min)(1.f / num_actions, 1.f / (float)std::sqrt(_counter * num_actions));
+  _action_probs.clear();
+  for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
+  _scores.clear();
+  for (uint32_t i = 0; i < num_actions; i++) _scores.push_back(preds[i].score);
 
-  if (!m_first_only)
+  if (!_first_only)
   {
     size_t tied_actions = fill_tied(preds);
     for (size_t i = 0; i < tied_actions; ++i)
-      m_action_probs[preds[i].action].score += additive_probability / tied_actions;
+      _action_probs[preds[i].action].score += additive_probability / tied_actions;
   }
   else
-    m_action_probs[preds[0].action].score += additive_probability;
+    _action_probs[preds[0].action].score += additive_probability;
 
   float norm = min_prob * num_actions + (additive_probability - min_prob);
-  for (size_t i = 1; i < m_cover_size; i++)
+  for (size_t i = 1; i < _cover_size; i++)
   {
     // Create costs of each action based on online cover
     if (is_learn)
     {
-      m_cs_labels_2.costs.clear();
+      _cs_labels_2.costs.clear();
       for (uint32_t j = 0; j < num_actions; j++)
       {
-        float pseudo_cost = m_cs_labels.costs[j].x - m_psi * min_prob / ((std::max)(m_action_probs[j].score, min_prob) / norm);
-        m_cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
+        float pseudo_cost = _cs_labels.costs[j].x - _psi * min_prob / ((std::max)(_action_probs[j].score, min_prob) / norm);
+        _cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
-      GEN_CS::call_cs_ldf<true>(*(m_cs_ldf_learner), examples, m_cb_labels, m_cs_labels_2, m_prepped_cs_labels,
+      GEN_CS::call_cs_ldf<true>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels,
           examples[0]->ft_offset, i + 1);
     }
     else
       GEN_CS::call_cs_ldf<false>(
-          *(m_cs_ldf_learner), examples, m_cb_labels, m_cs_labels, m_prepped_cs_labels, examples[0]->ft_offset, i + 1);
+          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
 
-    for (uint32_t i = 0; i < num_actions; i++) m_scores[i] += preds[i].score;
-    if (!m_first_only)
+    for (uint32_t i = 0; i < num_actions; i++) _scores[i] += preds[i].score;
+    if (!_first_only)
     {
       size_t tied_actions = fill_tied(preds);
       const float add_prob = additive_probability / tied_actions;
       for (size_t i = 0; i < tied_actions; ++i)
       {
-        if (m_action_probs[preds[i].action].score < min_prob)
-          norm += (std::max)(0.f, add_prob - (min_prob - m_action_probs[preds[i].action].score));
+        if (_action_probs[preds[i].action].score < min_prob)
+          norm += (std::max)(0.f, add_prob - (min_prob - _action_probs[preds[i].action].score));
         else
           norm += add_prob;
-        m_action_probs[preds[i].action].score += add_prob;
+        _action_probs[preds[i].action].score += add_prob;
       }
     }
     else
     {
       uint32_t action = preds[0].action;
-      if (m_action_probs[action].score < min_prob)
-        norm += (std::max)(0.f, additive_probability - (min_prob - m_action_probs[action].score));
+      if (_action_probs[action].score < min_prob)
+        norm += (std::max)(0.f, additive_probability - (min_prob - _action_probs[action].score));
       else
         norm += additive_probability;
-      m_action_probs[action].score += additive_probability;
+      _action_probs[action].score += additive_probability;
     }
   }
 
   exploration::enforce_minimum_probability(
-      min_prob * num_actions, !m_nounif, begin_scores(m_action_probs), end_scores(m_action_probs));
+      min_prob * num_actions, !_nounif, begin_scores(_action_probs), end_scores(_action_probs));
 
-  sort_action_probs(m_action_probs, m_scores);
-  for (size_t i = 0; i < num_actions; i++) preds[i] = m_action_probs[i];
+  sort_action_probs(_action_probs, _scores);
+  for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 
   if (is_learn)
-    ++m_counter;
+    ++_counter;
 }
 
 cb_explore_adf_cover::~cb_explore_adf_cover()
 {
-  m_cb_labels.delete_v();
-  for (size_t i = 0; i < m_prepped_cs_labels.size(); i++) m_prepped_cs_labels[i].costs.delete_v();
-  m_prepped_cs_labels.delete_v();
-  m_cs_labels_2.costs.delete_v();
-  m_cs_labels.costs.delete_v();
-  m_action_probs.delete_v();
-  m_gen_cs.pred_scores.costs.delete_v();
+  _cb_labels.delete_v();
+  for (size_t i = 0; i < _prepped_cs_labels.size(); i++) _prepped_cs_labels[i].costs.delete_v();
+  _prepped_cs_labels.delete_v();
+  _cs_labels_2.costs.delete_v();
+  _cs_labels.costs.delete_v();
+  _action_probs.delete_v();
+  _gen_cs.pred_scores.costs.delete_v();
 }
 
 template <bool is_learn>

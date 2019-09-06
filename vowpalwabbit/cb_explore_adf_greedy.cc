@@ -18,7 +18,7 @@ namespace cb_explore_adf
 namespace greedy
 {
 cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
- : m_epsilon(epsilon), m_first_only(first_only) {}
+ : _epsilon(epsilon), _first_only(first_only) {}
 
 template <bool is_learn>
 void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
@@ -32,14 +32,14 @@ void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, 
 
   size_t tied_actions = fill_tied(preds);
 
-  const float prob = m_epsilon / num_actions;
+  const float prob = _epsilon / num_actions;
   for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
-  if (!m_first_only)
+  if (!_first_only)
   {
-    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - m_epsilon) / tied_actions;
+    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - _epsilon) / tied_actions;
   }
   else
-    preds[0].score += 1.f - m_epsilon;
+    preds[0].score += 1.f - _epsilon;
 }
 
 template <bool is_learn>
