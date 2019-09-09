@@ -1372,6 +1372,15 @@ void read_line_json(
   // "Line: '"<< line_copy << "'");
 }
 
+void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
+{
+  if (all.label_type == label_type::label_type_t::cb) {
+      for (auto& e: examples) {
+          e->l.cb.weight = 1 - pdrop;
+      }
+  }
+}
+
 template <bool audit>
 void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
@@ -1392,6 +1401,8 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+
+  apply_pdrop(all, data->probabilityOfDrop, examples);
 
   if (!result.IsError())
     return;
