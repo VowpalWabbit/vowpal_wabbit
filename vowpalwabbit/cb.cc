@@ -106,6 +106,7 @@ void copy_label(void* dst, void* src)
   CB::label* ldD = (CB::label*)dst;
   CB::label* ldS = (CB::label*)src;
   copy_array(ldD->costs, ldS->costs);
+  ldD->weight = ldS->weight;
 }
 
 void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
