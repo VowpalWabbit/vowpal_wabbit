@@ -218,6 +218,11 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
+float weight(void* v) {
+  CB_EVAL::label* ld = (CB_EVAL::label*)v;
+  return ld->event.weight;
+}
+
 size_t read_cached_label(shared_data* sd, void* v, io_buf& cache)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
@@ -283,6 +288,6 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   words.begin()--;
 }
 
-label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, CB::weight,
+label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
     copy_label, test_label, sizeof(CB_EVAL::label)};
 }  // namespace CB_EVAL
