@@ -9,17 +9,12 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <math.h>
 #include "v_array.h"
+#include "hashstring.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
 #include <Windows.h>
 #endif
-
-struct substring
-{
-  char* begin;
-  char* end;
-};
 
 std::ostream& operator<<(std::ostream& os, const substring& ss);
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);
@@ -68,8 +63,6 @@ namespace VW
 {
 typedef example& (*example_factory_t)(void*);
 }
-
-uint64_t hashstring(substring s, uint64_t h);
 
 typedef uint64_t (*hash_func_t)(substring, uint64_t);
 
