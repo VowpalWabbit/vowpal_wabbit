@@ -5,7 +5,7 @@
 
 // forward declarations
 struct example;
-typedef std::vector<example*> multi_ex;
+using multi_ex = std::vector<example*>;
 template <class T>
 struct v_array;
 struct random_state;
