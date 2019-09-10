@@ -1,6 +1,8 @@
 package org.vowpalwabbit.spark;
 
 import java.io.Closeable;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Main wrapper for VowpalWabbit native implementation.
@@ -25,9 +27,11 @@ public class VowpalWabbitNative implements Closeable {
      * Initializes the native VW data structures.
      * 
      * <p>
-     * Note: The {@code args} must be compatible with the command line arguments stored in {@code model}.
+     * Note: The {@code args} must be compatible with the command line arguments
+     * stored in {@code model}.
      * </p>
-     * @param args VW command line arguments.
+     * 
+     * @param args  VW command line arguments.
      * @param model VW model to initialize this instance from.
      * @return pointer to vw data structure defined in global_data.h.
      */
@@ -52,6 +56,8 @@ public class VowpalWabbitNative implements Closeable {
      */
     public native VowpalWabbitArguments getArguments();
 
+    private native double getPerformanceStatistic(String key);
+
     /**
      * Signals the end of the current pass over the data.
      */
@@ -63,7 +69,8 @@ public class VowpalWabbitNative implements Closeable {
     private native void finish();
 
     /**
-     * Invokes the native implementation of Murmur hash. Exposed through VowpalWabbitMurmur.
+     * Invokes the native implementation of Murmur hash. Exposed through
+     * VowpalWabbitMurmur.
      */
     static native int hash(byte[] data, int offset, int len, int seed);
 
@@ -85,9 +92,11 @@ public class VowpalWabbitNative implements Closeable {
      * Initializes the native VW data structures.
      * 
      * <p>
-     * Note: The {@code args} must be compatible with the command line arguments stored in {@code model}.
+     * Note: The {@code args} must be compatible with the command line arguments
+     * stored in {@code model}.
      * </p>
-     * @param args VW command line arguments.
+     * 
+     * @param args  VW command line arguments.
      * @param model VW model to initialize this instance from.
      */
     public VowpalWabbitNative(String args, byte[] model) {
@@ -96,6 +105,7 @@ public class VowpalWabbitNative implements Closeable {
 
     /**
      * Creates a new VW example associated with this this instance.
+     * 
      * @return new {@code VowpalWabbitExample} object.
      */
     public VowpalWabbitExample createExample() {
@@ -103,12 +113,25 @@ public class VowpalWabbitNative implements Closeable {
     }
 
     /**
-     * Creates a new empty VW example associated with this this instance.
-     * This is used to mark the end of a multiline example.
+     * Creates a new empty VW example associated with this this instance. This is
+     * used to mark the end of a multiline example.
+     * 
      * @return new {@code VowpalWabbitExample} object.
      */
     public VowpalWabbitExample createEmptyExample() {
         return new VowpalWabbitExample(this.nativePointer, true);
+    }
+
+    private static final String[] performanceKeys = new String[] { "numberOfExamplesPerPass", "weightedExampleSum",
+            "weightedLabelSum", "averageLoss", "bestConstant", "bestConstantLoss", "totalNumberOfFeatures" };
+
+    public Map<String, Double> getPerformanceStatistics() {
+        HashMap<String, Double> map = new HashMap<String, Double>();
+
+        for (String key : performanceKeys)
+            map.put(key, getPerformanceStatistic(key));
+
+        return map;
     }
 
     /**

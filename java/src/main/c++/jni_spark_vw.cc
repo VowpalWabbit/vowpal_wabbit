@@ -135,9 +135,69 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   jstring args = env->NewStringUTF(serializer.str().c_str());
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitArguments");
-  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;)V");
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;DD)V");
 
-  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args);
+  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->eta, all->power_t);
+}
+
+JNIEXPORT jdouble JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistic(
+    JNIEnv* env, jobject vwObj, jstring key)
+{
+  StringGuard g_key(env, key);
+
+  auto all = (vw*)get_native_pointer(env, vwObj);
+
+  if (!strcmp(g_key.c_str(), "numberOfExamplesPerPass"))
+  {
+    if (all->current_pass == 0)
+      return all->sd->example_number;
+    else
+      return all->sd->example_number / all->current_pass;
+  }
+
+  if (!strcmp(g_key.c_str(), "weightedExampleSum"))
+  {
+    return all->sd->weighted_examples();
+  }
+
+  if (!strcmp(g_key.c_str(), "weightedLabelSum"))
+  {
+    return all->sd->weighted_labels;
+  }
+
+  if (!strcmp(g_key.c_str(), "averageLoss"))
+  {
+    if (all->holdout_set_off)
+      if (all->sd->weighted_labeled_examples > 0)
+        return all->sd->sum_loss / all->sd->weighted_labeled_examples;
+      else
+        return 0;  // TODO should report NaN, but not clear how to do in platform independent manner
+    else if ((all->sd->holdout_best_loss == FLT_MAX) || (all->sd->holdout_best_loss == FLT_MAX * 0.5))
+      return 0;  // TODO should report NaN, but not clear how to do in platform independent manner
+    else
+      return all->sd->holdout_best_loss;
+  }
+
+  if (!strcmp(g_key.c_str(), "bestConstant") || !strcmp(g_key.c_str(), "bestConstantLoss"))
+  {
+    float best_constant;
+    float best_constant_loss;
+    if (!get_best_constant(*all, best_constant, best_constant_loss))
+      return 0;
+
+    if (!strcmp(g_key.c_str(), "bestConstant"))
+      return best_constant;
+
+    if (!strcmp(g_key.c_str(), "bestConstantLoss"))
+      return best_constant_loss;
+  }
+
+  if (!strcmp(g_key.c_str(), "totalNumberOfFeatures"))
+  {
+    return all->sd->total_features;
+  }
+
+  return -1;
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JNIEnv* env, jobject vwObj)

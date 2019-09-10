@@ -46,6 +46,14 @@ extern "C"
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
+   * Method:    getPerformanceStatistic
+   * Signature: ()Ljava.lang.String;
+   */
+  JNIEXPORT jdouble JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistic(
+      JNIEnv *, jobject, jstring);
+
+  /*
+   * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
    * Method:    endPass
    * Signature: ()V
    */
