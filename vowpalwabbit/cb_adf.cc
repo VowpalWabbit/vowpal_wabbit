@@ -46,6 +46,21 @@ struct cb_adf
   bool no_predict;
   bool rank_all;
   float clip_p;
+
+  ~cb_adf()
+  {
+    cb_labels.delete_v();
+    for (auto& prepped_cs_label : prepped_cs_labels)
+      prepped_cs_label.costs.delete_v();
+    prepped_cs_labels.delete_v();
+    cs_labels.costs.delete_v();
+    backup_weights.delete_v();
+    backup_nf.delete_v();
+    prob_s.delete_v();
+
+    a_s.delete_v();
+    gen_cs.pred_scores.costs.delete_v();
+  }
 };
 
 CB::cb_class get_observed_cost(multi_ex& examples)
@@ -414,21 +429,6 @@ void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-void finish(cb_adf& data)
-{
-  data.gen_cs.mtr_ec_seq.~multi_ex();
-  data.cb_labels.delete_v();
-  for (size_t i = 0; i < data.prepped_cs_labels.size(); i++) data.prepped_cs_labels[i].costs.delete_v();
-  data.prepped_cs_labels.delete_v();
-  data.cs_labels.costs.delete_v();
-  data.backup_weights.delete_v();
-  data.backup_nf.delete_v();
-  data.prob_s.delete_v();
-
-  data.a_s.delete_v();
-  data.gen_cs.pred_scores.costs.delete_v();
-}
-
 void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
   if (c.all->model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE)
@@ -500,7 +500,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   }
 
   if (ld->clip_p > 0.f && ld->gen_cs.cb_type == CB_TYPE_SM)
-    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped." << std::endl; 
+    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped." << std::endl;
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
@@ -535,7 +535,6 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   bare->gen_cs.scorer = all.scorer;
 
-  l.set_finish(CB_ADF::finish);
   l.set_save_load(CB_ADF::save_load);
   return make_base(l);
 }
