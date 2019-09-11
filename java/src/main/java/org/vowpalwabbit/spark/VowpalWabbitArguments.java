@@ -5,7 +5,9 @@ package org.vowpalwabbit.spark;
  * 
  * @author Markus Cozowicz
  */
-public class VowpalWabbitArguments {
+public class VowpalWabbitArguments implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     private int numBits;
     private int hashSeed;
     private String args;
