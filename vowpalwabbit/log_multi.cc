@@ -520,7 +520,7 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   init_tree(*data.get());
 
   learner<log_multi, example>& l = init_multiclass_learner(
-      data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors);
+      data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors, "log_multi");
   l.set_save_load(save_load_tree);
 
   return make_base(l);

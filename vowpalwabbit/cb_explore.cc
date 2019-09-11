@@ -4,6 +4,7 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "explore.h"
+#include "debug_log.h"
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -90,6 +91,9 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
     base.predict(ec);
 
   // pre-allocate pdf
+
+  VW_DBG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
+
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
@@ -152,6 +156,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 {
+  VW_DBG(ec) << "predict_or_learn_cover:" << is_learn << " start" << std::endl;
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
 
@@ -289,6 +294,8 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   if (!options.was_supplied("cb_explore"))
     return nullptr;
 
+  std::cout << "cb_explore" << std::endl;
+
   data->all = &all;
   uint32_t num_actions = data->cbcs.num_actions;
 
@@ -316,17 +323,17 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->preds = v_init<uint32_t>();
     data->preds.resize(data->cover_size);
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type::action_probs);
+        prediction_type::action_probs, "explore_cover");
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type::action_probs);
+        prediction_type::action_probs,"explore_bag");
   else if (options.was_supplied("first"))
     l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
+        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs,"explore_first");
   else  // greedy
     l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);
+        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs,"explore_greedy");
 
   l->set_finish_example(finish_example);
   return make_base(*l);

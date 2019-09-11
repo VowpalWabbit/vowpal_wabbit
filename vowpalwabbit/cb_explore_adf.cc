@@ -411,6 +411,7 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
+  VW_DBG(*examples[0]) << "predict_or_learn_cover_adf:" << is_learn << " start" << std::endl;
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
   const bool is_mtr = data.gen_cs.cb_type == CB_TYPE_MTR;
@@ -420,11 +421,13 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
       GEN_CS::gen_cs_example_dr<true>(data.gen_cs, examples, data.cs_labels);
     else
       GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
+    VW_DBG(*examples[0]) << "predict_or_learn_cover_adf:" << is_learn << " before base()" << std::endl;
     multiline_learn_or_predict<true>(base, examples, data.offset);
   }
   else
   {
     GEN_CS::gen_cs_example_ips(examples, data.cs_labels);
+    VW_DBG(*examples[0]) << "predict_or_learn_cover_adf:" << is_learn << " before base()" << std::endl;
     multiline_learn_or_predict<false>(base, examples, data.offset);
   }
 
@@ -793,7 +796,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   data->cs_ldf_learner = as_multiline(all.cost_sensitive);
 
   learner<cb_explore_adf, multi_ex>& l = init_learner(data, base, CB_EXPLORE_ADF::do_actual_learning<true>,
-      CB_EXPLORE_ADF::do_actual_learning<false>, problem_multiplier, prediction_type::action_probs);
+      CB_EXPLORE_ADF::do_actual_learning<false>, problem_multiplier, prediction_type::action_probs, "cb_explore_adf");
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
   return make_base(l);

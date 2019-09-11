@@ -24,6 +24,10 @@ license as described in the file LICENSE.
 #endif
 #endif
 
+#include "debug_log.h"
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG false
+
 #include "gd.h"
 #include "accumulate.h"
 #include "reductions.h"
@@ -40,6 +44,10 @@ using namespace VW::config;
 // 4. Factor various state out of vw&
 namespace GD
 {
+bool GET_VW_DEBUG_LOG() { return VW_DEBUG_LOG; }
+
+std::string depth_str;
+std::string get_depth_str() { return depth_str; }
 struct gd
 {
   //  double normalized_sum_norm_x;
@@ -70,10 +78,10 @@ inline float quake_InvSqrt(float x)
   // Carmack/Quake/SGI fast method:
   float xhalf = 0.5f * x;
   static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
-  int i = reinterpret_cast<int&>(x);        // store floating-point bits in integer
-  i = 0x5f3759d5 - (i >> 1);       // initial guess for Newton's method
-  x =  reinterpret_cast<float&>(i);            // convert new bits into float
-  x = x * (1.5f - xhalf * x * x);  // One round of Newton's method
+  int i = reinterpret_cast<int&>(x);  // store floating-point bits in integer
+  i = 0x5f3759d5 - (i >> 1);          // initial guess for Newton's method
+  x = reinterpret_cast<float&>(i);    // convert new bits into float
+  x = x * (1.5f - xhalf * x * x);     // One round of Newton's method
   return x;
 }
 
@@ -378,6 +386,7 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
+  depth_str = depth_indent_string(ec);
   vw& all = *g.all;
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
@@ -386,6 +395,9 @@ void predict(gd& g, base_learner&, example& ec)
 
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
+
+  VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+
   if (audit)
     print_audit_features(all, ec);
 }
@@ -1241,12 +1253,14 @@ base_learner* setup(options_i& options, vw& all)
   all.weights.stride_shift((uint32_t)ceil_log_2(stride - 1));
 
   gd* bare = g.get();
-  learner<gd, example>& ret = init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()));
+  learner<gd, example>& ret =
+      init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), "gd");
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
+  ret.name = "gd";
   return make_base(ret);
 }
 

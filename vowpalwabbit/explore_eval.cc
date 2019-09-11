@@ -213,7 +213,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   all.label_type = label_type::cb;
 
   learner<explore_eval, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::action_probs);
+      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::action_probs, "explore_eval");
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

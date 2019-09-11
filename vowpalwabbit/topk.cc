@@ -111,7 +111,7 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
   data->all = &all;
 
   LEARNER::learner<topk, multi_ex>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+      init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>,"topK");
   l.set_finish_example(finish_example);
   l.set_finish(finish);
 

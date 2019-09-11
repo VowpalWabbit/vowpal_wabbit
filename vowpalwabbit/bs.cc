@@ -242,6 +242,8 @@ base_learner* bs_setup(options_i& options, vw& all)
   if (!options.was_supplied("bootstrap"))
     return nullptr;
 
+  std::cout << "bootstrap" << std::endl;
+
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;
 
@@ -265,7 +267,7 @@ base_learner* bs_setup(options_i& options, vw& all)
   data->all = &all;
 
   learner<bs, example>& l = init_learner(
-      data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->B);
+      data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->B, "bs");
   l.set_finish_example(finish_example);
 
   return make_base(l);

@@ -96,5 +96,5 @@ base_learner* cb_sample_setup(options_i& options, vw& all)
   data->seed_state = all.random_seed;
 
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
-      learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs));
+      learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs, "cb_sample"));
 }

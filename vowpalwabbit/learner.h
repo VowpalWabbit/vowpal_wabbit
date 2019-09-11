@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
+#include "debug_log.h"
 
 #include <memory>
 
@@ -107,20 +108,46 @@ inline float noop_sensitivity(void*, base_learner&, example&)
 }
 float recur_sensitivity(void*, base_learner&, example&);
 
-inline void increment_offset(example& ex, const size_t increment, const size_t i)
+inline void increment_depth(example& ex) { ++ex.stack_depth; }
+
+inline void increment_depth(multi_ex& ec_seq)
 {
-  ex.ft_offset += static_cast<uint32_t>(increment * i);
+  for (auto& ec : ec_seq)
+  {
+    ++ec->stack_depth;
+  }
 }
+
+inline void decrement_depth(example& ex) { --ex.stack_depth; }
+inline void decrement_depth(multi_ex& ec_seq)
+{
+  for (auto& ec : ec_seq)
+  {
+    --ec->stack_depth;
+  }
+}
+
+inline void increment_offset(example& ex, const size_t increment, const size_t i)
+{ 
+  ex.ft_offset += static_cast<uint32_t>(increment * i);
+  increment_depth(ex);
+}
+
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  for (auto ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
+  for (auto& ec : ec_seq)
+  {
+    ec->ft_offset += static_cast<uint32_t>(increment * i);
+  }
+  increment_depth(ec_seq);
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
 {
   assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
+  decrement_depth(ex);
 }
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
@@ -129,12 +156,15 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   {
     assert(ec->ft_offset >= increment * i);
     ec->ft_offset -= static_cast<uint32_t>(increment * i);
+    decrement_depth(*ec);
   }
 }
 
 template <class T, class E>
 struct learner
 {
+  std::string name;
+
  private:
   func_data init_fd;
   learn_data learn_fd;
@@ -144,9 +174,10 @@ struct learner
   func_data end_pass_fd;
   func_data end_examples_fd;
   func_data finisher_fd;
-
   std::shared_ptr<void> learner_data;
+
   learner(){};  // Should only be able to construct a learner through init_learner function
+
  public:
   prediction_type::prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
@@ -156,13 +187,32 @@ struct learner
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
+  void print_reduction_name(example& ec, const std::string& msg) {
+    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
+    increment_depth(ec);
+  }
+  void print_reduction_name(multi_ex& ec, const std::string& msg) {
+    VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
+    increment_depth(ec);
+  }
+  void print_reduction_exit(example& ec){
+    decrement_depth(ec);
+    VW_DBG(ec) << std::endl;
+  }
+  void print_reduction_exit(multi_ex& ec){
+    decrement_depth(ec);
+    VW_DBG(*ec[0]) << std::endl;
+  }
+
   // called once for each example.  Must work under reduction.
   inline void learn(E& ec, size_t i = 0)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
+    print_reduction_name(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    print_reduction_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -171,7 +221,9 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
+    print_reduction_name(ec, "predict");
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    print_reduction_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -182,6 +234,7 @@ struct learner
     if (learn_fd.multipredict_f == NULL)
     {
       increment_offset(ec, increment, lo);
+      print_reduction_name(ec, "multipredict");
       for (size_t c = 0; c < count; c++)
       {
         learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
@@ -193,12 +246,15 @@ struct learner
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         increment_offset(ec, increment, 1);
       }
+      print_reduction_exit(ec);
       decrement_offset(ec, increment, lo + count);
     }
     else
     {
       increment_offset(ec, increment, lo);
+      print_reduction_name(ec, "multipredict");
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
+      print_reduction_exit(ec);
       decrement_offset(ec, increment, lo);
     }
   }
@@ -224,7 +280,9 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
+    print_reduction_name(ec, "update");
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    print_reduction_exit(ec);
     decrement_offset(ec, increment, i);
   }
   template <class L>
@@ -242,7 +300,9 @@ struct learner
   inline float sensitivity(example& ec, size_t i = 0)
   {
     increment_offset(ec, increment, i);
+    print_reduction_name(ec, "sensitivity");
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
+    print_reduction_exit(ec);
     decrement_offset(ec, increment, i);
     return ret;
   }
@@ -312,7 +372,7 @@ struct learner
 
   template <class L>
   static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type::prediction_type_t pred_type)
+      prediction_type::prediction_type_t pred_type, const std::string name)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
@@ -348,6 +408,7 @@ struct learner
       ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
     }
 
+    ret.name = name;
     ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
       ptr->~T();
       free(ptr);
@@ -361,15 +422,17 @@ struct learner
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
 
+    std::cout << "Added Reduction: " << name << std::endl;
+
     return ret;
   }
 };
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type::prediction_type_t pred_type)
+    size_t ws, prediction_type::prediction_type_t pred_type, const std::string& name)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
+  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
 
   dat.release();
   return *ret;
@@ -377,11 +440,11 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 
 // base learner/predictor
 template <class T, class E, class L>
-learner<T, E>& init_learner(
-    free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t params_per_weight)
+learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    size_t params_per_weight, const std::string& name)
 {
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type::scalar);
+  auto ret = &learner<T, E>::init_learner(
+      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type::scalar, name);
 
   dat.release();
   return *ret;
@@ -389,27 +452,27 @@ learner<T, E>& init_learner(
 
 // base predictor only
 template <class T, class E, class L>
-learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight)
+learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight, const std::string& name)
 {
   return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type::scalar);
+      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type::scalar, name);
 }
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type::prediction_type_t pred_type)
+    size_t params_per_weight, prediction_type::prediction_type_t pred_type, const std::string& name)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type);
+  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name);
   dat.release();
   return *ret;
 }
 
 // reduction with default prediction type
 template <class T, class E, class L>
-learner<T, E>& init_learner(
-    free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws)
+learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    size_t ws, const std::string& name)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type);
+  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name);
 
   dat.release();
   return *ret;
@@ -417,9 +480,10 @@ learner<T, E>& init_learner(
 
 // reduction with default num_params
 template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&))
+learner<T, E>& init_learner(
+    free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type);
+  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name);
 
   dat.release();
   return *ret;
@@ -427,18 +491,18 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 
 // Reduction with no data.
 template <class T, class E, class L>
-learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&))
+learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name)
 {
-  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type);
+  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name);
 }
 
 // multiclass reduction
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws,
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
     prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
+  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
 
   dat.release();
   l.set_finish_example(MULTICLASS::finish_example<T>);
@@ -448,10 +512,10 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws,
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
     prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
+  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
   dat.release();
   l.set_finish_example(COST_SENSITIVE::finish_example);
   p->lp = COST_SENSITIVE::cs_label;

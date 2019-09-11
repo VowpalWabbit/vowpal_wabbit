@@ -56,6 +56,6 @@ LEARNER::base_learner* print_setup(options_i& options, vw& all)
 
   all.weights.stride_shift(0);
 
-  LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1);
+  LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1, "print");
   return make_base(ret);
 }

@@ -21,5 +21,5 @@ LEARNER::base_learner* noop_setup(options_i& options, vw&)
   if (!noop)
     return nullptr;
 
-  return make_base(LEARNER::init_learner(learn, 1));
+  return make_base(LEARNER::init_learner(learn, 1, "noop"));
 }

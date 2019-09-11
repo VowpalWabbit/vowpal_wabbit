@@ -1,0 +1,234 @@
+--cb_explore_adf --cover 4 --cb_type dr -d $(ProjectDir)..\Test\train-sets\cb_test256.json --json --noconstant -p cbe_adf_cover_dr256.predict -P 1
+
+{
+  "s_": "1",
+  "s_": "2",
+  "_labelIndex": 0,
+  "_label_Action": 0,
+  "_label_Cost": 1,
+  "_label_Probability": 0.5,
+  "_multi": [
+    {
+      "a_": "1",
+      "b_": "1",
+      "c_": "1"
+    },
+    {
+      "a_": "2",
+      "b_": "2",
+      "c_": "2"
+    },
+    {
+      "a_": "3",
+      "b_": "3",
+      "c_": "3"
+    }
+  ]
+}
+
+src? cb_explore_adf.gen_cs.known_cost
+-------------------------------------
+cb_explore_adf.do_actual_learning()
+  cb_adf.get_observed_cost()
+    cb_explore_adf.gen_cs.known_cost = ec[0].cb_label[0]
+
+src? ec[0].pred.a_s
+-------------------
+cb_explore_adf.do_actual_learning()
+  cb_explore_adf.predict_or_learn_cover()
+    csoaa.do_actual_learning()
+      for_each ec in ec_seq
+        make_single_prediction()
+          score = base.predict(ec) //////////// <- !
+        ldf.a_s.push_back(action,score)
+      sort(ldf.a_s)
+      do_actual_learning_wap/oaa()
+      copy ldf.a_s -> ec_seq[0]->pred.a_s
+    transform ec[0].pred.a_s to exploration distribution
+
+src? sum_loss, sum_loss_since_last_dump
+---------------------------------------
+cb_explore_adf.finish_multiline_example
+  cb_explore_adf.output_example_seq()
+    cb_explore_adf.output_example()
+      preds = ec[0].pred.a_s
+      for_each pred in preds
+        l = get_cost_estimate(cb_explore_adf.gen_cs.known_cost, pred.action)
+          (pred.action == cb_explore_adf.gen_cs.known_cost.action)
+            ? cb_explore_adf.gen_cs.known_cost.cost / cb_explore_adf.gen_cs.known_cost.probability
+            : 0.0
+        loss += l * pred.score
+      sd.update(loss)
+        sum_loss, sum_loss_since_last_dump += loss
+    all.print_text(all.raw_prediction, ec[0].tag)
+
+src? current_prediction?
+
+predictions = cbe_adf_cover_dr256.predict
+
+Added Reduction: gd
+Added Reduction: scorer-identity
+Added Reduction: csoaa_ldf
+Added Reduction: cb_adf
+Added Reduction: cb_explore_adf
+Added Reduction: shared_feature_merger
+
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = C:\s\1_rc_vw_predict\vowpalwabbit\..\Test\train-sets\cb_test256.json
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+- [shared_feature_merger.learn]
+    - [cb_explore_adf.learn]
+      - predict_or_learn_cover_adf:1 start
+      - gen_cs_example:0
+      - gen_cs_example_dr-adf:0
+      - get_cost_pred:0
+        - [scorer-identity.predict]
+            - [gd.predict]
+            -
+        -
+      - get_cost_pred:0
+        - [scorer-identity.predict]
+            - [gd.predict]
+            -
+        -
+      - get_cost_pred:0
+        - [scorer-identity.predict]
+            - [gd.predict]
+            -
+        -
+      - predict_or_learn_cover_adf:1 before base()
+        - [cb_adf.learn]
+          - gen_cs_example_dr-adf:1
+          - get_cost_pred:1
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+          - get_cost_pred:1
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+          - get_cost_pred:1
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+          - call_cs_ldf:1
+            - [csoaa_ldf.learn]
+                - [scorer-identity.predict]
+                    - [gd.predict]
+                    -
+                -
+                - [scorer-identity.predict]
+                    - [gd.predict]
+                    -
+                -
+                - [scorer-identity.predict]
+                    - [gd.predict]
+                    -
+                -
+                - [scorer-identity.learn]
+                    - [gd.learn]
+                    -
+                -
+                - [scorer-identity.learn]
+                    - [gd.learn]
+                    -
+                -
+                - [scorer-identity.learn]
+                    - [gd.learn]
+                    -
+                -
+            -
+        -
+      - call_cs_ldf:1
+        - [csoaa_ldf.learn]
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+        -
+      - call_cs_ldf:1
+        - [csoaa_ldf.learn]
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+        -
+      - call_cs_ldf:1
+        - [csoaa_ldf.learn]
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.predict]
+                - [gd.predict]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+            - [scorer-identity.learn]
+                - [gd.learn]
+                -
+            -
+        -
+    -
+-
+0.666667 0.666667            1            1.0    known        0:0.333333...        9

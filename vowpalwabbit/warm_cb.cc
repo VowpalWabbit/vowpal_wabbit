@@ -639,11 +639,11 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   }
 
   if (use_cs)
-    l = &init_cost_sensitive_learner(
-        data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, data->choices_lambda);
+    l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
+        all.p, data->choices_lambda, "warm_cb-cs");
   else
-    l = &init_multiclass_learner(
-        data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
+    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>,
+        all.p, data->choices_lambda, "warm_cb-multi");
 
   l->set_finish(finish);
   all.delete_prediction = nullptr;

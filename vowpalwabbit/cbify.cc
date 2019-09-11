@@ -8,6 +8,7 @@
 #include "explore.h"
 
 #include <vector>
+#include "debug_log.h"
 
 using namespace LEARNER;
 using namespace exploration;
@@ -437,19 +438,20 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1);
+          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1, "cbify-adf-cs");
     else
       l = &init_multiclass_learner(
-          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, 1);
+          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, 1, "cbify-adf");
   }
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
+          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1, "cbify-cs");
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
+      l = &init_multiclass_learner(
+          data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1, "cbify");
   }
   all.delete_prediction = nullptr;
 
@@ -491,7 +493,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   multi_learner* base = as_multiline(setup_base(options, all));
   learner<cbify, multi_ex>& l = init_learner(
-      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass);
+      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass, "cbify-ldf");
 
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;

@@ -530,7 +530,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l = init_learner(ld, base, CB_ADF::do_actual_learning<true>,
-      CB_ADF::do_actual_learning<false>, problem_multiplier, prediction_type::action_scores);
+      CB_ADF::do_actual_learning<false>, problem_multiplier, prediction_type::action_scores,"cb_adf");
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->gen_cs.scorer = all.scorer;

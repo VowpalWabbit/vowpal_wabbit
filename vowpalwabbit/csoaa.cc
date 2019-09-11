@@ -27,10 +27,7 @@ struct csoaa
 {
   uint32_t num_classes;
   polyprediction* pred;
-  ~csoaa()
-  {
-    free(pred);
-  }
+  ~csoaa() { free(pred); }
 };
 
 template <bool is_learn>
@@ -131,7 +128,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, c->num_classes, prediction_type::multiclass);
+      predict_or_learn<false>, c->num_classes, prediction_type::multiclass, "csoaa");
   all.p->lp = cs_label;
   all.label_type = label_type::cs;
 
@@ -885,7 +882,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
 
   ld->read_example_this_loop = 0;
   learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>,
-      do_actual_learning<false>, 1, pred_type);
+      do_actual_learning<false>, 1, pred_type, "csoaa_ldf");
   l.set_finish_example(finish_multiline_example);
   l.set_end_pass(end_pass);
   all.cost_sensitive = make_base(l);

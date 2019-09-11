@@ -72,20 +72,20 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
       multipredict<id>;
 
   if (link.compare("identity") == 0)
-    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
+    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>, "scorer-identity");
   else if (link.compare("logistic") == 0)
   {
-    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>);
+    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>, "scorer-logistic");
     multipredict_f = multipredict<logistic>;
   }
   else if (link.compare("glf1") == 0)
   {
-    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>);
+    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>, "scorer-glf1");
     multipredict_f = multipredict<glf1>;
   }
   else if (link.compare("poisson") == 0)
   {
-    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
+    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>, "scorer-poisson");
     multipredict_f = multipredict<expf>;
   }
   else

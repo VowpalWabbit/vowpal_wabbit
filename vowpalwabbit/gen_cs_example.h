@@ -146,6 +146,7 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ =0.f)
 {  // this implements the doubly robust method
+  VW_DBG(ec) << "gen_cs_example_dr:" << is_learn << std::endl;
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
   if (ld.costs.size() == 0)  // a test example
@@ -196,6 +197,7 @@ void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_of
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f)
 {  // size_t mysize = examples.size();
+  VW_DBG(*examples[0]) << "gen_cs_example_dr-adf:" << is_learn << std::endl;
   c.pred_scores.costs.clear();
 
   cs_labels.costs.clear();
@@ -231,6 +233,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
 template <bool is_learn>
 void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
 {
+  VW_DBG(*ec_seq[0]) << "gen_cs_example:" << is_learn << std::endl;
   switch (c.cb_type)
   {
     case CB_TYPE_IPS:
@@ -251,6 +254,7 @@ template <bool is_learn>
 void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
     COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
 {
+  VW_DBG(*examples[0]) << "call_cs_ldf:" << is_learn << std::endl;
   cb_labels.clear();
   if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)
   {

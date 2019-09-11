@@ -123,3 +123,10 @@ namespace VW
 {
 void return_multiple_example(vw& all, v_array<example*>& examples);
 }  // namespace VW
+std::string features_to_string(const example& ec);
+std::string simple_label_to_string(const example& ec);
+std::string scalar_pred_to_string(const example& ec);
+std::string a_s_pred_to_string(const example& ec);
+std::string multiclass_pred_to_string(const example& ec);
+std::string depth_indent_string(const example& ec);
+std::string cb_label_to_string(const example& ec);

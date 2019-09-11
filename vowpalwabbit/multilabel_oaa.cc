@@ -67,7 +67,7 @@ LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
     return nullptr;
 
   LEARNER::learner<multi_oaa, example>& l = LEARNER::init_learner(data, as_singleline(setup_base(options, all)),
-      predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type::multilabels);
+      predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type::multilabels, "multilabel_oaa");
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;
   all.label_type = label_type::multi;
