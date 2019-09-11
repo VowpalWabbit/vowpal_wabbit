@@ -1,4 +1,4 @@
-#include "offset_tree_cont.h"
+﻿#include "offset_tree_cont.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
 #include <algorithm>
@@ -152,8 +152,13 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   std::sort(node_costs.begin(), node_costs.end(), compareByid);
 
   uint32_t iter_count = 0;
-  while (!node_costs.empty())
+  while (!node_costs.empty() || !node_costs_buffer.empty())
   {
+    if (node_costs.empty())
+    {
+      node_costs = node_costs_buffer;
+      node_costs_buffer.clear();
+    }
     std::vector<VW::offset_tree_cont::node_cost> node_costs_new;
     while (!node_costs.empty())
     {
