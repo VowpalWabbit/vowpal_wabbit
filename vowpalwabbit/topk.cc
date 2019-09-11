@@ -5,11 +5,36 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <sstream>
+#include <queue>
+#include <utility>
 
 #include "topk.h"
+#include "learner.h"
+#include "parse_args.h"
 #include "vw.h"
 
 using namespace VW::config;
+
+namespace VW
+{
+  class topk
+  {
+    using container_t = std::multimap<float, v_array<char>>;
+  public:
+    using const_iterator_t = container_t::const_iterator;
+    topk(uint32_t k_num);
+
+    void predict(LEARNER::single_learner& base, multi_ex& ec_seq);
+    void learn(LEARNER::single_learner& base, multi_ex& ec_seq);
+    std::pair<const_iterator_t, const_iterator_t> get_container_view();
+    void clear_container();
+  private:
+    void update_priority_queue(float pred, v_array<char>& tag);
+
+    const uint32_t _k_num;
+    container_t _pr_queue;
+  };
+}
 
 VW::topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
