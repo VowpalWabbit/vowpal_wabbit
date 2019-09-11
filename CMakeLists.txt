@@ -60,15 +60,24 @@ option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only p
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
-# When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
-# Use this option to force color output in these modes.
-option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
-if(FORCE_COLORED_OUTPUT)
+# Transparently support caching, sccache takes priority.
+find_program(CACHE_EXE sccache)
+if(NOT DEFINED CACHE_EXE)
+  find_program(CACHE_EXE ccache)
+endif()
+
+if(DEFINED CACHE_EXE)
+  message(STATUS "Object caching being used - found ${CACHE_EXE}")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CACHE_EXE}")
+
+  # Fix color output when using caching.
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     add_compile_options(-fdiagnostics-color=always)
   elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_compile_options(-fcolor-diagnostics)
   endif()
+else()
+  message(STATUS "Object caching is not being used - could not find ccache or sccache")
 endif()
 
 if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
