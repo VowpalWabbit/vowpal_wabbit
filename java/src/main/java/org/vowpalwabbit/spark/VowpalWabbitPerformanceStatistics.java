@@ -46,14 +46,14 @@ public class VowpalWabbitPerformanceStatistics implements java.io.Serializable {
 	/**
 	 * @return the bestConstant
 	 */
-	public double getBestConstant() {
+	public float getBestConstant() {
 		return bestConstant;
 	}
 
 	/**
 	 * @return the bestConstantLoss
 	 */
-	public double getBestConstantLoss() {
+	public float getBestConstantLoss() {
 		return bestConstantLoss;
 	}
 
