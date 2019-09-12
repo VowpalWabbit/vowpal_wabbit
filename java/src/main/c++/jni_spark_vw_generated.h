@@ -40,17 +40,16 @@ extern "C"
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
    * Method:    getArguments
-   * Signature: ()Lorg/vowpalwabbit/bare/VowpalWabbitArguments;
+   * Signature: ()Lorg/vowpalwabbit/spark/VowpalWabbitArguments;
    */
   JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArguments(JNIEnv *, jobject);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
    * Method:    getPerformanceStatistic
-   * Signature: ()Ljava.lang.String;
+   * Signature: ()Lorg/vowpalwabbit/bare/VowpalWabbitPerformanceStatistics;
    */
-  JNIEXPORT jdouble JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistic(
-      JNIEnv *, jobject, jstring);
+  JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistics(JNIEnv *, jobject);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative

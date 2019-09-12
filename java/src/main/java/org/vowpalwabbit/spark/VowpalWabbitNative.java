@@ -1,8 +1,6 @@
 package org.vowpalwabbit.spark;
 
 import java.io.Closeable;
-import java.util.Map;
-import java.util.HashMap;
 
 /**
  * Main wrapper for VowpalWabbit native implementation.
@@ -56,7 +54,7 @@ public class VowpalWabbitNative implements Closeable {
      */
     public native VowpalWabbitArguments getArguments();
 
-    private native double getPerformanceStatistic(String key);
+    public native VowpalWabbitPerformanceStatistics getPerformanceStatistics();
 
     /**
      * Signals the end of the current pass over the data.
@@ -120,18 +118,6 @@ public class VowpalWabbitNative implements Closeable {
      */
     public VowpalWabbitExample createEmptyExample() {
         return new VowpalWabbitExample(this.nativePointer, true);
-    }
-
-    private static final String[] performanceKeys = new String[] { "numberOfExamplesPerPass", "weightedExampleSum",
-            "weightedLabelSum", "averageLoss", "bestConstant", "bestConstantLoss", "totalNumberOfFeatures" };
-
-    public Map<String, Double> getPerformanceStatistics() {
-        HashMap<String, Double> map = new HashMap<String, Double>();
-
-        for (String key : performanceKeys)
-            map.put(key, getPerformanceStatistic(key));
-
-        return map;
     }
 
     /**

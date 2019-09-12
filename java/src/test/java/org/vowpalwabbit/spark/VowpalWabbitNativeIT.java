@@ -182,15 +182,15 @@ public class VowpalWabbitNativeIT {
             assertEquals(3.1, args.getLearningRate(), 0.001);
             assertEquals(0.2, args.getPowerT(), 0.001);
 
-            Map<String, Double> stats = vw.getPerformanceStatistics();
+            VowpalWabbitPerformanceStatistics stats = vw.getPerformanceStatistics();
 
-            assertEquals(4.0, stats.get("numberOfExamplesPerPass"), 0.0001);
-            assertEquals(9.0, stats.get("weightedExampleSum"), 0.0001);
-            assertEquals(-1.0, stats.get("weightedLabelSum"), 0.0001);
-            assertEquals(0.6931, stats.get("averageLoss"), 0.0001);
-            assertEquals(-0.223144, stats.get("bestConstant"), 0.0001);
-            assertEquals(0.6869, stats.get("bestConstantLoss"), 0.0001);
-            assertEquals(36.0, stats.get("totalNumberOfFeatures"), 0.0001);
+            assertEquals(4, stats.getNumberOfExamplesPerPass());
+            assertEquals(9.0, stats.getWeightedExampleSum(), 0.0001);
+            assertEquals(-1.0, stats.getWeightedLabelSum(), 0.0001);
+            assertEquals(0.6931, stats.getAverageLoss(), 0.0001);
+            assertEquals(-0.223144, stats.getBestConstant(), 0.0001);
+            assertEquals(0.6869, stats.getBestConstantLoss(), 0.0001);
+            assertEquals(36, stats.getTotalNumberOfFeatures());
 
         } finally {
             if (ex != null)
