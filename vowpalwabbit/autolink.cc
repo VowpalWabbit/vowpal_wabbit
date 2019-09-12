@@ -1,55 +1,100 @@
-#include "reductions.h"
+#include "autolink.h"
+
+#include "learner.h"
+#include "global_data.h"
+#include "parse_args.h"
+
+#include <cstdint>
 
 using namespace VW::config;
 
-constexpr int autoconstant = 524267083;
-
-struct autolink
+namespace VW
 {
-  uint32_t d;  // degree of the polynomial
-  uint32_t stride_shift;
-};
+  struct autolink
+  {
+    autolink(uint32_t d, uint32_t stride_shift);
+    void predict(LEARNER::single_learner& base, example& ec);
+    void learn(LEARNER::single_learner& base, example& ec);
 
-template <bool is_learn>
-void predict_or_learn(autolink& b, LEARNER::single_learner& base, example& ec)
+  private:
+    void prepare_example(LEARNER::single_learner& base, example& ec);
+    void reset_example(example& ec);
+
+    // degree of the polynomial
+    const uint32_t _poly_degree;
+    const uint32_t _stride_shift;
+    static constexpr int AUTOCONSTANT = 524267083;
+  };
+}
+
+VW::autolink::autolink(uint32_t poly_degree, uint32_t stride_shift)
+  : _poly_degree(poly_degree), _stride_shift(stride_shift)
+{}
+
+void VW::autolink::predict(LEARNER::single_learner& base, example& ec)
+{
+  prepare_example(base, ec);
+  base.predict(ec);
+  reset_example(ec);
+}
+
+void VW::autolink::learn(LEARNER::single_learner& base, example& ec)
+{
+  prepare_example(base, ec);
+  base.learn(ec);
+  reset_example(ec);
+}
+
+void VW::autolink::prepare_example(LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
   float base_pred = ec.pred.scalar;
-  // add features of label
+
+  // Add features of label.
   ec.indices.push_back(autolink_namespace);
   features& fs = ec.feature_space[autolink_namespace];
-  for (size_t i = 0; i < b.d; i++)
+  for (size_t i = 0; i < _poly_degree; i++)
+  {
     if (base_pred != 0.)
     {
-      fs.push_back(base_pred, autoconstant + (i << b.stride_shift));
+      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift));
       base_pred *= ec.pred.scalar;
     }
+  }
   ec.total_sum_feat_sq += fs.sum_feat_sq;
+}
 
-  if (is_learn)
-    base.learn(ec);
-  else
-    base.predict(ec);
-
+void VW::autolink::reset_example(example& ec)
+{
+  features& fs = ec.feature_space[autolink_namespace];
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
   ec.indices.pop();
 }
 
+template <bool is_learn>
+void predict_or_learn(VW::autolink& b, LEARNER::single_learner& base, example& ec)
+{
+  if (is_learn)
+    b.learn(base, ec);
+  else
+    b.predict(base, ec);
+}
+
 LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 {
-  free_ptr<autolink> data = scoped_calloc_or_throw<autolink>();
+  uint32_t d;
   option_group_definition new_options("Autolink");
-  new_options.add(make_option("autolink", data->d).keep().help("create link function with polynomial d"));
+  new_options.add(make_option("autolink", d).keep().help("create link function with polynomial d"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("autolink"))
     return nullptr;
 
-  data->stride_shift = all.weights.stride_shift();
-
-  LEARNER::learner<autolink, example>& ret =
-      init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
-
-  return make_base(ret);
+  auto autolink_reduction = scoped_calloc_or_throw<VW::autolink>(d, all.weights.stride_shift());
+  return make_base(init_learner(
+    autolink_reduction,
+    as_singleline(setup_base(options, all)),
+    predict_or_learn<true>,
+    predict_or_learn<false>));
 }
