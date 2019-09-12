@@ -29,6 +29,9 @@ pdf_data::~pdf_data()
       uint32_t min_h = max(0, (int)i - (int)data.bandwidth);
       uint32_t max_h = min(data.num_actions, i + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
+      std::cout << "data.bandwidth = " << data.bandwidth << ", data.num_actions = " << data.num_actions << std::endl;
+      std::cout << "min_h = " << min_h << ", max_h = " << max_h << ", bandwidth_range = " << bandwidth_range << std::endl;
+
       float continuous_mass = a_s.score * data.num_actions / ((float)bandwidth_range * continuous_range);
       std::cout << std::endl << "i = " << i << ", a_s.score = " << a_s.score << ", continuous_mass = " << continuous_mass << std::endl;
       for (uint32_t j = min_h; j < max_h; j++)
@@ -38,6 +41,10 @@ pdf_data::~pdf_data()
     }
     auto& p_dist = ec.pred.prob_dist;
     p_dist.clear();
+    for (uint32_t i = 0; i < data.num_actions; i++)
+    {
+      std::cout << "continuous_scores[" << i << "] = " << continuous_scores[i] << std::endl;
+    }
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
       float action = data.min_value + i * continuous_range / data.num_actions;
