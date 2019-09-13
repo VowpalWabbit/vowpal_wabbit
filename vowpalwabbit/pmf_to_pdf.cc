@@ -2,6 +2,7 @@
 #include "pmf_to_pdf.h"
 #include "explore.h"
 #include "vw.h"
+#include <typeinfo>
 
 using namespace LEARNER;
 using namespace VW;
@@ -26,14 +27,10 @@ pdf_data::~pdf_data()
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
       auto& a_s = data.temp_probs[i];
-      uint32_t min_h = max((int)0, static_cast<int>(i) - static_cast<int>(data.bandwidth));
-      uint32_t max_h = min(data.num_actions, i + data.bandwidth);
+      uint32_t min_h = std::max((int)0, static_cast<int>(i) - static_cast<int>(data.bandwidth));
+      uint32_t max_h = std::min(data.num_actions, i + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
-      std::cout << "data.bandwidth = " << data.bandwidth << ", data.num_actions = " << data.num_actions << std::endl;
-      std::cout << "min_h = " << min_h << ", max_h = " << max_h << ", bandwidth_range = " << bandwidth_range << std::endl;
-
       float continuous_mass = a_s.score * data.num_actions / ((float)bandwidth_range * continuous_range);
-      std::cout << std::endl << "i = " << i << ", a_s.score = " << a_s.score << ", continuous_mass = " << continuous_mass << std::endl;
       for (uint32_t j = min_h; j < max_h; j++)
       {
         continuous_scores[j] += continuous_mass;
@@ -43,16 +40,8 @@ pdf_data::~pdf_data()
     p_dist.clear();
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
-      std::cout << "continuous_scores[" << i << "] = " << continuous_scores[i] << std::endl;
-    }
-    for (uint32_t i = 0; i < data.num_actions; i++)
-    {
       float action = data.min_value + i * continuous_range / data.num_actions;
       p_dist.push_back({action, continuous_scores[i]});
-    }
-    for (uint32_t i = 0; i < data.num_actions; i++)
-    {
-      std::cout << "p_dist[" << i << "].value = " << p_dist[i].value << std::endl;
     }
   }
 
@@ -95,16 +84,16 @@ pdf_data::~pdf_data()
       }
     }
 
-    uint32_t min_value = max(0, ic - data.bandwidth + 1);
-    uint32_t max_value = min(data.num_actions - 1, ic + data.bandwidth);
+    uint32_t min_value = std::max(0, ic - (int)data.bandwidth + 1);
+    uint32_t max_value = std::min(data.num_actions - 1, ic + data.bandwidth);
 
     auto temp = ec.l.cb_cont;
     ec.l.cb = data.temp_cb;
     ec.l.cb.costs.clear();
     for (uint32_t j = min_value; j <= max_value; j++)
     {
-      uint32_t min_h = max(0, (int)j - (int)data.bandwidth);
-      uint32_t max_h = min(data.num_actions, j + data.bandwidth);
+      uint32_t min_h = std::max(0, (int)j - (int)data.bandwidth);
+      uint32_t max_h = std::min(data.num_actions, j + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
       ec.l.cb.costs.push_back({cost, j, prob * bandwidth_range, 0.0f});
     }
