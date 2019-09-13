@@ -26,7 +26,7 @@ pdf_data::~pdf_data()
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
       auto& a_s = data.temp_probs[i];
-      uint32_t min_h = max(0, (int)i - (int)data.bandwidth);
+      uint32_t min_h = max((int)0, static_cast<int>(i) - static_cast<int>(data.bandwidth));
       uint32_t max_h = min(data.num_actions, i + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
       std::cout << "data.bandwidth = " << data.bandwidth << ", data.num_actions = " << data.num_actions << std::endl;
