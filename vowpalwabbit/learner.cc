@@ -2,7 +2,11 @@
 #include "vw.h"
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
+#include "debug_log.h"
+
 using namespace std;
+
+VW_DEBUG_ENABLE(true);
 
 void dispatch_example(vw& all, example& ec)
 {

@@ -1,12 +1,13 @@
-﻿#include <float.h>
+#include <float.h>
+#include <vector>
+#include <float.h>
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
 #include "prob_dist_cont.h"
-
-#include <vector>
+#include "debug_log.h"
 
 using namespace LEARNER;
 using namespace exploration;
@@ -15,7 +16,7 @@ using namespace ACTION_SCORE;
 using namespace std;
 using namespace VW::config;
 
-bool VW_DEBUG_LOG = true;
+VW_DEBUG_ENABLE(true);
 
 struct cbify;
 
@@ -183,7 +184,7 @@ float get01loss(VW::actions_pdf::pdf& prob_dist, float chosen_action, float labe
 template <bool is_learn>
 void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 {
-  VWLOG(ec) << "cbify_reg: #_#_#_# is_learn = " << is_learn << simple_label_to_string(ec) <<  features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) <<  features_to_string(ec) << endl;
   label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
@@ -191,7 +192,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 
   base.predict(ec);
 
-  VWLOG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
 
   float chosen_action;
   // after having the function that samples the pdf and returns back a continuous action
@@ -202,7 +203,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
   //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
   //       If the function fails to find the index, it will actually return the second-to-last index
-  VWLOG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
+  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
 
   float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
 
@@ -218,10 +219,10 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   data.regression_data.cb_cont_label.costs.push_back(cb_cont);
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
-  VWLOG(ec) << "cbify-reg: before base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: before base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
   if (is_learn)
     base.learn(ec);
-  VWLOG(ec) << "cbify-reg: after base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: after base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
 
   data.regression_data.prob_dist.clear();
   data.regression_data.prob_dist = ec.pred.prob_dist;

@@ -14,8 +14,3 @@ namespace po = boost::program_options;
 #include "global_data.h"  // for vw datastructure
 #include "memory.h"
 #include "parse_args.h"
-
-#include <fstream>
-std::ostream* nullstream();
-
-#define VWLOG(e) if(VW_DEBUG_LOG) std::cout << depth_indent_string(e)

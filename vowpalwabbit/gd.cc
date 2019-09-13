@@ -30,6 +30,7 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 #include "floatbits.h"
+#include "debug_log.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
@@ -38,11 +39,10 @@ using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
-// todo:
-// 4. Factor various state out of vw&
+VW_DEBUG_ENABLE(true);
+
 namespace GD
 {
-bool VW_DEBUG_LOG = true;
 bool GET_VW_DEBUG_LOG() { return VW_DEBUG_LOG; }
 
 std::string depth_str;
@@ -294,12 +294,12 @@ void print_lda_features(vw& all, example& ec)
   {
     for (features::iterator_all& f : fs.values_indices_audit())
     {
-      VWLOG(ec) << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
-                << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
-      for (size_t k = 0; k < all.lda; k++) VWLOG(ec) << ':' << (&weights[f.index()])[k];
+      std::cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
+                 << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+      for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
   }
-  VWLOG(ec) << " total of " << count << " features." << endl;
+  std::cout << " total of " << count << " features." << endl;
 }
 
 void print_features(vw& all, example& ec)
@@ -329,9 +329,8 @@ void print_features(vw& all, example& ec)
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
     {
-      for (string_value& sv : dat.results)
-          std::cout << '\t' << sv.s;
-        std::cout << std::endl;
+      for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
+      std::cout << std::endl;
     }
   }
 }
@@ -396,7 +395,7 @@ void predict(gd& g, base_learner&, example& ec)
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
 
-  VWLOG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
 
   if (audit)
     print_audit_features(all, ec);

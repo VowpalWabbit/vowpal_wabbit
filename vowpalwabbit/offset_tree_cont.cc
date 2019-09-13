@@ -3,12 +3,14 @@
 #include "learner.h"     // init_learner()
 #include <algorithm>
 #include "reductions.h"
+#include "debug_log.h"
+
 using namespace VW::config;
 using namespace LEARNER;
 
-namespace VW { namespace offset_tree_cont {
+VW_DEBUG_ENABLE(true);
 
-bool VW_DEBUG_LOG = true;
+namespace VW { namespace offset_tree_cont {
 
 tree_node::tree_node(
     uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth, bool is_leaf)
@@ -93,19 +95,14 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
   if (binary_tree.leaf_node_count() == 0)  // todo: chnage this to throw error at some point
     return 0;
 
-  const CB::label saved_label = ec.l.cb;
-  ec.l.cb.costs.clear();
-  ec.l.simple.label = FLT_MAX; // says it is a test example
-
   auto cur_node = nodes[0];
 
   while (!(cur_node.is_leaf))
   {
     ec.partial_prediction = 0.f;
     ec.pred.scalar = 0.f;
-    ec.l.simple.initial = 0.f;
     base.predict(ec, cur_node.id);
-    VWLOG(ec) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec) << ", nodeid = " << cur_node.id << std::endl;
+    VW_DBG(ec) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec) << ", nodeid = " << cur_node.id << std::endl;
     if (ec.pred.scalar == -1)  // TODO: check
     {
       cur_node = nodes[cur_node.left_id];
@@ -116,7 +113,6 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
     }
   }
 
-  ec.l.cb = saved_label;
   return (cur_node.id - binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
@@ -133,11 +129,11 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   auto& nodes = binary_tree.nodes;
   auto& ac = ec.l.cb.costs;
 
-  VWLOG(ec) << "otree_c: learn() -- tree_traversal -- " << std::endl;
+  VW_DBG(ec) << "otree_c: learn() -- tree_traversal -- " << std::endl;
   for (uint32_t i = 0; i < ac.size(); i++)
   {
     uint32_t node_id = ac[i].action + binary_tree.internal_node_count();
-    VWLOG(ec) << "otree_c: learn() ac[" << i << "].action  = " << ac[i].action << ", node_id  = " << node_id
+    VW_DBG(ec) << "otree_c: learn() ac[" << i << "].action  = " << ac[i].action << ", node_id  = " << node_id
               << std::endl;
     if (nodes[node_id].depth < binary_tree.depth())
     {
@@ -173,14 +169,14 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       auto& w = nodes[(v.id == v_parent.left_id) ? v_parent.right_id : v_parent.left_id];  // w is sibling of v
       float cost_w = 0.0f;
       float local_action = 1;
-      VWLOG(ec) << "otree_c: learn() v.id = " << v.id << ", cost_v = " << cost_v << std::endl;
+      VW_DBG(ec) << "otree_c: learn() v.id = " << v.id << ", cost_v = " << cost_v << std::endl;
       if (!node_costs.empty() && node_costs.back().node_id == w.id)
       {
-        VWLOG(ec) << "otree_c: learn() found the sibling" << std::endl;
+        VW_DBG(ec) << "otree_c: learn() found the sibling" << std::endl;
         cost_w = node_costs.back().cost;
         if (cost_v != cost_w)
         {
-          VWLOG(ec) << "otree_c: learn() cost_w = " << cost_w << ", cost_v != cost_w" << std::endl;
+          VW_DBG(ec) << "otree_c: learn() cost_w = " << cost_w << ", cost_v != cost_w" << std::endl;
           if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) ////
             local_action = -1;
         }
@@ -188,31 +184,31 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       }
       else
       {
-        VWLOG(ec) << "otree_c: learn() no sibling" << std::endl;
+        VW_DBG(ec) << "otree_c: learn() no sibling" << std::endl;
         if (v.id == v_parent.right_id) ////
           local_action = -1;
       }
       float cost_parent = cost_v;
-      VWLOG(ec) << "otree_c: learn() cost_w = " << cost_w << std::endl;
+      VW_DBG(ec) << "otree_c: learn() cost_w = " << cost_w << std::endl;
       if (cost_v != cost_w)  // learn and update the cost of the parent
       {
         ec.l.simple.label = local_action;  // TODO:scalar label type
         ec.l.simple.initial = 0.f;
         ec.weight = abs(cost_v - cost_w);
-        VWLOG(ec) << "otree_c: learn() #_#_#_# binary learning the node " << v.parent_id << std::endl;
+        VW_DBG(ec) << "otree_c: learn() #### binary learning the node " << v.parent_id << std::endl;
         base.learn(ec, v.parent_id);
         base.predict(ec, v.parent_id);
-        VWLOG(ec) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
+        VW_DBG(ec) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
                   << ", local_action = " << (local_action) << std::endl;
         if (ec.pred.scalar == local_action)
         {
           cost_parent = (std::min)(cost_v, cost_w);
-          VWLOG(ec) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
+          VW_DBG(ec) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
         }
         else
         {
           cost_parent = (std::max)(cost_v, cost_w);
-          VWLOG(ec) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
+          VW_DBG(ec) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
         }
       }
       if (cost_parent > 0.0f)
@@ -237,16 +233,16 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
 void predict(offset_tree& ot, single_learner& base, example& ec)
 {
-  VWLOG(ec) << "otree_c: before tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "otree_c: before tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec) << std::endl;
   ec.pred.multiclass = ot.predict(base, ec);  // TODO: check: making the prediction zero-based?
-  VWLOG(ec) << "otree_c: after tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "otree_c: after tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec) << std::endl;
 }
 
 void learn(offset_tree& tree, single_learner& base, example& ec)
 {
-  VWLOG(ec) << "otree_c: before tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "otree_c: before tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
   tree.learn(base, ec);
-  VWLOG(ec) << "otree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "otree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
 }
 
 void finish(offset_tree& t)

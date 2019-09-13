@@ -2,15 +2,15 @@
 #include "pmf_to_pdf.h"
 #include "explore.h"
 #include "vw.h"
-#include <typeinfo>
+#include "debug_log.h"
 
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace VW { namespace pmf_to_pdf {
+VW_DEBUG_ENABLE(true);
 
-bool VW_DEBUG_LOG = true;
+namespace VW { namespace pmf_to_pdf {
 
 pdf_data::~pdf_data()
 {
@@ -51,13 +51,13 @@ pdf_data::~pdf_data()
     ec.pred.a_s = data.temp_probs;
     base.predict(ec);
 
-    VWLOG(ec) << "pmf_to_pdf::predict base.predict()" << a_s_pred_to_string(ec) << std::endl;
+    VW_DBG(ec) << "pmf_to_pdf::predict base.predict()" << a_s_pred_to_string(ec) << std::endl;
 
     data.temp_probs = ec.pred.a_s;
     ec.pred.prob_dist = temp;
     transform(data, ec);
 
-    VWLOG(ec) << "pmf_to_pdf::predict transform()" << prob_dist_pred_to_string(ec) << std::endl;
+    VW_DBG(ec) << "pmf_to_pdf::predict transform()" << prob_dist_pred_to_string(ec) << std::endl;
   }
 
   void learn(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
