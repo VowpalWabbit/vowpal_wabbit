@@ -61,6 +61,17 @@ option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only p
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
+# When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
+# Use this option to force color output in these modes.
+option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
+if(FORCE_COLORED_OUTPUT)
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    add_compile_options(-fdiagnostics-color=always)
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    add_compile_options(-fcolor-diagnostics)
+  endif()
+endif()
+
 if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
