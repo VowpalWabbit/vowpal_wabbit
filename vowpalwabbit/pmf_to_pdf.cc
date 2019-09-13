@@ -1,4 +1,4 @@
-#include "reductions.h"
+﻿#include "reductions.h"
 #include "pmf_to_pdf.h"
 #include "explore.h"
 #include "vw.h"
@@ -27,8 +27,8 @@ pdf_data::~pdf_data()
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
       auto& a_s = data.temp_probs[i];
-      uint32_t min_h = max(0, (int)i - (int)data.bandwidth);
-      uint32_t max_h = min(data.num_actions, i + data.bandwidth);
+      uint32_t min_h = (std::max)((int)0, static_cast<int>(i) - static_cast<int>(data.bandwidth));
+      uint32_t max_h = (std::min)(data.num_actions, i + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
       float continuous_mass = a_s.score * data.num_actions / ((float)bandwidth_range * continuous_range);
       for (uint32_t j = min_h; j < max_h; j++)
@@ -84,16 +84,16 @@ pdf_data::~pdf_data()
       }
     }
 
-    uint32_t min_value = max(0, ic - data.bandwidth + 1);
-    uint32_t max_value = min(data.num_actions - 1, ic + data.bandwidth);
+    uint32_t min_value = (std::max)(0, ic - (int)data.bandwidth + 1);
+    uint32_t max_value = (std::min)(data.num_actions - 1, ic + data.bandwidth);
 
     auto temp = ec.l.cb_cont;
     ec.l.cb = data.temp_cb;
     ec.l.cb.costs.clear();
     for (uint32_t j = min_value; j <= max_value; j++)
     {
-      uint32_t min_h = max(0, (int)j - (int)data.bandwidth);
-      uint32_t max_h = min(data.num_actions, j + data.bandwidth);
+      uint32_t min_h = (std::max)(0, (int)j - (int)data.bandwidth);
+      uint32_t max_h = (std::min)(data.num_actions, j + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
       ec.l.cb.costs.push_back({cost, j, prob * bandwidth_range, 0.0f});
     }

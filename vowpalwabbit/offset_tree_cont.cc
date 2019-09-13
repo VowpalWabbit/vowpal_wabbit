@@ -1,4 +1,4 @@
-#include "offset_tree_cont.h"
+﻿#include "offset_tree_cont.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
 #include <algorithm>
@@ -148,8 +148,13 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   std::sort(node_costs.begin(), node_costs.end(), compareByid);
 
   uint32_t iter_count = 0;
-  while (!node_costs.empty())
+  while (!node_costs.empty() || !node_costs_buffer.empty())
   {
+    if (node_costs.empty())
+    {
+      node_costs = node_costs_buffer;
+      node_costs_buffer.clear();
+    }
     std::vector<VW::offset_tree_cont::node_cost> node_costs_new;
     while (!node_costs.empty())
     {
@@ -197,12 +202,12 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
                   << ", local_action = " << (local_action) << std::endl;
         if (ec.pred.scalar == local_action)
         {
-          cost_parent = min(cost_v, cost_w);
+          cost_parent = (std::min)(cost_v, cost_w);
           VW_DBG(ec) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
         }
         else
         {
-          cost_parent = max(cost_v, cost_w);
+          cost_parent = (std::max)(cost_v, cost_w);
           VW_DBG(ec) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
         }
       }
@@ -216,6 +221,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       std::sort(node_costs_new.begin(), node_costs_new.end(), compareByid);
       node_costs_new.insert(node_costs_new.end(), std::make_move_iterator(node_costs_buffer.begin()),
           std::make_move_iterator(node_costs_buffer.end()));
+      node_costs_buffer.clear();
     }
     iter_count++;
     node_costs = node_costs_new;
