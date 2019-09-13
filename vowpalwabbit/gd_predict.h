@@ -35,8 +35,8 @@ inline void foreach_feature(const W& weights, features& fs, R& dat, uint64_t off
   {
     const weight& w = weights[(f.index() + offset)];
     if(GET_VW_DEBUG_LOG())
-      std::cout << get_depth_str() << "gd: vect add: {pre_acc=" << dat << ", mult=" << mult << ", v=" << f.value() 
-                << ", w=" << w << " (f.idx=" << f.index() << ", offset" << offset << ")}" << std::endl;
+      std::cout << get_depth_str() << "gd: vec_add: {pre_acc=" << dat << ", mult=" << mult << ", v=" << f.value() 
+                << ", w=" << w << " (f.idx=" << f.index() << ", offset=" << offset << ")} acc += mult * v * w" << std::endl;
     T(dat, mult * f.value(), w);
   }
 }

@@ -4,6 +4,7 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "explore.h"
+#include "debug_log.h"
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -14,9 +15,10 @@ using namespace exploration;
 using namespace VW::config;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
+VW_DEBUG_ENABLE(true);
+
 namespace CB_EXPLORE
 {
-bool VW_DEBUG_LOG = true;
 
 struct cb_explore
 {
@@ -84,7 +86,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   // pre-allocate pdf
 
-  VWLOG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
+  VW_DBG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
 
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});

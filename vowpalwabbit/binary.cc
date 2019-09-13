@@ -1,27 +1,27 @@
 #include <float.h>
 #include "reductions.h"
+#include "debug_log.h"
 
 using namespace std;
 using namespace VW::config;
 
+VW_DEBUG_ENABLE(true);
+
 namespace VW { namespace binary {
-
-bool VW_DEBUG_LOG=true;
-
 template <bool is_learn>
 void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
   {
-    VWLOG(ec) << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    VW_DBG(ec) << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
     base.learn(ec);
-    VWLOG(ec) << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+    VW_DBG(ec) << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
   }
   else
   {
-    VWLOG(ec) << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    VW_DBG(ec) << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
     base.predict(ec);
-    VWLOG(ec) << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+    VW_DBG(ec) << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
   }
 
   if (ec.pred.scalar > 0)
@@ -29,7 +29,7 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   else
     ec.pred.scalar = -1;
 
-  VWLOG(ec) << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
 
   if (ec.l.simple.label != FLT_MAX)
   {
@@ -57,4 +57,5 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
   return make_base(ret);
 }
 
-}}
+}  // namespace binary
+}  // namespace VW
