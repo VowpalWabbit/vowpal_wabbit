@@ -206,12 +206,12 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
                   << ", local_action = " << (local_action) << std::endl;
         if (ec.pred.scalar == local_action)
         {
-          cost_parent = std::min(cost_v, cost_w);
+          cost_parent = (std::min)(cost_v, cost_w);
           VWLOG(ec) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
         }
         else
         {
-          cost_parent = std::max(cost_v, cost_w);
+          cost_parent = (std::max)(cost_v, cost_w);
           VWLOG(ec) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
         }
       }
