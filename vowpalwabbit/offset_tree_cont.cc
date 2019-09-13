@@ -95,17 +95,12 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
   if (binary_tree.leaf_node_count() == 0)  // todo: chnage this to throw error at some point
     return 0;
 
-  const CB::label saved_label = ec.l.cb;
-  ec.l.cb.costs.clear();
-  ec.l.simple.label = FLT_MAX; // says it is a test example
-
   auto cur_node = nodes[0];
 
   while (!(cur_node.is_leaf))
   {
     ec.partial_prediction = 0.f;
     ec.pred.scalar = 0.f;
-    ec.l.simple.initial = 0.f;
     base.predict(ec, cur_node.id);
     VW_DBG(ec) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec) << ", nodeid = " << cur_node.id << std::endl;
     if (ec.pred.scalar == -1)  // TODO: check
@@ -118,7 +113,6 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
     }
   }
 
-  ec.l.cb = saved_label;
   return (cur_node.id - binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
