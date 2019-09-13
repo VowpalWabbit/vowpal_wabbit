@@ -225,6 +225,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       std::sort(node_costs_new.begin(), node_costs_new.end(), compareByid);
       node_costs_new.insert(node_costs_new.end(), std::make_move_iterator(node_costs_buffer.begin()),
           std::make_move_iterator(node_costs_buffer.end()));
+      node_costs_buffer.clear();
     }
     iter_count++;
     node_costs = node_costs_new;

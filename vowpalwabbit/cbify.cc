@@ -1,4 +1,4 @@
-#include <float.h>
+﻿#include <float.h>
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw.h"
@@ -173,7 +173,7 @@ float get01loss(VW::actions_pdf::pdf& prob_dist, float chosen_action, float labe
   if (prob_dist.size() == 1)
     return 0.0f;  ////
   float h = prob_dist[1].action - prob_dist[0].action;
-  if (abs(chosen_action - label) < h)
+  if (abs(chosen_action - label) <= h)
     return 0.0f;  ////
   return 1.0f;
 }
