@@ -1,4 +1,4 @@
-#include <float.h>
+﻿#include <float.h>
 #include <vector>
 #include <float.h>
 #include "reductions.h"
@@ -16,7 +16,7 @@ using namespace ACTION_SCORE;
 using namespace std;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(true);
+VW_DEBUG_ENABLE(false);
 
 struct cbify;
 

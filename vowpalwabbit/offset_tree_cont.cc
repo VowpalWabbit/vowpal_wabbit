@@ -8,7 +8,7 @@
 using namespace VW::config;
 using namespace LEARNER;
 
-VW_DEBUG_ENABLE(true);
+VW_DEBUG_ENABLE(false);
 
 namespace VW { namespace offset_tree_cont {
 
@@ -94,13 +94,15 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
   // Handle degenerate cases of zero node trees
   if (binary_tree.leaf_node_count() == 0)  // todo: chnage this to throw error at some point
     return 0;
-
+  const CB::label saved_label = ec.l.cb;
+  ec.l.simple.label = FLT_MAX; // says it is a test example
   auto cur_node = nodes[0];
 
   while (!(cur_node.is_leaf))
   {
     ec.partial_prediction = 0.f;
     ec.pred.scalar = 0.f;
+    ec.l.simple.initial = 0.f; // needed for gd.predict()
     base.predict(ec, cur_node.id);
     VW_DBG(ec) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec) << ", nodeid = " << cur_node.id << std::endl;
     if (ec.pred.scalar == -1)  // TODO: check
@@ -112,7 +114,7 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
       cur_node = nodes[cur_node.right_id];
     }
   }
-
+  ec.l.cb = saved_label;
   return (cur_node.id - binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
@@ -122,6 +124,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 {
   const auto saved_label = ec.l.cb;
   const auto saved_weight = ec.weight;
+  const auto saved_pred = ec.pred.multiclass;
 
   std::vector<VW::offset_tree_cont::node_cost> node_costs;
   std::vector<VW::offset_tree_cont::node_cost> node_costs_buffer;
@@ -229,6 +232,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
   ec.l.cb = saved_label;
   ec.weight = saved_weight;
+  ec.pred.multiclass = saved_pred;
 }
 
 void predict(offset_tree& ot, single_learner& base, example& ec)

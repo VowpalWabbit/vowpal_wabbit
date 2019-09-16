@@ -1,4 +1,4 @@
-#include "reductions.h"
+﻿#include "reductions.h"
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
@@ -15,7 +15,7 @@ using namespace exploration;
 using namespace VW::config;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
-VW_DEBUG_ENABLE(true);
+VW_DEBUG_ENABLE(false);
 
 namespace CB_EXPLORE
 {

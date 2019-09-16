@@ -8,7 +8,7 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(true);
+VW_DEBUG_ENABLE(false);
 
 namespace VW { namespace pmf_to_pdf {
 
@@ -49,6 +49,9 @@ pdf_data::~pdf_data()
   {
     auto temp = ec.pred.prob_dist;
     ec.pred.a_s = data.temp_probs;
+    auto temp_cb_cont = ec.l.cb_cont; //todo: Do we need to save and recover the label also?
+    ec.l.cb = data.temp_cb;
+
     base.predict(ec);
 
     VW_DBG(ec) << "pmf_to_pdf::predict base.predict()" << a_s_pred_to_string(ec) << std::endl;
@@ -56,6 +59,8 @@ pdf_data::~pdf_data()
     data.temp_probs = ec.pred.a_s;
     ec.pred.prob_dist = temp;
     transform(data, ec);
+    data.temp_cb = ec.l.cb;
+    ec.l.cb_cont = temp_cb_cont;
 
     VW_DBG(ec) << "pmf_to_pdf::predict transform()" << prob_dist_pred_to_string(ec) << std::endl;
   }
@@ -100,11 +105,12 @@ pdf_data::~pdf_data()
 
     auto temp_pd = ec.pred.prob_dist;
     ec.pred.a_s = data.temp_probs;
+    
     base.learn(ec);
+    
     data.temp_probs = ec.pred.a_s;
     ec.pred.prob_dist = temp_pd;
     transform(data, ec);
-
     data.temp_cb = ec.l.cb;
     ec.l.cb_cont = temp;
   }

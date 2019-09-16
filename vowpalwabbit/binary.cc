@@ -1,11 +1,11 @@
-#include <float.h>
+﻿#include <float.h>
 #include "reductions.h"
 #include "debug_log.h"
 
 using namespace std;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(true);
+VW_DEBUG_ENABLE(false);
 
 namespace VW { namespace binary {
 template <bool is_learn>
