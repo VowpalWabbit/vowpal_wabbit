@@ -25,6 +25,7 @@ struct cb_class
 struct label
 {
   v_array<cb_class> costs;
+  float weight;
 };
 
 extern label_parser cb_label;            // for learning

@@ -31,6 +31,7 @@ namespace CCB {
     // Outcome may be unset.
     conditional_contextual_bandit_outcome* outcome;
     v_array<uint32_t> explicit_included_actions;
+    float weight;
   };
 
   extern label_parser ccb_label_parser;

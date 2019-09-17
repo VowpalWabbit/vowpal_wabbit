@@ -130,6 +130,7 @@ void create_cb_labels(ccb& data)
   {
     action->l.cb.costs = data.cb_label_pool.get_object();
   }
+  data.shared->l.cb.weight = 1.0;
 }
 
 // the polylabel (union) must be manually cleaned up
