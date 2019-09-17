@@ -136,3 +136,17 @@ reinforcement_learning/unit_test/rlclient-test.out
 cs/azure_service/azure_service.ccproj.user
 
 build
+vowpalwabbit/0021.model
+vowpalwabbit/0022.predict
+vowpalwabbit/bs.prreg.predict
+vowpalwabbit/bs.reg.model
+vowpalwabbit/bs.reg.predict
+vowpalwabbit/bs.vote.model
+vowpalwabbit/bs.vote.predict
+vowpalwabbit/cb_adf_crash.model
+vowpalwabbit/cb_adf_dr.predict
+vowpalwabbit/cbe_adf_cover_dr256.predict
+vowpalwabbit/cbe_adf_epsilon.predict
+vowpalwabbit/ccb_test.predict
+vowpalwabbit/cs_test.ldf.csoaa.predict
+vowpalwabbit/cs_test.ldf.wap.predict

@@ -154,7 +154,6 @@ struct ldf
 
   bool rank;
   action_scores a_s;
-  uint64_t ft_offset;
 
   v_array<action_scores> stored_preds;
 
@@ -258,10 +257,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
   ec.l.simple = simple_label;
-  uint64_t old_offset = ec.ft_offset;
-  ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
-  ec.ft_offset = old_offset;
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
   LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
@@ -331,10 +327,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
-      uint64_t old_offset = ec1->ft_offset;
-      ec1->ft_offset = data.ft_offset;
       base.learn(*ec1);
-      ec1->ft_offset = old_offset;
       ec1->weight = old_weight;
       unsubtract_example(ec1);
 
@@ -392,10 +385,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 
     // learn
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
-    uint64_t old_offset = ec->ft_offset;
-    ec->ft_offset = data.ft_offset;
     base.learn(*ec);
-    ec->ft_offset = old_offset;
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
 
@@ -416,13 +406,10 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-template <bool is_learn>
-void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
+void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
   if (ec_seq_all.size() == 0)
     return;  // nothing to do
-
-  data.ft_offset = ec_seq_all[0]->ft_offset;
 
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
@@ -476,12 +463,115 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   }
 
   /////////////////////// learn
-  if (is_learn && !isTest)
+  if (!isTest)
   {
     if (data.is_wap)
       do_actual_learning_wap(data, base, ec_seq);
     else
       do_actual_learning_oaa(data, base, ec_seq);
+  }
+
+  if (data.rank)
+  {
+    data.stored_preds[0].clear();
+    for (size_t k = 0; k < K; k++)
+    {
+      ec_seq[k]->pred.a_s = data.stored_preds[k];
+      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
+    }
+  }
+  else
+  {
+    // Mark the predicted subexample with its class_index, all other with 0
+    for (size_t k = 0; k < K; k++)
+    {
+      if (k == predicted_K)
+        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
+      else
+        ec_seq[k]->pred.multiclass = 0;
+    }
+  }
+
+  ////////////////////// compute probabilities
+  if (data.is_probabilities)
+  {
+    float sum_prob = 0;
+    for (const auto& example : ec_seq)
+    {
+      // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
+      // but partial_prediction is lower for better classes (we are predicting the cost),
+      // so we need to take score = -partial_prediction,
+      // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
+      float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
+      example->pred.prob = prob;
+      sum_prob += prob;
+    }
+    // make sure that the probabilities sum up (exactly) to one
+    for (const auto& example : ec_seq)
+    {
+      example->pred.prob /= sum_prob;
+    }
+  }
+}
+
+/*
+ * 1) process all labels at first
+ * 2) verify no labels in the middle of data
+ * 3) learn_or_predict(data) with rest
+ */
+void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
+{
+  if (ec_seq_all.empty())
+    return;  // nothing to do
+
+  // handle label definitions
+  auto ec_seq = process_labels(data, ec_seq_all);
+  if (ec_seq.size() == 0)
+    return;  // nothing more to do
+
+  // Ensure there are no more labels
+  // (can be done in existing loops later but as a side effect learning
+  //    will happen with bad example)
+  if (ec_seq_has_label_definition(ec_seq))
+  {
+    THROW("error: label definition encountered in data block");
+  }
+
+  /////////////////////// add headers
+  uint32_t K = (uint32_t)ec_seq.size();
+
+  /////////////////////// do prediction
+  uint32_t predicted_K = 0;
+  if (data.rank)
+  {
+    data.a_s.clear();
+    data.stored_preds.clear();
+    for (uint32_t k = 0; k < K; k++)
+    {
+      example* ec = ec_seq[k];
+      data.stored_preds.push_back(ec->pred.a_s);
+      make_single_prediction(data, base, *ec);
+      action_score s;
+      s.score = ec->partial_prediction;
+      s.action = k;
+      data.a_s.push_back(s);
+    }
+
+    qsort((void*)data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
+  }
+  else
+  {
+    float min_score = FLT_MAX;
+    for (uint32_t k = 0; k < K; k++)
+    {
+      example* ec = ec_seq[k];
+      make_single_prediction(data, base, *ec);
+      if (ec->partial_prediction < min_score)
+      {
+        min_score = ec->partial_prediction;
+        predicted_K = k;
+      }
+    }
   }
 
   if (data.rank)
@@ -881,8 +971,8 @@ base_learner* csldf_setup(options_i& options, vw& all)
     pred_type = prediction_type::multiclass;
 
   ld->read_example_this_loop = 0;
-  learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>,
-      do_actual_learning<false>, 1, pred_type, "csoaa_ldf");
+  learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), learn_csoaa_ldf,
+      predict_csoaa_ldf, 1, pred_type, "csoaa_ldf");
   l.set_finish_example(finish_multiline_example);
   l.set_end_pass(end_pass);
   all.cost_sensitive = make_base(l);
