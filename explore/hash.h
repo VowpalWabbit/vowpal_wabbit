@@ -33,9 +33,9 @@ license as described in the file LICENSE.
 
 // Platform-specific functions and macros
 #if defined(_MSC_VER)                       // Microsoft Visual Studio
-#   include <stdint.h>
+#   include <cstdint>
 
-#   include <stdlib.h>
+#   include <cstdlib>
 #   define ROTL32(x,y)  _rotl(x,y)
 #   define BIG_CONSTANT(x) (x)
 
@@ -90,7 +90,7 @@ inline uint64_t uniform_hash(const void * key, size_t len, uint64_t seed)
   const uint32_t c2 = 0x1b873593;
 
   // --- body
-  const uint32_t * blocks = (const uint32_t *)(data + nblocks * 4);
+  const uint32_t* blocks = (const uint32_t *)(data + nblocks * 4);
 
   for (int i = -nblocks; i; i++)
   {
@@ -112,7 +112,7 @@ inline uint64_t uniform_hash(const void * key, size_t len, uint64_t seed)
 
   // The 'fall through' comments below silence the implicit-fallthrough warning introduced in GCC 7.
   // Once we move to C++17 these should be replaced with the [[fallthrough]] attribute.
-  switch (len & 3)
+  switch (len & 3u)
   {
   case 3:
     k1 ^= tail[2] << 16;
@@ -124,6 +124,8 @@ inline uint64_t uniform_hash(const void * key, size_t len, uint64_t seed)
     k1 *= c1;
     k1 = ROTL32(k1, 15);
     k1 *= c2; h1 ^= k1;
+  default:
+    break;
   }
 
   // --- finalization

@@ -6,7 +6,6 @@
 #include <string>
 #include "correctedMath.h"
 #include "gd.h"
-#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -306,7 +305,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   if (read)
     initialize_regressor(*all);
 
-  if (model_file.files.size() > 0)
+  if (!model_file.files.empty())
   {
     bool resume = all->save_resume;
     stringstream msg;

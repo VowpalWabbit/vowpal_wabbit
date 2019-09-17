@@ -1,4 +1,4 @@
-#include <float.h>
+#include <cfloat>
 #include "correctedMath.h"
 #include "reductions.h"
 #include "vw_exception.h"
@@ -71,19 +71,19 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
   void (*multipredict_f)(scorer&, LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) =
       multipredict<id>;
 
-  if (link.compare("identity") == 0)
+  if (link == "identity")
     l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
-  else if (link.compare("logistic") == 0)
+  else if (link == "logistic")
   {
     l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>);
     multipredict_f = multipredict<logistic>;
   }
-  else if (link.compare("glf1") == 0)
+  else if (link == "glf1")
   {
     l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>);
     multipredict_f = multipredict<glf1>;
   }
-  else if (link.compare("poisson") == 0)
+  else if (link == "poisson")
   {
     l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
     multipredict_f = multipredict<expf>;

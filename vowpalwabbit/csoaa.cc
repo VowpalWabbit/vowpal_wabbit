@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <float.h>
-#include <errno.h>
+#include <cfloat>
+#include <cerrno>
 
 #include "correctedMath.h"
 #include "reductions.h"
@@ -66,7 +66,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0., 0., 0.};
-  if (ld.costs.size() > 0)
+  if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
       inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
@@ -171,20 +171,20 @@ struct ldf
 
 bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
 {
-  if (ec.indices.size() < 1)
+  if (ec.indices.empty())
     return false;
   if (ec.indices[0] != 'l')
     return false;
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  for (size_t j = 0; j < costs.size(); j++)
-    if ((costs[j].class_index != 0) || (costs[j].x <= 0.))
+  for (auto & cost : costs)
+    if ((cost.class_index != 0) || (cost.x <= 0.))
       return false;
   return true;
 }
 
 bool ec_seq_is_label_definition(multi_ex& ec_seq)
 {
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return false;
   bool is_lab = ec_is_label_definition(*ec_seq[0]);
   for (size_t i = 1; i < ec_seq.size(); i++)
@@ -230,7 +230,7 @@ void subtract_example(vw& all, example* ec, example* ecsub)
 
 void unsubtract_example(example* ec)
 {
-  if (ec->indices.size() == 0)
+  if (ec->indices.empty())
   {
     cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;
     return;
@@ -274,7 +274,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
 {
   bool isTest;
-  if (0 == ec_seq.size())
+  if (ec_seq.empty())
     isTest = true;
   else
     isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[0]->l);
@@ -422,14 +422,14 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
 template <bool is_learn>
 void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
-  if (ec_seq_all.size() == 0)
+  if (ec_seq_all.empty())
     return;  // nothing to do
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
 
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return;  // nothing more to do
 
   // Ensure there are no more labels
@@ -534,9 +534,8 @@ void global_print_newline(vw& all)
 {
   char temp[1];
   temp[0] = '\n';
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for (int f : all.final_prediction_sink)
   {
-    int f = all.final_prediction_sink[i];
     ssize_t t;
     t = io_buf::write_file_or_socket(f, temp, 1);
     if (t != 1)
@@ -582,13 +581,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (size_t j = 0; j < costs.size(); j++)
+    for (auto & cost : costs)
     {
       if (hit_loss)
         break;
-      if (predicted_class == costs[j].class_index)
+      if (predicted_class == cost.class_index)
       {
-        loss = costs[j].x;
+        loss = cost.x;
         hit_loss = true;
       }
     }
@@ -730,7 +729,7 @@ void end_pass(ldf& data) { data.first_pass = false; }
 
 void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
@@ -746,9 +745,9 @@ void inline process_label(ldf& data, example* ec)
 {
   auto new_fs = ec->feature_space[ec->indices[0]];
   auto& costs = ec->l.cs.costs;
-  for (size_t j = 0; j < costs.size(); j++)
+  for (auto & cost : costs)
   {
-    const auto lab = (size_t)costs[j].x;
+    const auto lab = (size_t)cost.x;
     LabelDict::set_label_features(data.label_features, lab, new_fs);
   }
 }
@@ -844,16 +843,16 @@ base_learner* csldf_setup(options_i& options, vw& all)
   all.label_type = label_type::cs;
 
   ld->treat_as_classifier = false;
-  if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
+  if (ldf_arg == "multiline" || ldf_arg == "m")
     ld->treat_as_classifier = false;
-  else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0)
+  else if (ldf_arg == "multiline-classifier" || ldf_arg == "mc")
     ld->treat_as_classifier = true;
   else
   {
     if (all.training)
       THROW("ldf requires either m/multiline or mc/multiline-classifier");
-    if ((ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) ||
-        (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0))
+    if ((ldf_arg == "singleline" || ldf_arg == "s") ||
+        (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
       THROW(
           "ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no "
           "longer supported");

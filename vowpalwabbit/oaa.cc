@@ -4,8 +4,8 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <sstream>
-#include <float.h>
-#include <math.h>
+#include <cfloat>
+#include <cmath>
 #include "correctedMath.h"
 #include "reductions.h"
 #include "rand48.h"

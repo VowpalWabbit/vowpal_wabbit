@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 
 #include <cmath>
 #include <math.h>
-#include <ctype.h>
+#include <cctype>
 #include "parse_example.h"
 #include "hash.h"
 #include "unique_sort.h"
@@ -448,7 +448,7 @@ void substring_to_example(vw* all, example* ae, substring example)
   else
   {
     tokenize(' ', label_space, all->p->words);
-    if (all->p->words.size() > 0 &&
+    if (!all->p->words.empty() &&
         (all->p->words.last().end == label_space.end ||
             *(all->p->words.last().begin) == '\''))  // The last field is a tag, so record and strip it off
     {
@@ -459,7 +459,7 @@ void substring_to_example(vw* all, example* ae, substring example)
     }
   }
 
-  if (all->p->words.size() > 0)
+  if (!all->p->words.empty())
     all->p->lp.parse_label(all->p, all->sd, &ae->l, all->p->words);
 
   if (all->audit || all->hash_inv)
@@ -468,7 +468,7 @@ void substring_to_example(vw* all, example* ae, substring example)
     TC_parser<false> parser_line(bar_location, example.end, *all, ae);
 }
 
-std::vector<std::string> split(char* phrase, std::string delimiter)
+std::vector<std::string> split(char* phrase, const std::string& delimiter)
 {
   std::vector<std::string> list;
   std::string s = std::string(phrase);

@@ -261,7 +261,8 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
             if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr).values[loop_end - margin]))
             {
               ++margin;  // otherwise margin can't be increased
-              if ((must_skip_interaction = (loop_end < margin)))
+              must_skip_interaction = loop_end < margin;
+              if (must_skip_interaction)
                 break;
             }
 

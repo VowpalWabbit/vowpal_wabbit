@@ -1,8 +1,5 @@
-#include <float.h>
 #include "reductions.h"
 #include "cb_algs.h"
-#include "rand48.h"
-#include "bs.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
@@ -112,7 +109,7 @@ void copy_example_to_adf(cbify& data, example& ec)
     // copy data
     VW::copy_example_data(false, &eca, &ec);
 
-    // offset indicies for given action
+    // offset indices for given action
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
@@ -322,13 +319,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (size_t j = 0; j < costs.size(); j++)
+    for (auto & cost : costs)
     {
       if (hit_loss)
         break;
-      if (predicted_class == costs[j].class_index)
+      if (predicted_class == cost.class_index)
       {
-        loss = costs[j].x;
+        loss = cost.x;
         hit_loss = true;
       }
     }
@@ -358,7 +355,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
 void output_example_seq(vw& all, multi_ex& ec_seq)
 {
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
   all.sd->example_number++;
@@ -375,7 +372,7 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
 
 void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
   {
     output_example_seq(all, ec_seq);
     // global_print_newline(all);
@@ -408,7 +405,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->all = &all;
 
   if (data->use_adf)
-    init_adf_data(*data.get(), num_actions);
+    init_adf_data(*data, num_actions);
 
   if (!options.was_supplied("cb_explore") && !data->use_adf)
   {

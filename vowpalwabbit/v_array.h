@@ -6,10 +6,10 @@ license as described in the file LICENSE.
 
 #pragma once
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdint.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+#include <cstdint>
 
 #ifdef _WIN32
 #define __INLINE
@@ -23,7 +23,7 @@ license as described in the file LICENSE.
 
 #include "memory.h"
 
-const size_t erase_point = ~((1 << 10) - 1);
+const size_t erase_point = ~((1u << 10u) - 1u);
 
 template <class T>
 struct v_array

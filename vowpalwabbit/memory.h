@@ -1,6 +1,6 @@
 #pragma once
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include "vw_exception.h"
@@ -95,5 +95,4 @@ inline void free_it(void* ptr)
 {
   if (ptr != nullptr)
     free(ptr);
-  ptr = nullptr;
 }
