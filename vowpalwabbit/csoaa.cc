@@ -408,12 +408,12 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
  */
 void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
-  if (ec_seq_all.size() == 0)
+  if (ec_seq_all.empty())
     return;  // nothing to do
 
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return;  // nothing more to do
 
   // Ensure there are no more labels
@@ -424,93 +424,13 @@ void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     THROW("error: label definition encountered in data block");
   }
 
-  /////////////////////// add headers
-  uint32_t K = (uint32_t)ec_seq.size();
-
-  bool isTest = test_ldf_sequence(data, ec_seq);
-  /////////////////////// do prediction
-  uint32_t predicted_K = 0;
-  if (data.rank)
-  {
-    data.a_s.clear();
-    data.stored_preds.clear();
-    for (uint32_t k = 0; k < K; k++)
-    {
-      example* ec = ec_seq[k];
-      data.stored_preds.push_back(ec->pred.a_s);
-      make_single_prediction(data, base, *ec);
-      action_score s;
-      s.score = ec->partial_prediction;
-      s.action = k;
-      data.a_s.push_back(s);
-    }
-
-    qsort((void*)data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
-  }
-  else
-  {
-    float min_score = FLT_MAX;
-    for (uint32_t k = 0; k < K; k++)
-    {
-      example* ec = ec_seq[k];
-      make_single_prediction(data, base, *ec);
-      if (ec->partial_prediction < min_score)
-      {
-        min_score = ec->partial_prediction;
-        predicted_K = k;
-      }
-    }
-  }
-
   /////////////////////// learn
-  if (!isTest)
+  if (!test_ldf_sequence(data, ec_seq))
   {
     if (data.is_wap)
       do_actual_learning_wap(data, base, ec_seq);
     else
       do_actual_learning_oaa(data, base, ec_seq);
-  }
-
-  if (data.rank)
-  {
-    data.stored_preds[0].clear();
-    for (size_t k = 0; k < K; k++)
-    {
-      ec_seq[k]->pred.a_s = data.stored_preds[k];
-      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
-    }
-  }
-  else
-  {
-    // Mark the predicted subexample with its class_index, all other with 0
-    for (size_t k = 0; k < K; k++)
-    {
-      if (k == predicted_K)
-        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
-      else
-        ec_seq[k]->pred.multiclass = 0;
-    }
-  }
-
-  ////////////////////// compute probabilities
-  if (data.is_probabilities)
-  {
-    float sum_prob = 0;
-    for (const auto& example : ec_seq)
-    {
-      // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
-      // but partial_prediction is lower for better classes (we are predicting the cost),
-      // so we need to take score = -partial_prediction,
-      // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-      float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
-      example->pred.prob = prob;
-      sum_prob += prob;
-    }
-    // make sure that the probabilities sum up (exactly) to one
-    for (const auto& example : ec_seq)
-    {
-      example->pred.prob /= sum_prob;
-    }
   }
 }
 
