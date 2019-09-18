@@ -150,3 +150,7 @@ vowpalwabbit/cbe_adf_epsilon.predict
 vowpalwabbit/ccb_test.predict
 vowpalwabbit/cs_test.ldf.csoaa.predict
 vowpalwabbit/cs_test.ldf.wap.predict
+vowpalwabbit/multilabel_ldf.predict
+vowpalwabbit/cb_adf_rank.predict
+vowpalwabbit/csoaa_ldf_probabilities.predict
+vowpalwabbit/library_train.w
