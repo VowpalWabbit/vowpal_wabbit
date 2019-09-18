@@ -12,6 +12,9 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "debug_log.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG false
+
 #include <memory>
 
 namespace prediction_type
@@ -422,7 +425,7 @@ struct learner
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
 
-    std::cout << "Added Reduction: " << name << std::endl;
+    VW_DBG_0 << "Added Reduction: " << name << std::endl;
 
     return ret;
   }

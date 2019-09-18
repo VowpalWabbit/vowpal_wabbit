@@ -285,6 +285,25 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
   return isTest;
 }
 
+void base_learn_restore_pred(single_learner& base, example* ec1) {
+  // Notes:  Q) Why are we saving value of prediction during learn()?
+  //
+  //        Short answer) Breach of encapsulation.
+  //
+  //        Long answer) gd.learn() changes state of ec.pred.
+  //        However, for progressive validation predict() was called initially
+  //        and result saved in ec.pred.  This is needed during finish_example()
+  //        Therefore we need to save the state of ec->pred and restore it after
+  //        base.learn is called.
+  //
+  //        We can (and should) get rid of this if we strictly follow the principle that we don't
+  //        allow gd.learn (or any other reduction.learn) to modify state of example.pred
+
+  const polyprediction saved_pred = ec1->pred; // save
+  base.learn(*ec1);
+  ec1->pred = saved_pred; // restore
+}
+
 void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
@@ -327,7 +346,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
-      base.learn(*ec1);
+      base_learn_restore_pred(base, ec1);
       ec1->weight = old_weight;
       unsubtract_example(ec1);
 
@@ -385,7 +404,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 
     // learn
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
-    base.learn(*ec);
+    base_learn_restore_pred(base, ec);
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
 
