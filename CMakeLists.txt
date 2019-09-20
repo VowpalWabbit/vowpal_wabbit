@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 # Only allow Release and Debug configurations
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
+set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE INTERNAL "Supported configuration types.")
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
@@ -10,7 +10,7 @@ endif()
 # CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
 # https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
-  set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
+  set(CMAKE_SYSTEM_VERSION "10.0.10240.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
 project(vowpal_wabbit C CXX)
