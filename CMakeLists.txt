@@ -14,7 +14,15 @@ if(WIN32)
 endif()
 
 project(vowpal_wabbit C CXX)
-set(CMAKE_CXX_STANDARD 11)
+
+option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
+
+# By default we target 11, if you want to use a newer standard use "-DUSE_LATEST_STD=On"
+if(NOT USE_LATEST_STD)
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
