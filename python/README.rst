@@ -9,10 +9,10 @@ Vowpal Wabbit Python Wrapper
     :target: https://travis-ci.org/VowpalWabbit/vowpal_wabbit
 .. image:: https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true
     :alt: Windows Build Status
-    :target: https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit
-.. image:: https://coveralls.io/repos/github/JohnLangford/vowpal_wabbit/badge.svg
+    :target: https://ci.appveyor.com/project/VowpalWabbit/vowpal-wabbit
+.. image:: https://coveralls.io/repos/github/VowpalWabbit/vowpal_wabbit/badge.svg
     :alt: Coverage
-    :target: https://coveralls.io/r/JohnLangford/vowpal_wabbit
+    :target: https://coveralls.io/r/VowpalWabbit/vowpal_wabbit
 
 Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
 
