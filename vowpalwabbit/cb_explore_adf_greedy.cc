@@ -17,6 +17,25 @@ namespace cb_explore_adf
 {
 namespace greedy
 {
+struct cb_explore_adf_greedy : public cb_explore_adf_base
+{
+ private:
+  float _epsilon;
+  bool _first_only;
+
+ public:
+  cb_explore_adf_greedy(float epsilon, bool first_only);
+
+  template <bool is_learn>
+  static void predict_or_learn(cb_explore_adf_greedy& data, LEARNER::multi_learner& base, multi_ex& examples);
+  cb_explore_adf_greedy() = default;
+  ~cb_explore_adf_greedy() = default;
+
+ private:
+  template <bool is_learn>
+  void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+};
+
 cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
  : _epsilon(epsilon), _first_only(first_only) {}
 

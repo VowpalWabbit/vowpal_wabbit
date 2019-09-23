@@ -9,12 +9,30 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+
 namespace VW
 {
 namespace cb_explore_adf
 {
 namespace softmax
 {
+struct cb_explore_adf_softmax : public cb_explore_adf_base
+{
+ private:
+  float _epsilon;
+  float _lambda;
+
+ public:
+  cb_explore_adf_softmax(float epsilon, float lambda);
+  template <bool is_learn>
+  static void predict_or_learn(cb_explore_adf_softmax& data, LEARNER::multi_learner& base, multi_ex& examples);
+  ~cb_explore_adf_softmax() = default;
+
+ private:
+  template <bool is_learn>
+  void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+};
+
 cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda)
   : _epsilon(epsilon), _lambda(lambda) {}
 
