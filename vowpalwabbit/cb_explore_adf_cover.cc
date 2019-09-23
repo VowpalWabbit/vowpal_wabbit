@@ -19,7 +19,7 @@ namespace cb_explore_adf
 {
 namespace cover
 {
-struct cb_explore_adf_cover : public cb_explore_adf_base
+struct cb_explore_adf_cover
 {
  private:
   size_t _cover_size;
@@ -40,9 +40,11 @@ struct cb_explore_adf_cover : public cb_explore_adf_base
  public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, bool first_only,
       LEARNER::multi_learner* cs_ldf_learner, LEARNER::single_learner* scorer, size_t cb_type);
-  template <bool is_learn>
-  static void predict_or_learn(cb_explore_adf_cover& data, LEARNER::multi_learner& base, multi_ex& examples);
   ~cb_explore_adf_cover();
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
@@ -60,7 +62,9 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
 template <bool is_learn>
 void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
-  _gen_cs.known_cost = _known_cost;
+  // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
+  _gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
+
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
   const bool is_mtr = _gen_cs.cb_type == CB_TYPE_MTR;
@@ -161,22 +165,6 @@ cb_explore_adf_cover::~cb_explore_adf_cover()
   _gen_cs.pred_scores.costs.delete_v();
 }
 
-template <bool is_learn>
-void cb_explore_adf_cover::predict_or_learn(
-    cb_explore_adf_cover& data, LEARNER::multi_learner& base, multi_ex& examples)
-{
-  if (is_learn)
-    data.learn(data, &cb_explore_adf_cover::predict_or_learn_impl<true>,
-        &cb_explore_adf_cover::predict_or_learn_impl<false>, base, examples);
-  else
-    data.predict(data, &cb_explore_adf_cover::predict_or_learn_impl<false>, base, examples);
-}
-
-void finish_multiline_example(vw& all, cb_explore_adf_cover& data, multi_ex& ec_seq)
-{
-  data.finish_multiline_example(all, ec_seq);
-}
-
 LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -250,14 +238,15 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  auto data = scoped_calloc_or_throw<cb_explore_adf_cover>(
+  using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
+  auto data = scoped_calloc_or_throw<explore_type>(
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
-  LEARNER::learner<cb_explore_adf_cover, multi_ex>& l =
-      init_learner(data, base, cb_explore_adf_cover::predict_or_learn<true>,
-          cb_explore_adf_cover::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
+  LEARNER::learner<explore_type, multi_ex>& l =
+      init_learner(data, base, explore_type::learn,
+          explore_type::predict, problem_multiplier, prediction_type::action_probs);
 
-  l.set_finish_example(finish_multiline_example);
+  l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);
 }
 }  // namespace cover

@@ -1,4 +1,6 @@
 #include "cb_explore_adf_bag.h"
+
+#include "cb_explore_adf_common.h"
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
@@ -19,7 +21,7 @@ namespace cb_explore_adf
 {
 namespace bag
 {
-struct cb_explore_adf_bag : public cb_explore_adf_base
+struct cb_explore_adf_bag
 {
  private:
   float _epsilon;
@@ -35,9 +37,11 @@ struct cb_explore_adf_bag : public cb_explore_adf_base
  public:
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
-  template <bool is_learn>
-  static void predict_or_learn(cb_explore_adf_bag& data, LEARNER::multi_learner& base, multi_ex& examples);
   ~cb_explore_adf_bag();
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
@@ -47,7 +51,8 @@ struct cb_explore_adf_bag : public cb_explore_adf_base
 cb_explore_adf_bag::cb_explore_adf_bag(
     float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
     : _epsilon(epsilon), _bag_size(bag_size), _greedify(greedify), _random_state(random_state)
-{}
+{
+}
 
 template <bool is_learn>
 void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
@@ -106,21 +111,6 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
 
 cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
 
-template <bool is_learn>
-void cb_explore_adf_bag::predict_or_learn(cb_explore_adf_bag& data, LEARNER::multi_learner& base, multi_ex& examples)
-{
-  if (is_learn)
-    data.learn(data, &cb_explore_adf_bag::predict_or_learn_impl<true>,
-        &cb_explore_adf_bag::predict_or_learn_impl<false>, base, examples);
-  else
-    data.predict(data, &cb_explore_adf_bag::predict_or_learn_impl<false>, base, examples);
-}
-
-void finish_multiline_example(vw& all, cb_explore_adf_bag& data, multi_ex& ec_seq)
-{
-  data.finish_multiline_example(all, ec_seq);
-}
-
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -156,13 +146,13 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  auto data = scoped_calloc_or_throw<cb_explore_adf_bag>(epsilon, bag_size, greedify, first_only, all.get_random_state());
+  using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
+  auto data = scoped_calloc_or_throw<explore_type>(epsilon, bag_size, greedify, first_only, all.get_random_state());
 
-  LEARNER::learner<cb_explore_adf_bag, multi_ex>& l =
-      LEARNER::init_learner(data, base, cb_explore_adf_bag::predict_or_learn<true>,
-          cb_explore_adf_bag::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
+  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type::action_probs);
 
-  l.set_finish_example(finish_multiline_example);
+  l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);
 }
 

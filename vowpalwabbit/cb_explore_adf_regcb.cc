@@ -23,7 +23,7 @@ namespace cb_explore_adf
 {
 namespace regcb
 {
-struct cb_explore_adf_regcb : public cb_explore_adf_base
+struct cb_explore_adf_regcb
 {
  private:
   size_t _counter;
@@ -42,9 +42,11 @@ struct cb_explore_adf_regcb : public cb_explore_adf_base
 
  public:
   cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost);
-  template <bool is_learn>
-  static void predict_or_learn(cb_explore_adf_regcb& data, LEARNER::multi_learner& base, multi_ex& examples);
   ~cb_explore_adf_regcb() = default;
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
@@ -223,22 +225,6 @@ void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, m
   }
 }
 
-template <bool is_learn>
-void cb_explore_adf_regcb::predict_or_learn(
-    cb_explore_adf_regcb& data, LEARNER::multi_learner& base, multi_ex& examples)
-{
-  if (is_learn)
-    data.learn(data, &cb_explore_adf_regcb::predict_or_learn_impl<true>,
-        &cb_explore_adf_regcb::predict_or_learn_impl<false>, base, examples);
-  else
-    data.predict(data, &cb_explore_adf_regcb::predict_or_learn_impl<false>, base, examples);
-}
-
-void finish_multiline_example(vw& all, cb_explore_adf_regcb& data, multi_ex& ec_seq)
-{
-  data.finish_multiline_example(all, ec_seq);
-}
-
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -290,12 +276,12 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  auto data = scoped_calloc_or_throw<cb_explore_adf_regcb>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
-  LEARNER::learner<cb_explore_adf_regcb, multi_ex>& l =
-      LEARNER::init_learner(data, base, cb_explore_adf_regcb::predict_or_learn<true>,
-          cb_explore_adf_regcb::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
+  using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
+  auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
+  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(data, base, explore_type::learn,
+      explore_type::predict, problem_multiplier, prediction_type::action_probs);
 
-  l.set_finish_example(finish_multiline_example);
+  l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);
 }
 

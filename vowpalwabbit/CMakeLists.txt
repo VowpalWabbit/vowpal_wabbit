@@ -47,7 +47,7 @@ set(vw_all_sources
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
   action_score.cc OjaNewton.cc baseline.cc classweight.cc
   vw_exception.cc no_label.cc shared_feature_merger.cc conditional_contextual_bandit.cc cb_sample.cc ccb_label.cc version.cc
-  cb_explore_adf_common.cc cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc cb_explore_adf_regcb.cc cb_explore_adf_softmax.cc
+  cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc cb_explore_adf_regcb.cc cb_explore_adf_softmax.cc
 )
 
 set(explore_all_headers

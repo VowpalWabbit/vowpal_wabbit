@@ -16,7 +16,7 @@ namespace cb_explore_adf
 {
 namespace softmax
 {
-struct cb_explore_adf_softmax : public cb_explore_adf_base
+struct cb_explore_adf_softmax
 {
  private:
   float _epsilon;
@@ -24,9 +24,11 @@ struct cb_explore_adf_softmax : public cb_explore_adf_base
 
  public:
   cb_explore_adf_softmax(float epsilon, float lambda);
-  template <bool is_learn>
-  static void predict_or_learn(cb_explore_adf_softmax& data, LEARNER::multi_learner& base, multi_ex& examples);
   ~cb_explore_adf_softmax() = default;
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
@@ -45,22 +47,6 @@ void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base,
   exploration::generate_softmax(-_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
-}
-
-template <bool is_learn>
-void cb_explore_adf_softmax::predict_or_learn(
-    cb_explore_adf_softmax& data, LEARNER::multi_learner& base, multi_ex& examples)
-{
-  if (is_learn)
-    data.learn(data, &cb_explore_adf_softmax::predict_or_learn_impl<true>,
-        &cb_explore_adf_softmax::predict_or_learn_impl<false>, base, examples);
-  else
-    data.predict(data, &cb_explore_adf_softmax::predict_or_learn_impl<false>, base, examples);
-}
-
-void finish_multiline_example(vw& all, cb_explore_adf_softmax& data, multi_ex& ec_seq)
-{
-  data.finish_multiline_example(all, ec_seq);
 }
 
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
@@ -101,12 +87,12 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  auto data = scoped_calloc_or_throw<cb_explore_adf_softmax>(epsilon, lambda);
-  LEARNER::learner<cb_explore_adf_softmax, multi_ex>& l =
-      LEARNER::init_learner(data, base, cb_explore_adf_softmax::predict_or_learn<true>,
-          cb_explore_adf_softmax::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
+  using explore_type = cb_explore_adf_base<cb_explore_adf_softmax>;
+  auto data = scoped_calloc_or_throw<explore_type>(epsilon, lambda);
+  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(data, base, explore_type::learn,
+          explore_type::predict, problem_multiplier, prediction_type::action_probs);
 
-  l.set_finish_example(finish_multiline_example);
+  l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);
 }
 }  // namespace softmax
