@@ -40,9 +40,16 @@ extern "C"
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
    * Method:    getArguments
-   * Signature: ()Lorg/vowpalwabbit/bare/VowpalWabbitArguments;
+   * Signature: ()Lorg/vowpalwabbit/spark/VowpalWabbitArguments;
    */
   JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArguments(JNIEnv *, jobject);
+
+  /*
+   * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
+   * Method:    getPerformanceStatistic
+   * Signature: ()Lorg/vowpalwabbit/bare/VowpalWabbitPerformanceStatistics;
+   */
+  JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistics(JNIEnv *, jobject);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
@@ -90,7 +97,7 @@ extern "C"
    * Method:    finish
    * Signature: ()J
    */
-  JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JNIEnv *, jobject);
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JNIEnv *, jobject);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
