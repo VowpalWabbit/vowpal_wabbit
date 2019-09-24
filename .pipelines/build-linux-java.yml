@@ -5,7 +5,7 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 container:
-  image: eisber/centos7.6.1810-build:0.1.0
+  image: vowpalwabbit/centos7.6.1810-build:0.1.0
   endpoint: DockerHub
 
 steps:
