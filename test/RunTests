@@ -765,7 +765,7 @@ exit $ErrorCount;
 #
 #   # -------------------------------------
 #   # Test <test_id>: ...
-#   shell command which may include ...
+#   shell command which may include {VW} ...
 #       reference/file1
 #       reference/file2
 #       ...more reference files...
@@ -795,8 +795,8 @@ exit $ErrorCount;
 #
 #   #-------------------------------------------------------
 #   # Test 237: readable_model
-#   ... -p test75.predict --readable_model test75.rmodel
-#       test/$(ProjectDir)..\Test\train-sets\ref/test75.stderr
+#   {VW} ... -p test75.predict --readable_model test75.rmodel
+#       test/train-sets/ref/test75.stderr
 #       test/pred-sets/ref/test75.predict
 #       test/whatever/ref/test75.rmodel
 #
@@ -828,1019 +828,924 @@ exit $ErrorCount;
 __DATA__
 
 # Test 1:
--k -l 20 --initial_t 128000 --power_t 1 -d $(ProjectDir)..\Test\train-sets\0001.dat \
-    -f 0001_1.model -c --passes 8 --invariant \
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
+    -f models/0001_1.model -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
-        $(ProjectDir)..\Test\train-sets\ref/0001.stderr
+        train-sets/ref/0001.stderr
 
 # Test 2: checking predictions as well
--k -t -d $(ProjectDir)..\Test\train-sets\0001.dat -i 0001_1.model -p 0001.predict --invariant
+{VW} -k -t -d train-sets/0001.dat -i models/0001_1.model -p 0001.predict --invariant
     test-sets/ref/0001.stderr
     pred-sets/ref/0001.predict
 
 # Test 3: without -d, training only
--k -d $(ProjectDir)..\Test\train-sets\0002.dat -f 0002.model --invariant
-    $(ProjectDir)..\Test\train-sets\ref/0002.stderr
+{VW} -k -d train-sets/0002.dat -f models/0002.model --invariant
+    train-sets/ref/0002.stderr
 
 # Test 4: same, with -d
--k -d $(ProjectDir)..\Test\train-sets\0002.dat -f 0002.model --invariant
-    $(ProjectDir)..\Test\train-sets\ref/0002.stdout
-    $(ProjectDir)..\Test\train-sets\ref/0002.stderr
+{VW} -k -d train-sets/0002.dat -f models/0002.model --invariant
+    train-sets/ref/0002.stdout
+    train-sets/ref/0002.stderr
 
 # Test 5: add -q .., adaptive, and more (same input, different outputs)
--k --initial_t 1 --adaptive --invariant -q Tf -q ff -f 0002a.model -d $(ProjectDir)..\Test\train-sets\0002.dat
-    $(ProjectDir)..\Test\train-sets\ref/0002a.stderr
+{VW} -k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model -d train-sets/0002.dat
+    train-sets/ref/0002a.stderr
 
 # Test 6: run predictions on Test 4 model
 # Pretending the labels aren't there
--k -t -i 0002.model -d $(ProjectDir)..\Test\train-sets\0002.dat -p 0002b.predict
+{VW} -k -t -i models/0002.model -d train-sets/0002.dat -p 0002b.predict
     test-sets/ref/0002b.stderr
     pred-sets/ref/0002b.predict
 
 # Test 7: using normalized adaptive updates and a low --power_t
--k --power_t 0.45 -f 0002c.model -d $(ProjectDir)..\Test\train-sets\0002.dat
-    $(ProjectDir)..\Test\train-sets\ref/0002c.stderr
+{VW} -k --power_t 0.45 -f models/0002c.model -d train-sets/0002.dat
+    train-sets/ref/0002c.stderr
 
 # Test 8: predicts on test 7 model
--k -t -i 0002c.model -d $(ProjectDir)..\Test\train-sets\0002.dat -p 0002c.predict
+{VW} -k -t -i models/0002c.model -d train-sets/0002.dat -p 0002c.predict
     test-sets/ref/0002c.stderr
     pred-sets/ref/0002c.predict
 
 # Test 9: label-dependent features with csoaa_ldf
--k -c -d $(ProjectDir)..\Test\train-sets\cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/cs_test.ldf.csoaa.stderr
-    $(ProjectDir)..\Test\train-sets\ref/cs_test.ldf.csoaa.predict
-shared_feature_merger
-csoaa_ldf
-scorer
-gd
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off --noconstant
+    train-sets/ref/cs_test.ldf.csoaa.stderr
+    train-sets/ref/cs_test.ldf.csoaa.predict
 
 # Test 10: label-dependent features with wap_ldf
--k -c -d $(ProjectDir)..\Test\train-sets\cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/cs_test.ldf.wap.stderr
-    $(ProjectDir)..\Test\train-sets\ref/cs_test.ldf.wap.predict
-shared_feature_merger
-wap_ldf
-scorer
-gd
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off --noconstant
+    train-sets/ref/cs_test.ldf.wap.stderr
+    train-sets/ref/cs_test.ldf.wap.predict
 
 # Test 11: one-against-all
--k --oaa 10 -c --passes 10 -d $(ProjectDir)..\Test\train-sets\multiclass --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/oaa.stderr
-oaa
-scorer
-gd
+{VW} -k --oaa 10 -c --passes 10 -d train-sets/multiclass --holdout_off
+    train-sets/ref/oaa.stderr
 
 # Test 12: Error Correcting Tournament
--k --ect 10 --error 3 -c --passes 10 --invariant -d $(ProjectDir)..\Test\train-sets\multiclass --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/multiclass.stderr
-ect
-scorer
-gd
+{VW} -k --ect 10 --error 3 -c --passes 10 --invariant -d train-sets/multiclass --holdout_off
+    train-sets/ref/multiclass.stderr
 
 # Test 13: Run search (dagger) on wsj_small for 6 passes extra features
--k -c -d $(ProjectDir)..\Test\train-sets\wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off
-        $(ProjectDir)..\Test\train-sets\ref/search_wsj.stderr
-search_task
-csoaa
-scorer
-gd
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 \
+    --search_task sequence --search 45 --search_alpha 1e-6 \
+    --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
+    --holdout_off
+        train-sets/ref/search_wsj.stderr
 
 # Test 14: Run search (searn) on wsj_small for 6 passes extra features
--k -c -d $(ProjectDir)..\Test\train-sets\wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy
-        $(ProjectDir)..\Test\train-sets\ref/search_wsj2.dat.stdout
-        $(ProjectDir)..\Test\train-sets\ref/search_wsj2.dat.stderr
-search_task
-csoaa
-scorer
-gd
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 \
+    --search_task sequence --search 45 --search_alpha 1e-6 \
+    --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
+    --holdout_off --search_passes_per_policy 3 --search_interpolation policy
+        train-sets/ref/search_wsj2.dat.stdout
+        train-sets/ref/search_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
--k -c -d $(ProjectDir)..\Test\train-sets\zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/zero.stdout
-    $(ProjectDir)..\Test\train-sets\ref/zero.stderr
-scorer
-bfgs
+{VW} -k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 --holdout_off
+    train-sets/ref/zero.stdout
+    train-sets/ref/zero.stderr
 
 # Test 16: LBFGS early termination
--k -c -d $(ProjectDir)..\Test\train-sets\rcv1_small.dat --loss_function=logistic --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_small.stdout
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_small.stderr
-scorer
-bfgs
+{VW} -k -c -d train-sets/rcv1_small.dat --loss_function=logistic --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off
+    train-sets/ref/rcv1_small.stdout
+    train-sets/ref/rcv1_small.stderr
 
 # Test 17: Run LDA with 100 topics on 1000 Wikipedia articles
--k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d $(ProjectDir)..\Test\train-sets\wiki256.dat
-    $(ProjectDir)..\Test\train-sets\ref/wiki1K.stderr
-scorer
-lda
+{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256.dat
+    train-sets/ref/wiki1K.stderr
 
 # Test 18: Run search on seq_small for 12 passes, 4 passes per policy
--k -c -d $(ProjectDir)..\Test\train-sets\seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/search_small.stderr
-search_task
-csoaa
-scorer
-gd
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off
+    train-sets/ref/search_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
--k -c -d $(ProjectDir)..\Test\train-sets\3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f 0021.model --random_seed 19 --quiet --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/3parity.stderr
-scorer
-nn
-gd
+{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 19 --quiet --holdout_off
+    train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
--d $(ProjectDir)..\Test\train-sets\3parity -t -i 0021.model -p 0022.predict
+{VW} -d train-sets/3parity -t -i models/0021.model -p 0022.predict
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
-scorer
-nn
-gd
 
 # Test 21: cubic features -- on a parity test case
--k -c -f xxor.model -d $(ProjectDir)..\Test\train-sets\xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333
-    $(ProjectDir)..\Test\train-sets\ref/xxor.stderr
-scorer
-gd
+{VW} -k -c -f models/xxor.model -d train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333
+    train-sets/ref/xxor.stderr
 
 # Test 22: matrix factorization -- training
--k -d $(ProjectDir)..\Test\train-sets\ml100k_small_train -b 16 -q ui --rank 10 --l2 2e-6 --learning_rate 0.05 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg -c --loss_function classic --holdout_off
-        $(ProjectDir)..\Test\train-sets\ref/ml100k_small.stdout
-        $(ProjectDir)..\Test\train-sets\ref/ml100k_small.stderr
+{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 \
+    --l2 2e-6 --learning_rate 0.05 --passes 2 \
+    --decay_learning_rate 0.97 --power_t 0 -f models/movielens.reg \
+    -c --loss_function classic --holdout_off
+        train-sets/ref/ml100k_small.stdout
+        train-sets/ref/ml100k_small.stderr
 
 # Test 23: matrix factorization -- testing
--i movielens.reg -t -d test-sets/ml100k_small_test
+{VW} -i models/movielens.reg -t -d test-sets/ml100k_small_test
     test-sets/ref/ml100k_small.stdout
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
--k --active --simulation --mellowness 0.000001 -d $(ProjectDir)..\Test\train-sets\rcv1_small.dat -l 10 --initial_t 10 --random_seed 3
-    $(ProjectDir)..\Test\train-sets\ref/active-simulation.t24.stderr
+{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3
+    train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
--k -d $(ProjectDir)..\Test\train-sets\0002.dat -f bs.reg.model --bootstrap 4 -p bs.reg.predict
-    $(ProjectDir)..\Test\train-sets\ref/bs.reg.stderr
-    $(ProjectDir)..\Test\train-sets\ref/bs.reg.predict
-bootstrap
-scorer
-gd
+{VW} -k -d train-sets/0002.dat -f models/bs.reg.model --bootstrap 4 -p bs.reg.predict
+    train-sets/ref/bs.reg.stderr
+    train-sets/ref/bs.reg.predict
 
 # Test 26: bagging -- predicting with bagged regressor
--d $(ProjectDir)..\Test\train-sets\0002.dat -i bs.reg.model -p bs.prreg.predict -t
-    $(ProjectDir)..\Test\train-sets\ref/bs.prreg.stderr
-    $(ProjectDir)..\Test\train-sets\ref/bs.prreg.predict
+{VW} -d train-sets/0002.dat -i models/bs.reg.model -p bs.prreg.predict -t
+    train-sets/ref/bs.prreg.stderr
+    train-sets/ref/bs.prreg.predict
 
 # Test 27: bagging -- binary classifiers
--d $(ProjectDir)..\Test\train-sets\0001.dat -f bs.vote.model --bootstrap 4 --bs_type vote -p bs.vote.predict
-    $(ProjectDir)..\Test\train-sets\ref/bs.vote.stderr
-    $(ProjectDir)..\Test\train-sets\ref/bs.vote.predict
-bootstrap
-scorer
-gd
+{VW} -d train-sets/0001.dat -f models/bs.vote.model --bootstrap 4 --bs_type vote -p bs.vote.predict
+    train-sets/ref/bs.vote.stderr
+    train-sets/ref/bs.vote.predict
 
 # Test 28: bagging -- predict with bagged classifier
--d $(ProjectDir)..\Test\train-sets\0001.dat -i bs.vote.model -p bs.prvote.predict -t
-    $(ProjectDir)..\Test\train-sets\ref/bs.prvote.stderr
-    $(ProjectDir)..\Test\train-sets\ref/bs.prvote.predict
+{VW} -d train-sets/0001.dat -i models/bs.vote.model -p bs.prvote.predict -t
+    train-sets/ref/bs.prvote.stderr
+    train-sets/ref/bs.prvote.predict
 
 # Test 29: affix features
--d $(ProjectDir)..\Test\train-sets\affix_test.dat -k -c --passes 10 --holdout_off --affix -2
-    $(ProjectDir)..\Test\train-sets\ref/affix_test.stderr
+{VW} -d train-sets/affix_test.dat -k -c --passes 10 --holdout_off --affix -2
+    train-sets/ref/affix_test.stderr
 
 # Test 30: train --l1 regularized model
--d $(ProjectDir)..\Test\train-sets\0001.dat -f mask.model --invert_hash mask.predict --l1 0.01
-    $(ProjectDir)..\Test\train-sets\ref/mask.stderr
+{VW} -d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01
+    train-sets/ref/mask.stderr
 
 # Test 31: train model using --feature_mask
--d $(ProjectDir)..\Test\train-sets\0001.dat --invert_hash remask.predict --feature_mask mask.model -f remask.model
-    $(ProjectDir)..\Test\train-sets\ref/remask.stderr
+{VW} -d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model -f models/remask.model
+    train-sets/ref/remask.stderr
 
 # Test 32: train model using --feature_mask and --initial_regressor
--d $(ProjectDir)..\Test\train-sets\0001.dat --feature_mask mask.model -i remask.model
-    $(ProjectDir)..\Test\train-sets\ref/remask.final.stderr
+{VW} -d train-sets/0001.dat --feature_mask models/mask.model -i models/remask.model
+    train-sets/ref/remask.final.stderr
 
 # Test 33: train model for topk recommender
--d $(ProjectDir)..\Test\train-sets\topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/topk-train.stderr
+{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off
+    train-sets/ref/topk-train.stderr
 
 # Test 34: train model for topk recommender
--P 1 -d $(ProjectDir)..\Test\train-sets\topk.vw -i topk.model --top 2 -p topk-rec.predict
-    $(ProjectDir)..\Test\train-sets\ref/topk-rec.stderr
-    $(ProjectDir)..\Test\train-sets\ref/topk-rec.predict
+{VW} -P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk-rec.predict
+    train-sets/ref/topk-rec.stderr
+    train-sets/ref/topk-rec.predict
 
 # Test 35: non-centered data-set where constant >> 0
 #   To test the new --constant option without which performance is very weak
--k --passes 100 -c --holdout_off --constant 1000 -d $(ProjectDir)..\Test\train-sets\big-constant.dat
-    $(ProjectDir)..\Test\train-sets\ref/big-constant.stderr
+{VW} -k --passes 100 -c --holdout_off --constant 1000 -d train-sets/big-constant.dat
+    train-sets/ref/big-constant.stderr
 
 # Test 36: new option: --progress w/ integer arg
--k -d $(ProjectDir)..\Test\train-sets\0001.dat --progress 10
-    $(ProjectDir)..\Test\train-sets\ref/progress-10.stderr
+{VW} -k -d train-sets/0001.dat --progress 10
+    train-sets/ref/progress-10.stderr
 
 # Test 37: new-option: --progress w/ floating-point arg
 #           + alternate short form (-P)
--k -d $(ProjectDir)..\Test\train-sets\0001.dat -P 0.5
-    $(ProjectDir)..\Test\train-sets\ref/progress-0.5.stderr
+{VW} -k -d train-sets/0001.dat -P 0.5
+    train-sets/ref/progress-0.5.stderr
 
 # Test 38: --nn without --quiet to avoid nn regressions
 #   (Needs to be a simple test, not one sensitive to symmetry breaking)
--k -d $(ProjectDir)..\Test\train-sets\0001.dat --nn 1
-    $(ProjectDir)..\Test\train-sets\ref/nn-1-noquiet.stderr
+{VW} -k -d train-sets/0001.dat --nn 1
+    train-sets/ref/nn-1-noquiet.stderr
 
 # Test 39: cb with dr
--d $(ProjectDir)..\Test\train-sets\rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_raw_cb_dr.stderr
-cb
-csoaa
-scorer
-gd
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
+    train-sets/ref/rcv1_raw_cb_dr.stderr
 
 # Test 40: cb with ips
--d $(ProjectDir)..\Test\train-sets\rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_raw_cb_ips.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
+    train-sets/ref/rcv1_raw_cb_ips.stderr
 
 # Test 41: cb with dm
--d $(ProjectDir)..\Test\train-sets\rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_raw_cb_dm.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
+    train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
--k -d $(ProjectDir)..\Test\train-sets\lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/lda-2pass-hang.stderr
+{VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off
+    train-sets/ref/lda-2pass-hang.stderr
 
 # Test 43: search sequence labeling, non-ldf train
--k -c -d $(ProjectDir)..\Test\train-sets\sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f sequence_data.model
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.nonldf.train.stderr
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model
+    train-sets/ref/sequence_data.nonldf.train.stderr
 
 # Test 44: search sequence labeling, non-ldf test
--d $(ProjectDir)..\Test\train-sets\sequence_data -t -i sequence_data.model -p sequence_data.nonldf.test.predict
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.nonldf.test.stderr
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.nonldf.test.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.test.predict
+    train-sets/ref/sequence_data.nonldf.test.stderr
+    train-sets/ref/sequence_data.nonldf.test.predict
 
 # Test 45: make sure that history works
--k -c -d $(ProjectDir)..\Test\train-sets\seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/search_small2.stderr
-search_task
-csoaa
-scorer
-gd
+{VW} -k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off
+    train-sets/ref/search_small2.stderr
 
 # Test 46: search sequence labeling, ldf train
--k -c -d $(ProjectDir)..\Test\train-sets\sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f sequence_data.ldf.model --noconstant
-        $(ProjectDir)..\Test\train-sets\ref/sequence_data.ldf.train.stderr
-search_task
-shared_feature_merger
-csoaa_ldf
-scorer
-gd
+{VW} -k -c -d train-sets/sequence_data --passes 20 \
+    --search_rollout ref --search_alpha 1e-8 \
+    --search_task sequence_demoldf --csoaa_ldf m --search 5 \
+    --holdout_off -f models/sequence_data.ldf.model --noconstant
+        train-sets/ref/sequence_data.ldf.train.stderr
 
 # Test 47: search sequence labeling, ldf test
--d $(ProjectDir)..\Test\train-sets\sequence_data -t -i sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.ldf.test.stderr
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.ldf.test.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant
+    train-sets/ref/sequence_data.ldf.test.stderr
+    train-sets/ref/sequence_data.ldf.test.predict
 
 # Test 48: search sequence SPAN labeling BIO, non-ldf train, no rollouts
--k -c -d $(ProjectDir)..\Test\train-sets\sequencespan_data --passes 20 --invariant \
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant \
     --search_rollout none --search_task sequencespan --search 7 \
-    --holdout_off -f sequencespan_data.model
-        $(ProjectDir)..\Test\train-sets\ref/sequencespan_data.nonldf.train.stderr
+    --holdout_off -f models/sequencespan_data.model
+        train-sets/ref/sequencespan_data.nonldf.train.stderr
 
 # Test 49: search sequence SPAN labeling BIO, non-ldf test
--d $(ProjectDir)..\Test\train-sets\sequencespan_data -t -i sequencespan_data.model -p sequencespan_data.nonldf.test.predict
-    $(ProjectDir)..\Test\train-sets\ref/sequencespan_data.nonldf.test.stderr
-    $(ProjectDir)..\Test\train-sets\ref/sequencespan_data.nonldf.test.predict
+{VW} -d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.nonldf.test.predict
+    train-sets/ref/sequencespan_data.nonldf.test.stderr
+    train-sets/ref/sequencespan_data.nonldf.test.predict
 
 # Test 50: search sequence SPAN labeling BILOU, non-ldf train
--k -c -d $(ProjectDir)..\Test\train-sets\sequencespan_data --passes 20 --invariant \
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant \
     --search_rollout ref --search_alpha 1e-8 --search_task sequencespan \
     --search_span_bilou --search 7 --holdout_off \
-    -f sequencespan_data.model
-        $(ProjectDir)..\Test\train-sets\ref/sequencespan_data.nonldf-bilou.train.stderr
+    -f models/sequencespan_data.model
+        train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr
 
 # Test 51: search sequence SPAN labeling BILOU, non-ldf test
--d $(ProjectDir)..\Test\train-sets\sequencespan_data -t --search_span_bilou -i sequencespan_data.model -p sequencespan_data.nonldf-bilou.test.predict
-    $(ProjectDir)..\Test\train-sets\ref/sequencespan_data.nonldf-bilou.test.stderr
-    $(ProjectDir)..\Test\train-sets\ref/sequencespan_data.nonldf-bilou.test.predict
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.nonldf-bilou.test.predict
+    train-sets/ref/sequencespan_data.nonldf-bilou.test.stderr
+    train-sets/ref/sequencespan_data.nonldf-bilou.test.predict
 
 # Test 52: silly test for "argmax" task
--d $(ProjectDir)..\Test\train-sets\argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/argmax_data.stderr
+{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
+    train-sets/ref/argmax_data.stderr
 
 # Test 53: (holdout-broken regression)
 # ensure we have no holdout loss of '0 h'
--k -c --passes 2 -d $(ProjectDir)..\Test\train-sets\0001.dat
-    $(ProjectDir)..\Test\train-sets\ref/holdout-loss-not-zero.stderr
+{VW} -k -c --passes 2 -d train-sets/0001.dat
+    train-sets/ref/holdout-loss-not-zero.stderr
 
 # Test 54: stagewise poly with exponent 0.25
 ####in the following stage_poly tests, there are minute differences in losses, which are not being fuzzy-diffed;
 ####thus the stderr is cleared (--quiet) and only comparing (fuzzy-diffed) predictions.
---stage_poly --sched_exponent 0.25 --batch_sz 1000 --batch_sz_no_doubling -d $(ProjectDir)..\Test\train-sets\rcv1_small.dat -p stage_poly.s025.predict --quiet
-    $(ProjectDir)..\Test\train-sets\ref/stage_poly.s025.stderr
-    $(ProjectDir)..\Test\train-sets\ref/stage_poly.s025.predict
-scorer
-stage_poly
-gd
+{VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s025.predict --quiet
+    train-sets/ref/stage_poly.s025.stderr
+    train-sets/ref/stage_poly.s025.predict
 
 # Test 55: stagewise poly with exponent 1.0
---stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d $(ProjectDir)..\Test\train-sets\rcv1_small.dat --quiet
-    $(ProjectDir)..\Test\train-sets\ref/stage_poly.s100.stderr
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat --quiet
+    train-sets/ref/stage_poly.s100.stderr
 
 # Test 56: stagewise poly with exponent 0.25 and doubling batches
---stage_poly --sched_exponent 0.25 --batch_sz 1000 -d $(ProjectDir)..\Test\train-sets\rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet
-    $(ProjectDir)..\Test\train-sets\ref/stage_poly.s025.doubling.stderr
-    $(ProjectDir)..\Test\train-sets\ref/stage_poly.s025.doubling.predict
+{VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet
+    train-sets/ref/stage_poly.s025.doubling.stderr
+    train-sets/ref/stage_poly.s025.doubling.predict
 
 # Test 57: stagewise poly with exponent 1.0 and doubling batches
---stage_poly --sched_exponent 1.0 --batch_sz 1000 -d $(ProjectDir)..\Test\train-sets\rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet
-    $(ProjectDir)..\Test\train-sets\ref/stage_poly.s100.doubling.stderr
-    $(ProjectDir)..\Test\train-sets\ref/stage_poly.s100.doubling.predict
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet
+    train-sets/ref/stage_poly.s100.doubling.stderr
+    train-sets/ref/stage_poly.s100.doubling.predict
 
 # Test 58: library test, train the initial model
--c -k -d $(ProjectDir)..\Test\train-sets\library_train -f library_train.w -q st --passes 100 --hash all --noconstant --csoaa_ldf m --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/library_train.stdout
-    $(ProjectDir)..\Test\train-sets\ref/library_train.stderr
+{VW} -c -k -d train-sets/library_train -f models/library_train.w -q st --passes 100 --hash all --noconstant --csoaa_ldf m --holdout_off
+    train-sets/ref/library_train.stdout
+    train-sets/ref/library_train.stderr
 
 # Test 59: cb_adf, sharedfeatures
- --dsjson --cb_adf -d $(ProjectDir)..\Test\train-sets\no_shared_features.json
-    $(ProjectDir)..\Test\train-sets\ref/no_shared_features.stderr
+{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+    train-sets/ref/no_shared_features.stderr
 
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
 echo "" | {VW}
-    $(ProjectDir)..\Test\train-sets\ref/empty-set.stderr
+    train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
 ./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
---ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d $(ProjectDir)..\Test\train-sets\rcv1_smaller.dat
-    $(ProjectDir)..\Test\train-sets\ref/ksvm_train.linear.stderr
-    $(ProjectDir)..\Test\train-sets\ref/ksvm_train.linear.predict
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.linear.stderr
+    train-sets/ref/ksvm_train.linear.predict
 
 # Test 63: SVM polynomial kernel
---ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p ksvm_train.poly.predict -d $(ProjectDir)..\Test\train-sets\rcv1_smaller.dat
-    $(ProjectDir)..\Test\train-sets\ref/ksvm_train.poly.stderr
-    $(ProjectDir)..\Test\train-sets\ref/ksvm_train.poly.predict
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p ksvm_train.poly.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.poly.stderr
+    train-sets/ref/ksvm_train.poly.predict
 
 # Test 64: SVM rbf kernel
---ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p ksvm_train.rbf.predict -d $(ProjectDir)..\Test\train-sets\rcv1_smaller.dat
-    $(ProjectDir)..\Test\train-sets\ref/ksvm_train.rbf.stderr
-    $(ProjectDir)..\Test\train-sets\ref/ksvm_train.rbf.predict
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p ksvm_train.rbf.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.rbf.stderr
+    train-sets/ref/ksvm_train.rbf.predict
 
 # Test 65: Run search (dagger) on an entity-relation recognitions data set,
 # er_small, for 6 passes with constraints
--k -c -d $(ProjectDir)..\Test\train-sets\er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8
-    $(ProjectDir)..\Test\train-sets\ref/search_er.stderr
+{VW} -k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8
+    train-sets/ref/search_er.stderr
 
 # Test 66: Train a depenency parser with search (dagger)
 # on wsj_small.dparser.vw.gz for 6 passes
--k -c -d $(ProjectDir)..\Test\train-sets\wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout oracle --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/search_dep_parser.stderr
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12  --search_alpha 1e-4 --search_rollout oracle --holdout_off
+    train-sets/ref/search_dep_parser.stderr
 
 # Test 67: classification with data from dictionaries
 # (eg embeddings or gazetteers) -- note that this is impossible without
 # dictionaries because --ignore w; also test to make sure gzipped dicts
 # work and dictionary redundancy checking works
--k -c -d $(ProjectDir)..\Test\train-sets\dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets
-    $(ProjectDir)..\Test\train-sets\ref/dictionary_test.stderr
+{VW} -k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets
+    train-sets/ref/dictionary_test.stderr
 
 # Test 68: Search for multiclass classification
--k -c -d $(ProjectDir)..\Test\train-sets\multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/search_multiclass.stderr
+{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
+    train-sets/ref/search_multiclass.stderr
 
 # Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
--d $(ProjectDir)..\Test\train-sets\sequence_data -t -i sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.nonldf.beam.test.stderr
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.nonldf.beam.test.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
+    train-sets/ref/sequence_data.nonldf.beam.test.stderr
+    train-sets/ref/sequence_data.nonldf.beam.test.predict
 
 # Test 70: (see Test 46/47) search sequence labeling, ldf test, with selective branching
--d $(ProjectDir)..\Test\train-sets\sequence_data -t -i sequence_data.ldf.model -p sequence_data.ldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.ldf.beam.test.stderr
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.ldf.beam.test.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant
+    train-sets/ref/sequence_data.ldf.beam.test.stderr
+    train-sets/ref/sequence_data.ldf.beam.test.predict
 
 # Test 71: autolink
--d $(ProjectDir)..\Test\train-sets\0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict
-    $(ProjectDir)..\Test\train-sets\ref/0002.autolink.stderr
-    $(ProjectDir)..\Test\train-sets\ref/0002.autolink.predict
+{VW} -d train-sets/0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict
+    train-sets/ref/0002.autolink.stderr
+    train-sets/ref/0002.autolink.predict
 
 # Test 72: train FTRL-Proximal
--k -d $(ProjectDir)..\Test\train-sets\0001.dat -f 0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
-    $(ProjectDir)..\Test\train-sets\ref/0001_ftrl.stderr
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2
+    train-sets/ref/0001_ftrl.stderr
 
 # Test 73: test FTRL-Proximal
--k -t -d $(ProjectDir)..\Test\train-sets\0001.dat -i 0001_ftrl.model -p 0001_ftrl.predict
+{VW} -k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict
     test-sets/ref/0001_ftrl.stderr
     pred-sets/ref/0001_ftrl.predict
 
 # Test 74: cb evaluation
--d $(ProjectDir)..\Test\train-sets\rcv1_cb_eval --cb 2 --eval
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_cb_eval.stderr
+{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
+    train-sets/ref/rcv1_cb_eval.stderr
 
 # Test 75: Log_multi
---log_multi 10 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/log_multi.stderr
+{VW} --log_multi 10 -d train-sets/multiclass
+    train-sets/ref/log_multi.stderr
 
 # Test 76: cbify, epsilon-greedy
---cbify 10 --epsilon 0.05 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/cbify_epsilon.stderr
+{VW} --cbify 10 --epsilon 0.05 -d train-sets/multiclass
+    train-sets/ref/cbify_epsilon.stderr
 
 # Test 77: cbify, tau first
---cbify 10 --first 5 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/cbify_first.stderr
+{VW} --cbify 10 --first 5 -d train-sets/multiclass
+    train-sets/ref/cbify_first.stderr
 
 # Test 78: cbify, bag
---cbify 10 --bag 7 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/cbify_bag.stderr
+{VW} --cbify 10 --bag 7 -d train-sets/multiclass
+    train-sets/ref/cbify_bag.stderr
 
 # Test 79: cbify, cover
---cbify 10 --cover 3 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/cbify_cover.stderr
+{VW} --cbify 10 --cover 3 -d train-sets/multiclass
+    train-sets/ref/cbify_cover.stderr
 
 # Test 80: lrq empty namespace
---lrq aa3 -d $(ProjectDir)..\Test\train-sets\0080.dat
-    $(ProjectDir)..\Test\train-sets\ref/0080.stderr
+{VW} --lrq aa3 -d train-sets/0080.dat
+    train-sets/ref/0080.stderr
 
 # Test 81: train FTRL-PiSTOL
--k -d $(ProjectDir)..\Test\train-sets\0001.dat -f ftrl_pistol.model --passes 1 --pistol
-    $(ProjectDir)..\Test\train-sets\ref/ftrl_pistol.stderr
+{VW} -k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --pistol
+    train-sets/ref/ftrl_pistol.stderr
 
 # Test 82: test FTRL-PiSTOL
--k -t -d $(ProjectDir)..\Test\train-sets\0001.dat -i ftrl_pistol.model -p ftrl_pistol.predict
+{VW} -k -t -d train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict
     test-sets/ref/ftrl_pistol.stderr
     pred-sets/ref/ftrl_pistol.predict
 
 # Test 83: check redefine functionality
--k -d $(ProjectDir)..\Test\train-sets\0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy
-    $(ProjectDir)..\Test\train-sets\ref/redefine.stderr
+{VW} -k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy
+    train-sets/ref/redefine.stderr
 
 # Test 84: check cb_adf
---cb_adf -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_mtr.stderr
+{VW} --cb_adf -d train-sets/cb_test.ldf --noconstant
+    train-sets/ref/cb_adf_mtr.stderr
 
 # Test 85: check multilabel_oaa
---multilabel_oaa 10 -d $(ProjectDir)..\Test\train-sets\multilabel -p multilabel.predict
-    $(ProjectDir)..\Test\train-sets\ref/multilabel.stderr
+{VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel.predict
+    train-sets/ref/multilabel.stderr
     pred-sets/ref/multilabel.predict
 
 # Test 86: check --csoaa_rank on csoaa_ldf
---csoaa_ldf multiline --csoaa_rank -d $(ProjectDir)..\Test\train-sets\cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/multilabel_ldf.stderr
+{VW} --csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant
+    train-sets/ref/multilabel_ldf.stderr
     pred-sets/ref/multilabel_ldf.predict
 
 # Test 87: check --rank_all on csoaa_ldf
---cb_adf --rank_all -d $(ProjectDir)..\Test\train-sets\cb_test.ldf -p cb_adf_rank.predict --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_rank.stderr
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_rank.predict --noconstant
+    train-sets/ref/cb_adf_rank.stderr
     pred-sets/ref/cb_adf_rank.predict
 
 # Test 88: named labels at training time
---named_labels det,noun,verb --oaa 3 -d $(ProjectDir)..\Test\train-sets\test_named  -k -c --passes 10 --holdout_off -f test_named.model
-    $(ProjectDir)..\Test\train-sets\ref/test_named_train.stderr
-oaa
-scorer
-gd
+{VW} --named_labels det,noun,verb --oaa 3 -d train-sets/test_named  -k -c --passes 10 --holdout_off -f models/test_named.model
+    train-sets/ref/test_named_train.stderr
 
 # Test 89: named labels at prediction
--i test_named.model -t -d $(ProjectDir)..\Test\train-sets\test_named -p test_named.predict
-    $(ProjectDir)..\Test\train-sets\ref/test_named_test.stderr
+{VW} -i models/test_named.model -t -d train-sets/test_named -p test_named.predict
+    train-sets/ref/test_named_test.stderr
     pred-sets/ref/test_named.predict
 
 # Test 90: named labels at training time (csoaa)
---named_labels det,noun,verb --csoaa 3 -d $(ProjectDir)..\Test\train-sets\test_named_csoaa  -k -c --passes 10 --holdout_off -f test_named_csoaa.model
-    $(ProjectDir)..\Test\train-sets\ref/test_named_csoaa_train.stderr
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model
+    train-sets/ref/test_named_csoaa_train.stderr
 
 # Test 91: named labels at prediction (csoaa)
--i test_named_csoaa.model -t -d $(ProjectDir)..\Test\train-sets\test_named_csoaa -p test_named_csoaa.predict
-    $(ProjectDir)..\Test\train-sets\ref/test_named_csoaa_test.stderr
+{VW} -i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.predict
+    train-sets/ref/test_named_csoaa_test.stderr
     pred-sets/ref/test_named_csoaa.predict
 
 # Test 92: check -q :: and -oaa inverse hash
 printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
-    --oaa 3 -q :: --invert_hash inv_hash.cmp && \
+    {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp && \
         tail -n +2 inv_hash.cmp > inv_hash.cmp.new && \
             rm inv_hash.cmp && \
                 mv inv_hash.cmp.new inv_hash.cmp
-    $(ProjectDir)..\Test\train-sets\ref/inv_hash.stderr
+    train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
 
 # Test 93:  check cb_adf with doubly robust option
---cb_adf --rank_all -d $(ProjectDir)..\Test\train-sets\cb_test.ldf -p cb_adf_dr.predict --cb_type dr
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_dr.stderr
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr
+    train-sets/ref/cb_adf_dr.stderr
     pred-sets/ref/cb_adf_dr.predict
-shared_feature_merger
-cb_adf
-csoaa_ldf
-scorer
-gd
 
 # Test 94: experience replay version of test 1
--k -l 20 --initial_t 128000 --power_t 1 -d $(ProjectDir)..\Test\train-sets\0001.dat \
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
     -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off --replay_b 100
-        $(ProjectDir)..\Test\train-sets\ref/0001-replay.stderr
+        train-sets/ref/0001-replay.stderr
 
 # Test 95: named labels at training time (csoaa) with experience replay
---named_labels det,noun,verb --csoaa 3 \
-    -d $(ProjectDir)..\Test\train-sets\test_named_csoaa -k -c --passes 10 --holdout_off \
-    -f test_named_csoaa.model --replay_c 100
-        $(ProjectDir)..\Test\train-sets\ref/test_named_csoaa_train-replay.stderr
+{VW} --named_labels det,noun,verb --csoaa 3 \
+    -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off \
+    -f models/test_named_csoaa.model --replay_c 100
+        train-sets/ref/test_named_csoaa_train-replay.stderr
 
 # Test 96: backwards compatibility
 printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
-    -i simple_model --invert_hash inv_hash.cmp && \
+    {VW} -i simple_model --invert_hash inv_hash.cmp && \
         tail -n +2 inv_hash.cmp
    test-sets/ref/backwards.stderr
    test-sets/ref/backwards.stdout
 
 # Test 97:
--d $(ProjectDir)..\Test\train-sets\0001.dat -f 0097.model --save_resume
-        $(ProjectDir)..\Test\train-sets\ref/0097.stderr
+{VW} -d train-sets/0001.dat -f models/0097.model --save_resume
+        train-sets/ref/0097.stderr
 
 # Test 98: checking predictions as well
---preserve_performance_counters -d $(ProjectDir)..\Test\train-sets\0001.dat -i 0097.model -p 0098.predict
+{VW} --preserve_performance_counters -d train-sets/0001.dat -i models/0097.model -p 0098.predict
     test-sets/ref/0098.stderr
     pred-sets/ref/0098.predict
 
 # Test 99: checking predictions with testing
--d $(ProjectDir)..\Test\train-sets\0001.dat -i 0097.model -p 0099.predict
+{VW} -d train-sets/0001.dat -i models/0097.model -p 0099.predict
     test-sets/ref/0099.stderr
     pred-sets/ref/0099.predict
 
 # Test 100: action costs, no rollout
--k -c -d $(ProjectDir)..\Test\train-sets\sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/sequence_data.ctg.train.stderr
+{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off
+    train-sets/ref/sequence_data.ctg.train.stderr
 
 # Test 101: active cover
---loss_function logistic --binary --active_cover -d $(ProjectDir)..\Test\train-sets\rcv1_mini.dat -f active_cover.model
-    $(ProjectDir)..\Test\train-sets\ref/active_cover.stderr
+{VW} --loss_function logistic --binary --active_cover -d train-sets/rcv1_mini.dat -f models/active_cover.model
+    train-sets/ref/active_cover.stderr
 
 # Test 102: active cover (predict)
--i active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict
+{VW} -i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict
     test-sets/ref/active_cover.stderr
     pred-sets/ref/active_cover.predict
 
 # Test 103: active cover oracular
---loss_function logistic --binary --active_cover --oracular -d ./$(ProjectDir)..\Test\train-sets\rcv1_small.dat
-    $(ProjectDir)..\Test\train-sets\ref/active_cover_oracular.stderr
+{VW} --loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat
+    train-sets/ref/active_cover_oracular.stderr
 
 # Test 104: check cb_adf
---cb_adf -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --cb_type mtr --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_mtr.stderr
+{VW} --cb_adf -d train-sets/cb_test.ldf --cb_type mtr --noconstant
+    train-sets/ref/cb_adf_mtr.stderr
 
 # Test 105: train FTRL-Proximal early stopping
--k -d $(ProjectDir)..\Test\train-sets\0001.dat -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 3.0 --ftrl_beta 0 --l1 0.9 --cache
-    $(ProjectDir)..\Test\train-sets\ref/0001_ftrl_holdout.stderr
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 3.0 --ftrl_beta 0 --l1 0.9 --cache
+    train-sets/ref/0001_ftrl_holdout.stderr
 
 # Test 106: test FTRL-Proximal early stopping prediction
--k -t -d $(ProjectDir)..\Test\train-sets\0001.dat -i 0001_ftrl.model -p 0001_ftrl_holdout.predict
+{VW} -k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict
     test-sets/ref/0001_ftrl_holdout_106.stderr
     pred-sets/ref/0001_ftrl_holdout.predict
 
 # Test 107: train FTRL-Proximal no early stopping
--k -d $(ProjectDir)..\Test\train-sets\0001.dat -f 0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/0001_ftrl_holdout_off.stderr
+{VW} -k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off
+    train-sets/ref/0001_ftrl_holdout_off.stderr
 
 # Test 108: test FTRL-Proximal no early stopping
--k -t -d $(ProjectDir)..\Test\train-sets\0001.dat -i 0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off
+{VW} -k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off
     test-sets/ref/0001_ftrl_holdout_off.stderr
     pred-sets/ref/0001_ftrl_holdout_off.predict
 
 # Test 109: --probabilities --oaa
--d $(ProjectDir)..\Test\train-sets\probabilities.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict
-   $(ProjectDir)..\Test\train-sets\ref/oaa_probabilities.stderr
+{VW} -d train-sets/probabilities.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict
+   train-sets/ref/oaa_probabilities.stderr
    pred-sets/ref/oaa_probabilities.predict
 
 # Test 110: --probabilities --csoaa_ldf=mc
--d $(ProjectDir)..\Test\train-sets\cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict
-   $(ProjectDir)..\Test\train-sets\ref/csoaa_ldf_probabilities.stderr
+{VW} -d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict
+   train-sets/ref/csoaa_ldf_probabilities.stderr
    pred-sets/ref/csoaa_ldf_probabilities.predict
 
 # Test 111: Train a depenency parser with neural network and one_learner approach (lols)
--k -c -d $(ProjectDir)..\Test\train-sets\wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8
-    $(ProjectDir)..\Test\train-sets\ref/search_dep_parser_one_learner.stderr
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8
+    train-sets/ref/search_dep_parser_one_learner.stderr
 
 # Test 112: Train a depenency parser with cost_to_go
--k -c -d $(ProjectDir)..\Test\train-sets\wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go
-    $(ProjectDir)..\Test\train-sets\ref/search_dep_parser_cost_to_go.stderr
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go
+    train-sets/ref/search_dep_parser_cost_to_go.stderr
 
 # Test 113: Predictions with confidences
---confidence -d ./$(ProjectDir)..\Test\train-sets\rcv1_micro.dat --initial_t 0.1 -p confidence.preds
-    $(ProjectDir)..\Test\train-sets\ref/confidence.stderr
+{VW} --confidence -d ./train-sets/rcv1_micro.dat --initial_t 0.1 -p confidence.preds
+    train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
 
 # Test 114: Over size example test
--d $(ProjectDir)..\Test\train-sets\x.txt
-    $(ProjectDir)..\Test\train-sets\ref/oversize.stderr
+{VW} -d train-sets/x.txt
+    train-sets/ref/oversize.stderr
 
 # Test 115: Long Line test
--d $(ProjectDir)..\Test\train-sets\long_line -c -k
-    $(ProjectDir)..\Test\train-sets\ref/long_line.stderr
+{VW} -d train-sets/long_line -c -k
+    train-sets/ref/long_line.stderr
 
 # Test 116: MWT test
--d $(ProjectDir)..\Test\train-sets\cb_eval --multiworld_test f -p cb_eval.preds
-    $(ProjectDir)..\Test\train-sets\ref/cb_eval.stderr
+{VW} -d train-sets/cb_eval --multiworld_test f -p cb_eval.preds
+    train-sets/ref/cb_eval.stderr
     pred-sets/ref/cb_eval.preds
 
 # Test 117: Audit regressor of ftrl model (from test #107)
--d $(ProjectDir)..\Test\train-sets\0001.dat -i 0001_ftrl.model  --audit_regressor ftrl.audit_regr
-    $(ProjectDir)..\Test\train-sets\ref/ftrl_audit_regr.stderr
-    $(ProjectDir)..\Test\train-sets\ref/ftrl.audit_regr
+{VW} -d train-sets/0001.dat -i models/0001_ftrl.model  --audit_regressor ftrl.audit_regr
+    train-sets/ref/ftrl_audit_regr.stderr
+    train-sets/ref/ftrl.audit_regr
 
 # Test 118: Audit regressor of csoaa model (from test #95)
--d $(ProjectDir)..\Test\train-sets\test_named_csoaa -i test_named_csoaa.model --audit_regressor csoaa.audit_regr
-    $(ProjectDir)..\Test\train-sets\ref/csoaa_audit_regr.stderr
-    $(ProjectDir)..\Test\train-sets\ref/csoaa.audit_regr
+{VW} -d train-sets/test_named_csoaa -i models/test_named_csoaa.model --audit_regressor csoaa.audit_regr
+    train-sets/ref/csoaa_audit_regr.stderr
+    train-sets/ref/csoaa.audit_regr
 
 # Test 119: MWT learn test
--d $(ProjectDir)..\Test\train-sets\cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
-    $(ProjectDir)..\Test\train-sets\ref/mwt_learn.stderr
+{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
+    train-sets/ref/mwt_learn.stderr
     pred-sets/ref/mwt_learn.preds
 
 # Test 120: MWT learn exclude test
--d $(ProjectDir)..\Test\train-sets\cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
-    $(ProjectDir)..\Test\train-sets\ref/mwt_learn_exclude.stderr
+{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
+    train-sets/ref/mwt_learn_exclude.stderr
     pred-sets/ref/mwt_learn_exclude.preds
 
 # Test 121: cb_explore
--d $(ProjectDir)..\Test\train-sets\rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_raw_cb_explore.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds
+    train-sets/ref/rcv1_raw_cb_explore.stderr
     pred-sets/ref/rcv1_raw_cb_explore.preds
 
 # Test 122: Predictions with confidences after training
---confidence --confidence_after_training --initial_t 0.1 -d ./$(ProjectDir)..\Test\train-sets\rcv1_small.dat -p confidence_after_training.preds
-    $(ProjectDir)..\Test\train-sets\ref/confidence_after_training.stderr
+{VW} --confidence --confidence_after_training --initial_t 0.1 -d ./train-sets/rcv1_small.dat -p confidence_after_training.preds
+    train-sets/ref/confidence_after_training.stderr
     pred-sets/ref/confidence_after_training.preds
 
 # Test 123: cb_eval save/load #1
--d $(ProjectDir)..\Test\train-sets\cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
-    $(ProjectDir)..\Test\train-sets\ref/cb_eval1.stderr
+{VW} -d train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
+    train-sets/ref/cb_eval1.stderr
     pred-sets/ref/cb_eval1.preds
 
 # Test 124: cb_eval save/load #2
--d $(ProjectDir)..\Test\train-sets\cb_eval2 -i mwt.model -p cb_eval2.preds
-    $(ProjectDir)..\Test\train-sets\ref/cb_eval2.stderr
+{VW} -d train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
+    train-sets/ref/cb_eval2.stderr
     pred-sets/ref/cb_eval2.preds
 
 # Test 125: arc-eager trasition-based dependency parser
--k -c -d $(ProjectDir)..\Test\train-sets\wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 26 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --search_history_length 3 --root_label 8 --transition_system 2 --passes 8
-    $(ProjectDir)..\Test\train-sets\ref/search_dep_parser_arceager.stderr
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 26 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --search_history_length 3 --root_label 8 --transition_system 2 --passes 8
+    train-sets/ref/search_dep_parser_arceager.stderr
 
 # Test 126: recall tree hello world
---quiet -d $(ProjectDir)..\Test\train-sets\gauss1k.dat.gz -f recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic
+{VW} --quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic
 
 # Test 127: recall_tree hello world predict-from-saved-model
--t -d $(ProjectDir)..\Test\train-sets\gauss1k.dat.gz -i recall_tree_g100.model
-    $(ProjectDir)..\Test\train-sets\ref/recall_tree_gauss1k.stderr
-    $(ProjectDir)..\Test\train-sets\ref/recall_tree_gauss1k.stdout
+{VW} -t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model
+    train-sets/ref/recall_tree_gauss1k.stderr
+    train-sets/ref/recall_tree_gauss1k.stdout
 
 # Test 128: cb_explore_adf with epsilon-greedy exploration
---cb_explore_adf --epsilon 0.1 -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant -p cbe_adf_epsilon.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_epsilon.stderr
+{VW} --cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict
+    train-sets/ref/cbe_adf_epsilon.stderr
     pred-sets/ref/cbe_adf_epsilon.predict
 
 # Test 129: cb_explore_adf with softmax exploration
---cb_explore_adf --softmax --lambda 1 -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant -p cbe_adf_softmax.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_softmax.stderr
+{VW} --cb_explore_adf --softmax --lambda 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict
+    train-sets/ref/cbe_adf_softmax.stderr
     pred-sets/ref/cbe_adf_softmax.predict
 
 # Test 130: cb_explore_adf with bagging exploration
---cb_explore_adf --bag 3 -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant -p cbe_adf_bag.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_bag.stderr
+{VW} --cb_explore_adf --bag 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_bag.predict
+    train-sets/ref/cbe_adf_bag.stderr
     pred-sets/ref/cbe_adf_bag.predict
 
 # Test 131: cb_explore_adf with explore-first exploration
---cb_explore_adf --first 2 -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant -p cbe_adf_first.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_first.stderr
+{VW} --cb_explore_adf --first 2 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_first.predict
+    train-sets/ref/cbe_adf_first.stderr
     pred-sets/ref/cbe_adf_first.predict
 
 # Test 132: train a poisson model
---quiet -d $(ProjectDir)..\Test\train-sets\poisson.dat -f poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict
-    $(ProjectDir)..\Test\train-sets\ref/poisson.train.stderr
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict
+    train-sets/ref/poisson.train.stderr
     pred-sets/ref/poisson.train.predict
 
 # Test 133: train a poisson model without invariant updates
---quiet -d $(ProjectDir)..\Test\train-sets\poisson.dat -f poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict
-    $(ProjectDir)..\Test\train-sets\ref/poisson.train.normalized.stderr
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict
+    train-sets/ref/poisson.train.normalized.stderr
     pred-sets/ref/poisson.train.normalized.predict
 
 # Test 134: second order online learning
---OjaNewton -d $(ProjectDir)..\Test\train-sets\0001.dat -f second_order.model -p second_order.predict
-    $(ProjectDir)..\Test\train-sets\ref/second_order.stderr
+{VW} --OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict
+    train-sets/ref/second_order.stderr
     pred-sets/ref/second_order.predict
-scorer
-OjaNewton
 
 # Test 135: cb explore adf
-    -d $(ProjectDir)..\Test\train-sets\cb_adf_crash_1.data -f cb_adf_crash.model --cb_explore_adf --epsilon 0.05
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_crash1.stderr
-shared_feature_merger
-cb_explore_adf
-cb_adf
-csoaa_ldf
-scorer
-gd
+{VW} -d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05
+    train-sets/ref/cb_adf_crash1.stderr
 
 # Test 136: cb explore adf predict
--d $(ProjectDir)..\Test\train-sets\cb_adf_crash_2.data -i cb_adf_crash.model -t
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_crash2.stderr
+{VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t
+    train-sets/ref/cb_adf_crash2.stderr
 
 # Test 137: Fix for regression introduced by badeedb.
 # Ensure audit output continues to work correctly in the presence of anon features.
 # Github issue 1038 (https://github.com/JohnLangford/vowpal_wabbit/issues/1038)
---audit -d $(ProjectDir)..\Test\train-sets\audit.dat --noconstant
-    $(ProjectDir)..\Test\train-sets\ref/audit.stderr
-    $(ProjectDir)..\Test\train-sets\ref/audit.stdout
+{VW} --audit -d train-sets/audit.dat --noconstant
+    train-sets/ref/audit.stderr
+    train-sets/ref/audit.stdout
 
 # Test 138: cb_explore_adf with cover exploration
---cb_explore_adf --cover 3 -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant -p cbe_adf_cover.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_cover.stderr
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover.predict
+    train-sets/ref/cbe_adf_cover.stderr
     pred-sets/ref/cbe_adf_cover.predict
 
 # Test 139: cb_explore_adf with cover exploration + double robust
---cb_explore_adf --cover 3 --cb_type dr -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_cover_dr.stderr
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict
+    train-sets/ref/cbe_adf_cover_dr.stderr
     pred-sets/ref/cbe_adf_cover_dr.predict
 
 # Test 140: marginal features
---marginal f  -d $(ProjectDir)..\Test\train-sets\marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 -f marginal_model
-    $(ProjectDir)..\Test\train-sets\ref/marginal.stderr
+{VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 -f marginal_model
+    train-sets/ref/marginal.stderr
 
 # Test 141: marginal features test
--i marginal_model  -d $(ProjectDir)..\Test\train-sets\marginal_features --noconstant -t
-    $(ProjectDir)..\Test\train-sets\ref/marginal_test.stderr
+{VW} -i marginal_model  -d train-sets/marginal_features --noconstant -t
+    train-sets/ref/marginal_test.stderr
 
 # Test 142: Evaluate exploration on contextal bandit data
---explore_eval --epsilon 0.2 -d $(ProjectDir)..\Test\train-sets\cb_test.ldf --noconstant -p explore_eval.predict
-    $(ProjectDir)..\Test\train-sets\ref/explore_eval.stderr
+{VW} --explore_eval --epsilon 0.2 -d train-sets/cb_test.ldf --noconstant -p explore_eval.predict
+    train-sets/ref/explore_eval.stderr
     pred-sets/ref/explore_eval.predict
 
 # Test 143: Test 1 using JSON
--k -l 20 --initial_t 128000 --power_t 1 -d $(ProjectDir)..\Test\train-sets\0001.json --json \
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
     -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
-        $(ProjectDir)..\Test\train-sets\ref/0001.json.stderr
+        train-sets/ref/0001.json.stderr
 
 # Test 144: cb_explore_adf with cover exploration + double robust
---cb_explore_adf --cover 3 --cb_type dr -d $(ProjectDir)..\Test\train-sets\cb_test.json --json --noconstant -p cbe_adf_cover_dr.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_cover_dr.json.stderr
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --noconstant -p cbe_adf_cover_dr.predict
+    train-sets/ref/cbe_adf_cover_dr.json.stderr
     pred-sets/ref/cbe_adf_cover_dr.predict
 
 # Test 145: mix labeled and unlabeled examples with --bootstrap bug:
 # https://github.com/JohnLangford/vowpal_wabbit/issues/1111
---bootstrap 2 -d $(ProjectDir)..\Test\train-sets\labeled-unlabeled-mix.dat
-    $(ProjectDir)..\Test\train-sets\ref/labeled-unlabeled-mix.stderr
+{VW} --bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat
+    train-sets/ref/labeled-unlabeled-mix.stderr
 
 # Test 146: cb_explore_adf with cover exploration + double robust (using more than 256 examples)
---cb_explore_adf --cover 3 --cb_type dr -d $(ProjectDir)..\Test\train-sets\cb_test256.json --json --noconstant -p cbe_adf_cover_dr256.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_cover_dr256.json.stderr
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --noconstant -p cbe_adf_cover_dr256.predict
+    train-sets/ref/cbe_adf_cover_dr256.json.stderr
     pred-sets/ref/cbe_adf_cover_dr256.predict
 
 # Test 147: --scores --oaa
--d $(ProjectDir)..\Test\train-sets\probabilities.dat --scores --oaa=4 -p oaa_scores.predict
-   $(ProjectDir)..\Test\train-sets\ref/oaa_scores.stderr
+{VW} -d train-sets/probabilities.dat --scores --oaa=4 -p oaa_scores.predict
+   train-sets/ref/oaa_scores.stderr
    pred-sets/ref/oaa_scores.predict
 
 # Test 148:  check cb_adf with direct method option
---cb_adf -d $(ProjectDir)..\Test\train-sets\cb_test.ldf -p cb_adf_dm.predict --cb_type dm
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_dm.stderr
+{VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm
+    train-sets/ref/cb_adf_dm.stderr
     pred-sets/ref/cb_adf_dm.predict
 
 # Test 149: initial_weight option is used
-echo "1 | feature:1" | -a --initial_weight 0.1 --initial_t 0.3
-    $(ProjectDir)..\Test\train-sets\ref/initial_weight.stderr
-    $(ProjectDir)..\Test\train-sets\ref/initial_weight.stdout
+echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
+    train-sets/ref/initial_weight.stderr
+    train-sets/ref/initial_weight.stdout
 
 # Test 150:  Test --sparse_weights with 148
---cb_adf -d $(ProjectDir)..\Test\train-sets\cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
-    $(ProjectDir)..\Test\train-sets\ref/sparse.stderr
+{VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
+    train-sets/ref/sparse.stderr
 
 # Test 151: lrqfa
---lrqfa aa3 -d $(ProjectDir)..\Test\train-sets\0080.dat
-    $(ProjectDir)..\Test\train-sets\ref/0151.stderr
+{VW} --lrqfa aa3 -d train-sets/0080.dat
+    train-sets/ref/0151.stderr
 
 # Test 152: daemon on the foreground test
 ./daemon-test.sh --foreground
     test-sets/ref/vw-daemon.stdout
 
 # Test 153: marginal features
---marginal f  -d $(ProjectDir)..\Test\train-sets\marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100  --compete
-    $(ProjectDir)..\Test\train-sets\ref/marginal_compete.stderr
+{VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100  --compete
+    train-sets/ref/marginal_compete.stderr
 
 # Test 154: ignore linear
--k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d $(ProjectDir)..\Test\train-sets\0154.dat --noconstant --ignore_linear x -q xx
-    $(ProjectDir)..\Test\train-sets\ref/ignore_linear.stderr
+{VW} -k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx
+    train-sets/ref/ignore_linear.stderr
 
 # Test 155: checking audit_regressor with --save_resume model
--d $(ProjectDir)..\Test\train-sets\0001.dat -i 0097.model --save_resume --audit_regressor 0097.audit_regr
-    $(ProjectDir)..\Test\train-sets\ref/0097.audit_regr.stderr
-    $(ProjectDir)..\Test\train-sets\ref/0097.audit_regr
+{VW} -d train-sets/0001.dat -i models/0097.model --save_resume --audit_regressor 0097.audit_regr
+    train-sets/ref/0097.audit_regr.stderr
+    train-sets/ref/0097.audit_regr
 
 # Test 156: --cubic regression verification
 ./cubic-test.sh ${VW}
 
 # Test 157: save_resume without --preserve_performce_counters does not alter performance counters over multiple passes
--d $(ProjectDir)..\Test\train-sets\0001.dat -f sr.model  --passes 2 -c -k  -P 50 --save_resume
-    $(ProjectDir)..\Test\train-sets\ref/157.stderr
+{VW} -d train-sets/0001.dat -f models/sr.model  --passes 2 -c -k  -P 50 --save_resume
+    train-sets/ref/157.stderr
 
 # Test 158: test decision service json parsing
--d $(ProjectDir)..\Test\train-sets\decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict
-    $(ProjectDir)..\Test\train-sets\ref/cbe_adf_dsjson.stderr
+{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict
+    train-sets/ref/cbe_adf_dsjson.stderr
     pred-sets/ref/cbe_adf_dsjson.predict
 
 # Test 159: test --bootstrap & --binary interaction
--d $(ProjectDir)..\Test\train-sets\rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
-    $(ProjectDir)..\Test\train-sets\ref/bootstrap_and_binary.stderr
+{VW} -d train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
+    train-sets/ref/bootstrap_and_binary.stderr
 
 # Test 160: test --bootstrap & --oaa interaction
 # (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)
--d $(ProjectDir)..\Test\train-sets\multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
-    $(ProjectDir)..\Test\train-sets\ref/bootstrap_and_oaa.stderr
+{VW} -d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
+    train-sets/ref/bootstrap_and_oaa.stderr
 
 # Test 161: --classweight
--d $(ProjectDir)..\Test\train-sets\0001.dat --classweight 1:2,0:3.1,-1:5
-    $(ProjectDir)..\Test\train-sets\ref/classweight.stderr
+{VW} -d train-sets/0001.dat --classweight 1:2,0:3.1,-1:5
+    train-sets/ref/classweight.stderr
 
 # Test 162: --classweight with multiclass
---oaa 10 -d $(ProjectDir)..\Test\train-sets\multiclass --classweight 4:0,7:0.1,2:10 --classweight 10:3
-    $(ProjectDir)..\Test\train-sets\ref/classweight_multiclass.stderr
+{VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10 --classweight 10:3
+    train-sets/ref/classweight_multiclass.stderr
 
 # Test 163: --classweight with multiclass
---recall_tree 10 -d $(ProjectDir)..\Test\train-sets\multiclass --classweight 4:0,7:0.1 --classweight 2:10,10:3
-    $(ProjectDir)..\Test\train-sets\ref/classweight_recall_tree.stderr
+{VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1 --classweight 2:10,10:3
+    train-sets/ref/classweight_recall_tree.stderr
 
 # Test 164: cs_active low mellowness
---cs_active 3 -d ../test/$(ProjectDir)..\Test\train-sets\cs_test --cost_max 2 --mellowness 0.01 --simulation --adax
-    $(ProjectDir)..\Test\train-sets\ref/cs_active_0.01.stderr
+{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax
+    train-sets/ref/cs_active_0.01.stderr
 
 # Test 165: cs_active high mellowness
---cs_active 3 -d ../test/$(ProjectDir)..\Test\train-sets\cs_test --cost_max 2 --mellowness 1.0 --simulation --adax
-    $(ProjectDir)..\Test\train-sets\ref/cs_active_1.0.stderr
+{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax
+    train-sets/ref/cs_active_1.0.stderr
 
 # Test 166: hash_seed train
---hash_seed 5 -d $(ProjectDir)..\Test\train-sets\rcv1_mini.dat --holdout_off --passes 2 -f hash_seed5.model -c -k --ngram 2 -q ::
-    $(ProjectDir)..\Test\train-sets\ref/hash_seed_train.stderr
+{VW} --hash_seed 5 -d train-sets/rcv1_mini.dat --holdout_off --passes 2 -f hash_seed5.model -c -k --ngram 2 -q ::
+    train-sets/ref/hash_seed_train.stderr
 
 # Test 167: hash_seed test
--d $(ProjectDir)..\Test\train-sets\rcv1_mini.dat -i hash_seed5.model -t
-    $(ProjectDir)..\Test\train-sets\ref/hash_seed_test.stderr
+{VW} -d train-sets/rcv1_mini.dat -i hash_seed5.model -t
+    train-sets/ref/hash_seed_test.stderr
 
 # Test 168: test cb with dm
--d $(ProjectDir)..\Test\train-sets\rcv1_raw_cb_small.vw -t -i cb_dm.reg
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_raw_cb_dm_test.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
+    train-sets/ref/rcv1_raw_cb_dm_test.stderr
 
 # Test 169: test cbify large
--d $(ProjectDir)..\Test\train-sets\rcv1_multiclass.dat --cbify 2 --epsilon 0.05
-    $(ProjectDir)..\Test\train-sets\ref/rcv1_multiclass.stderr
+{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
+    train-sets/ref/rcv1_multiclass.stderr
 
 # Test 170: cbify adf, epsilon-greedy
---cbify 10 --cb_explore_adf --epsilon 0.05 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/cbify_epsilon_adf.stderr
+{VW} --cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass
+    train-sets/ref/cbify_epsilon_adf.stderr
 
 # Test 171: cbify cs, epsilon-greedy
---cbify 3 --cbify_cs --epsilon 0.05 -d $(ProjectDir)..\Test\train-sets\cs_cb
-    $(ProjectDir)..\Test\train-sets\ref/cbify_epsilon_cs.stderr
+{VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb
+    train-sets/ref/cbify_epsilon_cs.stderr
 
 # Test 172: cbify adf cs, epsilon-greedy
---cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d $(ProjectDir)..\Test\train-sets\cs_cb
-    $(ProjectDir)..\Test\train-sets\ref/cbify_epsilon_cs_adf.stderr
+{VW} --cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d train-sets/cs_cb
+    train-sets/ref/cbify_epsilon_cs_adf.stderr
 
 # Test 173: cbify adf, regcb
---cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/cbify_regcb.stderr
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d train-sets/multiclass
+    train-sets/ref/cbify_regcb.stderr
 
 # Test 174: cbify adf, regcbopt
---cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/cbify_regcbopt.stderr
-cbify
-shared_feature_merger
-cb_explore_adf
-cb_adf
-csoaa_ldf
-scorer
-gd
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass
+    train-sets/ref/cbify_regcbopt.stderr
 
 # Test 175: cbify ldf, regcbopt
--d $(ProjectDir)..\Test\train-sets\cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01
-    $(ProjectDir)..\Test\train-sets\ref/cbify_ldf_regcbopt.stderr
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01
+    train-sets/ref/cbify_ldf_regcbopt.stderr
 
 # Test 176: same model on cluster mode
 ./same-model-test.sh
 
 # Test 177: check --audit output is reproducible
-printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | --oaa 3 -q ef --audit
-    $(ProjectDir)..\Test\train-sets\ref/audit2.stdout
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
+    train-sets/ref/audit2.stdout
 
 # Test 178 cb_adf, sharedfeatures
- --dsjson --cb_adf -d $(ProjectDir)..\Test\train-sets\no_shared_features.json
-    $(ProjectDir)..\Test\train-sets\ref/no_shared_features.stderr
+{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+    train-sets/ref/no_shared_features.stderr
 
 # Test 179 warm_cb warm start
---warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/warm_cb.stderr
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb.stderr
 
 # Test 180 warm_cb warm start with lambda set containing 0/1
---warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/warm_cb_lambda_zeroone.stderr
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_lambda_zeroone.stderr
 
 # Test 181 warm_cb warm start with warm start update turned off
---warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/warm_cb_no_ws_upd.stderr
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_no_ws_upd.stderr
 
 # Test 182 warm_cb warm start with interaction update turned off
---warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/warm_cb_no_int_upd.stderr
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_no_int_upd.stderr
 
 # Test 183 warm_cb warm start with bandit warm start type (Sim-Bandit)
---warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/warm_cb_simbandit.stderr
-warm_cb
-shared_feature_merger
-cb_explore_adf
-cb_adf
-csoaa_ldf
-scorer
-gd
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass
+    train-sets/ref/warm_cb_simbandit.stderr
 
 # Test 184 warm_cb warm start with CYC supervised corruption
---warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d $(ProjectDir)..\Test\train-sets\multiclass
-    $(ProjectDir)..\Test\train-sets\ref/warm_cb_cyc.stderr
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
+    train-sets/ref/warm_cb_cyc.stderr
 
 # Test 185 warm_cb warm start with input cost-sensitive examples
---warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d $(ProjectDir)..\Test\train-sets\cs_cb
-    $(ProjectDir)..\Test\train-sets\ref/warm_cb_cs.stderr
+{VW} --warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb
+    train-sets/ref/warm_cb_cs.stderr
 
 # Test 186 test counting examples with holdout_after option
--k -P 100 --holdout_after 500 -d $(ProjectDir)..\Test\train-sets\0002.dat
-    $(ProjectDir)..\Test\train-sets\ref/holdout_after.stderr
+{VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat
+    train-sets/ref/holdout_after.stderr
 
 # Test 187 test counting examples with holdout_after option with 2 passes on the training set
--k -P 100 --holdout_after 500 -d $(ProjectDir)..\Test\train-sets\0002.dat -c --passes 2
-    $(ProjectDir)..\Test\train-sets\ref/holdout_after_2passes.stderr
+{VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2
+    train-sets/ref/holdout_after_2passes.stderr
 
 # Test 188 test cb_adf with softmax
---cb_adf --rank_all -d $(ProjectDir)..\Test\train-sets\cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm
-    $(ProjectDir)..\Test\train-sets\ref/cb_adf_sm.stderr
+{VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_adf_sm.stderr
     pred-sets/ref/cb_adf_sm.predict
 
 # Test 189 test dsjson parser correctly processes checkpoint and dangling observation lines
--d $(ProjectDir)..\Test\train-sets\b1848_dsjson_parser_regression.txt --dsjson --cb_explore_adf -P 1
-    $(ProjectDir)..\Test\train-sets\ref/b1848_dsjson_parser_regression.stderr
+{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --cb_explore_adf -P 1
+    train-sets/ref/b1848_dsjson_parser_regression.stderr
 
 # Test 190: one-against-all with subsampling
--k --oaa 10 --oaa_subsample 5 -c --passes 10 -d $(ProjectDir)..\Test\train-sets\multiclass --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/oaa_subsample.stderr
+{VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
+    train-sets/ref/oaa_subsample.stderr
 
 # Test 191: train coin betting
--k -d $(ProjectDir)..\Test\train-sets\0001.dat -f ftrl_coin.model --passes 1 --coin
-    $(ProjectDir)..\Test\train-sets\ref/ftrl_coin.stderr
-scorer
-ftrl
+{VW} -k -d train-sets/0001.dat -f models/ftrl_coin.model --passes 1 --coin
+    train-sets/ref/ftrl_coin.stderr
 
 # Test 192: test coin betting
--k -t -d $(ProjectDir)..\Test\train-sets\0001.dat -i ftrl_coin.model -p ftrl_coin.predict
+{VW} -k -t -d train-sets/0001.dat -i models/ftrl_coin.model -p ftrl_coin.predict
     test-sets/ref/ftrl_coin.stderr
     pred-sets/ref/ftrl_coin.predict
-scorer
-ftrl
 
 # Test 193: malformed examples, onethread, strict_parse failure
-./negative-test.sh -d $(ProjectDir)..\Test\train-sets\malformed.dat --onethread --strict_parse
-    $(ProjectDir)..\Test\train-sets\ref/malformed-onethread-strict_parse.stderr
+./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse
+    train-sets/ref/malformed-onethread-strict_parse.stderr
 
 # Test 194: malformed examples, strict_parse failure
-./negative-test.sh -d $(ProjectDir)..\Test\train-sets\malformed.dat --strict_parse
-    $(ProjectDir)..\Test\train-sets\ref/malformed-strict_parse.stderr
+./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse
+    train-sets/ref/malformed-strict_parse.stderr
 
 # Test 195: malformed examples success
--d $(ProjectDir)..\Test\train-sets\malformed.dat --onethread
-    $(ProjectDir)..\Test\train-sets\ref/malformed.stderr
+{VW} -d train-sets/malformed.dat --onethread
+    train-sets/ref/malformed.stderr
 
 # Test 196: online contextual memory tree
--d $(ProjectDir)..\Test\train-sets\rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/cmt_rcv1_smaller_online.stderr
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_online.stderr
 
 # Test 197: offline contextual memory tree
--d $(ProjectDir)..\Test\train-sets\rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off
-    $(ProjectDir)..\Test\train-sets\ref/cmt_rcv1_smaller_offline.stderr
-memory_tree
-scorer
-gd
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_offline.stderr
 
 # Test 198: test cb_sample
---cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234
+{VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234
     pred-sets/ref/cb_sample_seed.predict
 
 # Test 199: CCB train then test
--d $(ProjectDir)..\Test\train-sets\ccb_test.dat --ccb_explore_adf -p ccb_test.predict
-    $(ProjectDir)..\Test\train-sets\ref/ccb_test.stderr
-    $(ProjectDir)..\Test\train-sets\ref/ccb_test.predict
-ccb_explore_adf
-shared_feature_merger
-cb_sample
-cb_explore_adf
-cb_adf
-csoaa_ldf
-scorer
-gd
+{VW} -d train-sets/ccb_test.dat --ccb_explore_adf -p ccb_test.predict
+    train-sets/ref/ccb_test.stderr
+    train-sets/ref/ccb_test.predict
 
 # Do not delete this line or the empty line above it
