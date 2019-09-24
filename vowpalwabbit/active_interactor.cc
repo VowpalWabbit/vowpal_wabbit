@@ -22,6 +22,9 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
+using std::cerr;
+using std::endl;
+
 int open_socket(const char* host, unsigned short port)
 {
   hostent* he;
@@ -31,7 +34,7 @@ int open_socket(const char* host, unsigned short port)
   {
     std::stringstream msg;
     msg << "gethostbyname(" << host << "): " << strerror(errno);
-    std::cerr << msg.str() << std::endl;
+    cerr << msg.str() << endl;
     throw std::runtime_error(msg.str().c_str());
   }
   int sd = socket(PF_INET, SOCK_STREAM, 0);
@@ -39,7 +42,7 @@ int open_socket(const char* host, unsigned short port)
   {
     std::stringstream msg;
     msg << "socket: " << strerror(errno);
-    std::cerr << msg.str() << std::endl;
+    cerr << msg.str() << endl;
     throw std::runtime_error(msg.str().c_str());
   }
   sockaddr_in far_end;
@@ -51,7 +54,7 @@ int open_socket(const char* host, unsigned short port)
   {
     std::stringstream msg;
     msg << "connect(" << host << ':' << port << "): " << strerror(errno);
-    std::cerr << msg.str() << std::endl;
+    cerr << msg.str() << endl;
     throw std::runtime_error(msg.str().c_str());
   }
   return sd;
@@ -101,7 +104,7 @@ int main(int argc, char* argv[])
   if (ret < 0)
   {
     const char* msg = "Could not perform handshake!";
-    std::cerr << msg << std::endl;
+    cerr << msg << endl;
     throw std::runtime_error(msg);
   }
 
@@ -115,14 +118,14 @@ int main(int argc, char* argv[])
     if (ret < 0)
     {
       const char* msg = "Could not send unlabeled data!";
-      std::cerr << msg << std::endl;
+      cerr << msg << endl;
       throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
       const char* msg = "Could not receive queries!";
-      std::cerr << msg << std::endl;
+      cerr << msg << endl;
       throw std::runtime_error(msg);
     }
     buf[ret] = '\0';
@@ -146,18 +149,18 @@ int main(int argc, char* argv[])
     if (ret < 0)
     {
       const char* msg = "Could not send labeled data!";
-      std::cerr << msg << std::endl;
+      cerr << msg << endl;
       throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
       const char* msg = "Could not receive predictions!";
-      std::cerr << msg << std::endl;
+      cerr << msg << endl;
       throw std::runtime_error(msg);
     }
   }
   close(s);
-  std::cout << "Went through the data by doing " << queries << " queries" << std::endl;
+  std::cout << "Went through the data by doing " << queries << " queries" << endl;
   return 0;
 }

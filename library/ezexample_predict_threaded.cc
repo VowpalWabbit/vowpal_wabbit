@@ -6,6 +6,9 @@
 
 int runcount = 100;
 
+using std::cerr;
+using std::endl;
+
 class Worker
 {
 public:
@@ -18,7 +21,7 @@ public:
   void operator()()
   { m_vw_parser = VW::initialize(vw_init_string);
     if (m_vw_parser == NULL)
-    { std::cerr << "cannot initialize vw parser" << std::endl;
+    { cerr << "cannot initialize vw parser" << endl;
       exit(-1);
     }
 
@@ -36,8 +39,8 @@ public:
       ("w^le")
       ("w^homme");
       ex.set_label("1");
-      if (*it != ex()) { std::cerr << "fail!" << std::endl; ++errorCount; }
-      //if (*it != pred) { std::cerr << "fail!" << std::endl; ++errorCount; }
+      if (*it != ex()) { cerr << "fail!" << endl; ++errorCount; }
+      //if (*it != pred) { cerr << "fail!" << endl; ++errorCount; }
       //VW::finish_example(m_vw, vec2);
       ++it;
 
@@ -47,7 +50,7 @@ public:
       ("w^un")
       ("w^homme");
       ex.set_label("1");
-      if (*it != ex()) { std::cerr << "fail!" << std::endl; ++errorCount; }
+      if (*it != ex()) { cerr << "fail!" << endl; ++errorCount; }
       ++it;
 
       --ex;   // remove the most recent namespace
@@ -56,12 +59,12 @@ public:
       ('t', "w^un")
       ('t', "w^homme");
       ex.set_label("1");
-      if (*it != ex()) { std::cerr << "fail!" << std::endl; ++errorCount; }
+      if (*it != ex()) { cerr << "fail!" << endl; ++errorCount; }
       ++it;
 
       //cout << ".";std::cout.flush();
     }
-    std::cerr << "error count = " << errorCount << std::endl;
+    cerr << "error count = " << errorCount << endl;
     VW::finish(*m_vw_parser);
     m_vw_parser = NULL;
   }
@@ -75,7 +78,7 @@ private:
 
 int main(int argc, char *argv[])
 { if (argc != 3)
-  { std::cerr << "need two args: threadcount runcount" << std::endl;
+  { cerr << "need two args: threadcount runcount" << endl;
     return 1;
   }
   int threadcount = atoi(argv[1]);
@@ -98,7 +101,7 @@ int main(int argc, char *argv[])
     ("w^homme");
     ex.set_label("1");
     results.push_back(ex.predict_partial());
-    std::cerr << "should be near zero = " << ex.predict_partial() << std::endl;
+    cerr << "should be near zero = " << ex.predict_partial() << endl;
 
     --ex;   // remove the most recent namespace
     ex(vw_namespace('t'))
@@ -107,7 +110,7 @@ int main(int argc, char *argv[])
     ("w^homme");
     ex.set_label("1");
     results.push_back(ex.predict_partial());
-    std::cerr << "should be near one  = " << ex.predict_partial() << std::endl;
+    cerr << "should be near one  = " << ex.predict_partial() << endl;
 
     --ex;   // remove the most recent namespace
     // add features with explicit ns
@@ -116,7 +119,7 @@ int main(int argc, char *argv[])
     ('t', "w^homme");
     ex.set_label("1");
     results.push_back(ex.predict_partial());
-    std::cerr << "should be near one  = " << ex.predict_partial() << std::endl;
+    cerr << "should be near one  = " << ex.predict_partial() << endl;
   }
 
   if (threadcount == 0)
@@ -126,11 +129,11 @@ int main(int argc, char *argv[])
   else
   { boost::thread_group tg;
     for (int t = 0; t < threadcount; ++t)
-    { std::cerr << "starting thread " << t << std::endl;
+    { cerr << "starting thread " << t << endl;
       boost::thread * pt = tg.create_thread(Worker(*vw, vw_init_string_parser, results));
     }
     tg.join_all();
-    std::cerr << "finished!" << std::endl;
+    cerr << "finished!" << endl;
   }
 
 

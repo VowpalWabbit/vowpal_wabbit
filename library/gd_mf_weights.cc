@@ -9,17 +9,21 @@
 namespace po = boost::program_options;
 
 int main(int argc, char *argv[])
-{ std::string infile;
-  std::string outdir(".");
-  std::string vwparams;
+{
+  using std::cout;
+  using std::string;
+
+  string infile;
+  string outdir(".");
+  string vwparams;
 
   po::variables_map vm;
   po::options_description desc("Allowed options");
   desc.add_options()
   ("help,h", "produce help message")
-  ("infile,I", po::value<std::string>(&infile), "input (in vw format) of weights to extract")
-  ("outdir,O", po::value<std::string>(&outdir), "directory to write model files to (default: .)")
-  ("vwparams", po::value<std::string>(&vwparams), "vw parameters for model instantiation (-i model.reg -t ...")
+  ("infile,I", po::value<string>(&infile), "input (in vw format) of weights to extract")
+  ("outdir,O", po::value<string>(&outdir), "directory to write model files to (default: .)")
+  ("vwparams", po::value<string>(&vwparams), "vw parameters for model instantiation (-i model.reg -t ...")
   ;
 
   try
@@ -27,20 +31,20 @@ int main(int argc, char *argv[])
     po::notify(vm);
   }
   catch(std::exception & e)
-  {std::cout << std::endl << argv[0] << ": " << e.what() << std::endl << std::endl << desc << std::endl;
+  {cout << std::endl << argv[0] << ": " << e.what() << std::endl << std::endl << desc << std::endl;
     exit(2);
   }
 
   if (vm.count("help") || infile.empty() || vwparams.empty())
-  { std::cout << "Dumps weights for matrix factorization model (gd_mf)." << std::endl;
-    std::cout << "The constant will be written to <outdir>/constant." << std::endl;
-    std::cout << "Linear and quadratic weights corresponding to the input features will be " << std::endl;
-    std::cout << "written to <outdir>/<ns>.linear and <outdir>/<ns>.quadratic,respectively." << std::endl;
-    std::cout << std::endl;
-    std::cout << desc << "\n";
-    std::cout << "Example usage:" << std::endl;
-    std::cout << "    Extract weights for user 42 and item 7 under randomly initialized rank 10 model:" << std::endl;
-    std::cout << "    echo '|u 42 |i 7' | ./gd_mf_weights -I /dev/stdin --vwparams '-q ui --rank 10'" << std::endl;
+  { cout << "Dumps weights for matrix factorization model (gd_mf)." << std::endl;
+    cout << "The constant will be written to <outdir>/constant." << std::endl;
+    cout << "Linear and quadratic weights corresponding to the input features will be " << std::endl;
+    cout << "written to <outdir>/<ns>.linear and <outdir>/<ns>.quadratic,respectively." << std::endl;
+    cout << std::endl;
+    cout << desc << "\n";
+    cout << "Example usage:" << std::endl;
+    cout << "    Extract weights for user 42 and item 7 under randomly initialized rank 10 model:" << std::endl;
+    cout << "    echo '|u 42 |i 7' | ./gd_mf_weights -I /dev/stdin --vwparams '-q ui --rank 10'" << std::endl;
     return 1;
   }
 
@@ -48,7 +52,7 @@ int main(int argc, char *argv[])
   vw* model = VW::initialize(vwparams);
   model->audit = true;
 
-  std::string target("--rank ");
+  string target("--rank ");
   size_t loc = vwparams.find(target);
   const char* location = vwparams.c_str()+loc+target.size();
   size_t rank = atoi(location);
@@ -65,11 +69,11 @@ int main(int argc, char *argv[])
   ssize_t read;
 
   // output files
-  std::ofstream constant((outdir + std::string("/") + std::string("constant")).c_str()),
-           left_linear((outdir + std::string("/") + std::string(1, left_ns) + std::string(".linear")).c_str()),
-           left_quadratic((outdir + std::string("/") + std::string(1, left_ns) + std::string(".quadratic")).c_str()),
-           right_linear((outdir + std::string("/") + std::string(1, right_ns) + std::string(".linear")).c_str()),
-           right_quadratic((outdir + std::string("/") + std::string(1, right_ns) + std::string(".quadratic")).c_str());
+  std::ofstream constant((outdir + string("/") + string("constant")).c_str()),
+           left_linear((outdir + string("/") + string(1, left_ns) + string(".linear")).c_str()),
+           left_quadratic((outdir + string("/") + string(1, left_ns) + string(".quadratic")).c_str()),
+           right_linear((outdir + string("/") + string(1, right_ns) + string(".linear")).c_str()),
+           right_quadratic((outdir + string("/") + string(1, right_ns) + string(".quadratic")).c_str());
 
   example *ec = NULL;
   while ((read = getline(&line, &len, file)) != -1)

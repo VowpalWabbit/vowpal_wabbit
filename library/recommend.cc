@@ -85,7 +85,12 @@ struct compare_scored_examples
 std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples> pr_queue;
 
 int main(int argc, char *argv[])
-{ po::variables_map vm;
+{
+  using std::cout;
+  using std::cerr;
+  using std::endl;
+
+  po::variables_map vm;
   po::options_description desc("Allowed options");
   desc.add_options()
   ("help,h", "produce help message")
@@ -103,17 +108,17 @@ int main(int argc, char *argv[])
     po::notify(vm);
   }
   catch(std::exception & e)
-  { std::cout << std::endl << argv[0] << ": " << e.what() << std::endl << std::endl << desc << std::endl;
+  { cout << endl << argv[0] << ": " << e.what() << endl << endl << desc << endl;
     exit(2);
   }
 
   if (vm.count("help"))
-  { std::cout << desc << "\n";
+  { cout << desc << "\n";
     return 1;
   }
 
   if (blacklistfilename.empty() || userfilename.empty() || itemfilename.empty() || vwparams.empty())
-  { std::cout << desc << "\n";
+  { cout << desc << "\n";
     exit(2);
   }
 
@@ -123,17 +128,17 @@ int main(int argc, char *argv[])
 
   if((fB = fopen(blacklistfilename.c_str(), "r")) == NULL)
   { fprintf(stderr,"can't open %s: %s\n", blacklistfilename.c_str(), strerror(errno));
-    std::cerr << desc << std::endl;
+    cerr << desc << endl;
     exit(2);
   }
   if((fU = fopen(userfilename.c_str(), "r")) == NULL )
   { fprintf(stderr,"can't open %s: %s\n", userfilename.c_str(), strerror(errno));
-    std::cerr << desc << std::endl;
+    cerr << desc << endl;
     exit(2);
   }
   if((fI = fopen(itemfilename.c_str(), "r")) == NULL )
   { fprintf(stderr,"can't open %s: %s\n", itemfilename.c_str(), strerror(errno));
-    std::cerr << desc << std::endl;
+    cerr << desc << endl;
     exit(2);
   }
 
@@ -212,7 +217,7 @@ int main(int argc, char *argv[])
     }
 
     while(!pr_queue.empty())
-    {std::cout << pr_queue.top().first << "\t" << pr_queue.top().second;
+    {cout << pr_queue.top().first << "\t" << pr_queue.top().second;
       pr_queue.pop();
       recs++;
     }

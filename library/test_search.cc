@@ -5,6 +5,9 @@
 #include "../vowpalwabbit/search_sequencetask.h"
 #include "libsearch.h"
 
+using std::cerr;
+using std::endl;
+
 struct wt
 { std::string word;
   uint32_t tag;
@@ -18,7 +21,7 @@ public:
     : SearchTask<std::vector<wt>, std::vector<uint32_t> >(vw_obj)    // must run parent constructor!
   { sch.set_options( Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES );
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    std::cerr << "num_actions = " << d->num_actions << std::endl;
+    cerr << "num_actions = " << d->num_actions << endl;
   }
 
   // using vanilla vw interface
@@ -64,36 +67,36 @@ void run(vw& vw_obj)
   task.learn(data, output);
   task.learn(data, output);
   task.predict(data, output);
-  std::cerr << "output = [";
-  for (size_t i=0; i<output.size(); i++) std::cerr << " " << output[i];
-  std::cerr << " ]" << std::endl;
-  std::cerr << "should have printed: 1 2 3 1 4 2" << std::endl;
+  cerr << "output = [";
+  for (size_t i=0; i<output.size(); i++) cerr << " " << output[i];
+  cerr << " ]" << endl;
+  cerr << "should have printed: 1 2 3 1 4 2" << endl;
 }
 
 
 void train()
 { // initialize VW as usual, but use 'hook' as the search_task
-  std::cerr << std::endl << std::endl << "##### train() #####" << std::endl << std::endl;
+  cerr << endl << endl << "##### train() #####" << endl << endl;
   vw& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --ring_size 1024 -f my_model");
   run(vw_obj);
   VW::finish(vw_obj);
 }
 
 void predict()
-{ std::cerr << std::endl << std::endl << "##### predict() #####" << std::endl << std::endl;
+{ cerr << endl << endl << "##### predict() #####" << endl << endl;
   vw& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
   run(vw_obj);
   VW::finish(vw_obj);
 }
 
 void test_buildin_task()
-{ std::cerr << std::endl << std::endl << "##### run commandline vw #####" << std::endl << std::endl;
+{ cerr << endl << endl << "##### run commandline vw #####" << endl << endl;
   // train a model on the command line
   int ret = system("../vowpalwabbit/vw -k -c --holdout_off --passes 20 --search 4 --search_task sequence -d sequence.data -f sequence.model");
-  if (ret != 0) std::cerr << "../vowpalwabbit/vw failed" << std::endl;
+  if (ret != 0) cerr << "../vowpalwabbit/vw failed" << endl;
 
   // now, load that model using the BuiltInTask library
-  std::cerr << std::endl << std::endl << "##### test BuiltInTask #####" << std::endl << std::endl;
+  cerr << endl << endl << "##### test BuiltInTask #####" << endl << endl;
   vw& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
   { // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
@@ -105,10 +108,10 @@ void test_buildin_task()
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     std::vector<action> out;
     task.predict(V, out);
-    std::cerr << "out (should be 1 2 3 4 3) =";
+    cerr << "out (should be 1 2 3 4 3) =";
     for (size_t i=0; i<out.size(); i++)
-      std::cerr << " " << out[i];
-    std::cerr << std::endl;
+      cerr << " " << out[i];
+    cerr << endl;
     for (size_t i=0; i<V.size(); i++)
       VW::finish_example(vw_obj, *V[i]);
   }

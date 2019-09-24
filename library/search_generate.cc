@@ -8,6 +8,9 @@
 #include "../vowpalwabbit/ezexample.h"
 #include "libsearch.h"
 
+using std::cerr;
+using std::endl;
+
 size_t sed(const std::string &s1, const std::string &s2, size_t subst_cost=1, size_t ins_cost=1, size_t del_cost=1);
 
 action char2action(char c)    // 1=EOS, 2=' ', 3..28=a..z, 29=other
@@ -105,8 +108,8 @@ public:
   }
 
   void print(char c='^', size_t indent=0)
-  { std::cerr << std::string(indent*2, ' ');
-    std::cerr << '\'' << c << "' " << count << " [max_string=" << max_string << " max_count=" << max_count << "]" << std::endl;
+  { cerr << std::string(indent*2, ' ');
+    cerr << '\'' << c << "' " << count << " [max_string=" << max_string << " max_count=" << max_count << "]" << endl;
     for (size_t i=0; i<children.size(); i++)
       if (children[i])
         children[i]->print(action2char(i+1), indent+1);
@@ -365,19 +368,19 @@ void run_easy()
   };
   for (size_t i=0; i<100; i++)
   { //if (i == 9999) max_cost = 1.;
-    if (i % 10 == 0) std::cerr << '.';
+    if (i % 10 == 0) cerr << '.';
     for (auto x : training_data)
       task.learn(x, out);
   }
-  std::cerr << std::endl;
+  cerr << endl;
 
   for (auto x : training_data)
   { task.predict(x, out);
-    std::cerr << "output = " << out << std::endl;
+    cerr << "output = " << out << endl;
   }
   for (auto x : test_data)
   { task.predict(x, out);
-    std::cerr << "output = " << out << std::endl;
+    cerr << "output = " << out << endl;
   }
 }
 
@@ -402,7 +405,7 @@ Trie load_dictionary(const char* fname)
 void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t print_every=0)
 { std::ifstream h(fname);
   if (! h.is_open())
-  { std::cerr << "cannot open file " << fname << std::endl;
+  { cerr << "cannot open file " << fname << endl;
     throw std::exception();
   }
   std::string line;
@@ -412,28 +415,28 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
   float weight = 0.;
   while (getline(h, line))
   { n++;
-    if (n % 500 == 0) std::cerr << '.';
+    if (n % 500 == 0) cerr << '.';
     size_t i = line.find(" ||| ");
     size_t j = line.find(" ||| ", i+1);
     if (i == std::string::npos || j == std::string::npos)
-    { std::cerr << "skipping line " << n << ": '" << line << "'" << std::endl;
+    { cerr << "skipping line " << n << ": '" << line << "'" << endl;
       continue;
     }
     input dat(line.substr(j+5), line.substr(i+5,j-i-5), atof(line.substr(0,i).c_str())/10.);
-    //std::cerr << "count=" << dat.weight << ", in='" << dat.in << "', out='" << dat.out << "'" << std::endl;
+    //cerr << "count=" << dat.weight << ", in='" << dat.in << "', out='" << dat.out << "'" << endl;
     weight += dat.weight;
     if (is_learn)
       gen.learn(dat, out);
     else
     { gen.predict(dat, out);
       if (print_every>0 && (n % print_every == 0))
-       std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << std::endl;
+       std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl;
       dist += dat.weight * (float)gen.get_dist();
     }
   }
-  if (n > 500) std::cerr << std::endl;
+  if (n > 500) cerr << endl;
   if (!is_learn)
-    std::cout << "AVERAGE DISTANCE: " << (dist / weight) << std::endl;
+    std::cout << "AVERAGE DISTANCE: " << (dist / weight) << endl;
 }
 
 void train()
@@ -444,10 +447,10 @@ void train()
 
   std::string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
   vw& vw_obj = *VW::initialize(init_str);
-  std::cerr << init_str << std::endl;
+  cerr << init_str << endl;
   Generator gen(vw_obj, nullptr); // &dict);
   for (size_t pass=1; pass<=20; pass++)
-  { std::cerr << "===== pass " << pass << " =====" << std::endl;
+  { cerr << "===== pass " << pass << " =====" << endl;
     run_istream(gen, "phrase-table.tr", true);
     run_istream(gen, "phrase-table.tr", false, 300000);
     run_istream(gen, "phrase-table.te", false, 100000);
@@ -464,18 +467,18 @@ void predict()
 int main(int argc, char *argv[])
 { /*
   std::string target(argv[1]);
-  std::cerr << "target = " << target << std::endl;
+  cerr << "target = " << target << endl;
   IncrementalEditDistance ied(target);
-  std::cerr << "^: ";
+  cerr << "^: ";
   for (size_t i=0; i<=strlen(argv[2]); i++) {
    std::vector< std::pair<action,float> > next = ied.all_next();
     for (auto& p : next)
-      std::cerr << action2char(p.first) << ' ' << p.second << "\t";
-    std::cerr << std::endl;
-    std::cerr << argv[2][i] << ": ";
+      cerr << action2char(p.first) << ' ' << p.second << "\t";
+    cerr << endl;
+    cerr << argv[2][i] << ": ";
     ied.append(argv[2][i]);
   }
-  std::cerr << std::endl;
+  cerr << endl;
   */
   /*
   std::string target("abcde");
@@ -483,12 +486,12 @@ int main(int argc, char *argv[])
   ied.append(std::string("cde"));
   while (true) {
    std::vector<char>& best = ied.next();
-    std::cerr << ied.out() << " / " << ied.distance() << " -> "; for (char c : best) std::cerr << c; std::cerr << std::endl;
+    cerr << ied.out() << " / " << ied.distance() << " -> "; for (char c : best) cerr << c; cerr << endl;
     char c = best[0];
     if (c == '$') break;
     ied.append(c);
   }
-  std::cerr << "final: " << ied.distance() << "\t" << ied.out() << std::endl;
+  cerr << "final: " << ied.distance() << "\t" << ied.out() << endl;
   return 0;
   */
   train();
