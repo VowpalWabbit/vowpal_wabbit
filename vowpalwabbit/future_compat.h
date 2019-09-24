@@ -1,14 +1,15 @@
 #pragma once
 
-#if __cplusplus < 201103L
-#pragma error "At least C++11 is required."
+#if __cplusplus < 201103L || defined(_MSC_VER) && (_MSC_VER < 1914)
+#error "At least C++11 is required."
 #endif
 
-#if __cplusplus >= 201402L
+// Yes, 14 is before 11... See: https://docs.microsoft.com/en-us/cpp/overview/visual-cpp-language-conformance?view=vs-2019
+#if __cplusplus >= 201402L || defined(_MSC_VER) && (_MSC_VER >= 1910)
 #define HAS_STD14
 #endif
 
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L  || defined(_MSC_VER) && (_MSC_VER >= 1914)
 #define HAS_STD17
 #endif
 
