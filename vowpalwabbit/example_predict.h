@@ -9,6 +9,7 @@ typedef unsigned char namespace_index;
 
 #include "v_array.h"
 #include "feature_group.h"
+#include "constant.h"
 #include <vector>
 
 struct example_predict
@@ -40,14 +41,14 @@ struct example_predict
   };
 
   v_array<namespace_index> indices;
-  features feature_space[256]; //Groups of feature values.
+  std::array<features, NUM_NAMESPACES> feature_space; //Groups of feature values.
   uint64_t ft_offset;//An offset for all feature values.
 
   // Interactions are specified by this vector of strings, where each string is an interaction and each char is a namespace.
   std::vector<std::string>* interactions;
 
-  iterator begin() { return iterator(feature_space, indices.begin()); }
-  iterator end() { return iterator(feature_space, indices.end()); }
+  iterator begin() { return iterator(feature_space.data(), indices.begin()); }
+  iterator end() { return iterator(feature_space.data(), indices.end()); }
 };
 
 // make sure we have an exception safe version of example_predict

@@ -63,16 +63,16 @@ class TC_parser
   unsigned char index;
   float v;
   bool redefine_some;
-  unsigned char (*redefine)[256];
+  std::array<unsigned char, NUM_NAMESPACES>* redefine;
   parser* p;
   example* ae;
-  uint64_t* affix_features;
-  bool* spelling_features;
+  std::array<uint64_t, NUM_NAMESPACES>* affix_features;
+  std::array<bool, NUM_NAMESPACES>* spelling_features;
   v_array<char> spelling;
   uint32_t hash_seed;
   uint64_t parse_mask;
 
-  vector<feature_dict*>* namespace_dictionaries;
+  std::array<vector<feature_dict*>, NUM_NAMESPACES>* namespace_dictionaries;
 
   ~TC_parser() {}
 
@@ -163,12 +163,12 @@ class TC_parser
         fs.space_names.push_back(audit_strings_ptr(new audit_strings(base, feature_v.begin())));
         feature_v.delete_v();
       }
-      if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
+      if ((*affix_features)[index] > 0 && (feature_name.end != feature_name.begin))
       {
         features& affix_fs = ae->feature_space[affix_namespace];
         if (affix_fs.size() == 0)
           ae->indices.push_back(affix_namespace);
-        uint64_t affix = affix_features[index];
+        uint64_t affix = (*affix_features)[index];
         while (affix > 0)
         {
           bool is_prefix = affix & 0x1;
@@ -199,7 +199,7 @@ class TC_parser
           affix >>= 4;
         }
       }
-      if (spelling_features[index])
+      if ((*spelling_features)[index])
       {
         features& spell_fs = ae->feature_space[spelling_namespace];
         if (spell_fs.size() == 0)
@@ -238,11 +238,10 @@ class TC_parser
           spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling", spelling_v.begin())));
         }
       }
-      if (namespace_dictionaries[index].size() > 0)
+      if ((*namespace_dictionaries)[index].size() > 0)
       {
-        for (size_t dict = 0; dict < namespace_dictionaries[index].size(); dict++)
+        for(auto map : (*namespace_dictionaries)[index])
         {
-          feature_dict* map = namespace_dictionaries[index][dict];
           uint64_t hash = uniform_hash(feature_name.begin, feature_name.end - feature_name.begin, quadratic_constant);
           features* feats = map->get(feature_name, hash);
           if ((feats != nullptr) && (feats->values.size() > 0))
@@ -412,9 +411,9 @@ class TC_parser
       this->redefine_some = all.redefine_some;
       this->redefine = &all.redefine;
       this->ae = ae;
-      this->affix_features = all.affix_features;
-      this->spelling_features = all.spelling_features;
-      this->namespace_dictionaries = all.namespace_dictionaries;
+      this->affix_features = &all.affix_features;
+      this->spelling_features = &all.spelling_features;
+      this->namespace_dictionaries = &all.namespace_dictionaries;
       this->base = nullptr;
       this->hash_seed = all.hash_seed;
       this->parse_mask = all.parse_mask;
