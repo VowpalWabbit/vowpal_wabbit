@@ -635,12 +635,14 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
+  bool do_not_sample = false;
   option_group_definition new_options(
       "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
   new_options.add(
       make_option("ccb_explore_adf", ccb_explore_adf_option)
           .keep()
           .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."));
+  new_options.add(make_option("do_not_sample", do_not_sample).help("Turn off sampling each CB call"));
   options.add_and_parse(new_options);
 
   if (!ccb_explore_adf_option)
@@ -652,7 +654,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  if (!options.was_supplied("cb_sample"))
+  if (!options.was_supplied("cb_sample") && !do_not_sample)
   {
     options.insert("cb_sample", "");
     options.add_and_parse(new_options);
