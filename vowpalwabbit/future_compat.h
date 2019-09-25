@@ -1,9 +1,6 @@
 #pragma once
 
-// Even though full support for C++11 wasn't done until 1914, for our purposes 1900 is enough.
-#if __cplusplus < 201103L || defined(_MSC_VER) && (_MSC_VER < 1900)
-#error "At least C++11 is required."
-#endif
+#if __cplusplus >= 201103L || defined(_MSC_VER) && (_MSC_VER >= 1900)
 
 #if __cplusplus >= 201402L || defined(_MSC_VER) && (_MSC_VER >= 1910)
 #define HAS_STD14
@@ -23,4 +20,8 @@
 #define STD14_CONSTEXPR constexpr
 #else
 #define STD14_CONSTEXPR
+#endif
+
+#else
+#error "At least C++11 is required."
 #endif
