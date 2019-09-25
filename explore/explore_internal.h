@@ -90,7 +90,8 @@ namespace exploration
       return E_EXPLORATION_BAD_RANGE;
 
     float norm = 0.;
-    float max_score = *std::max_element(scores_first, scores_last);
+    float max_score = lambda > 0 ? *std::max_element(scores_first, scores_last)
+                                 : *std::min_element(scores_first, scores_last);
 
     InputIt s = scores_first;
     for (OutputIt d = pdf_first; d != pdf_last && s != scores_last; ++d, ++s)
