@@ -642,7 +642,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
       make_option("ccb_explore_adf", ccb_explore_adf_option)
           .keep()
           .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."));
-  new_options.add(make_option("do_not_sample", do_not_sample).help("Turn off sampling each CB call"));
+  new_options.add(make_option("do_not_sample", do_not_sample).keep().help("Turn off sampling each CB call"));
   options.add_and_parse(new_options);
 
   if (!ccb_explore_adf_option)
