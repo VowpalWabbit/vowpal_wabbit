@@ -63,14 +63,11 @@ template <typename ExploreType>
 // data common to all cb_explore_adf reductions
 struct cb_explore_adf_base
 {
- protected:
-  CB::cb_class _known_cost;  // needs to be protected because cover uses this variable
-
  private:
+  CB::cb_class _known_cost;
   // used in output_example
   CB::label _action_label;
   CB::label _empty_label;
-
   ExploreType explore;
 
  public:
@@ -80,7 +77,6 @@ struct cb_explore_adf_base
   static void predict(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
 
- protected:
  private:
   void output_example_seq(vw& all, multi_ex& ec_seq);
   void output_example(vw& all, multi_ex& ec_seq);

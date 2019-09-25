@@ -107,6 +107,11 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
     if (is_learn)
     {
       _cs_labels_2.costs.clear();
+      /* Cover's learn policy is similar to bag in that we have multiple learners
+       * The main difference here is that Cover's learners interact with each other.
+       * The following code generates cost = cost + penalty where a penalty is applied
+       * to any action a previous policy has already selected
+       */
       for (uint32_t j = 0; j < num_actions; j++)
       {
         float pseudo_cost = _cs_labels.costs[j].x - _psi * min_prob / ((std::max)(_action_probs[j].score, min_prob) / norm);

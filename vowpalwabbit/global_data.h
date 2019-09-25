@@ -350,7 +350,7 @@ enum label_type_t
 };
 }
 
-class rand_state
+struct rand_state
 {
  private:
   uint64_t random_state;
