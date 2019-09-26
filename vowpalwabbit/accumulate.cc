@@ -118,6 +118,12 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
 
 void accumulate_weighted_avg(vw& all, parameters& weights)
 {
+  if (!weights.adaptive)
+  {
+    all.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
+    return;
+  }
+  
   uint32_t length = 1 << all.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 
