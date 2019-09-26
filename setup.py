@@ -83,7 +83,8 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
             '-DBUILD_PYTHON=On',
             '-DBUILD_TESTS=Off',
-            '-DWARNINGS=Off'
+            '-DWARNINGS=Off',
+            '-DBoost_NO_BOOST_CMAKE=ON'
         ]
         if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
             cmake_args.append('-DBOOST_ROOT={}'.format(os.environ['CONDA_PREFIX']))
@@ -97,7 +98,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
-                '-G', "Visual Studio 14 2015 Win64"
+                '-G', "Visual Studio 15 2017 Win64"
             ]
             build_args += [
                 '--target', 'pylibvw'
