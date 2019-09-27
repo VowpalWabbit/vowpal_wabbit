@@ -167,7 +167,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
     test_label, sizeof(label)};
 
-bool ec_is_example_header(example& ec)  // example headers just have "shared"
+bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
   v_array<CB::cb_class> costs = ec.l.cb.costs;
   if (costs.size() != 1)
