@@ -43,6 +43,7 @@ pdf_data::~pdf_data()
       float action = data.min_value + i * continuous_range / data.num_actions;
       p_dist.push_back({action, continuous_scores[i]});
     }
+    p_dist.push_back({data.max_value, 0.f});
   }
 
   void predict(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)

@@ -32,6 +32,7 @@ struct cbify_reg
   VW::actions_pdf::pdf prob_dist;
   float min_value;
   float max_value;
+  int loss_option;
 };
 
 struct cbify
@@ -198,7 +199,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // after having the function that samples the pdf and returns back a continuous action
   if (S_EXPLORATION_OK !=
       sample_after_normalizing(data.app_seed + data.example_counter++, begin_probs(ec.pred.prob_dist),
-          end_probs(ec.pred.prob_dist), data.regression_data.min_value, data.regression_data.max_value, chosen_action))
+        one_to_end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
+        ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
     THROW("Failed to sample from pdf");
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
   //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
@@ -212,10 +214,15 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   cb_cont.action = chosen_action;
   cb_cont.probability = pdf_value;
 
-  // mean squared loss
-  //float diff = regression_label.label - chosen_action;
-  //cb_cont.cost = diff * diff;
-  cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
+  if (data.regression_data.loss_option == 0) {
+    cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
+  }
+  else if (data.regression_data.loss_option == 1) {
+    // mean squared loss
+    float diff = regression_label.label - chosen_action;
+    cb_cont.cost = diff * diff;
+  }
+
   data.regression_data.cb_cont_label.costs.push_back(cb_cont);
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
@@ -529,8 +536,10 @@ base_learner* cbify_setup(options_i& options, vw& all)
                .help("Convert discrete PDF into continuous PDF."))
       .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
+      .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:0/1, 1:squared"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+      
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))

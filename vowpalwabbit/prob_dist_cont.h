@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 namespace VW { namespace actions_pdf
 {
 struct pdf_segment
@@ -51,6 +51,8 @@ class prob_iterator : public virtual std::iterator<std::random_access_iterator_t
 inline prob_iterator begin_probs(pdf& p_d) { return prob_iterator(p_d.begin()); }
 
 inline prob_iterator end_probs(pdf& p_d) { return prob_iterator(p_d.end()); }
+
+inline prob_iterator one_to_end_probs(pdf& p_d) { return prob_iterator(--(p_d.end())); }
 
 inline int cmp(float a, float b)
 {
