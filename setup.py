@@ -21,13 +21,22 @@ here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, 'python')
 
 class Distribution(_distribution):
-    if system == 'Windows':
-        global_options = _distribution.global_options + [
-            ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only.'),
-        ]
+    global_options = _distribution.global_options
 
+    global_options += [
+        ('enable-boost-cmake', None, 'Enable boost-cmake'),
+        ('cmake-options=', None, 'Additional semicolon-separated cmake setup options list'),
+    ]
+
+    if system == 'Windows':
+        global_options += [
+            ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only'),
+        ]
+ 
     def __init__(self, attrs=None):
         self.vcpkg_root = None
+        self.enable_boost_cmake = None
+        self.cmake_options = None
         _distribution.__init__(self, attrs)
 
 class CMakeExtension(Extension):
@@ -85,6 +94,17 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DBUILD_TESTS=Off',
             '-DWARNINGS=Off'
         ]
+        if self.distribution.enable_boost_cmake is None:
+            # Add this flag as default since testing indicates its safe.
+            # But add a way to disable it in case it becomes a problem
+            cmake_args += [
+                '-DBoost_NO_BOOST_CMAKE=ON'
+            ]
+            
+        if self.distribution.cmake_options is not None:
+            argslist = self.distribution.cmake_options.split(';')
+            cmake_args += argslist
+        
         if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
             cmake_args.append('-DBOOST_ROOT={}'.format(os.environ['CONDA_PREFIX']))
 
@@ -97,7 +117,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
-                '-G', "Visual Studio 14 2015 Win64"
+                '-G', "Visual Studio 15 2017 Win64"
             ]
             build_args += [
                 '--target', 'pylibvw'
