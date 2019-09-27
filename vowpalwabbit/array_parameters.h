@@ -228,6 +228,9 @@ class sparse_parameters
 class parameters
 {
  public:
+  bool adaptive;
+  bool normalized;
+  
   bool sparse;
   dense_parameters dense_weights;
   sparse_parameters sparse_weights;
