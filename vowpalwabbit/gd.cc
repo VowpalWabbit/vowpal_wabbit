@@ -56,8 +56,8 @@ struct gd
   void (*update)(gd&, base_learner&, example&);
   float (*sensitivity)(gd&, base_learner&, example&);
   void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
-  bool normalized;
-  bool adaptive;
+  bool adaptive_input;
+  bool normalized_input;
   bool adax;
 
   vw* all;  // parallel, features, parameters
@@ -166,7 +166,7 @@ void end_pass(gd& g)
     sync_weights(all);
   if (all.all_reduce != nullptr)
   {
-    if (all.adaptive)
+    if (all.weights.adaptive)
       accumulate_weighted_avg(all, all.weights);
     else
       accumulate_avg(all, all.weights, 0);
@@ -253,7 +253,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     tempstream << ':' << (index >> stride_shift) << ':' << ft_weight << ':'
                << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
 
-    if (dat.all.adaptive)
+    if (weights.adaptive) // adaptive
       tempstream << '@' << (&weights[index])[1];
 
     string_value sv = {weights[index] * ft_weight, ns_pre + tempstream.str()};
@@ -800,9 +800,9 @@ void save_load_online_state(
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
-        else if (g == NULL || (!g->adaptive && !g->normalized))
+        else if (g == NULL || (!g->adaptive_input && !g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
-        else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+        else if ((g->adaptive_input && !g->normalized_input) || (!g->adaptive_input && g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
         else  // adaptive and normalized
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 3, "");
@@ -845,7 +845,7 @@ void save_load_online_state(
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
         }
       }
-      else if (g == nullptr || (!g->adaptive && !g->normalized))
+      else if (g == nullptr || (!all.weights.adaptive && !all.weights.normalized))
       {
         if (*v != 0.)
         {
@@ -854,7 +854,7 @@ void save_load_online_state(
           brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
         }
       }
-      else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+      else if ((all.weights.adaptive && !all.weights.normalized) || (!all.weights.adaptive && all.weights.normalized))
       {
         // either adaptive or normalized
         if (*v != 0. || (&(*v))[1] != 0.)
@@ -995,7 +995,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   {
     initialize_regressor(all);
 
-    if (all.adaptive && all.initial_t > 0)
+    if (all.weights.adaptive && all.initial_t > 0)
     {
       float init_weight = all.initial_weight;
       pair<float, float> p = make_pair(init_weight, all.initial_t);
@@ -1092,7 +1092,7 @@ template <bool sqrt_rate, uint64_t adaptive, uint64_t spare>
 uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
-  if (all.normalized_updates)
+  if (all.weights.normalized)
     return set_learn<sqrt_rate, adaptive, adaptive + 1, adaptive + 2, adaptive + 3>(all, feature_mask_off, g);
   else
     return set_learn<sqrt_rate, adaptive, 0, spare, spare + 1>(all, feature_mask_off, g);
@@ -1101,7 +1101,7 @@ uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 template <bool sqrt_rate>
 uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {
-  if (all.adaptive)
+  if (all.weights.adaptive)
     return set_learn<sqrt_rate, 1, 2>(all, feature_mask_off, g);
   else
     return set_learn<sqrt_rate, 0, 0>(all, feature_mask_off, g);
@@ -1126,11 +1126,15 @@ base_learner* setup(options_i& options, vw& all)
   bool normalized = false;
 
   option_group_definition new_options("Gradient Descent options");
-  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update."))
-      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates."))
+  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.")
+                 .keep(all.save_resume))
+      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.")
+                .keep(all.save_resume))
       .add(make_option("adax", adax).help("use adaptive learning rates with x^2 instead of g^2x^2"))
-      .add(make_option("invariant", invariant).help("use safe/importance aware updates."))
-      .add(make_option("normalized", normalized).help("use per feature normalized updates"))
+      .add(make_option("invariant", invariant).help("use safe/importance aware updates.")
+                .keep(all.save_resume))
+      .add(make_option("normalized", normalized).help("use per feature normalized updates")
+                .keep(all.save_resume))
       .add(make_option("sparse_l2", g->sparse_l2).default_value(0.f).help("use per feature normalized updates"))
       .add(make_option("l1_state", all.sd->gravity)
                .keep(all.save_resume)
@@ -1146,10 +1150,11 @@ base_learner* setup(options_i& options, vw& all)
   g->all->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
   g->total_weight = 0.;
-  g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
+  all.weights.adaptive = true;
+  all.weights.normalized = true;
+  g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.power_t;
-  g->adaptive = all.adaptive;
-  g->normalized = all.normalized_updates;
+
 
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
@@ -1173,16 +1178,16 @@ base_learner* setup(options_i& options, vw& all)
   if (sgd || adaptive || invariant || normalized)
   {
     // nondefault
-    all.adaptive = all.training && adaptive;
+    all.weights.adaptive = adaptive;
     all.invariant_updates = all.training && invariant;
-    all.normalized_updates = all.training && normalized;
+    all.weights.normalized = normalized;
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
-        !(all.adaptive && all.normalized_updates))
+        !(all.weights.adaptive && all.weights.normalized))
       all.eta = 10;  // default learning rate to 10 for non default update rule
 
     // if not using normalized or adaptive, default initial_t to 1 instead of 0
-    if (!all.adaptive && !all.normalized_updates)
+    if (!all.weights.adaptive && !all.weights.normalized)
     {
       if (!options.was_supplied("initial_t"))
       {
@@ -1194,15 +1199,18 @@ base_learner* setup(options_i& options, vw& all)
   }
   else
   {
-    all.adaptive = all.training;
     all.invariant_updates = all.training;
-    all.normalized_updates = all.training;
   }
+  g->adaptive_input = all.weights.adaptive;
+  g->normalized_input = all.weights.normalized;
+
+  all.weights.adaptive = all.weights.adaptive && all.training;
+  all.weights.normalized = all.weights.normalized && all.training;
 
   if (adax)
     g->adax = all.training && adax;
 
-  if (g->adax && !all.adaptive)
+  if (g->adax && !all.weights.adaptive)
     THROW("Cannot use adax without adaptive");
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)
