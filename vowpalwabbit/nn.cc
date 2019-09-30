@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include <stdio.h>
 #include <sstream>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -44,6 +45,7 @@ struct nn
   polyprediction* hiddenbias_pred;
 
   vw* all;  // many things
+  std::shared_ptr<rand_state> _random_state;
 
   ~nn()
   {
@@ -193,7 +195,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
       {
-        n.hiddenbias.l.simple.label = (float)(merand48(n.all->random_state) - 0.5);
+        n.hiddenbias.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5);
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
@@ -261,7 +263,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     if (wf == 0)
     {
       float sqrtk = sqrt((float)n.k);
-      n.outputweight.l.simple.label = (float)(merand48(n.all->random_state) - 0.5) / sqrtk;
+      n.outputweight.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;
     }
@@ -430,6 +432,7 @@ base_learner* nn_setup(options_i& options, vw& all)
     return nullptr;
 
   n->all = &all;
+  n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
     std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;

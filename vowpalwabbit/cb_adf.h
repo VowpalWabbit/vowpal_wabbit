@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "reductions_fwd.h"
 
 LEARNER::base_learner* cb_adf_setup(VW::config::options_i& options, vw& all);
 

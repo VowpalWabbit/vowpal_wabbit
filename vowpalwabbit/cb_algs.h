@@ -77,7 +77,7 @@ inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint
   return 0.;
 }
 
-inline bool example_is_newline_not_header(example& ec)
+inline bool example_is_newline_not_header(example const& ec)
 {
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
