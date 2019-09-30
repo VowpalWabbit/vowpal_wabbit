@@ -94,13 +94,11 @@ void print_result(int f, float res, float, v_array<char> tag)
 {
   if (f >= 0)
   {
-    char temp[30];
-    if (floorf(res) != res)
-      sprintf(temp, "%f", res);
-    else
-      sprintf(temp, "%.0f", res);
     std::stringstream ss;
-    ss << temp;
+    auto saved_precision = ss.precision();
+    if (floorf(res) == res)
+      ss << std::setprecision(0);
+    ss << std::fixed << res << std::setprecision(saved_precision);
     print_tag(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
@@ -347,9 +345,6 @@ vw::vw()
     spelling_features[i] = 0;
   }
 
-  // by default use invariant normalized adaptive updates
-  adaptive = true;
-  normalized_updates = true;
   invariant_updates = true;
   normalized_idx = 2;
 

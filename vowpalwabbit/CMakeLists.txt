@@ -73,6 +73,12 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_definitions(vw PUBLIC __extern_always_inline=inline)
 endif()
 
+# Clang-cl on Windows has issues with our usage of SIMD types. Turn it off explicitly for Windows + clang-cl to mitigate.
+# See issue #
+if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_definitions(vw PUBLIC VW_NO_INLINE_SIMD)
+endif()
+
 # TODO code analysis
 if(WIN32)
   target_compile_definitions(vw PUBLIC __SSE2__)
@@ -93,12 +99,15 @@ endif(WARNINGS)
 if(NOT WIN32)
   add_executable(active_interactor active_interactor.cc)
 
+  if(GCOV)
+    target_link_libraries(active_interactor PUBLIC gcov --coverage)
+  endif()
+
   if(VW_INSTALL)
     install(TARGETS active_interactor
       RUNTIME DESTINATION bin
     )
   endif()
-
 
   target_compile_definitions(active_interactor PUBLIC _FILE_OFFSET_BITS=64)
   target_compile_definitions(active_interactor PUBLIC $<$<CONFIG:RELEASE>:NDEBUG>)

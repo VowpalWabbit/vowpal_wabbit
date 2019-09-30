@@ -16,6 +16,7 @@ using namespace std;
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <stdarg.h>
 #include <numeric>
@@ -74,9 +75,9 @@ void truncate(vw& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
   for_each(weights.begin(), weights.end(), [](float& v) {
-    if (abs(v) > sd * 2)
+    if (std::fabs(v) > sd * 2)
     {
-      v = (float)std::remainder(v, sd * 2);
+      v = (float)std::remainder(static_cast<double>(v), sd * 2);
     }
   });
 }
@@ -159,23 +160,6 @@ bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
   return false;
 }
 
-int32_t safe_sprintf_s(char*& buf, size_t& buf_size, const char* fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  int32_t len = vsprintf_s(buf, buf_size, fmt, args);
-  va_end(args);
-  if (len < 0)
-    THROW("Encoding error.");
-  if (resize_buf_if_needed(buf, buf_size, len + 1))
-  {
-    va_start(args, fmt);
-    vsprintf_s(buf, buf_size, fmt, args);
-    va_end(args);
-  }
-
-  return len;
-}
 
 inline void safe_memcpy(char*& __dest, size_t& __dest_size, const void* __src, size_t __n)
 {

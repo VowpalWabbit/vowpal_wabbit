@@ -23,6 +23,12 @@ struct cb
 {
   cb_to_cs cbcs;
   COST_SENSITIVE::label cb_cs_ld;
+
+  ~cb()
+  {
+    cb_cs_ld.costs.delete_v();
+    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
+  }
 };
 
 bool know_all_cost_example(CB::label& ld)
@@ -109,13 +115,6 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   }
 
   print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
-}
-
-void finish(cb& data)
-{
-  cb_to_cs& c = data.cbcs;
-  data.cb_cs_ld.costs.delete_v();
-  COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
 }
 
 void finish_example(vw& all, cb& c, example& ec)
@@ -210,6 +209,5 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   }
   c.scorer = all.scorer;
 
-  l->set_finish(finish);
   return make_base(*l);
 }
