@@ -10,6 +10,7 @@ using namespace VW::config;
 
 namespace VW
 {
+// cb_sample is used to automatically sample and swap from a cb explore pdf.
 struct cb_sample_data
 {
   explicit cb_sample_data(uint64_t seedState) : _seed_state(seedState) {}
