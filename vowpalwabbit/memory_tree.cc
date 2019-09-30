@@ -5,6 +5,7 @@
 #include <time.h>
 #include <sstream>
 #include <ctime>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -168,6 +169,7 @@ struct node
 struct memory_tree
 {
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
 
   v_array<node> nodes;         // array of nodes.
   v_array<example*> examples;  // array of example points
@@ -338,7 +340,8 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     else if (b.nodes[cn].nr < 1)  // no examples routed to right ever:
       pred = -1.f;                // go left.
     else if ((b.nodes[cn].nl >= 1) && (b.nodes[cn].nr >= 1))
-      pred = merand48(b.all->random_state) < (b.nodes[cn].nl * 1. / (b.nodes[cn].nr + b.nodes[cn].nl)) ? -1.f : 1.f;
+      pred = b._random_state->get_and_update_random() < (b.nodes[cn].nl * 1. / (b.nodes[cn].nr + b.nodes[cn].nl)) ? -1.f
+                                                                                                                  : 1.f;
     else
     {
      std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
@@ -360,7 +363,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
 
   if (b.nodes[cn].examples_index.size() >= 1)
   {
-    int loc_at_leaf = int(merand48(b.all->random_state) * b.nodes[cn].examples_index.size());
+    int loc_at_leaf = int(b._random_state->get_and_update_random() * b.nodes[cn].examples_index.size());
     uint32_t ec_id = b.nodes[cn].examples_index[loc_at_leaf];
     remove_at_index(b.nodes[cn].examples_index, loc_at_leaf);
     return ec_id;
@@ -802,7 +805,7 @@ void learn_at_leaf_random(
   float reward = 0.f;
   if (b.nodes[leaf_id].examples_index.size() > 0)
   {
-    uint32_t pos = uint32_t(merand48(b.all->random_state) * b.nodes[leaf_id].examples_index.size());
+    uint32_t pos = uint32_t(b._random_state->get_and_update_random() * b.nodes[leaf_id].examples_index.size());
     ec_id = b.nodes[leaf_id].examples_index[pos];
   }
   if (ec_id != -1)
@@ -880,15 +883,15 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 
   if (path_to_leaf.size() > 1)
   {
-    // uint32_t random_pos = merand48(b.all->random_state)*(path_to_leaf.size()-1);
-    uint32_t random_pos = (uint32_t)(merand48(b.all->random_state) * (path_to_leaf.size()));  // include leaf
+    // uint32_t random_pos = merand48(b._random_state->get_current_state())*(path_to_leaf.size()-1);
+    uint32_t random_pos = (uint32_t)(b._random_state->get_and_update_random() * (path_to_leaf.size()));  // include leaf
     uint64_t cn = path_to_leaf[random_pos];
 
     if (b.nodes[cn].internal != -1)
     {  // if it's an internal node:'
       float objective = 0.f;
       float prob_right = 0.5;
-      float coin = merand48(b.all->random_state) < prob_right ? 1.f : -1.f;
+      float coin = b._random_state->get_and_update_random() < prob_right ? 1.f : -1.f;
       float weight = path_to_leaf.size() * 1.f / (path_to_leaf.size() - 1.f);
       if (coin == -1.f)
       {  // go left
@@ -1252,6 +1255,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   }
 
   tree->all = &all;
+  tree->_random_state = all.get_random_state();
   tree->current_pass = 0;
   tree->final_pass = all.numpasses;
 

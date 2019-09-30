@@ -26,11 +26,11 @@ set(vw_all_headers
   search_multiclasstask.h best_constant.h mwt.h search_sequencetask.h bfgs.h network.h sender.h
   binary.h nn.h boosting.h ftrl.h no_label.h spanning_tree.h bs.h gd.h noop.h stable_unique.h
   cache.h gd_mf.h oaa.h stagewise_poly.h cb_adf.h gd_predict.h OjaNewton.h svrg.h cb_algs.h
-  gen_cs_example.h parse_args.h topk.h cb_explore_adf.h parse_dispatch_loop.h unique_sort.h
+  gen_cs_example.h parse_args.h topk.h parse_dispatch_loop.h unique_sort.h
   interact.h interactions.h parse_example_json.h cbify.h warm_cb.h interactions_predict.h vw_allreduce.h
   classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
-  config.h.in primitives.h lda_core.h print.h vw_versions.h shared_feature_merger.h conditional_contextual_bandit.h
-  ccb_label.h
+  config.h.in primitives.h lda_core.h print.h vw_versions.h shared_feature_merger.h conditional_contextual_bandit.h ccb_label.h
+  cb_explore_adf_common.h cb_explore_adf_bag.h cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h cb_explore_adf_regcb.h cb_explore_adf_softmax.h
 )
 
 set(vw_all_sources
@@ -45,8 +45,9 @@ set(vw_all_sources
   cbify.cc warm_cb.cc explore_eval.cc topk.cc stagewise_poly.cc log_multi.cc recall_tree.cc memory_tree.cc active.cc
   active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
-  action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc
+  action_score.cc OjaNewton.cc baseline.cc classweight.cc
   vw_exception.cc no_label.cc shared_feature_merger.cc conditional_contextual_bandit.cc cb_sample.cc ccb_label.cc version.cc
+  cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc cb_explore_adf_regcb.cc cb_explore_adf_softmax.cc
 )
 
 set(explore_all_headers

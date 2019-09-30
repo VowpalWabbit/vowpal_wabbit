@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <numeric>
 #include <vector>
+#include <memory>
 
 #include "reductions.h"
 #include "vw.h"
@@ -27,6 +28,7 @@ struct bs
   float ub;
   std::vector<double>* pred_vec;
   vw* all;  // for raw prediction and loss
+  std::shared_ptr<rand_state> _random_state;
 
   ~bs()
   {
@@ -188,7 +190,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
 
   for (size_t i = 1; i <= d.B; i++)
   {
-    ec.weight = weight_temp * (float)BS::weight_gen(all);
+    ec.weight = weight_temp * (float)BS::weight_gen(d._random_state);
 
     if (is_learn)
       base.learn(ec, i - 1);
@@ -262,6 +264,7 @@ base_learner* bs_setup(options_i& options, vw& all)
   data->pred_vec = new std::vector<double>();
   data->pred_vec->reserve(data->B);
   data->all = &all;
+  data->_random_state = all.get_random_state();
 
   learner<bs, example>& l = init_learner(
       data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->B);

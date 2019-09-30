@@ -474,10 +474,10 @@ void save_load_header(
         auto serialized_keep_options = serializer.str();
 
         // We need to save our current PRG state
-        if (all.save_resume && all.random_state != 0)
+        if (all.save_resume && all.get_random_state()->get_current_state() != 0)
         {
           serialized_keep_options += " --random_seed";
-          serialized_keep_options += " " + std::to_string(all.random_state);
+          serialized_keep_options += " " + std::to_string(all.get_random_state()->get_current_state());
         }
 
         msg << "options:" << serialized_keep_options << "\n";

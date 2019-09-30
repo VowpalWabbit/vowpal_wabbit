@@ -34,7 +34,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
     avg_loss = (float)(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
-  if (merand48(a.all->random_state) < bias)
+  if (a._random_state->get_and_update_random() < bias)
     return 1.f / bias;
   else
     return -1.;
@@ -149,6 +149,7 @@ base_learner* active_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->_random_state = all.get_random_state();
 
   if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");

@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <string.h>
 #include <math.h>
+#include <memory>
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
@@ -138,6 +139,7 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
 struct search_private
 {
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
 
   uint64_t offset;
   bool auto_condition_features;  // do you want us to automatically add conditioning features?
@@ -395,11 +397,12 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
   else if (num_valid_policies == 1)
     pid = 0;
   else if (num_valid_policies == 2)
-    pid = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state)) >= priv.beta;
+    pid = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random()) >=
+        priv.beta;
   else
   {
     // SPEEDUP this up in the case that beta is small!
-    float r = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state));
+    float r = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random());
     pid = 0;
 
     if (r > priv.beta)
@@ -719,7 +722,7 @@ void reset_search_structure(search_private& priv)
 
   if (!priv.cb_learner)  // was: if rollout_all_actions
   {
-    priv.all->random_state = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
+    priv._random_state->set_random_state((uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647);
   }
 }
 
@@ -761,7 +764,7 @@ void cerr_print_array(std::string str, v_array<T>& A)
   std::cerr << " ]" << endl;
 }
 
-size_t random(uint64_t& v, size_t max) { return (size_t)(merand48(v) * (float)max); }
+size_t random(std::shared_ptr<rand_state>& rs, size_t max) { return (size_t)(rs->get_and_update_random() * (float)max); }
 template <class T>
 bool array_contains(T target, const T* A, size_t n)
 {
@@ -1107,7 +1110,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         {
           cdbg << ", hit @ " << k;
           count++;
-          if ((count == 1) || (merand48(priv.all->random_state) < 1. / (float)count))
+          if ((count == 1) || (priv._random_state->get_and_update_random() < 1. / (float)count))
           {
             a = (allowed_actions == nullptr) ? (uint32_t)(k + 1) : allowed_actions[k];
             cdbg << "***";
@@ -1120,13 +1123,13 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   if (a == (action)-1)
   {
     if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) &&
-        (merand48(priv.all->random_state) < priv.perturb_oracle))
+        (priv._random_state->get_and_update_random() < priv.perturb_oracle))
       oracle_actions_cnt = 0;
     a = (oracle_actions_cnt > 0)
-        ? oracle_actions[random(priv.all->random_state, oracle_actions_cnt)]
-        : (allowed_actions_cnt > 0) ? allowed_actions[random(priv.all->random_state, allowed_actions_cnt)]
-                                    : priv.is_ldf ? (action)random(priv.all->random_state, ec_cnt)
-                                                  : (action)(1 + random(priv.all->random_state, priv.A));
+        ? oracle_actions[random(priv._random_state, oracle_actions_cnt)]
+        : (allowed_actions_cnt > 0) ? allowed_actions[random(priv._random_state, allowed_actions_cnt)]
+                                    : priv.is_ldf ? (action)random(priv._random_state, ec_cnt)
+                                                  : (action)(1 + random(priv._random_state, priv.A));
   }
   cdbg << "choose_oracle_action from oracle_actions = [";
   for (size_t i = 0; i < oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i];
@@ -1980,7 +1983,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   if (priv.subsample_timesteps <= -1)
   {
     for (size_t i = 0; i < priv.active_uncertainty.size(); i++)
-      if (merand48(priv.all->random_state) > priv.active_uncertainty[i].first)
+      if (priv._random_state->get_and_update_random() > priv.active_uncertainty[i].first)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
     /*
     float k = (float)priv.total_examples_generated;
@@ -2013,11 +2016,11 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   else if (priv.subsample_timesteps < 1)
   {
     for (size_t t = 0; t < priv.T; t++)
-      if (merand48(priv.all->random_state) <= priv.subsample_timesteps)
+      if (priv._random_state->get_and_update_random() <= priv.subsample_timesteps)
         timesteps.push_back(t);
 
     if (timesteps.size() == 0)  // ensure at least one
-      timesteps.push_back((size_t)(merand48(priv.all->random_state) * priv.T));
+      timesteps.push_back((size_t)(priv._random_state->get_and_update_random() * priv.T));
   }
 
   // finally, if subsample >= 1, then pick (int) that many uniformly at random without replacement; could use an LFSR
@@ -2026,7 +2029,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   {
     while ((timesteps.size() < (size_t)priv.subsample_timesteps) && (timesteps.size() < priv.T))
     {
-      size_t t = (size_t)(merand48(priv.all->random_state) * (float)priv.T);
+      size_t t = (size_t)(priv._random_state->get_and_update_random() * (float)priv.T);
       if (!v_array_contains(timesteps, t))
         timesteps.push_back(t);
     }
@@ -2479,6 +2482,7 @@ void search_initialize(vw* all, search& sch)
 {
   search_private& priv = *sch.priv;  // priv is zero initialized by default
   priv.all = all;
+  priv._random_state = all->get_random_state();
 
   priv.active_csoaa = false;
   priv.label_is_test = mc_label_is_test;
