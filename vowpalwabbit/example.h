@@ -99,7 +99,7 @@ flat_example* flatten_example(vw& all, example* ec);
 flat_example* flatten_sort_example(vw& all, example* ec);
 void free_flatten_example(flat_example* fec);
 
-inline int example_is_newline(example& ec)
+inline int example_is_newline(example const& ec)
 {  // if only index is constant namespace or no index
   if (ec.tag.size() > 0)
     return false;

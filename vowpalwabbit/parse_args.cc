@@ -33,7 +33,12 @@ license as described in the file LICENSE.
 #include "cb_algs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
-#include "cb_explore_adf.h"
+#include "cb_explore_adf_bag.h"
+#include "cb_explore_adf_cover.h"
+#include "cb_explore_adf_first.h"
+#include "cb_explore_adf_greedy.h"
+#include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_softmax.h"
 #include "mwt.h"
 #include "confidence.h"
 #include "scorer.h"
@@ -1277,7 +1282,12 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_adf_setup);
   all.reduction_stack.push(mwt_setup);
   all.reduction_stack.push(cb_explore_setup);
-  all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::first::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
@@ -1513,7 +1523,7 @@ void parse_modules(options_i& options, vw& all, vector<string>& dictionary_nses)
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
-  all.random_state = all.random_seed;
+  all.get_random_state()->set_random_state(all.random_seed);
 
   parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
 

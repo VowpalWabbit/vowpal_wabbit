@@ -9,6 +9,7 @@
 #include "vw_exception.h"
 
 #include <vector>
+#include <memory>
 
 using namespace LEARNER;
 using namespace exploration;
@@ -40,6 +41,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter;
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   multi_ex ecs;
   float loss0;
   float loss1;
@@ -238,7 +240,7 @@ void setup_lambdas(warm_cb& data)
 
 uint32_t generate_uar_action(warm_cb& data)
 {
-  float randf = merand48(data.all->random_state);
+  float randf = data._random_state->get_and_update_random();
 
   for (uint32_t i = 1; i <= data.num_actions; i++)
   {
@@ -260,7 +262,7 @@ uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
     cor_type = data.cor_type_ws;
   }
 
-  float randf = merand48(data.all->random_state);
+  float randf = data._random_state->get_and_update_random();
   if (randf < cor_prob)
   {
     if (cor_type == UAR)
@@ -611,6 +613,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
   data->all = &all;
+  data->_random_state = all.get_random_state();
   data->use_cs = use_cs;
 
   init_adf_data(*data.get(), num_actions);
