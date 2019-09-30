@@ -74,6 +74,12 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_definitions(vw PUBLIC __extern_always_inline=inline)
 endif()
 
+# Clang-cl on Windows has issues with our usage of SIMD types. Turn it off explicitly for Windows + clang-cl to mitigate.
+# See issue #
+if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_definitions(vw PUBLIC VW_NO_INLINE_SIMD)
+endif()
+
 # TODO code analysis
 if(WIN32)
   target_compile_definitions(vw PUBLIC __SSE2__)
