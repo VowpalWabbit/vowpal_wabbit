@@ -1,5 +1,6 @@
 #include <cmath>
 #include <errno.h>
+#include <memory>
 #include "reductions.h"
 #include "rand48.h"
 #include "float.h"
@@ -29,6 +30,7 @@ struct active_cover
   float* lambda_d;
 
   vw* all;  // statistics, loss
+  std::shared_ptr<rand_state> _random_state;
   LEARNER::base_learner* l;
 
   ~active_cover()
@@ -116,7 +118,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
     p = 1.f;
   }
 
-  if (merand48(a.all->random_state) <= p)
+  if (a._random_state->get_and_update_random() <= p)
   {
     return 1.f / p;
   }
@@ -249,6 +251,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->_random_state = all.get_random_state();
   data->beta_scale *= data->beta_scale;
 
   if (data->oracular)
