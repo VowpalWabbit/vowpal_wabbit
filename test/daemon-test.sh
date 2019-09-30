@@ -140,8 +140,10 @@ fi
 
 # Test on train-set
 # OpenBSD netcat quits immediately after stdin EOF
-# nc.traditional does not, so let's use -q 1.
-$NETCAT -q 1 localhost $PORT < $TRAINSET > $PREDOUT
+# nc.traditional does not, so let's use -q 1. -q is not supported on Mac so let's workaround it with -i
+
+$NETCAT -i 1 localhost $PORT < $TRAINSET > $PREDOUT
+
 #wait
 
 # JohnLangford: I'm unable to make the following work on Ubuntu 16.04.  Without -q 1, netcat appears to sometimes early terminate with STATUS an empty string.

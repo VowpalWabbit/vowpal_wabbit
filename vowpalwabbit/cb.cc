@@ -20,7 +20,7 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
   size_t num = *(size_t*)c;
   ld->costs.clear();
   c += sizeof(size_t);
-  size_t total = sizeof(cb_class) * num;
+  size_t total = sizeof(cb_class) * num + sizeof(ld->weight);
   if (cache.buf_read(c, total) < total)
   {
     cout << "error in demarshal of cost data" << endl;
@@ -32,7 +32,8 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
     c += sizeof(cb_class);
     ld->costs.push_back(temp);
   }
-
+  memcpy(&ld->weight, c, sizeof(ld->weight));
+  c += sizeof(ld->weight);
   return c;
 }
 
@@ -49,7 +50,10 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void*) { return 1.; }
+float weight(void* v) {
+    CB::label* ld = (CB::label*)v;
+    return ld->weight;
+}
 
 char* bufcache_label(CB::label* ld, char* c)
 {
@@ -60,6 +64,8 @@ char* bufcache_label(CB::label* ld, char* c)
     *(cb_class*)c = ld->costs[i];
     c += sizeof(cb_class);
   }
+  memcpy(c, &ld->weight, sizeof(ld->weight));
+  c += sizeof(ld->weight);
   return c;
 }
 
@@ -67,7 +73,7 @@ void cache_label(void* v, io_buf& cache)
 {
   char* c;
   CB::label* ld = (CB::label*)v;
-  cache.buf_write(c, sizeof(size_t) + sizeof(cb_class) * ld->costs.size());
+  cache.buf_write(c, sizeof(size_t) + sizeof(cb_class) * ld->costs.size() + sizeof(ld->weight));
   bufcache_label(ld, c);
 }
 
@@ -75,6 +81,7 @@ void default_label(void* v)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
+  ld->weight = 1;
 }
 
 bool test_label(void* v)
@@ -99,12 +106,15 @@ void copy_label(void* dst, void* src)
   CB::label* ldD = (CB::label*)dst;
   CB::label* ldS = (CB::label*)src;
   copy_array(ldD->costs, ldS->costs);
+  ldD->weight = ldS->weight;
 }
 
 void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
+  ld->weight = 1.0;
+
   for (size_t i = 0; i < words.size(); i++)
   {
     cb_class f;
@@ -157,7 +167,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
     test_label, sizeof(label)};
 
-bool ec_is_example_header(example& ec)  // example headers just have "shared"
+bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
   v_array<CB::cb_class> costs = ec.l.cb.costs;
   if (costs.size() != 1)
@@ -208,6 +218,11 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
+float weight(void* v) {
+  CB_EVAL::label* ld = (CB_EVAL::label*)v;
+  return ld->event.weight;
+}
+
 size_t read_cached_label(shared_data* sd, void* v, io_buf& cache)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
@@ -273,6 +288,6 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   words.begin()--;
 }
 
-label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, CB::weight,
+label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
     copy_label, test_label, sizeof(CB_EVAL::label)};
 }  // namespace CB_EVAL

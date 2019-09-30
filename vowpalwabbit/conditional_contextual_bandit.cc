@@ -133,6 +133,7 @@ void create_cb_labels(ccb& data)
   {
     action->l.cb.costs = data.cb_label_pool.get_object();
   }
+  data.shared->l.cb.weight = 1.0;
 }
 
 // the polylabel (union) must be manually cleaned up
@@ -683,5 +684,5 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-bool ec_is_example_header(example& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
+bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
 }  // namespace CCB
