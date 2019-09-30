@@ -17,9 +17,9 @@
 #endif
 
 #ifdef HAS_STD14
-#define STD14_CONSTEXPR constexpr
+#define VW_STD14_CONSTEXPR constexpr
 #else
-#define STD14_CONSTEXPR
+#define VW_STD14_CONSTEXPR
 #endif
 
 #else

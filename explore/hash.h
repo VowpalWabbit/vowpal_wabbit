@@ -48,7 +48,7 @@ namespace MURMUR_HASH_3
 {
   //-----------------------------------------------------------------------------
   // Finalization mix - force all bits of a hash block to avalanche
-  STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
+  VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
   {
     h ^= h >> 16;
     h *= 0x85ebca6b;
@@ -68,7 +68,7 @@ namespace MURMUR_HASH_3
   }
 }
 
-STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
+VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 {
   const uint8_t* data = (const uint8_t*)key;
   const int nblocks = (int)len / 4;
