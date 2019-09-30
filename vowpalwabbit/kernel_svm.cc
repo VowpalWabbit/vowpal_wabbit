@@ -36,6 +36,8 @@ license as described in the file LICENSE.
 using namespace LEARNER;
 using namespace VW::config;
 
+using std::endl;
+
 struct svm_params;
 
 static size_t num_kernel_evals = 0;
@@ -119,10 +121,10 @@ struct svm_params
     free(pool);
     if (all)
     {
-      all->trace_message << "Num support = " << model->num_support << std::endl;
+      all->trace_message << "Num support = " << model->num_support << endl;
       all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                         << "Number of cache queries = " << num_cache_evals << std::endl;
-      all->trace_message << "Total loss = " << loss_sum << std::endl;
+                         << "Number of cache queries = " << num_cache_evals << endl;
+      all->trace_message << "Total loss = " << loss_sum << endl;
     }
     if (model)
     {
@@ -130,14 +132,14 @@ struct svm_params
     }
     if (all)
     {
-      all->trace_message << "Done freeing model" << std::endl;
+      all->trace_message << "Done freeing model" << endl;
     }
 
     free(kernel_params);
     if (all)
     {
-      all->trace_message << "Done freeing kernel params" << std::endl;
-      all->trace_message << "Done with finish " << std::endl;
+      all->trace_message << "Done freeing kernel params" << endl;
+      all->trace_message << "Done with finish " << endl;
     }
   }
 };
@@ -180,7 +182,7 @@ int svm_example::compute_kernels(svm_params& params)
       alloc += 1;
       // std::cerr<<kv<<" ";
     }
-    // std::cerr<< std::endl;
+    // std::cerr<< endl;
   }
   else
     num_cache_evals += n;
@@ -200,7 +202,7 @@ static int make_hot_sv(svm_params& params, size_t svi)
   svm_model* model = params.model;
   size_t n = model->num_support;
   if (svi >= model->num_support)
-    params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << std::endl;
+    params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
   // rotate params fields
   svm_example* svi_e = model->support_vec[svi];
   int alloc = svi_e->compute_kernels(params);
@@ -305,7 +307,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         brw = model_file.bin_write_fixed((char*)fec->tag, (uint32_t)fec->tag_len * sizeof(char));
         if (!brw)
         {
-          std::cerr << fec->tag_len << " " << fec->tag << std::endl;
+          std::cerr << fec->tag_len << " " << fec->tag << endl;
           return 2;
         }
       }
@@ -332,12 +334,12 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   svm_model* model = params.model;
   // TODO: check about initialization
 
-  // params.all->opts_n_args.trace_message<<"Save load svm "<<read<<" "<<text<< std::endl;
+  // params.all->opts_n_args.trace_message<<"Save load svm "<<read<<" "<<text<< endl;
   if (model_file.files.size() == 0)
     return;
   std::stringstream msg;
   bin_text_read_write_fixed(model_file, (char*)&(model->num_support), sizeof(model->num_support), "", read, msg, text);
-  // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< std::endl;
+  // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< endl;
 
   flat_example* fec = nullptr;
   if (read)
@@ -373,7 +375,7 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
 {
   if (text)
   {
-    params.all->trace_message << "Not supporting readable model for kernel svm currently" << std::endl;
+    params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
 
@@ -394,7 +396,7 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
   {
     uint64_t ec1pos = fs_1.indicies[idx1];
     uint64_t ec2pos = fs_2.indicies[idx2];
-    // params.all->opts_n_args.trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<< std::endl;
+    // params.all->opts_n_args.trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<< endl;
     if (ec1pos < ec2pos)
       continue;
 
@@ -403,29 +405,29 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
     if (ec1pos == ec2pos)
     {
       // params.all->opts_n_args.trace_message<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<"
-      // "<<ec2f->x<< std::endl;
+      // "<<ec2f->x<< endl;
       numint++;
       dotprod += fs_1.values[idx1] * fs_2.values[idx2];
       ++idx2;
     }
   }
-  // params.all->opts_n_args.trace_message<< std::endl;
-  // params.all->opts_n_args.trace_message<<"numint = "<<numint<<" dotprod = "<<dotprod<< std::endl;
+  // params.all->opts_n_args.trace_message<< endl;
+  // params.all->opts_n_args.trace_message<<"numint = "<<numint<<" dotprod = "<<dotprod<< endl;
   return dotprod;
 }
 
 float poly_kernel(const flat_example* fec1, const flat_example* fec2, int power)
 {
   float dotprod = linear_kernel(fec1, fec2);
-  // std::cerr<<"Bandwidth = "<<bandwidth<< std::endl;
-  //std::cout<<pow(1 + dotprod, power)<< std::endl;
+  // std::cerr<<"Bandwidth = "<<bandwidth<< endl;
+  //std::cout<<pow(1 + dotprod, power)<< endl;
   return pow(1 + dotprod, power);
 }
 
 float rbf_kernel(const flat_example* fec1, const flat_example* fec2, float bandwidth)
 {
   float dotprod = linear_kernel(fec1, fec2);
-  // std::cerr<<"Bandwidth = "<<bandwidth<< std::endl;
+  // std::cerr<<"Bandwidth = "<<bandwidth<< endl;
   return expf(-(fec1->total_sum_feat_sq + fec2->total_sum_feat_sq - 2 * dotprod) * bandwidth);
 }
 
@@ -456,7 +458,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   for (size_t i = 0; i < n; i++)
   {
     ec_arr[i]->compute_kernels(params);
-    //std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< std::endl;
+    //std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
       scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
     else
@@ -500,7 +502,7 @@ size_t suboptimality(svm_model* model, double* subopt)
     }
     // std::cerr<<subopt[i]<<" ";
   }
-  // std::cerr<< std::endl;
+  // std::cerr<< endl;
   return max_pos;
 }
 
@@ -508,7 +510,7 @@ int remove(svm_params& params, size_t svi)
 {
   svm_model* model = params.model;
   if (svi >= model->num_support)
-    params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << std::endl;
+    params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
   // shift params fields
   svm_example* svi_e = model->support_vec[svi];
   for (size_t i = svi; i < model->num_support - 1; ++i)
@@ -546,7 +548,7 @@ int add(svm_params& params, svm_example* fec)
   model->support_vec.push_back(fec);
   model->alpha.push_back(0.);
   model->delta.push_back(0.);
-  // std::cout<<"After adding "<<model->num_support<< std::endl;
+  // std::cout<<"After adding "<<model->num_support<< endl;
   return (int)(model->support_vec.size() - 1);
 }
 
@@ -569,7 +571,7 @@ bool update(svm_params& params, size_t pos)
   float proj = alphaKi * ld.label;
   float ai = (params.lambda - proj) / inprods[pos];
   // std::cout<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld.label<<"
-  // "<<model->delta[pos]<<" " << ai<<" "<<params.lambda<< std::endl;
+  // "<<model->delta[pos]<<" " << ai<<" "<<params.lambda<< endl;
 
   if (ai > fec->ex.l.simple.weight)
     ai = fec->ex.l.simple.weight;
@@ -643,7 +645,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
     total_sum += sizes[i];
   }
 
-  // params.all->opts_n_args.trace_message<<total_sum<<" "<<prev_sum<< std::endl;
+  // params.all->opts_n_args.trace_message<<total_sum<<" "<<prev_sum<< endl;
   if (total_sum > 0)
   {
     queries = calloc_or_throw<char>(total_sum);
@@ -668,7 +670,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
         params.pool_pos++;
         // for(int j = 0;j < fec->feature_map_len;j++)
         //   params.all->opts_n_args.trace_message<<fec->feature_map[j].weight_index<<":"<<fec->feature_map[j].x<<" ";
-        // params.all->opts_n_args.trace_message<< std::endl;
+        // params.all->opts_n_args.trace_message<< endl;
         // params.pool[i]->in_use = true;
         // params.current_t += ((label_data*) params.pool[i]->ld)->weight;
         // params.pool[i]->example_t = params.current_t;
@@ -691,14 +693,14 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
 
 void train(svm_params& params)
 {
-  // params.all->opts_n_args.trace_message<<"In train "<<params.all->training<< std::endl;
+  // params.all->opts_n_args.trace_message<<"In train "<<params.all->training<< endl;
 
   bool* train_pool = calloc_or_throw<bool>(params.pool_size);
   for (size_t i = 0; i < params.pool_size; i++) train_pool[i] = false;
 
   float* scores = calloc_or_throw<float>(params.pool_pos);
   predict(params, params.pool, scores, params.pool_pos);
-  // std::cout<<scores[0]<< std::endl;
+  // std::cout<<scores[0]<< endl;
 
   if (params.active)
   {
@@ -712,12 +714,12 @@ void train(svm_params& params)
       // params.all->opts_n_args.trace_message<<params.pool_size<<" "<<"Scoremap: ";
       // for(;iter != scoremap.end();iter++)
       // params.all->opts_n_args.trace_message<<iter->first<<" "<<iter->second<<"
-      // "<<((label_data*)params.pool[iter->second]->ld)->label<<"\t"; params.all->opts_n_args.trace_message<< std::endl;
+      // "<<((label_data*)params.pool[iter->second]->ld)->label<<"\t"; params.all->opts_n_args.trace_message<< endl;
       iter = scoremap.begin();
 
       for (size_t train_size = 1; iter != scoremap.end() && train_size <= params.subsample; train_size++)
       {
-        // params.all->opts_n_args.trace_message<<train_size<<" "<<iter->second<<" "<<iter->first<< std::endl;
+        // params.all->opts_n_args.trace_message<<train_size<<" "<<iter->second<<" "<<iter->first<< endl;
         train_pool[iter->second] = 1;
         iter++;
       }
@@ -755,14 +757,14 @@ void train(svm_params& params)
 
     for (size_t i = 0; i < params.pool_pos; i++)
     {
-      // params.all->opts_n_args.trace_message<<"process: "<<i<<" "<<train_pool[i]<< std::endl;;
+      // params.all->opts_n_args.trace_message<<"process: "<<i<<" "<<train_pool[i]<< endl;
       int model_pos = -1;
       if (params.active)
       {
         if (train_pool[i])
         {
           // params.all->opts_n_args.trace_message<<"i = "<<i<<"train_pool[i] = "<<train_pool[i]<<"
-          // "<<params.pool[i]->example_counter<< std::endl;
+          // "<<params.pool[i]->example_counter<< endl;
           model_pos = add(params, params.pool[i]);
         }
       }
@@ -770,13 +772,13 @@ void train(svm_params& params)
         model_pos = add(params, params.pool[i]);
 
       // params.all->opts_n_args.trace_message<<"Added: "<<model_pos<<"
-      // "<<model->support_vec[model_pos]->example_counter<< std::endl;std::cout<<"After adding in train
-      // "<<model->num_support<< std::endl;
+      // "<<model->support_vec[model_pos]->example_counter<< endl;std::cout<<"After adding in train
+      // "<<model->num_support<< endl;
 
       if (model_pos >= 0)
       {
         bool overshoot = update(params, model_pos);
-        //std::cout<<model_pos<<":alpha = "<<model->alpha[model_pos]<< std::endl;
+        //std::cout<<model_pos<<":alpha = "<<model->alpha[model_pos]<< endl;
 
         double* subopt = calloc_or_throw<double>(model->num_support);
         for (size_t j = 0; j < params.reprocess; j++)
@@ -793,9 +795,9 @@ void train(svm_params& params)
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == (size_t)model_pos && max_pos > 0 && j == 0)
-                params.all->trace_message << "Shouldn't reprocess right after process!!!" << std::endl;
-              // std::cout<<max_pos<<" "<<subopt[max_pos]<< std::endl;
-              // std::cout<<params.model->support_vec[0]->example_counter<< std::endl;
+                params.all->trace_message << "Shouldn't reprocess right after process!!!" << endl;
+              // std::cout<<max_pos<<" "<<subopt[max_pos]<< endl;
+              // std::cout<<params.model->support_vec[0]->example_counter<< endl;
               if (max_pos * model->num_support <= params.maxcache)
                 make_hot_sv(params, max_pos);
               update(params, max_pos);
@@ -807,8 +809,8 @@ void train(svm_params& params)
             update(params, rand_pos);
           }
         }
-        // std::cout<< std::endl;
-        // td::cout<<params.model->support_vec[0]->example_counter<< std::endl;
+        // std::cout<< endl;
+        // td::cout<<params.model->support_vec[0]->example_counter<< endl;
         free(subopt);
       }
     }
@@ -816,14 +818,14 @@ void train(svm_params& params)
   else
     for (size_t i = 0; i < params.pool_pos; i++) delete params.pool[i];
 
-  // params.all->opts_n_args.trace_message<<params.model->support_vec[0]->example_counter<< std::endl;
+  // params.all->opts_n_args.trace_message<<params.model->support_vec[0]->example_counter<< endl;
   // for(int i = 0;i < params.pool_size;i++)
   //   params.all->opts_n_args.trace_message<<scores[i]<<" ";
-  // params.all->opts_n_args.trace_message<< std::endl;
+  // params.all->opts_n_args.trace_message<< endl;
   free(scores);
-  // params.all->opts_n_args.trace_message<<params.model->support_vec[0]->example_counter<< std::endl;
+  // params.all->opts_n_args.trace_message<<params.model->support_vec[0]->example_counter<< endl;
   free(train_pool);
-  // params.all->opts_n_args.trace_message<<params.model->support_vec[0]->example_counter<< std::endl;
+  // params.all->opts_n_args.trace_message<<params.model->support_vec[0]->example_counter<< endl;
 }
 
 void learn(svm_params& params, single_learner&, example& ec)
@@ -836,18 +838,18 @@ void learn(svm_params& params, single_learner&, example& ec)
     float score = 0;
     predict(params, &sec, &score, 1);
     ec.pred.scalar = score;
-    // std::cout<<"Score = "<<score<< std::endl;
+    // std::cout<<"Score = "<<score<< endl;
     ec.loss = std::max(0.f, 1.f - score * ec.l.simple.label);
     params.loss_sum += ec.loss;
     if (params.all->training && ec.example_counter % 100 == 0)
       trim_cache(params);
     if (params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
-      params.all->trace_message << "Number of support vectors = " << params.model->num_support << std::endl;
+      params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
       params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
                                 << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
                                 << " " << params.model->alpha[params.model->num_support - 1] << " "
-                                << params.model->alpha[params.model->num_support - 2] << std::endl;
+                                << params.model->alpha[params.model->num_support - 2] << endl;
     }
     params.pool[params.pool_pos] = sec;
     params.pool_pos++;
@@ -919,20 +921,20 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   params->lambda = all.l2_lambda;
   if (params->lambda == 0.)
     params->lambda = 1.;
-  params->all->trace_message << "Lambda = " << params->lambda << std::endl;
-  params->all->trace_message << "Kernel = " << kernel_type << std::endl;
+  params->all->trace_message << "Lambda = " << params->lambda << endl;
+  params->all->trace_message << "Kernel = " << kernel_type << endl;
 
   if (kernel_type.compare("rbf") == 0)
   {
     params->kernel_type = SVM_KER_RBF;
-    params->all->trace_message << "bandwidth = " << bandwidth << std::endl;
+    params->all->trace_message << "bandwidth = " << bandwidth << endl;
     params->kernel_params = &calloc_or_throw<double>();
     *((float*)params->kernel_params) = bandwidth;
   }
   else if (kernel_type.compare("poly") == 0)
   {
     params->kernel_type = SVM_KER_POLY;
-    params->all->trace_message << "degree = " << degree << std::endl;
+    params->all->trace_message << "degree = " << degree << endl;
     params->kernel_params = &calloc_or_throw<int>();
     *((int*)params->kernel_params) = degree;
   }

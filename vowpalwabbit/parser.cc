@@ -60,6 +60,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
 
+using std::endl;
 
 // This should not? matter in a library mode.
 bool got_sigterm;
@@ -224,7 +225,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   io_buf* output = all.p->output;
   if (output->files.size() != 0)
   {
-    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << std::endl;
+    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
@@ -234,7 +235,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
   if (f == -1)
   {
-    all.trace_message << "can't create cache file !" << std::endl;
+    all.trace_message << "can't create cache file !" << endl;
     return;
   }
 
@@ -248,7 +249,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   push_many(output->finalname, newname.c_str(), newname.length() + 1);
   all.p->write_cache = true;
   if (!quiet)
-    all.trace_message << "creating cache_file = " << newname << std::endl;
+    all.trace_message << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -276,14 +277,14 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       {
         if (!quiet)
           all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
-                            << std::endl;
+                            << endl;
         all.p->input->close_file();
         make_write_cache(all, file, quiet);
       }
       else
       {
         if (!quiet)
-          all.trace_message << "using cache_file = " << file.c_str() << std::endl;
+          all.trace_message << "using cache_file = " << file.c_str() << endl;
         all.p->reader = read_cached_features;
         if (c == all.num_bits)
           all.p->sorted_cache = true;
@@ -298,7 +299,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   if (cache_files.size() == 0)
   {
     if (!quiet)
-      all.trace_message << "using no cache" << std::endl;
+      all.trace_message << "using no cache" << endl;
     all.p->output->space.delete_v();
   }
 }
@@ -326,18 +327,18 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::stringstream msg;
       msg << "socket: " << strerror(errno);
-      all.trace_message << msg.str() << std::endl;
+      all.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << std::endl;
+      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << std::endl;
+      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -361,14 +362,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.trace_message << "getsockname: " << strerror(errno) << std::endl;
+        all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open())
         THROW("error writing port file: " << input_options.port_file);
 
-      port_file << ntohs(address.sin_port) << std::endl;
+      port_file << ntohs(address.sin_port) << endl;
       port_file.close();
     }
 
@@ -388,7 +389,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
-      pid_file << getpid() << std::endl;
+      pid_file << getpid() << endl;
       pid_file.close();
     }
 
@@ -468,7 +469,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     socklen_t size = sizeof(client_address);
     all.p->max_fd = 0;
     if (!all.quiet)
-      all.trace_message << "calling accept" << std::endl;
+      all.trace_message << "calling accept" << endl;
     int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f < 0)
       THROWERRNO("accept");
@@ -481,7 +482,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.p->input->files.push_back(f);
     all.p->max_fd = std::max(f, all.p->max_fd);
     if (!all.quiet)
-      all.trace_message << "reading data from port " << port << std::endl;
+      all.trace_message << "reading data from port " << port << endl;
 
     all.p->max_fd++;
     if (all.active)
@@ -506,13 +507,13 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (all.p->input->files.size() > 0)
     {
       if (!quiet)
-        all.trace_message << "ignoring text input in favor of cache input" << std::endl;
+        all.trace_message << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
       std::string temp = all.data_filename;
       if (!quiet)
-        all.trace_message << "Reading datafile = " << temp << std::endl;
+        all.trace_message << "Reading datafile = " << temp << endl;
       try
       {
         all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
@@ -522,7 +523,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (temp.size() != 0)
         {
-          all.trace_message << "can't open '" << temp << "', sailing on!" << std::endl;
+          all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
         }
         else
         {
@@ -565,7 +566,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->files.size() << std::endl;
+    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
 }
 
 void lock_done(parser& p)
