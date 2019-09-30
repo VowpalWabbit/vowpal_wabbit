@@ -13,10 +13,11 @@ namespace VW
 // cb_sample is used to automatically sample and swap from a cb explore pdf.
 struct cb_sample_data
 {
-  explicit cb_sample_data(uint64_t seedState) : _seed_state(seedState) {}
+  explicit cb_sample_data(std::shared_ptr<rand_state>& random_state) : _random_state(random_state) {}
+  explicit cb_sample_data(std::shared_ptr<rand_state>&& random_state) : _random_state(random_state) {}
 
   template <bool is_learn>
-  void learn_or_predict(multi_learner &base, multi_ex &examples)
+  inline void learn_or_predict(multi_learner &base, multi_ex &examples)
   {
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
@@ -50,7 +51,7 @@ struct cb_sample_data
     else
     {
       bool tag_provided_seed = false;
-      uint64_t seed = _seed_state;
+      uint64_t seed = _random_state->get_current_state();
       if (!examples[0]->tag.empty())
       {
         const std::string SEED_IDENTIFIER = "seed=";
@@ -72,17 +73,18 @@ struct cb_sample_data
       // Update the seed state in place if it was used for this example.
       if (!tag_provided_seed)
       {
-        merand48(_seed_state);
+        _random_state->get_and_update_random();
       }
     }
 
     auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
     assert(result == S_EXPLORATION_OK);
+
     _UNUSED(result);
   }
 
  private:
-  uint64_t _seed_state;
+  std::shared_ptr<rand_state> _random_state;
 };
 }  // namespace VW
 
@@ -103,7 +105,7 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   if (!cb_sample_option)
     return nullptr;
 
-  auto data = scoped_calloc_or_throw<cb_sample_data>(all.random_seed);
+  auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
       learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs));
 }
