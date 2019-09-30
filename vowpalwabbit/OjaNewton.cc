@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "reductions.h"
 #include <math.h>
+#include <memory>
 
 using namespace std;
 using namespace LEARNER;
@@ -32,6 +33,7 @@ struct update_data
 struct OjaNewton
 {
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   int m;
   int epoch_size;
   float alpha;
@@ -84,8 +86,8 @@ struct OjaNewton
           // redraw until r1 should be strictly positive
           do
           {
-            r1 = merand48(all->random_state);
-            r2 = merand48(all->random_state);
+            r1 = _random_state->get_and_update_random();
+            r2 = _random_state->get_and_update_random();
           } while (r1 == 0.f);
 
           (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
@@ -561,6 +563,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
     return nullptr;
 
   ON->all = &all;
+  ON->_random_state = all.get_random_state();
 
   ON->normalize = normalize == "true";
   ON->random_init = random_init == "true";
