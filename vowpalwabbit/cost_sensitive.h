@@ -43,5 +43,5 @@ extern label_parser cs_label;
 
 void print_update(
     vw& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool multilabel, uint32_t prediction);
-bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
+bool ec_is_example_header(example const& ec);  // example headers look like "0:-1" or just "shared"
 }  // namespace COST_SENSITIVE
