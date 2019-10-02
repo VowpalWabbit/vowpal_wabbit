@@ -31,6 +31,8 @@ namespace MC = MULTICLASS;
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG false
 
 namespace Search
 {
@@ -399,8 +401,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
   else if (num_valid_policies == 1)
     pid = 0;
   else if (num_valid_policies == 2)
-    pid = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random()) >=
-        priv.beta;
+    pid = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random()) >= priv.beta;
   else
   {
     // SPEEDUP this up in the case that beta is small!
@@ -576,9 +577,10 @@ void print_update(search_private& priv)
   auto const& total_cach = number_to_natural(priv.total_cache_hits);
   auto const& total_exge = number_to_natural(priv.total_examples_generated);
 
-  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since, inst_cntr.c_str(),
-      true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy, total_pred.c_str(), total_cach.c_str(),
-      total_exge.c_str(), priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
+  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since,
+      inst_cntr.c_str(), true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy,
+      total_pred.c_str(), total_cach.c_str(), total_exge.c_str(),
+      priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
 
   if (PRINT_CLOCK_TIME)
   {
@@ -766,7 +768,10 @@ void cerr_print_array(string str, v_array<T>& A)
   std::cerr << " ]" << endl;
 }
 
-size_t random(std::shared_ptr<rand_state>& rs, size_t max) { return (size_t)(rs->get_and_update_random() * (float)max); }
+size_t random(std::shared_ptr<rand_state>& rs, size_t max)
+{
+  return (size_t)(rs->get_and_update_random() * (float)max);
+}
 template <class T>
 bool array_contains(T target, const T* A, size_t n)
 {
@@ -2164,14 +2169,10 @@ void advance_from_known_actions(search_private& priv)
   advance_from_known_actions(priv);
 }
 
-template <bool is_learn>
-void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, multi_ex& ec_seq)
+void predict_single_example(search& sch, bool is_test_ex, multi_ex& ec_seq)
 {
   search_private& priv = *sch.priv;
   vw& all = *priv.all;
-  bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
-
-  // if (! priv.no_caching)
   clear_cache_hash_map(priv);
 
   cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
@@ -2181,8 +2182,6 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   {
     cdbg << "======================================== INIT TEST (" << priv.current_policy << ","
          << priv.read_example_last_pass << ") ========================================" << endl;
-
-    ran_test = true;
 
     // do the prediction
     reset_search_structure(priv);
@@ -2195,7 +2194,12 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
 
     // accumulate loss
     if (!is_test_ex)
+    {
+      VW_DBG(*ec_seq[0]) << "sd.update() ,test=" << ec_seq[0]->test_only << ", labeled=" << !is_test_ex
+                         << ",loss=" << priv.test_loss << ",weight=" << 1.f << ",numfeat=" << priv.num_features
+                         << std::endl;
       all.sd->update(ec_seq[0]->test_only, !is_test_ex, priv.test_loss, 1.f, priv.num_features);
+    }
 
     // generate output
     for (int sink : all.final_prediction_sink) all.print_text((int)sink, priv.pred_string->str(), ec_seq[0]->tag);
@@ -2203,10 +2207,19 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     if (all.raw_prediction > 0)
       all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
   }
+}
 
-  // if we're not training, then we're done!
-  if ((!is_learn) || is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training))
+void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, multi_ex& ec_seq)
+{
+  search_private& priv = *sch.priv;
+  vw& all = *priv.all;
+
+  if (is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!all.training))
     return;
+
+  bool ran_test = false;  // if (! priv.no_caching)
+  if (must_run_test(all, ec_seq, is_test_ex))
+    ran_test = true;
 
   // SPEEDUP: if the oracle was never called, we can skip this!
 
@@ -2224,8 +2237,11 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   run_task(sch, ec_seq);
 
   if (!ran_test)  // was  && !priv.ec_seq[0]->test_only) { but we know it's not test_only
+  {
+    VW_DBG(*ec_seq[0]) << "sd.update() ,test=" << ec_seq[0]->test_only << ", labeled=" << 1
+                       << ",loss=" << priv.test_loss << ",weight=" << 1.f << ",numfeat=" << priv.num_features;
     all.sd->update(ec_seq[0]->test_only, true, priv.test_loss, 1.f, priv.num_features);
-
+  }
   // if there's nothing to train on, we're done!
   if ((priv.loss_declared_cnt == 0) || (priv.t + priv.meta_t == 0) ||
       (priv.rollout_method == NO_ROLLOUT))  // TODO: make sure NO_ROLLOUT works with beam!
@@ -2420,7 +2436,11 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   }
 
   add_neighbor_features(priv, ec_seq);
-  train_single_example<is_learn>(sch, is_test_ex, is_holdout_ex, ec_seq);
+  if (is_learn)
+    train_single_example(sch, is_test_ex, is_holdout_ex, ec_seq);
+  else
+    predict_single_example(sch, is_test_ex, ec_seq);
+
   del_neighbor_features(priv, ec_seq);
 
   if (priv.task->run_takedown)
