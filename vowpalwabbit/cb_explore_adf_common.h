@@ -135,8 +135,6 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   auto& ec = *ec_seq[0];
   ACTION_SCORE::action_scores preds = ec.pred.a_s;
 
-  std::cout << "ec_seq.size() = " << ec_seq.size() << std::endl;
-
   for (const auto& example : ec_seq)
   {
     num_features += example->num_features;
