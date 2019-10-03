@@ -234,7 +234,7 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (auto & pair : vw_ref->pairs)
+    for (auto const& pair : vw_ref->pairs)
     {
       quadratic_features_num += ec->feature_space[(int)pair[0]].size() * ec->feature_space[(int)pair[1]].size();
       quadratic_features_sqr +=

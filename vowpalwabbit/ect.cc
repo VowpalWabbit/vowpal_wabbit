@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <numeric>
 
 #include "reductions.h"
 
@@ -84,21 +85,18 @@ size_t final_depth(size_t eliminations)
   return 31;
 }
 
-bool not_empty(v_array<v_array<uint32_t>> tournaments)
+bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 {
-  for (auto & tournament : tournaments)
-  {
-    if (!tournament.empty())
-      return true;
-  }
-  return false;
+  auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
+    [](v_array<uint32_t>& tournament){ return !tournament.empty(); });
+  return first_non_empty_tournament != tournaments.cend();
 }
 
-void print_level(v_array<v_array<uint32_t>> level)
+void print_level(v_array<v_array<uint32_t>> const& level)
 {
-  for (auto & t : level)
+  for (auto const& t : level)
   {
-    for (unsigned int i : t) cout << " " << i;
+    for (auto i : t) cout << " " << i;
     cout << " | ";
   }
   cout << endl;

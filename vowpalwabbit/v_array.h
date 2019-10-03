@@ -40,6 +40,9 @@ struct v_array
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
 
+  inline const T* begin() const{ return _begin; }
+  inline const T* end() const { return _end; }
+
   inline T* cbegin() const { return _begin; }
   inline T* cend() const { return _end; }
 

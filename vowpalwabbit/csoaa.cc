@@ -176,7 +176,7 @@ bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or jus
   if (ec.indices[0] != 'l')
     return false;
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  for (auto & cost : costs)
+  for (auto const& cost : costs)
     if ((cost.class_index != 0) || (cost.x <= 0.))
       return false;
   return true;
@@ -581,7 +581,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (auto & cost : costs)
+    for (auto const& cost : costs)
     {
       if (hit_loss)
         break;
@@ -745,7 +745,7 @@ void inline process_label(ldf& data, example* ec)
 {
   auto new_fs = ec->feature_space[ec->indices[0]];
   auto& costs = ec->l.cs.costs;
-  for (auto & cost : costs)
+  for (auto const& cost : costs)
   {
     const auto lab = (size_t)cost.x;
     LabelDict::set_label_features(data.label_features, lab, new_fs);

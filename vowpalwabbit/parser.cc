@@ -769,7 +769,7 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, const string& example_line) { return read_example(all, (char*)example_line.c_str()); }
+example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {

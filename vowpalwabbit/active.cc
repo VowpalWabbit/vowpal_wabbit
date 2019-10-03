@@ -117,10 +117,9 @@ void output_and_account_example(vw& all, active& a, example& ec)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (int i : all.final_prediction_sink)
+  for (auto i : all.final_prediction_sink)
   {
-    int f = (int)i;
-    active_print_result(f, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i, ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);

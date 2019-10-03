@@ -154,27 +154,27 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 
   // TODO: Check Marco's example that causes VW to report prob > 1.
 
-  for (size_t i = 0; i < mydata.prob_s.size(); i++)  // Scale example_wt by prob of chosen action
+  for (auto const& action_score : mydata.prob_s)  // Scale example_wt by prob of chosen action
   {
-    if (mydata.prob_s[i].action == chosen_action)
+    if (action_score.action == chosen_action)
     {
-      example_weight *= mydata.prob_s[i].score;
+      example_weight *= action_score.score;
       break;
     }
   }
 
   mydata.backup_weights.clear();
   mydata.backup_nf.clear();
-  for (size_t i = 0; i < mydata.prob_s.size(); i++)
+  for (auto const& action_score : mydata.prob_s)
   {
-    uint32_t current_action = mydata.prob_s[i].action;
+    uint32_t current_action = action_score.action;
     mydata.backup_weights.push_back(examples[current_action]->weight);
     mydata.backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action]->weight = example_weight * (1.0f - mydata.prob_s[i].score);
+      examples[current_action]->weight = example_weight * (1.0f - action_score.score);
     else
-      examples[current_action]->weight = example_weight * mydata.prob_s[i].score;
+      examples[current_action]->weight = example_weight * action_score.score;
 
     if (examples[current_action]->weight <= 1e-15)
       examples[current_action]->weight = 0;
@@ -240,7 +240,7 @@ example* test_adf_sequence(multi_ex& ec_seq)
 
   uint32_t count = 0;
   example* ret = nullptr;
-  for (auto ec : ec_seq)
+  for (auto* ec : ec_seq)
   {
     // Check if there is more than one cost for this example.
     if (ec->l.cb.costs.size() > 1)
@@ -338,7 +338,7 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     labeled_example = false;
 
   bool holdout_example = labeled_example;
-  for (auto & i : *ec_seq) holdout_example &= i->test_only;
+  for (auto const& i : *ec_seq) holdout_example &= i->test_only;
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
   return labeled_example;

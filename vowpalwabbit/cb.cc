@@ -59,7 +59,7 @@ char* bufcache_label(CB::label* ld, char* c)
 {
   *(size_t*)c = ld->costs.size();
   c += sizeof(size_t);
-  for (auto cost : ld->costs)
+  for (auto const& cost : ld->costs)
   {
     *(cb_class*)c = cost;
     c += sizeof(cb_class);
@@ -89,7 +89,7 @@ bool test_label(void* v)
   CB::label* ld = (CB::label*)v;
   if (ld->costs.empty())
     return true;
-  for (auto & cost : ld->costs)
+  for (auto const& cost : ld->costs)
     if (FLT_MAX != cost.cost && cost.probability > 0.)
       return false;
   return true;
@@ -115,7 +115,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   ld->costs.clear();
   ld->weight = 1.0;
 
-  for (auto word : words)
+  for (auto const& word : words)
   {
     cb_class f;
     tokenize(':', word, p->parse_name);

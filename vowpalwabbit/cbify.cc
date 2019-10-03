@@ -40,7 +40,7 @@ struct cbify
   std::vector<ACTION_SCORE::action_scores> cb_as;
 
   ~cbify()
-  {   
+  {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
 
@@ -319,7 +319,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (auto & cost : costs)
+    for (auto const& cost : costs)
     {
       if (hit_loss)
         break;

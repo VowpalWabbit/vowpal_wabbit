@@ -64,7 +64,7 @@ struct primitive_feature_space  // just a helper definition.
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
 example* read_example(vw& all, char* example_line);
-example* read_example(vw& all, const std::string& example_line);
+example* read_example(vw& all, std::string example_line);
 
 // The more complex way to create an example.
 
