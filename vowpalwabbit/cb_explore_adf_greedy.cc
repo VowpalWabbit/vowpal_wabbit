@@ -63,10 +63,9 @@ void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, 
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
-  using namespace std::placeholders;
   bool cb_explore_adf_option = false;
-  float epsilon;
-  bool first_only;
+  float epsilon = 0.;
+  bool first_only = false;
 
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
