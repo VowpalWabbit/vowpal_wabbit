@@ -190,7 +190,7 @@ void vw::finish_example(multi_ex& ec)
   LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
+void compile_gram(vector<string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)
   {
@@ -214,7 +214,7 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
   }
 }
 
-void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
+void compile_limits(vector<string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
@@ -345,9 +345,6 @@ vw::vw()
     spelling_features[i] = 0;
   }
 
-  // by default use invariant normalized adaptive updates
-  adaptive = true;
-  normalized_updates = true;
   invariant_updates = true;
   normalized_idx = 2;
 

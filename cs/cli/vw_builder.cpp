@@ -62,7 +62,7 @@ VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte feat
 { uint32_t index = featureGroup;
   example* ex = m_example->m_example;
 
-  return gcnew VowpalWabbitNamespaceBuilder(ex->feature_space + index, featureGroup, m_example->m_example);
+  return gcnew VowpalWabbitNamespaceBuilder(ex->feature_space.data() + index, featureGroup, m_example->m_example);
 }
 
 VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(features* features,
