@@ -99,7 +99,7 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
     R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
-  features* features_data = ec.feature_space;
+  features* features_data = ec.feature_space.data();
 
   // often used values
   const uint64_t offset = ec.ft_offset;
