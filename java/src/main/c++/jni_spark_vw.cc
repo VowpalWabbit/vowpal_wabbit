@@ -322,7 +322,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
   {
     addNamespaceIfNotExists(all, ex, ns);
 
-    auto features = ex->feature_space + ns;
+    auto features = ex->feature_space.data() + ns;
 
     CriticalArrayGuard valuesGuard(env, values);
     double* values0 = (double*)valuesGuard.data();
@@ -361,7 +361,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
   {
     addNamespaceIfNotExists(all, ex, ns);
 
-    auto features = ex->feature_space + ns;
+    auto features = ex->feature_space.data() + ns;
 
     CriticalArrayGuard indicesGuard(env, indices);
     int* indices0 = (int*)indicesGuard.data();
