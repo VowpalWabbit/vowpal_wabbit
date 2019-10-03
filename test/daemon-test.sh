@@ -141,8 +141,12 @@ fi
 # Test on train-set
 # OpenBSD netcat quits immediately after stdin EOF
 # nc.traditional does not, so let's use -q 1. -q is not supported on Mac so let's workaround it with -i
-
-$NETCAT -i 1 localhost $PORT < $TRAINSET > $PREDOUT
+DELAY_OPT="-q 1"
+if ! $NETCAT $DELAY_OPT localhost $PORT < /dev/null
+then
+  DELAY_OPT="-i 1"
+fi
+$NETCAT $DELAY_OPT localhost $PORT < $TRAINSET > $PREDOUT
 
 #wait
 
