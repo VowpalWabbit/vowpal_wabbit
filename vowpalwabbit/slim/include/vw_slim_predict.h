@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <array>
 
 // avoid mmap dependency
 #define DISABLE_SHARED_WEIGHTS
@@ -217,7 +218,7 @@ class vw_predict
   std::string _version;
   std::string _command_line_arguments;
   std::vector<std::string> _interactions;
-  bool _ignore_linear[256];
+  std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
   vw_predict_exploration _exploration;
@@ -248,7 +249,7 @@ class vw_predict
     _model_loaded = false;
 
     // required for inline_predict
-    memset(_ignore_linear, false, sizeof(_ignore_linear));
+    _ignore_linear.fill(false);
 
     model_parser mp(model, length);
 
