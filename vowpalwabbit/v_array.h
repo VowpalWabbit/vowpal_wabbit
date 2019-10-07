@@ -8,10 +8,10 @@ license as described in the file LICENSE.
 #define NOMINMAX
 #include <iostream>
 #include <algorithm>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdint.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+#include <cstdint>
 
 #ifdef _WIN32
 #define __INLINE
@@ -25,7 +25,7 @@ license as described in the file LICENSE.
 
 #include "memory.h"
 
-const size_t erase_point = ~((1 << 10) - 1);
+const size_t erase_point = ~((1u << 10u) - 1u);
 
 template <class T>
 struct v_array
@@ -41,6 +41,9 @@ struct v_array
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
+
+  inline const T* begin() const{ return _begin; }
+  inline const T* end() const { return _end; }
 
   inline T* cbegin() const { return _begin; }
   inline T* cend() const { return _end; }

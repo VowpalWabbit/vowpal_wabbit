@@ -1,5 +1,5 @@
 #include "gd.h"
-#include "float.h"
+#include <cfloat>
 #include "reductions.h"
 
 using namespace VW::config;
@@ -32,7 +32,7 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
         cout << ld.initial << " ";
     }
   }
-  if (ec.tag.size() > 0)
+  if (!ec.tag.empty())
   {
     cout << '\'';
     cout.write(ec.tag.begin(), ec.tag.size());

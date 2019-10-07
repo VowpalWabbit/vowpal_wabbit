@@ -257,7 +257,7 @@ class LabelObjectState : public BaseState<audit>
 
       if ((actions.size() != 0) && (probs.size() != 0))
       {
-        auto outcome = new CCB::conditional_contexual_bandit_outcome();
+        auto outcome = new CCB::conditional_contextual_bandit_outcome();
         outcome->cost = cb_label.cost;
         if (actions.size() != probs.size())
         {
@@ -837,7 +837,7 @@ class DefaultState : public BaseState<audit>
           ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
-          auto outcome = new CCB::conditional_contexual_bandit_outcome();
+          auto outcome = new CCB::conditional_contextual_bandit_outcome();
           outcome->cost = ctx.label_object_state.cb_label.cost;
           outcome->probabilities.push_back(
               {ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
@@ -1243,7 +1243,7 @@ struct Context
     Namespace<audit> n;
     n.feature_group = ns[0];
     n.namespace_hash = VW::hash_space(*all, ns);
-    n.ftrs = ex->feature_space + ns[0];
+    n.ftrs = ex->feature_space.data() + ns[0];
     n.feature_count = 0;
     n.return_state = return_state;
 

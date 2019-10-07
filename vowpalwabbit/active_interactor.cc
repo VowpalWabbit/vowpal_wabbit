@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
   {
     port = atoi(argv[2]);
   }
-  if (port <= 1024 || port == (unsigned short)(~0))
+  if (port <= 1024 || port == (unsigned short)(~0u))
   {
     port = 26542;
   }
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
 
     queries += 1;
     std::string imp = std::string(itok) + " " + tag + " |";
-    pos = line.find_first_of("|");
+    pos = line.find_first_of('|');
     line.replace(pos, 1, imp);
     cstr = line.c_str();
     len = line.size();

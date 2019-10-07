@@ -1,5 +1,5 @@
-#include <string.h>
-#include <float.h>
+#include <cstring>
+#include <cfloat>
 #include "reductions.h"
 #include "rand48.h"
 #include "vw_exception.h"
@@ -171,7 +171,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (size_t i = 0; i < lrq_names.size(); i++) lrq_names[i] = spoof_hex_encoded_namespaces(lrq_names[i]);
+  for (auto & lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
@@ -197,8 +197,8 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
     unsigned int k = atoi(i.c_str() + 2);
 
-    lrq->lrindices[(int)i[0]] = 1;
-    lrq->lrindices[(int)i[1]] = 1;
+    lrq->lrindices[(int)i[0]] = true;
+    lrq->lrindices[(int)i[1]] = true;
 
     maxk = std::max(k, k);
   }

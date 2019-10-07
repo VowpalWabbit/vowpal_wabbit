@@ -44,7 +44,7 @@ typedef int socket_t;
 #include <future>
 #endif
 #include "vw_exception.h"
-#include <assert.h>
+#include <cassert>
 
 constexpr size_t ar_buf_size = 1 << 16;
 
@@ -86,7 +86,7 @@ class AllReduce
     assert(node < total);
   }
 
-  virtual ~AllReduce() {}
+  virtual ~AllReduce() = default;
 };
 
 struct Data
@@ -293,7 +293,7 @@ class AllReduceSockets : public AllReduce
   {
   }
 
-  virtual ~AllReduceSockets() {}
+  virtual ~AllReduceSockets() = default;
 
   template <class T, void (*f)(T&, const T&)>
   void all_reduce(T* buffer, const size_t n)

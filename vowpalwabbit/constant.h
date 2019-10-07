@@ -33,3 +33,5 @@ constexpr unsigned char ccb_slot_namespace = 139;
 constexpr unsigned char ccb_id_namespace = 140;
 
 typedef float weight;
+
+constexpr size_t NUM_NAMESPACES = 256;

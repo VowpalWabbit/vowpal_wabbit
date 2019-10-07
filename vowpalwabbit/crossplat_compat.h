@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #ifndef _WIN32
 #define sprintf_s snprintf

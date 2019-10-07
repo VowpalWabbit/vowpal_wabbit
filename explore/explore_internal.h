@@ -5,7 +5,7 @@
 // get the error code defined in master
 #include "explore.h"
 
-#include <stdint.h>
+#include <cstdint>
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
@@ -17,7 +17,7 @@ namespace exploration
   const uint64_t a = 0xeece66d5deece66dULL;
   const uint64_t c = 2147483647;
 
-  const int bias = 127 << 23;
+  const int bias = 127 << 23u;
 
   union int_float
   {

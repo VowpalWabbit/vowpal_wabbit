@@ -2,7 +2,6 @@
 #include "reductions.h"
 #include "example.h"
 #include "global_data.h"
-#include "cache.h"
 #include "vw.h"
 #include "interactions.h"
 #include "label_dictionary.h"
@@ -10,12 +9,10 @@
 #include "cb_algs.h"
 #include "constant.h"
 #include "v_array_pool.h"
-#include "interactions.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
-#include <queue>
 #include <bitset>
 
 using namespace LEARNER;
@@ -148,7 +145,7 @@ void delete_cb_labels(ccb& data)
 }
 
 void attach_label_to_example(
-    uint32_t action_index_one_based, example* example, conditional_contexual_bandit_outcome* outcome, ccb& data)
+    uint32_t action_index_one_based, example* example, conditional_contextual_bandit_outcome* outcome, ccb& data)
 {
   // save the cb label
   // Action is unused in cb
@@ -627,9 +624,6 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
 
   VW::finish_example(all, ec_seq);
 }
-
-// Prediction deleter is intentionally a nullopt as it is handled by the reduction.
-void nullopt_delete(void*) {}
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {

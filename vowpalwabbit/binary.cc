@@ -1,4 +1,4 @@
-#include <float.h>
+#include <cfloat>
 #include "reductions.h"
 
 using namespace VW::config;

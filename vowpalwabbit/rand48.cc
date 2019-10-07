@@ -1,5 +1,5 @@
 // A quick implementation similar to drand48 for cross-platform compatibility
-#include <stdint.h>
+#include <cstdint>
 //
 // NB: the 'ULL' suffix is not part of the constant it is there to
 // prevent truncation of constant to (32-bit long) when compiling

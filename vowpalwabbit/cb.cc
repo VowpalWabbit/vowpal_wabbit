@@ -3,7 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <float.h>
+#include <cfloat>
 
 #include "example.h"
 #include "parse_primitives.h"
@@ -58,9 +58,9 @@ char* bufcache_label(CB::label* ld, char* c)
 {
   *(size_t*)c = ld->costs.size();
   c += sizeof(size_t);
-  for (size_t i = 0; i < ld->costs.size(); i++)
+  for (auto const& cost : ld->costs)
   {
-    *(cb_class*)c = ld->costs[i];
+    *(cb_class*)c = cost;
     c += sizeof(cb_class);
   }
   memcpy(c, &ld->weight, sizeof(ld->weight));
@@ -86,10 +86,10 @@ void default_label(void* v)
 bool test_label(void* v)
 {
   CB::label* ld = (CB::label*)v;
-  if (ld->costs.size() == 0)
+  if (ld->costs.empty())
     return true;
-  for (size_t i = 0; i < ld->costs.size(); i++)
-    if (FLT_MAX != ld->costs[i].cost && ld->costs[i].probability > 0.)
+  for (auto const& cost : ld->costs)
+    if (FLT_MAX != cost.cost && cost.probability > 0.)
       return false;
   return true;
 }
@@ -114,12 +114,12 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   ld->costs.clear();
   ld->weight = 1.0;
 
-  for (size_t i = 0; i < words.size(); i++)
+  for (auto const& word : words)
   {
     cb_class f;
-    tokenize(':', words[i], p->parse_name);
+    tokenize(':', word, p->parse_name);
 
-    if (p->parse_name.size() < 1 || p->parse_name.size() > 3)
+    if (p->parse_name.empty() || p->parse_name.size() > 3)
       THROW("malformed cost specification: " << p->parse_name);
 
     f.partial_prediction = 0.;
@@ -200,8 +200,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     if (action_scores)
     {
       std::ostringstream pred_buf;
-      pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
-      if (ec.pred.a_s.size() > 0)
+      pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ');
+      if (!ec.pred.a_s.empty())
         pred_buf << ec.pred.a_s[0].action << ":" << ec.pred.a_s[0].score << "...";
       else
         pred_buf << "no action";

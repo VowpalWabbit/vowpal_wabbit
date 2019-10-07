@@ -1,5 +1,5 @@
 #pragma once
-#include <stdio.h>
+#include <cstdio>
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
 
@@ -33,8 +33,8 @@ class ezexample
 
   v_array<example*> example_copies;
 
-  ezexample(const ezexample& ex);
-  ezexample& operator=(const ezexample& ex);
+  ezexample(const ezexample& ex) = delete;
+  ezexample& operator=(const ezexample& ex) = delete;
 
   example* get_new_example()
   {
@@ -42,7 +42,7 @@ class ezexample
     vw_par_ref->p->lp.default_label(&new_ec->l);
     new_ec->tag.clear();
     new_ec->indices.clear();
-    for (size_t i = 0; i < 256; i++) new_ec->feature_space[i].clear();
+    for (auto & i : new_ec->feature_space) i.clear();
 
     new_ec->ft_offset = 0;
     new_ec->num_features = 0;
@@ -69,7 +69,7 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (size_t i = 0; i < 256; i++) ns_exists[i] = false;
+    for (bool & ns_exist : ns_exists) ns_exist = false;
 
     example_changed_since_prediction = true;
   }
@@ -155,7 +155,7 @@ class ezexample
 
   void remns()
   {
-    if (ec->indices.size() == 0)
+    if (ec->indices.empty())
     {
       current_seed = 0;
       current_ns = 0;
@@ -234,11 +234,11 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (std::vector<std::string>::iterator i = vw_ref->pairs.begin(); i != vw_ref->pairs.end(); i++)
+    for (auto const& pair : vw_ref->pairs)
     {
-      quadratic_features_num += ec->feature_space[(int)(*i)[0]].size() * ec->feature_space[(int)(*i)[1]].size();
+      quadratic_features_num += ec->feature_space[(int)pair[0]].size() * ec->feature_space[(int)pair[1]].size();
       quadratic_features_sqr +=
-          ec->feature_space[(int)(*i)[0]].sum_feat_sq * ec->feature_space[(int)(*i)[1]].sum_feat_sq;
+          ec->feature_space[(int)pair[0]].sum_feat_sq * ec->feature_space[(int)pair[1]].sum_feat_sq;
     }
     ec->num_features += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
