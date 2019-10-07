@@ -863,6 +863,9 @@ void return_example(vw &all, example &ec)
 
 void learn_batch(lda &l)
 {
+  if (!l.examples.empty())
+    VW_DBG(*l.examples[0]) << "learn_batch(): batch_sz:" << l.examples.size() << std::endl;
+
   parameters &weights = l.all->weights;
   if (l.sorted_features.empty())  // FAST-PASS for real "true"
   {
@@ -996,7 +999,12 @@ void learn_batch(lda &l)
   l.doc_lengths.clear();
 }
 
-void learn(lda &l, LEARNER::single_learner &, example &ec)
+void learn(lda &l, LEARNER::single_learner &, example &ec) {
+  // Do nothing
+}
+
+
+void learn_impl(lda &l, LEARNER::single_learner &, example &ec)
 {
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
@@ -1014,7 +1022,11 @@ void learn(lda &l, LEARNER::single_learner &, example &ec)
     learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
+void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) {
+  // Do nothing
+}
+
+void learn_with_metrics_impl(lda &l, LEARNER::single_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1033,12 +1045,12 @@ void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
     }
   }
 
-  learn(l, base, ec);
+  learn_impl(l, base, ec);
 }
 
 // placeholder
-void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn_impl(l, base, ec); }
+void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics_impl(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1361,14 +1373,16 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   all.p->lp = no_label::no_label_parser;
 
-  LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
-      ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type::scalars, "lda");
+  LEARNER::learner<lda, example> &l =
+      init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
+          ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
+          prediction_type::scalars, "lda");
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
+  l.name = "lda";
 
   return make_base(l);
 }
