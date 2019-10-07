@@ -323,11 +323,11 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(v_array<int>& final_prediction_sink)
+void global_print_newline(const v_array<int>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
-  for (int f : final_prediction_sink)
+  for (auto f : final_prediction_sink)
   {
     ssize_t t;
     t = io_buf::write_file_or_socket(f, temp, 1);
