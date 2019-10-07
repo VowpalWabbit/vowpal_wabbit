@@ -4,7 +4,6 @@
   license as described in the file LICENSE.
 */
 #include "search_multiclasstask.h"
-using namespace std;
 
 namespace MulticlassTask
 {

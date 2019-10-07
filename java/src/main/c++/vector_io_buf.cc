@@ -1,5 +1,6 @@
 #include "vector_io_buf.h"
 #include <iostream>
+#include <algorithm>
 
 vector_io_buf::vector_io_buf(const char* data, size_t len) : _buffer(data, data + len)
 {
@@ -21,7 +22,7 @@ void vector_io_buf::reset_file(int f)
 
 ssize_t vector_io_buf::read_file(int f, void* buf, size_t nbytes)
 {  // make sure we don't go past the end
-  nbytes = min(_buffer.end() - _iterator, nbytes);
+  nbytes = std::min(static_cast<size_t>(_buffer.end() - _iterator), nbytes);
 
   memcpy(buf, &*_iterator, nbytes);
   _iterator += nbytes;

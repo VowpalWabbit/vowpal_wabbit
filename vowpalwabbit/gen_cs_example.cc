@@ -51,7 +51,7 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, fl
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-      wc.x = ld.costs[0].cost / safe_probability((std::max)(ld.costs[0].probability, clip_p));
+      wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p));
     cs_labels.costs.push_back(wc);
   }
 }
@@ -98,7 +98,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
       if (c.known_cost != nullptr && i == c.known_cost->action)
       {
         // use importance weighted cost for observed action, 0 otherwise
-        wc.x = c.known_cost->cost / safe_probability((std::max)(c.known_cost->probability, clip_p));
+        wc.x = c.known_cost->cost / safe_probability(std::max(c.known_cost->probability, clip_p));
 
         // ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         // update the loss of this regressor
@@ -121,7 +121,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
       if (c.known_cost != nullptr && cl.action == c.known_cost->action)
       {
         // use importance weighted cost for observed action, 0 otherwise
-        wc.x = c.known_cost->cost / safe_probability((std::max)(c.known_cost->probability, clip_p));
+        wc.x = c.known_cost->cost / safe_probability(std::max(c.known_cost->probability, clip_p));
 
         // ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         // update the loss of this regressor

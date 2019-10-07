@@ -6,7 +6,6 @@
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
-using namespace std;
 using namespace VW::config;
 
 struct LRQstate
@@ -78,7 +77,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
     // TODO: what happens with --lrq ab2 --lrq ac2
     //       i.e. namespace occurs multiple times (?)
 
-    for (string const& i : lrq.lrpairs)
+    for (std::string const& i : lrq.lrpairs)
     {
       unsigned char left = i[which % 2];
       unsigned char right = i[(which + 1) % 2];
@@ -149,7 +148,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
       ec.confidence = first_uncertainty;
     }
 
-    for (string const& i : lrq.lrpairs)
+    for (std::string const& i : lrq.lrpairs)
     {
       unsigned char right = i[(which + 1) % 2];
       ec.feature_space[right].truncate_to(lrq.orig_size[right]);
@@ -160,7 +159,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 base_learner* lrq_setup(options_i& options, vw& all)
 {
   auto lrq = scoped_calloc_or_throw<LRQstate>();
-  vector<string> lrq_names;
+  std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
   new_options.add(make_option("lrq", lrq_names).keep().help("use low rank quadratic features"))
       .add(make_option("lrqdropout", lrq->dropout).keep().help("use dropout training for low rank quadratic features"));
@@ -185,7 +184,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
       all.trace_message << "(using dropout) ";
   }
 
-  for (string const& i : lrq->lrpairs)
+  for (std::string const& i : lrq->lrpairs)
   {
     if (!all.quiet)
     {
@@ -201,11 +200,11 @@ base_learner* lrq_setup(options_i& options, vw& all)
     lrq->lrindices[(int)i[0]] = true;
     lrq->lrindices[(int)i[1]] = true;
 
-    maxk = max(maxk, k);
+    maxk = std::max(k, k);
   }
 
   if (!all.quiet)
-    all.trace_message << endl;
+    all.trace_message << std::endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate, example>& l = init_learner(

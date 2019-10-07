@@ -2,8 +2,9 @@
 #include <cfloat>
 #include "reductions.h"
 
-using namespace std;
 using namespace VW::config;
+
+using std::cout;
 
 struct print
 {
@@ -38,7 +39,7 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
   }
   cout << "| ";
   GD::foreach_feature<vw, uint64_t, print_feature>(*(p.all), ec, *p.all);
-  cout << endl;
+  cout << std::endl;
 }
 
 LEARNER::base_learner* print_setup(options_i& options, vw& all)

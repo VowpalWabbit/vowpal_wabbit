@@ -5,6 +5,7 @@
 #include <cstddef>
 
 #ifndef _WIN32
+#define NOMINMAX
 #include <sys/mman.h>
 #endif
 

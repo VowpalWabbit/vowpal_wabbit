@@ -6,14 +6,14 @@ license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
 
-#define cdbg clog
+#define cdbg std::clog
 #undef cdbg
 #define cdbg \
   if (1)     \
   {          \
   }          \
   else       \
-    clog
+    std::clog
 // comment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t action;
@@ -132,7 +132,7 @@ struct search
   //                           AUTO_CONDITION_FEATURES is on, then we will automatically
   //                           add features to ec based on what you're conditioning on.
   //                           nullptr => independent prediction
-  //   condition_on_names    a string containing the list of names of features you're
+  //   condition_on_names    a std::string containing the list of names of features you're
   //                           conditioning on. used explicitly for auditing, implicitly
   //                           for keeping tags separated. also, strlen(condition_on_names)
   //                           tells us how long condition_on is

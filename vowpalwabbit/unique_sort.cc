@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include "example.h"
 #include "unique_sort.h"
+#include <algorithm>
 
 void unique_features(features& fs, int max)
 {
@@ -13,7 +14,7 @@ void unique_features(features& fs, int max)
 
   features::features_value_index_audit_range range = fs.values_indices_audit();
   features::iterator_all last_index = range.begin();
-  features::iterator_all end = max > 0 ? range.begin() + min(fs.size(), (size_t)max) : range.end();
+  features::iterator_all end = max > 0 ? range.begin() + std::min(fs.size(), (size_t)max) : range.end();
 
   for (features::iterator_all i = ++range.begin(); i != end; ++i)
     if (i.index() != last_index.index())
