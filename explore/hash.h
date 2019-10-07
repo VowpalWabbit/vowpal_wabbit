@@ -29,14 +29,10 @@ license as described in the file LICENSE.
 //----
 #pragma once
 
-// #include <cstdlib>
-// #include <cstdint>
-
 #include "future_compat.h"
 
-
 #include <sys/types.h>
-#include <stdint.h>
+#include <cstdint>
 
 // All modern compilers will optimize this to the rotate intrinsic.
 constexpr inline uint32_t rotl32(uint32_t x, int8_t r) noexcept
@@ -79,7 +75,7 @@ VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uin
   const uint32_t c2 = 0x1b873593;
 
   // --- body
-  const uint32_t * blocks = (const uint32_t *)(data + nblocks * 4);
+  const uint32_t* blocks = (const uint32_t *)(data + nblocks * 4);
 
   for (int i = -nblocks; i; i++)
   {
@@ -101,7 +97,7 @@ VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uin
 
   // The 'fall through' comments below silence the implicit-fallthrough warning introduced in GCC 7.
   // Once we move to C++17 these should be replaced with the [[fallthrough]] attribute.
-  switch (len & 3)
+  switch (len & 3u)
   {
   case 3:
     k1 ^= tail[2] << 16;
@@ -113,6 +109,8 @@ VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uin
     k1 *= c1;
     k1 = rotl32(k1, 15);
     k1 *= c2; h1 ^= k1;
+  default:
+    break;
   }
 
   // --- finalization

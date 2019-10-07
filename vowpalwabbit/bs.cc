@@ -3,17 +3,17 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <float.h>
-#include <math.h>
-#include <errno.h>
+#include <cfloat>
+#include <cmath>
+#include <cerrno>
 #include <sstream>
 #include <numeric>
 #include <vector>
 #include <memory>
 
 #include "reductions.h"
-#include "vw.h"
 #include "rand48.h"
+#include "vw.h"
 #include "bs.h"
 #include "vw_exception.h"
 
@@ -60,7 +60,7 @@ void bs_predict_vote(example& ec, vector<double>& pred_vec)
     pred_vec_int[i] = (int)floor(
         pred_vec[i] + 0.5);  // could be added: link(), min_label/max_label, cutoff between true/false for binary
 
-    if (multivote_detected == false)  // distinct(votes)>2 detection bloc
+    if (!multivote_detected)  // distinct(votes)>2 detection bloc
     {
       if (i == 0)
       {
@@ -100,7 +100,7 @@ void bs_predict_vote(example& ec, vector<double>& pred_vec)
       majority_found = true;
   }
 
-  if (multivote_detected && majority_found == false)  // then find most frequent element - if tie: smallest tie label
+  if (multivote_detected && !majority_found)  // then find most frequent element - if tie: smallest tie label
   {
     std::sort(pred_vec_int, pred_vec_int + pred_vec.size());
     int tmp_label = pred_vec_int[0];
@@ -160,7 +160,7 @@ void output_example(vw& all, bs& d, example& ec)
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
-  if (all.final_prediction_sink.size() != 0)  // get confidence interval only when printing out predictions
+  if (!all.final_prediction_sink.empty())  // get confidence interval only when printing out predictions
   {
     d.lb = FLT_MAX;
     d.ub = -FLT_MAX;
@@ -249,9 +249,9 @@ base_learner* bs_setup(options_i& options, vw& all)
 
   if (options.was_supplied("bs_type"))
   {
-    if (type_string.compare("mean") == 0)
+    if (type_string == "mean")
       data->bs_type = BS_TYPE_MEAN;
-    else if (type_string.compare("vote") == 0)
+    else if (type_string == "vote")
       data->bs_type = BS_TYPE_VOTE;
     else
     {

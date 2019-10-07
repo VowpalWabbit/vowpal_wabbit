@@ -1,5 +1,5 @@
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 
 #include "gd.h"
@@ -147,7 +147,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     initialize_regressor(*s.all);
   }
 
-  if (model_file.files.size() > 0)
+  if (!model_file.files.empty())
   {
     bool resume = s.all->save_resume;
     stringstream msg;

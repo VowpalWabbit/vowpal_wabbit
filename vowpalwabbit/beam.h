@@ -5,9 +5,9 @@ license as described in the file LICENSE.
 */
 #pragma once
 
-#include <stdio.h>
-#include <float.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cfloat>
+#include <cstdlib>
 #include "v_array.h"
 
 // TODO: special case the version where beam_size == 1

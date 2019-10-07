@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include "io_buf.h"
 #include "v_array.h"
 #include <vector>
-#include <stdio.h>
+#include <cstdio>
 
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
@@ -21,19 +21,19 @@ class comp_io_buf : public io_buf
  public:
   std::vector<gzFile> gz_files;
 
-  virtual int open_file(const char* name, bool stdin_off, int flag = READ);
+  int open_file(const char* name, bool stdin_off, int flag) override;
 
-  virtual void reset_file(int f);
+  void reset_file(int f) override;
 
-  virtual ssize_t read_file(int f, void* buf, size_t nbytes);
+  ssize_t read_file(int f, void* buf, size_t nbytes) override;
 
-  virtual size_t num_files();
+  size_t num_files() override;
 
-  virtual ssize_t write_file(int file, const void* buf, size_t nbytes);
+  ssize_t write_file(int file, const void* buf, size_t nbytes) override;
 
-  virtual bool compressed();
+  bool compressed() override;
 
-  virtual void flush();
+  void flush() override;
 
-  virtual bool close_file();
+  bool close_file() override;
 };

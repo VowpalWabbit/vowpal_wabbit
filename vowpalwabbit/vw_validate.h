@@ -5,7 +5,7 @@ license as described in the file LICENSE.
 */
 
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 
 struct vw;
 
