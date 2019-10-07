@@ -648,6 +648,11 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
+  if(options.was_supplied("cb_sample") && slate)
+  {
+    THROW("--slate and --cb_sample cannot be supplied together");
+  }
+
   if (!options.was_supplied("cb_sample") && !slate)
   {
     options.insert("cb_sample", "");
