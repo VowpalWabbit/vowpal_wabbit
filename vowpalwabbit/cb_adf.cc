@@ -17,7 +17,6 @@
 #include "vw_versions.h"
 #include "explore.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
@@ -86,7 +85,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   {
     known_cost.probability = -1;
     return known_cost;
-    // std::cerr << "None of the examples has known cost. Exiting." << endl;
+    // std::cerr << "None of the examples has known cost. Exiting." << std::endl;
     // throw exception();
   }
 
@@ -212,7 +211,7 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   {
     gen_cs_example_ips(examples, mydata.cs_labels);
     call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
-    swap(examples[0]->pred.a_s, mydata.a_s);
+    std::swap(examples[0]->pred.a_s, mydata.a_s);
   }
   // second train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
@@ -220,7 +219,7 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   gen_cs_example_mtr(mydata.gen_cs, examples, mydata.cs_labels);
   uint32_t nf = (uint32_t)examples[mydata.gen_cs.mtr_example]->num_features;
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
-  const float clipped_p = (std::max)(examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability, mydata.clip_p);
+  const float clipped_p = std::max(examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability, mydata.clip_p);
   examples[mydata.gen_cs.mtr_example]->weight *= 1.f / clipped_p *
       ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
 
@@ -229,7 +228,7 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
       base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
   examples[mydata.gen_cs.mtr_example]->weight = old_weight;
-  swap(examples[0]->pred.a_s, mydata.a_s);
+  std::swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
@@ -297,8 +296,8 @@ void do_actual_learning(cb_adf& data, multi_learner& base, multi_ex& ec_seq)
 
     /*      for (size_t i = 0; i < temp_scores.size(); i++)
     if (temp_scores[i] != data.ec_seq[0]->pred.a_s[i].score)
-      cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
-    data.ec_seq[0]->pred.a_s[i].action << endl; temp_scores.delete_v();*/
+     std::cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
+    data.ec_seq[0]->pred.a_s[i].action << std::endl; temp_scores.delete_v();*/
   }
   else
   {
@@ -316,7 +315,7 @@ void global_print_newline(vw& all)
     ssize_t t;
     t = io_buf::write_file_or_socket(f, temp, 1);
     if (t != 1)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -356,8 +355,8 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     v_array<CB::cb_class> costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
@@ -386,8 +385,8 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
       if (i > 0)
@@ -430,7 +429,7 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
   if (c.all->model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE)
     return;
-  stringstream msg;
+  std::stringstream msg;
   msg << "event_sum " << c.gen_cs.event_sum << "\n";
   bin_text_read_write_fixed(model_file, (char*)&c.gen_cs.event_sum, sizeof(c.gen_cs.event_sum), "", read, msg, text);
 

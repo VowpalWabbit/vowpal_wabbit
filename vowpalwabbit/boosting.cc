@@ -24,9 +24,11 @@
 #include "vw.h"
 #include "rand48.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
+
+using std::cerr;
+using std::endl;
 
 inline float sign(float w)
 {
@@ -59,7 +61,7 @@ struct boosting
 {
   int N;
   float gamma;
-  string alg;
+  std::string alg;
   vw* all;
   std::shared_ptr<rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
@@ -294,7 +296,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
-  stringstream os;
+  std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
@@ -313,7 +315,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
@@ -327,7 +329,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "v " << o.v[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
@@ -358,7 +360,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
-  stringstream os;
+  std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
@@ -374,7 +376,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }

@@ -10,7 +10,7 @@ using namespace LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 // using namespace COST_SENSITIVE;
-using namespace std;
+
 using namespace VW::config;
 
 struct cbify;
@@ -40,7 +40,7 @@ struct cbify
   std::vector<ACTION_SCORE::action_scores> cb_as;
 
   ~cbify()
-  {
+  {   
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
 
@@ -338,15 +338,15 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
       if (i > 0)
         outputStringStream << ' ';
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
-    // outputStringStream << endl;
+    // outputStringStream << std::endl;
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
@@ -409,21 +409,21 @@ base_learner* cbify_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("cb_explore") && !data->use_adf)
   {
-    stringstream ss;
+    std::stringstream ss;
     ss << num_actions;
     options.insert("cb_explore", ss.str());
   }
 
   if (data->use_adf)
   {
-    options.insert("cb_min_cost", to_string(data->loss0));
-    options.insert("cb_max_cost", to_string(data->loss1));
+    options.insert("cb_min_cost", std::to_string(data->loss0));
+    options.insert("cb_max_cost", std::to_string(data->loss1));
   }
 
   if (options.was_supplied("baseline"))
   {
-    stringstream ss;
-    ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
+    std::stringstream ss;
+    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
@@ -476,13 +476,13 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   {
     options.insert("cb_explore_adf", "");
   }
-  options.insert("cb_min_cost", to_string(data->loss0));
-  options.insert("cb_max_cost", to_string(data->loss1));
+  options.insert("cb_min_cost", std::to_string(data->loss0));
+  options.insert("cb_max_cost", std::to_string(data->loss1));
 
   if (options.was_supplied("baseline"))
   {
-    stringstream ss;
-    ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
+    std::stringstream ss;
+    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 

@@ -8,7 +8,6 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct multi_oaa
@@ -43,8 +42,8 @@ void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
       preds.label_v.push_back(i);
   }
   if (is_learn && multilabel_index < multilabels.label_v.size())
-    cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k - 1
-         << "} This won't work right." << endl;
+    std::cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k - 1
+         << "} This won't work right." << std::endl;
 
   ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;

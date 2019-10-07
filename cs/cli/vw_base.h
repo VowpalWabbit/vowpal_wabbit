@@ -11,7 +11,6 @@ license as described in the file LICENSE.
 #include "vw_interface.h"
 #include "vw_arguments.h"
 
-using namespace std;
 using namespace System::Collections::Generic;
 
 namespace VW

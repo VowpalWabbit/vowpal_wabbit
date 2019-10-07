@@ -11,7 +11,6 @@ license as described in the file LICENSE.
 #include <math.h>
 #include <memory>
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -90,7 +89,7 @@ struct OjaNewton
             r2 = _random_state->get_and_update_random();
           } while (r1 == 0.f);
 
-          (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
+          (&w)[j] = std::sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
         }
       }
     }
@@ -110,7 +109,7 @@ struct OjaNewton
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
         norm += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[j];
-      norm = sqrt(norm);
+      norm = std::sqrt(norm);
       for (uint32_t i = 0; i < length; i++) (&(weights.strided_index(i)))[j] /= (float)norm;
     }
   }
@@ -329,7 +328,7 @@ struct OjaNewton
       }
       for (int j = 1; j <= m; ++j)
       {
-        // norm = max(norm, fabs(tmp[j]));
+        // norm = std::max(norm, fabs(tmp[j]));
         (&w)[j] = tmp[j];
       }
     }
@@ -380,7 +379,7 @@ void make_pred(update_data& data, float x, float& wref)
 
   if (data.ON->normalize)
   {
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
   }
 
   data.prediction += w[0] * x;
@@ -403,7 +402,7 @@ void update_Z_and_wbar(update_data& data, float x, float& wref)
   float* w = &wref;
   int m = data.ON->m;
   if (data.ON->normalize)
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
   float s = data.sketch_cnt * x;
 
   for (int i = 1; i <= m; i++)
@@ -418,7 +417,7 @@ void compute_Zx_and_norm(update_data& data, float x, float& wref)
   float* w = &wref;
   int m = data.ON->m;
   if (data.ON->normalize)
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
 
   for (int i = 1; i <= m; i++)
   {
@@ -432,7 +431,7 @@ void update_wbar_and_Zx(update_data& data, float x, float& wref)
   float* w = &wref;
   int m = data.ON->m;
   if (data.ON->normalize)
-    x /= sqrt(w[NORM2]);
+    x /= std::sqrt(w[NORM2]);
 
   float g = data.g * x;
 
@@ -521,7 +520,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
   if (model_file.files.size() > 0)
   {
     bool resume = all.save_resume;
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 

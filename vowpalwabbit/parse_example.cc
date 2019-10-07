@@ -13,7 +13,6 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "constant.h"
 
-using namespace std;
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
@@ -72,7 +71,7 @@ class TC_parser
   uint32_t hash_seed;
   uint64_t parse_mask;
 
-  std::array<vector<feature_dict*>, NUM_NAMESPACES>* namespace_dictionaries;
+  std::array<std::vector<feature_dict*>, NUM_NAMESPACES>* namespace_dictionaries;
 
   ~TC_parser() {}
 
@@ -80,14 +79,14 @@ class TC_parser
   {
     std::stringstream ss;
     ss << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
-       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << endl;
+       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << std::endl;
     if (p->strict_parse)
     {
       THROW_EX(VW::strict_parse_exception, ss.str());
     }
     else
     {
-      cerr << ss.str();
+      std::cerr << ss.str();
     }
   }
 
@@ -256,7 +255,7 @@ class TC_parser
               for (size_t i = 0; i < feats->indicies.size(); ++i)
               {
                 uint64_t id = feats->indicies[i];
-                stringstream ss;
+                std::stringstream ss;
                 ss << index << '_';
                 for (char* fc = feature_name.begin; fc != feature_name.end; ++fc) ss << *fc;
                 ss << '=' << id;

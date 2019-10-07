@@ -11,7 +11,6 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 
 using namespace LEARNER;
-using namespace std;
 
 namespace CB
 {
@@ -23,7 +22,7 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
   size_t total = sizeof(cb_class) * num + sizeof(ld->weight);
   if (cache.buf_read(c, total) < total)
   {
-    cout << "error in demarshal of cost data" << endl;
+    std::cout << "error in demarshal of cost data" << std::endl;
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -142,12 +141,12 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 
     if (f.probability > 1.0)
     {
-      cerr << "invalid probability > 1 specified for an action, resetting to 1." << endl;
+      std::cerr << "invalid probability > 1 specified for an action, resetting to 1." << std::endl;
       f.probability = 1.0;
     }
     if (f.probability < 0.0)
     {
-      cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
+      std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << std::endl;
       f.probability = .0;
     }
     if (substring_equal(p->parse_name[0], "shared"))
@@ -157,7 +156,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
         f.probability = -1.f;
       }
       else
-        cerr << "shared feature vectors should not have costs" << endl;
+        std::cerr << "shared feature vectors should not have costs" << std::endl;
     }
 
     ld->costs.push_back(f);
