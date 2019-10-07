@@ -3,8 +3,8 @@
   individual contributors. All rights reserved.  Released under a BSD (revised)
   license as described in the file LICENSE.
 */
-#include <float.h>
-#include <errno.h>
+#include <cfloat>
+#include <cerrno>
 #include <algorithm>
 
 #include "reductions.h"
@@ -154,27 +154,27 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 
   // TODO: Check Marco's example that causes VW to report prob > 1.
 
-  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)  // Scale example_wt by prob of chosen action
+  for (auto const& action_score : mydata.prob_s)  // Scale example_wt by prob of chosen action
   {
-    if (mydata.prob_s[i].action == chosen_action)
+    if (action_score.action == chosen_action)
     {
-      example_weight *= mydata.prob_s[i].score;
+      example_weight *= action_score.score;
       break;
     }
   }
 
   mydata.backup_weights.clear();
   mydata.backup_nf.clear();
-  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
+  for (auto const& action_score : mydata.prob_s)
   {
-    uint32_t current_action = mydata.prob_s[i].action;
+    uint32_t current_action = action_score.action;
     mydata.backup_weights.push_back(examples[current_action]->weight);
     mydata.backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action]->weight = example_weight * (1.0f - mydata.prob_s[i].score);
+      examples[current_action]->weight = example_weight * (1.0f - action_score.score);
     else
-      examples[current_action]->weight = example_weight * mydata.prob_s[i].score;
+      examples[current_action]->weight = example_weight * action_score.score;
 
     if (examples[current_action]->weight <= 1e-15)
       examples[current_action]->weight = 0;
@@ -184,7 +184,7 @@ void learn_SM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 
   // Restore example weights and numFeatures
-  for (uint32_t i = 0; i < mydata.prob_s.size(); i++)
+  for (size_t i = 0; i < mydata.prob_s.size(); i++)
   {
     uint32_t current_action = mydata.prob_s[i].action;
     examples[current_action]->weight = mydata.backup_weights[i];
@@ -235,15 +235,13 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 // Validates a multiline example collection as a valid sequence for action dependent features format.
 example* test_adf_sequence(multi_ex& ec_seq)
 {
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
   uint32_t count = 0;
   example* ret = nullptr;
-  for (size_t k = 0; k < ec_seq.size(); k++)
+  for (auto* ec : ec_seq)
   {
-    example* ec = ec_seq[k];
-
     // Check if there is more than one cost for this example.
     if (ec->l.cb.costs.size() > 1)
       THROW("cb_adf: badly formatted example, only one cost can be known.");
@@ -313,9 +311,8 @@ void global_print_newline(vw& all)
 {
   char temp[1];
   temp[0] = '\n';
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for (int f : all.final_prediction_sink)
   {
-    int f = all.final_prediction_sink[i];
     ssize_t t;
     t = io_buf::write_file_or_socket(f, temp, 1);
     if (t != 1)
@@ -341,7 +338,7 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     labeled_example = false;
 
   bool holdout_example = labeled_example;
-  for (size_t i = 0; i < ec_seq->size(); i++) holdout_example &= (*ec_seq)[i]->test_only;
+  for (auto const& i : *ec_seq) holdout_example &= i->test_only;
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
   return labeled_example;
@@ -405,7 +402,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
 void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
   {
     if (data.rank_all)
       output_rank_example(all, data, **(ec_seq.begin()), &(ec_seq));
@@ -421,7 +418,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
 
 void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
@@ -478,20 +475,20 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   size_t problem_multiplier = 1;  // default for IPS
   bool check_baseline_enabled = false;
 
-  if (type_string.compare("dr") == 0)
+  if (type_string == "dr")
   {
     ld->gen_cs.cb_type = CB_TYPE_DR;
     problem_multiplier = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
-  else if (type_string.compare("ips") == 0)
+  else if (type_string == "ips")
     ld->gen_cs.cb_type = CB_TYPE_IPS;
-  else if (type_string.compare("mtr") == 0)
+  else if (type_string == "mtr")
     ld->gen_cs.cb_type = CB_TYPE_MTR;
-  else if (type_string.compare("dm") == 0)
+  else if (type_string == "dm")
     ld->gen_cs.cb_type = CB_TYPE_DM;
-  else if (type_string.compare("sm") == 0)
+  else if (type_string == "sm")
     ld->gen_cs.cb_type = CB_TYPE_SM;
   else
   {

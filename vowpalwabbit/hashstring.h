@@ -2,15 +2,17 @@
 #include <cstdint>  // defines size_t
 #include "hash.h"
 
+#include "future_compat.h"
+
 struct substring
 {
   char* begin;
   char* end;
 };
 
-inline uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h); }
+VW_STD14_CONSTEXPR inline uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h); }
 
-inline uint64_t hashstring(substring s, uint64_t h)
+VW_STD14_CONSTEXPR inline uint64_t hashstring(substring s, uint64_t h)
 {
   // trim leading whitespace but not UTF-8
   for (; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin) >= 0; s.begin++)

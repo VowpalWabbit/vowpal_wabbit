@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <utility>
 
 using namespace VW::config;
 
@@ -27,7 +28,7 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
 void options_boost_po::add_to_description(
     std::shared_ptr<base_option> opt, po::options_description& options_description)
 {
-  add_to_description_impl<supported_options_types>(opt, options_description);
+  add_to_description_impl<supported_options_types>(std::move(opt), options_description);
 }
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
@@ -73,7 +74,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
       if (option.string_key.length() > 0 && option.string_key[0] == '-')
       {
         auto short_name = option.string_key.substr(1);
-        for (auto opt_ptr : group.m_options)
+        for (const auto& opt_ptr : group.m_options)
         {
           if (opt_ptr->m_short_name == short_name)
           {
