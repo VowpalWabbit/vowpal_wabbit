@@ -30,9 +30,12 @@ namespace CB_ADF
 struct cb_adf
 {
  public:
-  cb_to_cs_adf gen_cs;
   shared_data* sd;
+  // model_file_ver is only used to conditionally run save_load(). In the setup function
+  // model_file_ver is not always set.
   VW::version_struct* model_file_ver;
+
+  cb_to_cs_adf gen_cs;
   bool rank_all;
   float clip_p;
   bool no_predict;
@@ -444,7 +447,7 @@ void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
 
 void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
-  if (c.model_file_ver != NULL && *c.model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE)
+  if (c.model_file_ver != nullptr && *c.model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE)
     return;
   std::stringstream msg;
   msg << "event_sum " << c.gen_cs.event_sum << "\n";
