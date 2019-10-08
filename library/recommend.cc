@@ -43,7 +43,7 @@ void progress()
 
 #define MASK(u, b) (u & ((1UL << b) - 1))
 #define NUM_HASHES 2
-void get_hashv(char *in, size_t len, unsigned *out)
+void get_hashv(char* in, size_t len, unsigned* out)
 {
   assert(NUM_HASHES == 2);
   out[0] = MASK(uniform_hash(in, len, 1), bits);
@@ -55,20 +55,20 @@ void get_hashv(char *in, size_t len, unsigned *out)
 #define byte_len(b) (((1UL << b) / 8) + (((1UL << b) % 8) ? 1 : 0))
 #define num_bits(b) (1UL << b)
 
-char *bf_new(unsigned b)
+char* bf_new(unsigned b)
 {
-  char *bf = (char *)calloc(1, byte_len(b));
+  char* bf = (char* )calloc(1, byte_len(b));
   return bf;
 }
 
-void bf_add(char *bf, char *line)
+void bf_add(char* bf, char* line)
 {
   unsigned i, hashv[NUM_HASHES];
   get_hashv(line, strlen(line), hashv);
   for (i = 0; i < NUM_HASHES; i++) BIT_SET(bf, hashv[i]);
 }
 
-void bf_info(char *bf, FILE *f)
+void bf_info(char* bf, FILE* f)
 {
   unsigned i, on = 0;
   for (i = 0; i < num_bits(bits); i++)
@@ -78,7 +78,7 @@ void bf_info(char *bf, FILE *f)
   fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on * 100.0 / num_bits(bits), num_bits(bits));
 }
 
-int bf_hit(char *bf, char *line)
+int bf_hit(char* bf, char* line)
 {
   unsigned i, hashv[NUM_HASHES];
   get_hashv(line, strlen(line), hashv);
@@ -100,7 +100,7 @@ struct compare_scored_examples
 
 std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples> pr_queue;
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   using std::cerr;
   using std::cout;
@@ -140,9 +140,9 @@ int main(int argc, char *argv[])
     exit(2);
   }
 
-  FILE *fB;
-  FILE *fU;
-  FILE *fI;
+  FILE* fB;
+  FILE* fU;
+  FILE* fI;
 
   if ((fB = fopen(blacklistfilename.c_str(), "r")) == NULL)
   {
@@ -163,16 +163,16 @@ int main(int argc, char *argv[])
     exit(2);
   }
 
-  char *buf = NULL;
-  char *u = NULL;
-  char *i = NULL;
+  char* buf = NULL;
+  char* u = NULL;
+  char* i = NULL;
   size_t len = 0;
   ssize_t read;
 
   /* make the bloom filter */
   if (verbose > 0)
     fprintf(stderr, "loading blacklist into bloom filter...\n");
-  char *bf = bf_new(bits);
+  char* bf = bf_new(bits);
 
   /* loop over the source file */
   while ((read = getline(&buf, &len, fB)) != -1)
@@ -191,9 +191,9 @@ int main(int argc, char *argv[])
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
   if (verbose > 0)
     fprintf(stderr, "initializing vw...\n");
-  vw *model = VW::initialize(vwparams);
+  vw* model = VW::initialize(vwparams);
 
-  char *estr = NULL;
+  char* estr = NULL;
 
   if (verbose > 0)
   {
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 
       if (!bf_hit(bf, estr))
       {
-        example *ex = VW::read_example(*model, estr);
+        example* ex = VW::read_example(*model, estr);
         model->learn(*ex);
 
         const std::string str(estr);
