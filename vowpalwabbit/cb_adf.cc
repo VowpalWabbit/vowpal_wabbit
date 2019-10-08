@@ -55,10 +55,10 @@ struct cb_adf
   void do_actual_learning(LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
-  cb_adf(shared_data* sd, size_t gen_cs, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
+  cb_adf(shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
       : _sd(sd), _model_file_ver(model_file_ver), _rank_all(rank_all), _clip_p(clip_p), _no_predict(no_predict)
   {
-    _gen_cs.cb_type = gen_cs;
+    _gen_cs.cb_type = cb_type;
   }
 
   void set_scorer(LEARNER::single_learner* scorer)
