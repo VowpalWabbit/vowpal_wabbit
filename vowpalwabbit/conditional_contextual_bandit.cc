@@ -613,7 +613,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   if (ec_seq.size() > 0)
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all);
+    CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
   for (auto a_s : ec_seq[0]->pred.decision_scores)
