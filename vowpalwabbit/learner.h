@@ -479,9 +479,10 @@ learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*
 // reduction with default prediction type
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, const std::string& name)
+    size_t ws, const std::string& name, bool predict_before_learn = true)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name);
+  auto ret =
+      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name, predict_before_learn);
 
   dat.release();
   return *ret;
