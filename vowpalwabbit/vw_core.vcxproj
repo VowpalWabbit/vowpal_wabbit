@@ -184,6 +184,7 @@
     <ClInclude Include="options_types.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="parse_args.h" />
+    <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="parse_example.h" />
     <ClInclude Include="parse_primitives.h" />
