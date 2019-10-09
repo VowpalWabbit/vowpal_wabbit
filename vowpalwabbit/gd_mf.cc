@@ -322,6 +322,7 @@ void learn(gdmf& d, single_learner&, example& ec)
 {
   vw& all = *d.all;
 
+  mf_predict(d, ec);
   if (all.training && ec.l.simple.label != FLT_MAX)
     mf_train(d, ec);
 }
