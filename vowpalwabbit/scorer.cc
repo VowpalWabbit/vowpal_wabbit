@@ -75,17 +75,18 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
     l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>, "scorer-identity", false);
   else if (link.compare("logistic") == 0)
   {
-    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>, "scorer-logistic");
+    l = &init_learner(
+        s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>, "scorer-logistic", false);
     multipredict_f = multipredict<logistic>;
   }
   else if (link.compare("glf1") == 0)
   {
-    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>, "scorer-glf1");
+    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>, "scorer-glf1", false);
     multipredict_f = multipredict<glf1>;
   }
   else if (link.compare("poisson") == 0)
   {
-    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>, "scorer-poisson");
+    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>, "scorer-poisson", false);
     multipredict_f = multipredict<expf>;
   }
   else
