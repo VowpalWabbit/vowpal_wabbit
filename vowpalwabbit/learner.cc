@@ -32,14 +32,12 @@ namespace LEARNER
 {
   void learn_ex(example& ec, vw& all)
   {
-    //all.predict(ec);
     all.learn(ec);
     as_singleline(all.l)->finish_example(all, ec);
   }
   
   void learn_multi_ex(multi_ex& ec_seq, vw& all)
   {
-    //all.predict(ec_seq);
     all.learn(ec_seq);
     as_multiline(all.l)->finish_example(all, ec_seq);
   }
