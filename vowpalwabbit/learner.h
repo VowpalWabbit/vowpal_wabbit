@@ -131,11 +131,10 @@ inline void decrement_depth(multi_ex& ec_seq)
 }
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
-{ 
+{
   ex.ft_offset += static_cast<uint32_t>(increment * i);
   increment_depth(ex);
 }
-
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
@@ -166,8 +165,6 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
 template <class T, class E>
 struct learner
 {
-  std::string name;
-
  private:
   func_data init_fd;
   learn_data learn_fd;
@@ -185,24 +182,32 @@ struct learner
   prediction_type::prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
-  bool is_multiline;  // Is this a single-line or multi-line reduction?
+  bool is_multiline;                  // Is this a single-line or multi-line reduction?
+  std::string name;                   // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
+  bool require_predict_before_learn;  // Most reductions need to call predict() before learn().  The prediction
+                                      //   is used for progressive validation.  Some reductions do not
+                                      //   need to call predict() before learn().  For example active.cc
 
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
-  void print_reduction_name(example& ec, const std::string& msg) {
+  void print_reduction_name(example& ec, const std::string& msg)
+  {
     VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
     increment_depth(ec);
   }
-  void print_reduction_name(multi_ex& ec, const std::string& msg) {
+  void print_reduction_name(multi_ex& ec, const std::string& msg)
+  {
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
     increment_depth(ec);
   }
-  void print_reduction_exit(example& ec){
+  void print_reduction_exit(example& ec)
+  {
     decrement_depth(ec);
     VW_DBG(ec) << std::endl;
   }
-  void print_reduction_exit(multi_ex& ec){
+  void print_reduction_exit(multi_ex& ec)
+  {
     decrement_depth(ec);
     VW_DBG(*ec[0]) << std::endl;
   }
@@ -375,7 +380,7 @@ struct learner
 
   template <class L>
   static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type::prediction_type_t pred_type, const std::string name)
+      prediction_type::prediction_type_t pred_type, const std::string name, bool predict_before_learn = true)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
@@ -424,6 +429,7 @@ struct learner
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
+    ret.require_predict_before_learn = predict_before_learn;
 
     VW_DBG_0 << "Added Reduction: " << name << std::endl;
 
@@ -483,10 +489,11 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 
 // reduction with default num_params
 template <class T, class E, class L>
-learner<T, E>& init_learner(
-    free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name)
+learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    const std::string& name, bool predict_before_learn = true)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name);
+  auto ret =
+      &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name, predict_before_learn);
 
   dat.release();
   return *ret;
