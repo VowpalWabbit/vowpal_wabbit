@@ -16,7 +16,7 @@ using namespace ACTION_SCORE;
 using namespace std;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(false);
+VW_DEBUG_ENABLE(true);
 
 struct cbify;
 
@@ -33,6 +33,7 @@ struct cbify_reg
   float min_value;
   float max_value;
   int loss_option;
+  int num_actions; //todo
 };
 
 struct cbify
@@ -180,6 +181,68 @@ float get01loss(VW::actions_pdf::pdf& prob_dist, float chosen_action, float labe
   return 1.0f;
 }
 
+// discretized continuous action space predict_or_learn. Non-afd workflow only
+// Receives Regression example as input, sends cb example to base learn/predict which is cb_explore
+template <bool is_learn>
+void predict_or_learn_regression_discrete(cbify& data, single_learner& base, example& ec)
+{
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec) << endl;
+  
+  label_data regression_label = ec.l.simple; 
+  data.cb_label.costs.clear();
+  ec.l.cb = data.cb_label;
+  ec.pred.a_s = data.a_s;
+
+  cout << "regression_label.label = " << regression_label.label << endl;
+  
+  // Call the cb_explore algorithm. It returns a vector of probabilities for each action
+  base.predict(ec);
+ 
+  uint32_t chosen_action;
+  if (sample_after_normalizing(
+    data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
+    THROW("Failed to sample from pdf");
+
+  cout << "chosen_action = " << chosen_action << endl;
+  CB::cb_class cl;
+  cl.action = chosen_action + 1;
+  cl.probability = ec.pred.a_s[chosen_action].score;
+
+  if (!cl.action)
+    THROW("No action with non-zero probability found!");
+  float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
+  float converted_action = data.regression_data.min_value 
+    + chosen_action * continuous_range / data.regression_data.num_actions;
+
+  cout << "continuous_range = " << continuous_range << endl;
+  cout << "converted_action = " << converted_action << endl;
+
+  if (data.regression_data.loss_option == 0) {
+    // mean squared loss
+    float diff = regression_label.label - converted_action;
+    cl.cost = diff * diff;
+    cout << "cl.cost = " << cl.cost << endl;
+  }
+  else if (data.regression_data.loss_option == 1) {
+    // cl.cost = get01loss(ec.pred.prob_dist, converted_action, regression_label.label);
+    cout << "use loss_option 0 for now!!!!" << endl;
+  }
+
+  // Create a new cb label
+  data.cb_label.costs.push_back(cl);
+  ec.l.cb = data.cb_label;
+
+  if (is_learn)
+    base.learn(ec);
+
+  data.a_s.clear();
+  data.a_s = ec.pred.a_s;
+
+  ec.l.simple = regression_label;
+  ec.pred.scalar = converted_action;
+}
+
+
 // continuous action space predict_or_learn. Non-afd workflow only
 // Receives Regression example as input, sends cb_continuous example to base learn/predict
 template <bool is_learn>
@@ -190,6 +253,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
+
+  cout << "regression_label.label = " << regression_label.label << endl;
 
   base.predict(ec);
 
@@ -215,12 +280,12 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   cb_cont.probability = pdf_value;
 
   if (data.regression_data.loss_option == 0) {
-    cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
-  }
-  else if (data.regression_data.loss_option == 1) {
     // mean squared loss
     float diff = regression_label.label - chosen_action;
-    cb_cont.cost = diff * diff;
+    cb_cont.cost = diff * diff; 
+  }
+  else if (data.regression_data.loss_option == 1) {
+    cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
   }
 
   data.regression_data.cb_cont_label.costs.push_back(cb_cont);
@@ -482,12 +547,28 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   }
 }
 
+void output_example_regression_discrete(vw& all, cbify& data, example& ec)
+{
+  // data contains the cb vector, which store among other things, loss
+  // ec contains a simple label type
+  label_data& ld = ec.l.simple;
+  const auto& cb_costs= data.cb_label.costs;
+  if (cb_costs.size() > 0)
+    all.sd->update(ec.test_only, cb_costs[0].action != FLT_MAX, cb_costs[0].cost, ec.weight, ec.num_features);
+
+  if (ld.label != FLT_MAX)
+    all.sd->weighted_labels += ((double)cb_costs[0].action) * ec.weight;
+
+  print_update(all, ec);
+}
+
+
 void output_example_regression(vw& all, cbify& data, example& ec)
 {
   // data contains the cb_cont vector, which store among other things, loss
   // ec contains a simple label type
   label_data& ld = ec.l.simple;
-  const auto& cb_cont_costs= data.regression_data.cb_cont_label.costs;
+  const auto& cb_cont_costs = data.regression_data.cb_cont_label.costs;
   if (cb_cont_costs.size() > 0)
     all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
 
@@ -501,6 +582,13 @@ void finish_example(vw& all, cbify& data, example& ec)
 {
   // add output example
   output_example_regression(all, data, ec);
+  VW::finish_example(all, ec);
+}
+
+void finish_example_discrete(vw& all, cbify& data, example& ec)
+{
+  // add output example
+  output_example_regression_discrete(all, data, ec);
   VW::finish_example(all, ec);
 }
 
@@ -521,22 +609,24 @@ base_learner* cbify_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<cbify>();
   bool use_cs;
   bool use_reg;  // todo: check
+  bool use_discrete;
 
   option_group_definition new_options("Make Multiclass into Contextual Bandit");
   new_options
       .add(make_option("cbify", num_actions)
                .keep()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
-      .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("cbify_cs", use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("cbify_reg", use_reg)
-               .help("consume regression examples instead of multiclass and cost sensitive"))
+               .help("Consume regression examples instead of multiclass and cost sensitive"))
       .add(make_option("cb_continuous", cb_continuous_num_actions)
                .default_value(0)
                .keep()
-               .help("Convert discrete PDF into continuous PDF."))
+               .help("Convert PMF (discrete) into PDF (continuous)."))
+      .add(make_option("cb_discrete", use_discrete).keep().help("Discretizes continuous space and adds cb_explore as option"))
       .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
-      .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:0/1, 1:squared"))
+      .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:squared, 1:0/1"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
       
@@ -545,6 +635,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   if (!options.was_supplied("cbify"))
     return nullptr;
 
+  data->regression_data.num_actions = num_actions;
   data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
@@ -568,7 +659,17 @@ base_learner* cbify_setup(options_i& options, vw& all)
       THROW("error: min and max values must be supplied with cbify_reg");
     }
 
-    if (options.was_supplied("cb_continuous"))
+    if (use_discrete && options.was_supplied("cb_continuous"))
+    {
+      THROW("error: incompatible options: cb_discrete and cb_continuous");
+    }
+    else if (use_discrete)
+    {
+      stringstream ss;
+      ss << num_actions;
+      options.insert("cb_explore", ss.str());
+    }
+    else if (options.was_supplied("cb_continuous"))
     {
       if (cb_continuous_num_actions != num_actions)
         THROW("error: different number of actions specified for cbify and cb_continuous");
@@ -620,9 +721,20 @@ base_learner* cbify_setup(options_i& options, vw& all)
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_reg)
     {
-      l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-          prediction_type::scalar);  // todo: check prediction type
-      l->set_finish_example(finish_example);
+      if (use_discrete) 
+      {
+        l = &init_learner(data, base, predict_or_learn_regression_discrete<true>, predict_or_learn_regression_discrete<false>, 1,
+          prediction_type::scalar);  
+        l->set_finish_example(finish_example_discrete); // todo: check
+
+      }
+      else 
+      {
+        l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
+          prediction_type::scalar);  
+        l->set_finish_example(finish_example); 
+      }
+      
     }
     else if (use_cs)
       l = &init_cost_sensitive_learner(
