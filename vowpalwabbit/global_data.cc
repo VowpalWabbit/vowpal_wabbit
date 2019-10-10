@@ -350,7 +350,7 @@ vw::vw()
   add_constant = true;
   audit = false;
 
-  pass_length = (size_t)-1;
+  pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;
 
   save_per_pass = false;
@@ -362,7 +362,7 @@ vw::vw()
   check_holdout_every_n_passes = 1;
   early_terminate = false;
 
-  max_examples = (size_t)-1;
+  max_examples = std::numeric_limits<size_t>::max();
 
   hash_inv = false;
   print_invert = false;
