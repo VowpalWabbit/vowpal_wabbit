@@ -1761,5 +1761,4 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} --ccb_explore_adf --ring_size 20 --dsjson -d train-sets/ccb_reuse_medium.dsjson
     train-sets/ref/ccb_reuse_medium.stderr
 
-
 # Do not delete this line or the empty line above it
