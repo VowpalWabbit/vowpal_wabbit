@@ -187,17 +187,17 @@ template <bool is_learn>
 void predict_or_learn_regression_discrete(cbify& data, single_learner& base, example& ec)
 {
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec) << endl;
-  
-  label_data regression_label = ec.l.simple; 
+
+  label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
 
   cout << "regression_label.label = " << regression_label.label << endl;
-  
+
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
- 
+
   uint32_t chosen_action;
   if (sample_after_normalizing(
     data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
@@ -211,7 +211,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   if (!cl.action)
     THROW("No action with non-zero probability found!");
   float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
-  float converted_action = data.regression_data.min_value 
+  float converted_action = data.regression_data.min_value
     + chosen_action * continuous_range / data.regression_data.num_actions;
 
   cout << "continuous_range = " << continuous_range << endl;
@@ -282,7 +282,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   if (data.regression_data.loss_option == 0) {
     // mean squared loss
     float diff = regression_label.label - chosen_action;
-    cb_cont.cost = diff * diff; 
+    cb_cont.cost = diff * diff;
   }
   else if (data.regression_data.loss_option == 1) {
     cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
@@ -629,7 +629,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:squared, 1:0/1"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
-      
+
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))
@@ -721,20 +721,20 @@ base_learner* cbify_setup(options_i& options, vw& all)
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_reg)
     {
-      if (use_discrete) 
+      all.p->lp = simple_label;
+      if (use_discrete)
       {
-        l = &init_learner(data, base, predict_or_learn_regression_discrete<true>, predict_or_learn_regression_discrete<false>, 1,
-          prediction_type::scalar);  
+        l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
+            predict_or_learn_regression_discrete<false>, 1,
+          prediction_type::scalar);
         l->set_finish_example(finish_example_discrete); // todo: check
-
       }
-      else 
+      else
       {
         l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-          prediction_type::scalar);  
-        l->set_finish_example(finish_example); 
+          prediction_type::scalar);
+        l->set_finish_example(finish_example);
       }
-      
     }
     else if (use_cs)
       l = &init_cost_sensitive_learner(
