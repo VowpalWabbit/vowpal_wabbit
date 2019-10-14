@@ -158,7 +158,7 @@ void attach_label_to_example(
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
-  auto pred = data.shared->pred.a_s;
+  auto& pred = data.shared->pred.a_s;
   decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
