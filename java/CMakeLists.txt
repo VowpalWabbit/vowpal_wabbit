@@ -1,3 +1,6 @@
+# make sure it works with OpenJDK
+set(JAVA_AWT_LIBRARY NotNeeded)
+set(JAVA_JVM_LIBRARY NotNeeded)
 
 find_package(JNI REQUIRED)
 
@@ -45,13 +48,17 @@ target_include_directories(vw_jni PUBLIC
   ${JNI_INCLUDE_DIRS})
 
 # Ensure target directory exists
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/linux_64/)
 add_custom_command(TARGET vw_jni POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/linux_64/
 )
 
-# enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+if(STATIC_LINK_VW_JAVA)
+  target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC vw)
+else()
+  # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
+  target_link_libraries(vw_jni PUBLIC -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+endif()
 
 # Replace version number in POM
 configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
@@ -97,10 +104,10 @@ if(NOT WIN32)
   # add_dependencies(javaheaders javacompile)
 
   add_custom_command(TARGET vw_jni POST_BUILD
-      COMMAND ldd $<TARGET_FILE:vw_jni> | grep -E 'boost|libz' | grep -oP '=> \\K\\S+' | xargs -i cp {} target/bin/natives/linux_64
       COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
       COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
-      COMMAND mvn verify
+      # -B is batch mode and avoids the massive download progress print out       
+      COMMAND mvn -B verify
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Copying shared libary dependencies to output directory")
 

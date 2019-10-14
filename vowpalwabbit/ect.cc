@@ -8,11 +8,10 @@ license as described in the file LICENSE.
   by John Langford.
 */
 
-#include <math.h>
 #include <iostream>
 #include <fstream>
-#include <float.h>
-#include <time.h>
+#include <ctime>
+#include <numeric>
 
 #include "reductions.h"
 
@@ -51,12 +50,27 @@ struct ect
   uint32_t last_pair;
 
   v_array<bool> tournaments_won;
+
+  ~ect()
+  {
+    for (auto & all_level : all_levels)
+    {
+      for (auto & t : all_level) t.delete_v();
+      all_level.delete_v();
+    }
+    all_levels.delete_v();
+    final_nodes.delete_v();
+    up_directions.delete_v();
+    directions.delete_v();
+    down_directions.delete_v();
+    tournaments_won.delete_v();
+  }
 };
 
 bool exists(v_array<size_t> db)
 {
-  for (size_t i = 0; i < db.size(); i++)
-    if (db[i] != 0)
+  for (unsigned long i : db)
+    if (i != 0)
       return true;
   return false;
 }
@@ -71,21 +85,18 @@ size_t final_depth(size_t eliminations)
   return 31;
 }
 
-bool not_empty(v_array<v_array<uint32_t>> tournaments)
+bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 {
-  for (size_t i = 0; i < tournaments.size(); i++)
-  {
-    if (tournaments[i].size() > 0)
-      return true;
-  }
-  return false;
+  auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
+    [](v_array<uint32_t>& tournament){ return !tournament.empty(); });
+  return first_non_empty_tournament != tournaments.cend();
 }
 
-void print_level(v_array<v_array<uint32_t>> level)
+void print_level(v_array<v_array<uint32_t>> const& level)
 {
-  for (size_t t = 0; t < level.size(); t++)
+  for (auto const& t : level)
   {
-    for (size_t i = 0; i < level[t].size(); i++) cout << " " << level[t][i];
+    for (auto i : t) cout << " " << i;
     cout << " | ";
   }
   cout << endl;
@@ -146,10 +157,10 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
           e.directions[right].winner = direction_index;
         else
           e.directions[right].loser = direction_index;
-        if (e.directions[left].last == true)
+        if (e.directions[left].last)
           e.directions[left].winner = direction_index;
 
-        if (tournaments[t].size() == 2 && (t == 0 || tournaments[t - 1].size() == 0))
+        if (tournaments[t].size() == 2 && (t == 0 || tournaments[t - 1].empty()))
         {
           e.directions[direction_index].last = true;
           if (t + 1 < tournaments.size())
@@ -269,7 +280,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
     }
   } while (id != 0);
 
-  if (e.tournaments_won.size() < 1)
+  if (e.tournaments_won.empty())
     cout << "badness!" << endl;
 
   // tournaments_won is a bit vector determining which tournaments the label won.
@@ -327,21 +338,6 @@ void learn(ect& e, single_learner& base, example& ec)
   ec.pred.multiclass = pred;
 }
 
-void finish(ect& e)
-{
-  for (size_t l = 0; l < e.all_levels.size(); l++)
-  {
-    for (size_t t = 0; t < e.all_levels[l].size(); t++) e.all_levels[l][t].delete_v();
-    e.all_levels[l].delete_v();
-  }
-  e.all_levels.delete_v();
-  e.final_nodes.delete_v();
-  e.up_directions.delete_v();
-  e.directions.delete_v();
-  e.down_directions.delete_v();
-  e.tournaments_won.delete_v();
-}
-
 base_learner* ect_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
@@ -362,11 +358,10 @@ base_learner* ect_setup(options_i& options, vw& all)
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 
   base_learner* base = setup_base(options, all);
-  if (link.compare("logistic") == 0)
+  if (link == "logistic")
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
   learner<ect, example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, all.p, wpp);
-  l.set_finish(finish);
 
   return make_base(l);
 }

@@ -4,8 +4,8 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <sstream>
-#include <float.h>
-#include <math.h>
+#include <cfloat>
+#include <cmath>
 #include "correctedMath.h"
 #include "reductions.h"
 #include "rand48.h"
@@ -23,6 +23,12 @@ struct oaa
   uint64_t num_subsample;     // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id;        // for randomized subsampling, where do we live in the list
+
+  ~oaa()
+  {
+    free(pred);
+    free(subsample_order);
+  }
 };
 
 void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
@@ -126,12 +132,6 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   ec.l.multi = mc_label_data;
 }
 
-void finish(oaa& o)
-{
-  free(o.pred);
-  free(o.subsample_order);
-}
-
 // TODO: partial code duplication with multiclass.cc:finish_example
 template <bool probabilities>
 void finish_example_scores(vw& all, oaa& o, example& ec)
@@ -169,7 +169,6 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     zero_one_loss = ec.weight;
 
   // === Print probabilities for all classes
-  char temp_str[10];
   ostringstream outputStringStream;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -181,8 +180,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     }
     else
       outputStringStream << i + 1;
-    sprintf(temp_str, "%f", ec.pred.scalars[i]);  // 0.123 -> 0.123000
-    outputStringStream << ':' << temp_str;
+    outputStringStream << ':' << ec.pred.scalars[i];
   }
   for (int sink : all.final_prediction_sink) all.print_text(sink, outputStringStream.str(), ec.tag);
 
@@ -238,7 +236,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
       for (size_t i = 0; i < data->k; i++) data->subsample_order[i] = (uint32_t)i;
       for (size_t i = 0; i < data->k; i++)
       {
-        size_t j = (size_t)(merand48(all.random_state) * (float)(data->k - i)) + i;
+        size_t j = (size_t)(all.get_random_state()->get_and_update_random() * (float)(data->k - i)) + i;
         uint32_t tmp = data->subsample_order[i];
         data->subsample_order[i] = data->subsample_order[j];
         data->subsample_order[j] = tmp;
@@ -282,7 +280,6 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
   }
-  l->set_finish(finish);
 
   return make_base(*l);
 }

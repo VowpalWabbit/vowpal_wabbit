@@ -36,6 +36,14 @@ struct mwt
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   vw* all;
+
+  ~mwt()
+  {
+    evals.delete_v();
+    policies.delete_v();
+    for (auto & i : feature_space) i.delete_v();
+    indices.delete_v();
+  }
 };
 
 inline bool observed_cost(CB::cb_class* cl)
@@ -124,7 +132,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   if (exclude || learn)
-    while (c.indices.size() > 0)
+    while (!c.indices.empty())
     {
       unsigned char ns = c.indices.pop();
       swap(c.feature_space[ns], ec.feature_space[ns]);
@@ -185,17 +193,9 @@ void finish_example(vw& all, mwt& c, example& ec)
   VW::finish_example(all, ec);
 }
 
-void finish(mwt& c)
-{
-  c.evals.delete_v();
-  c.policies.delete_v();
-  for (size_t i = 0; i < 256; i++) c.feature_space[i].delete_v();
-  c.indices.delete_v();
-}
-
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.files.empty())
     return;
 
   stringstream msg;
@@ -248,7 +248,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (!options.was_supplied("multiworld_test"))
     return nullptr;
 
-  for (size_t i = 0; i < s.size(); i++) c->namespaces[(unsigned char)s[i]] = true;
+  for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
   calloc_reserve(c->evals, all.length());
@@ -284,6 +284,5 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
-  l->set_finish(finish);
   return make_base(*l);
 }

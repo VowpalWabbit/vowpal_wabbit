@@ -1,8 +1,5 @@
-#include <float.h>
 #include "reductions.h"
 #include "cb_algs.h"
-#include "rand48.h"
-#include "bs.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
@@ -41,6 +38,23 @@ struct cbify
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
   std::vector<v_array<CB::cb_class>> cb_costs;
   std::vector<ACTION_SCORE::action_scores> cb_as;
+
+  ~cbify()
+  {
+    CB::cb_label.delete_label(&cb_label);
+    a_s.delete_v();
+
+    if (use_adf)
+    {
+      for (size_t a = 0; a < adf_data.num_actions; ++a)
+      {
+        adf_data.ecs[a]->pred.a_s.delete_v();
+        VW::dealloc_example(CB::cb_label.delete_label, *adf_data.ecs[a]);
+        free_it(adf_data.ecs[a]);
+      }
+      for (auto& as : cb_as) as.delete_v();
+    }
+  }
 };
 
 float loss(cbify& data, uint32_t label, uint32_t final_prediction)
@@ -79,34 +93,6 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-template <class T>
-inline void delete_it(T* p)
-{
-  if (p != nullptr)
-    delete p;
-}
-
-void finish(cbify& data)
-{
-  CB::cb_label.delete_label(&data.cb_label);
-  data.a_s.delete_v();
-
-  if (data.use_adf)
-  {
-    for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-    {
-      data.adf_data.ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
-      free_it(data.adf_data.ecs[a]);
-    }
-    data.adf_data.ecs.~vector<example*>();
-    data.cs_costs.~vector<v_array<COST_SENSITIVE::wclass>>();
-    data.cb_costs.~vector<v_array<CB::cb_class>>();
-    for (auto as : data.cb_as) as.delete_v();
-    data.cb_as.~vector<ACTION_SCORE::action_scores>();
-  }
-}
-
 void copy_example_to_adf(cbify& data, example& ec)
 {
   auto& adf_data = data.adf_data;
@@ -123,7 +109,7 @@ void copy_example_to_adf(cbify& data, example& ec)
     // copy data
     VW::copy_example_data(false, &eca, &ec);
 
-    // offset indicies for given action
+    // offset indices for given action
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
@@ -333,13 +319,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (size_t j = 0; j < costs.size(); j++)
+    for (auto const& cost : costs)
     {
       if (hit_loss)
         break;
-      if (predicted_class == costs[j].class_index)
+      if (predicted_class == cost.class_index)
       {
-        loss = costs[j].x;
+        loss = cost.x;
         hit_loss = true;
       }
     }
@@ -369,7 +355,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
 void output_example_seq(vw& all, multi_ex& ec_seq)
 {
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
   all.sd->example_number++;
@@ -386,12 +372,12 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
 
 void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
   {
     output_example_seq(all, ec_seq);
     // global_print_newline(all);
   }
-  VW::clear_seq_and_finish_examples(all, ec_seq);
+  VW::finish_example(all, ec_seq);
 }
 
 base_learner* cbify_setup(options_i& options, vw& all)
@@ -419,7 +405,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->all = &all;
 
   if (data->use_adf)
-    init_adf_data(*data.get(), num_actions);
+    init_adf_data(*data, num_actions);
 
   if (!options.was_supplied("cb_explore") && !data->use_adf)
   {
@@ -462,7 +448,6 @@ base_learner* cbify_setup(options_i& options, vw& all)
     else
       l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
   }
-  l->set_finish(finish);
   all.delete_prediction = nullptr;
 
   return make_base(*l);
@@ -505,7 +490,6 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   learner<cbify, multi_ex>& l = init_learner(
       data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass);
 
-  l.set_finish(finish);
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;
   all.delete_prediction = nullptr;

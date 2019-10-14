@@ -59,7 +59,9 @@ class features_value_iterator
  public:
   features_value_iterator(feature_value* begin) : _begin(begin) {}
 
-  features_value_iterator(const features_value_iterator& other) : _begin(other._begin) {}
+  features_value_iterator(const features_value_iterator& other)
+    : _begin(other._begin)
+  { }
 
   features_value_iterator& operator++()
   {
@@ -286,7 +288,7 @@ struct features
     for (; i < space_names.size(); i++) space_names[i].~audit_strings_ptr();
   }
 
-  features_value_index_audit_range values_indices_audit() { return features_value_index_audit_range(this); }
+  features_value_index_audit_range values_indices_audit() { return {this}; }
 
   // default iterator for values & features
   iterator begin() { return iterator(values.begin(), indicies.begin()); }
@@ -295,7 +297,7 @@ struct features
 
   void clear()
   {
-    sum_feat_sq = 0.f;
+  	sum_feat_sq = 0.f;
     values.clear();
     indicies.clear();
     space_names.clear();
@@ -309,7 +311,7 @@ struct features
       indicies.end() = indicies.begin() + i;
     if (space_names.begin() != space_names.end())
     {
-      free_space_names(i);
+	  free_space_names((size_t)i);
       space_names.end() = space_names.begin() + i;
     }
   }
@@ -342,10 +344,10 @@ struct features
 
   bool sort(uint64_t parse_mask)
   {
-    if (indicies.size() == 0)
+    if (indicies.empty())
       return false;
 
-    if (space_names.size() != 0)
+    if (!space_names.empty())
     {
       v_array<feature_slice> slice = v_init<feature_slice>();
       for (size_t i = 0; i < indicies.size(); i++)

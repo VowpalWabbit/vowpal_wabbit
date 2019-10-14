@@ -4,7 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <sstream>
-#include <float.h>
+#include <cfloat>
 #include "reductions.h"
 #include "v_array.h"
 
@@ -19,6 +19,11 @@ struct interact
   float n1_feat_sq;
   float total_sum_feat_sq;
   size_t num_features;
+
+  ~interact()
+  {
+    feat_store.delete_v();
+  }
 };
 
 bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
@@ -150,8 +155,6 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   ec.num_features = in.num_features;
 }
 
-void finish(interact& in) { in.feat_store.delete_v(); }
-
 LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
   string s;
@@ -181,6 +184,5 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
   l = &LEARNER::init_learner(
       data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
-  l->set_finish(finish);
   return make_base(*l);
 }

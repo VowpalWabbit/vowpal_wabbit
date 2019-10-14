@@ -99,7 +99,7 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
     R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
-  features* features_data = ec.feature_space;
+  features* features_data = ec.feature_space.data();
 
   // often used values
   const uint64_t offset = ec.ft_offset;
@@ -261,7 +261,8 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
             if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr).values[loop_end - margin]))
             {
               ++margin;  // otherwise margin can't be increased
-              if ((must_skip_interaction = (loop_end < margin)))
+              must_skip_interaction = loop_end < margin;
+              if (must_skip_interaction)
                 break;
             }
 

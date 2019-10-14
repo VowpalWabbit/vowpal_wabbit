@@ -3,10 +3,11 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <sstream>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -44,6 +45,19 @@ struct nn
   polyprediction* hiddenbias_pred;
 
   vw* all;  // many things
+  std::shared_ptr<rand_state> _random_state;
+
+  ~nn()
+  {
+    delete squared_loss;
+    free(hidden_units);
+    free(dropped_out);
+    free(hidden_units_pred);
+    free(hiddenbias_pred);
+    VW::dealloc_example(nullptr, output_layer);
+    VW::dealloc_example(nullptr, hiddenbias);
+    VW::dealloc_example(nullptr, outputweight);
+  }
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -181,7 +195,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
       {
-        n.hiddenbias.l.simple.label = (float)(merand48(n.all->random_state) - 0.5);
+        n.hiddenbias.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5);
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
@@ -249,7 +263,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     if (wf == 0)
     {
       float sqrtk = sqrt((float)n.k);
-      n.outputweight.l.simple.label = (float)(merand48(n.all->random_state) - 0.5) / sqrtk;
+      n.outputweight.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;
     }
@@ -400,18 +414,6 @@ void finish_example(vw& all, nn&, example& ec)
   all.raw_prediction = save_raw_prediction;
 }
 
-void finish(nn& n)
-{
-  delete n.squared_loss;
-  free(n.hidden_units);
-  free(n.dropped_out);
-  free(n.hidden_units_pred);
-  free(n.hiddenbias_pred);
-  VW::dealloc_example(nullptr, n.output_layer);
-  VW::dealloc_example(nullptr, n.hiddenbias);
-  VW::dealloc_example(nullptr, n.outputweight);
-}
-
 base_learner* nn_setup(options_i& options, vw& all)
 {
   auto n = scoped_calloc_or_throw<nn>();
@@ -430,6 +432,7 @@ base_learner* nn_setup(options_i& options, vw& all)
     return nullptr;
 
   n->all = &all;
+  n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
     std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;
@@ -466,7 +469,6 @@ base_learner* nn_setup(options_i& options, vw& all)
       init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1);
   if (nv.multitask)
     l.set_multipredict(multipredict);
-  l.set_finish(finish);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
 

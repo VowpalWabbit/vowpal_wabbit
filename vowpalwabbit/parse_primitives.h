@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <math.h>
 #include "v_array.h"
+#include "hashstring.h"
 #include <boost/utility/string_view.hpp>
 
 #ifdef _WIN32
@@ -16,60 +17,24 @@ license as described in the file LICENSE.
 #include <Windows.h>
 #endif
 
-struct substring
-{
-  char* begin;
-  char* end;
-};
+std::ostream& operator<<(std::ostream& os, const v_array<boost::string_view>& ss);
 
-std::ostream& operator<<(std::ostream& os, const substring& ss);
-std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);
-
-// chop up the string into a v_array or any compatible container of substring.
-template <typename ContainerT>
-void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false)
-{
-  ret.clear();
-  char* last = s.begin;
-  for (; s.begin != s.end; s.begin++)
-  {
-    if (*s.begin == delim)
-    {
-      if (allow_empty || (s.begin != last))
-      {
-        substring temp = {last, s.begin};
-        ret.push_back(temp);
-      }
-      last = s.begin + 1;
-    }
-  }
-  if (allow_empty || (s.begin != last))
-  {
-    substring final_substring = {last, s.begin};
-    ret.push_back(final_substring);
-  }
-}
-// same as above, but with string_views instead of substrings
+// chop up the string into a v_array or any compatible container of string_view.
 template <typename ContainerT>
 void tokenize(char delim, const boost::string_view s, ContainerT& ret, bool allow_empty = false)
 {
   size_t start_pos = 0;
   size_t end_pos = 0;
 
-  while ((end_pos = phrase.find(delimiter, start_pos)) != boost::string_view::npos)
+  while ((end_pos = s.find(delim, start_pos)) != boost::string_view::npos)
   {
     if (allow_empty || start_pos != end_pos)
-      ret.emplace_back(phrase.begin() + start_pos, end_pos - start_pos);
+      ret.emplace_back(s.begin() + start_pos, end_pos - start_pos);
     start_pos = end_pos + 1;
   }
-  if (allow_empty || start_pos < phrase.size() - 1)
-    ret.emplace_back(phrase.begin() + start_pos, phrase.size() - start_pos);
+  if (allow_empty || start_pos < s.size() - 1)
+    ret.emplace_back(s.begin() + start_pos, s.size() - start_pos);
 }
-
-bool substring_equal(const substring& a, const substring& b);
-bool substring_equal(const substring& ss, const char* str);
-
-size_t substring_len(substring& s);
 
 inline const char* safe_index(const char* start, char v, const char* max)
 {
@@ -77,20 +42,11 @@ inline const char* safe_index(const char* start, char v, const char* max)
   return start;
 }
 
-inline void print_substring(substring s) { std::cout.write(s.begin, s.end - s.begin); }
-
 // can't type as it forces C++/CLI part to include rapidjson, which leads to name clashes...
 struct example;
 namespace VW
 {
 typedef example& (*example_factory_t)(void*);
-}
-
-uint64_t hashstring(boost::string_view s, uint64_t h);
-inline uint64_t hashstring(substring s, uint64_t h)
-{
-  boost::string_view strview(s.begin, s.end-s.begin);
-  return hashstring(strview, h);
 }
 
 typedef uint64_t (*hash_func_t)(boost::string_view, uint64_t);
@@ -172,23 +128,10 @@ inline float parse_float_string_view(boost::string_view strview, size_t& end_idx
 inline float float_of_string(boost::string_view s)
 {
   size_t end_idx;
-  float f = parse_float_string_view(s.begin, end_idx);
+  float f = parse_float_string_view(s, end_idx);
   if ((end_idx == 0 && s.size() > 0) || std::isnan(f))
   {
     std::cout << "warning: " << s << " is not a good float, replacing with 0" << std::endl;
-    f = 0;
-  }
-  return f;
-}
-
-inline float float_of_substring(substring s)
-{
-  char* endptr = s.end;
-  float f = parseFloat(s.begin, &endptr);
-  if ((endptr == s.begin && s.begin != s.end) || std::isnan(f))
-  {
-    std::cout << "warning: " << std::string(s.begin, s.end - s.begin).c_str()
-              << " is not a good float, replacing with 0" << std::endl;
     f = 0;
   }
   return f;
@@ -201,20 +144,6 @@ inline int int_of_string(boost::string_view s)
   if (endptr == s.begin() && s.size() > 0)
   {
     std::cout << "warning: " << s << " is not a good int, replacing with 0"
-              << std::endl;
-    i = 0;
-  }
-
-  return i;
-}
-
-inline int int_of_substring(substring s)
-{
-  char* endptr = s.end;
-  int i = strtol(s.begin, &endptr, 10);
-  if (endptr == s.begin && s.begin != s.end)
-  {
-    std::cout << "warning: " << std::string(s.begin, s.end - s.begin).c_str() << " is not a good int, replacing with 0"
               << std::endl;
     i = 0;
   }

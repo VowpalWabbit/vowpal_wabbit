@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include <stack>
 #include <unordered_map>
 #include <string>
+#include <array>
 #include <boost/utility/string_view.hpp>
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -42,9 +43,13 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
+#include "constant.h"
+#include "rand48.h"
+#include "hashstring.h"
 
 #include "options.h"
 #include "version.h"
+#include <memory>
 
 typedef float weight;
 
@@ -86,10 +91,8 @@ class namedlabels
   }
 
   uint32_t getK() { return m_K; }
-  const
 
-      uint64_t
-      get(const boost::string_view& s) const
+  uint64_t get(boost::string_view s) const
   {
     auto iter = m_name2id.find(s);
     if (iter == m_name2id.end())
@@ -103,8 +106,7 @@ class namedlabels
   {
     if ((v == 0) || (v > m_K))
     {
-      boost::string_view strview;
-      return strview;
+      return boost::string_view();
     }
     else
       return m_id2name[v - 1];
@@ -333,8 +335,26 @@ enum label_type_t
 };
 }
 
+struct rand_state
+{
+ private:
+  uint64_t random_state;
+
+ public:
+  constexpr rand_state() : random_state(0) {}
+  rand_state(uint64_t initial) : random_state(initial) {}
+  constexpr uint64_t get_current_state() const noexcept { return random_state; }
+  float get_and_update_random() { return merand48(random_state); }
+  float get_random() const { return merand48_noadvance(random_state); }
+  void set_random_state(uint64_t initial) noexcept { random_state = initial; }
+};
+
 struct vw
 {
+ private:
+  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+
+ public:
   shared_data* sd;
 
   parser* p;
@@ -423,36 +443,37 @@ struct vw
   // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
-  bool ignore[256];  // a set of namespaces to ignore
+  std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
-  bool ignore_linear[256];  // a set of namespaces to ignore for linear
+  std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
 
-  bool redefine_some;           // --redefine param was used
-  unsigned char redefine[256];  // keeps new chars for amespaces
-
+  bool redefine_some;                                  // --redefine param was used
+  std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
   std::vector<std::string> ngram_strings;
   std::vector<std::string> skip_strings;
-  uint32_t ngram[256];                       // ngrams to generate.
-  uint32_t skips[256];                       // skips in ngrams.
-  std::vector<std::string> limit_strings;    // descriptor of feature limits
-  uint32_t limit[256];                       // count to limit features by
-  uint64_t affix_features[256];              // affixes to generate (up to 16 per namespace - 4 bits per affix)
-  bool spelling_features[256];               // generate spelling features for which namespace
-  std::vector<std::string> dictionary_path;  // where to look for dictionaries
-  // feature_dict* owner is loaded_dictionaries
-  std::vector<dictionary_info> loaded_dictionaries;        // which dictionaries have we loaded from a file to memory?
-  std::array<std::vector<std::shared_ptr<feature_dict>>, 256> namespace_dictionaries;  // each namespace has a list of dictionaries attached to it
+  std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
+  std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
+  std::vector<std::string> limit_strings;      // descriptor of feature limits
+  std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
+  std::array<uint64_t, NUM_NAMESPACES>
+      affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
+  std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
+  std::vector<std::string> dictionary_path;            // where to look for dictionaries
+
+  // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
+  // use shared pointers to avoid the question of ownership
+  std::vector<dictionary_info> loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
+  // This array is required to be value initialized so that the std::vectors are constructed.
+  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
+      namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
   void (*delete_prediction)(void*);
   bool audit;     // should I print lots of debugging information?
   bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?
   bool active;
-  bool adaptive;            // Should I use adaptive individual learning rates?
-  bool normalized_updates;  // Should every feature be normalized
-  bool invariant_updates;   // Should we use importance aware/safe updates
+  bool invariant_updates;  // Should we use importance aware/safe updates
   uint64_t random_seed;
-  uint64_t random_state;  // per instance random_state
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
   bool normal_weights;
@@ -514,6 +535,7 @@ struct vw
   label_type::label_type_t label_type;
 
   vw();
+  std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
   vw(const vw&);
   // private://disable copying.
@@ -524,6 +546,7 @@ void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
 void get_prediction(int sock, float& res, float& weight);
-void compile_gram(std::vector<std::string> grams, uint32_t* dest, char* descriptor, bool quiet);
-void compile_limits(std::vector<std::string> limits, uint32_t* dest, bool quiet);
+void compile_gram(
+    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);

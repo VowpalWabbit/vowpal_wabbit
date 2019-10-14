@@ -2,9 +2,9 @@
 #include "cb_algs.h"
 #include "vw.h"
 #include "cb_adf.h"
-#include "cb_explore_adf.h"
 #include "rand48.h"
 #include "gen_cs_example.h"
+#include <memory>
 
 // Do evaluation of nonstationary policies.
 // input = contextual bandit label
@@ -21,6 +21,7 @@ struct explore_eval
 {
   CB::cb_class known_cost;
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   uint64_t offset;
   CB::label action_label;
   CB::label empty_label;
@@ -117,7 +118,7 @@ void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
     output_example_seq(all, data, ec_seq);
     CB_ADF::global_print_newline(all);
   }
-  VW::clear_seq_and_finish_examples(all, ec_seq);
+  VW::finish_example(all, ec_seq);
 }
 
 template <bool is_learn>
@@ -155,7 +156,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
     if (threshold > 1. + 1e-6)
       data.violations++;
 
-    if (merand48(data.all->random_state) < threshold)
+    if (data._random_state->get_and_update_random() < threshold)
     {
       example* ec_found = nullptr;
       for (example*& ec : ec_seq)
@@ -197,6 +198,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->_random_state = all.get_random_state();
 
   if (options.was_supplied("multiplier"))
     data->fixed_multiplier = true;

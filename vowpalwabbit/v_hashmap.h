@@ -4,10 +4,10 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include "v_array.h"
 
 template <class K, class V>

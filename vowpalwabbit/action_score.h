@@ -9,7 +9,7 @@ struct action_score
 
 typedef v_array<action_score> action_scores;
 
-class score_iterator : public virtual std::iterator<std::random_access_iterator_tag,  // iterator_cateogry
+class score_iterator : public virtual std::iterator<std::random_access_iterator_tag,  // iterator_category
                            float,                                                     // value_type
                            long,                                                      // difference_type
                            float*,                                                    // pointer
@@ -27,7 +27,7 @@ class score_iterator : public virtual std::iterator<std::random_access_iterator_
     return *this;
   }
 
-  score_iterator operator+(size_t n) { return score_iterator(_p + n); }
+  score_iterator operator+(size_t n) { return {_p + n}; }
 
   bool operator==(const score_iterator& other) const { return _p == other._p; }
 
@@ -40,9 +40,9 @@ class score_iterator : public virtual std::iterator<std::random_access_iterator_
   float& operator*() { return _p->score; }
 };
 
-inline score_iterator begin_scores(action_scores& a_s) { return score_iterator(a_s.begin()); }
+inline score_iterator begin_scores(action_scores& a_s) { return {a_s.begin()}; }
 
-inline score_iterator end_scores(action_scores& a_s) { return score_iterator(a_s.end()); }
+inline score_iterator end_scores(action_scores& a_s) { return {a_s.end()}; }
 
 inline int cmp(size_t a, size_t b)
 {

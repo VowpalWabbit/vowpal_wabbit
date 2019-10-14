@@ -33,7 +33,12 @@ license as described in the file LICENSE.
 #include "cb_algs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
-#include "cb_explore_adf.h"
+#include "cb_explore_adf_bag.h"
+#include "cb_explore_adf_cover.h"
+#include "cb_explore_adf_first.h"
+#include "cb_explore_adf_greedy.h"
+#include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_softmax.h"
 #include "mwt.h"
 #include "confidence.h"
 #include "scorer.h"
@@ -489,21 +494,20 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.p->hasher != vw2.p->hasher)
     return "hasher";
 
-  if (!std::equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)),
-          vw2.spelling_features))
+
+  if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
     return "spelling_features";
 
-  if (!std::equal(
-          vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features))
+  if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
     return "affix_features";
 
-  if (!std::equal(vw1.ngram, vw1.ngram + (sizeof(vw1.ngram) / sizeof(uint32_t)), vw2.ngram))
+  if (!std::equal(vw1.ngram.begin(), vw1.ngram.end(), vw2.ngram.begin()))
     return "ngram";
 
-  if (!std::equal(vw1.skips, vw1.skips + (sizeof(vw1.skips) / sizeof(uint32_t)), vw2.skips))
+  if (!std::equal(vw1.skips.begin(), vw1.skips.end(), vw2.skips.begin()))
     return "skips";
 
-  if (!std::equal(vw1.limit, vw1.limit + (sizeof(vw1.limit) / sizeof(uint32_t)), vw2.limit))
+  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin()))
     return "limit";
 
   if (vw1.num_bits != vw2.num_bits)
@@ -518,21 +522,19 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.ignore_some != vw2.ignore_some)
     return "ignore_some";
 
-  if (vw1.ignore_some && !std::equal(vw1.ignore, vw1.ignore + (sizeof(vw1.ignore) / sizeof(bool)), vw2.ignore))
+  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin()))
     return "ignore";
 
   if (vw1.ignore_some_linear != vw2.ignore_some_linear)
     return "ignore_some_linear";
 
-  if (vw1.ignore_some_linear &&
-      !std::equal(vw1.ignore_linear, vw1.ignore_linear + (sizeof(vw1.ignore_linear) / sizeof(bool)), vw2.ignore_linear))
+  if (vw1.ignore_some_linear && !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
     return "ignore_linear";
 
   if (vw1.redefine_some != vw2.redefine_some)
     return "redefine_some";
 
-  if (vw1.redefine_some &&
-      !std::equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine))
+  if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
     return "redefine";
 
   if (vw1.add_constant != vw2.add_constant)
@@ -541,7 +543,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.dictionary_path.size() != vw2.dictionary_path.size())
     return "dictionary_path size";
 
-  if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
+  if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
   for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
@@ -1271,7 +1273,12 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_adf_setup);
   all.reduction_stack.push(mwt_setup);
   all.reduction_stack.push(cb_explore_setup);
-  all.reduction_stack.push(cb_explore_adf_setup);
+  all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::first::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
@@ -1507,7 +1514,7 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
-  all.random_state = all.random_seed;
+  all.get_random_state()->set_random_state(all.random_seed);
 
   parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
 
@@ -1594,9 +1601,11 @@ char** get_argv_from_string(std::string s, int& argc)
   char** argv = calloc_or_throw<char*>(foo.size());
   for (size_t i = 0; i < foo.size(); i++)
   {
-    *(foo[i].end) = '\0';
-    argv[i] = calloc_or_throw<char>(foo[i].end - foo[i].begin + 1);
-    sprintf(argv[i], "%s", foo[i].begin);
+    size_t len = foo[i].length();
+    argv[i] = calloc_or_throw<char>(len + 1);
+    foo[i].copy(argv[i], len);
+    // unnecessary because of the calloc, but needed if we change stuff in the future
+    // argv[i][len] = '\0';
   }
 
   argc = (int)foo.size();

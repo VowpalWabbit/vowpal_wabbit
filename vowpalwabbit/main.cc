@@ -1,3 +1,4 @@
+
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
@@ -93,9 +94,9 @@ int main(int argc, char* argv[])
         int l_argc;
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
-        std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+        std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
         ptr->add_and_parse(driver_config);
-        alls.push_back(setup(*ptr.get()));
+        alls.push_back(setup(*ptr));
         arguments.push_back(std::move(ptr));
       }
     }
@@ -103,7 +104,7 @@ int main(int argc, char* argv[])
     {
       std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
       ptr->add_and_parse(driver_config);
-      alls.push_back(setup(*ptr.get()));
+      alls.push_back(setup(*ptr));
       arguments.push_back(std::move(ptr));
     }
 

@@ -8,6 +8,7 @@ license as described in the file LICENSE.node
 #include <cstdio>
 #include <float.h>
 #include <sstream>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -62,6 +63,7 @@ struct node
 struct recall_tree
 {
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   uint32_t k;
   bool node_only;
 
@@ -73,6 +75,12 @@ struct recall_tree
   float bern_hyper;
 
   bool randomized_routing;
+
+  ~recall_tree()
+  {
+    for (auto& node : nodes) node.preds.delete_v();
+    nodes.delete_v();
+  }
 };
 
 float to_prob(float x)
@@ -380,7 +388,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       float which = train_node(b, base, ec, cn);
 
       if (b.randomized_routing)
-        which = (merand48(b.all->random_state) > to_prob(which) ? -1.f : 1.f);
+        which = (b._random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f);
 
       uint32_t newcn = descend(b.nodes[cn], which);
       bool cond = stop_recurse_check(b, cn, newcn);
@@ -422,12 +430,6 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       ec.pred.multiclass = save_pred;
     }
   }
-}
-
-void finish(recall_tree& b)
-{
-  for (size_t i = 0; i < b.nodes.size(); ++i) b.nodes[i].preds.delete_v();
-  b.nodes.delete_v();
 }
 
 void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
@@ -517,6 +519,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
     return nullptr;
 
   tree->all = &all;
+  tree->_random_state = all.get_random_state();
   tree->max_candidates = options.was_supplied("max_candidates")
       ? tree->max_candidates
       : (std::min)(tree->k, 4 * (uint32_t)(ceil(log(tree->k) / log(2.0))));
@@ -535,7 +538,6 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
   learner<recall_tree, example>& l = init_multiclass_learner(
       tree, as_singleline(setup_base(options, all)), learn, predict, all.p, tree->max_routers + tree->k);
   l.set_save_load(save_load_tree);
-  l.set_finish(finish);
 
   return make_base(l);
 }

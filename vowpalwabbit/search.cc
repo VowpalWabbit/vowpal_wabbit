@@ -6,10 +6,12 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <string.h>
 #include <math.h>
+#include <memory>
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
 #include "gd.h"  // for GD::foreach_feature
+#include "parse_primitives.h"
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
 #include "search_dep_parser.h"
@@ -167,6 +169,7 @@ struct search_private
 
  public:
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
 
   uint64_t offset;
   bool auto_condition_features;  // do you want us to automatically add conditioning features?
@@ -301,12 +304,6 @@ struct search_private
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 };
 
-search::search() { priv = &calloc_or_throw<search_private>(); }
-search::~search() { free(priv); }
-
-string audit_feature_space("conditional");
-uint64_t conditional_constant = 8290743;
-
 void clear_memo_foreach_action(search_private& priv)
 {
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
@@ -317,6 +314,78 @@ void clear_memo_foreach_action(search_private& priv)
     }
   priv.memo_foreach_action.clear();
 }
+
+search::search() { priv = &calloc_or_throw<search_private>(); }
+
+search::~search()
+{
+  if (this->priv && this->priv->all)
+  {
+    search_private& priv = *this->priv;
+
+    delete priv.truth_string;
+    delete priv.pred_string;
+    delete priv.bad_string_stream;
+    priv.rawOutputString.~string();
+    priv.test_action_sequence.~vector<action>();
+    priv.dat_new_feature_audit_ss.~stringstream();
+    priv.neighbor_features.delete_v();
+    priv.timesteps.delete_v();
+    if (priv.cb_learner)
+      priv.learn_losses.cb.costs.delete_v();
+    else
+      priv.learn_losses.cs.costs.delete_v();
+    if (priv.cb_learner)
+      priv.gte_label.cb.costs.delete_v();
+    else
+      priv.gte_label.cs.costs.delete_v();
+
+    priv.condition_on_actions.delete_v();
+    priv.learn_allowed_actions.delete_v();
+    priv.ldf_test_label.costs.delete_v();
+    priv.last_action_repr.delete_v();
+    priv.active_uncertainty.delete_v();
+    for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
+    priv.active_known.delete_v();
+
+    if (priv.cb_learner)
+      priv.allowed_actions_cache->cb.costs.delete_v();
+    else
+      priv.allowed_actions_cache->cs.costs.delete_v();
+
+    priv.train_trajectory.delete_v();
+    for (Search::action_repr& ar : priv.ptag_to_action)
+    {
+      if (ar.repr != nullptr)
+      {
+        ar.repr->delete_v();
+        delete ar.repr;
+        cdbg << "delete_v" << endl;
+      }
+    }
+    priv.ptag_to_action.delete_v();
+    clear_memo_foreach_action(priv);
+    priv.memo_foreach_action.delete_v();
+
+    // destroy copied examples if we needed them
+    if (!priv.examples_dont_change)
+    {
+      void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
+      for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
+      priv.learn_ec_copy.delete_v();
+    }
+    priv.learn_condition_on_names.delete_v();
+    priv.learn_condition_on.delete_v();
+    priv.learn_condition_on_act.delete_v();
+
+    free(priv.allowed_actions_cache);
+    delete priv.rawOutputStringStream;
+  }
+  free(this->priv);
+}
+
+string audit_feature_space("conditional");
+uint64_t conditional_constant = 8290743;
 
 inline bool need_memo_foreach_action(search_private& priv)
 {
@@ -349,11 +418,11 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
   else if (num_valid_policies == 1)
     pid = 0;
   else if (num_valid_policies == 2)
-    pid = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state)) >= priv.beta;
+    pid = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random()) >= priv.beta;
   else
   {
     // SPEEDUP this up in the case that beta is small!
-    float r = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state));
+    float r = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random());
     pid = 0;
 
     if (r > priv.beta)
@@ -460,16 +529,19 @@ void to_short_string(string in, size_t max_len, char* out)
   out[max_len] = 0;
 }
 
-void number_to_natural(size_t big, char* c)
+std::string number_to_natural(size_t big)
 {
+  std::stringstream ss;
   if (big > 9999999999)
-    sprintf(c, "%dg", (int)(big / 1000000000));
+    ss << big / 1000000000 << "g";
   else if (big > 9999999)
-    sprintf(c, "%dm", (int)(big / 1000000));
+    ss << big / 1000000 << "m";
   else if (big > 9999)
-    sprintf(c, "%dk", (int)(big / 1000));
+    ss << big / 1000 << "k";
   else
-    sprintf(c, "%d", (int)(big));
+    ss << big;
+
+  return ss.str();
 }
 
 void print_update(search_private& priv)
@@ -517,18 +589,15 @@ void print_update(search_private& priv)
         (float)(all.sd->weighted_labeled_examples - all.sd->old_weighted_labeled_examples));
   }
 
-  char inst_cntr[9];
-  number_to_natural((size_t)all.sd->example_number, inst_cntr);
-  char total_pred[8];
-  number_to_natural(priv.total_predictions_made, total_pred);
-  char total_cach[8];
-  number_to_natural(priv.total_cache_hits, total_cach);
-  char total_exge[8];
-  number_to_natural(priv.total_examples_generated, total_exge);
+  auto const& inst_cntr = number_to_natural((size_t)all.sd->example_number);
+  auto const& total_pred = number_to_natural(priv.total_predictions_made);
+  auto const& total_cach = number_to_natural(priv.total_cache_hits);
+  auto const& total_exge = number_to_natural(priv.total_examples_generated);
 
-  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since, inst_cntr,
-      true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy, total_pred, total_cach,
-      total_exge, priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
+  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since,
+      inst_cntr.c_str(), true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy,
+      total_pred.c_str(), total_cach.c_str(), total_exge.c_str(),
+      priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
 
   if (PRINT_CLOCK_TIME)
   {
@@ -674,7 +743,7 @@ void reset_search_structure(search_private& priv)
 
   if (!priv.cb_learner)  // was: if rollout_all_actions
   {
-    priv.all->random_state = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
+    priv._random_state->set_random_state((uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647);
   }
 }
 
@@ -716,7 +785,10 @@ void cerr_print_array(string str, v_array<T>& A)
   std::cerr << " ]" << endl;
 }
 
-size_t random(uint64_t& v, size_t max) { return (size_t)(merand48(v) * (float)max); }
+size_t random(std::shared_ptr<rand_state>& rs, size_t max)
+{
+  return (size_t)(rs->get_and_update_random() * (float)max);
+}
 template <class T>
 bool array_contains(T target, const T* A, size_t n)
 {
@@ -1062,7 +1134,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         {
           cdbg << ", hit @ " << k;
           count++;
-          if ((count == 1) || (merand48(priv.all->random_state) < 1. / (float)count))
+          if ((count == 1) || (priv._random_state->get_and_update_random() < 1. / (float)count))
           {
             a = (allowed_actions == nullptr) ? (uint32_t)(k + 1) : allowed_actions[k];
             cdbg << "***";
@@ -1075,13 +1147,13 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   if (a == (action)-1)
   {
     if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) &&
-        (merand48(priv.all->random_state) < priv.perturb_oracle))
+        (priv._random_state->get_and_update_random() < priv.perturb_oracle))
       oracle_actions_cnt = 0;
     a = (oracle_actions_cnt > 0)
-        ? oracle_actions[random(priv.all->random_state, oracle_actions_cnt)]
-        : (allowed_actions_cnt > 0) ? allowed_actions[random(priv.all->random_state, allowed_actions_cnt)]
-                                    : priv.is_ldf ? (action)random(priv.all->random_state, ec_cnt)
-                                                  : (action)(1 + random(priv.all->random_state, priv.A));
+        ? oracle_actions[random(priv._random_state, oracle_actions_cnt)]
+        : (allowed_actions_cnt > 0) ? allowed_actions[random(priv._random_state, allowed_actions_cnt)]
+                                    : priv.is_ldf ? (action)random(priv._random_state, ec_cnt)
+                                                  : (action)(1 + random(priv._random_state, priv.A));
   }
   cdbg << "choose_oracle_action from oracle_actions = [";
   for (size_t i = 0; i < oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i];
@@ -1372,6 +1444,15 @@ int choose_policy(search_private& priv, bool advance_prng = true)
   }
 }
 
+bool cached_item_equivalent(unsigned char* const& A, unsigned char* const& B)
+{
+  size_t sz_A = *A;
+  size_t sz_B = *B;
+  if (sz_A != sz_B)
+    return false;
+  return memcmp(A, B, sz_A) == 0;
+}
+
 // returns true if found and do_store is false. if do_store is true, always returns true.
 bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on,
     const char* condition_on_names, action_repr* condition_on_actions, size_t condition_on_cnt, int policy,
@@ -1408,7 +1489,6 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
   }
-  uint64_t hash = uniform_hash(item.get(), sz, 3419);
   if (do_store)
   {
     priv.cache_hash_map.emplace(std::move(item), scored_action(a, a_cost));
@@ -1925,7 +2005,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   if (priv.subsample_timesteps <= -1)
   {
     for (size_t i = 0; i < priv.active_uncertainty.size(); i++)
-      if (merand48(priv.all->random_state) > priv.active_uncertainty[i].first)
+      if (priv._random_state->get_and_update_random() > priv.active_uncertainty[i].first)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
     /*
     float k = (float)priv.total_examples_generated;
@@ -1958,11 +2038,11 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   else if (priv.subsample_timesteps < 1)
   {
     for (size_t t = 0; t < priv.T; t++)
-      if (merand48(priv.all->random_state) <= priv.subsample_timesteps)
+      if (priv._random_state->get_and_update_random() <= priv.subsample_timesteps)
         timesteps.push_back(t);
 
     if (timesteps.size() == 0)  // ensure at least one
-      timesteps.push_back((size_t)(merand48(priv.all->random_state) * priv.T));
+      timesteps.push_back((size_t)(priv._random_state->get_and_update_random() * priv.T));
   }
 
   // finally, if subsample >= 1, then pick (int) that many uniformly at random without replacement; could use an LFSR
@@ -1971,7 +2051,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   {
     while ((timesteps.size() < (size_t)priv.subsample_timesteps) && (timesteps.size() < priv.T))
     {
-      size_t t = (size_t)(merand48(priv.all->random_state) * (float)priv.T);
+      size_t t = (size_t)(priv._random_state->get_and_update_random() * (float)priv.T);
       if (!v_array_contains(timesteps, t))
         timesteps.push_back(t);
     }
@@ -2112,7 +2192,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
 
   // if (! priv.no_caching)
-  clear_cache_hash_map(priv);
+  priv.cache_hash_map.clear();
 
   cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
   cdbg << "must_run_test = " << must_run_test(all, ec_seq, is_test_ex) << endl;
@@ -2155,7 +2235,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
        << priv.read_example_last_pass << ") ========================================" << endl;
   // cerr << "training" << endl;
 
-  clear_cache_hash_map(priv);
+  priv.cache_hash_map.clear();
   reset_search_structure(priv);
   clear_memo_foreach_action(priv);
   priv.state = INIT_TRAIN;
@@ -2424,6 +2504,7 @@ void search_initialize(vw* all, search& sch)
 {
   search_private& priv = *sch.priv;  // priv is zero initialized by default
   priv.all = all;
+  priv._random_state = all->get_random_state();
 
   priv.active_csoaa = false;
   priv.label_is_test = mc_label_is_test;
@@ -2450,7 +2531,7 @@ void search_initialize(vw* all, search& sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa((action)-1, 0.);
-  new (&priv.cache_hash_map) search_private::cache_map();
+  // new (&priv.cache_hash_map) search_private::cache_map();
 
   sch.task_data = nullptr;
 
@@ -2463,80 +2544,6 @@ void search_initialize(vw* all, search& sch)
   priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
   new (&priv.test_action_sequence) vector<action>();
   new (&priv.dat_new_feature_audit_ss) stringstream();
-}
-
-void search_finish(search& sch)
-{
-  search_private& priv = *sch.priv;
-  cdbg << "search_finish" << endl;
-
-  delete priv.truth_string;
-  delete priv.pred_string;
-  delete priv.bad_string_stream;
-  priv.cache_hash_map.clear();
-  priv.rawOutputString.~string();
-  priv.test_action_sequence.~vector<action>();
-  priv.dat_new_feature_audit_ss.~stringstream();
-  priv.neighbor_features.delete_v();
-  priv.timesteps.delete_v();
-  if (priv.cb_learner)
-    priv.learn_losses.cb.costs.delete_v();
-  else
-    priv.learn_losses.cs.costs.delete_v();
-  if (priv.cb_learner)
-    priv.gte_label.cb.costs.delete_v();
-  else
-    priv.gte_label.cs.costs.delete_v();
-
-  priv.condition_on_actions.delete_v();
-  priv.learn_allowed_actions.delete_v();
-  priv.ldf_test_label.costs.delete_v();
-  priv.last_action_repr.delete_v();
-  priv.active_uncertainty.delete_v();
-  for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
-  priv.active_known.delete_v();
-
-  if (priv.cb_learner)
-    priv.allowed_actions_cache->cb.costs.delete_v();
-  else
-    priv.allowed_actions_cache->cs.costs.delete_v();
-
-  priv.train_trajectory.delete_v();
-  for (Search::action_repr& ar : priv.ptag_to_action)
-  {
-    if (ar.repr != nullptr)
-    {
-      ar.repr->delete_v();
-      delete ar.repr;
-      cdbg << "delete_v" << endl;
-    }
-  }
-  priv.ptag_to_action.delete_v();
-  clear_memo_foreach_action(priv);
-  priv.memo_foreach_action.delete_v();
-
-  // destroy copied examples if we needed them
-  if (!priv.examples_dont_change)
-  {
-    void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-    for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
-    priv.learn_ec_copy.delete_v();
-  }
-  priv.learn_condition_on_names.delete_v();
-  priv.learn_condition_on.delete_v();
-  priv.learn_condition_on_act.delete_v();
-
-  if (priv.active_csoaa)
-    std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
-
-  if (priv.task->finish)
-    priv.task->finish(sch);
-  if (priv.metatask && priv.metatask->finish)
-    priv.metatask->finish(sch);
-
-  free(priv.allowed_actions_cache);
-  delete priv.rawOutputStringStream;
-  free(sch.priv);
 }
 
 void ensure_param(float& v, float lo, float hi, float def, const char* string)
@@ -2568,6 +2575,20 @@ void handle_condition_options(vw& all, auto_condition_settings& acset)
                       .keep()
                       .help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
   all.options->add_and_parse(new_options);
+}
+
+void search_finish(search& sch)
+{
+  search_private& priv = *sch.priv;
+  cdbg << "search_finish" << endl;
+
+  if (priv.active_csoaa)
+    std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
+
+  if (priv.task->finish)
+    priv.task->finish(sch);
+  if (priv.metatask && priv.metatask->finish)
+    priv.metatask->finish(sch);
 }
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
@@ -2618,48 +2639,43 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   return allowed;
 }
 
-void parse_neighbor_features(string& nf_string, search& sch)
+void parse_neighbor_features(boost::string_view nf_strview, search& sch)
 {
   search_private& priv = *sch.priv;
   priv.neighbor_features.clear();
-  size_t len = nf_string.length();
-  if (len == 0)
+  if (nf_strview.empty())
     return;
 
-  char* cstr = new char[len + 1];
-  strcpy(cstr, nf_string.c_str());
-
-  char* p = strtok(cstr, ",");
-  std::vector<substring> cmd;
-  while (p != 0)
+  std::vector<boost::string_view> cmd;
+  size_t start_idx = 0;
+  size_t end_idx = 0;
+  while (start_idx != std::string::npos)
   {
-    cmd.clear();
-    substring me = {p, p + strlen(p)};
-    tokenize(':', me, cmd, true);
+    end_idx = nf_strview.find(',', start_idx);
+    boost::string_view strview = nf_strview.substr(start_idx, end_idx - start_idx);
+    start_idx = (end_idx == std::string::npos) ? end_idx : end_idx + 1;
 
+    cmd.clear();
+    tokenize(':', strview, cmd, true);
     int32_t posn = 0;
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_substring(cmd[0]);
+      posn = int_of_string(cmd[0]);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_substring(cmd[0]);
-      ns = (cmd[1].end > cmd[1].begin) ? cmd[1].begin[0] : ' ';
+      posn = int_of_string(cmd[0]);
+      ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else
     {
-      std::cerr << "warning: ignoring malformed neighbor specification: '" << p << "'" << endl;
+      std::cerr << "warning: ignoring malformed neighbor specification: '" << strview << "'" << endl;
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
     priv.neighbor_features.push_back(enc);
-
-    p = strtok(nullptr, ",");
   }
-
-  delete[] cstr;
 }
 
 base_learner* setup(options_i& options, vw& all)

@@ -8,7 +8,7 @@
 #include "action_score.h"
 
 namespace CCB {
-  struct conditional_contexual_bandit_outcome
+  struct conditional_contextual_bandit_outcome
   {
     // The cost of this class
     float cost;
@@ -29,8 +29,9 @@ namespace CCB {
   struct label {
     example_type type;
     // Outcome may be unset.
-    conditional_contexual_bandit_outcome* outcome;
+    conditional_contextual_bandit_outcome* outcome;
     v_array<uint32_t> explicit_included_actions;
+    float weight;
   };
 
   extern label_parser ccb_label_parser;

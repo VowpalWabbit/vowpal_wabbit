@@ -6,10 +6,10 @@ license as described in the file LICENSE.
 
 #pragma once
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdint.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+#include <cstdint>
 
 #ifdef _WIN32
 #define __INLINE
@@ -17,10 +17,13 @@ license as described in the file LICENSE.
 #define __INLINE inline
 #endif
 
+#ifndef VW_NOEXCEPT
 #include "vw_exception.h"
+#endif
+
 #include "memory.h"
 
-const size_t erase_point = ~((1 << 10) - 1);
+const size_t erase_point = ~((1u << 10u) - 1u);
 
 template <class T>
 struct v_array
@@ -37,6 +40,9 @@ struct v_array
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
 
+  inline const T* begin() const{ return _begin; }
+  inline const T* end() const { return _end; }
+
   inline T* cbegin() const { return _begin; }
   inline T* cend() const { return _end; }
 
@@ -46,10 +52,10 @@ struct v_array
   // ~v_array() {
   //  delete_v();
   // }
-  T last() const { return *(_end - 1); }
-  T pop() { return *(--_end); }
-  bool empty() const { return _begin == _end; }
-  void decr() { _end--; }
+  T last() const { return *(_end-1);}
+  T pop() { return *(--_end);}
+  bool empty() const { return _begin == _end;}
+  void decr() { _end--;}
   void incr()
   {
     if (_end == end_array)
@@ -60,13 +66,13 @@ struct v_array
   inline size_t size() const { return _end - _begin; }
   void resize(size_t length)
   {
-    if ((size_t)(end_array - _begin) != length)
+  	if ((size_t)(end_array-_begin) != length)
     {
-      size_t old_len = _end - _begin;
-      T* temp = (T*)realloc(_begin, sizeof(T) * length);
-      if ((temp == nullptr) && ((sizeof(T) * length) > 0))
+      size_t old_len = _end-_begin;
+      T* temp = (T *)realloc(_begin, sizeof(T) * length);
+      if ((temp == nullptr) && ((sizeof(T)*length) > 0))
       {
-        THROW("realloc of " << length << " failed in resize().  out of memory?");
+        THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?");
       }
       else
         _begin = temp;
@@ -84,14 +90,16 @@ struct v_array
       resize(_end - _begin);
       erase_count = 0;
     }
-    for (T* item = _begin; item != _end; ++item) item->~T();
+    for (T* item = _begin; item != _end; ++item)
+	  item->~T();
     _end = _begin;
   }
   void delete_v()
   {
     if (_begin != nullptr)
     {
-      for (T* item = _begin; item != _end; ++item) item->~T();
+      for (T* item = _begin; item != _end; ++item)
+	    item->~T();
       free(_begin);
     }
     _begin = _end = end_array = nullptr;
@@ -102,7 +110,9 @@ struct v_array
       resize(2 * (end_array - _begin) + 3);
     new (_end++) T(new_ele);
   }
+
   void push_back_unchecked(const T& new_ele) { new (_end++) T(new_ele); }
+
   template <class... Args>
   void emplace_back(Args&&... args)
   {
@@ -226,9 +236,14 @@ template <class T>
 void push_many(v_array<T>& v, const T* _begin, size_t num)
 {
   if (v._end + num >= v.end_array)
-    v.resize(max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
+    v.resize(max(2 * (size_t)(v.end_array - v._begin) + 3,
+                 v._end - v._begin + num));
+#ifdef _WIN32
+  memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
+#else
   memcpy(v._end, _begin, num * sizeof(T));
-  v._end += num;
+#endif
+ v._end += num;
 }
 
 template <class T>

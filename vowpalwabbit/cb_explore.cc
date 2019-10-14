@@ -4,6 +4,7 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "explore.h"
+#include <memory>
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -18,7 +19,7 @@ namespace CB_EXPLORE
 {
 struct cb_explore
 {
-  vw* all;
+  std::shared_ptr<rand_state> _random_state;
   cb_to_cs cbcs;
   v_array<uint32_t> preds;
   v_array<float> cover_probs;
@@ -36,6 +37,15 @@ struct cb_explore
   float psi;
 
   size_t counter;
+
+  ~cb_explore()
+  {
+    preds.delete_v();
+    cover_probs.delete_v();
+    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
+    COST_SENSITIVE::cs_label.delete_label(&cs_label);
+    COST_SENSITIVE::cs_label.delete_label(&second_cs_label);
+  }
 };
 
 template <bool is_learn>
@@ -99,7 +109,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   float prob = 1.f / (float)data.bag_size;
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = BS::weight_gen(*data.all);
+    uint32_t count = BS::weight_gen(data._random_state);
     if (is_learn && count > 0)
       base.learn(ec, i);
     else
@@ -209,16 +219,6 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   ec.pred.a_s = probs;
 }
 
-void finish(cb_explore& data)
-{
-  data.preds.delete_v();
-  data.cover_probs.delete_v();
-  cb_to_cs& c = data.cbcs;
-  COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
-  COST_SENSITIVE::cs_label.delete_label(&data.cs_label);
-  COST_SENSITIVE::cs_label.delete_label(&data.second_cs_label);
-}
-
 void print_update_cb_explore(vw& all, bool is_test, example& ec, stringstream& pred_string)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
@@ -245,26 +245,22 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
-  char temp_str[20];
-  stringstream ss, sso;
+  stringstream ss;
   float maxprob = 0.;
   uint32_t maxid = 0;
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
   {
-    sprintf(temp_str, "%f ", ec.pred.a_s[i].score);
-    ss << temp_str;
+    ss << std::fixed << ec.pred.a_s[i].score << " ";
     if (ec.pred.a_s[i].score > maxprob)
     {
       maxprob = ec.pred.a_s[i].score;
       maxid = i + 1;
     }
   }
-
-  sprintf(temp_str, "%d:%f", maxid, maxprob);
-  sso << temp_str;
-
   for (int sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
 
+  std::stringstream sso;
+  sso << maxid << ":" << std::fixed << maxprob;
   print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
 }
 
@@ -294,7 +290,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   if (!options.was_supplied("cb_explore"))
     return nullptr;
 
-  data->all = &all;
+  data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
   if (!options.was_supplied("cb"))
@@ -333,7 +329,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     l = &init_learner(
         data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);
 
-  l->set_finish(finish);
   l->set_finish_example(finish_example);
   return make_base(*l);
 }

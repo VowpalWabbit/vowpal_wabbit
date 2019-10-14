@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(object_pool_test)
   BOOST_CHECK_EQUAL(pool.size(), 2);
   BOOST_CHECK_EQUAL(pool.empty(), false);
 
-  auto other_obj = new obj{};
+  obj other_obj;
   BOOST_CHECK_EQUAL(pool.is_from_pool(o2), true);
-  BOOST_CHECK_EQUAL(pool.is_from_pool(other_obj), false);
+  BOOST_CHECK_EQUAL(pool.is_from_pool(&other_obj), false);
 }

@@ -160,23 +160,6 @@ bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
   return false;
 }
 
-int32_t safe_sprintf_s(char*& buf, size_t& buf_size, const char* fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  int32_t len = vsprintf_s(buf, buf_size, fmt, args);
-  va_end(args);
-  if (len < 0)
-    THROW("Encoding error.");
-  if (resize_buf_if_needed(buf, buf_size, len + 1))
-  {
-    va_start(args, fmt);
-    vsprintf_s(buf, buf_size, fmt, args);
-    va_end(args);
-  }
-
-  return len;
-}
 
 inline void safe_memcpy(char*& __dest, size_t& __dest_size, const void* __src, size_t __n)
 {
@@ -492,10 +475,10 @@ void save_load_header(
         auto serialized_keep_options = serializer.str();
 
         // We need to save our current PRG state
-        if (all.save_resume && all.random_state != 0)
+        if (all.save_resume && all.get_random_state()->get_current_state() != 0)
         {
           serialized_keep_options += " --random_seed";
-          serialized_keep_options += " " + std::to_string(all.random_state);
+          serialized_keep_options += " " + std::to_string(all.get_random_state()->get_current_state());
         }
 
         msg << "options:" << serialized_keep_options << "\n";

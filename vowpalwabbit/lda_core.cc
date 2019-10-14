@@ -25,9 +25,9 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cstring>
+#include <cstdio>
+#include <cassert>
 #include "no_label.h"
 #include "gd.h"
 #include "rand48.h"
@@ -94,6 +94,18 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, float *gamma, float *norm);
+
+  ~lda()
+  {
+    Elogtheta.delete_v();
+    decay_levels.delete_v();
+    total_new.delete_v();
+    examples.delete_v();
+    total_lambda.delete_v();
+    doc_lengths.delete_v();
+    digammas.delete_v();
+    v.delete_v();
+  }
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -792,7 +804,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     else
       all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
   }
-  if (model_file.files.size() > 0)
+  if (!model_file.files.empty())
   {
     uint64_t i = 0;
     stringstream msg;
@@ -876,7 +888,7 @@ void learn_batch(lda &l)
   float eta = -1;
   float minuseta = -1;
 
-  if (l.total_lambda.size() == 0)
+  if (l.total_lambda.empty())
   {
     for (size_t k = 0; k < l.all->lda; k++) l.total_lambda.push_back(0.f);
     // This part does not work with sparse parameters
@@ -1125,7 +1137,7 @@ void compute_coherence_metrics(lda &l, T &weights)
     auto &word_pairs = topics_word_pairs[topic];
     for (size_t i = 0; i < top_features_idx.size(); i++)
       for (size_t j = i + 1; j < top_features_idx.size(); j++)
-        word_pairs.push_back(feature_pair(top_features_idx[i], top_features_idx[j]));
+        word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]);
   }
 
   // compress word pairs and create record for storing frequency
@@ -1233,7 +1245,7 @@ void compute_coherence_metrics(lda &l)
 
 void end_pass(lda &l)
 {
-  if (l.examples.size())
+  if (!l.examples.empty())
     learn_batch(l);
 
   if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
@@ -1266,19 +1278,6 @@ void end_examples(lda &l)
 }
 
 void finish_example(vw &, lda &, example &) {}
-
-void finish(lda &ld)
-{
-  ld.sorted_features.~vector<index_feature>();
-  ld.Elogtheta.delete_v();
-  ld.decay_levels.delete_v();
-  ld.total_new.delete_v();
-  ld.examples.delete_v();
-  ld.total_lambda.delete_v();
-  ld.doc_lengths.delete_v();
-  ld.digammas.delete_v();
-  ld.v.delete_v();
-}
 
 std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 {
@@ -1327,7 +1326,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   all.lda = (uint32_t)ld->topics;
   all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
-  ld->total_lambda_init = 0;
+  ld->total_lambda_init = false;
   ld->all = &all;
   ld->example_t = all.initial_t;
   if (ld->compute_coherence_metrics)
@@ -1370,7 +1369,6 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
-  l.set_finish(finish);
 
   return make_base(l);
 }

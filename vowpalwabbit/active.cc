@@ -1,7 +1,7 @@
-#include <errno.h>
+#include <cerrno>
 #include "reductions.h"
 #include "rand48.h"
-#include "float.h"
+#include <cfloat>
 #include "vw.h"
 #include "active.h"
 #include "vw_exception.h"
@@ -35,7 +35,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
     avg_loss = (float)(a.all->sd->sum_loss / k + sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
-  if (merand48(a.all->random_state) < bias)
+  if (a._random_state->get_and_update_random() < bias)
     return 1.f / bias;
   else
     return -1.;
@@ -90,16 +90,11 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
   if (f >= 0)
   {
     std::stringstream ss;
-    char temp[30];
-    sprintf(temp, "%f", res);
-    ss << temp;
+    ss << std::fixed << res;
     if (!print_tag(ss, tag))
       ss << ' ';
     if (weight >= 0)
-    {
-      sprintf(temp, " %f", weight);
-      ss << temp;
-    }
+      ss << " " << std::fixed << weight;
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
@@ -122,10 +117,9 @@ void output_and_account_example(vw& all, active& a, example& ec)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for (auto i : all.final_prediction_sink)
   {
-    int f = (int)all.final_prediction_sink[i];
-    active_print_result(f, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i, ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);
@@ -155,6 +149,7 @@ base_learner* active_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->_random_state = all.get_random_state();
 
   if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");

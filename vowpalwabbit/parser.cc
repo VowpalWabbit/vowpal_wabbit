@@ -12,7 +12,7 @@ license as described in the file LICENSE.
 #include <netinet/tcp.h>
 #endif
 
-#include <signal.h>
+#include <csignal>
 
 #include <fstream>
 
@@ -44,9 +44,9 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <netinet/in.h>
 #endif
 
-#include <errno.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cerrno>
+#include <cstdio>
+#include <cassert>
 
 #include "parse_example.h"
 #include "cache.h"
@@ -89,39 +89,29 @@ void set_compressed(parser* par)
 
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 {
-  try
+  size_t v_length;
+  buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+  if (v_length > 61)
+    THROW("cache version too long, cache file is probably invalid");
+
+  if (v_length == 0)
+    THROW("cache version too short, cache file is probably invalid");
+
+  std::vector<char> t(v_length);
+  buf->read_file(filepointer, t.data(), v_length);
+  VW::version_struct v_tmp(t.data());
+  if (v_tmp != VW::version)
   {
-    size_t v_length;
-    buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-    if (v_length > 61)
-      THROW("cache version too long, cache file is probably invalid");
-
-    if (v_length == 0)
-      THROW("cache version too short, cache file is probably invalid");
-
-    std::vector<char> t(v_length);
-    buf->read_file(filepointer, t.data(), v_length);
-    VW::version_struct v_tmp(t.data());
-    if (v_tmp != VW::version)
-    {
-      //      cout << "cache has possibly incompatible version, rebuilding" << endl;
-      return 0;
-    }
-
-    char temp;
-    if (buf->read_file(filepointer, &temp, 1) < 1)
-      THROW("failed to read");
-
-    if (temp != 'c')
-      THROW("data file is not a cache file");
+    //      cout << "cache has possibly incompatible version, rebuilding" << endl;
+    return 0;
   }
-  catch (...)
-  {
-    // TODO fix this exception bubbling behavior: https://github.com/VowpalWabbit/vowpal_wabbit/issues/1774
-    // Prior to using a std::vector, a v_array was used and the catch statement was used to delete it.
-    // This caused any exception to be ignored. Bubbling up this exception causes tests to fail so
-    // I am going to swallow it to maintain previous behavior.
-  }
+
+  char temp;
+  if (buf->read_file(filepointer, &temp, 1) < 1)
+    THROW("failed to read");
+
+  if (temp != 'c')
+    THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
   if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits))
@@ -513,7 +503,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   }
   else
   {
-    if (all.p->input->files.size() > 0)
+    if (!all.p->input->files.empty())
     {
       if (!quiet)
         all.trace_message << "ignoring text input in favor of cache input" << endl;
@@ -530,7 +520,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       catch (exception const& ex)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
-        if (temp.size() != 0)
+        if (!temp.empty())
         {
           all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
         }
@@ -725,13 +715,13 @@ void setup_example(vw& all, example* ae)
         i--;
       }
 
-  if (all.ngram_strings.size() > 0)
+  if (!all.ngram_strings.empty())
     generateGrams(all, ae);
 
   if (all.add_constant)  // add constant feature
     VW::add_constant_feature(all, ae);
 
-  if (all.limit_strings.size() > 0)
+  if (!all.limit_strings.empty())
     feature_limit(all, ae);
 
   uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
@@ -798,7 +788,7 @@ void add_label(example* ec, float label, float weight, float base)
   ec->weight = weight;
 }
 
-example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
+example* import_example(vw& all, const string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
   all.p->lp.default_label(&ret->l);
@@ -853,7 +843,7 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
   delete (features);
 }
 
-void parse_example_label(vw& all, example& ec, string label)
+void parse_example_label(vw& all, example& ec, const string& label)
 {
   v_array<boost::string_view> words = v_init<boost::string_view>();
 
@@ -885,12 +875,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   assert(ec.in_use);
   ec.in_use = false;
   all.p->example_pool.return_object(&ec);
-}
-
-void finish_example(vw& all, multi_ex& ec_seq)
-{
-  for (auto ec : ec_seq) finish_example(all, *ec);
-  ec_seq.clear();
 }
 
 void finish_example(vw& all, example& ec)
@@ -991,7 +975,7 @@ void free_parser(vw& all)
   all.p->words.delete_v();
   all.p->name.delete_v();
 
-  if (all.ngram_strings.size() > 0)
+  if (!all.ngram_strings.empty())
     all.p->gram_mask.delete_v();
 
   io_buf* output = all.p->output;

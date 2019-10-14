@@ -18,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <memory>
 
 #include "reductions.h"
 #include "vw.h"
@@ -60,6 +61,7 @@ struct boosting
   float gamma;
   string alg;
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;
@@ -210,7 +212,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
     o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
-  float stopping_point = merand48(o.all->random_state);
+  float stopping_point = o._random_state->get_and_update_random();
 
   for (int i = 0; i < o.N; i++)
   {
@@ -346,12 +348,6 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   cerr << endl;
 }
 
-void finish(boosting& o)
-{
-  o.C.~vector();
-  o.alpha.~vector();
-}
-
 void return_example(vw& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
@@ -428,6 +424,7 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
+  data->_random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 
@@ -450,7 +447,6 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   else
     THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
 
-  l->set_finish(finish);
   l->set_finish_example(return_example);
 
   return make_base(*l);

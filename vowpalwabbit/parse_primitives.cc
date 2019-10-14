@@ -16,48 +16,6 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "vw_exception.h"
 
-bool substring_equal(const substring& a, const substring& b)
-{
-  return (a.end - a.begin == b.end - b.begin)  // same length
-      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
-}
-
-bool substring_equal(const substring& ss, const char* str)
-{
-  size_t len_ss = ss.end - ss.begin;
-  size_t len_str = strlen(str);
-  if (len_ss != len_str)
-    return false;
-  return (strncmp(ss.begin, str, len_ss) == 0);
-}
-
-size_t substring_len(substring& s) { return s.end - s.begin; }
-
-uint64_t hashstring(boost::string_view s, uint64_t h)
-{
-  // trim leading whitespace but not UTF-8
-  while (!s.empty() && s.front() <= 0x20 && (int)(s.front()) >= 0)
-    s.remove_prefix(1);
-  // trim trailing white space but not UTF-8
-  while (!s.empty() && s.back() <= 0x20 && (int)(s.back()) >= 0)
-    s.remove_suffix(1);
-
-  size_t ret = 0;
-  for (char c : s)
-  {
-  }
-  const char* p = s.begin();
-  while (p != s.end())
-    if (*p >= '0' && *p <= '9')
-      ret = 10 * ret + *(p++) - '0';
-    else
-      return uniform_hash((unsigned char*)s.begin(), s.size(), h);
-
-  return ret + h;
-}
-
-uint64_t hashall(boost::string_view s, uint64_t h) { return uniform_hash((unsigned char*)s.begin(), s.size(), h); }
-
 hash_func_t getHasher(const std::string& s)
 {
   if (s == "strings")
@@ -68,15 +26,9 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
-std::ostream& operator<<(std::ostream& os, const substring& ss)
+std::ostream& operator<<(std::ostream& os, const v_array<boost::string_view>& ss)
 {
-  std::string s(ss.begin, ss.end - ss.begin);
-  return os << s;
-}
-
-std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
-{
-  substring* it = ss.cbegin();
+  boost::string_view* it = ss.cbegin();
 
   if (it == ss.cend())
   {
