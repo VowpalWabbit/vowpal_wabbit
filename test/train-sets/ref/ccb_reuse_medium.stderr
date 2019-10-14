@@ -1,0 +1,19 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/ccb_reuse_medium.dsjson
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0 0:0.000000,4:0.000000,... 0,4,7,...       28
+-0.137647 -0.275295            2            2.0 0:-0.091765,6:-0.091765,... 0,6,7,...       28
+-0.150397 -0.163148            4            4.0 0:-0.023090,6:-0.023090,... 0,6,7,...       28
+
+finished run
+number of examples = 4
+weighted example sum = 4.000000
+weighted label sum = 0.000000
+average loss = -0.150397
+total feature number = 112

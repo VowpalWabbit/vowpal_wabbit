@@ -158,25 +158,23 @@ void attach_label_to_example(
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
-  // save a copy
-  auto copy = data.action_score_pool.get_object();
-  copy_array(copy, data.shared->pred.a_s);
-  decision_scores.push_back(copy);
+  auto& pred = data.shared->pred.a_s;
+  decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
-  for (auto& action_score : copy)
+  for (auto& action_score : pred)
   {
     action_score.action = data.origin_index[action_score.action];
   }
 
   // Exclude the chosen action from next slots.
-  auto original_index_of_chosen_action = copy[0].action;
+  auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
 }
 
 void clear_pred_and_label(ccb& data)
 {
-  return_v_array(data.shared->pred.a_s, data.action_score_pool);
+   // Don't need to return to pool, as that will be done when the example is output.
 
   // This just needs to be cleared as it is reused.
   data.actions[data.action_with_label]->l.cb.costs.clear();
@@ -373,7 +371,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
     }
   }
 
-  // Must reset this in case the pooled example has stale data here.
+  // Must provide a prediction that cb can write into, this will be saved into the decision scores object later.
   data.shared->pred.a_s = data.action_score_pool.get_object();
 
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
@@ -616,7 +614,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto a_s : ec_seq[0]->pred.decision_scores)
+  for (auto& a_s : ec_seq[0]->pred.decision_scores)
   {
     return_v_array(a_s, data.action_score_pool);
   }

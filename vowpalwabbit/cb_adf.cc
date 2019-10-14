@@ -41,6 +41,7 @@ struct cb_adf
   v_array<COST_SENSITIVE::label> _prepped_cs_labels;
 
   action_scores _a_s;              // temporary storage for mtr and sm
+  action_scores _a_s_mtr_cs;       // temporary storage for mtr cost sensitive example
   action_scores _prob_s;           // temporary storage for sm; stores softmax values
   v_array<uint32_t> _backup_nf;    // temporary storage for sm; backup for numFeatures in examples
   v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
@@ -93,6 +94,7 @@ struct cb_adf
     _prob_s.delete_v();
 
     _a_s.delete_v();
+    _a_s_mtr_cs.delete_v();
     _gen_cs.pred_scores.costs.delete_v();
   }
 
@@ -267,11 +269,13 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p *
       ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
 
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
   GEN_CS::call_cs_ldf<true>(
       base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   std::swap(examples[0]->pred.a_s, _a_s);
 }
 
