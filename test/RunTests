@@ -1749,8 +1749,16 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/ccb_test.predict
 
 # Test 200: cb_explore_adf with huge lambda softmax exploration
-{VW} --cb_explore_adf --softmax --lambda 100000 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict
+{VW} --cb_explore_adf --softmax --lambda 100000 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax_biglambda.predict
     train-sets/ref/cbe_adf_softmax_biglambda.stderr
     pred-sets/ref/cbe_adf_softmax_biglambda.predict
+
+# Test 201: Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind
+{VW} --ccb_explore_adf --ring_size 7 -d train-sets/ccb_reuse_small.data
+    train-sets/ref/ccb_reuse_small.stderr
+
+# Test 202: Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind
+{VW} --ccb_explore_adf --ring_size 20 --dsjson -d train-sets/ccb_reuse_medium.dsjson
+    train-sets/ref/ccb_reuse_medium.stderr
 
 # Do not delete this line or the empty line above it
