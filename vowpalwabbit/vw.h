@@ -79,7 +79,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 example* alloc_examples(size_t, size_t);
 void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*) = nullptr);
 
-void parse_example_label(vw& all, example& ec, const std::string& label);
+void parse_example_label(vw& all, example& ec, std::string label);
 void setup_examples(vw& all, v_array<example*>& examples);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);

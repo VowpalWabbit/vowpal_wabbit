@@ -88,11 +88,13 @@ license as described in the file LICENSE.
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 
-//using namespace std;
+using std::cerr;
+using std::cout;
+using std::endl;
 using namespace VW::config;
 
 //
-// Does string end with a certain substring?
+// Does std::string end with a certain substring?
 //
 bool ends_with(std::string const& fullString, std::string const& ending)
 {
@@ -182,9 +184,8 @@ void parse_dictionary_argument(vw& all, std::string str)
   io->close_file();
 
   if (!all.quiet)
-    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
-                      << std::dec
-                      << std::endl;
+    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash << std::dec
+                      << endl;
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
@@ -555,7 +556,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 }
 
 }  // namespace VW
-// return a copy of string replacing \x00 sequences in it
+// return a copy of std::string replacing \x00 sequences in it
 std::string spoof_hex_encoded_namespaces(const std::string& arg)
 {
   std::string res;
@@ -619,7 +620,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
-               .help("redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form "
+               .help("redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in form "
                      "'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a "
                      "wildcard in S.")
                .keep())
@@ -1182,7 +1183,7 @@ void parse_output_model(options_i& options, vw& all)
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
   // {
   //   arg.args.push_back("--id");
-  //   arg.args.push_back(arg.vm["id"].as<string>());
+  //   arg.args.push_back(arg.vm["id"].as<std::string>());
   // }
 }
 
@@ -1410,13 +1411,13 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
 
   interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
 
-  // Convert file_options into a vector.
+  // Convert file_options into  vector.
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
   po::options_description desc("");
 
-  // Get list of options in file options string
+  // Get list of options in file options std::string
   po::parsed_options pos = po::command_line_parser(container).options(desc).allow_unregistered().run();
 
   bool skipping = false;
@@ -1577,7 +1578,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
     size_t pos_after_value = cmd.find(" ", pos);
     if (pos_after_value == std::string::npos)
     {
-      // we reach the end of the string, so replace the all characters after pos by new_value
+      // we reach the end of the std::string, so replace the all characters after pos by new_value
       cmd.replace(pos, cmd.size() - pos, new_value);
     }
     else
@@ -1654,7 +1655,7 @@ vw* initialize(
     // upon direct query for help -- spit it out to stdout;
     if (options.get_typed_option<bool>("help").value())
     {
-      std::cout << options.help();
+      cout << options.help();
       exit(0);
     }
 

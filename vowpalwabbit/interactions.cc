@@ -3,7 +3,6 @@
 #include "vw_exception.h"
 #include <algorithm>
 
-using namespace std;
 
 namespace INTERACTIONS
 {
@@ -56,11 +55,11 @@ void expand_namespaces_with_recursion(
 // process all interactions in a vector
 
 std::vector<std::string> expand_interactions(
-    const vector<string>& vec, const size_t required_length, const string& err_msg)
+    const std::vector<std::string>& vec, const size_t required_length, const std::string& err_msg)
 {
   std::vector<std::string> res;
 
-  for (string const& i : vec)
+  for (std::string const& i : vec)
   {
     const size_t len = i.length();
     if (required_length > 0 && len != required_length)
@@ -89,7 +88,7 @@ std::vector<std::string> expand_interactions(
 inline bool must_be_left_sorted(const std::string& oi)
 {
   if (oi.size() <= 1)
-    return true;  // one letter in string - no need to sort
+    return true;  // one letter in std::string - no need to sort
 
   bool diff_ns_found = false;
   bool pair_found = false;
@@ -128,7 +127,7 @@ void sort_and_filter_duplicate_interactions(
   {
     std::string sorted_i(vec[i]);
     std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
-    vec_sorted.push_back(make_pair(sorted_i, i));
+    vec_sorted.push_back(std::make_pair(sorted_i, i));
   }
 
   if (filter_duplicates)
@@ -380,10 +379,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
     if (correct_features_cnt != new_features_cnt)
       all.trace_message << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt
-                        << endl;
+                        << std::endl;
     if (fabs(correct_features_value - new_features_value) > 1e-5)
       all.trace_message << "Incorrect new features value " << new_features_value << " must be "
-                        << correct_features_value << endl;
+                        << correct_features_value << std::endl;
 #endif
   }
 

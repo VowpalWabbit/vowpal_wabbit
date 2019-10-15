@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "constant.h"
 
-using namespace std;
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
@@ -86,14 +85,14 @@ class TC_parser
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples << ": \"" << tmp_view << "\""
-       << endl;
+       << std::endl;
     if (_p->strict_parse)
     {
       THROW_EX(VW::strict_parse_exception, ss.str());
     }
     else
     {
-      cerr << ss.str();
+      std::cerr << ss.str();
     }
   }
 
@@ -263,7 +262,7 @@ class TC_parser
             if (audit)
               for (const auto& id : feats->indicies)
               {
-                stringstream ss;
+		std::stringstream ss;
                 ss << _index << '_';
                 ss << feature_name;
                 ss << '=' << id;

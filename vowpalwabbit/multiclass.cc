@@ -5,8 +5,6 @@
 #include "vw_exception.h"
 #include <boost/utility/string_view.hpp>
 
-using namespace std;
-
 namespace MULTICLASS
 {
 char* bufread_label(label_t* ld, char* c)
@@ -85,8 +83,8 @@ void parse_label(parser*, shared_data* sd, void* v, v_array<boost::string_view>&
       ld->weight = float_of_string(words[1]);
       break;
     default:
-      cerr << "malformed example!\n";
-      cerr << "words.size() = " << words.size() << endl;
+      std::cerr << "malformed example!\n";
+      std::cerr << "words.size() = " << words.size() << std::endl;
   }
   if (ld->label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
@@ -101,8 +99,8 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
   boost::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   boost::string_view sv_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(all.holdout_set_off, all.current_pass,
-      sv_label.empty() ? "unknown" : std::string(sv_label),
-      sv_pred.empty() ? "unknown" : std::string(sv_pred), ec.num_features,
+      sv_label.empty() ? "unknown" : sv_label.to_string(),
+      sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features,
       all.progress_add, all.progress_arg);
 }
 
@@ -168,7 +166,7 @@ void finish_example(vw& all, example& ec, bool update_loss)
     else
     {
       boost::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(sink, std::string(sv_pred), ec.tag);
+      all.print_text(sink, sv_pred.to_string(), ec.tag);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);

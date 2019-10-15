@@ -5,7 +5,6 @@
 #include <cmath>
 #include <boost/utility/string_view.hpp>
 
-using namespace std;
 namespace COST_SENSITIVE
 {
 void name_value(boost::string_view& s, v_array<boost::string_view>& name, float& v)
@@ -24,7 +23,7 @@ void name_value(boost::string_view& s, v_array<boost::string_view>& name, float&
         THROW("error NaN value for: " << name[0]);
       break;
     default:
-      cerr << "example with a wierd name.  What is '" << s << "'?\n";
+      std::cerr << "example with a wierd name.  What is '" << s << "'?\n";
   }
 }
 
@@ -36,7 +35,7 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
   size_t total = sizeof(wclass) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    cout << "error in demarshal of cost data" << endl;
+    std::cout << "error in demarshal of cost data" << std::endl;
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -140,7 +139,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<boost::string_view
       if (eq_shared)
       {
         if (p->parse_name.size() != 1)
-          cerr << "shared feature vectors should not have costs on: " << words[0] << endl;
+          std::cerr << "shared feature vectors should not have costs on: " << words[0] << std::endl;
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
@@ -150,7 +149,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<boost::string_view
       if (eq_label)
       {
         if (p->parse_name.size() != 2)
-          cerr << "label feature vectors should have exactly one cost on: " << words[0] << endl;
+          std::cerr << "label feature vectors should have exactly one cost on: " << words[0] << std::endl;
         else
         {
           wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
@@ -253,7 +252,7 @@ void output_example(vw& all, example& ec)
         min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
+      std::cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << std::endl;
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
@@ -268,12 +267,12 @@ void output_example(vw& all, example& ec)
     else
     {
       boost::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(sink, string(sv_pred), ec.tag);
+      all.print_text(sink, sv_pred.to_string(), ec.tag);
     }
 
   if (all.raw_prediction > 0)
   {
-    stringstream outputStringStream;
+    std::stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       wclass cl = ld.costs[i];

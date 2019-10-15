@@ -8,7 +8,6 @@
 #include "vw.h"
 
 #include <iterator>
-using namespace std;
 
 namespace VW
 {
@@ -46,7 +45,7 @@ void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
     ec_seq.erase(ec_seq.begin());
     // merge sequences
     for (auto& example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
-    swap(ec_seq[0]->pred, shared_example->pred);
+    std::swap(ec_seq[0]->pred, shared_example->pred);
   }
   if (ec_seq.size() == 0)
     return;
@@ -58,7 +57,7 @@ void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
   if (has_example_header)
   {
     for (auto& example : ec_seq) LabelDict::del_example_namespaces_from_example(*example, *shared_example);
-    swap(shared_example->pred, ec_seq[0]->pred);
+    std::swap(shared_example->pred, ec_seq[0]->pred);
     ec_seq.insert(ec_seq.begin(), shared_example);
   }
 }

@@ -68,7 +68,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
   else
   {
     float avg_loss = sum_loss / t;
-    float threshold = sqrt(c0 * avg_loss / t) + fmax(2.f * alpha, 4.f) * c0 * log(t) / t;
+    float threshold = std::sqrt(c0 * avg_loss / t) + fmax(2.f * alpha, 4.f) * c0 * log(t) / t;
     return threshold;
   }
 }
@@ -82,7 +82,7 @@ float get_pmin(float sum_loss, float t)
   }
 
   float avg_loss = sum_loss / t;
-  float pmin = fmin(1.f / (sqrt(t * avg_loss) + log(t)), 0.5f);
+  float pmin = fmin(1.f / (std::sqrt(t * avg_loss) + log(t)), 0.5f);
   return pmin;  // treating n*eps_n = 1
 }
 
@@ -111,7 +111,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
     q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
   }
 
-  p = sqrt(q2) / (1 + sqrt(q2));
+  p = std::sqrt(q2) / (1 + std::sqrt(q2));
 
   if (std::isnan(p))
   {
@@ -195,7 +195,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       // Update cost
       if (in_dis)
       {
-        p = sqrt(q2) / (1.f + sqrt(q2));
+        p = std::sqrt(q2) / (1.f + std::sqrt(q2));
         s = 2.f * a.alpha * a.alpha - 1.f / p;
         cost_delta = 2.f * cost - r * (fmax(importance, 0.f)) - s;
       }
@@ -242,7 +242,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
                .help("active learning variance upper bound parameter alpha. Default 1."))
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
-               .help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."))
+               .help("active learning variance upper bound parameter beta_scale. Default std::sqrt(10)."))
       .add(make_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false."));
   options.add_and_parse(new_options);

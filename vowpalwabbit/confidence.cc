@@ -3,7 +3,7 @@
 #include "math.h"
 
 using namespace LEARNER;
-using namespace std;
+
 using namespace VW::config;
 
 struct confidence
@@ -54,7 +54,7 @@ void confidence_print_result(int f, float res, float confidence, v_array<char> t
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -97,9 +97,9 @@ base_learner* confidence_setup(options_i& options, vw& all)
 
   if (!all.training)
   {
-    cout << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
+    std::cout << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
             "saving the model and avoid --test_only"
-         << endl;
+         << std::endl;
     return nullptr;
   }
 

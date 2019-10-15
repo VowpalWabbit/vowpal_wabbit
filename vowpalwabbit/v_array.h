@@ -5,7 +5,9 @@ license as described in the file LICENSE.
  */
 
 #pragma once
+#define NOMINMAX
 #include <iostream>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
@@ -184,26 +186,6 @@ struct v_array
   }
 };
 
-#ifdef _WIN32
-#undef max
-#undef min
-#endif
-
-inline size_t max(size_t a, size_t b)
-{
-  if (a < b)
-    return b;
-  else
-    return a;
-}
-inline size_t min(size_t a, size_t b)
-{
-  if (a < b)
-    return a;
-  else
-    return b;
-}
-
 template <class T>
 inline v_array<T> v_init()
 {
@@ -236,7 +218,7 @@ template <class T>
 void push_many(v_array<T>& v, const T* _begin, size_t num)
 {
   if (v._end + num >= v.end_array)
-    v.resize(max(2 * (size_t)(v.end_array - v._begin) + 3,
+    v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3,
                  v._end - v._begin + num));
 #ifdef _WIN32
   memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));

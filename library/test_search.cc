@@ -5,24 +5,27 @@
 #include "../vowpalwabbit/search_sequencetask.h"
 #include "libsearch.h"
 
+using std::cerr;
+using std::endl;
+
 struct wt
-{ string word;
+{ std::string word;
   uint32_t tag;
-  wt(string w, uint32_t t) : word(w), tag(t) {}
+  wt(std::string w, uint32_t t) : word(w), tag(t) {}
 };
 
-class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> >
+class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >
 {
 public:
   SequenceLabelerTask(vw& vw_obj)
-    : SearchTask< vector<wt>, vector<uint32_t> >(vw_obj)    // must run parent constructor!
+    : SearchTask<std::vector<wt>, std::vector<uint32_t> >(vw_obj)    // must run parent constructor!
   { sch.set_options( Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES );
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     cerr << "num_actions = " << d->num_actions << endl;
   }
 
   // using vanilla vw interface
-  void _run(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output)
+  void _run(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
   { output.clear();
     for (size_t i=0; i<input_example.size(); i++)
     { example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
@@ -33,7 +36,7 @@ public:
   }
 
   // using ezexample
-  void _run2(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output)
+  void _run2(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
   { output.clear();
     for (size_t i=0; i<input_example.size(); i++)
     { ezexample ex(&vw_obj);
@@ -51,8 +54,8 @@ void run(vw& vw_obj)
   // otherwise we'll get a segfault :(. i'm not sure what to do about
   // this :(.
   SequenceLabelerTask task(vw_obj);
-  vector<wt> data;
-  vector<uint32_t> output;
+  std::vector<wt> data;
+  std::vector<uint32_t> output;
   uint32_t DET = 1, NOUN = 2, VERB = 3, ADJ = 4;
   data.push_back( wt("the", DET) );
   data.push_back( wt("monster", NOUN) );
@@ -103,7 +106,7 @@ void test_buildin_task()
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
-    vector<action> out;
+    std::vector<action> out;
     task.predict(V, out);
     cerr << "out (should be 1 2 3 4 3) =";
     for (size_t i=0; i<out.size(); i++)

@@ -15,7 +15,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "vw_exception.h"
 
-using namespace std;
 
 struct global_prediction
 {
@@ -105,12 +104,12 @@ void print_result(int f, float res, float, v_array<char> tag)
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
     {
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
     }
   }
 }
 
-void print_raw_text(int f, string s, v_array<char> tag)
+void print_raw_text(int f, std::string s, v_array<char> tag)
 {
   if (f < 0)
     return;
@@ -123,15 +122,15 @@ void print_raw_text(int f, string s, v_array<char> tag)
   ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
   if (t != len)
   {
-    cerr << "write error: " << strerror(errno) << endl;
+    std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
 void set_mm(shared_data* sd, float label)
 {
-  sd->min_label = min(sd->min_label, label);
+  sd->min_label = std::min(sd->min_label, label);
   if (label != FLT_MAX)
-    sd->max_label = max(sd->max_label, label);
+    sd->max_label = std::max(sd->max_label, label);
 }
 
 void noop_mm(shared_data*, float) {}
@@ -190,58 +189,58 @@ void vw::finish_example(multi_ex& ec)
   LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(vector<string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
+void compile_gram(std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)
   {
-    string ngram = grams[i];
+    std::string ngram = grams[i];
     if (isdigit(ngram[0]))
     {
       int n = atoi(ngram.c_str());
       if (!quiet)
-        cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << endl;
+        std::cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << std::endl;
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (ngram.size() == 1)
-      cout << "You must specify the namespace index before the n" << endl;
+      std::cout << "You must specify the namespace index before the n" << std::endl;
     else
     {
       int n = atoi(ngram.c_str() + 1);
       dest[(uint32_t)(unsigned char)*ngram.c_str()] = n;
       if (!quiet)
-        cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
+        std::cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << std::endl;
     }
   }
 }
 
-void compile_limits(vector<string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
-    string limit = limits[i];
+    std::string limit = limits[i];
     if (isdigit(limit[0]))
     {
       int n = atoi(limit.c_str());
       if (!quiet)
-        cerr << "limiting to " << n << "features for each namespace." << endl;
+        std::cerr << "limiting to " << n << "features for each namespace." << std::endl;
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (limit.size() == 1)
-      cout << "You must specify the namespace index before the n" << endl;
+      std::cout << "You must specify the namespace index before the n" << std::endl;
     else
     {
       int n = atoi(limit.c_str() + 1);
       dest[(uint32_t)limit[0]] = n;
       if (!quiet)
-        cerr << "limiting to " << n << " for namespaces " << limit[0] << endl;
+        std::cerr << "limiting to " << n << " for namespaces " << limit[0] << std::endl;
     }
   }
 }
 
 void trace_listener_cerr(void*, const std::string& message)
 {
-  cerr << message;
-  cerr.flush();
+  std::cerr << message;
+  std::cerr.flush();
 }
 
 int vw_ostream::vw_streambuf::sync()
@@ -351,7 +350,7 @@ vw::vw()
   add_constant = true;
   audit = false;
 
-  pass_length = (size_t)-1;
+  pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;
 
   save_per_pass = false;
@@ -363,7 +362,7 @@ vw::vw()
   check_holdout_every_n_passes = 1;
   early_terminate = false;
 
-  max_examples = (size_t)-1;
+  max_examples = std::numeric_limits<size_t>::max();
 
   hash_inv = false;
   print_invert = false;
