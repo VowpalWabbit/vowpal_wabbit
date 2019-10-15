@@ -2,7 +2,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
-#include <boost/utility/string_view.hpp>
+#include "future_compat.h"
 
 #include "cache.h"
 #include "accumulate.h"
@@ -27,7 +27,7 @@ bool test_label(void*) { return false; }
 
 void delete_no_label(void*) {}
 
-void parse_no_label(parser*, shared_data*, void*, v_array<boost::string_view>& words)
+void parse_no_label(parser*, shared_data*, void*, v_array<string_view>& words)
 {
   switch (words.size())
   {

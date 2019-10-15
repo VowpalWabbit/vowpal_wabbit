@@ -162,7 +162,7 @@ void parse_dictionary_argument(vw& all, std::string str)
   // in the case of just 'foo.txt' it's applied to the default namespace
 
   char ns = ' ';
-  boost::string_view s(str);
+  string_view s(str);
   if ((str.length() > 2) && (str[1] == ':'))
   {
     ns = str[0];
@@ -1595,8 +1595,8 @@ char** get_argv_from_string(std::string s, int& argc)
 {
   std::string str("b ");
   str += s;
-  boost::string_view strview(str);
-  std::vector<boost::string_view> foo;
+  string_view strview(str);
+  std::vector<string_view> foo;
   tokenize(' ', strview, foo);
 
   char** argv = calloc_or_throw<char*>(foo.size());
@@ -1604,7 +1604,9 @@ char** get_argv_from_string(std::string s, int& argc)
   {
     size_t len = foo[i].length();
     argv[i] = calloc_or_throw<char>(len + 1);
-    foo[i].copy(argv[i], len);
+    memcpy(argv[i], foo[i].data(), len);
+    // copy() is supported with string_view, not with string_ref
+    //foo[i].copy(argv[i], len);
     // unnecessary because of the calloc, but needed if we change stuff in the future
     // argv[i][len] = '\0';
   }

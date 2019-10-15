@@ -5,7 +5,7 @@ license as described in the file LICENSE.
  */
 #pragma once
 #include <stdint.h>
-#include <boost/utility/string_view_fwd.hpp>
+#include "future_compat.h"
 #include "parse_primitives.h"
 #include "example.h"
 #include "vw.h"
@@ -17,7 +17,7 @@ typedef enum
   JsonFeatures
 } FeatureInputType;
 
-void substring_to_example(vw* all, example* ae, boost::string_view example);
+void substring_to_example(vw* all, example* ae, string_view example);
 
 namespace VW
 {

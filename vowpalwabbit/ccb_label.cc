@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <cmath>
-#include <boost/utility/string_view.hpp>
+#include "future_compat.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -205,7 +205,7 @@ void copy_label(void* dst, void* src)
   ldDst->weight = ldSrc->weight;
 }
 
-ACTION_SCORE::action_score convert_to_score(const boost::string_view& action_id_str, const boost::string_view& probability_str)
+ACTION_SCORE::action_score convert_to_score(const string_view& action_id_str, const string_view& probability_str)
 {
   auto action_id = static_cast<uint32_t>(int_of_string(action_id_str));
   auto probability = float_of_string(probability_str);
@@ -227,14 +227,14 @@ ACTION_SCORE::action_score convert_to_score(const boost::string_view& action_id_
 }
 
 //<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
-CCB::conditional_contextual_bandit_outcome* parse_outcome(boost::string_view& outcome)
+CCB::conditional_contextual_bandit_outcome* parse_outcome(string_view& outcome)
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
-  auto split_commas = v_init<boost::string_view>();
+  auto split_commas = v_init<string_view>();
   tokenize(',', outcome, split_commas);
 
-  auto split_colons = v_init<boost::string_view>();
+  auto split_colons = v_init<string_view>();
   tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3)
@@ -263,7 +263,7 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(boost::string_view& ou
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label* ld, v_array<boost::string_view>& split_inclusions)
+void parse_explicit_inclusions(CCB::label* ld, v_array<string_view>& split_inclusions)
 {
   for (const auto& inclusion : split_inclusions)
   {
@@ -271,7 +271,7 @@ void parse_explicit_inclusions(CCB::label* ld, v_array<boost::string_view>& spli
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<boost::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<string_view>& words)
 {
   CCB::label* ld = static_cast<CCB::label*>(v);
   ld->weight = 1.0;
@@ -306,7 +306,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<boost::string_view>& 
     for (size_t i = 2; i < words.size(); i++)
     {
       auto is_outcome = words[i].find(':');
-      if (is_outcome != boost::string_view::npos)
+      if (is_outcome != string_view::npos)
       {
         if (ld->outcome != nullptr)
         {

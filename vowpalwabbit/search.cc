@@ -2638,21 +2638,22 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   return allowed;
 }
 
-void parse_neighbor_features(boost::string_view nf_strview, search& sch)
+void parse_neighbor_features(string_view nf_strview, search& sch)
 {
   search_private& priv = *sch.priv;
   priv.neighbor_features.clear();
   if (nf_strview.empty())
     return;
 
-  std::vector<boost::string_view> cmd;
+  std::vector<string_view> cmd;
   size_t start_idx = 0;
   size_t end_idx = 0;
-  while (start_idx != std::string::npos)
+  while (!nf_strview.empty())
   {
-    end_idx = nf_strview.find(',', start_idx);
-    boost::string_view strview = nf_strview.substr(start_idx, end_idx - start_idx);
-    start_idx = (end_idx == std::string::npos) ? end_idx : end_idx + 1;
+    end_idx = nf_strview.find(',');
+    string_view strview = nf_strview.substr(0, end_idx);
+    if (end_idx != string_view::npos)
+      nf_strview.remove_prefix(end_idx + 1);
 
     cmd.clear();
     tokenize(':', strview, cmd, true);

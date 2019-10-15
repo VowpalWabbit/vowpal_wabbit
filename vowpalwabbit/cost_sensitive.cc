@@ -3,11 +3,11 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include <cmath>
-#include <boost/utility/string_view.hpp>
+#include "future_compat.h"
 
 namespace COST_SENSITIVE
 {
-void name_value(boost::string_view& s, v_array<boost::string_view>& name, float& v)
+void name_value(string_view& s, v_array<string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -117,7 +117,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<boost::string_view>& words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<string_view>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -266,7 +266,7 @@ void output_example(vw& all, example& ec)
       all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
-      boost::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
       all.print_text(sink, sv_pred.to_string(), ec.tag);
     }
 

@@ -32,7 +32,7 @@ license as described in the file LICENSE.
 
 #include "best_constant.h"
 
-#include <boost/utility/string_view.hpp>
+#include "future_compat.h"
 #include <algorithm>
 #include <vector>
 
@@ -1473,7 +1473,7 @@ inline void prepare_for_learner(vw* all, v_array<example*>& examples)
   {
     example& ae = VW::get_unused_example(all);
     static const char empty[] = "";
-    boost::string_view example(empty);
+    string_view example(empty);
     substring_to_example(all, &ae, example);
 
     examples.push_back(&ae);

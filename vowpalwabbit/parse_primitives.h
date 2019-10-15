@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include "v_array.h"
 #include "hashstring.h"
-#include <boost/utility/string_view.hpp>
+#include "future_compat.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -18,24 +18,23 @@ license as described in the file LICENSE.
 #include <Windows.h>
 #endif
 
-std::ostream& operator<<(std::ostream& os, const v_array<boost::string_view>& ss);
+std::ostream& operator<<(std::ostream& os, const v_array<string_view>& ss);
 
 // chop up the string into a v_array or any compatible container of string_view.
 template <typename ContainerT>
-void tokenize(char delim, const boost::string_view s, ContainerT& ret, bool allow_empty = false)
+void tokenize(char delim, string_view s, ContainerT& ret, bool allow_empty = false)
 {
   ret.clear();
-  size_t start_pos = 0;
   size_t end_pos = 0;
 
-  while ((end_pos = s.find(delim, start_pos)) != boost::string_view::npos)
+  while (!s.empty() && ((end_pos = s.find(delim)) != string_view::npos))
   {
-    if (allow_empty || start_pos != end_pos)
-      ret.emplace_back(s.substr(start_pos, end_pos - start_pos));
-    start_pos = end_pos + 1;
+    if (allow_empty || end_pos > 0)
+      ret.emplace_back(s.substr(0, end_pos));
+    s.remove_prefix(end_pos + 1);
   }
-  if (start_pos < s.size())
-    ret.emplace_back(s.substr(start_pos));
+  if (!s.empty())
+    ret.emplace_back(s.substr(0));
 }
 
 inline const char* safe_index(const char* start, char v, const char* max)
@@ -51,7 +50,7 @@ namespace VW
 typedef example& (*example_factory_t)(void*);
 }
 
-typedef uint64_t (*hash_func_t)(boost::string_view, uint64_t);
+typedef uint64_t (*hash_func_t)(string_view, uint64_t);
 
 hash_func_t getHasher(const std::string& s);
 
@@ -119,7 +118,7 @@ inline float parseFloat(const char* p, const char** end, const char* endLine = n
     return (float)strtod(start, const_cast<char**>(end));
 }
 
-inline float parse_float_string_view(boost::string_view strview, size_t& end_idx)
+inline float parse_float_string_view(string_view strview, size_t& end_idx)
 {
   const char* end = nullptr;
   float ret = parseFloat(strview.begin(), &end, strview.end());
@@ -127,7 +126,7 @@ inline float parse_float_string_view(boost::string_view strview, size_t& end_idx
   return ret;
 }
 
-inline float float_of_string(boost::string_view s)
+inline float float_of_string(string_view s)
 {
   size_t end_idx;
   float f = parse_float_string_view(s, end_idx);
@@ -139,7 +138,7 @@ inline float float_of_string(boost::string_view s)
   return f;
 }
 
-inline int int_of_string(boost::string_view s)
+inline int int_of_string(string_view s)
 {
   const char* endptr = s.end();
   int i = strtol(s.begin(), const_cast<char**>(&endptr), 10);
