@@ -869,7 +869,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
 
   all.p->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
-  features fs;
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
   prediction_type::prediction_type_t pred_type;

@@ -24,9 +24,7 @@ void name_value(boost::string_view& s, v_array<boost::string_view>& name, float&
         THROW("error NaN value for: " << name[0]);
       break;
     default:
-      cerr << "example with a wierd name.  What is '";
-      cerr.write(s.begin, s.end - s.begin);
-      cerr << "'?\n";
+      cerr << "example with a wierd name.  What is '" << s << "'?\n";
   }
 }
 
@@ -180,7 +178,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<boost::string_view
         f.x = FLT_MAX;
     }
     else
-      THROW("malformed cost specification on '" << (p->parse_name[0].begin) << "'");
+      THROW("malformed cost specification on '" << (p->parse_name[0]) << "'");
 
     ld->costs.push_back(f);
   }

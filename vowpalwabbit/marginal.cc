@@ -42,7 +42,7 @@ struct data
 
   ~data()
   {
-    for (size_t i = 0; i < 256; i++) temp[i].delete_v();
+    //for (size_t i = 0; i < 256; i++) temp[i].delete_v();
   }
 };
 

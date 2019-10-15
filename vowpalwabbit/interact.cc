@@ -22,7 +22,7 @@ struct interact
 
   ~interact()
   {
-    feat_store.delete_v();
+    //feat_store.delete_v();
   }
 };
 

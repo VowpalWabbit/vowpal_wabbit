@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 # Only allow Release and Debug configurations
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE INTERNAL "Supported configuration types.")
+set(CMAKE_CONFIGURATION_TYPES Debug Release RelWithDebInfo CACHE INTERNAL "Supported configuration types.")
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
@@ -93,7 +93,7 @@ if((NOT PROFILE) AND (NOT GCOV))
 endif()
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
+set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
 
 if(LTO)
 	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

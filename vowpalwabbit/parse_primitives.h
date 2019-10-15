@@ -23,17 +23,18 @@ std::ostream& operator<<(std::ostream& os, const v_array<boost::string_view>& ss
 template <typename ContainerT>
 void tokenize(char delim, const boost::string_view s, ContainerT& ret, bool allow_empty = false)
 {
+  ret.clear();
   size_t start_pos = 0;
   size_t end_pos = 0;
 
   while ((end_pos = s.find(delim, start_pos)) != boost::string_view::npos)
   {
     if (allow_empty || start_pos != end_pos)
-      ret.emplace_back(s.begin() + start_pos, end_pos - start_pos);
+      ret.emplace_back(s.substr(start_pos, end_pos - start_pos));
     start_pos = end_pos + 1;
   }
-  if (allow_empty || start_pos < s.size() - 1)
-    ret.emplace_back(s.begin() + start_pos, s.size() - start_pos);
+  if (start_pos < s.size())
+    ret.emplace_back(s.substr(start_pos));
 }
 
 inline const char* safe_index(const char* start, char v, const char* max)

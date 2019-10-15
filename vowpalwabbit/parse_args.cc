@@ -1592,7 +1592,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
 
 char** get_argv_from_string(std::string s, int& argc)
 {
-  std::string str("b_");
+  std::string str("b ");
   str += s;
   boost::string_view strview(str);
   std::vector<boost::string_view> foo;
@@ -1708,7 +1708,7 @@ vw* initialize(
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, const std::string &extra_args, trace_message_t trace_listener, void* trace_context)
+vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())

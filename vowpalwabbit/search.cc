@@ -343,7 +343,7 @@ search::~search()
     priv.condition_on_actions.delete_v();
     priv.learn_allowed_actions.delete_v();
     priv.ldf_test_label.costs.delete_v();
-    priv.last_action_repr.delete_v();
+    //priv.last_action_repr.delete_v();
     priv.active_uncertainty.delete_v();
     for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
     priv.active_known.delete_v();
@@ -358,7 +358,7 @@ search::~search()
     {
       if (ar.repr != nullptr)
       {
-        ar.repr->delete_v();
+        //ar.repr->delete_v();
         delete ar.repr;
         cdbg << "delete_v" << endl;
       }
@@ -735,7 +735,7 @@ void reset_search_structure(search_private& priv)
   {
     if (ar.repr != nullptr)
     {
-      ar.repr->delete_v();
+      //ar.repr->delete_v();
       delete ar.repr;
     }
   }
@@ -1497,6 +1497,7 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   else  // its a find
   {
     auto sa_iter = priv.cache_hash_map.find(item);
+    if(sa_iter == priv.cache_hash_map.end()) return false;
     a = sa_iter->second.a;
     a_cost = sa_iter->second.s;
     return a != (action)-1;
@@ -2531,7 +2532,8 @@ void search_initialize(vw* all, search& sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa((action)-1, 0.);
-  // new (&priv.cache_hash_map) search_private::cache_map();
+  // unnecessary if priv has a proper constructor
+  new (&priv.cache_hash_map) search_private::cache_map();
 
   sch.task_data = nullptr;
 
@@ -2990,7 +2992,7 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        priv->ptag_to_action[mytag].repr->delete_v();
+        //priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
       }
     }
@@ -3027,7 +3029,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        priv->ptag_to_action[mytag].repr->delete_v();
+        //priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
       }
     }

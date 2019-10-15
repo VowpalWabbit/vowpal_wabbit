@@ -277,7 +277,45 @@ struct features
   }
 
   // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
-  ~features() { delete_v(); }
+  ~features() { 
+     values.delete_v();
+     indicies.delete_v();
+     space_names.delete_v();
+   }
+   features(const features&) = default;
+   features & operator=( const features& ) = default;
+   
+   // custom move operators required since we need to leave the old value in
+   // a null state to prevent freeing of shallow copied v_arrays
+   features(features&& other) :
+   values(std::move(other.values)),
+   indicies(std::move(other.indicies)),
+   space_names(std::move(other.space_names)),
+   sum_feat_sq(other.sum_feat_sq)
+   {
+     // We need to null out all the v_arrays to prevent double freeing during moves
+     auto & v = other.values;
+     v._begin = v._end = v.end_array = nullptr;
+     auto & i = other.indicies;
+     i._begin = i._end = i.end_array = nullptr;
+     auto & s = other.space_names;
+     s._begin = s._end = s.end_array = nullptr;
+   }
+   features & operator=(features&& other)
+   {
+     values = std::move(other.values);
+     indicies = std::move(other.indicies);
+     space_names = std::move(other.space_names);
+     sum_feat_sq = other.sum_feat_sq;
+     // We need to null out all the v_arrays to prevent double freeing during moves
+     auto & v = other.values;
+     v._begin = v._end = v.end_array = nullptr;
+     auto & i = other.indicies;
+     i._begin = i._end = i.end_array = nullptr;
+     auto & s = other.space_names;
+     s._begin = s._end = s.end_array = nullptr;
+     return *this;
+   }
 
   inline size_t size() const { return values.size(); }
 
@@ -326,13 +364,6 @@ struct features
       free_space_names(i);
       space_names.end() = space_names.begin() + i;
     }
-  }
-
-  void delete_v()
-  {
-    values.delete_v();
-    indicies.delete_v();
-    space_names.delete_v();
   }
 
   void push_back(feature_value v, feature_index i)

@@ -163,7 +163,7 @@ class TC_parser
       fs.push_back(_v, word_hash);
       if (audit)
       {
-        fs.space_names.push_back(audit_strings_ptr(new audit_strings(_base, feature_name)));
+        fs.space_names.push_back(audit_strings_ptr(new audit_strings(_base.to_string(), feature_name.to_string())));
       }
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
@@ -415,7 +415,6 @@ class TC_parser
       this->_affix_features = &all.affix_features;
       this->_spelling_features = &all.spelling_features;
       this->_namespace_dictionaries = &all.namespace_dictionaries;
-      this->_base = nullptr;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
 
