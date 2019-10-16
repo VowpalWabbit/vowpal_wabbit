@@ -33,7 +33,7 @@ using std::endl;
 
 namespace Search
 {
-typedef std::unique_ptr<uint8_t[]> byte_array;
+using byte_array = std::unique_ptr<uint8_t[]>;
 
 search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
@@ -163,7 +163,7 @@ struct search_private
   };
 
  public:
-  typedef std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent> cache_map;
+  using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
  public:
   vw* all;
@@ -355,7 +355,6 @@ search::~search()
     {
       if (ar.repr != nullptr)
       {
-        //ar.repr->delete_v();
         delete ar.repr;
         cdbg << "delete_v" << endl;
       }
@@ -2638,21 +2637,21 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   return allowed;
 }
 
-void parse_neighbor_features(string_view nf_strview, search& sch)
+void parse_neighbor_features(VW::string_view nf_strview, search& sch)
 {
   search_private& priv = *sch.priv;
   priv.neighbor_features.clear();
   if (nf_strview.empty())
     return;
 
-  std::vector<string_view> cmd;
+  std::vector<VW::string_view> cmd;
   size_t start_idx = 0;
   size_t end_idx = 0;
   while (!nf_strview.empty())
   {
     end_idx = nf_strview.find(',');
-    string_view strview = nf_strview.substr(0, end_idx);
-    if (end_idx != string_view::npos)
+    VW::string_view strview = nf_strview.substr(0, end_idx);
+    if (end_idx != VW::string_view::npos)
       nf_strview.remove_prefix(end_idx + 1);
 
     cmd.clear();

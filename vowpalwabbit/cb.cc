@@ -108,7 +108,7 @@ void copy_label(void* dst, void* src)
   ldD->weight = ldS->weight;
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
@@ -271,7 +271,7 @@ void copy_label(void* dst, void* src)
   ldD->action = ldS->action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<string_view>& words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 

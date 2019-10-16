@@ -76,7 +76,7 @@ bool test_label(void* v)
 
 void delete_simple_label(void*) {}
 
-void parse_simple_label(parser*, shared_data* sd, void* v, v_array<string_view>& words)
+void parse_simple_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words)
 {
   label_data* ld = (label_data*)v;
 

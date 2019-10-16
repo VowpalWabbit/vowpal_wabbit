@@ -45,9 +45,9 @@ struct parser
     this->lp = simple_label;
 
     // Free parser must still be used for the following fields.
-    this->words = v_init<string_view>();
-    this->name = v_init<string_view>();
-    this->parse_name = v_init<string_view>();
+    this->words = v_init<VW::string_view>();
+    this->name = v_init<VW::string_view>();
+    this->parse_name = v_init<VW::string_view>();
     this->gram_mask = v_init<size_t>();
     this->ids = v_init<size_t>();
     this->counts = v_init<size_t>();
@@ -60,8 +60,8 @@ struct parser
   }
 
   // helper(s) for text parsing
-  v_array<string_view> words;
-  v_array<string_view> name;
+  v_array<VW::string_view> words;
+  v_array<VW::string_view> name;
 
   VW::object_pool<example, example_initializer> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
@@ -97,7 +97,7 @@ struct parser
   int bound_sock = 0;
   int max_fd = 0;
 
-  v_array<string_view> parse_name;
+  v_array<VW::string_view> parse_name;
 
   label_parser lp;  // moved from vw
 

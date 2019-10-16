@@ -42,7 +42,7 @@ int read_features_string(vw* all, v_array<example*>& examples)
   if (num_chars_initial < 1)
     return (int)num_chars_initial;
 
-  string_view example(line, num_chars);
+  VW::string_view example(line, num_chars);
   substring_to_example(all, examples[0], example);
 
   return (int)num_chars_initial;
@@ -52,13 +52,13 @@ template <bool audit>
 class TC_parser
 {
  public:
-  const string_view _line;
+  const VW::string_view _line;
   size_t _read_idx;
   float _cur_channel_v;
   bool _new_index;
   size_t _anon;
   uint64_t _channel_hash;
-  string_view _base;
+  VW::string_view _base;
   unsigned char _index;
   float _v;
   bool _redefine_some;
@@ -75,13 +75,13 @@ class TC_parser
 
   ~TC_parser() {}
 
-  inline void parserWarning(const char* message, string_view var_msg, const char* message2)
+  inline void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
   {
-    // string_view will output the entire view into the output stream.
+    // VW::string_view will output the entire view into the output stream.
     // That means if there is a null character somewhere in the range, it will terminate
     // the stringstream at that point! Minor hack to give us the behavior we actually want here (i think)..
     // the alternative is to do what the old code was doing.. str(_line).c_str()...
-    // TODO: Find a sane way to handle nulls in the middle of a string (either string_view or substring)
+    // TODO: Find a sane way to handle nulls in the middle of a string (either VW::string_view or substring)
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples << ": \"" << tmp_view << "\""
@@ -129,7 +129,7 @@ class TC_parser
     }
   }
 
-  inline string_view read_name()
+  inline VW::string_view read_name()
   {
     size_t name_start = _read_idx;
     while (!(_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == ':' ||
@@ -149,7 +149,7 @@ class TC_parser
     else
     {
       // maybeFeature --> 'String' FeatureValue
-      string_view feature_name = read_name();
+      VW::string_view feature_name = read_name();
       _v = _cur_channel_v * featureValue();
       uint64_t word_hash;
       if (!feature_name.empty())
@@ -175,7 +175,7 @@ class TC_parser
         {
           bool is_prefix = affix & 0x1;
           uint64_t len = (affix >> 1) & 0x7;
-          string_view affix_name(feature_name);
+          VW::string_view affix_name(feature_name);
           if (affix_name.size() > len)
           {
             if (is_prefix)
@@ -226,7 +226,7 @@ class TC_parser
           _spelling.push_back(d);
         }
 
-        string_view spelling_strview(_spelling.begin(), _spelling.size());
+        VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
         uint64_t word_hash = hashstring(spelling_strview, (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash);
         if (audit)
@@ -323,7 +323,7 @@ class TC_parser
         _index = (*_redefine)[_index];  // redefine _index
       if (_ae->feature_space[_index].size() == 0)
         _new_index = true;
-      string_view name = read_name();
+      VW::string_view name = read_name();
       if (audit)
       {
         _base = name;
@@ -363,7 +363,7 @@ class TC_parser
         _new_index = true;
       if (audit)
       {
-        // TODO: c++17 allows string_view literals, eg: " "sv
+        // TODO: c++17 allows VW::string_view literals, eg: " "sv
         static const char* space = " ";
         _base = space;
       }
@@ -401,7 +401,7 @@ class TC_parser
     }
   }
 
-  TC_parser(string_view line, vw& all, example* ae) : _line(line)
+  TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
   {
     _spelling = v_init<char>();
     if (!_line.empty())
@@ -422,7 +422,7 @@ class TC_parser
   }
 };
 
-void substring_to_example(vw* all, example* ae, string_view example)
+void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
   all->p->lp.default_label(&ae->l);
 
@@ -431,26 +431,26 @@ void substring_to_example(vw* all, example* ae, string_view example)
   all->p->words.clear();
   if (bar_idx != 0)
   {
-    string_view label_space(example);
-    if (bar_idx != string_view::npos)
+    VW::string_view label_space(example);
+    if (bar_idx != VW::string_view::npos)
     {
       // a little bit iffy since bar_idx is based on example and we're working off label_space
       // but safe as long as this is the first manipulation after the copy
       label_space.remove_suffix(label_space.size() - bar_idx);
     }
     size_t tab_idx = label_space.find('\t');
-    if (tab_idx != string_view::npos)
+    if (tab_idx != VW::string_view::npos)
     {
       label_space.remove_prefix(tab_idx + 1);
     }
 
-    std::vector<string_view> tokenized;
+    std::vector<VW::string_view> tokenized;
     tokenize(' ', label_space, all->p->words);
     if (all->p->words.size() > 0 &&
         (all->p->words.last().end() == label_space.end() ||
         all->p->words.last().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      string_view tag = all->p->words.pop();
+      VW::string_view tag = all->p->words.pop();
       if (tag.front() == '\'')
         tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());
@@ -460,7 +460,7 @@ void substring_to_example(vw* all, example* ae, string_view example)
   if (!all->p->words.empty())
     all->p->lp.parse_label(all->p, all->sd, &ae->l, all->p->words);
 
-  if (bar_idx != string_view::npos)
+  if (bar_idx != VW::string_view::npos)
   {
     if (all->audit || all->hash_inv)
       TC_parser<true> parser_line(example.substr(bar_idx), *all, ae);
@@ -471,17 +471,17 @@ void substring_to_example(vw* all, example* ae, string_view example)
 
 namespace VW
 {
-void read_line(vw& all, example* ex, string_view line)
+void read_line(vw& all, example* ex, VW::string_view line)
 {
   while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
   substring_to_example(&all, ex, line);
 }
 
-void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, string_view(line)); }
+void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, VW::string_view(line)); }
 
 void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples)
 {
-  std::vector<string_view> lines;
+  std::vector<VW::string_view> lines;
   tokenize('\n', line, lines);
   for (size_t i = 0; i < lines.size(); i++)
   {

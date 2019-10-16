@@ -59,7 +59,7 @@ struct cb_sample_data
         if (strncmp(examples[0]->tag.begin(), SEED_IDENTIFIER.c_str(), SEED_IDENTIFIER.size()) == 0 &&
             examples[0]->tag.size() > SEED_IDENTIFIER.size())
         {
-          string_view tag_seed(examples[0]->tag.begin() + 5, examples[0]->tag.size());
+          VW::string_view tag_seed(examples[0]->tag.begin() + 5, examples[0]->tag.size());
           seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
           tag_provided_seed = true;
         }

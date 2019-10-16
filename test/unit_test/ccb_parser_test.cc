@@ -9,7 +9,7 @@
 #include "conditional_contextual_bandit.h"
 #include "parser.h"
 
-void parse_label(label_parser& lp, parser* p, string_view label, CCB::label& l)
+void parse_label(label_parser& lp, parser* p, VW::string_view label, CCB::label& l)
 {
   tokenize(' ', label, p->words);
   lp.default_label(&l);
@@ -20,8 +20,8 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
 {
   auto lp = CCB::ccb_label_parser;
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<string_view>();
-  p.parse_name = v_init<string_view>();
+  p.words = v_init<VW::string_view>();
+  p.parse_name = v_init<VW::string_view>();
 
   {
 	  CCB::label label;
@@ -122,8 +122,8 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   //io.init();      TODO: figure out and fix leak caused by double init()
 
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<string_view>();
-  p.parse_name = v_init<string_view>();
+  p.words = v_init<VW::string_view>();
+  p.parse_name = v_init<VW::string_view>();
 
   auto lp = CCB::ccb_label_parser;
   CCB::label label;
@@ -157,8 +157,8 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
 BOOST_AUTO_TEST_CASE(ccb_copy_label)
 {
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<string_view>();
-  p.parse_name = v_init<string_view>();
+  p.words = v_init<VW::string_view>();
+  p.parse_name = v_init<VW::string_view>();
   auto lp = CCB::ccb_label_parser;
   
   CCB::label label;

@@ -5,12 +5,12 @@
 
 #include "future_compat.h"
 
-VW_STD14_CONSTEXPR inline uint64_t hashall(string_view s, uint64_t h)
+VW_STD14_CONSTEXPR inline uint64_t hashall(VW::string_view s, uint64_t h)
 {
   return uniform_hash((unsigned char*)s.begin(), s.size(), h);
 }
 
-VW_STD14_CONSTEXPR inline uint64_t hashstring(string_view s, uint64_t h)
+VW_STD14_CONSTEXPR inline uint64_t hashstring(VW::string_view s, uint64_t h)
 {
   // trim leading whitespace but not UTF-8
   while (!s.empty() && s.front() <= 0x20 && (int)(s.front()) >= 0) s.remove_prefix(1);
@@ -30,10 +30,10 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(string_view s, uint64_t h)
 
 namespace std
 {
-// boost string_view hashing isn't available until 1.69. Implement our own for now
+// boost VW::string_view hashing isn't available until 1.69. Implement our own for now
 template <>
-struct hash<string_view>
+struct hash<VW::string_view>
 {
-  size_t operator()(const string_view& s) const { return hashstring(s, 0); }
+  size_t operator()(const VW::string_view& s) const { return hashstring(s, 0); }
 };
 }  // namespace std

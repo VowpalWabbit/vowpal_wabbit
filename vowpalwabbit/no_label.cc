@@ -27,7 +27,7 @@ bool test_label(void*) { return false; }
 
 void delete_no_label(void*) {}
 
-void parse_no_label(parser*, shared_data*, void*, v_array<string_view>& words)
+void parse_no_label(parser*, shared_data*, void*, v_array<VW::string_view>& words)
 {
   switch (words.size())
   {

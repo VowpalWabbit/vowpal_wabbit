@@ -16,7 +16,7 @@ set(vw_all_headers
   allreduce.h comp_io.h example.h action_score.h feature_group.h cb_explore.h
   crossplat_compat.h parse_example.h global_data.h io_buf.h learner.h loss_functions.h
   parse_primitives.h parser.h simple_label.h v_array.h vw.h vwdll.h label_parser.h multiclass.h
-  cost_sensitive.h cb.h v_hashmap.h memory.h vw_exception.h vw_validate.h multilabel.h constant.h
+  cost_sensitive.h cb.h memory.h vw_exception.h vw_validate.h multilabel.h constant.h
   ezexample.h version.h accumulate.h options.h options_types.h options_boost_po.h
   options_serializer_boost_po.h correctedMath.h rand48.h log_multi.h recall_tree.h memory_tree.h active_cover.h
   reductions.h active.h cs_active.h lrqfa.h scorer.h csoaa.h lrq.h search_dep_parser.h

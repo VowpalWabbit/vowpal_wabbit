@@ -1473,7 +1473,7 @@ inline void prepare_for_learner(vw* all, v_array<example*>& examples)
   {
     example& ae = VW::get_unused_example(all);
     static const char empty[] = "";
-    string_view example(empty);
+    VW::string_view example(empty);
     substring_to_example(all, &ae, example);
 
     examples.push_back(&ae);

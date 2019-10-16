@@ -26,9 +26,9 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
-std::ostream& operator<<(std::ostream& os, const v_array<string_view>& ss)
+std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss)
 {
-  string_view* it = ss.cbegin();
+  VW::string_view* it = ss.cbegin();
 
   if (it == ss.cend())
   {

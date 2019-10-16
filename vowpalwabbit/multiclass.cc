@@ -66,7 +66,7 @@ bool test_label(void* v)
 
 void delete_label(void*) {}
 
-void parse_label(parser*, shared_data* sd, void* v, v_array<string_view>& words)
+void parse_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words)
 {
   label_t* ld = (label_t*)v;
 
@@ -96,8 +96,8 @@ label_parser mc_label = {default_label, parse_label, cache_label, read_cached_la
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
-  string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
-  string_view sv_pred = all.sd->ldict->get(prediction);
+  VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
+  VW::string_view sv_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(all.holdout_set_off, all.current_pass,
       sv_label.empty() ? "unknown" : sv_label.to_string(),
       sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features,
@@ -165,7 +165,7 @@ void finish_example(vw& all, example& ec, bool update_loss)
       all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
-      string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
       all.print_text(sink, sv_pred.to_string(), ec.tag);
     }
 

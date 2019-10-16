@@ -67,8 +67,8 @@ class namedlabels
  private:
   // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
   const std::string m_label_list;
-  std::vector<string_view> m_id2name;
-  std::unordered_map<string_view, uint64_t> m_name2id;
+  std::vector<VW::string_view> m_id2name;
+  std::unordered_map<VW::string_view, uint64_t> m_name2id;
   uint32_t m_K;
 
  public:
@@ -82,7 +82,7 @@ class namedlabels
 
     for (size_t k = 0; k < m_K; k++)
     {
-      const string_view& l = m_id2name[k];
+      const VW::string_view& l = m_id2name[k];
       auto iter = m_name2id.find(l);
       if (iter != m_name2id.end())
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
@@ -92,7 +92,7 @@ class namedlabels
 
   uint32_t getK() { return m_K; }
 
-  uint64_t get(string_view s) const
+  uint64_t get(VW::string_view s) const
   {
     auto iter = m_name2id.find(s);
     if (iter == m_name2id.end())
@@ -102,11 +102,11 @@ class namedlabels
     return iter->second;
   }
 
-  string_view get(uint32_t v) const
+  VW::string_view get(uint32_t v) const
   {
     if ((v == 0) || (v > m_K))
     {
-      return string_view();
+      return VW::string_view();
     }
     else
       return m_id2name[v - 1];
@@ -155,18 +155,18 @@ struct shared_data
   float second_observed_label;
 
   // Column width, precision constants:
-  static const int col_avg_loss = 8;
-  static const int prec_avg_loss = 6;
-  static const int col_since_last = 8;
-  static const int prec_since_last = 6;
-  static const int col_example_counter = 12;
-  static const int col_example_weight = col_example_counter + 2;
-  static const int prec_example_weight = 1;
-  static const int col_current_label = 8;
-  static const int prec_current_label = 4;
-  static const int col_current_predict = 8;
-  static const int prec_current_predict = 4;
-  static const int col_current_features = 8;
+  static constexpr int col_avg_loss = 8;
+  static constexpr int prec_avg_loss = 6;
+  static constexpr int col_since_last = 8;
+  static constexpr int prec_since_last = 6;
+  static constexpr int col_example_counter = 12;
+  static constexpr int col_example_weight = col_example_counter + 2;
+  static constexpr int prec_example_weight = 1;
+  static constexpr int col_current_label = 8;
+  static constexpr int prec_current_label = 4;
+  static constexpr int col_current_predict = 8;
+  static constexpr int prec_current_predict = 4;
+  static constexpr int col_current_features = 8;
 
   double weighted_examples() { return weighted_labeled_examples + weighted_unlabeled_examples; }
 
@@ -537,9 +537,13 @@ struct vw
   vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
-  vw(const vw&);
-  // private://disable copying.
-  // vw& operator=(const vw& );
+  vw(const vw&) = delete;
+  vw& operator=(const vw&) = delete;
+
+  // vw object cannot be moved as many objects hold a pointer to it.
+  // That pointer would be invalidated if it were to be moved.
+  vw(const vw&&) = delete;
+  vw& operator=(const vw&&) = delete;
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);
