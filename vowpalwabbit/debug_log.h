@@ -2,14 +2,14 @@
 
 struct vw_dbg
 {
-  const static bool default     = false;
+  const static bool default_log     = false;
   const static bool learner     = false;
   const static bool search      = false;
   const static bool gd          = false;
   const static bool gd_predict  = false;
 };
 
-#define VW_DEBUG_LOG vw_dbg::default
+#define VW_DEBUG_LOG vw_dbg::default_log
 
 #define VW_LOG_SINK std::cout
 
