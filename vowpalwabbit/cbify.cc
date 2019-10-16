@@ -16,7 +16,7 @@ using namespace ACTION_SCORE;
 using namespace std;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(true);
+VW_DEBUG_ENABLE(false);
 
 struct cbify;
 
@@ -193,7 +193,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
 
-  cout << "regression_label.label = " << regression_label.label << endl;
+  /*cout << "regression_label.label = " << regression_label.label << endl;*/
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -203,7 +203,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
     data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  cout << "chosen_action = " << chosen_action << endl;
+  /*cout << "chosen_action = " << chosen_action << endl;*/
   CB::cb_class cl;
   cl.action = chosen_action + 1;
   cl.probability = ec.pred.a_s[chosen_action].score;
@@ -214,14 +214,14 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   float converted_action = data.regression_data.min_value
     + chosen_action * continuous_range / data.regression_data.num_actions;
 
-  cout << "continuous_range = " << continuous_range << endl;
-  cout << "converted_action = " << converted_action << endl;
+  /*cout << "continuous_range = " << continuous_range << endl;
+  cout << "converted_action = " << converted_action << endl;*/
 
   if (data.regression_data.loss_option == 0) {
     // mean squared loss
     float diff = regression_label.label - converted_action;
     cl.cost = diff * diff;
-    cout << "cl.cost = " << cl.cost << endl;
+    /*cout << "cl.cost = " << cl.cost << endl;*/
   }
   else if (data.regression_data.loss_option == 1) {
     // cl.cost = get01loss(ec.pred.prob_dist, converted_action, regression_label.label);
@@ -254,7 +254,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
 
-  cout << "regression_label.label = " << regression_label.label << endl;
+  /*cout << "regression_label.label = " << regression_label.label << endl;*/
 
   base.predict(ec);
 

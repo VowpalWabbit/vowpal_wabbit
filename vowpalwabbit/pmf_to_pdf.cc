@@ -101,7 +101,7 @@ pdf_data::~pdf_data()
       uint32_t min_h = (std::max)(0, (int)j - (int)data.bandwidth);
       uint32_t max_h = (std::min)(data.num_actions, j + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
-      ec.l.cb.costs.push_back({cost, j, prob * bandwidth_range, 0.0f});
+      ec.l.cb.costs.push_back({cost, j + 1, prob * bandwidth_range, 0.0f});
     }
 
     auto temp_pd = ec.pred.prob_dist;

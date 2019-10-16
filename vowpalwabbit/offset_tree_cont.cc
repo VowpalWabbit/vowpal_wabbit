@@ -135,7 +135,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   VW_DBG(ec) << "otree_c: learn() -- tree_traversal -- " << std::endl;
   for (uint32_t i = 0; i < ac.size(); i++)
   {
-    uint32_t node_id = ac[i].action + binary_tree.internal_node_count();
+    uint32_t node_id = ac[i].action + binary_tree.internal_node_count() - 1;
     VW_DBG(ec) << "otree_c: learn() ac[" << i << "].action  = " << ac[i].action << ", node_id  = " << node_id
               << std::endl;
     if (nodes[node_id].depth < binary_tree.depth())
