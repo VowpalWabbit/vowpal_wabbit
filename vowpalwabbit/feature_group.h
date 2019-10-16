@@ -235,7 +235,7 @@ class features_value_index_audit_iterator : public features_value_index_iterator
   friend void swap(features_value_index_audit_iterator& lhs, features_value_index_audit_iterator& rhs)
   {
     swap(static_cast<features_value_index_iterator&>(lhs), static_cast<features_value_index_iterator&>(rhs));
-    swap(lhs._begin_audit, rhs._begin_audit);
+    std::swap(lhs._begin_audit, rhs._begin_audit);
   }
 };
 
@@ -288,7 +288,7 @@ struct features
     for (; i < space_names.size(); i++) space_names[i].~audit_strings_ptr();
   }
 
-  features_value_index_audit_range values_indices_audit() { return features_value_index_audit_range(this); }
+  features_value_index_audit_range values_indices_audit() { return {this}; }
 
   // default iterator for values & features
   iterator begin() { return iterator(values.begin(), indicies.begin()); }
@@ -344,10 +344,10 @@ struct features
 
   bool sort(uint64_t parse_mask)
   {
-    if (indicies.size() == 0)
+    if (indicies.empty())
       return false;
 
-    if (space_names.size() != 0)
+    if (!space_names.empty())
     {
       v_array<feature_slice> slice = v_init<feature_slice>();
       for (size_t i = 0; i < indicies.size(); i++)

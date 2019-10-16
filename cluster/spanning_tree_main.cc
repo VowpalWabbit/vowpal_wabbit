@@ -25,12 +25,11 @@ int getpid()
 #include <stdlib.h>
 #include <errno.h>
 
-using namespace std;
 using namespace VW;
 
 int main(int argc, char* argv[])
 { if (argc > 2)
-  { cout << "usage: spanning_tree [--nondaemon | pid_file]" << endl;
+  { std::cout << "usage: spanning_tree [--nondaemon | pid_file]" << std::endl;
     exit(0);
   }
 
@@ -43,19 +42,19 @@ int main(int argc, char* argv[])
     SpanningTree spanningTree;
 
     if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
-    { ofstream pid_file;
+    { std::ofstream pid_file;
       pid_file.open(argv[1]);
       if (!pid_file.is_open())
-      { cerr << "error writing pid file" << endl;
+      { std::cerr << "error writing pid file" << std::endl;
         exit(1);
       }
-      pid_file << getpid() << endl;
+      pid_file << getpid() << std::endl;
       pid_file.close();
     }
 
     spanningTree.Run();
   }
   catch (VW::vw_exception& e)
-  { cerr << "spanning tree (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
+  { std::cerr << "spanning tree (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
   }
 }

@@ -2,7 +2,6 @@
 #include "reductions.h"
 #include "example.h"
 #include "global_data.h"
-#include "cache.h"
 #include "vw.h"
 #include "interactions.h"
 #include "label_dictionary.h"
@@ -10,12 +9,10 @@
 #include "cb_algs.h"
 #include "constant.h"
 #include "v_array_pool.h"
-#include "interactions.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
-#include <queue>
 #include <bitset>
 
 using namespace LEARNER;
@@ -133,6 +130,7 @@ void create_cb_labels(ccb& data)
   {
     action->l.cb.costs = data.cb_label_pool.get_object();
   }
+  data.shared->l.cb.weight = 1.0;
 }
 
 // the polylabel (union) must be manually cleaned up
@@ -147,7 +145,7 @@ void delete_cb_labels(ccb& data)
 }
 
 void attach_label_to_example(
-    uint32_t action_index_one_based, example* example, conditional_contexual_bandit_outcome* outcome, ccb& data)
+    uint32_t action_index_one_based, example* example, conditional_contextual_bandit_outcome* outcome, ccb& data)
 {
   // save the cb label
   // Action is unused in cb
@@ -160,25 +158,23 @@ void attach_label_to_example(
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
-  // save a copy
-  auto copy = data.action_score_pool.get_object();
-  copy_array(copy, data.shared->pred.a_s);
-  decision_scores.push_back(copy);
+  auto& pred = data.shared->pred.a_s;
+  decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
-  for (auto& action_score : copy)
+  for (auto& action_score : pred)
   {
     action_score.action = data.origin_index[action_score.action];
   }
 
   // Exclude the chosen action from next slots.
-  auto original_index_of_chosen_action = copy[0].action;
+  auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
 }
 
 void clear_pred_and_label(ccb& data)
 {
-  return_v_array(data.shared->pred.a_s, data.action_score_pool);
+   // Don't need to return to pool, as that will be done when the example is output.
 
   // This just needs to be cleared as it is reused.
   data.actions[data.action_with_label]->l.cb.costs.clear();
@@ -375,7 +371,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
     }
   }
 
-  // Must reset this in case the pooled example has stale data here.
+  // Must provide a prediction that cb can write into, this will be saved into the decision scores object later.
   data.shared->pred.a_s = data.action_score_pool.get_object();
 
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
@@ -615,10 +611,10 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   if (ec_seq.size() > 0)
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all);
+    CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto a_s : ec_seq[0]->pred.decision_scores)
+  for (auto& a_s : ec_seq[0]->pred.decision_scores)
   {
     return_v_array(a_s, data.action_score_pool);
   }
@@ -627,19 +623,18 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-// Prediction deleter is intentionally a nullopt as it is handled by the reduction.
-void nullopt_delete(void*) {}
-
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
+  bool slate = false;
   option_group_definition new_options(
       "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
   new_options.add(
       make_option("ccb_explore_adf", ccb_explore_adf_option)
           .keep()
           .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."));
+  new_options.add(make_option("slate", slate).keep().help("EXPERIMENTAL - MAY CHANGE: Enable slate mode in CCB."));
   options.add_and_parse(new_options);
 
   if (!ccb_explore_adf_option)
@@ -651,7 +646,12 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  if (!options.was_supplied("cb_sample"))
+  if(options.was_supplied("cb_sample") && slate)
+  {
+    THROW("--slate and --cb_sample cannot be supplied together");
+  }
+
+  if (!options.was_supplied("cb_sample") && !slate)
   {
     options.insert("cb_sample", "");
     options.add_and_parse(new_options);
@@ -683,5 +683,5 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-bool ec_is_example_header(example& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
+bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
 }  // namespace CCB

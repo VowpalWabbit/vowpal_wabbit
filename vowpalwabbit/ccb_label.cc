@@ -49,7 +49,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 
   if (is_outcome_present)
   {
-    ld->outcome = new CCB::conditional_contexual_bandit_outcome();
+    ld->outcome = new CCB::conditional_contextual_bandit_outcome();
     ld->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     next_read_size = sizeof(ld->outcome->cost);
@@ -96,10 +96,17 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
     ld->explicit_included_actions.push_back(include);
   }
 
+  next_read_size = sizeof(ld->weight);
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
+    return 0;
+  ld->weight = *(float*)read_ptr;
   return read_count;
 }
 
-float ccb_weight(void*) { return 1.; }
+float ccb_weight(void* v) {
+  CCB::label* ld = (CCB::label*)v;
+  return ld->weight;
+}
 
 void cache_label(void* v, io_buf& cache)
 {
@@ -112,7 +119,8 @@ void cache_label(void* v, io_buf& cache)
                     + sizeof(uint32_t)                                                         // probabilities size
                     + sizeof(ACTION_SCORE::action_score) * ld->outcome->probabilities.size())  // probabilities
       + sizeof(uint32_t)  // explicit_included_actions size
-      + sizeof(uint32_t) * ld->explicit_included_actions.size();
+      + sizeof(uint32_t) * ld->explicit_included_actions.size()
+      + sizeof(ld->weight);
 
   cache.buf_write(c, size);
 
@@ -145,6 +153,9 @@ void cache_label(void* v, io_buf& cache)
     *(uint32_t*)c = included_action;
     c += sizeof(included_action);
   }
+
+  *(float*)c = ld->weight;
+  c += sizeof(ld->weight);
 }
 
 void default_label(void* v)
@@ -153,6 +164,7 @@ void default_label(void* v)
   ld->outcome = nullptr;
   ld->explicit_included_actions = v_init<uint32_t>();
   ld->type = example_type::unset;
+  ld->weight = 1.0;
 }
 
 bool test_label(void* v)
@@ -180,7 +192,7 @@ void copy_label(void* dst, void* src)
 
   if (ldSrc->outcome)
   {
-    ldDst->outcome = new CCB::conditional_contexual_bandit_outcome();
+    ldDst->outcome = new CCB::conditional_contextual_bandit_outcome();
     ldDst->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     ldDst->outcome->cost = ldSrc->outcome->cost;
@@ -189,6 +201,7 @@ void copy_label(void* dst, void* src)
 
   copy_array(ldDst->explicit_included_actions, ldSrc->explicit_included_actions);
   ldDst->type = ldSrc->type;
+  ldDst->weight = ldSrc->weight;
 }
 
 ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, const substring& probability_str)
@@ -213,9 +226,9 @@ ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, cons
 }
 
 //<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
-CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
+CCB::conditional_contextual_bandit_outcome* parse_outcome(substring& outcome)
 {
-  auto& ccb_outcome = *(new CCB::conditional_contexual_bandit_outcome());
+  auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
   auto split_commas = v_init<substring>();
   tokenize(',', outcome, split_commas);
@@ -260,6 +273,7 @@ void parse_explicit_inclusions(CCB::label* ld, v_array<substring>& split_inclusi
 void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 {
   CCB::label* ld = static_cast<CCB::label*>(v);
+  ld->weight = 1.0;
 
   if (words.size() < 2)
     THROW("ccb labels may not be empty");

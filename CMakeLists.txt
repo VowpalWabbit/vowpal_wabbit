@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 # Only allow Release and Debug configurations
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
+set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE INTERNAL "Supported configuration types.")
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
@@ -10,11 +10,19 @@ endif()
 # CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
 # https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
-  set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
+  set(CMAKE_SYSTEM_VERSION "10.0.10240.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
 project(vowpal_wabbit C CXX)
-set(CMAKE_CXX_STANDARD 11)
+
+option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
+
+# By default we target 11, if you want to use a newer standard use "-DUSE_LATEST_STD=On"
+if(NOT USE_LATEST_STD)
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
@@ -49,6 +57,7 @@ option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
+option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
@@ -59,6 +68,17 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
+
+# When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
+# Use this option to force color output in these modes.
+option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
+if(FORCE_COLORED_OUTPUT)
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    add_compile_options(-fdiagnostics-color=always)
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    add_compile_options(-fcolor-diagnostics)
+  endif()
+endif()
 
 if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAVA OR LTO))
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
@@ -108,15 +128,21 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
-if(STATIC_LINK_VW)
+
+if(STATIC_LINK_VW_JAVA)
   set(Boost_USE_STATIC_LIBS ON)
   SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-  SET(BUILD_SHARED_LIBS OFF)
 else()
-  set(Boost_USE_STATIC_LIBS OFF)
-  if(WIN32)
-    # Windows links everything dynamically
-    add_definitions( -DBOOST_ALL_DYN_LINK )
+  if(STATIC_LINK_VW)
+    set(Boost_USE_STATIC_LIBS ON)
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    SET(BUILD_SHARED_LIBS OFF)
+  else()
+    set(Boost_USE_STATIC_LIBS OFF)
+    if(WIN32)
+      # Windows links everything dynamically
+      add_definitions( -DBOOST_ALL_DYN_LINK )
+    endif()
   endif()
 endif()
 

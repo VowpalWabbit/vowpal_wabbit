@@ -3,7 +3,7 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <stdint.h>
+#include <cstdint>
 #include <algorithm>
 
 #include "gd.h"
@@ -232,7 +232,7 @@ void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_pre
     delete ec.passthrough;
   }
 
-  for (size_t j = 0; j < 256; j++) ec.feature_space[j].delete_v();
+  for (auto & j : ec.feature_space) j.delete_v();
 
   ec.indices.delete_v();
 }
@@ -242,7 +242,7 @@ void clean_example(vw&, example&, bool rewind);
 
 void finish_example(vw& all, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
     for (example* ecc : ec_seq)
       if (ecc->in_use)
         VW::finish_example(all, *ecc);

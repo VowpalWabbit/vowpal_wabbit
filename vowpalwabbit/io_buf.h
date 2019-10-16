@@ -9,12 +9,12 @@ license as described in the file LICENSE.
 #include <unistd.h>
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include <fcntl.h>
 #include "v_array.h"
 #include <iostream>
 #include <sstream>
-#include <errno.h>
+#include <cerrno>
 #include <stdexcept>
 #include "hash.h"
 #include "vw_exception.h"
@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #endif
 
 #ifdef _WIN32
+#define NOMINMAX
 #define ssize_t int64_t
 #include <io.h>
 #include <sys/stat.h>
@@ -55,6 +56,7 @@ class io_buf
   // used to check-sum i/o files for corruption detection
   bool _verify_hash;
   uint32_t _hash;
+  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
 
  public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
@@ -68,21 +70,6 @@ class io_buf
 
   static constexpr int READ = 1;
   static constexpr int WRITE = 2;
-
-  void init()
-  {
-    space = v_init<char>();
-    files = v_init<int>();
-    currentname = v_init<char>();
-    finalname = v_init<char>();
-    size_t s = 1 << 16;
-    space.resize(s);
-    current = 0;
-    count = 0;
-    head = space.begin();
-    _verify_hash = false;
-    _hash = 0;
-  }
 
   void verify_hash(bool verify)
   {
@@ -98,6 +85,11 @@ class io_buf
     if (!_verify_hash)
       THROW("HASH WAS NOT CALCULATED");
     return _hash;
+  }
+
+  virtual int open_file(const char* name, bool stdin_off)
+  {
+    return open_file(name, stdin_off, READ);
   }
 
   virtual int open_file(const char* name, bool stdin_off, int flag = READ)
@@ -155,7 +147,19 @@ class io_buf
     head = space.begin();
   }
 
-  io_buf() { init(); }
+  io_buf() :
+    _verify_hash{false},
+    _hash{0},
+    count{0},
+    current{0}
+  {
+    space = v_init<char>();
+    files = v_init<int>();
+    currentname = v_init<char>();
+    finalname = v_init<char>();
+    space.resize(INITIAL_BUFF_SIZE);
+    head = space.begin();
+  }
 
   virtual ~io_buf()
   {
@@ -196,7 +200,7 @@ class io_buf
 
   virtual void flush()
   {
-    if (files.size() > 0)
+    if (!files.empty())
     {
       if (write_file(files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
         std::cerr << "error, failed to write example\n";
@@ -206,7 +210,7 @@ class io_buf
 
   virtual bool close_file()
   {
-    if (files.size() > 0)
+    if (!files.empty())
     {
       close_file_or_socket(files.pop());
       return true;
@@ -301,7 +305,6 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
   }
   else
     return bin_write(io, data, (uint32_t)len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
@@ -324,7 +327,6 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stri
   }
   else
     return io.bin_write_fixed(data, len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)

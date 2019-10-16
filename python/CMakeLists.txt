@@ -40,7 +40,10 @@ set_target_properties(pylibvw PROPERTIES PREFIX "")
 if (NOT WIN32)
   # Windows links dynamically
   target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+  # OSX builds a .dylib and then attempts to find a .so. Just build a .so file and things work
+  set_target_properties(pylibvw PROPERTIES SUFFIX ".so")
 else()
+  # Force Windows to build with a .pyd extension
   set_target_properties(pylibvw PROPERTIES SUFFIX ".pyd")
 endif()
 target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)

@@ -1,5 +1,4 @@
 #include "best_constant.h"
-using namespace std;
 
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 {

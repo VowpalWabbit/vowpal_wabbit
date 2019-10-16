@@ -7,12 +7,11 @@
 #include "accumulate.h"
 #include "best_constant.h"
 
-using namespace std;
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   memcpy(&ld->label, c, sizeof(ld->label));
-  //  cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<  endl;
+  //  std::cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label << std::endl;
   c += sizeof(ld->label);
   memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);
@@ -97,9 +96,9 @@ void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& w
       ld->initial = float_of_substring(words[2]);
       break;
     default:
-      cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
+     std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
       for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
-      cout << endl;
+     std::cout << std::endl;
   }
   count_label(sd, ld->label);
 }
@@ -161,7 +160,7 @@ bool summarize_holdout_set(vw& all, size_t& no_win_counter)
   }
 
   if ((thisLoss != FLT_MAX) ||
-      (isfinite(
+      (std::isfinite(
           all.sd->holdout_best_loss)))  // it's only a loss if we're not infinite when the previous one wasn't infinite
     no_win_counter++;
   return false;

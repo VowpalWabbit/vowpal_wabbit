@@ -5,11 +5,13 @@ license as described in the file LICENSE.
  */
 
 #pragma once
+#define NOMINMAX
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdint.h>
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+#include <cstdint>
 
 #ifdef _WIN32
 #define __INLINE
@@ -23,7 +25,7 @@ license as described in the file LICENSE.
 
 #include "memory.h"
 
-const size_t erase_point = ~((1 << 10) - 1);
+const size_t erase_point = ~((1u << 10u) - 1u);
 
 template <class T>
 struct v_array
@@ -39,6 +41,9 @@ struct v_array
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
+
+  inline const T* begin() const{ return _begin; }
+  inline const T* end() const { return _end; }
 
   inline T* cbegin() const { return _begin; }
   inline T* cend() const { return _end; }
@@ -173,26 +178,6 @@ struct v_array
   }
 };
 
-#ifdef _WIN32
-#undef max
-#undef min
-#endif
-
-inline size_t max(size_t a, size_t b)
-{
-  if (a < b)
-    return b;
-  else
-    return a;
-}
-inline size_t min(size_t a, size_t b)
-{
-  if (a < b)
-    return a;
-  else
-    return b;
-}
-
 template <class T>
 inline v_array<T> v_init()
 {
@@ -225,7 +210,7 @@ template <class T>
 void push_many(v_array<T>& v, const T* _begin, size_t num)
 {
   if (v._end + num >= v.end_array)
-    v.resize(max(2 * (size_t)(v.end_array - v._begin) + 3,
+    v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3,
                  v._end - v._begin + num));
 #ifdef _WIN32
   memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
