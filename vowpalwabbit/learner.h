@@ -13,7 +13,7 @@ license as described in the file LICENSE.
 #include "debug_log.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG false
+#define VW_DEBUG_LOG vw_dbg::learner
 
 #include <memory>
 
@@ -182,8 +182,8 @@ struct learner
   prediction_type::prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
-  bool is_multiline;                  // Is this a single-line or multi-line reduction?
-  std::string name;                   // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
+  bool is_multiline;  // Is this a single-line or multi-line reduction?
+  std::string name;   // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
   bool require_predict_before_learn;  // Most reductions need to call predict() before learn().  The prediction
                                       //   is used for progressive validation.  Some reductions do not
                                       //   need to call predict() before learn().  For example active.cc

@@ -31,8 +31,9 @@ namespace MC = MULTICLASS;
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG false
+#define VW_DEBUG_LOG vw_dbg::search
 
 namespace Search
 {

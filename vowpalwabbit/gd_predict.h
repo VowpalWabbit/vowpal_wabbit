@@ -8,9 +8,6 @@ license as described in the file LICENSE.
 #include "interactions_predict.h"
 #include "v_array.h"
 
-#undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG false
-
 namespace GD
 {
 bool GET_VW_DEBUG_LOG();

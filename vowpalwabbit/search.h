@@ -9,7 +9,7 @@ license as described in the file LICENSE.
 #define cdbg clog
 #undef cdbg
 #define cdbg \
-  if (1)     \
+  if (0)     \
   {          \
   }          \
   else       \
