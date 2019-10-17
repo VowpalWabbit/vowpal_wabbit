@@ -2,6 +2,9 @@
 #include "reductions.h"
 #include "debug_log.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::binary
+
 using namespace std;
 using namespace VW::config;
 
@@ -51,7 +54,7 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
     return nullptr;
 
   LEARNER::learner<char, example>& ret =
-      LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, "binary");
+      LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, "binary", false);
   return make_base(ret);
 }
 

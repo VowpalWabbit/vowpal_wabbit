@@ -3,10 +3,11 @@
 struct vw_dbg
 {
   const static bool default_log     = false;
-  const static bool learner     = false;
-  const static bool search      = false;
-  const static bool gd          = false;
-  const static bool gd_predict  = false;
+  const static bool learner         = false;
+  const static bool search          = false;
+  const static bool gd              = false;
+  const static bool gd_predict      = false;
+  const static bool binary          = false;
 };
 
 #define VW_DEBUG_LOG vw_dbg::default_log

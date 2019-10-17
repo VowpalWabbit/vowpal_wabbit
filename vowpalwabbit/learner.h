@@ -369,7 +369,9 @@ struct learner
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
   {
+    print_reduction_name(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
+    print_reduction_exit(ec);
   }
   // called after learn example for each example.  Explicitly not recursive.
   void set_finish_example(void (*f)(vw& all, T&, E&))
@@ -502,9 +504,10 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 
 // Reduction with no data.
 template <class T, class E, class L>
-learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name)
+learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name,
+    bool predict_before_learn = true)
 {
-  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name);
+  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name, predict_before_learn);
 }
 
 // multiclass reduction
