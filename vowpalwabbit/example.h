@@ -129,4 +129,5 @@ std::string scalar_pred_to_string(const example& ec);
 std::string a_s_pred_to_string(const example& ec);
 std::string multiclass_pred_to_string(const example& ec);
 std::string depth_indent_string(const example& ec);
+std::string depth_indent_string(uint32_t depth);
 std::string cb_label_to_string(const example& ec);

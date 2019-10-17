@@ -247,6 +247,18 @@ std::string depth_indent_string(const example& ec)
   return strstream.str();
 }
 
+std::string depth_indent_string(uint32_t depth)
+{
+  std::stringstream strstream;
+  for (uint32_t i = 0; i < depth - 1; i++)
+  {
+    // strstream << "| ";
+    strstream << "  ";
+  }
+  strstream << "- ";
+  return strstream.str();
+}
+
 std::string scalar_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
