@@ -123,7 +123,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
       THROW("malformed cost specification: " << p->parse_name);
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)hashstring(p->parse_name[0], 0);
+    f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
     f.cost = FLT_MAX;
 
     if (p->parse_name.size() > 1)
@@ -278,7 +278,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
   if (words.size() < 2)
     THROW("Evaluation can not happen without an action and an exploration");
 
-  ld->action = (uint32_t)hashstring(words[0], 0);
+  ld->action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
 
   words.begin()++;
 

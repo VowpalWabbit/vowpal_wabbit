@@ -32,7 +32,7 @@ license as described in the file LICENSE.
 
 #include "best_constant.h"
 
-#include "future_compat.h"
+#include "vw_string_view.h"
 #include <algorithm>
 #include <vector>
 

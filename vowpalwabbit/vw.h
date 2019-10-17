@@ -127,26 +127,26 @@ void save_predictor(vw& all, io_buf& buf);
 // First create the hash of a namespace.
 inline uint64_t hash_space(vw& all, const std::string& s)
 {
-  return all.p->hasher(s, all.hash_seed);
+  return all.p->hasher(s.data(), s.length(), all.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
-  return getHasher(hash)(s, 0);
+  return getHasher(hash)(s.data(), s.length(), 0);
 }
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {
-  return all.p->hasher(s, u) & all.parse_mask;
+  return all.p->hasher(s.data(), s.length(), u) & all.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
   size_t parse_mark = (1 << num_bits) - 1;
-  return getHasher(h)(s, u) & parse_mark;
+  return getHasher(h)(s.data(), s.length(), u) & parse_mark;
 }
 
 inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
-  return all.p->hasher(fstr, u) & all.parse_mask;
+  return all.p->hasher(fstr, strlen(fstr), u) & all.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

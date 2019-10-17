@@ -18,7 +18,7 @@ license as described in the file LICENSE.
 #include <unordered_map>
 #include <string>
 #include <array>
-#include "future_compat.h"
+#include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE

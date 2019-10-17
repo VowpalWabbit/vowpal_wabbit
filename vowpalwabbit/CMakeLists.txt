@@ -31,6 +31,7 @@ set(vw_all_headers
   classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
   config.h.in primitives.h lda_core.h print.h vw_versions.h shared_feature_merger.h conditional_contextual_bandit.h ccb_label.h
   cb_explore_adf_common.h cb_explore_adf_bag.h cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h cb_explore_adf_regcb.h cb_explore_adf_softmax.h
+  vw_string_view.h
 )
 
 set(vw_all_sources

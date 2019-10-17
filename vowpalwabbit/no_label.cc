@@ -2,7 +2,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
-#include "future_compat.h"
+#include "vw_string_view.h"
 
 #include "cache.h"
 #include "accumulate.h"

@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include "v_array.h"
 #include "hashstring.h"
-#include "future_compat.h"
+#include "vw_string_view.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -50,7 +50,7 @@ namespace VW
 typedef example& (*example_factory_t)(void*);
 }
 
-typedef uint64_t (*hash_func_t)(VW::string_view, uint64_t);
+typedef uint64_t (*hash_func_t)(const char * s, size_t, uint64_t);
 
 hash_func_t getHasher(const std::string& s);
 

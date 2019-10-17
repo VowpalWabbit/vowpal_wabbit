@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 
 #include <cmath>
 #include <math.h>
-#include "future_compat.h"
+#include "vw_string_view.h"
 #include <cctype>
 #include "parse_example.h"
 #include "hash.h"
@@ -153,7 +153,7 @@ class TC_parser
       _v = _cur_channel_v * featureValue();
       uint64_t word_hash;
       if (!feature_name.empty())
-        word_hash = (_p->hasher(feature_name, _channel_hash) & _parse_mask);
+        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
       else
         word_hash = _channel_hash + _anon++;
       if (_v == 0)
@@ -185,7 +185,7 @@ class TC_parser
           }
 
           word_hash =
-              _p->hasher(affix_name, (uint64_t)_channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
+              _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
           affix_fs.push_back(_v, word_hash);
           if (audit)
           {
@@ -227,7 +227,7 @@ class TC_parser
         }
 
         VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        uint64_t word_hash = hashstring(spelling_strview, (uint64_t)_channel_hash);
+        uint64_t word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
@@ -328,7 +328,7 @@ class TC_parser
       {
         _base = name;
       }
-      _channel_hash = _p->hasher(name, this->_hash_seed);
+      _channel_hash = _p->hasher(name.begin(), name.length(), this->_hash_seed);
       nameSpaceInfoValue();
     }
   }

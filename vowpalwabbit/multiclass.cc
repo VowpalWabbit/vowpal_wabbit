@@ -3,7 +3,7 @@
 #include "global_data.h"
 #include "vw.h"
 #include "vw_exception.h"
-#include "future_compat.h"
+#include "vw_string_view.h"
 
 namespace MULTICLASS
 {

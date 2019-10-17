@@ -25,18 +25,3 @@
 #else
 #error "At least C++11 is required."
 #endif
-
-#include <boost/version.hpp>
-#if BOOST_VERSION < 106100
-#include <boost/utility/string_ref.hpp>
-namespace VW
-{
-using string_view = boost::string_ref;
-}
-#else
-#include <boost/utility/string_view.hpp>
-namespace VW
-{
-using string_view = boost::string_view;
-}
-#endif

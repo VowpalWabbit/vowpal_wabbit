@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <cmath>
-#include "future_compat.h"
+#include "vw_string_view.h"
 
 using namespace LEARNER;
 using namespace VW;

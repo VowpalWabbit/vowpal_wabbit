@@ -4,7 +4,7 @@
 #include "parse_primitives.h"
 #include "io_buf.h"
 
-#include "future_compat.h"
+#include "vw_string_view.h"
 
 struct parser;
 struct shared_data;

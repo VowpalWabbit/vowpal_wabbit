@@ -23,7 +23,7 @@ license as described in the file LICENSE.
 #endif
 
 #include <memory>
-#include "future_compat.h"
+#include "vw_string_view.h"
 #include "queue.h"
 #include "object_pool.h"
 

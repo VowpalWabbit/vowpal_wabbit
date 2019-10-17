@@ -3,7 +3,7 @@
 #include "explore.h"
 
 #include "rand48.h"
-#include "future_compat.h"
+#include "vw_string_view.h"
 
 using namespace LEARNER;
 using namespace VW;
