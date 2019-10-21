@@ -83,7 +83,7 @@ endif()
 # TODO code analysis
 if(WIN32)
   target_compile_definitions(vw PUBLIC __SSE2__)
-  target_compile_options(vw PUBLIC /MP)
+  target_compile_options(vw PUBLIC /MP /Zc:__cplusplus)
 else()
   target_compile_options(vw PUBLIC ${linux_flags})
 endif()

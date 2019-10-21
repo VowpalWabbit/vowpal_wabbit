@@ -10,7 +10,6 @@
 using namespace LEARNER;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
-using namespace std;
 using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
@@ -147,7 +146,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
+  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(data.counter * num_actions));
 
   enforce_minimum_probability(min_prob * num_actions, false, begin_scores(probs), end_scores(probs));
 
@@ -176,7 +175,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   float additive_probability = 1.f / (float)cover_size;
 
-  float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
+  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(counter * num_actions));
 
   data.cb_label = ec.l.cb;
 
@@ -206,14 +205,14 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
       for (uint32_t j = 0; j < num_actions; j++)
       {
         float pseudo_cost =
-            data.cs_label.costs[j].x - data.psi * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
+            data.cs_label.costs[j].x - data.psi * min_prob / (std::max(probabilities[j], min_prob) / norm) + 1;
         data.second_cs_label.costs[j].class_index = j + 1;
         data.second_cs_label.costs[j].x = pseudo_cost;
       }
       if (i != 0)
         data.cs->learn(ec, i + 1);
       if (probabilities[predictions[i] - 1] < min_prob)
-        norm += max(0, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
+        norm += std::max(0.f, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
       else
         norm += additive_probability;
       probabilities[predictions[i] - 1] += additive_probability;
@@ -224,11 +223,11 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   ec.pred.a_s = probs;
 }
 
-void print_update_cb_explore(vw& all, bool is_test, example& ec, stringstream& pred_string)
+void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
-    stringstream label_string;
+    std::stringstream label_string;
     if (is_test)
       label_string << " unknown";
     else
@@ -250,7 +249,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
-  stringstream ss;
+  std::stringstream ss;
   float maxprob = 0.;
   uint32_t maxid = 0;
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
@@ -300,7 +299,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("cb"))
   {
-    stringstream ss;
+    std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
   }

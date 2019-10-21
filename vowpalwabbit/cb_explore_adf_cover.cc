@@ -176,10 +176,10 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   bool cb_explore_adf_option = false;
   std::string type_string = "mtr";
-  size_t cover_size;
-  float psi;
-  bool nounif;
-  bool first_only;
+  size_t cover_size = 0;
+  float psi = 0.;
+  bool nounif = false;
+  bool first_only = false;
 
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options

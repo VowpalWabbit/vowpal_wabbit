@@ -2,7 +2,6 @@
 #include "vw.h"
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
-using namespace std;
 
 namespace prediction_type
 {
@@ -35,36 +34,36 @@ namespace LEARNER
     all.learn(ec);
     as_singleline(all.l)->finish_example(all, ec);
   }
-  
+
   void learn_multi_ex(multi_ex& ec_seq, vw& all)
   {
     all.learn(ec_seq);
     as_multiline(all.l)->finish_example(all, ec_seq);
   }
-  
+
   void end_pass(example& ec, vw& all)
   {
     all.current_pass++;
     all.l->end_pass();
-    
+
     VW::finish_example(all, ec);
   }
-  
+
   void save(example& ec, vw& all)
   {
     // save state command
-    string final_regressor_name = all.final_regressor_name;
+    std::string final_regressor_name = all.final_regressor_name;
 
     if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
-      final_regressor_name = string(ec.tag.begin() + 5, (ec.tag).size() - 5);
+      final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
     if (!all.quiet)
-      all.trace_message << "saving regressor to " << final_regressor_name << endl;
+      all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
     save_predictor(all, final_regressor_name, 0);
 
     VW::finish_example(all, ec);
   }
-  
+
 /* is this just a newline */
 inline bool example_is_newline_not_header(example& ec, vw& all)
   {
@@ -81,12 +80,12 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 
   return example_is_newline(ec) && !is_header;
   }
-  
+
   bool inline is_save_cmd(example* ec)
   {
     return (ec->tag.size() >= 4) && (0 == strncmp((const char*)ec->tag.begin(), "save", 4));
   }
-  
+
 
   void drain_examples(vw& all) {
     if (all.early_terminate) { // drain any extra examples from parser.
@@ -103,9 +102,9 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
   public:
     single_instance_context(vw& all)
     : _all(all) {}
-    
+
     vw& get_master() const {return _all;}
-    
+
     template <class T, void (*process_impl)(T&, vw&)>
     void process(T& ec) {
       process_impl(ec, _all);
@@ -113,14 +112,14 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
   private:
     vw& _all;
   };
-  
+
   class multi_instance_context {
   public:
     multi_instance_context(const std::vector<vw*>& all)
     : _all(all) {}
-    
+
     vw& get_master() const {return *_all.front();}
-    
+
     template <class T, void (*process_impl)(T&, vw&)>
     void process(T& ec) {
       // start with last as the first instance will free the example as it is the owner
@@ -137,7 +136,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
   public:
     single_example_handler(const context_type& context)
     : _context(context) {}
-    
+
     void on_example(example* ec) {
       if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
         _context.template process<example, learn_ex>(*ec);
@@ -151,7 +150,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
   private:
     context_type _context;
   };
-  
+
   template<typename context_type>
   class multi_example_handler {
   private:
@@ -167,7 +166,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
       }
       return is_newline;
     }
-    
+
     bool try_complete_multi_ex(example* ec) {
       if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
         return complete_multi_ex(ec);
@@ -179,24 +178,24 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
         return complete_multi_ex(ec);
       return false;
     }
-    
+
   public:
     multi_example_handler(const context_type context)
     : _context(context) {}
-    
+
     ~multi_example_handler() {
       if (!ec_seq.empty()) {
         _context.template process<multi_ex, learn_multi_ex>(ec_seq);
       }
     }
-    
+
     void on_example(example* ec) {
       if (try_complete_multi_ex(ec)) {
         _context.template process<multi_ex, learn_multi_ex>(ec_seq);
         ec_seq.clear();
       }
     }
-    
+
   private:
     context_type _context;
     multi_ex ec_seq;
@@ -208,19 +207,19 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
   public:
     ready_examples_queue(vw& master)
     : _master(master) {}
-    
+
     example* pop() {
       return !_master.early_terminate ? VW::get_example(_master.p) : nullptr;
     }
   private:
     vw& _master;
   };
-  
+
   class custom_examples_queue {
   public:
     custom_examples_queue(v_array<example*> examples)
     : _examples(examples) {}
-    
+
     example* pop() {
       return _index < _examples.size() ? _examples[_index++] : nullptr;
     }
@@ -228,16 +227,16 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
     v_array<example*> _examples;
     size_t _index {0};
   };
-  
+
   template <typename queue_type, typename handler_type>
   void process_examples(queue_type& examples, handler_type& handler)
   {
     example* ec;
-    
+
     while ((ec = examples.pop()) != nullptr)
       handler.on_example(ec);
   }
-  
+
   template <typename context_type>
   void generic_driver(ready_examples_queue& examples, context_type& context) {
     if (context.get_master().l->is_multiline) {
@@ -251,21 +250,21 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
     }
     drain_examples(context.get_master());
   }
-  
+
   void generic_driver(vw& all)
   {
     single_instance_context context(all);
     ready_examples_queue examples(all);
     generic_driver(examples, context);
   }
-  
+
   void generic_driver(const std::vector<vw*>& all)
   {
     multi_instance_context context(all);
     ready_examples_queue examples(context.get_master());
     generic_driver(examples, context);
   }
-  
+
   template<typename handler_type>
   void generic_driver_onethread(vw& all) {
     single_instance_context context(all);

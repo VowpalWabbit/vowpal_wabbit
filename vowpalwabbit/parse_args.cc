@@ -88,13 +88,16 @@ license as described in the file LICENSE.
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 
-using namespace std;
+using std::cerr;
+using std::cout;
+using std::endl;
+
 using namespace VW::config;
 
 //
-// Does string end with a certain substring?
+// Does std::string end with a certain substring?
 //
-bool ends_with(string const& fullString, string const& ending)
+bool ends_with(std::string const& fullString, std::string const& ending)
 {
   if (fullString.length() > ending.length())
   {
@@ -124,7 +127,7 @@ uint64_t hash_file_contents(io_buf* io, int f)
   return v;
 }
 
-bool directory_exists(string path)
+bool directory_exists(std::string path)
 {
   struct stat info;
   if (stat(path.c_str(), &info) != 0)
@@ -135,24 +138,24 @@ bool directory_exists(string path)
   //  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
 }
 
-string find_in_path(vector<string> paths, string fname)
+std::string find_in_path(std::vector<std::string> paths, std::string fname)
 {
 #ifdef _WIN32
-  string delimiter = "\\";
+  std::string delimiter = "\\";
 #else
-  string delimiter = "/";
+  std::string delimiter = "/";
 #endif
-  for (string path : paths)
+  for (std::string path : paths)
   {
-    string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
-    ifstream f(full.c_str());
+    std::string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    std::ifstream f(full.c_str());
     if (f.good())
       return full;
   }
   return "";
 }
 
-void parse_dictionary_argument(vw& all, string str)
+void parse_dictionary_argument(vw& all, std::string str)
 {
   if (str.length() == 0)
     return;
@@ -167,7 +170,7 @@ void parse_dictionary_argument(vw& all, string str)
     s += 2;
   }
 
-  string fname = find_in_path(all.dictionary_path, string(s));
+  std::string fname = find_in_path(all.dictionary_path, std::string(s));
   if (fname == "")
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
@@ -182,7 +185,7 @@ void parse_dictionary_argument(vw& all, string str)
   io->close_file();
 
   if (!all.quiet)
-    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec
+    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash << std::dec
                       << endl;
 
   // see if we've already read this dictionary
@@ -295,7 +298,7 @@ void parse_dictionary_argument(vw& all, string str)
   all.loaded_dictionaries.push_back(info);
 }
 
-void parse_affix_argument(vw& all, string str)
+void parse_affix_argument(vw& all, std::string str)
 {
   if (str.length() == 0)
     return;
@@ -382,7 +385,7 @@ void parse_diagnostics(options_i& options, vw& all)
   {
     all.progress_arg = (float)::atof(progress_arg.c_str());
     // --progress interval is dual: either integer or floating-point
-    if (progress_arg.find_first_of(".") == string::npos)
+    if (progress_arg.find_first_of(".") == std::string::npos)
     {
       // No "." in arg: assume integer -> additive
       all.progress_add = true;
@@ -500,21 +503,19 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.p->hasher != vw2.p->hasher)
     return "hasher";
 
-  if (!equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)),
-          vw2.spelling_features))
+  if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
     return "spelling_features";
 
-  if (!equal(
-          vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features))
+  if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
     return "affix_features";
 
-  if (!equal(vw1.ngram, vw1.ngram + (sizeof(vw1.ngram) / sizeof(uint32_t)), vw2.ngram))
+  if (!std::equal(vw1.ngram.begin(), vw1.ngram.end(), vw2.ngram.begin()))
     return "ngram";
 
-  if (!equal(vw1.skips, vw1.skips + (sizeof(vw1.skips) / sizeof(uint32_t)), vw2.skips))
+  if (!std::equal(vw1.skips.begin(), vw1.skips.end(), vw2.skips.begin()))
     return "skips";
 
-  if (!equal(vw1.limit, vw1.limit + (sizeof(vw1.limit) / sizeof(uint32_t)), vw2.limit))
+  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin()))
     return "limit";
 
   if (vw1.num_bits != vw2.num_bits)
@@ -529,21 +530,19 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.ignore_some != vw2.ignore_some)
     return "ignore_some";
 
-  if (vw1.ignore_some && !equal(vw1.ignore, vw1.ignore + (sizeof(vw1.ignore) / sizeof(bool)), vw2.ignore))
+  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin()))
     return "ignore";
 
   if (vw1.ignore_some_linear != vw2.ignore_some_linear)
     return "ignore_some_linear";
 
-  if (vw1.ignore_some_linear &&
-      !equal(vw1.ignore_linear, vw1.ignore_linear + (sizeof(vw1.ignore_linear) / sizeof(bool)), vw2.ignore_linear))
+  if (vw1.ignore_some_linear && !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
     return "ignore_linear";
 
   if (vw1.redefine_some != vw2.redefine_some)
     return "redefine_some";
 
-  if (vw1.redefine_some &&
-      !equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine))
+  if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
     return "redefine";
 
   if (vw1.add_constant != vw2.add_constant)
@@ -552,7 +551,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.dictionary_path.size() != vw2.dictionary_path.size())
     return "dictionary_path size";
 
-  if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
+  if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
   for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
@@ -564,16 +563,16 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 }
 
 }  // namespace VW
-// return a copy of string replacing \x00 sequences in it
-string spoof_hex_encoded_namespaces(const string& arg)
+// return a copy of std::string replacing \x00 sequences in it
+std::string spoof_hex_encoded_namespaces(const std::string& arg)
 {
-  string res;
+  std::string res;
   int pos = 0;
   while (pos < (int)arg.size() - 3)
   {
     if (arg[pos] == '\\' && arg[pos + 1] == 'x')
     {
-      string substr = arg.substr(pos + 2, 2);
+      std::string substr = arg.substr(pos + 2, 2);
       char* p;
       unsigned char c = (unsigned char)strtoul(substr.c_str(), &p, 16);
       if (*p == '\0')
@@ -597,20 +596,20 @@ string spoof_hex_encoded_namespaces(const string& arg)
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
 {
-  string hash_function("strings");
+  std::string hash_function("strings");
   uint32_t new_bits;
-  vector<string> spelling_ns;
-  vector<string> quadratics;
-  vector<string> cubics;
-  vector<string> interactions;
-  vector<string> ignores;
-  vector<string> ignore_linears;
-  vector<string> keeps;
-  vector<string> redefines;
+  std::vector<std::string> spelling_ns;
+  std::vector<std::string> quadratics;
+  std::vector<std::string> cubics;
+  std::vector<std::string> interactions;
+  std::vector<std::string> ignores;
+  std::vector<std::string> ignore_linears;
+  std::vector<std::string> keeps;
+  std::vector<std::string> redefines;
 
-  vector<string> dictionary_path;
+  std::vector<std::string> dictionary_path;
 
   bool noconstant;
   bool leave_duplicate_interactions;
@@ -628,7 +627,7 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
       .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
-               .help("redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form "
+               .help("redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in form "
                      "'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a "
                      "wildcard in S.")
                .keep())
@@ -747,7 +746,7 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
     if (!all.quiet)
       all.trace_message << "creating quadratic features for pairs: ";
 
-    for (vector<string>::iterator i = quadratics.begin(); i != quadratics.end(); ++i)
+    for (std::vector<std::string>::iterator i = quadratics.begin(); i != quadratics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
@@ -765,7 +764,7 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
   {
     if (!all.quiet)
       all.trace_message << "creating cubic features for triples: ";
-    for (vector<string>::iterator i = cubics.begin(); i != cubics.end(); ++i)
+    for (std::vector<std::string>::iterator i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
@@ -784,7 +783,7 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
   {
     if (!all.quiet)
       all.trace_message << "creating features for following interactions: ";
-    for (vector<string>::iterator i = interactions.begin(); i != interactions.end(); ++i)
+    for (std::vector<std::string>::iterator i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
@@ -845,10 +844,10 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
   {
     all.ignore_some = true;
 
-    for (vector<string>::iterator i = ignores.begin(); i != ignores.end(); i++)
+    for (std::vector<std::string>::iterator i = ignores.begin(); i != ignores.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      for (string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = true;
+      for (std::string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = true;
     }
 
     if (!all.quiet)
@@ -865,10 +864,10 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
   {
     all.ignore_some_linear = true;
 
-    for (vector<string>::iterator i = ignore_linears.begin(); i != ignore_linears.end(); i++)
+    for (std::vector<std::string>::iterator i = ignore_linears.begin(); i != ignore_linears.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      for (string::const_iterator j = i->begin(); j != i->end(); j++)
+      for (std::string::const_iterator j = i->begin(); j != i->end(); j++)
         all.ignore_linear[(size_t)(unsigned char)*j] = true;
     }
 
@@ -888,10 +887,10 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
 
     all.ignore_some = true;
 
-    for (vector<string>::iterator i = keeps.begin(); i != keeps.end(); i++)
+    for (std::vector<std::string>::iterator i = keeps.begin(); i != keeps.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      for (string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = false;
+      for (std::string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = false;
     }
 
     if (!all.quiet)
@@ -915,9 +914,9 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
 
-    for (vector<string>::iterator arg_iter = redefines.begin(); arg_iter != redefines.end(); arg_iter++)
+    for (std::vector<std::string>::iterator arg_iter = redefines.begin(); arg_iter != redefines.end(); arg_iter++)
     {
-      string argument = spoof_hex_encoded_namespaces(*arg_iter);
+      std::string argument = spoof_hex_encoded_namespaces(*arg_iter);
       size_t arg_len = argument.length();
 
       size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
@@ -975,7 +974,7 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
   if (options.was_supplied("dictionary"))
   {
     if (options.was_supplied("dictionary_path"))
-      for (string path : dictionary_path)
+      for (std::string path : dictionary_path)
         if (directory_exists(path))
           all.dictionary_path.push_back(path);
     if (directory_exists("."))
@@ -991,7 +990,7 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
     {
       size_t previous = 0;
       size_t index = PATH.find(delimiter);
-      while (index != string::npos)
+      while (index != std::string::npos)
       {
         all.dictionary_path.push_back(PATH.substr(previous, index - previous));
         previous = index + 1;
@@ -1007,8 +1006,8 @@ void parse_feature_tweaks(options_i& options, vw& all, vector<string>& dictionar
 
 void parse_example_tweaks(options_i& options, vw& all)
 {
-  string named_labels;
-  string loss_function;
+  std::string named_labels;
+  std::string loss_function;
   float loss_parameter = 0.0;
   size_t early_terminate_passes;
   bool test_only = false;
@@ -1191,7 +1190,7 @@ void parse_output_model(options_i& options, vw& all)
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
   // {
   //   arg.args.push_back("--id");
-  //   arg.args.push_back(arg.vm["id"].as<string>());
+  //   arg.args.push_back(arg.vm["id"].as<std::string>());
   // }
 }
 
@@ -1419,13 +1418,13 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
 
   interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
 
-  // Convert file_options into a vector.
+  // Convert file_options into  vector.
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
   po::options_description desc("");
 
-  // Get list of options in file options string
+  // Get list of options in file options std::string
   po::parsed_options pos = po::command_line_parser(container).options(desc).allow_unregistered().run();
 
   bool skipping = false;
@@ -1518,7 +1517,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
   return options;
 }
 
-void parse_modules(options_i& options, vw& all, vector<string>& dictionary_nses)
+void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
@@ -1565,14 +1564,14 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
 
 namespace VW
 {
-void cmd_string_replace_value(std::stringstream*& ss, string flag_to_replace, string new_value)
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value)
 {
   flag_to_replace.append(
       " ");  // add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
-  string cmd = ss->str();
+  std::string cmd = ss->str();
   size_t pos = cmd.find(flag_to_replace);
-  if (pos == string::npos)
-    // flag currently not present in command string, so just append it to command string
+  if (pos == std::string::npos)
+    // flag currently not present in command std::string, so just append it to command std::string
     *ss << " " << flag_to_replace << new_value;
   else
   {
@@ -1584,9 +1583,9 @@ void cmd_string_replace_value(std::stringstream*& ss, string flag_to_replace, st
     // now pos is position where value starts
     // find position of next space
     size_t pos_after_value = cmd.find(" ", pos);
-    if (pos_after_value == string::npos)
+    if (pos_after_value == std::string::npos)
     {
-      // we reach the end of the string, so replace the all characters after pos by new_value
+      // we reach the end of the std::string, so replace the all characters after pos by new_value
       cmd.replace(pos, cmd.size() - pos, new_value);
     }
     else
@@ -1599,7 +1598,7 @@ void cmd_string_replace_value(std::stringstream*& ss, string flag_to_replace, st
   }
 }
 
-char** get_argv_from_string(string s, int& argc)
+char** get_argv_from_string(std::string s, int& argc)
 {
   char* c = calloc_or_throw<char>(s.length() + 3);
   c[0] = 'b';
@@ -1651,7 +1650,7 @@ vw* initialize(
     // Loads header of model files and loads the command line options into the options object.
     load_header_merge_options(options, all, *model);
 
-    vector<string> dictionary_nses;
+   std::vector<std::string> dictionary_nses;
     parse_modules(options, all, dictionary_nses);
 
     parse_sources(options, all, *model, skipModelLoad);
@@ -1664,7 +1663,7 @@ vw* initialize(
     // upon direct query for help -- spit it out to stdout;
     if (options.get_typed_option<bool>("help").value())
     {
-      cout << options.help();
+     cout << options.help();
       exit(0);
     }
 
@@ -1685,7 +1684,7 @@ vw* initialize(
   }
 }
 
-vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = get_argv_from_string(s, argc);
@@ -1718,7 +1717,7 @@ vw* initialize(
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_listener, void* trace_context)
+vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())

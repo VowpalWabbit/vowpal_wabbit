@@ -59,7 +59,7 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, S)
 // where S is EITHER float& feature_weight OR uint64_t feature_index
 template <class R, class S, void (*T)(R&, float, S), class W>
-inline void foreach_feature(W& weights, bool ignore_some_linear, bool ignore_linear[256],
+inline void foreach_feature(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     std::vector<std::string>& interactions, bool permutations, example_predict& ec, R& dat)
 {
   uint64_t offset = ec.ft_offset;
@@ -81,7 +81,7 @@ inline void foreach_feature(W& weights, bool ignore_some_linear, bool ignore_lin
 inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
 
 template <class W>
-inline float inline_predict(W& weights, bool ignore_some_linear, bool ignore_linear[256],
+inline float inline_predict(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     std::vector<std::string>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
 {
   foreach_feature<float, const float&, vec_add, W>(

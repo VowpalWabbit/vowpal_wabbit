@@ -9,7 +9,6 @@ license as described in the file LICENSE.
 #include "cb_algs.h"
 #include "io_buf.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
@@ -41,7 +40,7 @@ struct mwt
   {
     evals.delete_v();
     policies.delete_v();
-    for (size_t i = 0; i < 256; i++) feature_space[i].delete_v();
+    for (auto & i : feature_space) i.delete_v();
     indices.delete_v();
   }
 };
@@ -66,7 +65,7 @@ CB::cb_class* get_observed_cost(CB::label& ld)
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
   if (val < 0 || floor(val) != val)
-    cout << "error " << val << " is not a valid action " << endl;
+    std::cout << "error " << val << " is not a valid action " << std::endl;
 
   uint32_t value = (uint32_t)val;
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -132,10 +131,10 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   if (exclude || learn)
-    while (c.indices.size() > 0)
+    while (!c.indices.empty())
     {
       unsigned char ns = c.indices.pop();
-      swap(c.feature_space[ns], ec.feature_space[ns]);
+      std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
 
   // modify the predictions to use a vector with a score for each evaluated feature.
@@ -169,7 +168,7 @@ void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -195,10 +194,10 @@ void finish_example(vw& all, mwt& c, example& ec)
 
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.files.empty())
     return;
 
-  stringstream msg;
+  std::stringstream msg;
 
   // total
   msg << "total: " << c.total;
@@ -237,7 +236,7 @@ using namespace MWT;
 base_learner* mwt_setup(options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<mwt>();
-  string s;
+  std::string s;
   bool exclude_eval = false;
   option_group_definition new_options("Multiworld Testing Options");
   new_options.add(make_option("multiworld_test", s).keep().help("Evaluate features as a policies"))
@@ -248,7 +247,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (!options.was_supplied("multiworld_test"))
     return nullptr;
 
-  for (size_t i = 0; i < s.size(); i++) c->namespaces[(unsigned char)s[i]] = true;
+  for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
   calloc_reserve(c->evals, all.length());
@@ -264,7 +263,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
     if (!options.was_supplied("cb"))
     {
-      stringstream ss;
+      std::stringstream ss;
       ss << c->num_classes;
       options.insert("cb", ss.str());
     }

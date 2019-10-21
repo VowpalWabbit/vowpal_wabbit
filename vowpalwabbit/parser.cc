@@ -12,11 +12,12 @@ license as described in the file LICENSE.
 #include <netinet/tcp.h>
 #endif
 
-#include <signal.h>
+#include <csignal>
 
 #include <fstream>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #include <Windows.h>
 #include <io.h>
@@ -44,9 +45,9 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <netinet/in.h>
 #endif
 
-#include <errno.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cerrno>
+#include <cstdio>
+#include <cassert>
 
 #include "parse_example.h"
 #include "cache.h"
@@ -59,7 +60,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
 
-using namespace std;
+using std::endl;
 
 // This should not? matter in a library mode.
 bool got_sigterm;
@@ -219,7 +220,7 @@ void finalize_source(parser* p)
   p->output = nullptr;
 }
 
-void make_write_cache(vw& all, string& newname, bool quiet)
+void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
   io_buf* output = all.p->output;
   if (output->files.size() != 0)
@@ -228,7 +229,7 @@ void make_write_cache(vw& all, string& newname, bool quiet)
     return;
   }
 
-  string temp = newname + string(".writing");
+  std::string temp = newname + std::string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
   int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
@@ -263,7 +264,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       {
         f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (const exception&)
+      catch (const std::exception&)
       {
         f = -1;
       }
@@ -324,7 +325,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
     if (all.p->bound_sock < 0)
     {
-      stringstream msg;
+      std::stringstream msg;
       msg << "socket: " << strerror(errno);
       all.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
@@ -363,7 +364,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
-      ofstream port_file;
+      std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open())
         THROW("error writing port file: " << input_options.port_file);
@@ -383,7 +384,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     // write pid file
     if (all.options->was_supplied("pid_file"))
     {
-      ofstream pid_file;
+      std::ofstream pid_file;
       pid_file.open(input_options.pid_file.c_str());
       if (!pid_file.is_open())
         THROW("error writing pid file");
@@ -479,7 +480,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.final_prediction_sink.push_back((size_t)f);
 
     all.p->input->files.push_back(f);
-    all.p->max_fd = max(f, all.p->max_fd);
+    all.p->max_fd = std::max(f, all.p->max_fd);
     if (!all.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
@@ -503,24 +504,24 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   }
   else
   {
-    if (all.p->input->files.size() > 0)
+    if (!all.p->input->files.empty())
     {
       if (!quiet)
         all.trace_message << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
-      string temp = all.data_filename;
+      std::string temp = all.data_filename;
       if (!quiet)
         all.trace_message << "Reading datafile = " << temp << endl;
       try
       {
         all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (exception const& ex)
+      catch (std::exception const& ex)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
-        if (temp.size() != 0)
+        if (!temp.empty())
         {
           all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
         }
@@ -596,11 +597,11 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t init
       fs.push_back(1., new_index);
       if (fs.space_names.size() > 0)
       {
-        string feature_name(fs.space_names[i].get()->second);
+        std::string feature_name(fs.space_names[i].get()->second);
         for (size_t n = 1; n < gram_mask.size(); n++)
         {
-          feature_name += string("^");
-          feature_name += string(fs.space_names[i + gram_mask[n]].get()->second);
+          feature_name += std::string("^");
+          feature_name += std::string(fs.space_names[i + gram_mask[n]].get()->second);
         }
         fs.space_names.push_back(audit_strings_ptr(new audit_strings(fs.space_names[i].get()->first, feature_name)));
       }
@@ -715,13 +716,13 @@ void setup_example(vw& all, example* ae)
         i--;
       }
 
-  if (all.ngram_strings.size() > 0)
+  if (!all.ngram_strings.empty())
     generateGrams(all, ae);
 
   if (all.add_constant)  // add constant feature
     VW::add_constant_feature(all, ae);
 
-  if (all.limit_strings.size() > 0)
+  if (!all.limit_strings.empty())
     feature_limit(all, ae);
 
   uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
@@ -769,7 +770,7 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
+example* read_example(vw& all, std::string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {
@@ -788,7 +789,7 @@ void add_label(example* ec, float label, float weight, float base)
   ec->weight = weight;
 }
 
-example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
+example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
   all.p->lp.default_label(&ret->l);
@@ -843,7 +844,7 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
   delete (features);
 }
 
-void parse_example_label(vw& all, example& ec, string label)
+void parse_example_label(vw& all, example& ec, std::string label)
 {
   v_array<substring> words = v_init<substring>();
   char* cstr = (char*)label.c_str();
@@ -976,7 +977,7 @@ void free_parser(vw& all)
   all.p->words.delete_v();
   all.p->name.delete_v();
 
-  if (all.ngram_strings.size() > 0)
+  if (!all.ngram_strings.empty())
     all.p->gram_mask.delete_v();
 
   io_buf* output = all.p->output;

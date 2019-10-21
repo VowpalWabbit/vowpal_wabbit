@@ -8,7 +8,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "vw_exception.h"
 
-using namespace std;
 using namespace VW::config;
 
 /*
@@ -82,9 +81,9 @@ struct task_data
   // per-example data
   uint32_t N;                   // number of nodes
   uint32_t E;                   // number of edges
-  vector<vector<size_t>> adj;   // adj[n] is a vector of *edge example ids* that contain n
-  vector<uint32_t> bfs;         // order of nodes to process
-  vector<size_t> pred;          // predictions
+  std::vector<std::vector<size_t>> adj;   // adj[n] is a vector of *edge example ids* that contain n
+  std::vector<uint32_t> bfs;         // order of nodes to process
+  std::vector<size_t> pred;          // predictions
   example* cur_node;            // pointer to the current node for add_edge_features_fn
   float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
   uint32_t* confusion_matrix;
@@ -118,7 +117,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
-  cerr << "K=" << D->K << ", numN=" << D->numN << endl;
+  std::cerr << "K=" << D->K << ", numN=" << D->numN << std::endl;
   D->neighbor_predictions = calloc_or_throw<float>(D->numN);
 
   D->confusion_matrix = calloc_or_throw<uint32_t>((D->K + 1) * (D->K + 1));
@@ -148,7 +147,7 @@ inline bool example_is_edge(example* e) { return e->l.cs.costs.size() > 1; }
 void run_bfs(task_data& D, multi_ex& ec)
 {
   D.bfs.clear();
-  vector<bool> touched;
+  std::vector<bool> touched;
   for (size_t n = 0; n < D.N; n++) touched.push_back(false);
 
   touched[0] = true;
@@ -213,7 +212,7 @@ void setup(Search::search& sch, multi_ex& ec)
   if ((D.N == 0) && (D.E > 0))
     THROW("error: got edges without any nodes (perhaps ring_size is too small?)!");
 
-  D.adj = vector<vector<size_t>>(D.N, vector<size_t>(0));
+  D.adj = std::vector<std::vector<size_t>>(D.N, std::vector<size_t>(0));
 
   for (size_t i = D.N; i < ec.size(); i++)
   {
@@ -324,8 +323,8 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
 
     if (pred_total == 0.)
       continue;
-    // cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) cerr << ' ' << D.neighbor_predictions[k]; cerr
-    // << " ]" << endl;
+    // std::cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) std::cerr << ' ' << D.neighbor_predictions[k]; std::cerr
+    // << " ]" << std::endl;
     for (size_t k = 0; k < D.numN; k++) D.neighbor_predictions[k] /= pred_total;
     example& edge = *ec[i];
 
@@ -342,7 +341,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (string& i : all.pairs)
+  for (std::string& i : all.pairs)
   {
     int i0 = (int)i[0];
     int i1 = (int)i[1];
@@ -425,11 +424,11 @@ void run(Search::search& sch, multi_ex& ec)
       if (false && (k > 0))
       {
         float min_count = 1e12f;
-        for (size_t k2 = 1; k2 <= D.K; k2++) min_count = min(min_count, D.true_counts[k2]);
+        for (size_t k2 = 1; k2 <= D.K; k2++) min_count = std::min(min_count, D.true_counts[k2]);
         float w = min_count / D.true_counts[k];
         // float w = D.true_counts_total / D.true_counts[k] / (float)(D.K);
         P.set_weight(w);
-        // cerr << "w = " << D.true_counts_total / D.true_counts[k] / (float)(D.K) << endl;
+        // std::cerr << "w = " << D.true_counts_total / D.true_counts[k] / (float)(D.K) << std::endl;
         // P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
       }
       if (D.separate_learners)

@@ -9,7 +9,6 @@
 #include "reductions.h"
 #include "vw.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -140,7 +139,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       float multiplier = data.lr_multiplier;
       if (multiplier == 0)
       {
-        multiplier = max<float>(0.0001f, max<float>(abs(data.all->sd->min_label), abs(data.all->sd->max_label)));
+        multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
         if (multiplier > max_multiplier)
           multiplier = max_multiplier;
       }
@@ -179,15 +178,15 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
   VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
   data.ec->l.simple.label = ec.l.simple.label;
   data.ec->pred.scalar = ec.pred.scalar;
-  // cout << "before base" << endl;
+  // std::cout << "before base" << std::endl;
   const float baseline_sens = base.sensitivity(*data.ec);
-  // cout << "base sens: " << baseline_sens << endl;
+  // std::cout << "base sens: " << baseline_sens << std::endl;
 
   // sensitivity of residual
   as_singleline(&base)->predict(*data.ec);
   ec.l.simple.initial = data.ec->pred.scalar;
   const float sens = base.sensitivity(ec);
-  // cout << " residual sens: " << sens << endl;
+  // std::cout << " residual sens: " << sens << std::endl;
   return baseline_sens + sens;
 }
 

@@ -1,12 +1,11 @@
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 
 #include "gd.h"
 #include "vw.h"
 #include "reductions.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -115,7 +114,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->quiet)
     {
-      cout << "svrg pass " << pass << ": committing stable point" << endl;
+      std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -123,7 +122,7 @@ void learn(svrg& s, single_learner& base, example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      cout << "svrg pass " << pass << ": computing exact gradient" << endl;
+      std::cout << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
@@ -132,7 +131,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->quiet)
     {
-      cout << "svrg pass " << pass << ": taking steps" << endl;
+      std::cout << "svrg pass " << pass << ": taking steps" << std::endl;
     }
     update_inner(s, ec);
   }
@@ -147,10 +146,10 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     initialize_regressor(*s.all);
   }
 
-  if (model_file.files.size() > 0)
+  if (!model_file.files.empty())
   {
     bool resume = s.all->save_resume;
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 

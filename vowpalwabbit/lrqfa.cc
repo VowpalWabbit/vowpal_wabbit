@@ -4,13 +4,12 @@
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
-using namespace std;
 using namespace VW::config;
 
 struct LRQFAstate
 {
   vw* all;
-  string field_name;
+  std::string field_name;
   int k;
   int field_id[256];
   size_t orig_size[256];
@@ -38,7 +37,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   float first_loss = 0;
   unsigned int maxiter = (is_learn && !example_is_test(ec)) ? 2 : 1;
   unsigned int k = lrq.k;
-  float sqrtk = (float)sqrt(k);
+  float sqrtk = (float)std::sqrt(k);
 
   uint32_t stride_shift = lrq.all->weights.stride_shift();
   uint64_t weight_mask = lrq.all->weights.mask();
@@ -47,9 +46,9 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
 
-    for (string::const_iterator i1 = lrq.field_name.begin(); i1 != lrq.field_name.end(); ++i1)
+    for (std::string::const_iterator i1 = lrq.field_name.begin(); i1 != lrq.field_name.end(); ++i1)
     {
-      for (string::const_iterator i2 = i1 + 1; i2 != lrq.field_name.end(); ++i2)
+      for (std::string::const_iterator i2 = i1 + 1; i2 != lrq.field_name.end(); ++i2)
       {
         unsigned char left = (which % 2) ? *i1 : *i2;
         unsigned char right = ((which + 1) % 2) ? *i1 : *i2;
@@ -144,9 +143,9 @@ LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   auto lrq = scoped_calloc_or_throw<LRQFAstate>();
   lrq->all = &all;
 
-  string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
+  std::string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
-  new (&lrq->field_name) string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
+  new (&lrq->field_name) std::string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());
 
   int fd_id = 0;

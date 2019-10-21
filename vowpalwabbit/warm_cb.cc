@@ -14,7 +14,6 @@
 using namespace LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
-using namespace std;
 using namespace VW::config;
 
 #define WARM_START 1
@@ -64,13 +63,13 @@ struct warm_cb
   // auxiliary variables
   uint32_t num_actions;
   float epsilon;
-  vector<float> lambdas;
+  std::vector<float> lambdas;
   action_scores a_s_adf;
-  vector<float> cumulative_costs;
+  std::vector<float> cumulative_costs;
   CB::cb_class cl_adf;
   uint32_t ws_train_size;
   uint32_t ws_vali_size;
-  vector<example*> ws_vali;
+  std::vector<example*> ws_vali;
   float cumu_var;
   uint32_t ws_iter;
   uint32_t inter_iter;
@@ -134,7 +133,7 @@ float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fi
 }
 
 template <class T>
-uint32_t find_min(vector<T> arr)
+uint32_t find_min(std::vector<T> arr)
 {
   T min_val = FLT_MAX;
   uint32_t argmin = 0;
@@ -156,10 +155,10 @@ void finish(warm_cb& data)
 
   if (!data.all->quiet)
   {
-    cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << endl;
-    cerr << "theoretical average variance = " << data.num_actions / data.epsilon << endl;
-    cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
-         << " to " << data.lambdas[data.choices_lambda - 1] << endl;
+    std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    std::cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
+         << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 
@@ -203,7 +202,7 @@ float minimax_lambda(float epsilon) { return epsilon / (1.0f + epsilon); }
 void setup_lambdas(warm_cb& data)
 {
   // The lambdas are arranged in ascending order
-  vector<float>& lambdas = data.lambdas;
+  std::vector<float>& lambdas = data.lambdas;
   for (uint32_t i = 0; i < data.choices_lambda; i++) lambdas.push_back(0.f);
 
   // interaction only: set all lambda's to be identically 1
@@ -362,7 +361,7 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
     data.ecs[a]->l.cs = csls[a];
   }
 
-  vector<float> old_weights;
+  std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
@@ -417,7 +416,7 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   auto& lab = data.ecs[cl.action - 1]->l.cb;
   lab.costs.push_back(cl);
 
-  vector<float> old_weights;
+  std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
@@ -618,13 +617,13 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   init_adf_data(*data.get(), num_actions);
 
-  options.insert("cb_min_cost", to_string(data->loss0));
-  options.insert("cb_max_cost", to_string(data->loss1));
+  options.insert("cb_min_cost", std::to_string(data->loss0));
+  options.insert("cb_max_cost", std::to_string(data->loss1));
 
   if (options.was_supplied("baseline"))
   {
-    stringstream ss;
-    ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
+    std::stringstream ss;
+    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
@@ -637,7 +636,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("epsilon"))
   {
-    cerr << "Warning: no epsilon (greedy parameter) specified; resetting to 0.05" << endl;
+    std::cerr << "Warning: no epsilon (greedy parameter) specified; resetting to 0.05" << std::endl;
     data->epsilon = 0.05f;
   }
 

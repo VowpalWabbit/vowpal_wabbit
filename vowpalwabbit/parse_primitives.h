@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "hashstring.h"
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #include <Windows.h>
 #endif
@@ -19,7 +20,7 @@ license as described in the file LICENSE.
 std::ostream& operator<<(std::ostream& os, const substring& ss);
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);
 
-// chop up the string into a v_array or any compatible container of substring.
+// chop up the  string into a v_array or any compatible container of substring.
 template <typename ContainerT>
 void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false)
 {
@@ -70,7 +71,7 @@ hash_func_t getHasher(const std::string& s);
 
 // The following function is a home made strtof. The
 // differences are :
-//  - much faster (around 50% but depends on the string to parse)
+//  - much faster (around 50% but depends on the  string to parse)
 //  - less error control, but utilised inside a very strict parser
 //    in charge of error detection.
 inline float parseFloat(char* p, char** end, char* endLine = nullptr)

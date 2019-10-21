@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <float.h>
-#include <errno.h>
+#include <cfloat>
+#include <cerrno>
 
 #include "correctedMath.h"
 #include "reductions.h"
@@ -16,7 +16,6 @@ license as described in the file LICENSE.
 #include <algorithm>
 #include "csoaa.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
@@ -57,13 +56,13 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
-  // cerr << "------------- passthrough" << endl;
+  // std::cerr << "------------- passthrough" << std::endl;
   COST_SENSITIVE::label ld = ec.l.cs;
   uint32_t prediction = 1;
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0., 0., 0.};
-  if (ld.costs.size() > 0)
+  if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
       inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
@@ -167,20 +166,20 @@ struct ldf
 
 bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
 {
-  if (ec.indices.size() < 1)
+  if (ec.indices.empty())
     return false;
   if (ec.indices[0] != 'l')
     return false;
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  for (size_t j = 0; j < costs.size(); j++)
-    if ((costs[j].class_index != 0) || (costs[j].x <= 0.))
+  for (auto const& cost : costs)
+    if ((cost.class_index != 0) || (cost.x <= 0.))
       return false;
   return true;
 }
 
 bool ec_seq_is_label_definition(multi_ex& ec_seq)
 {
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return false;
   bool is_lab = ec_is_label_definition(*ec_seq[0]);
   for (size_t i = 1; i < ec_seq.size(); i++)
@@ -196,7 +195,7 @@ bool ec_seq_has_label_definition(multi_ex& ec_seq)
 
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
 
-void compute_wap_values(vector<COST_SENSITIVE::wclass*> costs)
+void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
 {
   std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
   costs[0]->wap_value = 0.;
@@ -226,17 +225,17 @@ void subtract_example(vw& all, example* ec, example* ecsub)
 
 void unsubtract_example(example* ec)
 {
-  if (ec->indices.size() == 0)
+  if (ec->indices.empty())
   {
-    cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;
+    std::cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << std::endl;
     return;
   }
 
   if (ec->indices.last() != wap_ldf_namespace)
   {
-    cerr << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
+    std::cerr << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
             "after and not removed!"
-         << endl;
+         << std::endl;
     return;
   }
 
@@ -267,7 +266,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
 {
   bool isTest;
-  if (0 == ec_seq.size())
+  if (ec_seq.empty())
     isTest = true;
   else
     isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[0]->l);
@@ -279,7 +278,7 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
     if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
     {
       isTest = true;
-      data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
+      data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << std::endl;
     }
   }
   return isTest;
@@ -307,7 +306,7 @@ void base_learn_restore_pred(single_learner& base, example* ec1) {
 void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
-  vector<COST_SENSITIVE::wclass*> all_costs;
+  std::vector<COST_SENSITIVE::wclass*> all_costs;
   for (const auto& example : ec_seq) all_costs.push_back(&example->l.cs.costs[0]);
   compute_wap_values(all_costs);
 
@@ -465,7 +464,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return;  // nothing more to do
 
   // Ensure there are no more labels
@@ -560,13 +559,12 @@ void global_print_newline(vw& all)
 {
   char temp[1];
   temp[0] = '\n';
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for (int f : all.final_prediction_sink)
   {
-    int f = all.final_prediction_sink[i];
     ssize_t t;
     t = io_buf::write_file_or_socket(f, temp, 1);
     if (t != 1)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -608,13 +606,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (size_t j = 0; j < costs.size(); j++)
+    for (auto const& cost : costs)
     {
       if (hit_loss)
         break;
-      if (predicted_class == costs[j].class_index)
+      if (predicted_class == cost.class_index)
       {
-        loss = costs[j].x;
+        loss = cost.x;
         hit_loss = true;
       }
     }
@@ -628,15 +626,15 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
       if (i > 0)
         outputStringStream << ' ';
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
-    // outputStringStream << endl;
+    // outputStringStream << std::endl;
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
@@ -681,15 +679,15 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
       if (i > 0)
         outputStringStream << ' ';
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
-    // outputStringStream << endl;
+    // outputStringStream << std::endl;
     all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
   }
 
@@ -756,7 +754,7 @@ void end_pass(ldf& data) { data.first_pass = false; }
 
 void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
@@ -772,9 +770,9 @@ void inline process_label(ldf& data, example* ec)
 {
   auto new_fs = ec->feature_space[ec->indices[0]];
   auto& costs = ec->l.cs.costs;
-  for (size_t j = 0; j < costs.size(); j++)
+  for (auto const& cost : costs)
   {
-    const auto lab = (size_t)costs[j].x;
+    const auto lab = (size_t)cost.x;
     LabelDict::set_label_features(data.label_features, lab, new_fs);
   }
 }
@@ -852,7 +850,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->all = &all;
   ld->first_pass = true;
 
-  string ldf_arg;
+  std::string ldf_arg;
 
   if (options.was_supplied("csoaa_ldf"))
     ldf_arg = csoaa_ldf;
@@ -870,16 +868,16 @@ base_learner* csldf_setup(options_i& options, vw& all)
   all.label_type = label_type::cs;
 
   ld->treat_as_classifier = false;
-  if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
+  if (ldf_arg == "multiline" || ldf_arg == "m")
     ld->treat_as_classifier = false;
-  else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0)
+  else if (ldf_arg == "multiline-classifier" || ldf_arg == "mc")
     ld->treat_as_classifier = true;
   else
   {
     if (all.training)
       THROW("ldf requires either m/multiline or mc/multiline-classifier");
-    if ((ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) ||
-        (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0))
+    if ((ldf_arg == "singleline" || ldf_arg == "s") ||
+        (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
       THROW(
           "ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no "
           "longer supported");
@@ -890,9 +888,9 @@ base_learner* csldf_setup(options_i& options, vw& all)
     all.sd->report_multiclass_log_loss = true;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
-      all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+      all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
     if (!ld->treat_as_classifier)
-      all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
+      all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << std::endl;
   }
 
   all.p->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;

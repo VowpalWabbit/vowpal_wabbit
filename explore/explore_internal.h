@@ -5,7 +5,7 @@
 // get the error code defined in master
 #include "explore.h"
 
-#include <stdint.h>
+#include <cstdint>
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
@@ -17,7 +17,7 @@ namespace exploration
   const uint64_t a = 0xeece66d5deece66dULL;
   const uint64_t c = 2147483647;
 
-  const int bias = 127 << 23;
+  const int bias = 127 << 23u;
 
   union int_float
   {
@@ -76,8 +76,8 @@ namespace exploration
     if (num_actions_scores != num_actions_pdf)
     {
       // fallback to the minimum
-      scores_last = scores_first + ((std::min)(num_actions_scores, num_actions_pdf));
-      OutputIt pdf_new_last = pdf_first + ((std::min)(num_actions_scores, num_actions_pdf));
+      scores_last = scores_first + std::min(num_actions_scores, num_actions_pdf);
+      OutputIt pdf_new_last = pdf_first + std::min(num_actions_scores, num_actions_pdf);
 
       // zero out pdf
       for (OutputIt d = pdf_new_last; d != pdf_last; ++d)

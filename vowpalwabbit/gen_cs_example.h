@@ -137,7 +137,7 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
         ((c.known_cost->cost - wc.x) * (c.known_cost->cost - wc.x) - c.avg_loss_regressors);
     c.last_pred_reg = wc.x;
     c.last_correct_cost = c.known_cost->cost;
-    wc.x += (c.known_cost->cost - wc.x) / (std::max)(c.known_cost->probability, clip_p);
+    wc.x += (c.known_cost->cost - wc.x) / std::max(c.known_cost->probability, clip_p);
   }
 
   cs_ld.costs.push_back(wc);
@@ -225,7 +225,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
 
     // add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action == i)
-      wc.x += (c.known_cost.cost - wc.x) / (std::max)(c.known_cost.probability, clip_p);
+      wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p);
     cs_labels.costs.push_back(wc);
   }
 }

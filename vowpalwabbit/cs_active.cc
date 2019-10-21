@@ -11,9 +11,11 @@
 #define B_SEARCH_MAX_ITER 20
 
 using namespace LEARNER;
-using namespace std;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
+
+using std::cerr;
+using std::endl;
 
 struct lq_data
 {
@@ -65,7 +67,7 @@ struct cs_active
 
 float binarySearch(float fhat, float delta, float sens, float tol)
 {
-  float maxw = min(fhat / sens, FLT_MAX);
+  float maxw = std::min(fhat / sens, FLT_MAX);
 
   if (maxw * fhat * fhat <= delta)
     return maxw;
@@ -163,9 +165,9 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
   {
     // finding max_pred and min_pred by binary search
     max_pred =
-        min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
+        std::min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
     min_pred =
-        max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+        std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
       cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
@@ -183,7 +185,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
   {
     // save regressor
-    stringstream filename;
+    std::stringstream filename;
     filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
              << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
@@ -219,8 +221,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   float t = (float)cs_a.t;  // ec.example_t;  // current round
   float t_prev = t - 1.f;   // ec.weight; // last round
 
-  float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / sqrt(t);  // threshold on cost range
-  float delta = cs_a.c0 * log((float)(cs_a.num_classes * max(t_prev, 1.f))) *
+  float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / std::sqrt(t);  // threshold on cost range
+  float delta = cs_a.c0 * log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
       pow(cs_a.cost_max - cs_a.cost_min, 2);  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
@@ -235,7 +237,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     for (lq_data& lqd : cs_a.query_data)
     {
       find_cost_range(cs_a, base, ec, lqd.cl.class_index, delta, eta, lqd.min_pred, lqd.max_pred, lqd.is_range_large);
-      min_max_cost = min(min_max_cost, lqd.max_pred);
+      min_max_cost = std::min(min_max_cost, lqd.max_pred);
     }
     for (lq_data& lqd : cs_a.query_data)
     {
@@ -243,15 +245,15 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       n_overlapped += (uint32_t)(lqd.is_range_overlapped);
       // large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
       // if(cl.is_range_overlapped && is_learn)
-      //{ cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ",
+      //{ std::cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ",
       // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
       //}
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
       if (lqd.cl.x > lqd.max_pred || lqd.cl.x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
-        // cs_a.all->sd->distance_to_range[cl.class_index-1] += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
-        cs_a.distance_to_range += max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
+        // cs_a.all->sd->distance_to_range[cl.class_index-1] += std::max(cl.x - cl.max_pred, cl.min_pred - cl.x);
+        cs_a.distance_to_range += std::max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
         cs_a.range += lqd.max_pred - lqd.min_pred;
       }
     }

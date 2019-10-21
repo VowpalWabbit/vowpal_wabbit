@@ -6,14 +6,13 @@ license as described in the file LICENSE.
 
 #include <cmath>
 #include <math.h>
-#include <ctype.h>
+#include <cctype>
 #include "parse_example.h"
 #include "hash.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
 
-using namespace std;
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
@@ -63,16 +62,16 @@ class TC_parser
   unsigned char index;
   float v;
   bool redefine_some;
-  unsigned char (*redefine)[256];
+  std::array<unsigned char, NUM_NAMESPACES>* redefine;
   parser* p;
   example* ae;
-  uint64_t* affix_features;
-  bool* spelling_features;
+  std::array<uint64_t, NUM_NAMESPACES>* affix_features;
+  std::array<bool, NUM_NAMESPACES>* spelling_features;
   v_array<char> spelling;
   uint32_t hash_seed;
   uint64_t parse_mask;
 
-  vector<feature_dict*>* namespace_dictionaries;
+  std::array<std::vector<feature_dict*>, NUM_NAMESPACES>* namespace_dictionaries;
 
   ~TC_parser() {}
 
@@ -80,14 +79,14 @@ class TC_parser
   {
     std::stringstream ss;
     ss << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
-       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << endl;
+       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << std::endl;
     if (p->strict_parse)
     {
       THROW_EX(VW::strict_parse_exception, ss.str());
     }
     else
     {
-      cerr << ss.str();
+      std::cerr << ss.str();
     }
   }
 
@@ -163,12 +162,12 @@ class TC_parser
         fs.space_names.push_back(audit_strings_ptr(new audit_strings(base, feature_v.begin())));
         feature_v.delete_v();
       }
-      if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
+      if ((*affix_features)[index] > 0 && (feature_name.end != feature_name.begin))
       {
         features& affix_fs = ae->feature_space[affix_namespace];
         if (affix_fs.size() == 0)
           ae->indices.push_back(affix_namespace);
-        uint64_t affix = affix_features[index];
+        uint64_t affix = (*affix_features)[index];
         while (affix > 0)
         {
           bool is_prefix = affix & 0x1;
@@ -199,7 +198,7 @@ class TC_parser
           affix >>= 4;
         }
       }
-      if (spelling_features[index])
+      if ((*spelling_features)[index])
       {
         features& spell_fs = ae->feature_space[spelling_namespace];
         if (spell_fs.size() == 0)
@@ -238,11 +237,10 @@ class TC_parser
           spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling", spelling_v.begin())));
         }
       }
-      if (namespace_dictionaries[index].size() > 0)
+      if ((*namespace_dictionaries)[index].size() > 0)
       {
-        for (size_t dict = 0; dict < namespace_dictionaries[index].size(); dict++)
+        for(auto map : (*namespace_dictionaries)[index])
         {
-          feature_dict* map = namespace_dictionaries[index][dict];
           uint64_t hash = uniform_hash(feature_name.begin, feature_name.end - feature_name.begin, quadratic_constant);
           features* feats = map->get(feature_name, hash);
           if ((feats != nullptr) && (feats->values.size() > 0))
@@ -257,7 +255,7 @@ class TC_parser
               for (size_t i = 0; i < feats->indicies.size(); ++i)
               {
                 uint64_t id = feats->indicies[i];
-                stringstream ss;
+                std::stringstream ss;
                 ss << index << '_';
                 for (char* fc = feature_name.begin; fc != feature_name.end; ++fc) ss << *fc;
                 ss << '=' << id;
@@ -412,9 +410,9 @@ class TC_parser
       this->redefine_some = all.redefine_some;
       this->redefine = &all.redefine;
       this->ae = ae;
-      this->affix_features = all.affix_features;
-      this->spelling_features = all.spelling_features;
-      this->namespace_dictionaries = all.namespace_dictionaries;
+      this->affix_features = &all.affix_features;
+      this->spelling_features = &all.spelling_features;
+      this->namespace_dictionaries = &all.namespace_dictionaries;
       this->base = nullptr;
       this->hash_seed = all.hash_seed;
       this->parse_mask = all.parse_mask;
@@ -448,7 +446,7 @@ void substring_to_example(vw* all, example* ae, substring example)
   else
   {
     tokenize(' ', label_space, all->p->words);
-    if (all->p->words.size() > 0 &&
+    if (!all->p->words.empty() &&
         (all->p->words.last().end == label_space.end ||
             *(all->p->words.last().begin) == '\''))  // The last field is a tag, so record and strip it off
     {
@@ -459,7 +457,7 @@ void substring_to_example(vw* all, example* ae, substring example)
     }
   }
 
-  if (all->p->words.size() > 0)
+  if (!all->p->words.empty())
     all->p->lp.parse_label(all->p, all->sd, &ae->l, all->p->words);
 
   if (all->audit || all->hash_inv)
@@ -468,7 +466,7 @@ void substring_to_example(vw* all, example* ae, substring example)
     TC_parser<false> parser_line(bar_location, example.end, *all, ae);
 }
 
-std::vector<std::string> split(char* phrase, std::string delimiter)
+std::vector<std::string> split(char* phrase, const std::string& delimiter)
 {
   std::vector<std::string> list;
   std::string s = std::string(phrase);

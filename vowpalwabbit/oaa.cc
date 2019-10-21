@@ -4,15 +4,14 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <sstream>
-#include <float.h>
-#include <math.h>
+#include <cfloat>
+#include <cmath>
 #include "correctedMath.h"
 #include "reductions.h"
 #include "rand48.h"
 #include "vw_exception.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct oaa
@@ -35,7 +34,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
-    cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << endl;
+    std::cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
   ec.l.simple = {1., 0.f, 0.f};  // truth
   base.learn(ec, ld.label - 1);
@@ -74,9 +73,9 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
-    cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << endl;
+    std::cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
-  stringstream outputStringStream;
+  std::stringstream outputStringStream;
   uint32_t prediction = 1;
   v_array<float> scores_array;
   if (scores)
@@ -169,7 +168,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     zero_one_loss = ec.weight;
 
   // === Print probabilities for all classes
-  ostringstream outputStringStream;
+  std::ostringstream outputStringStream;
   for (uint32_t i = 0; i < o.k; i++)
   {
     if (i > 0)
@@ -177,7 +176,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     if (all.sd->ldict)
     {
       substring ss = all.sd->ldict->get(i + 1);
-      outputStringStream << string(ss.begin, ss.end - ss.begin);
+      outputStringStream << std::string(ss.begin, ss.end - ss.begin);
     }
     else
       outputStringStream << i + 1;
@@ -229,7 +228,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     if (data->num_subsample >= data->k)
     {
       data->num_subsample = 0;
-      all.trace_message << "oaa is turning off subsampling because your parameter >= K" << endl;
+      all.trace_message << "oaa is turning off subsampling because your parameter >= K" << std::endl;
     }
     else
     {
@@ -255,7 +254,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     {
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
-        all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+        all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
           predict_or_learn<false, false, true, true>, all.p, data->k, "oaa-prob", prediction_type::scalars);

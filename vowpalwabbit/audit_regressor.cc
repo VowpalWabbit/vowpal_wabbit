@@ -9,7 +9,6 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct audit_regressor_data
@@ -18,7 +17,7 @@ struct audit_regressor_data
   size_t increment;
   size_t cur_class;
   size_t total_class_cnt;
-  vector<string>* ns_pre;
+  std::vector<std::string>* ns_pre;
   io_buf* out_file;
   size_t loaded_regressor_values;
   size_t values_audited;
@@ -33,7 +32,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
     return;
   }
 
-  string ns_pre;
+  std::string ns_pre;
   if (!dat.ns_pre->empty())
     ns_pre += '*';
 
@@ -57,15 +56,15 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   else
     return;
 
-  string ns_pre;
-  for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
+  std::string ns_pre;
+  for (std::vector<std::string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
 
-  ostringstream tempstream;
+  std::ostringstream tempstream;
   tempstream << ':' << ((ft_idx & weights.mask()) >> weights.stride_shift()) << ':' << weights[ft_idx];
 
-  string temp = ns_pre + tempstream.str() + '\n';
+  std::string temp = ns_pre + tempstream.str() + '\n';
   if (dat.total_class_cnt > 1)  // add class prefix for multiclass problems
-    temp = to_string(dat.cur_class) + ':' + temp;
+    temp = std::to_string(dat.cur_class) + ':' + temp;
 
   dat.out_file->bin_write_fixed(temp.c_str(), (uint32_t)temp.size());
 
@@ -76,7 +75,7 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
 {
   vw& all = *rd.all;
 
-  ostringstream tempstream;
+  std::ostringstream tempstream;
   parameters& weights = rd.all->weights;
   for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
   {
@@ -91,7 +90,7 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
         tempstream << ':' << w;
         w = 0.;
       }
-      tempstream << endl;
+      tempstream << std::endl;
     }
   }
 
@@ -187,7 +186,7 @@ void finish(audit_regressor_data& dat)
 {
   if (dat.values_audited < dat.loaded_regressor_values)
     dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset ("
-                           << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
+                           << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << std::endl;
 }
 
 template <class T>
@@ -246,7 +245,7 @@ void init_driver(audit_regressor_data& dat)
 
 LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
-  string out_file;
+  std::string out_file;
 
   option_group_definition new_options("Audit Regressor");
   new_options.add(make_option("audit_regressor", out_file)
@@ -268,7 +267,7 @@ LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 
   auto dat = scoped_calloc_or_throw<audit_regressor_data>();
   dat->all = &all;
-  dat->ns_pre = new vector<string>();  // explicitly invoking vector's constructor
+  dat->ns_pre = new std::vector<std::string>();  // explicitly invoking std::vector's constructor
   dat->out_file = new io_buf();
   dat->out_file->open_file(out_file.c_str(), all.stdin_off, io_buf::WRITE);
 

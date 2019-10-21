@@ -69,7 +69,7 @@ example* read_example(vw& all, std::string example_line);
 // The more complex way to create an example.
 
 // after you create and fill feature_spaces, get an example with everything filled in.
-example* import_example(vw& all, std::string label, primitive_feature_space* features, size_t len);
+example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len);
 
 // callers must free memory using release_example
 // this interface must be used with care as finish_example is a no-op for these examples.
@@ -125,14 +125,14 @@ void save_predictor(vw& all, io_buf& buf);
 // inlines
 
 // First create the hash of a namespace.
-inline uint64_t hash_space(vw& all, std::string s)
+inline uint64_t hash_space(vw& all, const std::string& s)
 {
   substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return all.p->hasher(ss, all.hash_seed);
 }
-inline uint64_t hash_space_static(std::string s, std::string hash)
+inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
   substring ss;
   ss.begin = (char*)s.c_str();
@@ -140,14 +140,14 @@ inline uint64_t hash_space_static(std::string s, std::string hash)
   return getHasher(hash)(ss, 0);
 }
 // Then use it as the seed for hashing features.
-inline uint64_t hash_feature(vw& all, std::string s, uint64_t u)
+inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {
   substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return all.p->hasher(ss, u) & all.parse_mask;
 }
-inline uint64_t hash_feature_static(std::string s, uint64_t u, std::string h, uint32_t num_bits)
+inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
   substring ss;
   ss.begin = (char*)s.c_str();

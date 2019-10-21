@@ -20,14 +20,15 @@ license as described in the file LICENSE.
 #include <boost/math/special_functions/gamma.hpp>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>
 #endif
 
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cstring>
+#include <cstdio>
+#include <cassert>
 #include "no_label.h"
 #include "gd.h"
 #include "rand48.h"
@@ -39,7 +40,6 @@ license as described in the file LICENSE.
 #include <boost/align/is_aligned.hpp>
 #endif
 
-using namespace std;
 using namespace VW::config;
 
 enum lda_math_mode
@@ -804,10 +804,10 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     else
       all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
   }
-  if (model_file.files.size() > 0)
+  if (!model_file.files.empty())
   {
     uint64_t i = 0;
-    stringstream msg;
+    std::stringstream msg;
     size_t brw = 1;
 
     do
@@ -888,7 +888,7 @@ void learn_batch(lda &l)
   float eta = -1;
   float minuseta = -1;
 
-  if (l.total_lambda.size() == 0)
+  if (l.total_lambda.empty())
   {
     for (size_t k = 0; k < l.all->lda; k++) l.total_lambda.push_back(0.f);
     // This part does not work with sparse parameters
@@ -1069,7 +1069,7 @@ void get_top_weights(vw *all, int top_words_count, int topic, std::vector<featur
   std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
   typename T::iterator iter = weights.begin();
 
-  for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
+  for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
     top_features.push({(&(*iter))[topic], iter.index()});
 
   for (uint64_t i = top_words_count; i < length; i++, ++iter)
@@ -1115,7 +1115,7 @@ void compute_coherence_metrics(lda &l, T &weights)
     auto cmp = [](feature &left, feature &right) { return left.x > right.x; };
     std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
     typename T::iterator iter = weights.begin();
-    for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
+    for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
       top_features.push(feature((&(*iter))[topic], iter.index()));
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
@@ -1126,7 +1126,7 @@ void compute_coherence_metrics(lda &l, T &weights)
       }
 
     // extract idx and sort descending
-    vector<uint64_t> top_features_idx;
+    std::vector<uint64_t> top_features_idx;
     top_features_idx.resize(top_features.size());
     for (int i = (int)top_features.size() - 1; i >= 0; i--)
     {
@@ -1137,7 +1137,7 @@ void compute_coherence_metrics(lda &l, T &weights)
     auto &word_pairs = topics_word_pairs[topic];
     for (size_t i = 0; i < top_features_idx.size(); i++)
       for (size_t j = i + 1; j < top_features_idx.size(); j++)
-        word_pairs.push_back(feature_pair(top_features_idx[i], top_features_idx[j]));
+        word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]);
   }
 
   // compress word pairs and create record for storing frequency
@@ -1245,7 +1245,7 @@ void compute_coherence_metrics(lda &l)
 
 void end_pass(lda &l)
 {
-  if (l.examples.size())
+  if (!l.examples.empty())
     learn_batch(l);
 
   if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
@@ -1326,7 +1326,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   all.lda = (uint32_t)ld->topics;
   all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
-  ld->total_lambda_init = 0;
+  ld->total_lambda_init = false;
   ld->all = &all;
   ld->example_t = all.initial_t;
   if (ld->compute_coherence_metrics)
@@ -1344,7 +1344,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   if (all.eta > 1.)
   {
     std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
-    all.eta = min(all.eta, 1.f);
+    all.eta = std::min(all.eta, 1.f);
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);

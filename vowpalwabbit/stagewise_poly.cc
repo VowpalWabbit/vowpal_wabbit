@@ -9,7 +9,6 @@
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -69,7 +68,7 @@ struct stagewise_poly
   ~stagewise_poly()
   {
 #ifdef DEBUG
-    cout << "total feature number (after poly expansion!) = " << sum_sparsity << endl;
+    cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
     synth_ec.feature_space[tree_atomics].delete_v();
@@ -91,7 +90,7 @@ inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 {
-  // cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << endl;
+  // std::cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << std::endl;
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   return idx + poly.synth_ec.ft_offset;
 }
@@ -238,11 +237,11 @@ void sort_data_ensure_sz(stagewise_poly &poly, size_t len)
   {
     size_t len_candidate = 2 * len;
 #ifdef DEBUG
-    cout << "resizing sort buffer; current size " << poly.sd_len;
+    std::cout << "resizing sort buffer; current size " << poly.sd_len;
 #endif  // DEBUG
     poly.sd_len = (len_candidate > poly.all->length()) ? poly.all->length() : len_candidate;
 #ifdef DEBUG
-    cout << ", new size " << poly.sd_len << endl;
+    std::cout << ", new size " << poly.sd_len << std::endl;
 #endif              // DEBUG
     free(poly.sd);  // okay for null.
     poly.sd = calloc_or_throw<sort_data>(poly.sd_len);
@@ -287,7 +286,7 @@ void sort_data_update_support(stagewise_poly &poly)
   sort_data_ensure_sz(poly, num_new_features);
 
   sort_data *heap_end = poly.sd;
-  make_heap(poly.sd, heap_end, sort_data_compar_heap);  // redundant
+  std::make_heap(poly.sd, heap_end, sort_data_compar_heap);  // redundant
   for (uint64_t i = 0; i != poly.all->length(); ++i)
   {
     uint64_t wid = stride_shift(poly, i);
@@ -310,7 +309,7 @@ void sort_data_update_support(stagewise_poly &poly)
 
         if (heap_end - poly.sd == (int)num_new_features && poly.sd->weightsal < weightsal)
         {
-          pop_heap(poly.sd, heap_end, sort_data_compar_heap);
+          std::pop_heap(poly.sd, heap_end, sort_data_compar_heap);
           --heap_end;
         }
 
@@ -322,7 +321,7 @@ void sort_data_update_support(stagewise_poly &poly)
           heap_end->weightsal = weightsal;
           heap_end->wid = wid;
           ++heap_end;
-          push_heap(poly.sd, heap_end, sort_data_compar_heap);
+          std::push_heap(poly.sd, heap_end, sort_data_compar_heap);
         }
       }
     }
@@ -340,20 +339,20 @@ void sort_data_update_support(stagewise_poly &poly)
         poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
-    cout << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid << " || sort value "
-         << poly.sd[pos].weightsal << endl;
+    std::cout << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid << " || sort value "
+         << poly.sd[pos].weightsal << std::endl;
 #endif  // DEBUG
   }
 
 #ifdef DEBUG
-  cout << "depths:";
+  std::cout << "depths:";
   for (uint64_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
-    cout << "  [" << depth << "] = " << poly.depths[depth];
-  cout << endl;
+    std::cout << "  [" << depth << "] = " << poly.depths[depth];
+  std::cout << std::endl;
 
-  cout << "Sanity check after sort... " << flush;
+  std::cout << "Sanity check after sort... " << flush;
   sanity_check_state(poly);
-  cout << "done" << endl;
+  std::cout << "done" << std::endl;
 #endif  // DEBUG
 
   // it's okay that these may have been initially unequal; synth_ec value irrelevant so far.
@@ -429,8 +428,8 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
     if (parent_get(poly, wid_cur))
     {
 #ifdef DEBUG
-      cout << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth " << (uint64_t)min_depths_get(poly, wid_cur)
-           << " to depth " << poly.cur_depth << endl;
+     std::cout << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth " << (uint64_t)min_depths_get(poly, wid_cur)
+           << " to depth " << poly.cur_depth << std::endl;
 #endif  // DEBUG
       // XXX arguably, should also fear transplants that occured with
       // a different ft_offset ; e.g., need to look out for cross-reduction
@@ -563,7 +562,7 @@ void reduce_min_max(uint8_t &v1, const uint8_t &v2)
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
-    cout << "Reducing parent with depth!!!!!";
+    std::cout << "Reducing parent with depth!!!!!";
 #endif  // DEBUG
     return;
   }
@@ -589,7 +588,7 @@ void end_pass(stagewise_poly &poly)
   uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
 #ifdef DEBUG
-  cout << "Sanity before allreduce\n";
+  std::cout << "Sanity before allreduce\n";
   sanity_check_state(poly);
 #endif  // DEBUG
 
@@ -617,7 +616,7 @@ void end_pass(stagewise_poly &poly)
   poly.num_examples = poly.num_examples_sync;
 
 #ifdef DEBUG
-  cout << "Sanity after allreduce\n";
+  std::cout << "Sanity after allreduce\n";
   sanity_check_state(poly);
 #endif  // DEBUG
 
@@ -641,16 +640,16 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)
   {
-    stringstream msg;
+    std::stringstream msg;
     bin_text_read_write_fixed(
         model_file, (char *)poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
   //#ifdef DEBUG
-  //      cout << "Sanity check after save_load... " << flush;
+  //      std::cout << "Sanity check after save_load... " << flush;
   //      sanity_check_state(poly);
-  //      cout << "done" << endl;
+  //      std::cout << "done" << std::endl;
   //#endif //DEBUG
 }
 

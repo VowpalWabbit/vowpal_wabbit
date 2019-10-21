@@ -1,7 +1,7 @@
 #include <unordered_map>
 #include "reductions.h"
 
-using namespace std;
+
 using namespace VW::config;
 
 namespace CLASSWEIGHTS
@@ -71,7 +71,7 @@ using namespace CLASSWEIGHTS;
 
 LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 {
-  vector<string> classweight_array;
+  std::vector<std::string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();
   option_group_definition new_options("importance weight classes");
   new_options.add(make_option("classweight", classweight_array).help("importance weight multiplier for class"));
@@ -83,7 +83,7 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   for (auto& s : classweight_array) cweights->load_string(s);
 
   if (!all.quiet)
-    all.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
+    all.trace_message << "parsed " << cweights->weights.size() << " class weights" << std::endl;
 
   LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 

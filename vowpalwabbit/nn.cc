@@ -3,9 +3,9 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <sstream>
 #include <memory>
 
@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "vw.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -171,7 +170,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   polyprediction* hiddenbias_pred = n.hiddenbias_pred;
   bool* dropped_out = n.dropped_out;
 
-  ostringstream outputStringStream;
+  std::ostringstream outputStringStream;
 
   n.all->set_minmax = noop_mm;
   n.all->loss = n.squared_loss;
@@ -262,7 +261,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     // avoid saddle point at 0
     if (wf == 0)
     {
-      float sqrtk = sqrt((float)n.k);
+      float sqrtk = std::sqrt((float)n.k);
       n.outputweight.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;

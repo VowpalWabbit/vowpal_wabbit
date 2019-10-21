@@ -49,7 +49,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 
   if (is_outcome_present)
   {
-    ld->outcome = new CCB::conditional_contexual_bandit_outcome();
+    ld->outcome = new CCB::conditional_contextual_bandit_outcome();
     ld->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     next_read_size = sizeof(ld->outcome->cost);
@@ -192,7 +192,7 @@ void copy_label(void* dst, void* src)
 
   if (ldSrc->outcome)
   {
-    ldDst->outcome = new CCB::conditional_contexual_bandit_outcome();
+    ldDst->outcome = new CCB::conditional_contextual_bandit_outcome();
     ldDst->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     ldDst->outcome->cost = ldSrc->outcome->cost;
@@ -226,9 +226,9 @@ ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, cons
 }
 
 //<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
-CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
+CCB::conditional_contextual_bandit_outcome* parse_outcome(substring& outcome)
 {
-  auto& ccb_outcome = *(new CCB::conditional_contexual_bandit_outcome());
+  auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
   auto split_commas = v_init<substring>();
   tokenize(',', outcome, split_commas);

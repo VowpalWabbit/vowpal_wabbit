@@ -50,7 +50,7 @@ struct cb_explore_adf_bag
 
 cb_explore_adf_bag::cb_explore_adf_bag(
     float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
-    : _epsilon(epsilon), _bag_size(bag_size), _greedify(greedify), _random_state(random_state)
+    : _epsilon(epsilon), _bag_size(bag_size), _greedify(greedify), _first_only(first_only), _random_state(random_state)
 {
 }
 
@@ -115,10 +115,10 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
-  float epsilon;
-  size_t bag_size;
-  bool greedify;
-  bool first_only;
+  float epsilon = 0.;
+  size_t bag_size = 0;
+  bool greedify = false;
+  bool first_only = false;
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)

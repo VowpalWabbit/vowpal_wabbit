@@ -10,7 +10,6 @@
 #include "vw.h"
 #include "vw_exception.h"
 
-using namespace std;
 using namespace VW::config;
 
 #define val_namespace 100  // valency and distance feature space
@@ -30,7 +29,7 @@ struct task_data
   uint32_t num_label;
   v_array<uint32_t> valid_actions, action_loss, gold_heads, gold_tags, stack, heads, tags, temp, valid_action_temp;
   v_array<action> gold_actions, gold_action_temp;
-  v_array<pair<action, float>> gold_action_losses;
+  v_array<std::pair<action, float>> gold_action_losses;
   v_array<uint32_t> children[6];  // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc,
                                   // [4]:rightmost_arc, [5]: second_rightmost_arc
   example *ec_buf[13];
@@ -91,8 +90,8 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   const char *pair[] = {
       "BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
   const char *triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BEJ", "BEH", "BJK", "BEN"};
-  vector<string> newpairs(pair, pair + 19);
-  vector<string> newtriples(triple, triple + 12);
+  std::vector<std::string> newpairs(pair, pair + 19);
+  std::vector<std::string> newtriples(triple, triple + 12);
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
@@ -292,10 +291,10 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
 
   // Other features
   temp.resize(10);
-  temp[0] = empty ? 0 : (idx > n ? 1 : 2 + min(5, idx - (uint32_t)last));
-  temp[1] = empty ? 1 : 1 + min(5, children[0][last]);
-  temp[2] = empty ? 1 : 1 + min(5, children[1][last]);
-  temp[3] = idx > n ? 1 : 1 + min(5, children[0][idx]);
+  temp[0] = empty ? 0 : (idx > n ? 1 : 2 + std::min(static_cast<uint32_t>(5), idx - (uint32_t)last));
+  temp[1] = empty ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[0][last]);
+  temp[2] = empty ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[1][last]);
+  temp[3] = idx > n ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[0][idx]);
   for (size_t i = 4; i < 8; i++) temp[i] = (!empty && children[i - 2][last] != 0) ? tags[children[i - 2][last]] : 15;
   for (size_t i = 8; i < 10; i++) temp[i] = (idx <= n && children[i - 6][idx] != 0) ? tags[children[i - 6][idx]] : 15;
 
@@ -453,7 +452,7 @@ void get_hybrid_action_cost(Search::search &sch, size_t idx, uint64_t n)
 }
 
 void get_cost_to_go_losses(
-    Search::search &sch, v_array<pair<action, float>> &gold_action_losses, uint32_t left_label, uint32_t right_label)
+    Search::search &sch, v_array<std::pair<action, float>> &gold_action_losses, uint32_t left_label, uint32_t right_label)
 {
   task_data *data = sch.get_task_data<task_data>();
   bool &one_learner = data->one_learner;
@@ -465,25 +464,25 @@ void get_cost_to_go_losses(
   if (one_learner)
   {
     if (is_valid(SHIFT, valid_actions))
-      gold_action_losses.push_back(make_pair(SHIFT, (float)action_loss[SHIFT]));
+      gold_action_losses.push_back(std::make_pair(SHIFT, (float)action_loss[SHIFT]));
     for (uint32_t i = 2; i <= 3; i++)
       if (is_valid(i, valid_actions))
       {
         for (uint32_t j = 1; j <= num_label; j++)
           if (sys == arc_eager || j != data->root_label)
-            gold_action_losses.push_back(make_pair((1 + j + (i - 2) * num_label),
+            gold_action_losses.push_back(std::make_pair((1 + j + (i - 2) * num_label),
                 action_loss[i] + (float)(j != (i == REDUCE_LEFT ? left_label : right_label))));
       }
     if (sys == arc_eager && is_valid(REDUCE, valid_actions))
-      gold_action_losses.push_back(make_pair(2 + num_label * 2, (float)action_loss[REDUCE]));
+      gold_action_losses.push_back(std::make_pair(2 + num_label * 2, (float)action_loss[REDUCE]));
   }
   else
   {
     for (action i = 1; i <= 3; i++)
       if (is_valid(i, valid_actions))
-        gold_action_losses.push_back(make_pair(i, (float)action_loss[i]));
+        gold_action_losses.push_back(std::make_pair(i, (float)action_loss[i]));
     if (sys == arc_eager && is_valid(REDUCE, valid_actions))
-      gold_action_losses.push_back(make_pair(REDUCE, (float)action_loss[REDUCE]));
+      gold_action_losses.push_back(std::make_pair(REDUCE, (float)action_loss[REDUCE]));
   }
 }
 
@@ -599,7 +598,7 @@ void run(Search::search &sch, multi_ex &ec)
                     &heads = data->heads, &gold_tags = data->gold_tags, &tags = data->tags,
                     &valid_action_temp = data->valid_action_temp;
   v_array<uint32_t> &gold_action_temp = data->gold_action_temp;
-  v_array<pair<action, float>> &gold_action_losses = data->gold_action_losses;
+  v_array<std::pair<action, float>> &gold_action_losses = data->gold_action_losses;
   v_array<action> &gold_actions = data->gold_actions;
   bool &cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
   uint32_t &num_label = data->num_label;
@@ -725,7 +724,7 @@ void run(Search::search &sch, multi_ex &ec)
         {
           gold_action_losses.clear();
           for (size_t i = 1; i <= data->num_label; i++)
-            gold_action_losses.push_back(make_pair((action)i, i != (a_id == REDUCE_LEFT ? left_label : right_label)));
+            gold_action_losses.push_back(std::make_pair((action)i, i != (a_id == REDUCE_LEFT ? left_label : right_label)));
           t_id = P.set_tag((ptag)count)
                      .set_input(*(data->ex))
                      .set_allowed(gold_action_losses)
@@ -758,6 +757,6 @@ void run(Search::search &sch, multi_ex &ec)
     sch.loss((gold_heads[stack.last()] != heads[stack.last()]));
   }
   if (sch.output().good())
-    for (size_t i = 1; i <= n; i++) sch.output() << (heads[i]) << ":" << tags[i] << endl;
+    for (size_t i = 1; i <= n; i++) sch.output() << (heads[i]) << ":" << tags[i] << std::endl;
 }
 }  // namespace DepParserTask

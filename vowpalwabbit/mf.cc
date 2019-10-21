@@ -4,6 +4,7 @@
  license as described in the file LICENSE.
  */
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>
@@ -11,13 +12,12 @@
 #include "reductions.h"
 #include "gd.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
 struct mf
 {
-  vector<string> pairs;
+  std::vector<std::string> pairs;
 
   size_t rank;
 
@@ -69,7 +69,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (string& i : data.pairs)
+  for (std::string& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -127,7 +127,7 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (string& i : data.pairs)
+  for (std::string& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];

@@ -7,7 +7,6 @@
 #include "accumulate.h"
 #include "best_constant.h"
 
-using namespace std;
 
 namespace no_label
 {
@@ -34,9 +33,9 @@ void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
     case 0:
       break;
     default:
-      cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
+     std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
       for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
-      cout << endl;
+     std::cout << std::endl;
   }
 }
 

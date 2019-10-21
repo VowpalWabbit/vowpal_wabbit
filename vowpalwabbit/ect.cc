@@ -8,15 +8,13 @@ license as described in the file LICENSE.
   by John Langford.
 */
 
-#include <math.h>
 #include <iostream>
 #include <fstream>
-#include <float.h>
-#include <time.h>
+#include <ctime>
+#include <numeric>
 
 #include "reductions.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -54,10 +52,10 @@ struct ect
 
   ~ect()
   {
-    for (size_t l = 0; l < all_levels.size(); l++)
+    for (auto & all_level : all_levels)
     {
-      for (size_t t = 0; t < all_levels[l].size(); t++) all_levels[l][t].delete_v();
-      all_levels[l].delete_v();
+      for (auto & t : all_level) t.delete_v();
+      all_level.delete_v();
     }
     all_levels.delete_v();
     final_nodes.delete_v();
@@ -70,8 +68,8 @@ struct ect
 
 bool exists(v_array<size_t> db)
 {
-  for (size_t i = 0; i < db.size(); i++)
-    if (db[i] != 0)
+  for (unsigned long i : db)
+    if (i != 0)
       return true;
   return false;
 }
@@ -82,28 +80,25 @@ size_t final_depth(size_t eliminations)
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0)
       return i;
-  cerr << "too many eliminations" << endl;
+  std::cerr << "too many eliminations" << std::endl;
   return 31;
 }
 
-bool not_empty(v_array<v_array<uint32_t>> tournaments)
+bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 {
-  for (size_t i = 0; i < tournaments.size(); i++)
-  {
-    if (tournaments[i].size() > 0)
-      return true;
-  }
-  return false;
+  auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
+    [](v_array<uint32_t>& tournament){ return !tournament.empty(); });
+  return first_non_empty_tournament != tournaments.cend();
 }
 
-void print_level(v_array<v_array<uint32_t>> level)
+void print_level(v_array<v_array<uint32_t>> const& level)
 {
-  for (size_t t = 0; t < level.size(); t++)
+  for (auto const& t : level)
   {
-    for (size_t i = 0; i < level[t].size(); i++) cout << " " << level[t][i];
-    cout << " | ";
+    for (auto i : t) std::cout << " " << i;
+    std::cout << " | ";
   }
-  cout << endl;
+  std::cout << std::endl;
 }
 
 size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
@@ -161,10 +156,10 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
           e.directions[right].winner = direction_index;
         else
           e.directions[right].loser = direction_index;
-        if (e.directions[left].last == true)
+        if (e.directions[left].last)
           e.directions[left].winner = direction_index;
 
-        if (tournaments[t].size() == 2 && (t == 0 || tournaments[t - 1].size() == 0))
+        if (tournaments[t].size() == 2 && (t == 0 || tournaments[t - 1].empty()))
         {
           e.directions[direction_index].last = true;
           if (t + 1 < tournaments.size())
@@ -284,8 +279,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
     }
   } while (id != 0);
 
-  if (e.tournaments_won.size() < 1)
-    cout << "badness!" << endl;
+  if (e.tournaments_won.empty())
+    std::cout << "badness!" << std::endl;
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -325,7 +320,7 @@ void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
-    cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << endl;
+    std::cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << std::endl;
   ec.pred.multiclass = ect_predict(e, base, ec);
   ec.l.multi = mc;
 }
@@ -362,7 +357,7 @@ base_learner* ect_setup(options_i& options, vw& all)
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 
   base_learner* base = setup_base(options, all);
-  if (link.compare("logistic") == 0)
+  if (link == "logistic")
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
   learner<ect, example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, all.p, wpp, "ect");

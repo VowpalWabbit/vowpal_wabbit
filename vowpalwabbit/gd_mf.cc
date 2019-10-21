@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include <string.h>
 #include <stdio.h>
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>
@@ -19,7 +20,6 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "array_parameters.h"
 
-using namespace std;
 
 using namespace LEARNER;
 using namespace VW::config;
@@ -47,14 +47,14 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     bool audit = !fs.space_names.empty();
     for (auto& f : fs.values_indices_audit())
     {
-      cout << '\t';
+      std::cout << '\t';
       if (audit)
-        cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
-      cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
-      cout << ':' << (&weights[f.index()])[offset];
+        std::cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
+      std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
+      std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (string& i : all.pairs)
+  for (std::string& i : all.pairs)
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     {
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
@@ -63,22 +63,22 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
           for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           {
-            cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':'
+            std::cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':'
                  << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
-            cout << ':' << (&weights[f1.index()])[offset + k];
+            std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':'
+            std::cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':'
                  << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
                  << ':' << f2.value();
-            cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
+            std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
-            cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
+            std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
           }
       }
     }
   if (all.triples.begin() != all.triples.end())
     THROW("cannot use triples in matrix factorization");
-  cout << endl;
+  std::cout << std::endl;
 }
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
@@ -102,7 +102,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
-  for (string& i : d.all->pairs)
+  for (std::string& i : d.all->pairs)
   {
     ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
@@ -123,7 +123,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (string& i : d.all->pairs)
+  for (std::string& i : d.all->pairs)
   {
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
@@ -203,7 +203,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
-  for (string& i : all.pairs)
+  for (std::string& i : all.pairs)
   {
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
@@ -273,7 +273,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     {
       brw = 0;
       size_t K = d.rank * 2 + 1;
-      stringstream msg;
+      std::stringstream msg;
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file, (char*)&i, sizeof(i), "", read, msg, text);
       if (brw != 0)

@@ -1,11 +1,10 @@
-#include <float.h>
+#include <cfloat>
 #include "reductions.h"
 #include "debug_log.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::binary
 
-using namespace std;
 using namespace VW::config;
 
 namespace VW { namespace binary {
@@ -35,7 +34,7 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   if (ec.l.simple.label != FLT_MAX)
   {
     if (fabs(ec.l.simple.label) != 1.f)
-      cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << endl;
+     std::cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << std::endl;
     else if (ec.l.simple.label == ec.pred.scalar)
       ec.loss = 0.;
     else

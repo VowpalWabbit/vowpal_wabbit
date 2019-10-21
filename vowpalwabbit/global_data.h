@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include <inttypes.h>
 #include <climits>
 #include <stack>
+#include <array>
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -40,6 +41,7 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
+#include "constant.h"
 #include "rand48.h"
 
 #include "options.h"
@@ -458,23 +460,24 @@ struct vw
   // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
-  bool ignore[256];  // a set of namespaces to ignore
+  std::array<bool, NUM_NAMESPACES> ignore; // a set of namespaces to ignore
   bool ignore_some_linear;
-  bool ignore_linear[256];  // a set of namespaces to ignore for linear
+  std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
 
   bool redefine_some;           // --redefine param was used
-  unsigned char redefine[256];  // keeps new chars for amespaces
-
+  std::array<unsigned char, NUM_NAMESPACES> redefine; // keeps new chars for namespaces
   std::vector<std::string> ngram_strings;
   std::vector<std::string> skip_strings;
-  uint32_t ngram[256];                       // ngrams to generate.
-  uint32_t skips[256];                       // skips in ngrams.
+  std::array<uint32_t, NUM_NAMESPACES> ngram;                       // ngrams to generate.
+  std::array<uint32_t, NUM_NAMESPACES> skips;                       // skips in ngrams.
   std::vector<std::string> limit_strings;    // descriptor of feature limits
-  uint32_t limit[256];                       // count to limit features by
-  uint64_t affix_features[256];              // affixes to generate (up to 16 per namespace - 4 bits per affix)
-  bool spelling_features[256];               // generate spelling features for which namespace
+  std::array<uint32_t, NUM_NAMESPACES> limit;                       // count to limit features by
+  std::array<uint64_t, NUM_NAMESPACES> affix_features;              // affixes to generate (up to 16 per namespace - 4 bits per affix)
+  std::array<bool, NUM_NAMESPACES> spelling_features;               // generate spelling features for which namespace
   std::vector<std::string> dictionary_path;  // where to look for dictionaries
-  std::vector<feature_dict*> namespace_dictionaries[256];  // each namespace has a list of dictionaries attached to it
+
+  // This array is required to be value initialized so that the std::vectors are constructed.
+  std::array<std::vector<feature_dict*>, NUM_NAMESPACES> namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
   std::vector<dictionary_info> loaded_dictionaries;        // which dictionaries have we loaded from a file to memory?
 
   void (*delete_prediction)(void*);
@@ -560,6 +563,6 @@ void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
 void get_prediction(int sock, float& res, float& weight);
-void compile_gram(std::vector<std::string> grams, uint32_t* dest, char* descriptor, bool quiet);
-void compile_limits(std::vector<std::string> limits, uint32_t* dest, bool quiet);
+void compile_gram(std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);

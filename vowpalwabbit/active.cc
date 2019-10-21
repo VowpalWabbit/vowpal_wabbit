@@ -1,26 +1,25 @@
-#include <errno.h>
+#include <cerrno>
 #include "reductions.h"
 #include "rand48.h"
-#include "float.h"
+#include <cfloat>
 #include "vw.h"
 #include "active.h"
 #include "vw_exception.h"
 
 using namespace LEARNER;
-using namespace std;
 using namespace VW::config;
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   float b, sb, rs, sl;
   b = (float)(c0 * (log(k + 1.) + 0.0001) / (k + 0.0001));
-  sb = sqrt(b);
-  avg_loss = min(1.f, max(0.f, avg_loss));  // loss should be in [0,1]
+  sb = std::sqrt(b);
+  avg_loss = std::min(1.f, std::max(0.f, avg_loss));  // loss should be in [0,1]
 
-  sl = sqrt(avg_loss) + sqrt(avg_loss + g);
+  sl = std::sqrt(avg_loss) + std::sqrt(avg_loss + g);
   if (g <= sb * sl + b)
     return 1;
-  rs = (sl + sqrt(sl * sl + 4 * g)) / (2 * g);
+  rs = (sl + std::sqrt(sl * sl + 4 * g)) / (2 * g);
   return b * rs * rs;
 }
 
@@ -32,7 +31,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
   else
   {
     weighted_queries = (float)a.all->sd->weighted_labeled_examples;
-    avg_loss = (float)(a.all->sd->sum_loss / k + sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
+    avg_loss = (float)(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
   if (a._random_state->get_and_update_random() < bias)
@@ -99,7 +98,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -117,10 +116,9 @@ void output_and_account_example(vw& all, active& a, example& ec)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  for (auto i : all.final_prediction_sink)
   {
-    int f = (int)all.final_prediction_sink[i];
-    active_print_result(f, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i, ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);

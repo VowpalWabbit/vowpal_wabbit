@@ -1,8 +1,5 @@
-#include <float.h>
 #include "reductions.h"
 #include "cb_algs.h"
-#include "rand48.h"
-#include "bs.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
@@ -14,7 +11,7 @@ using namespace LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 // using namespace COST_SENSITIVE;
-using namespace std;
+
 using namespace VW::config;
 
 struct cbify;
@@ -113,7 +110,7 @@ void copy_example_to_adf(cbify& data, example& ec)
     // copy data
     VW::copy_example_data(false, &eca, &ec);
 
-    // offset indicies for given action
+    // offset indices for given action
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
@@ -323,13 +320,13 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
-    for (size_t j = 0; j < costs.size(); j++)
+    for (auto const& cost : costs)
     {
       if (hit_loss)
         break;
-      if (predicted_class == costs[j].class_index)
+      if (predicted_class == cost.class_index)
       {
-        loss = costs[j].x;
+        loss = cost.x;
         hit_loss = true;
       }
     }
@@ -342,15 +339,15 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
       if (i > 0)
         outputStringStream << ' ';
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
-    // outputStringStream << endl;
+    // outputStringStream << std::endl;
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
@@ -359,7 +356,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
 void output_example_seq(vw& all, multi_ex& ec_seq)
 {
-  if (ec_seq.size() == 0)
+  if (ec_seq.empty())
     return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
   all.sd->example_number++;
@@ -376,7 +373,7 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
 
 void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 {
-  if (ec_seq.size() > 0)
+  if (!ec_seq.empty())
   {
     output_example_seq(all, ec_seq);
     // global_print_newline(all);
@@ -409,25 +406,25 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->all = &all;
 
   if (data->use_adf)
-    init_adf_data(*data.get(), num_actions);
+    init_adf_data(*data, num_actions);
 
   if (!options.was_supplied("cb_explore") && !data->use_adf)
   {
-    stringstream ss;
+    std::stringstream ss;
     ss << num_actions;
     options.insert("cb_explore", ss.str());
   }
 
   if (data->use_adf)
   {
-    options.insert("cb_min_cost", to_string(data->loss0));
-    options.insert("cb_max_cost", to_string(data->loss1));
+    options.insert("cb_min_cost", std::to_string(data->loss0));
+    options.insert("cb_max_cost", std::to_string(data->loss1));
   }
 
   if (options.was_supplied("baseline"))
   {
-    stringstream ss;
-    ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
+    std::stringstream ss;
+    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
@@ -481,13 +478,13 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   {
     options.insert("cb_explore_adf", "");
   }
-  options.insert("cb_min_cost", to_string(data->loss0));
-  options.insert("cb_max_cost", to_string(data->loss1));
+  options.insert("cb_min_cost", std::to_string(data->loss0));
+  options.insert("cb_max_cost", std::to_string(data->loss1));
 
   if (options.was_supplied("baseline"))
   {
-    stringstream ss;
-    ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
+    std::stringstream ss;
+    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
