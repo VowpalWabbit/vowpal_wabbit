@@ -13,6 +13,8 @@ using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
+using std::endl;
+
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 namespace CB_EXPLORE
@@ -156,7 +158,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 {
-  VW_DBG(ec) << "predict_or_learn_cover:" << is_learn << " start" << std::endl;
+  VW_DBG(ec) << "predict_or_learn_cover:" << is_learn << " start" << endl;
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
 

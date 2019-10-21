@@ -6,6 +6,7 @@
 #define VW_DEBUG_LOG vw_dbg::binary
 
 using namespace VW::config;
+using std::endl;
 
 namespace VW { namespace binary {
 template <bool is_learn>
