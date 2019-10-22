@@ -167,7 +167,16 @@ float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
   float h = prob_dist[1].action - prob_dist[0].action;
   uint32_t idx = (uint32_t)floor((chosen_action - prob_dist[0].action) / h);
   if (idx < 0 || idx >= prob_dist.size())  // todo: can chosen_action be max_value?
+  {
+    cout << "h = " << h << endl;
+    cout << "prob_dist.size() = " << prob_dist.size() << endl;
+    cout << "prob_dist[0].action " << prob_dist[0].action << endl;
+    cout << "prob_dist[prob_dist.size()-2].action " << prob_dist[prob_dist.size()-2].action << endl;
+    cout << "prob_dist[prob_dist.size()-1].action " << prob_dist[prob_dist.size()-1].action << endl;
+    cout << "chosen_action = " << chosen_action << endl;
+    cout << "idx = " << idx << endl;
     THROW("The chosen action is not in the domain of the pdf function");
+  }
   return prob_dist[idx].value;
 }
 
@@ -259,7 +268,15 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+  if (ec.pred.prob_dist[ec.pred.prob_dist.size()-1].action != 86)
+  {
+    cout << "ec.pred.prob_dist[ec.pred.prob_dist.size()-1].action = " << ec.pred.prob_dist[ec.pred.prob_dist.size()-1].action << endl;
+  }
 
+  if (ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action - 0.00351524 < 1e-9)
+  {
+    cout << "ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action = " << ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action << endl;
+  }
   float chosen_action;
   // after having the function that samples the pdf and returns back a continuous action
   if (S_EXPLORATION_OK !=
