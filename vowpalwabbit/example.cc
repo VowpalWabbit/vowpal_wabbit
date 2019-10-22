@@ -216,13 +216,15 @@ std::string features_to_string(const example& ec)
   return strstream.str();
 }
 
-std::string cb_label_to_string(const example& ec) {
+std::string cb_label_to_string(const example& ec)
+{
   std::stringstream strstream;
   strstream << "[l.cb={";
   auto& costs = ec.l.cb.costs;
   for (auto c = costs.cbegin(); c != costs.cend(); ++c)
   {
-    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction << "}";
+    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction
+              << "}";
   }
   strstream << "}]";
   return strstream.str();
@@ -235,29 +237,24 @@ std::string simple_label_to_string(const example& ec)
   return strstream.str();
 }
 
-std::string depth_indent_string(const example& ec)
-{
-  std::stringstream strstream;
-  for (uint32_t i = 0; i < ec.stack_depth-1; i++)
-  {
-    //strstream << "| ";
-    strstream << "  ";
-  }
-  strstream << "- ";
-  return strstream.str();
-}
-
 std::string depth_indent_string(uint32_t depth)
 {
-  std::stringstream strstream;
+  const std::string indent_str = "- ";
+  const std::string space_str = "  ";
+
+  if (depth == 0)
+    return indent_str;
+
+  std::stringstream str_stream;
   for (uint32_t i = 0; i < depth - 1; i++)
   {
-    // strstream << "| ";
-    strstream << "  ";
+    str_stream << space_str;
   }
-  strstream << "- ";
-  return strstream.str();
+  str_stream << indent_str;
+  return str_stream.str();
 }
+
+std::string depth_indent_string(const example& ec) { return depth_indent_string(ec.stack_depth); }
 
 std::string scalar_pred_to_string(const example& ec)
 {
@@ -318,7 +315,7 @@ void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_pre
     delete ec.passthrough;
   }
 
-  for (auto & j : ec.feature_space) j.delete_v();
+  for (auto& j : ec.feature_space) j.delete_v();
 
   ec.indices.delete_v();
 }

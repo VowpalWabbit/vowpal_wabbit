@@ -74,6 +74,10 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
       GEN_CS::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels);
     else
       GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
+
+    // First predict() since the result of the predictions are used to learn
+    // later in the reduction
+    LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
     LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
   }
   else
