@@ -256,6 +256,8 @@ std::string depth_indent_string(uint32_t depth)
 
 std::string depth_indent_string(const example& ec) { return depth_indent_string(ec.stack_depth); }
 
+std::string depth_indent_string(const multi_ex& ec) { return depth_indent_string(*ec[0]); }
+
 std::string scalar_pred_to_string(const example& ec)
 {
   std::stringstream strstream;

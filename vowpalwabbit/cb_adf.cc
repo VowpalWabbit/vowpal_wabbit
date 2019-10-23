@@ -25,6 +25,9 @@ using namespace CB_ALGS;
 using namespace VW::config;
 using namespace exploration;
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_adf
+
 namespace CB_ADF
 {
 struct cb_adf
@@ -272,7 +275,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
   GEN_CS::call_cs_ldf<true>(
-      base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+    base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);

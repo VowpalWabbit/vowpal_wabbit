@@ -44,10 +44,9 @@ using namespace VW::config;
 // 4. Factor various state out of vw&
 namespace GD
 {
-bool GET_VW_DEBUG_LOG() { return VW_DEBUG_LOG; }
+uint32_t stack_depth;
+uint32_t get_stack_depth() { return stack_depth; }
 
-std::string depth_str;
-std::string get_depth_str() { return depth_str; }
 struct gd
 {
   //  double normalized_sum_norm_x;
@@ -150,6 +149,9 @@ void train(gd& g, example& ec, float update)
 {
   if (normalized)
     update *= g.update_multiplier;
+  
+  VW_DBG(ec)<< "gd: train() spare=" << spare << std::endl;
+  
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 
@@ -386,7 +388,7 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
-  depth_str = depth_indent_string(ec);
+  stack_depth = ec.stack_depth;
   vw& all = *g.all;
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);

@@ -144,7 +144,7 @@ void vw::learn(example& ec)
     LEARNER::as_singleline(l)->predict(ec);
   else
   {
-    if (l->require_predict_before_learn)
+    if (l->learn_does_not_predict)
       LEARNER::as_singleline(l)->predict(ec);
     LEARNER::as_singleline(l)->learn(ec);
   }
@@ -159,7 +159,7 @@ void vw::learn(multi_ex& ec)
     LEARNER::as_multiline(l)->predict(ec);
   else
   {
-    if (l->require_predict_before_learn)
+    if (l->learn_does_not_predict)
       LEARNER::as_multiline(l)->predict(ec);
     LEARNER::as_multiline(l)->learn(ec);
   }

@@ -8,6 +8,7 @@ struct vw_dbg
   const static bool gd              = false;
   const static bool gd_predict      = false;
   const static bool binary          = false;
+  const static bool cb_adf          = false;
 };
 
 #define VW_DEBUG_LOG vw_dbg::default_log

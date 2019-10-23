@@ -10,8 +10,8 @@ license as described in the file LICENSE.
 
 namespace GD
 {
-bool GET_VW_DEBUG_LOG();
-std::string get_depth_str();
+// forward declare
+uint32_t get_stack_depth();
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t), class W>
@@ -20,11 +20,41 @@ void foreach_feature(W& /*weights*/, features& fs, R& dat, uint64_t offset = 0, 
   for (features::iterator& f : fs) T(dat, mult * f.value(), f.index() + offset);
 }
 
+template <typename W, typename D>
+inline void debug_weight_update_pre(W& w, D& dat, float mult, features::iterator& f, uint64_t offset)
+{ /* Do nothing for most template parameters.  Specialized below for the type we care about*/ }
+
+template <>
+inline void debug_weight_update_pre<float, float>(float& w, float& dat, float mult, features::iterator& f, uint64_t offset)
+{
+  VW_DBG(get_stack_depth()) << "gd: update_feature: {pre_w=" << w << ", update=" << dat << ", mult=" << mult
+              << ", f.v=" << f.value() << ", w[spare]=" << ((float*)&w)[3] << " (f.idx=" << f.index() << ", offset=" << offset
+              << ")} ";
+}
+
+template <typename W, typename D>
+inline void debug_weight_update_post(W& w, D& dat)
+{ /* Do nothing for most template parameters.  Specialized below for the type we care about*/ }
+
+template <>
+inline void debug_weight_update_post<float, float>(
+    float& w, float& dat)
+{
+  VW_DBG(0) << "{w=" << w << "}"
+                << "w[0] += update * mult * f.v * w[spare] " << std::endl;
+}
+
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, const float, float&), class W>
 inline void foreach_feature(W& weights, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (features::iterator& f : fs) T(dat, mult * f.value(), weights[(f.index() + offset)]);
+  for (features::iterator& f : fs)
+  {
+    weight& w = weights[(f.index() + offset)];
+    debug_weight_update_pre(w, dat, mult, f, offset);
+    T(dat, mult * f.value(), w);
+    debug_weight_update_post(w, dat);
+  }
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
@@ -34,9 +64,9 @@ inline void foreach_feature(const W& weights, features& fs, R& dat, uint64_t off
   for (features::iterator& f : fs)
   {
     const weight& w = weights[(f.index() + offset)];
-    if(GET_VW_DEBUG_LOG())
-      std::cout << get_depth_str() << "gd: vec_add: {pre_acc=" << dat << ", mult=" << mult << ", v=" << f.value() 
-                << ", w=" << w << " (f.idx=" << f.index() << ", offset=" << offset << ")} acc += mult * v * w" << std::endl;
+    VW_DBG(get_stack_depth()) << "gd: vec_add: {pre_acc=" << dat << ", mult=" << mult << ", v=" << f.value()
+                << ", w=" << w << " (f.idx=" << f.index() << ", offset=" << offset << ")} acc += mult * v * w"
+                << std::endl;
     T(dat, mult * f.value(), w);
   }
 }

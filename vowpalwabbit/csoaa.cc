@@ -253,13 +253,23 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   simple_label.initial = 0.;
   simple_label.label = FLT_MAX;
 
+  // WARNING: Access of label information when making prediction is problematic.  
+  // What should be done here about ld.costs[0].class_index?
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
+  // WARNING: Access of label information when making prediction is problematic.
+  // What should be done here about ec.l.simple?
   ec.l.simple = simple_label;
   base.predict(ec);  // make a prediction
+
+  // WARNING: Access of label information when making prediction is problematic.
+  // What should be done here about ld.costs[0].partial_prediction?
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
+  // WARNING: Access of label information when making prediction is problematic.
+  // @What should be done here about ld.costs[0].class_index?
   LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
+
   ec.l.cs = ld;
 }
 

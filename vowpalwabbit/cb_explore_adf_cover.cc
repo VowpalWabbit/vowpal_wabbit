@@ -75,9 +75,15 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
     else
       GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
 
-    // First predict() since the result of the predictions are used to learn
-    // later in the reduction
-    LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    if (base.learn_does_not_predict)
+    {
+      // First predict() since the result of the predictions are used to learn
+      // later in the reduction
+      VW_DBG(examples) << "cb_explore_adf_cover: LEARNER::multiline_learn_or_predict<false>()" << std::endl;
+      LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    }
+
+    VW_DBG(examples) << "cb_explore_adf_cover: LEARNER::multiline_learn_or_predict<true>()" << std::endl;
     LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
   }
   else
@@ -118,11 +124,19 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
        */
       for (uint32_t j = 0; j < num_actions; j++)
       {
-        float pseudo_cost = _cs_labels.costs[j].x - _psi * min_prob / ((std::max)(_action_probs[j].score, min_prob) / norm);
+        float pseudo_cost =
+            _cs_labels.costs[j].x - _psi * min_prob / ((std::max)(_action_probs[j].score, min_prob) / norm);
         _cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
-      GEN_CS::call_cs_ldf<true>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels,
-          examples[0]->ft_offset, i + 1);
+
+      // Notes: predict() has to be called here because code below relies
+      // on old behavior where learn() used to call predict() first.
+      if (_cs_ldf_learner->learn_does_not_predict)
+        GEN_CS::call_cs_ldf<false>(
+            *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
+
+      GEN_CS::call_cs_ldf<true>(
+          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
     }
     else
       GEN_CS::call_cs_ldf<false>(
@@ -159,6 +173,17 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
   sort_action_probs(_action_probs, _scores);
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 
+  if (VW_DEBUG_LOG)
+  {
+    VW_DBG(examples) << "a_p[]=";
+    for (auto const& ap : _action_probs) VW_DBG(0) << ap.action << "::" << ap.score << ",";
+    VW_DBG(0) << std::endl;
+
+    VW_DBG(examples) << "scores[]=";
+    for (auto const& s : _scores) VW_DBG(0) << s << ",";
+    VW_DBG(0) << std::endl;
+  }
+
   if (is_learn)
     ++_counter;
 }
@@ -192,12 +217,8 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("cover", cover_size).keep().help("Online cover based exploration"))
       .add(make_option("psi", psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
-      .add(make_option("nounif", nounif)
-               .keep()
-               .help("do not explore uniformly on zero-probability actions in cover"))
-      .add(make_option("first_only", first_only)
-               .keep()
-               .help("Only explore the first action in a tie-breaking event"))
+      .add(make_option("nounif", nounif).keep().help("do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
@@ -251,8 +272,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
-  LEARNER::learner<explore_type, multi_ex>& l =
-      init_learner(data, base, explore_type::learn, explore_type::predict,
+  LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
       problem_multiplier, prediction_type::action_probs, "cb_explore_adf-cover", false);
 
   l.set_finish_example(explore_type::finish_multiline_example);
