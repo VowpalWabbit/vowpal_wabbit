@@ -571,6 +571,7 @@ IGNORE_DEPRECATED_USAGE_END
       }
 
       all.p->resettable = all.p->write_cache;
+      all.chain_hash = input_options.chain_hash;
     }
   }
 
