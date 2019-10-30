@@ -13,7 +13,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   spanning_tree_args = [args.spanning_tree, "--nondaemon"]
-  print("Starting spanning_tree: " + " ".join(spanning_tree_args))
+  print("Starting spanning_tree with args: " + " ".join(spanning_tree_args[1:]))
   spanning_tree_proc = subprocess.Popen(spanning_tree_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
   split_vw_args = args.vw_args.split()
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     cmd_args.extend(split_vw_args)
     if(index == len(args.data_files) - 1):
       cmd_args.extend(["-f", "final.model"])
-    print("Starting: " + " ".join(cmd_args))
+    print("Starting VW with args: " + " ".join(cmd_args[1:]))
     vw_procs.append(subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
 
   for proc in vw_procs:
@@ -43,7 +43,7 @@ if __name__ == '__main__':
   if(args.prediction_file is not None):
     cmd_args.extend(["-p", args.prediction_file])
   print("Running test on produced model...")
-  print("Running: " +  " ".join(cmd_args))
+  print("Running VW with args: " +  " ".join(cmd_args[1:]))
 
   cmd_args.extend(split_vw_args)
   subprocess.Popen(cmd_args).wait()
