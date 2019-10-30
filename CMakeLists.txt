@@ -1,19 +1,26 @@
 cmake_minimum_required(VERSION 3.5)
 
-# Only allow Release and Debug configurations
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE INTERNAL "Supported configuration types.")
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+# Read version into variable
+file(READ version.txt PACKAGE_VERSION)
+string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
+message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
+
+set(DEFAULT_BUILD_TYPE "Release")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# VW targets Windows 8.1 SDK
+# VW targets Windows 10.0.10240.0 SDK
 # CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
 # https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
   set(CMAKE_SYSTEM_VERSION "10.0.10240.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
-project(vowpal_wabbit C CXX)
+project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
 
 option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
 
@@ -23,11 +30,6 @@ if(NOT USE_LATEST_STD)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Read version into variable
-file(READ version.txt PACKAGE_VERSION)
-string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
-message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
 # Grab git commitish into variable
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
@@ -39,7 +41,7 @@ IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
       OUTPUT_VARIABLE "vw_GIT_COMMIT"
       ERROR_QUIET
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    MESSAGE( STATUS "Git Version: ${vw_GIT_COMMIT}" )
+    MESSAGE(STATUS "Git Version: ${vw_GIT_COMMIT}" )
   ELSE(GIT_FOUND)
     SET(vw_GIT_COMMIT "")
   ENDIF(GIT_FOUND)
