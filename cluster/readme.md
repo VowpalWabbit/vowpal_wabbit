@@ -24,7 +24,7 @@ In general: start the span server on one of the cluster nodes:
 
 Or to start in the foreground:
 ```sh
-./spanning_tree --nodaemon
+./spanning_tree --nondaemon
 ```
 
 Launch `vw` on each of the worker nodes:
