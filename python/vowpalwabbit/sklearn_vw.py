@@ -12,7 +12,7 @@ from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets.svmlight_format import dump_svmlight_file
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import shuffle
-from sklearn.externals import joblib
+import joblib
 from vowpalwabbit import pyvw
 
 

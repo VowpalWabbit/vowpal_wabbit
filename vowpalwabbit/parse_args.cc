@@ -1855,11 +1855,15 @@ void finish(vw& all, bool delete_all)
     delete all.options;
 
   // TODO: migrate all finalization into parser destructor
-  free_parser(all);
-  finalize_source(all.p);
-  all.p->parse_name.clear();
-  all.p->parse_name.delete_v();
-  delete all.p;
+  if (all.p != nullptr)
+  {
+    free_parser(all);
+    finalize_source(all.p);
+    all.p->parse_name.clear();
+    all.p->parse_name.delete_v();
+    delete all.p;
+  }
+
   bool seeded;
   if (all.weights.seeded() > 0)
     seeded = true;
