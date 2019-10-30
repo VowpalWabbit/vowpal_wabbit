@@ -163,7 +163,7 @@ TEST(PairIteratorTestSuite, simple_test)
   ActionType actions[num_actions];
   float pdf[num_actions];
   float n = 0.f;
-  std::generate(std::begin(pdf), std::end(pdf), [&n]() mutable { return n++; });
+  std::generate(std::begin(pdf), std::end(pdf), [&n]() { return n++; });
   std::iota(std::begin(actions), std::end(actions), 0);
   float scores[] = {.4f, .1f, .2f};
 
