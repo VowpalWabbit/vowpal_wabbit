@@ -212,7 +212,7 @@ if(BUILD_PYTHON)
 endif()
 
 if(BUILD_SLIM_VW)
-  add_subdirectory(vowpalwabbitslim)
+  add_subdirectory(vowpalwabbit/slim)
 endif()
 
 if(BUILD_TESTS)
