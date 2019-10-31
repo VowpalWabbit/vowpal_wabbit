@@ -1769,5 +1769,4 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
         test-sets/ref/cluster.stdout
         pred-sets/ref/cluster.predict
 
-
 # Do not delete this line or the empty line above it
