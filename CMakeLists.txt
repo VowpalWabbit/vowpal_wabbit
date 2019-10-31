@@ -193,6 +193,7 @@ endif()
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
 
+add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
@@ -210,7 +211,7 @@ if(BUILD_PYTHON)
 endif()
 
 if(BUILD_SLIM_VW)
-  add_subdirectory(vowpalwabbitslim)
+  add_subdirectory(vowpalwabbit/slim)
 endif()
 
 if(BUILD_TESTS)
