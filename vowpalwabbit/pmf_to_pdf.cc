@@ -43,14 +43,6 @@ pdf_data::~pdf_data()
       float action = data.min_value + i * continuous_range / data.num_actions;
       p_dist.push_back({action, continuous_scores[i]});
     }
-    //if ( (continuous_range / data.num_actions) - 0.00351562 < 1e-9)
-    if (true)
-    {
-      std::cout << "h = " << (continuous_range / data.num_actions) << std::endl;
-      std::cout << "p_dist[0].action = " << p_dist[0].action << std::endl;
-      std::cout << "p_dist[1].action = " << p_dist[1].action << std::endl; 
-      std::cout << "p_dist[1].action - p_dist[1].action = " << p_dist[1].action - p_dist[0].action << std::endl;
-  }
     p_dist.push_back({data.max_value, 0.f});
   }
 
@@ -70,15 +62,6 @@ pdf_data::~pdf_data()
     transform(data, ec);
     data.temp_cb = ec.l.cb;
     ec.l.cb_cont = temp_cb_cont;
-    if ( ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action - 0.00351562 < 1e-9)
-    {
-     // std::cout << "h = " << (continuous_range / data.num_actions) << std::endl;
-     // std::cout << "p_dist[0].action = " << p_dist[0].action << std::endl;
-     // std::cout << "p_dist[1].action = " << p_dist[1].action << std::endl;
-      std::cout << "in predict pmftopdf: ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action = " <<
-	ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action << std::endl;
-   }
-
     VW_DBG(ec) << "pmf_to_pdf::predict transform()" << prob_dist_pred_to_string(ec) << std::endl;
   }
 
@@ -122,9 +105,9 @@ pdf_data::~pdf_data()
 
     auto temp_pd = ec.pred.prob_dist;
     ec.pred.a_s = data.temp_probs;
-    
+
     base.learn(ec);
-    
+
     data.temp_probs = ec.pred.a_s;
     ec.pred.prob_dist = temp_pd;
     transform(data, ec);
