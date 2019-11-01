@@ -147,7 +147,7 @@ endif()
 
 # build main executable
 add_executable(vw-bin main.cc)
-target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw)
+target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw Boost::program_options)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
 if(STATIC_LINK_VW)
