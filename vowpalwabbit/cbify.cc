@@ -264,15 +264,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
-  if (ec.pred.prob_dist[ec.pred.prob_dist.size()-1].action != 86)
-  {
-    cout << "ec.pred.prob_dist[ec.pred.prob_dist.size()-1].action = " << ec.pred.prob_dist[ec.pred.prob_dist.size()-1].action << endl;
-  }
 
-  if (ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action - 0.00351524 < 1e-9)
-  {
-    cout << "ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action = " << ec.pred.prob_dist[1].action - ec.pred.prob_dist[0].action << endl;
-  }
   float chosen_action;
   // after having the function that samples the pdf and returns back a continuous action
   if (S_EXPLORATION_OK !=
