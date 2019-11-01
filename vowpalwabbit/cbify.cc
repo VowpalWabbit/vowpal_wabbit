@@ -32,6 +32,7 @@ struct cbify_reg
   VW::actions_pdf::pdf prob_dist;
   float min_value;
   float max_value;
+  float bandwidth;
   int loss_option;
   int num_actions; //todo
 };
@@ -162,31 +163,31 @@ void copy_example_to_adf(cbify& data, example& ec)
 }
 float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
 {
-  if (prob_dist.size() == 1)
-    return prob_dist[0].value;
-  float h = prob_dist[1].action - prob_dist[0].action;
-  uint32_t idx = (uint32_t)floor((chosen_action - prob_dist[0].action) / h);
-  if (idx < 0 || idx >= prob_dist.size())  // todo: can chosen_action be max_value?
-  {
-    cout << "h = " << h << endl;
-    cout << "prob_dist.size() = " << prob_dist.size() << endl;
-    cout << "prob_dist[0].action " << prob_dist[0].action << endl;
-    cout << "prob_dist[prob_dist.size()-2].action " << prob_dist[prob_dist.size()-2].action << endl;
-    cout << "prob_dist[prob_dist.size()-1].action " << prob_dist[prob_dist.size()-1].action << endl;
-    cout << "chosen_action = " << chosen_action << endl;
-    cout << "idx = " << idx << endl;
-    THROW("The chosen action is not in the domain of the pdf function");
+  int begin = -1;
+  int end = (int)prob_dist.size();
+  while (end - begin > 1) {
+    int mid = (begin + end) / 2;
+    if (prob_dist[mid].action <= chosen_action) {
+      begin = mid;
+    }
+    else {
+      end = mid;
+    }
   }
-  return prob_dist[idx].value;
+  return prob_dist[begin].value;
 }
 
-float get01loss(VW::actions_pdf::pdf& prob_dist, float chosen_action, float label)
+float get_squared_loss(cbify& data, float chosen_action, float label)
 {
-  if (prob_dist.size() == 1)
-    return 0.0f;  ////
-  float h = prob_dist[1].action - prob_dist[0].action;
-  if (abs(chosen_action - label) <= h)
-    return 0.0f;  ////
+  float diff = label - chosen_action;
+  float range = data.regression_data.max_value - data.regression_data.min_value;
+  return (diff * diff) / (range * range);
+}
+
+float get_01_loss(cbify& data, float chosen_action, float label)
+{
+  if (abs(chosen_action - label) <= data.regression_data.bandwidth)
+    return 0.0f; 
   return 1.0f;
 }
 
@@ -213,36 +214,33 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
     THROW("Failed to sample from pdf");
 
   /*cout << "chosen_action = " << chosen_action << endl;*/
-  CB::cb_class cl;
-  cl.action = chosen_action + 1;
-  cl.probability = ec.pred.a_s[chosen_action].score;
+  CB::cb_class cb;
+  cb.action = chosen_action + 1;
+  cb.probability = ec.pred.a_s[chosen_action].score;
 
-  if (!cl.action)
+  if (!cb.action)
     THROW("No action with non-zero probability found!");
   float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
   float converted_action = data.regression_data.min_value
     + chosen_action * continuous_range / data.regression_data.num_actions;
 
-  /*cout << "continuous_range = " << continuous_range << endl;
-  cout << "converted_action = " << converted_action << endl;*/
-
   if (data.regression_data.loss_option == 0) {
-    // mean squared loss
-    float diff = regression_label.label - converted_action;
-    cl.cost = diff * diff;
-    /*cout << "cl.cost = " << cl.cost << endl;*/
+    cb.cost = get_squared_loss(data, converted_action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 1) {
-    // cl.cost = get01loss(ec.pred.prob_dist, converted_action, regression_label.label);
-    cout << "use loss_option 0 for now!!!!" << endl;
+    cb.cost = get_01_loss(data, converted_action, regression_label.label);
   }
 
   // Create a new cb label
-  data.cb_label.costs.push_back(cl);
+  data.cb_label.costs.push_back(cb);
   ec.l.cb = data.cb_label;
 
   if (is_learn)
     base.learn(ec);
+
+  // for reporintg avergae loss to be in the correct range (reverse normalizing)
+  size_t siz = data.cb_label.costs.size();
+  data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
 
   data.a_s.clear();
   data.a_s = ec.pred.a_s;
@@ -262,9 +260,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
-
-  /*cout << "regression_label.label = " << regression_label.label << endl;*/
-
+  
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
@@ -297,12 +293,10 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   cb_cont.probability = pdf_value;
 
   if (data.regression_data.loss_option == 0) {
-    // mean squared loss
-    float diff = regression_label.label - chosen_action;
-    cb_cont.cost = diff * diff;
+    cb_cont.cost = get_squared_loss(data, chosen_action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 1) {
-    cb_cont.cost = get01loss(ec.pred.prob_dist, chosen_action, regression_label.label);
+    cb_cont.cost = get_01_loss(data, chosen_action, regression_label.label);
   }
 
   data.regression_data.cb_cont_label.costs.push_back(cb_cont);
@@ -313,6 +307,18 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     base.learn(ec);
   VW_DBG(ec) << "cbify-reg: after base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
 
+  // for reporintg avergae loss to be in the correct range (reverse normalizing)
+  float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
+  size_t siz = data.regression_data.cb_cont_label.costs.size();
+  data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range * continuous_range;
+
+  // or below instead of above
+  /*data.regression_data.cb_cont_label.costs.decr();
+  cb_cont.cost *= range * range;
+  data.regression_data.cb_cont_label.costs.push_back(cb_cont);*/
+  // but below one does not work
+  //((--data.regression_data.cb_cont_label.costs.end()))->cost = cb_cont.cost * continuous_range * continuous_range;
+  
   data.regression_data.prob_dist.clear();
   data.regression_data.prob_dist = ec.pred.prob_dist;
 
