@@ -257,7 +257,7 @@ if(VW_INSTALL)
   write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfigVersion.cmake
     VERSION ${PACKAGE_VERSION}
-    COMPATIBILITY SameMinorVersion)
+    COMPATIBILITY ExactVersion)
 
   configure_package_config_file (
     cmake/VowpalWabbitConfig.cmake.in
