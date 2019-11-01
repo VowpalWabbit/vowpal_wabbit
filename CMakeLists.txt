@@ -128,7 +128,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
-
 if(STATIC_LINK_VW_JAVA)
   set(Boost_USE_STATIC_LIBS ON)
   SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
@@ -169,6 +168,9 @@ endif()
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
 find_package(ZLIB REQUIRED)
+
+# This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
+include(GNUInstallDirs)
 
 # Ensure rapidjson submodule is ready
 find_package(Git QUIET)
@@ -231,7 +233,7 @@ endif()
 # TODO convert cs directory to cmake
 # TODO convert c_test directory to cmake
 
-# PkgConfig
+# Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
@@ -239,5 +241,34 @@ if(VW_INSTALL)
 
   configure_file(libvw.pc.in libvw.pc)
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
+    DESTINATION lib/pkgconfig)
+
+  install(EXPORT VowpalWabbitConfig
+    FILE
+      VowpalWabbitTargets.cmake
+    NAMESPACE
+      VowpalWabbit::
+    DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
+
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfigVersion.cmake
+    VERSION ${PACKAGE_VERSION}
+    COMPATIBILITY SameMinorVersion)
+
+  configure_package_config_file (
+    cmake/VowpalWabbitConfig.cmake.in
+    ${CMAKE_BINARY_DIR}/VowpalWabbitConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
+
+  install(
+    FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfigVersion.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfig.cmake
+    DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
+
 endif()
