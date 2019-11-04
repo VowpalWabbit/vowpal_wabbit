@@ -34,6 +34,7 @@ struct cbify_reg
   float max_value;
   float bandwidth;
   int loss_option;
+  int loss_report;
   int num_actions; //todo
 };
 
@@ -238,9 +239,11 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   if (is_learn)
     base.learn(ec);
 
-  // for reporintg avergae loss to be in the correct range (reverse normalizing)
-  size_t siz = data.cb_label.costs.size();
-  data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
+  if (data.regression_data.loss_report == 1) {
+    // for reporintg avergae loss to be in the correct range (reverse normalizing)
+    size_t siz = data.cb_label.costs.size();
+    data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
+  }
 
   // data.a_s.clear(); //TODO:CHECK
   data.a_s = ec.pred.a_s;
@@ -299,17 +302,18 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     base.learn(ec);
   VW_DBG(ec) << "cbify-reg: after base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
 
-  // for reporintg avergae loss to be in the correct range (reverse normalizing)
-  float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
-  size_t siz = data.regression_data.cb_cont_label.costs.size();
-  data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range * continuous_range;
-
-  // or below instead of above
-  /*data.regression_data.cb_cont_label.costs.decr();
-  cb_cont.cost *= range * range;
-  data.regression_data.cb_cont_label.costs.push_back(cb_cont);*/
-  // but below one does not work
-  //((--data.regression_data.cb_cont_label.costs.end()))->cost = cb_cont.cost * continuous_range * continuous_range;
+  if (data.regression_data.loss_report == 1) {
+    // for reporintg avergae loss to be in the correct range (reverse normalizing)
+    float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
+    size_t siz = data.regression_data.cb_cont_label.costs.size();
+    data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range * continuous_range;
+    // or below instead of above
+    /*data.regression_data.cb_cont_label.costs.decr();
+    cb_cont.cost *= range * range;
+    data.regression_data.cb_cont_label.costs.push_back(cb_cont);*/
+    // but below one does not work
+    //((--data.regression_data.cb_cont_label.costs.end()))->cost = cb_cont.cost * continuous_range * continuous_range;
+  }
   
  // data.regression_data.prob_dist.clear(); //TODO: CHECK
   data.regression_data.prob_dist = ec.pred.prob_dist;
@@ -642,6 +646,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
       .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:squared, 1:0/1"))
+      .add(make_option("loss_report", data->regression_data.loss_report).default_value(0).help("loss report option - 0:normalized, 1:denormalized"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
 
