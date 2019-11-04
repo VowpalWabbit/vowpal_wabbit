@@ -242,7 +242,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   size_t siz = data.cb_label.costs.size();
   data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
 
-  data.a_s.clear();
+  // data.a_s.clear(); //TODO:CHECK
   data.a_s = ec.pred.a_s;
 
   ec.l.simple = regression_label;
@@ -311,7 +311,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // but below one does not work
   //((--data.regression_data.cb_cont_label.costs.end()))->cost = cb_cont.cost * continuous_range * continuous_range;
   
-  data.regression_data.prob_dist.clear();
+ // data.regression_data.prob_dist.clear(); //TODO: CHECK
   data.regression_data.prob_dist = ec.pred.prob_dist;
 
   ec.l.simple = regression_label;  // recovering regression label
