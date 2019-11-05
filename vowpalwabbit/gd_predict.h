@@ -40,7 +40,7 @@ template <>
 inline void debug_weight_update_post<float, float>(
     float& w, float& dat)
 {
-  VW_DBG(0) << "{w=" << w << "}"
+  VW_DBG_0 << "{w=" << w << "}"
                 << "w[0] += update * mult * f.v * w[spare] " << std::endl;
 }
 

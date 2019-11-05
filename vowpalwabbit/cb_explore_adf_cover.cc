@@ -176,12 +176,12 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
   if (VW_DEBUG_LOG)
   {
     VW_DBG(examples) << "a_p[]=";
-    for (auto const& ap : _action_probs) VW_DBG(0) << ap.action << "::" << ap.score << ",";
-    VW_DBG(0) << std::endl;
+    for (auto const& ap : _action_probs) VW_DBG_0 << ap.action << "::" << ap.score << ",";
+    VW_DBG_0 << std::endl;
 
     VW_DBG(examples) << "scores[]=";
-    for (auto const& s : _scores) VW_DBG(0) << s << ",";
-    VW_DBG(0) << std::endl;
+    for (auto const& s : _scores) VW_DBG_0 << s << ",";
+    VW_DBG_0 << std::endl;
   }
 
   if (is_learn)

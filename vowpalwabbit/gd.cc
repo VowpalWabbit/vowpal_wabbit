@@ -149,9 +149,9 @@ void train(gd& g, example& ec, float update)
 {
   if (normalized)
     update *= g.update_multiplier;
-  
+
   VW_DBG(ec)<< "gd: train() spare=" << spare << std::endl;
-  
+
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 
@@ -416,6 +416,7 @@ template <bool l1, bool audit>
 void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
+  stack_depth = ec.stack_depth;
   vw& all = *g.all;
   for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
   if (g.all->weights.sparse)
@@ -674,6 +675,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 void learn(gd& g, base_learner& base, example& ec)
 {
   // invariant: not a test label, importance weight > 0
+  stack_depth = ec.stack_depth;
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);

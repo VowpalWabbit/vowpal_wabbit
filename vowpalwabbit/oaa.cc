@@ -86,7 +86,10 @@ void learn(oaa& o, LEARNER::single_learner& base, example& ec)
   for (uint32_t i = 1; i <= o.k; i++)
   {
     ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f};
-//    ec.pred.scalar = o.pred[i - 1].scalar;
+    // The following is an unfortunate loss of abstraction
+    // Downstream reduction (gd.update) uses the prediction
+    // from here
+    ec.pred.scalar = o.pred[i - 1].scalar;
     base.update(ec, i - 1);
   }
 
