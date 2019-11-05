@@ -75,7 +75,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
     else
       GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
 
-    if (base.learn_does_not_predict)
+    if (base.predict_before_learn)
     {
       // First predict() since the result of the predictions are used to learn
       // later in the reduction
@@ -131,7 +131,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
 
       // Notes: predict() has to be called here because code below relies
       // on old behavior where learn() used to call predict() first.
-      if (_cs_ldf_learner->learn_does_not_predict)
+      if (_cs_ldf_learner->predict_before_learn)
         GEN_CS::call_cs_ldf<false>(
             *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
 

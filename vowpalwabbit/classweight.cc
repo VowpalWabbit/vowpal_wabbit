@@ -90,10 +90,10 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type::scalar)
     ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::scalar>,
-        predict_or_learn<false, prediction_type::scalar>,"classweight-scalar");
+        predict_or_learn<false, prediction_type::scalar>,"classweight-scalar", false);
   else if (base->pred_type == prediction_type::multiclass)
     ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::multiclass>,
-        predict_or_learn<false, prediction_type::multiclass>,"classweight-multi");
+        predict_or_learn<false, prediction_type::multiclass>,"classweight-multi", false);
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);

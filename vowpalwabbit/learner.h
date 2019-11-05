@@ -184,7 +184,7 @@ struct learner
   size_t increment;
   bool is_multiline;  // Is this a single-line or multi-line reduction?
   std::string name;   // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
-  bool learn_does_not_predict;  // Most reductions need to call predict() before learn().  The prediction
+  bool predict_before_learn;  // Most reductions need to call predict() before learn().  The prediction
                                       //   is used for progressive validation.  Some reductions do not
                                       //   need to call predict() before learn().  For example active.cc
 
@@ -382,7 +382,7 @@ struct learner
 
   template <class L>
   static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type::prediction_type_t pred_type, const std::string name, bool learn_does_not_predict = true)
+      prediction_type::prediction_type_t pred_type, const std::string name, bool predict_before_learn = true)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
@@ -431,7 +431,7 @@ struct learner
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
-    ret.learn_does_not_predict = learn_does_not_predict;
+    ret.predict_before_learn = predict_before_learn;
 
     VW_DBG_0 << "Added Reduction: " << name << std::endl;
 
@@ -441,9 +441,9 @@ struct learner
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type::prediction_type_t pred_type, const std::string& name, bool learn_does_not_predict = true)
+    size_t ws, prediction_type::prediction_type_t pred_type, const std::string& name, bool predict_before_learn = true)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_does_not_predict);
+  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
 
   dat.release();
   return *ret;
@@ -481,10 +481,10 @@ learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*
 // reduction with default prediction type
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, const std::string& name, bool learn_does_not_predict = true)
+    size_t ws, const std::string& name, bool predict_before_learn = true)
 {
   auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name, learn_does_not_predict);
+      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name, predict_before_learn);
 
   dat.release();
   return *ret;
@@ -493,10 +493,10 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 // reduction with default num_params
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    const std::string& name, bool learn_does_not_predict = true)
+    const std::string& name, bool predict_before_learn = true)
 {
   auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name, learn_does_not_predict);
+      &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name, predict_before_learn);
 
   dat.release();
   return *ret;
@@ -505,18 +505,18 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 // Reduction with no data.
 template <class T, class E, class L>
 learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name,
-    bool learn_does_not_predict = true)
+    bool predict_before_learn = true)
 {
-  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name, learn_does_not_predict);
+  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name, predict_before_learn);
 }
 
 // multiclass reduction
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass, bool learn_does_not_predict = true)
+    prediction_type::prediction_type_t pred_type = prediction_type::multiclass, bool predict_before_learn = true)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_does_not_predict);
+  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
 
   dat.release();
   l.set_finish_example(MULTICLASS::finish_example<T>);
@@ -527,7 +527,7 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass, bool learn_does_not_predict = true)
+    prediction_type::prediction_type_t pred_type = prediction_type::multiclass, bool predict_before_learn = true)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
   dat.release();

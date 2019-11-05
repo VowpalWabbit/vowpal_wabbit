@@ -71,7 +71,7 @@ LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, v
 
   auto* base = LEARNER::as_multiline(setup_base(options, all));
   auto& learner =
-      LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, "shared_feature_merger", base->learn_does_not_predict);
+      LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, "shared_feature_merger", base->predict_before_learn);
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.
