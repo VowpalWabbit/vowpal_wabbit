@@ -47,6 +47,8 @@ struct classweights
 template <bool is_learn, int pred_type>
 static void predict_or_learn(classweights& cweights, LEARNER::single_learner& base, example& ec)
 {
+  // Save the weight so we can remove the side effect later
+  float saved_weight = ec.weight;
   switch (pred_type)
   {
     case prediction_type::scalar:
@@ -64,6 +66,9 @@ static void predict_or_learn(classweights& cweights, LEARNER::single_learner& ba
     base.learn(ec);
   else
     base.predict(ec);
+
+  // restore the weight 
+  ec.weight = saved_weight;
 }
 }  // namespace CLASSWEIGHTS
 
@@ -90,10 +95,10 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type::scalar)
     ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::scalar>,
-        predict_or_learn<false, prediction_type::scalar>,"classweight-scalar", false);
+        predict_or_learn<false, prediction_type::scalar>, "classweight-scalar", base->predict_before_learn);
   else if (base->pred_type == prediction_type::multiclass)
     ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::multiclass>,
-        predict_or_learn<false, prediction_type::multiclass>,"classweight-multi", false);
+        predict_or_learn<false, prediction_type::multiclass>,"classweight-multi", base->predict_before_learn);
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);
