@@ -44,11 +44,9 @@ struct classweights
   }
 };
 
-template <bool is_learn, int pred_type>
-static void predict_or_learn(classweights& cweights, LEARNER::single_learner& base, example& ec)
+template <int pred_type>
+static inline void update_example_weight(classweights& cweights, example& ec)
 {
-  // Save the weight so we can remove the side effect later
-  float saved_weight = ec.weight;
   switch (pred_type)
   {
     case prediction_type::scalar:
@@ -61,14 +59,23 @@ static void predict_or_learn(classweights& cweights, LEARNER::single_learner& ba
       // suppress the warning
       break;
   }
+}
 
-  if (is_learn)
+template <bool is_learn, int pred_type>
+static void predict_or_learn(classweights& cweights, LEARNER::single_learner& base, example& ec)
+{
+  // Notes: Update example weight either in predict() or learn() but not in both
+  // If base.predict_before_learn is set, predict() will be called before learn()
+
+  if (is_learn){
+    if(!base.predict_before_learn)
+      update_example_weight<pred_type>(cweights, ec);
     base.learn(ec);
-  else
+  }
+  else{
+    update_example_weight<pred_type>(cweights, ec);
     base.predict(ec);
-
-  // restore the weight 
-  ec.weight = saved_weight;
+  }
 }
 }  // namespace CLASSWEIGHTS
 
