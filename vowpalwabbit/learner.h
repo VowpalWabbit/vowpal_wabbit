@@ -531,7 +531,7 @@ learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*lea
     bool predict_before_learn = true,
     prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
+  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
   dat.release();
   l.set_finish_example(COST_SENSITIVE::finish_example);
   p->lp = COST_SENSITIVE::cs_label;
