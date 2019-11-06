@@ -34,6 +34,7 @@ struct cbify
   cbify_adf_data adf_data;
   float loss0;
   float loss1;
+  uint32_t chosen_action;
 
   // for ldf inputs
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
@@ -180,10 +181,28 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   ec.pred.multiclass = cl.action;
 }
 
-template <bool is_learn, bool use_cs>
-void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
+template <bool use_cs>
+void predict_adf(cbify& data, multi_learner& base, example& ec)
 {
-  // Store the multiclass or cost-sensitive input label
+  const auto save_label = ec.l;
+
+  copy_example_to_adf(data, ec);
+  base.predict(data.adf_data.ecs);
+
+  auto& out_ec = *data.adf_data.ecs[0];
+
+  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
+          end_scores(out_ec.pred.a_s), data.chosen_action))
+    THROW("Failed to sample from pdf");
+
+  ec.pred.multiclass = out_ec.pred.a_s[data.chosen_action].action + 1;
+  ec.l = save_label;
+}
+
+template <bool use_cs>
+void learn_adf(cbify& data, multi_learner& base, example& ec)
+{
+  auto& out_ec = *data.adf_data.ecs[0];
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
   if (use_cs)
@@ -191,19 +210,9 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   else
     ld = ec.l.multi;
 
-  copy_example_to_adf(data, ec);
-  base.predict(data.adf_data.ecs);
-
-  auto& out_ec = *data.adf_data.ecs[0];
-
-  uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
-          end_scores(out_ec.pred.a_s), chosen_action))
-    THROW("Failed to sample from pdf");
-
   CB::cb_class cl;
-  cl.action = out_ec.pred.a_s[chosen_action].action + 1;
-  cl.probability = out_ec.pred.a_s[chosen_action].score;
+  cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
+  cl.probability = out_ec.pred.a_s[data.chosen_action].score;
 
   if (!cl.action)
     THROW("No action with non-zero probability found!");
@@ -218,10 +227,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   lab.costs.clear();
   lab.costs.push_back(cl);
 
-  if (is_learn)
-    base.learn(data.adf_data.ecs);
-
-  ec.pred.multiclass = cl.action;
+  base.learn(data.adf_data.ecs);
 }
 
 void init_adf_data(cbify& data, const size_t num_actions)
@@ -435,10 +441,10 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1, "cbify-adf-cs");
+          data, base, learn_adf<true>, predict_adf<true>, all.p, 1, "cbify-adf-cs");
     else
       l = &init_multiclass_learner(
-          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, 1, "cbify-adf");
+          data, base, learn_adf<false>, predict_adf<false>, all.p, 1, "cbify-adf");
   }
   else
   {
