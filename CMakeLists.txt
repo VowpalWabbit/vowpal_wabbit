@@ -195,6 +195,7 @@ endif()
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
 
+add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
