@@ -514,7 +514,8 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass, bool predict_before_learn = true)
+    bool predict_before_learn = true,
+    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
 
@@ -527,7 +528,8 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass, bool predict_before_learn = true)
+    bool predict_before_learn = true,
+    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
   dat.release();
