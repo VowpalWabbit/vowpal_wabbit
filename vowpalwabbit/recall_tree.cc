@@ -375,8 +375,6 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 
 void learn(recall_tree& b, single_learner& base, example& ec)
 {
-  predict(b, base, ec);
-
   if (b.all->training && ec.l.multi.label != (uint32_t)-1)  // if training the tree
   {
     uint32_t cn = 0;
