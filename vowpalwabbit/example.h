@@ -54,9 +54,29 @@ class gd_prediction_cache
   std::vector<polyprediction> _cache;
 
   public:
-  bool inline get_value(uint64_t ft_offset, polyprediction& pred);
-  void inline set_value(uint64_t ft_offset, const polyprediction& pred);
-  void inline clear();
+  bool inline get_value(uint64_t ft_offset, polyprediction& pred)
+  {
+    if (_cache.size() > ft_offset)
+    {
+      pred = _cache[ft_offset];
+      return true;
+    }
+    return false;
+  }
+
+  void inline set_value(uint64_t ft_offset, const polyprediction& pred)
+  {
+    if (_cache.size() <= ft_offset)
+    {
+      _cache.resize(ft_offset + 1);
+    }
+    _cache[ft_offset] = pred;
+  }
+
+  void inline clear()
+  {
+    _cache.clear();
+  }
 };
 
 struct example : public example_predict  // core example datatype.
