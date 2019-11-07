@@ -20,6 +20,9 @@ using namespace LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG csoaa
+
 namespace CSOAA
 {
 struct csoaa
