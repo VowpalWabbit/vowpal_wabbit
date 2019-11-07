@@ -388,6 +388,10 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
+  
+  if (ec.GD_PREDICTION_CACHE.get_value(ec.ft_offset, ec.pred))
+    return;
+
   stack_depth = ec.stack_depth;
   vw& all = *g.all;
   if (l1)
@@ -397,6 +401,8 @@ void predict(gd& g, base_learner&, example& ec)
 
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
+
+  ec.GD_PREDICTION_CACHE.set_value(ec.ft_offset, ec.pred);
 
   VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << std::endl;
 
@@ -680,6 +686,7 @@ void learn(gd& g, base_learner& base, example& ec)
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, base, ec);
+  ec.GD_PREDICTION_CACHE.clear();
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
 }
 

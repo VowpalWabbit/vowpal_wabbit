@@ -149,6 +149,27 @@ void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
   p.fs.push_back(fx, (uint64_t)(fi >> p.stride_shift) & p.mask);
 }
 
+bool inline gd_prediction_cache::get_value(uint64_t ft_offset, polyprediction& pred) 
+{
+  if (_cache.size() > ft_offset)
+  {
+    pred = _cache[ft_offset];
+    return true;
+  }
+  return false;
+}
+
+void inline gd_prediction_cache::set_value(uint64_t ft_offset, const polyprediction& pred)
+{
+  if (_cache.size() <= ft_offset)
+  {
+    _cache.resize(ft_offset + 1);
+  }
+  _cache[ft_offset] = pred;
+}
+
+void gd_prediction_cache::clear() { _cache.clear(); }
+
 flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();

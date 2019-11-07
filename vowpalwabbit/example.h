@@ -49,6 +49,16 @@ typedef union {
   float prob;  // for --probabilities --csoaa_ldf=mc
 } polyprediction;
 
+class gd_prediction_cache
+{
+  std::vector<polyprediction> _cache;
+
+  public:
+  bool inline get_value(uint64_t ft_offset, polyprediction& pred);
+  void inline set_value(uint64_t ft_offset, const polyprediction& pred);
+  void inline clear();
+};
+
 struct example : public example_predict  // core example datatype.
 {
   // input fields
@@ -57,6 +67,8 @@ struct example : public example_predict  // core example datatype.
   // output prediction
   polyprediction pred;
 
+  // EXPERIMENTAL
+  gd_prediction_cache GD_PREDICTION_CACHE;
   float weight;       // a relative importance weight for the example, default = 1
   v_array<char> tag;  // An identifier for the example.
   size_t example_counter;
