@@ -198,6 +198,22 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
 
+# Add natvis file if the Generator is Visual Studio
+if (CMAKE_VERSION VERSION_GREATER 3.7.8)
+    if (MSVC_IDE)
+        option(VS_ADD_NATIVE_VISUALIZERS "Configure project to use Visual Studio native visualizers" TRUE)
+    else()
+        set(VS_ADD_NATIVE_VISUALIZERS FALSE CACHE INTERNAL "Native visualizers are Visual Studio extension" FORCE)
+    endif()
+
+    # Add natvis file to the library so it will automatically be loaded into Visual Studio
+    if(VS_ADD_NATIVE_VISUALIZERS)
+        target_sources(vowpal_wabbit INTERFACE
+            ${CMAKE_CURRENT_SOURCE_DIR}/vowpalwabbit/vw_types.natvis
+        )
+    endif()
+endif()
+
 if(BUILD_DOCS)
   add_subdirectory(doc)
 endif()
