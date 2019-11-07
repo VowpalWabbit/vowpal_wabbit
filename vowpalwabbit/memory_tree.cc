@@ -665,6 +665,11 @@ float F1_score_for_two_examples(example& ec1, example& ec2)
 
 void predict(memory_tree& b, single_learner& base, example& ec)
 {
+  // measure predict performance if test mode is set (i.e.  we lead memory tree model from file)
+  clock_t begin;
+  if (b.test_mode == false)
+    begin = clock();
+
   MULTICLASS::label_t mc;
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
@@ -728,11 +733,14 @@ void predict(memory_tree& b, single_learner& base, example& ec)
     ec.loss = (float)compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs);
     b.hamming_loss += ec.loss;
   }
+
+  // Need to measure perf only when test mode is on
+  if (b.test_mode == false)
+    b.test_time += float(clock() - begin) / CLOCKS_PER_SEC;
 }
 
 float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, example& ec, float weight = 1.f)
 {
-  // example& ec = *b.examples[ec_array_index];
   MULTICLASS::label_t mc;
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
@@ -1019,10 +1027,10 @@ void experience_replay(memory_tree& b, single_learner& base)
 // example for each node, including the leaf, and store the example at the leaf.
 void learn(memory_tree& b, single_learner& base, example& ec)
 {
+  // Assume predict is called before learn is called
   if (b.test_mode == false)
   {
     b.iter++;
-    predict(b, base, ec);
 
     if (b.iter % 5000 == 0)
     {
@@ -1065,9 +1073,6 @@ void learn(memory_tree& b, single_learner& base, example& ec)
       else
         std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
     }
-    clock_t begin = clock();
-    predict(b, base, ec);
-    b.test_time += float(clock() - begin) / CLOCKS_PER_SEC;
   }
 }
 
@@ -1075,7 +1080,7 @@ void end_pass(memory_tree& b)
 {
   b.current_pass++;
   std::cout << "######### Current Pass: " << b.current_pass
-       << ", with number of memories strored so far: " << b.examples.size() << std::endl;
+       << ", with number of memories stored so far: " << b.examples.size() << std::endl;
 }
 
 ///////////////////Save & Load//////////////////////////////////////
