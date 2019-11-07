@@ -388,10 +388,14 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
+  polyprediction pred;
+  if (ec.GD_PREDICTION_CACHE.get_value(ec.ft_offset, pred)){
+    VW_DBG(ec) << "cache hit: ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
+  }
+  else{
+    VW_DBG(ec) << "NO CACHE hit: ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;  
+  }
   
-  if (ec.GD_PREDICTION_CACHE.get_value(ec.ft_offset, ec.pred))
-    return;
-
   stack_depth = ec.stack_depth;
   vw& all = *g.all;
   if (l1)
