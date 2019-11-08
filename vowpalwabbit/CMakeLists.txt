@@ -4,7 +4,12 @@ configure_file(config.h.in config.h)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
-target_include_directories(allreduce PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(allreduce PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+add_library(VowpalWabbit::allreduce ALIAS allreduce)
+
 # Winsock32 should be available on Windows
 if(WIN32)
   target_link_libraries(allreduce PUBLIC wsock32 ws2_32)
@@ -13,25 +18,26 @@ else()
 endif()
 
 set(vw_all_headers
-  allreduce.h comp_io.h example.h accumulate.h action_score.h active_cover.h active.h
-  array_parameters_dense.h array_parameters.h audit_regressor.h autolink.h baseline.h beam.h
-  best_constant.h bfgs.h binary.h boosting.h bs.h cache.h cb_adf.h cb_algs.h cb_explore_adf_bag.h
-  cb_explore_adf_common.h cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h
-  cb_explore_adf_regcb.h cb_explore_adf_softmax.h cb_explore.h cb.h cbify.h ccb_label.h
-  classweight.h conditional_contextual_bandit.h confidence.h config.h.in constant.h correctedMath.h
-  cost_sensitive.h crossplat_compat.h cs_active.h csoaa.h ect.h error_reporting.h example_predict.h
-  explore_eval.h expreplay.h ezexample.h feature_group.h ftrl.h gd_mf.h gd_predict.h gd.h
-  gen_cs_example.h global_data.h interact.h interactions_predict.h interactions.h io_buf.h
-  kernel_svm.h label_dictionary.h label_parser.h lda_core.h learner.h log_multi.h loss_functions.h
-  lrq.h lrqfa.h marginal.h memory_tree.h memory.h mf.h multiclass.h multilabel_oaa.h multilabel.h
-  mwt.h network.h nn.h no_label.h noop.h oaa.h OjaNewton.h options_boost_po.h
-  options_serializer_boost_po.h options_types.h options.h parse_args.h parse_dispatch_loop.h
-  parse_example_json.h parse_example.h parse_primitives.h parse_regressor.h parser.h primitives.h
-  print.h rand48.h recall_tree.h reductions.h scorer.h search_dep_parser.h
-  search_entityrelationtask.h search_graph.h search_hooktask.h search_meta.h search_multiclasstask.h
-  search_sequencetask.h search.h sender.h shared_feature_merger.h simple_label.h spanning_tree.h
-  stable_unique.h stagewise_poly.h svrg.h topk.h unique_sort.h v_array.h v_hashmap.h version.h
-  vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h vwdll.h warm_cb.h
+accumulate.h action_score.h active_cover.h active.h allreduce.h array_parameters_dense.h
+array_parameters.h audit_regressor.h autolink.h baseline.h beam.h best_constant.h bfgs.h binary.h
+boosting.h bs.h cache.h cb_adf.h cb_algs.h cb_explore_adf_bag.h cb_explore_adf_common.h
+cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h cb_explore_adf_regcb.h
+cb_explore_adf_softmax.h cb_explore.h cb.h cbify.h ccb_label.h classweight.h comp_io.h
+conditional_contextual_bandit.h confidence.h config.h.in constant.h correctedMath.h cost_sensitive.h
+crossplat_compat.h cs_active.h csoaa.h ect.h error_reporting.h example_predict.h example.h
+explore_eval.h expreplay.h ezexample.h feature_group.h ftrl.h gd_mf.h gd_predict.h gd.h
+gen_cs_example.h global_data.h hashstring.h interact.h interactions_predict.h interactions.h
+io_buf.h kernel_svm.h label_dictionary.h label_parser.h lda_core.h learner.h log_multi.h
+loss_functions.h lrq.h lrqfa.h marginal.h memory_tree.h memory.h mf.h multiclass.h multilabel_oaa.h
+multilabel.h mwt.h network.h nn.h no_label.h noop.h oaa.h object_pool.h OjaNewton.h
+options_boost_po.h options_serializer_boost_po.h options_types.h options.h parse_args.h
+parse_dispatch_loop.h parse_example_json.h parse_example.h parse_primitives.h parse_regressor.h
+parser.h primitives.h print.h queue.h rand48.h recall_tree.h reductions.h scorer.h
+search_dep_parser.h search_entityrelationtask.h search_graph.h search_hooktask.h search_meta.h
+search_multiclasstask.h search_sequencetask.h search.h sender.h shared_feature_merger.h
+simple_label.h spanning_tree.h stable_unique.h stagewise_poly.h svrg.h topk.h unique_sort.h
+v_array.h v_hashmap.h version.h vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h
+vwdll.h warm_cb.h
 )
 
 set(vw_all_sources
@@ -54,13 +60,26 @@ set(vw_all_sources
 
 add_library(vw ${vw_all_sources} ${vw_all_headers})
 
-target_link_libraries(vw PUBLIC explore rapidjson Boost::program_options ${LINK_THREADS} ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
+target_link_libraries(vw
+  PUBLIC
+    VowpalWabbit::explore VowpalWabbit::allreduce
+  PRIVATE
+    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} ZLIB::ZLIB
+    # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
+    # actually a private dependency and so do not "link" when processing targets for installation.
+    # https://gitlab.kitware.com/cmake/cmake/issues/15415
+    $<BUILD_INTERFACE:rapidjson>)
+
+add_library(VowpalWabbit::vw ALIAS vw)
 
 if(GCOV)
   target_link_libraries(vw PUBLIC gcov --coverage)
 endif()
 
-target_include_directories(vw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(vw PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
 # Only define if Clang is not used
@@ -99,9 +118,10 @@ if(NOT WIN32)
   endif()
 
   if(VW_INSTALL)
-    install(TARGETS active_interactor
-      RUNTIME DESTINATION bin
-    )
+    install(
+      TARGETS active_interactor
+      EXPORT VowpalWabbitConfig
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif()
 
   target_compile_definitions(active_interactor PUBLIC _FILE_OFFSET_BITS=64)
@@ -125,10 +145,9 @@ if(NOT WIN32)
   endif()
 endif()
 
-
 # build main executable
 add_executable(vw-bin main.cc)
-target_link_libraries(vw-bin PRIVATE vw)
+target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw Boost::program_options)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
 if(STATIC_LINK_VW)
@@ -143,29 +162,30 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
     add_library(vw_c_wrapper SHARED vwdll.cpp)
   endif()
 
-  target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
-  target_link_libraries(vw_c_wrapper PUBLIC vw)
+  add_library(VowpalWabbit::vw_c_wrapper ALIAS vw_c_wrapper)
 
+  target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
+  target_link_libraries(vw_c_wrapper PUBLIC VowpalWabbit::vw)
   if(VW_INSTALL)
-    install(TARGETS vw_c_wrapper
-      ARCHIVE DESTINATION lib
-      LIBRARY DESTINATION lib
-    )
+    install(
+      TARGETS vw_c_wrapper
+      EXPORT VowpalWabbitConfig
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif()
 endif()
 
 if(VW_INSTALL)
-  # Install executables
-  install(TARGETS vw-bin
-    RUNTIME DESTINATION bin
-  )
+  install(
+    TARGETS vw vw-bin allreduce
+    EXPORT VowpalWabbitConfig
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-  # Install headers
-  install(FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/vowpalwabbit/vowpalwabbit)
-
-  # Install libs
-  install(TARGETS allreduce vw
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-  )
+  # VW target headers
+  install(
+    FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
