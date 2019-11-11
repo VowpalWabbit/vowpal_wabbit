@@ -1,19 +1,26 @@
 cmake_minimum_required(VERSION 3.5)
 
-# Only allow Release and Debug configurations
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE INTERNAL "Supported configuration types.")
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+# Read version into variable
+file(READ version.txt PACKAGE_VERSION)
+string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
+message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
+
+set(DEFAULT_BUILD_TYPE "Release")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# VW targets Windows 8.1 SDK
+# VW targets Windows 10.0.10240.0 SDK
 # CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
 # https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
   set(CMAKE_SYSTEM_VERSION "10.0.10240.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
-project(vowpal_wabbit C CXX)
+project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
 
 option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
 
@@ -23,11 +30,6 @@ if(NOT USE_LATEST_STD)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Read version into variable
-file(READ version.txt PACKAGE_VERSION)
-string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
-message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
 # Grab git commitish into variable
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
@@ -39,7 +41,7 @@ IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
       OUTPUT_VARIABLE "vw_GIT_COMMIT"
       ERROR_QUIET
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    MESSAGE( STATUS "Git Version: ${vw_GIT_COMMIT}" )
+    MESSAGE(STATUS "Git Version: ${vw_GIT_COMMIT}" )
   ELSE(GIT_FOUND)
     SET(vw_GIT_COMMIT "")
   ENDIF(GIT_FOUND)
@@ -128,7 +130,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
-
 if(STATIC_LINK_VW_JAVA)
   set(Boost_USE_STATIC_LIBS ON)
   SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
@@ -170,6 +171,9 @@ endif()
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
 find_package(ZLIB REQUIRED)
 
+# This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
+include(GNUInstallDirs)
+
 # Ensure rapidjson submodule is ready
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
@@ -193,6 +197,7 @@ endif()
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
 
+add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
@@ -210,7 +215,7 @@ if(BUILD_PYTHON)
 endif()
 
 if(BUILD_SLIM_VW)
-  add_subdirectory(vowpalwabbitslim)
+  add_subdirectory(vowpalwabbit/slim)
 endif()
 
 if(BUILD_TESTS)
@@ -230,7 +235,7 @@ endif()
 # TODO convert cs directory to cmake
 # TODO convert c_test directory to cmake
 
-# PkgConfig
+# Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
@@ -238,5 +243,34 @@ if(VW_INSTALL)
 
   configure_file(libvw.pc.in libvw.pc)
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
+    DESTINATION lib/pkgconfig)
+
+  install(EXPORT VowpalWabbitConfig
+    FILE
+      VowpalWabbitTargets.cmake
+    NAMESPACE
+      VowpalWabbit::
+    DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
+
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfigVersion.cmake
+    VERSION ${PACKAGE_VERSION}
+    COMPATIBILITY ExactVersion)
+
+  configure_package_config_file (
+    cmake/VowpalWabbitConfig.cmake.in
+    ${CMAKE_BINARY_DIR}/VowpalWabbitConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
+
+  install(
+    FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfigVersion.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfig.cmake
+    DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
+
 endif()

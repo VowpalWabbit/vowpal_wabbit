@@ -46,7 +46,7 @@ rm -rf build
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DDO_NOT_BUILD_VW_C_WRAPPER=On
-make vw-bin vw-unit-test.out -j ${NUM_PROCESSORS}
+make vw-bin vw-unit-test.out spanning_tree -j ${NUM_PROCESSORS}
 ./test/unit_test/vw-unit-test.out
 cd ../test
 ./RunTests -d -fe -E 0.001
