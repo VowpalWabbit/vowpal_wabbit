@@ -179,14 +179,9 @@ example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existi
 multi_ex unwrap_example_list(py::list& ec)
 {
   multi_ex ex_coll;
-  for (ssize_t i = 0; i<len(ec); i++)
+  for (ssize_t i = 0; i < py::len(ec); i++)
   {
-    py::object eci = ec[i];
-    py::extract<example_ptr> get_ex(eci);
-    example_ptr ecp;
-    if (get_ex.check())
-      ecp = get_ex();
-    ex_coll.push_back(ecp.get());
+    ex_coll.push_back(py::extract<example_ptr>(ec[i])().get());
   }
   return ex_coll;
 }
