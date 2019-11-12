@@ -93,7 +93,9 @@ void set_label_features(label_feature_map& lfm, size_t lab, features& fs)
 {
   if (lfm.find(lab) == lfm.end())
     return;
-  lfm.emplace(lab, fs);
+  features tmp_features;
+  tmp_features.deep_copy_from(fs);
+  lfm.emplace(lab, std::move(tmp_features));
 }
 
 }  // namespace LabelDict

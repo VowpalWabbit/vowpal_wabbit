@@ -228,11 +228,8 @@ void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_pre
 
   if (ec.passthrough)
   {
-    //ec.passthrough->delete_v();
     delete ec.passthrough;
   }
-
-  //for (auto & j : ec.feature_space) j.delete_v();
 
   ec.indices.delete_v();
 }

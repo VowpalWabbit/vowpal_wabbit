@@ -279,18 +279,21 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     // nn_output_namespace but at least it will not leak memory
     // in that case
     ec.indices.push_back(nn_output_namespace);
-    features save_nn_output_namespace = ec.feature_space[nn_output_namespace];
-    ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
-    ec.total_sum_feat_sq += n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
+    //features save_nn_output_namespace = ec.feature_space[nn_output_namespace];
+    features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
+    auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
+    ec.feature_space[nn_output_namespace] = std::move(n.output_layer.feature_space[nn_output_namespace]);
+    ec.total_sum_feat_sq += tmp_sum_feat_sq;
     if (is_learn)
       base.learn(ec, n.k);
     else
       base.predict(ec, n.k);
     n.output_layer.partial_prediction = ec.partial_prediction;
     n.output_layer.loss = ec.loss;
-    ec.total_sum_feat_sq -= n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
+    ec.total_sum_feat_sq -= tmp_sum_feat_sq;
     ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
-    ec.feature_space[nn_output_namespace] = save_nn_output_namespace;
+    //ec.feature_space[nn_output_namespace] = save_nn_output_namespace;
+    ec.feature_space[nn_output_namespace] = std::move(save_nn_output_namespace);
     ec.indices.pop();
   }
   else

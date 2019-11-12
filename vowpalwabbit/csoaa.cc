@@ -741,12 +741,12 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
  */
 void inline process_label(ldf& data, example* ec)
 {
-  auto new_fs = ec->feature_space[ec->indices[0]];
+  //auto new_fs = ec->feature_space[ec->indices[0]];
   auto& costs = ec->l.cs.costs;
   for (auto const& cost : costs)
   {
     const auto lab = (size_t)cost.x;
-    LabelDict::set_label_features(data.label_features, lab, new_fs);
+    LabelDict::set_label_features(data.label_features, lab, ec->feature_space[ec->indices[0]]);
   }
 }
 

@@ -282,8 +282,9 @@ struct features
      indicies.delete_v();
      space_names.delete_v();
    }
-   features(const features&) = default;
-   features & operator=( const features& ) = default;
+   features(const features&) = delete;
+   features & operator=( const features& ) = delete;
+   
    
    // custom move operators required since we need to leave the old value in
    // a null state to prevent freeing of shallow copied v_arrays

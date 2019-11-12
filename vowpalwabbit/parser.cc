@@ -314,6 +314,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   all.p->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
+  // default text reader
+  all.p->text_reader = VW::read_lines;
+
   if (all.daemon || all.active)
   {
 #ifdef _WIN32
