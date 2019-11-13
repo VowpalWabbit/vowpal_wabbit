@@ -731,7 +731,6 @@ void reset_search_structure(search_private& priv)
   {
     if (ar.repr != nullptr)
     {
-      //ar.repr->delete_v();
       delete ar.repr;
     }
   }

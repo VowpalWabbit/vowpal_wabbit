@@ -62,7 +62,7 @@ add_library(vw ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} ZLIB::ZLIB
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
