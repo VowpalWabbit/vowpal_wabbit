@@ -1761,4 +1761,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
 {VW} --ccb_explore_adf --ring_size 20 --dsjson -d train-sets/ccb_reuse_medium.dsjson
     train-sets/ref/ccb_reuse_medium.stderr
 
+# Test 203: Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread
+python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree \
+    --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat \
+    --prediction_file cluster.predict
+        test-sets/ref/cluster.stderr
+        test-sets/ref/cluster.stdout
+        pred-sets/ref/cluster.predict
+
 # Do not delete this line or the empty line above it

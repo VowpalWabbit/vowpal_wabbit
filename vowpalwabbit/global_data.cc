@@ -275,6 +275,7 @@ vw::vw()
   scorer = nullptr;
   cost_sensitive = nullptr;
   loss = nullptr;
+  p = nullptr;
 
   reg_mode = 0;
   current_pass = 0;

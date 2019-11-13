@@ -4,9 +4,9 @@ services:
   - docker
 
 before_install:
-  - docker pull vowpalwabbit/ubuntu1404-build:0.1.0
+  - docker pull vowpalwabbit/ubuntu1404-build:0.1.1
 script:
-  - docker run -a STDOUT -v `pwd`:/vw -t vowpalwabbit/ubuntu1404-build:0.1.0 /bin/bash -c "cd /vw && chmod +x ./build-linux.sh && ./build-linux.sh"
+  - docker run -a STDOUT -v `pwd`:/vw -t vowpalwabbit/ubuntu1404-build:0.1.1 /bin/bash -c "cd /vw && chmod +x ./build-linux.sh && ./build-linux.sh"
 
 after_success:
-  - docker run -e TRAVIS_JOB_ID -e TRAVIS_BRANCH -a STDOUT -v `pwd`:/vw -t vowpalwabbit/ubuntu1404-build:0.1.0 /bin/bash -c "cd /vw && coveralls --include explore --include vowpalwabbit --gcov-options '\-lp'"
+  - docker run -e TRAVIS_JOB_ID -e TRAVIS_BRANCH -a STDOUT -v `pwd`:/vw -t vowpalwabbit/ubuntu1404-build:0.1.1 /bin/bash -c "cd /vw && coveralls --include explore --include vowpalwabbit --gcov-options '\-lp'"
