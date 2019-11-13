@@ -116,7 +116,7 @@ inline float parseFloat(const char* p, size_t* end_idx, const char* endLine = nu
   else
   {
     // originally strtod was used instead of strtof, was that on purpose?
-    return std::stof(start, end_idx);
+    return std::stod(start, end_idx);
   }
     
 }
@@ -143,7 +143,7 @@ inline int int_of_string(VW::string_view s)
   size_t end_idx = 0;
 
   // originally strtol was used instead of strtoi, was that on purpose?
-  int i = std::stoi(s.begin(), &end_idx);
+  int i = std::stol(s.begin(), &end_idx);
   if (end_idx == 0 && s.size() > 0)
   {
     std::cout << "warning: " << s << " is not a good int, replacing with 0"

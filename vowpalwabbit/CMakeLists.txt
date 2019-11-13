@@ -36,7 +36,7 @@ parser.h primitives.h print.h queue.h rand48.h recall_tree.h reductions.h scorer
 search_dep_parser.h search_entityrelationtask.h search_graph.h search_hooktask.h search_meta.h
 search_multiclasstask.h search_sequencetask.h search.h sender.h shared_feature_merger.h
 simple_label.h spanning_tree.h stable_unique.h stagewise_poly.h svrg.h topk.h unique_sort.h
-v_array.h v_hashmap.h version.h vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h
+v_array.h version.h vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h
 vwdll.h warm_cb.h vw_string_view.h
 )
 
