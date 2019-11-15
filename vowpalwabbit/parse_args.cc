@@ -1598,7 +1598,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
   }
 }
 
-char** get_argv_from_string(std::string s, int& argc)
+char** to_argv(std::string const& s, int& argc)
 {
   char* c = calloc_or_throw<char>(s.length() + 3);
   c[0] = 'b';
@@ -1607,9 +1607,10 @@ char** get_argv_from_string(std::string s, int& argc)
   substring ss = {c, c + s.length() + 2};
   std::vector<substring> foo;
   tokenize(' ', ss, foo);
+  escaped_tokenize(' ', ss, foo);
 
-  char** argv = calloc_or_throw<char*>(foo.size());
-  for (size_t i = 0; i < foo.size(); i++)
+  char** argv = calloc_or_throw<char*>(tokens.size());
+  for (size_t i = 0; i < tokens.size(); i++)
   {
     *(foo[i].end) = '\0';
     argv[i] = calloc_or_throw<char>(foo[i].end - foo[i].begin + 1);
@@ -1619,6 +1620,11 @@ char** get_argv_from_string(std::string s, int& argc)
   argc = (int)foo.size();
   free(c);
   return argv;
+}
+
+char** get_argv_from_string(std::string s, int& argc)
+{
+  return to_argv(s, argc);
 }
 
 void free_args(int argc, char* argv[])
@@ -1687,7 +1693,7 @@ vw* initialize(
 vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
-  char** argv = get_argv_from_string(s, argc);
+  char** argv = to_argv(s, argc);
   vw* ret = nullptr;
 
   try

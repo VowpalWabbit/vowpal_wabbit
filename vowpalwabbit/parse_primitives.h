@@ -5,6 +5,8 @@ license as described in the file LICENSE.
  */
 #pragma once
 #include <cmath>
+#include <string>
+#include <vector>
 #include <iostream>
 #include <stdint.h>
 #include <math.h>
@@ -43,7 +45,11 @@ void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false
     substring final_substring = {last, s.begin};
     ret.push_back(final_substring);
   }
+
+  if (!s.empty() || (s.empty() && allow_empty))
+    ret.emplace_back(s.substr(0));
 }
+
 
 bool substring_equal(const substring& a, const substring& b);
 bool substring_equal(const substring& ss, const char* str);
@@ -55,14 +61,14 @@ inline char* safe_index(char* start, char v, char* max)
 std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty = false)
 {
   std::vector<std::string> tokens;
-  std::sting current = "";
+  std::string current = "";
   bool in_escape = false;
   for(auto c : s)
   {
     if(in_escape)
     {
       current += c;
-      in_escape = false
+      in_escape = false;
     }
     else
     {
@@ -85,6 +91,9 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
       }
     }
   }
+
+  if (!current.empty() || (current.empty() && allow_empty))
+    tokens.push_back(current);
 
   return tokens;
 }

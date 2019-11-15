@@ -38,7 +38,11 @@ vw* seed_vw_model(
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
+VW_DEPRECATED("By value version is deprecated, pass std::string by const ref instead using `to_argv`")
 char** get_argv_from_string(std::string s, int& argc);
+
+char** to_argv(std::string const& s, int& argc);
+
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
 /*
