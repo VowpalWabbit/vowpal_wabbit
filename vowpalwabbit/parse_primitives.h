@@ -51,6 +51,46 @@ bool substring_equal(const substring& ss, const char* str);
 size_t substring_len(substring& s);
 
 inline char* safe_index(char* start, char v, char* max)
+
+std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty = false)
+{
+  std::vector<std::string> tokens;
+  std::sting current = "";
+  bool in_escape = false;
+  for(auto c : s)
+  {
+    if(in_escape)
+    {
+      current += c;
+      in_escape = false
+    }
+    else
+    {
+      if(c == delim)
+      {
+        if (current != "" || allow_empty)
+        {
+          tokens.push_back(current);
+        }
+
+        current.clear();
+      }
+      else if (c == '\\')
+      {
+        in_escape = !in_escape;
+      }
+      else
+      {
+        current += c;
+      }
+    }
+  }
+
+  return tokens;
+}
+
+
+inline const char* safe_index(const char* start, char v, const char* max)
 {
   while (start != max && *start != v) start++;
   return start;
