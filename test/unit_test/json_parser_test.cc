@@ -27,7 +27,7 @@ multi_ex parse_json(vw& all, std::string line)
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_json_simple)
 {
-  auto vw = VW::initialize("--json --no_stdin", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::string json_text = R"(
     {
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cb)
       ]
     })";
 
-  auto vw = VW::initialize("--cb_adf --json --no_stdin", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--cb_adf --json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
   BOOST_CHECK_EQUAL(examples.size(), 4);
 
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb)
       ]
     })";
 
-  auto vw = VW::initialize("--ccb_explore_adf --json --no_stdin", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--ccb_explore_adf --json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   auto examples = parse_json(*vw, json_text);
 
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
       ]
     })";
 
-  auto vw = VW::initialize("--ccb_explore_adf --json --no_stdin", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--ccb_explore_adf --json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   auto examples = parse_json(*vw, json_text);
 
