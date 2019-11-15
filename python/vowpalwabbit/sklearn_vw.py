@@ -452,7 +452,7 @@ class VW(BaseEstimator):
 
     def load(self, filename):
         """Load model from file"""
-        self.vw_ = pyvw.vw(**self.params, initial_regressor=filename)
+        self.set_params(**self.params, initial_regressor=filename)
         # Assume that the model is already fitted when loaded from file.
         self.fit_ = True
 
