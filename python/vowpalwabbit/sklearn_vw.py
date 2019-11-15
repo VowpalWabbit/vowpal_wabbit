@@ -448,14 +448,14 @@ class VW(BaseEstimator):
 
     def save(self, filename):
         """Save model to file"""
-        joblib.dump(dict(params=self.get_params(), coefs=self.get_coefs(), fit=self.fit_), filename=filename)
+        model = self.get_vw()
+        model.save(filename)
 
     def load(self, filename):
         """Load model from file"""
-        obj = joblib.load(filename=filename)
-        self.set_params(**obj['params'])
-        self.set_coefs(obj['coefs'])
-        self.fit_ = obj['fit']
+        self.vw_ = pyvw.vw(**self.params, initial_regressor=filename)
+        # Assume that the model is already fitted when loaded from file.
+        self.fit_ = True
 
 
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
