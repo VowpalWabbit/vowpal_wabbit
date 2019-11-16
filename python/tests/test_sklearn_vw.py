@@ -246,7 +246,7 @@ def test_tovw():
     assert tovw(x=csr_matrix(x), y=y, sample_weight=w) == expected
 
 def test_save_load(tmp_path):
-    train_file = os.path.realpath(os.path.join(tmp_path, "train.model"))
+    train_file = str(tmp_path / "train.model")
 
     X = [[1, 2], [3, 4], [5, 6], [7, 8]]
     y = [1, 2, 3, 4]
