@@ -245,7 +245,7 @@ def test_tovw():
 
     assert tovw(x=csr_matrix(x), y=y, sample_weight=w) == expected
 
-def test_save_load(self, tmp_path):
+def test_save_load(tmp_path):
     train_file = os.path.realpath(os.path.join(tmp_path, "train.model"))
 
     X = [[1, 2], [3, 4], [5, 6], [7, 8]]
@@ -255,7 +255,7 @@ def test_save_load(self, tmp_path):
     model_before.fit(X, y)
     before_saving = model_before.predict(X)
 
-    model_after.save(train_file)
+    model_before.save(train_file)
 
     model_after = VWRegressor(l=100)
     model_after.load(train_file)
