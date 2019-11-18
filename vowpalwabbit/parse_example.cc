@@ -84,7 +84,7 @@ class TC_parser
     // TODO: Find a sane way to handle nulls in the middle of a string (either VW::string_view or substring)
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
-    ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples << ": \"" << tmp_view << "\""
+    ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view << "\""
        << std::endl;
     if (_p->strict_parse)
     {

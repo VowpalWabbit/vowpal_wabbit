@@ -695,7 +695,7 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
 
-  ae->example_counter = (size_t)(all.p->end_parsed_examples);
+  ae->example_counter = (size_t)(all.p->end_parsed_examples.load());
   if (!all.p->emptylines_separate_examples)
     all.p->in_pass_counter++;
 
@@ -759,7 +759,7 @@ example* new_unused_example(vw& all)
   example* ec = &get_unused_example(&all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
-  ec->example_counter = (size_t)all.p->begin_parsed_examples;
+  ec->example_counter = (size_t)all.p->begin_parsed_examples.load();
   return ec;
 }
 example* read_example(vw& all, char* example_line)
@@ -871,7 +871,7 @@ void clean_example(vw& all, example& ec, bool rewind)
 {
   if (rewind)
   {
-    assert(all.p->begin_parsed_examples > 0);
+    assert(all.p->begin_parsed_examples.load() > 0);
     all.p->begin_parsed_examples--;
   }
 

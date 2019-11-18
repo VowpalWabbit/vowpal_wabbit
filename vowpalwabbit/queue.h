@@ -47,12 +47,10 @@ class ptr_queue
   void push(T* item)
   {
     std::unique_lock<std::mutex> lock(mut);
-    while (object_queue.size() == max_size && !done)
+    while (object_queue.size() == max_size)
     {
       is_not_full.wait(lock);
     }
-    if (done)
-      return;
     object_queue.push(item);
 
     is_not_empty.notify_all();
