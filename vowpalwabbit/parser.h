@@ -59,6 +59,10 @@ struct parser
     delete output;
   }
 
+  //delete copy constructor
+  parser(const parser&) = delete;
+  parser& operator=(const parser&) = delete;
+
   // helper(s) for text parsing
   v_array<VW::string_view> words;
   v_array<VW::string_view> name;

@@ -188,19 +188,25 @@ struct object_pool
     return inner_pool.get_object( );
   }
 
-  bool empty() const { return inner_pool.empty(); }
+  bool empty() const
+  {
+    std::unique_lock<std::mutex> lock(m_lock);
+    return inner_pool.empty();
+  }
 
   size_t size() const
   {
+    std::unique_lock<std::mutex> lock(m_lock);
     return inner_pool.size();
   }
 
   bool is_from_pool(T* obj) const
   {
+    std::unique_lock<std::mutex> lock(m_lock);
     return inner_pool.is_from_pool(obj);
   }
 
-  std::mutex m_lock;
+  mutable std::mutex m_lock;
   no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
 };
 }  // namespace VW

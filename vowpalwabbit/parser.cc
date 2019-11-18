@@ -735,7 +735,7 @@ void setup_example(vw& all, example* ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (features& fs : *ae)
+  for (const features& fs : *ae)
   {
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
@@ -896,7 +896,7 @@ void finish_example(vw& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(vw& all, v_array<example*> examples)
+void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
   all.p->end_parsed_examples += examples.size();
   for (auto example : examples)

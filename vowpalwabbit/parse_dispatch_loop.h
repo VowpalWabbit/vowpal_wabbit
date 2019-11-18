@@ -2,7 +2,7 @@
 
 #include <functional>
 
-using dispatch_fptr = std::function<void(vw&, v_array<example*>&)>;
+using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {

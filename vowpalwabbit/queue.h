@@ -27,7 +27,7 @@ class ptr_queue
   T* pop()
   {
     std::unique_lock<std::mutex> lock(mut);
-    while (!done && object_queue.size() == 0)
+    while (object_queue.size() == 0 && !done)
     {
       is_not_empty.wait(lock);
     }
@@ -40,7 +40,6 @@ class ptr_queue
     auto item = object_queue.front();
     object_queue.pop();
 
-    lock.unlock();
     is_not_full.notify_all();
     return item;
   }
@@ -48,33 +47,39 @@ class ptr_queue
   void push(T* item)
   {
     std::unique_lock<std::mutex> lock(mut);
-    while (object_queue.size() == max_size)
+    while (object_queue.size() == max_size && !done)
     {
       is_not_full.wait(lock);
     }
-
+    if (done)
+      return;
     object_queue.push(item);
 
-    lock.unlock();
     is_not_empty.notify_all();
   }
 
   void set_done()
   {
-    done = true;
-
+    {
+      std::unique_lock<std::mutex> lock(mut);
+      done = true;
+    }
     is_not_empty.notify_all();
     is_not_full.notify_all();
   }
 
-  size_t size() const { return object_queue.size(); }
+  size_t size() const
+  {
+    std::unique_lock<std::mutex> lock(mut);
+    return object_queue.size();
+  }
 
  private:
   size_t max_size;
   std::queue<T*> object_queue;
-  std::mutex mut;
+  mutable std::mutex mut;
 
-  bool done = false;
+  volatile bool done = false;
 
   std::condition_variable is_not_full;
   std::condition_variable is_not_empty;
