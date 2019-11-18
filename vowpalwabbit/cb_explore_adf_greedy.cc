@@ -42,7 +42,10 @@ template <bool is_learn>
 void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Explore uniform random an epsilon fraction of the time.
-  LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
+  if(is_learn)
+    base.learn(examples);
+  else
+    base.predict(examples);
 
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
 

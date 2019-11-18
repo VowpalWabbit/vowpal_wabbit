@@ -3,13 +3,13 @@
 struct vw_dbg
 {
   const static bool default_log     = false;
-  const static bool learner         = true;
+  const static bool learner         = false;
   const static bool search          = false;
-  const static bool gd              = true;
-  const static bool gd_predict      = true;
+  const static bool gd              = false;
+  const static bool gd_predict      = false;
   const static bool binary          = false;
   const static bool cb_adf          = false;
-  const static bool csoaa           = true;
+  const static bool csoaa           = false;
 
   const static bool track_stack     = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa;
 };

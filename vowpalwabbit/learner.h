@@ -111,22 +111,34 @@ inline float noop_sensitivity(void*, base_learner&, example&)
 }
 float recur_sensitivity(void*, base_learner&, example&);
 
-inline void increment_depth(example& ex) { ++ex.stack_depth; }
+inline void increment_depth(example& ex) 
+{
+  if(vw_dbg::track_stack) 
+    ++ex.stack_depth; 
+}
 
 inline void increment_depth(multi_ex& ec_seq)
 {
-  for (auto& ec : ec_seq)
-  {
-    ++ec->stack_depth;
+  if(vw_dbg::track_stack){ 
+    for (auto& ec : ec_seq)
+    {
+      ++ec->stack_depth;
+    }
   }
 }
 
-inline void decrement_depth(example& ex) { --ex.stack_depth; }
+inline void decrement_depth(example& ex) { 
+  if(vw_dbg::track_stack) 
+    --ex.stack_depth; 
+}
+
 inline void decrement_depth(multi_ex& ec_seq)
 {
-  for (auto& ec : ec_seq)
-  {
-    --ec->stack_depth;
+  if(vw_dbg::track_stack){ 
+    for (auto& ec : ec_seq)
+    {
+      --ec->stack_depth;
+    }
   }
 }
 
