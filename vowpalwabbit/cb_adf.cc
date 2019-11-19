@@ -255,7 +255,6 @@ void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
 template <bool predict>
 void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 {
-  // uint32_t action = 0;
   if (predict)  // first get the prediction to return
   {
     gen_cs_example_ips(examples, _cs_labels);

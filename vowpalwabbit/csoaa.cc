@@ -309,9 +309,6 @@ void base_learn_restore_pred(single_learner& base, example* ec1) {
   //        and result saved in ec.pred.  This is needed during finish_example()
   //        Therefore we need to save the state of ec->pred and restore it after
   //        base.learn is called.
-  //
-  //        We can (and should) get rid of this if we strictly follow the principle that we don't
-  //        allow gd.learn (or any other reduction.learn) to modify state of example.pred
 
   const polyprediction saved_pred = ec1->pred; // save
   base.learn(*ec1);

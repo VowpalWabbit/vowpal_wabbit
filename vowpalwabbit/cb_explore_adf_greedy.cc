@@ -33,20 +33,15 @@ struct cb_explore_adf_greedy
  private:
   template <bool is_learn>
   void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+  void update_example_prediction(multi_ex& examples);
 };
 
 cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
  : _epsilon(epsilon), _first_only(first_only) {}
 
-template <bool is_learn>
-void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
-{
-  // Explore uniform random an epsilon fraction of the time.
-  if(is_learn)
-    base.learn(examples);
-  else
-    base.predict(examples);
 
+void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
+{
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
 
   uint32_t num_actions = (uint32_t)preds.size();
@@ -61,6 +56,19 @@ void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, 
   }
   else
     preds[0].score += 1.f - _epsilon;
+}
+
+
+template <bool is_learn>
+void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
+{
+  // Explore uniform random an epsilon fraction of the time.
+  if(is_learn)
+    base.learn(examples);
+  else
+    base.predict(examples);
+
+  update_example_prediction(examples);
 }
 
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
