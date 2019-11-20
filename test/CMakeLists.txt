@@ -49,5 +49,5 @@ endif()
 # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
 add_custom_target(test_with_output
   COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-  DEPENDS ezexample_predict ezexample_predict_threaded ezexample_train library_example test_search search_generate recommend gd_mf_weights vw-unit-test.out vw-bin
+  DEPENDS spanning_tree vw-unit-test.out vw-bin
 )
