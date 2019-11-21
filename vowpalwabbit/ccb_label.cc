@@ -344,5 +344,5 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 
 // Export the definition of this label parser.
 label_parser ccb_label_parser = {default_label, parse_label, cache_label, read_cached_label, delete_label, ccb_weight,
-    copy_label, test_label, sizeof(CCB::label)};
+    copy_label, test_label, sizeof(CCB::label), nullptr};
 }  // namespace CCB

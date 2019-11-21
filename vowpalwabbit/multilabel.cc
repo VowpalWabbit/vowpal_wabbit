@@ -117,7 +117,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 }
 
 label_parser multilabel = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
-    test_label, sizeof(labels)};
+    test_label, sizeof(labels), nullptr};
 
 void print_update(vw& all, bool is_test, example& ec)
 {
