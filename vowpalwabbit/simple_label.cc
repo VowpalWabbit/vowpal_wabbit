@@ -13,10 +13,10 @@ char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
   memcpy(&ld->label, c, sizeof(ld->label));
   //  std::cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label << std::endl;
   c += sizeof(ld->label);
-  memcpy(&ld->weight, c, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  memcpy(&ld->initial, c, sizeof(ld->initial));
-  c += sizeof(ld->initial);
+  memcpy(&ld->serialized_weight, c, sizeof(ld->serialized_weight));
+  c += sizeof(ld->serialized_weight);
+  memcpy(&ld->serialized_initial, c, sizeof(ld->serialized_initial));
+  c += sizeof(ld->serialized_initial);
 
   count_label(sd, ld->label);
   return c;
@@ -26,7 +26,7 @@ size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
 {
   label_data* ld = (label_data*)v;
   char* c;
-  size_t total = sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial);
+  size_t total = sizeof(ld->label) + sizeof(ld->serialized_weight) + sizeof(ld->serialized_initial);
   if (cache.buf_read(c, total) < total)
     return 0;
   bufread_simple_label(sd, ld, c);
@@ -37,17 +37,17 @@ size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
 float get_weight(void* v)
 {
   label_data* ld = (label_data*)v;
-  return ld->weight;
+  return ld->serialized_weight;
 }
 
 char* bufcache_simple_label(label_data* ld, char* c)
 {
   memcpy(c, &ld->label, sizeof(ld->label));
   c += sizeof(ld->label);
-  memcpy(c, &ld->weight, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  memcpy(c, &ld->initial, sizeof(ld->initial));
-  c += sizeof(ld->initial);
+  memcpy(c, &ld->serialized_weight, sizeof(ld->serialized_weight));
+  c += sizeof(ld->serialized_weight);
+  memcpy(c, &ld->serialized_initial, sizeof(ld->serialized_initial));
+  c += sizeof(ld->serialized_initial);
   return c;
 }
 
@@ -55,7 +55,7 @@ void cache_simple_label(void* v, io_buf& cache)
 {
   char* c;
   label_data* ld = (label_data*)v;
-  cache.buf_write(c, sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial));
+  cache.buf_write(c, sizeof(ld->label) + sizeof(ld->serialized_weight) + sizeof(ld->serialized_initial));
   bufcache_simple_label(ld, c);
 }
 
@@ -63,8 +63,8 @@ void default_simple_label(void* v)
 {
   label_data* ld = (label_data*)v;
   ld->label = FLT_MAX;
-  ld->weight = 1.;
-  ld->initial = 0.;
+  ld->serialized_weight = 1.;
+  ld->serialized_initial = 0.;
 }
 
 bool test_label(void* v)
@@ -75,6 +75,8 @@ bool test_label(void* v)
 
 void delete_simple_label(void*) {}
 
+// Example: 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924
+// label := 0, weight := 1, initial := 0.5
 void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
 {
   label_data* ld = (label_data*)v;
@@ -88,12 +90,12 @@ void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& w
       break;
     case 2:
       ld->label = float_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
+      ld->serialized_weight = float_of_substring(words[1]);
       break;
     case 3:
       ld->label = float_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
-      ld->initial = float_of_substring(words[2]);
+      ld->serialized_weight = float_of_substring(words[1]);
+      ld->serialized_initial = float_of_substring(words[2]);
       break;
     default:
      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
@@ -103,8 +105,25 @@ void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& w
   count_label(sd, ld->label);
 }
 
-label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
-    delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
+void post_parse_setup(example* ec)
+{
+  ec->initial = ec->l.simple.serialized_initial;
+}
+
+label_parser simple_label_parser = {
+  default_simple_label,     // label_data default constructor
+  parse_simple_label,       // parse input stream of words into label_data
+  cache_simple_label,       // write label to cache
+  read_cached_simple_label, // read label from cache
+  delete_simple_label,
+  get_weight,
+  nullptr,                  // deep copy of label
+  test_label,               // is ths a test label?
+  sizeof(label_data),
+  post_parse_setup          // called after example is completely parsed so that
+                            // label specific fixups can happen
+                            // (for example serialized_initial used by gd)
+};
 
 void print_update(vw& all, example& ec)
 {

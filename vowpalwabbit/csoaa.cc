@@ -66,7 +66,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   uint32_t prediction = 1;
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
-  ec.l.simple = {0., 0., 0.};
+  ec.l.simple = {0.};
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
@@ -75,7 +75,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   }
   else if (DO_MULTIPREDICT && !is_learn)
   {
-    ec.l.simple = {FLT_MAX, 0.f, 0.f};
+    ec.l.simple = {FLT_MAX};
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
     {
@@ -133,7 +133,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
       predict_or_learn<false>, c->num_classes, prediction_type::multiclass, "csoaa");
-  all.p->lp = cs_label;
+  all.example_parser->lbl_parser = cs_label;
   all.label_type = label_type::cs;
 
   l.set_finish_example(finish_example);
@@ -254,16 +254,14 @@ void unsubtract_example(example* ec)
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
   COST_SENSITIVE::label ld = ec.l.cs;
-  label_data simple_label;
-  simple_label.initial = 0.;
-  simple_label.label = FLT_MAX;
 
-  // WARNING: Access of label information when making prediction is problematic.  
+  // WARNING: Access of label information when making prediction is problematic.
   // What should be done here about ld.costs[0].class_index?
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
   // WARNING: Access of label information when making prediction is problematic.
   // What should be done here about ec.l.simple?
+  const label_data simple_label {FLT_MAX};
   ec.l.simple = simple_label;
   base.predict(ec);  // make a prediction
 
@@ -351,7 +349,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
-      simple_label.initial = 0.;
+      ec1->initial = 0.;
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       float old_weight = ec1->weight;
       ec1->weight = value_diff;
@@ -394,7 +392,6 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     // build example for the base learner
     label_data simple_label;
 
-    simple_label.initial = 0.;
     float old_weight = ec->weight;
     if (!data.treat_as_classifier)  // treat like regression
       simple_label.label = costs[0].x;
@@ -411,6 +408,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
+    ec->initial = 0.;
     ec->l.simple = simple_label;
 
     // learn
@@ -876,7 +874,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   if (ld->rank)
     all.delete_prediction = delete_action_scores;
 
-  all.p->lp = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
   all.label_type = label_type::cs;
 
   ld->treat_as_classifier = false;
@@ -905,7 +903,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
       all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << std::endl;
   }
 
-  all.p->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
+  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
   features fs;
   ld->label_features.init(256, fs, LabelDict::size_t_eq);

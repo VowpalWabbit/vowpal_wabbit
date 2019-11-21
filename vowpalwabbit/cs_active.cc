@@ -59,10 +59,7 @@ struct cs_active
   float distance_to_range;
   float range;
 
-  ~cs_active()
-  {
-    examples_by_queries.delete_v();
-  }
+  ~cs_active() { examples_by_queries.delete_v(); }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -98,7 +95,6 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
   if (is_learn)
   {
     vw& all = *cs_a.all;
-    ec.l.simple.weight = 1.;
     ec.weight = 1.;
     if (is_simulation)
     {
@@ -215,7 +211,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
-  ec.l.simple = {0., 0., 0.};
+  ec.l.simple = {0.};
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round
@@ -243,16 +239,10 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     {
       lqd.is_range_overlapped = (lqd.min_pred <= min_max_cost);
       n_overlapped += (uint32_t)(lqd.is_range_overlapped);
-      // large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
-      // if(cl.is_range_overlapped && is_learn)
-      //{ std::cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ",
-      // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
-      //}
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
       if (lqd.cl.x > lqd.max_pred || lqd.cl.x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
-        // cs_a.all->sd->distance_to_range[cl.class_index-1] += std::max(cl.x - cl.max_pred, cl.min_pred - cl.x);
         cs_a.distance_to_range += std::max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
         cs_a.range += lqd.max_pred - lqd.min_pred;
       }
@@ -260,7 +250,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
     bool query = (n_overlapped > 1);
     size_t queries = cs_a.all->sd->queries;
-    // bool any_query = false;
     for (lq_data& lqd : cs_a.query_data)
     {
       bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && lqd.is_range_large) ||
@@ -364,7 +353,8 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   if (!options.was_supplied("adax"))
     all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
-  all.p->lp = cs_label;  // assigning the label parser
+  // Label parser set to cost sensitive label parser
+  all.example_parser->lbl_parser = cs_label;
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);

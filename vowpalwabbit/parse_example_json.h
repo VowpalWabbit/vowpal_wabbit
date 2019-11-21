@@ -176,7 +176,7 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
-    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
 
     // don't allow { { { } } }
     if (ctx.previous_state == this)
@@ -208,12 +208,12 @@ class LabelObjectState : public BaseState<audit>
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      ctx.ex->l.simple.initial = v;
+      ctx.ex->initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->l.simple.weight = v;
+      ctx.ex->weight = v;
       found = true;
     }
     // CB
@@ -460,7 +460,7 @@ struct MultiState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
     if (ctx.all->label_type == label_type::ccb)
     {
       ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
@@ -505,7 +505,7 @@ struct SlotsState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
     ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
 
     ctx.examples->push_back(ctx.ex);
@@ -833,7 +833,7 @@ class DefaultState : public BaseState<audit>
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-          ctx.all->p->lp.default_label(&ctx.ex->l);
+          ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
           ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
@@ -1295,7 +1295,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
     ctx.init(all);
     ctx.examples = examples;
     ctx.ex = (*examples)[0];
-    all->p->lp.default_label(&ctx.ex->l);
+    all->example_parser->lbl_parser.default_label(&ctx.ex->l);
 
     ctx.stream = stream;
     ctx.stream_end = stream_end;
@@ -1423,7 +1423,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 template <bool audit>
 bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
 {
-  if (all->p->decision_service_json)
+  if (all->example_parser->decision_service_json)
   {
     // Skip lines that do not start with "{"
     if (line[0] != '{')

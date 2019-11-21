@@ -125,18 +125,18 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
 
 void reset_source(vw& all, size_t numbits)
 {
-  io_buf* input = all.p->input;
+  io_buf* input = all.example_parser->input;
   input->current = 0;
-  if (all.p->write_cache)
+  if (all.example_parser->write_cache)
   {
-    all.p->output->flush();
-    all.p->write_cache = false;
-    all.p->output->close_file();
-    remove(all.p->output->finalname.begin());
+    all.example_parser->output->flush();
+    all.example_parser->write_cache = false;
+    all.example_parser->output->close_file();
+    remove(all.example_parser->output->finalname.begin());
 
-    if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
-      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
-                                                                          << all.p->output->finalname);
+    if (0 != rename(all.example_parser->output->currentname.begin(), all.example_parser->output->finalname.begin()))
+      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.example_parser->output->currentname << " to "
+                                                                          << all.example_parser->output->finalname);
 
     while (input->num_files() > 0)
       if (input->compressed())
@@ -150,44 +150,44 @@ void reset_source(vw& all, size_t numbits)
         if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
           io_buf::close_file_or_socket(fd);
       }
-    input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
+    input->open_file(all.example_parser->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
                                                                                       // open_file
-    all.p->reader = read_cached_features;
+    all.example_parser->reader = read_cached_features;
   }
-  if (all.p->resettable == true)
+  if (all.example_parser->resettable == true)
   {
     if (all.daemon)
     {
       // wait for all predictions to be sent back to client
       {
-        std::unique_lock<std::mutex> lock(all.p->output_lock);
-        all.p->output_done.wait(lock, [&] { return all.p->ready_parsed_examples.size() == 0; });
+        std::unique_lock<std::mutex> lock(all.example_parser->output_lock);
+        all.example_parser->output_done.wait(lock, [&] { return all.example_parser->ready_parsed_examples.size() == 0; });
       }
 
       // close socket, erase final prediction sink and socket
-      io_buf::close_file_or_socket(all.p->input->files[0]);
+      io_buf::close_file_or_socket(all.example_parser->input->files[0]);
       all.final_prediction_sink.clear();
-      all.p->input->files.clear();
+      all.example_parser->input->files.clear();
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
+      int f = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
       if (f < 0)
         THROW("accept: " << strerror(errno));
 
       // note: breaking cluster parallel online learning by dropping support for id
 
       all.final_prediction_sink.push_back((size_t)f);
-      all.p->input->files.push_back(f);
+      all.example_parser->input->files.push_back(f);
 
-      if (isbinary(*(all.p->input)))
+      if (isbinary(*(all.example_parser->input)))
       {
-        all.p->reader = read_cached_features;
+        all.example_parser->reader = read_cached_features;
         all.print = binary_print_result;
       }
       else
       {
-        all.p->reader = read_features_string;
+        all.example_parser->reader = read_features_string;
         all.print = print_result;
       }
     }
@@ -222,7 +222,7 @@ void finalize_source(parser* p)
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
-  io_buf* output = all.p->output;
+  io_buf* output = all.example_parser->output;
   if (output->files.size() != 0)
   {
     all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
@@ -247,14 +247,14 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   output->write_file(f, &all.num_bits, sizeof(all.num_bits));
 
   push_many(output->finalname, newname.c_str(), newname.length() + 1);
-  all.p->write_cache = true;
+  all.example_parser->write_cache = true;
   if (!quiet)
     all.trace_message << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
 {
-  all.p->write_cache = false;
+  all.example_parser->write_cache = false;
 
   for (auto& file : cache_files)
   {
@@ -262,7 +262,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     if (!kill_cache)
       try
       {
-        f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
+        f = all.example_parser->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
       }
       catch (const std::exception&)
       {
@@ -272,25 +272,25 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.p->input, f);
+      uint64_t c = cache_numbits(all.example_parser->input, f);
       if (c < all.num_bits)
       {
         if (!quiet)
           all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
                             << endl;
-        all.p->input->close_file();
+        all.example_parser->input->close_file();
         make_write_cache(all, file, quiet);
       }
       else
       {
         if (!quiet)
           all.trace_message << "using cache_file = " << file.c_str() << endl;
-        all.p->reader = read_cached_features;
+        all.example_parser->reader = read_cached_features;
         if (c == all.num_bits)
-          all.p->sorted_cache = true;
+          all.example_parser->sorted_cache = true;
         else
-          all.p->sorted_cache = false;
-        all.p->resettable = true;
+          all.example_parser->sorted_cache = false;
+        all.example_parser->resettable = true;
       }
     }
   }
@@ -300,7 +300,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   {
     if (!quiet)
       all.trace_message << "using no cache" << endl;
-    all.p->output->space.delete_v();
+    all.example_parser->output->space.delete_v();
   }
 }
 
@@ -311,7 +311,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
-  all.p->input->current = 0;
+  all.example_parser->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   if (all.daemon || all.active)
@@ -322,8 +322,8 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (lastError != 0)
       THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
-    all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
-    if (all.p->bound_sock < 0)
+    all.example_parser->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
+    if (all.example_parser->bound_sock < 0)
     {
       std::stringstream msg;
       msg << "socket: " << strerror(errno);
@@ -332,12 +332,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     }
 
     int on = 1;
-    if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
       all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
-    if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
       all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
 
     sockaddr_in address;
@@ -349,18 +349,18 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     address.sin_port = htons(port);
 
     // attempt to bind to socket
-    if (::bind(all.p->bound_sock, (sockaddr*)&address, sizeof(address)) < 0)
+    if (::bind(all.example_parser->bound_sock, (sockaddr*)&address, sizeof(address)) < 0)
       THROWERRNO("bind");
 
     // listen on socket
-    if (listen(all.p->bound_sock, 1) < 0)
+    if (listen(all.example_parser->bound_sock, 1) < 0)
       THROWERRNO("listen");
 
     // write port file
     if (all.options->was_supplied("port_file"))
     {
       socklen_t address_size = sizeof(address);
-      if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
+      if (getsockname(all.example_parser->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
         all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
@@ -467,44 +467,44 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    all.p->max_fd = 0;
+    all.example_parser->max_fd = 0;
     if (!all.quiet)
       all.trace_message << "calling accept" << endl;
-    int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
+    int f = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
     if (f < 0)
       THROWERRNO("accept");
 
-    all.p->label_sock = f;
+    all.example_parser->label_sock = f;
     all.print = print_result;
 
     all.final_prediction_sink.push_back((size_t)f);
 
-    all.p->input->files.push_back(f);
-    all.p->max_fd = std::max(f, all.p->max_fd);
+    all.example_parser->input->files.push_back(f);
+    all.example_parser->max_fd = std::max(f, all.example_parser->max_fd);
     if (!all.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
-    all.p->max_fd++;
+    all.example_parser->max_fd++;
     if (all.active)
-      all.p->reader = read_features_string;
+      all.example_parser->reader = read_features_string;
     else
     {
-      if (isbinary(*(all.p->input)))
+      if (isbinary(*(all.example_parser->input)))
       {
-        all.p->reader = read_cached_features;
+        all.example_parser->reader = read_cached_features;
         all.print = binary_print_result;
       }
       else
       {
-        all.p->reader = read_features_string;
+        all.example_parser->reader = read_features_string;
       }
-      all.p->sorted_cache = true;
+      all.example_parser->sorted_cache = true;
     }
-    all.p->resettable = all.p->write_cache || all.daemon;
+    all.example_parser->resettable = all.example_parser->write_cache || all.daemon;
   }
   else
   {
-    if (!all.p->input->files.empty())
+    if (!all.example_parser->input->files.empty())
     {
       if (!quiet)
         all.trace_message << "ignoring text input in favor of cache input" << endl;
@@ -516,7 +516,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         all.trace_message << "Reading datafile = " << temp << endl;
       try
       {
-        all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+        all.example_parser->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
       catch (std::exception const& ex)
       {
@@ -538,35 +538,35 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
         {
-          all.p->reader = &read_features_json<true>;
-          all.p->text_reader = &line_to_examples_json<true>;
-          all.p->audit = true;
+          all.example_parser->reader = &read_features_json<true>;
+          all.example_parser->text_reader = &line_to_examples_json<true>;
+          all.example_parser->audit = true;
         }
         else
         {
-          all.p->reader = &read_features_json<false>;
-          all.p->text_reader = &line_to_examples_json<false>;
-          all.p->audit = false;
+          all.example_parser->reader = &read_features_json<false>;
+          all.example_parser->text_reader = &line_to_examples_json<false>;
+          all.example_parser->audit = false;
         }
 
-        all.p->decision_service_json = input_options.dsjson;
+        all.example_parser->decision_service_json = input_options.dsjson;
       }
       else
       {
-        all.p->reader = read_features_string;
-        all.p->text_reader = VW::read_lines;
+        all.example_parser->reader = read_features_string;
+        all.example_parser->text_reader = VW::read_lines;
       }
 
-      all.p->resettable = all.p->write_cache;
+      all.example_parser->resettable = all.example_parser->write_cache;
     }
   }
 
-  if (passes > 1 && !all.p->resettable)
+  if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  all.p->input->count = all.p->input->files.size();
+  all.example_parser->input->count = all.example_parser->input->files.size();
   if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.example_parser->input->files.size() << endl;
 }
 
 void lock_done(parser& p)
@@ -579,7 +579,7 @@ void lock_done(parser& p)
 void set_done(vw& all)
 {
   all.early_terminate = true;
-  lock_done(*all.p);
+  lock_done(*all.example_parser);
 }
 
 void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t initial_length, v_array<size_t>& gram_mask,
@@ -635,18 +635,18 @@ void generateGrams(vw& all, example*& ex)
     size_t length = ex->feature_space[index].size();
     for (size_t n = 1; n < all.ngram[index]; n++)
     {
-      all.p->gram_mask.clear();
-      all.p->gram_mask.push_back((size_t)0);
-      addgrams(all, n, all.skips[index], ex->feature_space[index], length, all.p->gram_mask, 0);
+      all.example_parser->gram_mask.clear();
+      all.example_parser->gram_mask.push_back((size_t)0);
+      addgrams(all, n, all.skips[index], ex->feature_space[index], length, all.example_parser->gram_mask, 0);
     }
   }
 }
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.p->lp.default_label(&ae->l);
+  all.example_parser->lbl_parser.default_label(&ae->l);
   ae->end_pass = true;
-  all.p->in_pass_counter = 0;
+  all.example_parser->in_pass_counter = 0;
 }
 
 void feature_limit(vw& all, example* ex)
@@ -664,7 +664,7 @@ namespace VW
 {
 example& get_unused_example(vw* all)
 {
-  parser* p = all->p;
+  parser* p = all->example_parser;
   auto ex = p->example_pool.get_object();
   ex->in_use = true;
   p->begin_parsed_examples++;
@@ -678,32 +678,33 @@ void setup_examples(vw& all, v_array<example*>& examples)
 
 void setup_example(vw& all, example* ae)
 {
-  if (all.p->sort_features && ae->sorted == false)
+  if (all.example_parser->sort_features && ae->sorted == false)
     unique_sort_features(all.parse_mask, ae);
 
-  if (all.p->write_cache)
+  if (all.example_parser->write_cache)
   {
-    all.p->lp.cache_label(&ae->l, *(all.p->output));
-    cache_features(*(all.p->output), ae, all.parse_mask);
+    all.example_parser->lbl_parser.cache_label(&ae->l, *(all.example_parser->output));
+    cache_features(*(all.example_parser->output), ae, all.parse_mask);
   }
 
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
+  ae->initial = 0.;
 
-  ae->example_counter = (size_t)(all.p->end_parsed_examples);
-  if (!all.p->emptylines_separate_examples)
-    all.p->in_pass_counter++;
+  ae->example_counter = (size_t)(all.example_parser->end_parsed_examples);
+  if (!all.example_parser->emptylines_separate_examples)
+    all.example_parser->in_pass_counter++;
 
-  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
-      all.p->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
-  ae->test_only |= all.p->lp.test_label(&ae->l);
+  ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
+      all.example_parser->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
+  ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
 
-  if (all.p->emptylines_separate_examples && example_is_newline(*ae))
-    all.p->in_pass_counter++;
+  if (all.example_parser->emptylines_separate_examples && example_is_newline(*ae))
+    all.example_parser->in_pass_counter++;
 
-  ae->weight = all.p->lp.get_weight(&ae->l);
+  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
 
   if (all.ignore_some)
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
@@ -746,6 +747,12 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
+
+  // Notes: Allows the label parser to update the example after parsing is done.
+  // For example we set the initial value used in gd during predict() (if set)
+  // simple_label_parser is defined with this post parse setup step.
+  if (all.example_parser->lbl_parser.post_parse_setup != nullptr)
+    all.example_parser->lbl_parser.post_parse_setup(ae);
 }
 }  // namespace VW
 
@@ -754,9 +761,9 @@ namespace VW
 example* new_unused_example(vw& all)
 {
   example* ec = &get_unused_example(&all);
-  all.p->lp.default_label(&ec->l);
-  all.p->begin_parsed_examples++;
-  ec->example_counter = (size_t)all.p->begin_parsed_examples;
+  all.example_parser->lbl_parser.default_label(&ec->l);
+  all.example_parser->begin_parsed_examples++;
+  ec->example_counter = (size_t)all.example_parser->begin_parsed_examples;
   return ec;
 }
 example* read_example(vw& all, char* example_line)
@@ -765,7 +772,7 @@ example* read_example(vw& all, char* example_line)
 
   VW::read_line(all, ret, example_line);
   setup_example(all, ret);
-  all.p->end_parsed_examples++;
+  all.example_parser->end_parsed_examples++;
 
   return ret;
 }
@@ -782,17 +789,17 @@ void add_constant_feature(vw& vw, example* ec)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
 }
 
-void add_label(example* ec, float label, float weight, float base)
+void add_label_(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  ec->l.simple.initial = base;
+  ec->initial = base;
   ec->weight = weight;
 }
 
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
-  all.p->lp.default_label(&ret->l);
+  all.example_parser->lbl_parser.default_label(&ret->l);
 
   if (label.length() > 0)
     parse_example_label(all, *ret, label);
@@ -806,7 +813,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   }
 
   setup_example(all, ret);
-  all.p->end_parsed_examples++;
+  all.example_parser->end_parsed_examples++;
   return ret;
 }
 
@@ -850,7 +857,7 @@ void parse_example_label(vw& all, example& ec, std::string label)
   char* cstr = (char*)label.c_str();
   substring str = {cstr, cstr + label.length()};
   tokenize(' ', str, words);
-  all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
+  all.example_parser->lbl_parser.parse_label(all.example_parser, all.sd, &ec.l, words);
   words.clear();
   words.delete_v();
 }
@@ -863,20 +870,21 @@ void empty_example(vw& /*all*/, example& ec)
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
+  ec.initial = 0.f;
 }
 
 void clean_example(vw& all, example& ec, bool rewind)
 {
   if (rewind)
   {
-    assert(all.p->begin_parsed_examples > 0);
-    all.p->begin_parsed_examples--;
+    assert(all.example_parser->begin_parsed_examples > 0);
+    all.example_parser->begin_parsed_examples--;
   }
 
   empty_example(all, ec);
   assert(ec.in_use);
   ec.in_use = false;
-  all.p->example_pool.return_object(&ec);
+  all.example_parser->example_pool.return_object(&ec);
 }
 
 void finish_example(vw& all, example& ec)
@@ -888,18 +896,18 @@ void finish_example(vw& all, example& ec)
   clean_example(all, ec, false);
 
   {
-    std::lock_guard<std::mutex> lock(all.p->output_lock);
-    all.p->output_done.notify_one();
+    std::lock_guard<std::mutex> lock(all.example_parser->output_lock);
+    all.example_parser->output_done.notify_one();
   }
 }
 }  // namespace VW
 
 void thread_dispatch(vw& all, v_array<example*> examples)
 {
-  all.p->end_parsed_examples += examples.size();
+  all.example_parser->end_parsed_examples += examples.size();
   for (auto example : examples)
   {
-    all.p->ready_parsed_examples.push(example);
+    all.example_parser->ready_parsed_examples.push(example);
   }
 }
 
@@ -915,7 +923,7 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) { return ec->l.simple.initial; }
+float get_initial_(example* ec) { return ec->initial; }
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 
@@ -974,36 +982,36 @@ void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &al
 }  // namespace VW
 void free_parser(vw& all)
 {
-  all.p->words.delete_v();
-  all.p->name.delete_v();
+  all.example_parser->words.delete_v();
+  all.example_parser->name.delete_v();
 
   if (!all.ngram_strings.empty())
-    all.p->gram_mask.delete_v();
+    all.example_parser->gram_mask.delete_v();
 
-  io_buf* output = all.p->output;
+  io_buf* output = all.example_parser->output;
   if (output != nullptr)
   {
     output->finalname.delete_v();
     output->currentname.delete_v();
   }
 
-  while (!all.p->example_pool.empty())
+  while (!all.example_parser->example_pool.empty())
   {
-    example* temp = all.p->example_pool.get_object();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    example* temp = all.example_parser->example_pool.get_object();
+    VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *temp, all.delete_prediction);
   }
 
-  while (all.p->ready_parsed_examples.size() != 0)
+  while (all.example_parser->ready_parsed_examples.size() != 0)
   {
-    example* temp = all.p->ready_parsed_examples.pop();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    example* temp = all.example_parser->ready_parsed_examples.pop();
+    VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *temp, all.delete_prediction);
   }
-  all.p->counts.delete_v();
+  all.example_parser->counts.delete_v();
 }
 
 namespace VW
 {
 void end_parser(vw& all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw& all, example* ae) { return all.p->example_pool.is_from_pool(ae); }
+bool is_ring_example(vw& all, example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
 }  // namespace VW

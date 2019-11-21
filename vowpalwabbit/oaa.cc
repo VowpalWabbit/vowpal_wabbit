@@ -35,7 +35,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
     std::cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
-  ec.l.simple = {1., 0.f, 0.f};  // truth
+  ec.l.simple = {1.};  // truth
   base.learn(ec, ld.label - 1);
 
   size_t prediction = ld.label;
@@ -70,7 +70,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
 template <bool print_all, bool scores, bool probabilities>
 void learn(oaa& o, LEARNER::single_learner& base, example& ec)
 {
-  // Save prediction.  Why?  Although learn should 
+  // Save prediction.  Why?  Although learn should
   // not touch prediction... sometimes it does.
   const auto saved_prediction = ec.pred;
 
@@ -81,11 +81,11 @@ void learn(oaa& o, LEARNER::single_learner& base, example& ec)
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
     std::cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple = {FLT_MAX};
 
   for (uint32_t i = 1; i <= o.k; i++)
   {
-    ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f};
+    ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f};
     // The following is an unfortunate loss of abstraction
     // Downstream reduction (gd.update) uses the prediction
     // from here
@@ -102,11 +102,11 @@ void learn(oaa& o, LEARNER::single_learner& base, example& ec)
 template <bool print_all, bool scores, bool probabilities>
 void predict(oaa& o, LEARNER::single_learner& base, example& ec)
 {
-  // The predictions are either an array of scores or a single 
+  // The predictions are either an array of scores or a single
   // class id of a multiclass label
-  
-  // In the case we return scores, we need to save a copy of 
-  // the pre-allocated scores array since ec.pred will be 
+
+  // In the case we return scores, we need to save a copy of
+  // the pre-allocated scores array since ec.pred will be
   // used for other predictions.
   v_array<float> scores_array;
   if (scores)
@@ -284,23 +284,23 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
         all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &LEARNER::init_multiclass_learner(data, base, learn<false, true, true>,
-          predict<false, true, true>, all.p, data->k, "oaa-prob", prediction_type::scalars);
+          predict<false, true, true>, all.example_parser, data->k, "oaa-prob", prediction_type::scalars);
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
       l = &LEARNER::init_multiclass_learner(data, base, learn<false, true, false>,
-          predict<false, true, false>, all.p, data->k, "oaa-scores", prediction_type::scalars);
+          predict<false, true, false>, all.example_parser, data->k, "oaa-scores", prediction_type::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (all.raw_prediction > 0)
     l = &LEARNER::init_multiclass_learner(data, base, learn<true, false, false>,
-        predict<true, false, false>, all.p, data->k, "oaa-raw", prediction_type::multiclass);
+        predict<true, false, false>, all.example_parser, data->k, "oaa-raw", prediction_type::multiclass);
   else
     l = &LEARNER::init_multiclass_learner(data, base, learn<false, false, false>,
-        predict<false, false, false>, all.p, data->k, "oaa", prediction_type::multiclass);
+        predict<false, false, false>, all.example_parser, data->k, "oaa", prediction_type::multiclass);
 
   if (data_ptr->num_subsample > 0)
   {

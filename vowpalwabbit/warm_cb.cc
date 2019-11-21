@@ -641,10 +641,10 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   }
 
   if (use_cs)
-    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>, all.p,
+    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>, all.example_parser,
         data->choices_lambda, "warm_cb-cs", prediction_type::multiclass, false);
   else
-    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>, all.p,
+    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>, all.example_parser,
         data->choices_lambda, "warm_cb-multi", prediction_type::multiclass, false);
 
   l->set_finish(finish);

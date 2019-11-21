@@ -259,8 +259,7 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example&
   uint32_t amaxscore = 0;
 
   add_node_id_feature(b, cn, ec);
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
-
+  ec.l.simple = {FLT_MAX};
   float maxscore = std::numeric_limits<float>::lowest();
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -313,7 +312,7 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple = {FLT_MAX};
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -357,7 +356,9 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   float route_label = delta_left < delta_right ? -1.f : 1.f;
   float imp_weight = fabs((float)(delta_left - delta_right));
 
-  ec.l.simple = {route_label, imp_weight, 0.};
+  ec.l.simple = {route_label};
+  ec.weight = imp_weight;
+
   base.learn(ec, b.nodes[cn].base_router);
 
   // TODO: using the updated routing seems to help
@@ -409,9 +410,11 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
       add_node_id_feature(b, cn, ec);
 
-      ec.l.simple = {1.f, 1.f, 0.f};
+      ec.l.simple = {1.f};
+      ec.weight = 1.f;
       base.learn(ec, b.max_routers + mc.label - 1);
-      ec.l.simple = {-1.f, 1.f, 0.f};
+      ec.l.simple = {-1.f};
+      ec.weight = 1.f;
 
       for (node_pred* ls = b.nodes[cn].preds.begin();
            ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -532,7 +535,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
                       << std::endl;
 
   learner<recall_tree, example>& l = init_multiclass_learner(
-      tree, as_singleline(setup_base(options, all)), learn, predict, all.p, tree->max_routers + tree->k, "recall_tree");
+      tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, tree->max_routers + tree->k, "recall_tree");
   l.set_save_load(save_load_tree);
 
   return make_base(l);

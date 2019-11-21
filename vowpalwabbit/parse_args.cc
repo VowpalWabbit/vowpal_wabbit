@@ -208,7 +208,7 @@ void parse_dictionary_argument(vw& all, std::string str)
 
   feature_dict* map = &calloc_or_throw<feature_dict>();
   map->init(1023, nullptr, substring_equal);
-  example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
+  example* ec = VW::alloc_examples(all.example_parser->lbl_parser.label_size, 1);
 
   size_t def = (size_t)' ';
 
@@ -231,7 +231,7 @@ void parse_dictionary_argument(vw& all, std::string str)
         {
           free(buffer);
           free(ec);
-          VW::dealloc_example(all.p->lp.delete_label, *ec);
+          VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
           delete map;
           io->close_file();
           delete io;
@@ -285,7 +285,7 @@ void parse_dictionary_argument(vw& all, std::string str)
   free(buffer);
   io->close_file();
   delete io;
-  VW::dealloc_example(all.p->lp.delete_label, *ec);
+  VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
   free(ec);
 
   if (!all.quiet)
@@ -476,10 +476,10 @@ input_options parse_source(vw& all, options_i& options)
   }
 
   if (parsed_options.compressed)
-    set_compressed(all.p);
+    set_compressed(all.example_parser);
 
   if (ends_with(all.data_filename, ".gz"))
-    set_compressed(all.p);
+    set_compressed(all.example_parser);
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
@@ -500,7 +500,7 @@ namespace VW
 {
 const char* are_features_compatible(vw& vw1, vw& vw2)
 {
-  if (vw1.p->hasher != vw2.p->hasher)
+  if (vw1.example_parser->hasher != vw2.example_parser->hasher)
     return "hasher";
 
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
@@ -668,7 +668,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.p->hasher = getHasher(hash_function);
+  all.example_parser->hasher = getHasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -1028,7 +1028,7 @@ void parse_example_tweaks(options_i& options, vw& all)
       .add(make_option("examples", all.max_examples).help("number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
-      .add(make_option("sort_features", all.p->sort_features)
+      .add(make_option("sort_features", all.example_parser->sort_features)
                .help("turn this on to disregard order in which features have been defined. This will lead to smaller "
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
@@ -1246,7 +1246,7 @@ void parse_reductions(options_i& options, vw& all)
 
   // Score Users
   all.reduction_stack.push(baseline_setup);
-  all.reduction_stack.push(ExpReplay::expreplay_setup<'b', simple_label>);
+  all.reduction_stack.push(ExpReplay::expreplay_setup<'b', simple_label_parser>);
   all.reduction_stack.push(active_setup);
   all.reduction_stack.push(active_cover_setup);
   all.reduction_stack.push(confidence_setup);
@@ -1324,7 +1324,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
 
-    all.p = new parser{ring_size, strict_parse};
+    all.example_parser = new parser{ring_size, strict_parse};
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1856,10 +1856,10 @@ void finish(vw& all, bool delete_all)
 
   // TODO: migrate all finalization into parser destructor
   free_parser(all);
-  finalize_source(all.p);
-  all.p->parse_name.clear();
-  all.p->parse_name.delete_v();
-  delete all.p;
+  finalize_source(all.example_parser);
+  all.example_parser->parse_name.clear();
+  all.example_parser->parse_name.delete_v();
+  delete all.example_parser;
   bool seeded;
   if (all.weights.seeded() > 0)
     seeded = true;

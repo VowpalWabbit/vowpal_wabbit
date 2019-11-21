@@ -97,7 +97,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   size_t problem_multiplier = 1;
 
   LEARNER::multi_learner* base = LEARNER::as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;

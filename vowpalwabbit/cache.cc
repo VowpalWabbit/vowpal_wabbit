@@ -65,10 +65,10 @@ __attribute__((packed))
 int read_cached_features(vw* all, v_array<example*>& examples)
 {
   example* ae = examples[0];
-  ae->sorted = all->p->sorted_cache;
-  io_buf* input = all->p->input;
+  ae->sorted = all->example_parser->sorted_cache;
+  io_buf* input = all->example_parser->input;
 
-  size_t total = all->p->lp.read_cached_label(all->sd, &ae->l, *input);
+  size_t total = all->example_parser->lbl_parser.read_cached_label(all->sd, &ae->l, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input, ae) == 0)
@@ -80,7 +80,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   num_indices = *(unsigned char*)c;
   c += sizeof(num_indices);
 
-  all->p->input->set(c);
+  all->example_parser->input->set(c);
   for (; num_indices > 0; num_indices--)
   {
     size_t temp;
@@ -97,7 +97,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     features& ours = ae->feature_space[index];
     size_t storage = *(size_t*)c;
     c += sizeof(size_t);
-    all->p->input->set(c);
+    all->example_parser->input->set(c);
     total += storage;
     if (input->buf_read(c, storage) < storage)
     {
@@ -129,7 +129,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
       last = i;
       ours.push_back(v, i);
     }
-    all->p->input->set(c);
+    all->example_parser->input->set(c);
   }
 
   return (int)total;

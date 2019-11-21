@@ -153,7 +153,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.l.simple.weight = ec->weight;
+  fec.weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)
@@ -233,7 +233,7 @@ std::string cb_label_to_string(const example& ec)
 std::string simple_label_to_string(const example& ec)
 {
   std::stringstream strstream;
-  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.l.simple.weight << "]";
+  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
   return strstream.str();
 }
 

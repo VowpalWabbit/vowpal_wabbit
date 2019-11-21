@@ -127,7 +127,7 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_EndParser(VW_HANDLE handle)
 
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_GetExample(VW_HANDLE handle)
 { vw * pointer = static_cast<vw*>(handle);
-  parser * parser_pointer = static_cast<parser *>(pointer->p);
+  parser * parser_pointer = static_cast<parser *>(pointer->example_parser);
   return static_cast<VW_EXAMPLE>(VW::get_example(parser_pointer));
 }
 

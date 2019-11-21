@@ -84,6 +84,16 @@ struct example : public example_predict  // core example datatype.
   // input fields
   polylabel l;
 
+  // Notes: TLDR; needed to make predict() indpendent of label (as it should theoretically should be)
+  // 1) initial used to be in label_data (simple label)
+  // 2) gd.predict() used to use this to load intial value
+  // 3) It also used it as an accumulator and modified it.
+  // 4) This cause two breaches of label independence abstraction during predict()
+  //      a) All reductions depending on gd had to initalize example.l to sane values before base.predict()
+  //      b) All reductions had to save label state before calling base.predict()
+  // Making it impossible to remove depenence of predict on label
+  float initial;
+
   // output prediction
   polyprediction pred;
 
@@ -114,6 +124,7 @@ struct vw;
 struct flat_example
 {
   polylabel l;
+  float weight;  // a relative importance weight for the example, default = 1
 
   size_t tag_len;
   char* tag;  // An identifier for the example.

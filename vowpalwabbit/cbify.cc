@@ -460,19 +460,19 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(
-          data, base, learn_adf<true>, predict_adf<true>, all.p, 1, "cbify-adf-cs");
+          data, base, learn_adf<true>, predict_adf<true>, all.example_parser, 1, "cbify-adf-cs");
     else
       l = &init_multiclass_learner(
-          data, base, learn_adf<false>, predict_adf<false>, all.p, 1, "cbify-adf");
+          data, base, learn_adf<false>, predict_adf<false>, all.example_parser, 1, "cbify-adf");
   }
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_cs)
-     l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p,
+     l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser,
           1, "cbify-cs", prediction_type::multiclass, false);
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1,
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1,
           "cbify", prediction_type::multiclass, false);
   }
   all.delete_prediction = nullptr;
@@ -518,7 +518,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
       data, base, do_actual_learning_ldf, do_actual_predict_ldf, 1, prediction_type::multiclass, "cbify-ldf");
 
   l.set_finish_example(finish_multiline_example);
-  all.p->lp = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
   all.delete_prediction = nullptr;
 
   return make_base(l);

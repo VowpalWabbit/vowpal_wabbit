@@ -130,7 +130,7 @@ inline uint64_t hash_space(vw& all, const std::string& s)
   substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
-  return all.p->hasher(ss, all.hash_seed);
+  return all.example_parser->hasher(ss, all.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
@@ -145,7 +145,7 @@ inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
   substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
-  return all.p->hasher(ss, u) & all.parse_mask;
+  return all.example_parser->hasher(ss, u) & all.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
@@ -161,7 +161,7 @@ inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
   substring ss;
   ss.begin = fstr;
   ss.end = ss.begin + strlen(fstr);
-  return all.p->hasher(ss, u) & all.parse_mask;
+  return all.example_parser->hasher(ss, u) & all.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

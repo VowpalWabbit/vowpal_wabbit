@@ -111,7 +111,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     epsilon = 0.05f;
 
   LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;

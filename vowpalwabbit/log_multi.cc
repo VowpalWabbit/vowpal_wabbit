@@ -158,7 +158,7 @@ inline void update_min_count(log_multi& b, uint32_t node)
 
 void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
-  for (uint32_t i = 0; i < depth; i++)std::cout << "\t";
+  for (uint32_t i = 0; i < depth; i++) std::cout << "\t";
   std::cout << node.min_count << " " << node.left << " " << node.right;
   std::cout << " label = " << node.max_count_label << " labels = ";
   for (size_t i = 0; i < node.preds.size(); i++)
@@ -305,7 +305,8 @@ void predict(log_multi& b, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple = {FLT_MAX};
+
   uint32_t cn = 0;
   uint32_t depth = 0;
   while (b.nodes[cn].internal)
@@ -330,7 +331,7 @@ void learn(log_multi& b, single_learner& base, example& ec)
     uint32_t start_pred = ec.pred.multiclass;
 
     uint32_t class_index = 0;
-    ec.l.simple = {FLT_MAX, 0.f, 0.f};
+    ec.l.simple = {FLT_MAX};
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))
@@ -519,7 +520,7 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   init_tree(*data.get());
 
   learner<log_multi, example>& l = init_multiclass_learner(
-      data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors, "log_multi");
+      data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors, "log_multi");
   l.set_save_load(save_load_tree);
 
   return make_base(l);

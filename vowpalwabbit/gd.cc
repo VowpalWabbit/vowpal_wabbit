@@ -374,7 +374,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 
 inline float trunc_predict(vw& all, example& ec, double gravity)
 {
-  trunc_data temp = {ec.l.simple.initial, (float)gravity};
+  trunc_data temp = {ec.initial, (float)gravity};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
   return temp.prediction;
 }
@@ -428,7 +428,7 @@ void multipredict(
 {
   stack_depth = ec.stack_depth;
   vw& all = *g.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {

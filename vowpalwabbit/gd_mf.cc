@@ -99,8 +99,7 @@ template <class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
 {
   vw& all = *d.all;
-  label_data& ld = ec.l.simple;
-  float prediction = ld.initial;
+  float prediction = ec.initial;
 
   for (std::string& i : d.all->pairs)
   {
@@ -157,12 +156,12 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   ec.partial_prediction = prediction;
 
-  all.set_minmax(all.sd, ld.label);
+  all.set_minmax(all.sd, ec.l.simple.label);
 
   ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
 
-  if (ld.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+  if (ec.l.simple.label != FLT_MAX)
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   if (all.audit)
     mf_print_audit_features(d, ec, 0);

@@ -63,6 +63,7 @@ test/RunTests.last.times
 *.pc
 *.pyc
 .DS_Store
+logs/**
 
 # build folders
 **/x64

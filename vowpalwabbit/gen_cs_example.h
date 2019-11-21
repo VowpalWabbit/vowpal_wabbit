@@ -254,7 +254,7 @@ template <bool is_learn>
 void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
     COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
 {
-  VW_DBG(*examples[0]) << "call_cs_ldf:" << is_learn << std::endl;
+  VW_DBG(*examples[0]) << "call_cs_ldf: ex=" << examples[0]->example_counter << ", learn=" << is_learn << ", offset=" << offset << ", id=" << id << std::endl;
   cb_labels.clear();
   if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)
   {

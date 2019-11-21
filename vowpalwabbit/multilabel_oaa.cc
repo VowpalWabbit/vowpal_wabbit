@@ -22,7 +22,7 @@ void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
   MULTILABEL::labels preds = ec.pred.multilabels;
   preds.label_v.clear();
 
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX};
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -68,7 +68,7 @@ LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
   LEARNER::learner<multi_oaa, example>& l = LEARNER::init_learner(data, as_singleline(setup_base(options, all)),
       predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type::multilabels, "multilabel_oaa");
   l.set_finish_example(finish_example);
-  all.p->lp = MULTILABEL::multilabel;
+  all.example_parser->lbl_parser = MULTILABEL::multilabel;
   all.label_type = label_type::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 

@@ -41,7 +41,7 @@ struct parser
   {
     this->input = new io_buf{};
     this->output = new io_buf{};
-    this->lp = simple_label;
+    this->lbl_parser = simple_label_parser;
 
     // Free parser must still be used for the following fields.
     this->words = v_init<substring>();
@@ -98,7 +98,7 @@ struct parser
 
   v_array<substring> parse_name;
 
-  label_parser lp;  // moved from vw
+  label_parser lbl_parser;  // moved from vw
 
   bool audit = false;
   bool decision_service_json = false;

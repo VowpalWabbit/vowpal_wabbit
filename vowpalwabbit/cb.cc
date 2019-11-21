@@ -116,6 +116,10 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 
   for (auto const& word : words)
   {
+    // Format is the following:
+    // <action>:<cost>:<probability> | shared
+    // for example "1:2:0.5"
+    // action = 1, cost = 2, probability = 0.5
     cb_class f;
     tokenize(':', word, p->parse_name);
 

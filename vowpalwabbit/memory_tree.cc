@@ -303,13 +303,13 @@ void init_tree(memory_tree& b)
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
   std::cout << "tree initiazliation is done...." << std::endl
-       << "max nodes " << b.max_nodes << std::endl
-       << "tree size: " << b.nodes.size() << std::endl
-       << "max number of unique labels: " << b.max_num_labels << std::endl
-       << "learn at leaf: " << b.learn_at_leaf << std::endl
-       << "num of dream operations per example: " << b.dream_repeats << std::endl
-       << "current_pass: " << b.current_pass << std::endl
-       << "oas: " << b.oas << std::endl;
+            << "max nodes " << b.max_nodes << std::endl
+            << "tree size: " << b.nodes.size() << std::endl
+            << "max number of unique labels: " << b.max_num_labels << std::endl
+            << "learn at leaf: " << b.learn_at_leaf << std::endl
+            << "num of dream operations per example: " << b.dream_repeats << std::endl
+            << "current_pass: " << b.current_pass << std::endl
+            << "oas: " << b.oas << std::endl;
 }
 
 // rout based on the prediction
@@ -344,8 +344,8 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
                                                                                                                   : 1.f;
     else
     {
-     std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
-     std::cout << "Error:  nl = 0, and nr = 0, exit...";
+      std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
+      std::cout << "Error:  nl = 0, and nr = 0, exit...";
       exit(0);
     }
 
@@ -393,7 +393,9 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
     preds = ec.pred.multilabels;
   }
 
-  ec.l.simple = {1.f, 1.f, 0.};
+  ec.l.simple = {1.f, 1.f};
+  ec.initial = 0.f;
+
   base.predict(ec, b.nodes[cn].base_router);
   float prediction = ec.pred.scalar;
   // float imp_weight = 1.f; //no importance weight.
@@ -405,7 +407,9 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   // ec.l.simple = {route_label, imp_weight, 0.f};
   float ec_input_weight = ec.weight;
   ec.weight = 1.f;
-  ec.l.simple = {route_label, 1., 0.f};
+  ec.l.simple = {route_label, 1.};
+  ec.initial = 0.f;
+
   base.learn(ec, b.nodes[cn].base_router);  // update the router according to the new example.
 
   base.predict(ec, b.nodes[cn].base_router);
@@ -476,7 +480,8 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       preds = b.examples[ec_pos]->pred.multilabels;
     }
 
-    b.examples[ec_pos]->l.simple = {1.f, 1.f, 0.f};
+    b.examples[ec_pos]->l.simple = {1.f, 1.f};
+    b.examples[ec_pos]->initial = 0.f;
     base.predict(*b.examples[ec_pos], b.nodes[cn].base_router);  // re-predict
     float scalar = b.examples[ec_pos]->pred.scalar;              // this is spliting the leaf.
     if (scalar < 0)
@@ -503,8 +508,8 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       b.examples[ec_pos]->l.multilabels = multilabels;
     }
   }
-  b.nodes[cn].examples_index.delete_v();                                                  // empty the cn's example list
-  b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001);  // avoid to set nl to zero
+  b.nodes[cn].examples_index.delete_v();                                                 // empty the cn's example list
+  b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001);   // avoid to set nl to zero
   b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
@@ -573,7 +578,8 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX, 1.f};
+  ec.initial = 0.f;
   for (size_t i = 0; i < leaf_labs.size(); i++)
   {
     ec.l.simple.label = -1.f;
@@ -593,7 +599,8 @@ inline uint32_t compute_hamming_loss_via_oas(
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels stored in the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX, 1.f};
+  ec.initial = 0.f;
   for (size_t i = 0; i < leaf_labs.size(); i++)
   {
     base.predict(ec, b.max_routers + 1 + leaf_labs[i]);
@@ -625,7 +632,8 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
       {
         float tmp_s = normalized_linear_prod(b, &ec, b.examples[loc]);
         diag_kronecker_product_test(ec, *b.examples[loc], *b.kprod_ec, b.oas);
-        b.kprod_ec->l.simple = {FLT_MAX, 0., tmp_s};
+        b.kprod_ec->l.simple = {FLT_MAX, 0.};
+        b.kprod_ec->initial = tmp_s;
         base.predict(*b.kprod_ec, b.max_routers);
         score = b.kprod_ec->partial_prediction;
       }
@@ -686,7 +694,8 @@ void predict(memory_tree& b, single_learner& base, example& ec)
   }
 
   uint64_t cn = 0;
-  ec.l.simple = {-1.f, 1.f, 0.};
+  ec.l.simple = {-1.f, 1.f};
+  ec.initial = 0.f;
   while (b.nodes[cn].internal == 1)
   {  // if it's internal{
     base.predict(ec, b.nodes[cn].base_router);
@@ -755,7 +764,8 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
     multilabels = ec.l.multilabels;
     preds = ec.pred.multilabels;
   }
-  ec.l.simple = {FLT_MAX, 1., 0.0};
+  ec.l.simple = {FLT_MAX, 1.};
+  ec.initial = 0.f;
   while (b.nodes[cn].internal != -1)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -794,7 +804,8 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   {
     float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
     diag_kronecker_product_test(ec, *b.examples[closest_ec], *b.kprod_ec, b.oas);
-    b.kprod_ec->l.simple = {reward, 1.f, -score};
+    b.kprod_ec->l.simple = {reward, 1.f};
+    b.kprod_ec->initial = -score;
     b.kprod_ec->weight = weight;
     base.learn(*b.kprod_ec, b.max_routers);
   }
@@ -822,7 +833,8 @@ void learn_at_leaf_random(
       reward = 1.f;
     float score = normalized_linear_prod(b, &ec, b.examples[ec_id]);
     diag_kronecker_product_test(ec, *b.examples[ec_id], *b.kprod_ec, b.oas);
-    b.kprod_ec->l.simple = {reward, 1.f, -score};
+    b.kprod_ec->l.simple = {reward, 1.f};
+    b.kprod_ec->initial = -score;
     b.kprod_ec->weight = weight;  //* b.nodes[leaf_id].examples_index.size();
     base.learn(*b.kprod_ec, b.max_routers);
   }
@@ -850,7 +862,8 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   }
 
   path.clear();
-  ec.l.simple = {FLT_MAX, 1.0, 0.0};
+  ec.l.simple = {FLT_MAX, 1.0};
+  ec.initial = 0.f;
   while (b.nodes[cn].internal != -1)
   {
     path.push_back(cn);  // path stores node id from the root to the leaf
@@ -932,7 +945,8 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
         ec.weight = 100.f;
       else if (ec.weight < .01f)
         ec.weight = 0.01f;
-      ec.l.simple = {objective < 0. ? -1.f : 1.f, 1.f, 0.};
+      ec.l.simple = {objective < 0. ? -1.f : 1.f, 1.f};
+      ec.initial = 0.f;
       base.learn(ec, b.nodes[cn].base_router);
 
       if (b.oas == false)
@@ -1035,11 +1049,11 @@ void learn(memory_tree& b, single_learner& base, example& ec)
     if (b.iter % 5000 == 0)
     {
       if (b.oas == false)
-       std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
-             << ", total num queires so far: " << b.total_num_queries << ", max depth: " << b.max_depth
-             << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
+        std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
+                  << ", total num queires so far: " << b.total_num_queries << ", max depth: " << b.max_depth
+                  << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       else
-       std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
     }
 
     clock_t begin = clock();
@@ -1080,7 +1094,7 @@ void end_pass(memory_tree& b)
 {
   b.current_pass++;
   std::cout << "######### Current Pass: " << b.current_pass
-       << ", with number of memories stored so far: " << b.examples.size() << std::endl;
+            << ", with number of memories stored so far: " << b.examples.size() << std::endl;
 }
 
 ///////////////////Save & Load//////////////////////////////////////
@@ -1219,7 +1233,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
       }
     }
     for (uint32_t i = 0; i < n_examples; i++) save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
-    //std::cout<<"done loading...."<< std::endl;
+    // std::cout<<"done loading...."<< std::endl;
   }
 }
 //////////////////////////////End of Save & Load///////////////////////////////
@@ -1284,7 +1298,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   {
     num_learners = tree->max_nodes + 1;
     learner<memory_tree, example>& l = init_multiclass_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict, all.p, num_learners, "memory_tree");
+        tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, num_learners, "memory_tree");
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
     l.set_end_pass(end_pass);
@@ -1305,7 +1319,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     l.set_save_load(save_load_memory_tree);
     // l.set_end_pass(end_pass);
 
-    all.p->lp = MULTILABEL::multilabel;
+    all.example_parser->lbl_parser = MULTILABEL::multilabel;
     all.label_type = label_type::multi;
     all.delete_prediction = MULTILABEL::multilabel.delete_label;
 

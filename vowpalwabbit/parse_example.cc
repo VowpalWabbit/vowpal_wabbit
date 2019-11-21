@@ -17,7 +17,7 @@ license as described in the file LICENSE.
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
-  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
+  size_t num_chars_initial = readto(*(all->example_parser->input), line, '\n');
   if (num_chars_initial < 1)
     return num_chars_initial;
   num_chars = num_chars_initial;
@@ -406,7 +406,7 @@ class TC_parser
       this->beginLine = reading_head;
       this->reading_head = reading_head;
       this->endLine = endLine;
-      this->p = all.p;
+      this->p = all.example_parser;
       this->redefine_some = all.redefine_some;
       this->redefine = &all.redefine;
       this->ae = ae;
@@ -425,10 +425,12 @@ class TC_parser
 
 void substring_to_example(vw* all, example* ae, substring example)
 {
-  all->p->lp.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(&ae->l);
   char* bar_location = safe_index(example.begin, '|', example.end);
   char* tab_location = safe_index(example.begin, '\t', bar_location);
   substring label_space;
+
+  // Tab (if present) before bar is beginning of the label in the example
   if (tab_location != bar_location)
   {
     label_space.begin = tab_location + 1;
@@ -437,28 +439,30 @@ void substring_to_example(vw* all, example* ae, substring example)
   {
     label_space.begin = example.begin;
   }
+
+  // Bar is end of the label and beginning of features
   label_space.end = bar_location;
 
   if (*example.begin == '|')
   {
-    all->p->words.clear();
+    all->example_parser->words.clear();
   }
   else
   {
-    tokenize(' ', label_space, all->p->words);
-    if (!all->p->words.empty() &&
-        (all->p->words.last().end == label_space.end ||
-            *(all->p->words.last().begin) == '\''))  // The last field is a tag, so record and strip it off
+    tokenize(' ', label_space, all->example_parser->words);
+    if (!all->example_parser->words.empty() &&
+        (all->example_parser->words.last().end == label_space.end ||
+            *(all->example_parser->words.last().begin) == '\''))  // The last field is a tag, so record and strip it off
     {
-      substring tag = all->p->words.pop();
+      substring tag = all->example_parser->words.pop();
       if (*tag.begin == '\'')
         tag.begin++;
       push_many(ae->tag, tag.begin, tag.end - tag.begin);
     }
   }
 
-  if (!all->p->words.empty())
-    all->p->lp.parse_label(all->p, all->sd, &ae->l, all->p->words);
+  if (!all->example_parser->words.empty())
+    all->example_parser->lbl_parser.parse_label(all->example_parser, all->sd, &ae->l, all->example_parser->words);
 
   if (all->audit || all->hash_inv)
     TC_parser<true> parser_line(bar_location, example.end, *all, ae);
