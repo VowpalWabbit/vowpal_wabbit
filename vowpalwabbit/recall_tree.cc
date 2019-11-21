@@ -260,6 +260,7 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example&
 
   add_node_id_feature(b, cn, ec);
   ec.l.simple = {FLT_MAX};
+  ec.initial = 0.f;
   float maxscore = std::numeric_limits<float>::lowest();
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -313,6 +314,7 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
   uint32_t save_pred = ec.pred.multiclass;
 
   ec.l.simple = {FLT_MAX};
+  ec.initial = 0.f;
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -358,6 +360,7 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 
   ec.l.simple = {route_label};
   ec.weight = imp_weight;
+  ec.initial = 0.f;
 
   base.learn(ec, b.nodes[cn].base_router);
 
@@ -412,10 +415,13 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
       ec.l.simple = {1.f};
       ec.weight = 1.f;
+      ec.initial = 0.f;
+      
       base.learn(ec, b.max_routers + mc.label - 1);
       ec.l.simple = {-1.f};
       ec.weight = 1.f;
-
+      ec.initial = 0.f;
+      
       for (node_pred* ls = b.nodes[cn].preds.begin();
            ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
       {
