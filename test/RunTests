@@ -1769,4 +1769,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
         test-sets/ref/cluster.stdout
         pred-sets/ref/cluster.predict
 
+# Test 204: Test if options that are negative numbers are handled correctly
+{VW} --classweight -1:0.5 --no_stdin
+    test-sets/ref/negative-num-option.stderr
+
 # Do not delete this line or the empty line above it
