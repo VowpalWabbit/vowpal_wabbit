@@ -67,12 +67,6 @@ inline char* safe_index(char* start, char v, char* max)
 // Note this will destructively parse the passed in substring as it replaces delimiters with '\0'
 std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty = false);
 
-inline const char* safe_index(const char* start, char v, const char* max)
-{
-  while (start != max && *start != v) start++;
-  return start;
-}
-
 inline void print_substring(substring s) { std::cout.write(s.begin, s.end - s.begin); }
 
 // can't type as it forces C++/CLI part to include rapidjson, which leads to name clashes...
