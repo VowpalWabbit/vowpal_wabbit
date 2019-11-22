@@ -45,55 +45,96 @@ void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false
     substring final_substring = {last, s.begin};
     ret.push_back(final_substring);
   }
-
-  if (!s.empty() || (s.empty() && allow_empty))
-    ret.emplace_back(s.substr(0));
 }
-
 
 bool substring_equal(const substring& a, const substring& b);
 bool substring_equal(const substring& ss, const char* str);
 
+inline bool operator==(const substring& ss, const char* str)
+{
+  return substring_equal(ss, str);
+}
+
+inline bool operator==(const char* str, const substring& ss)
+{
+  return substring_equal(ss, str);
+}
+
+inline bool operator==(const substring& ss1, const substring& ss2)
+{
+  return substring_equal(ss1, ss2);
+}
+
+inline bool operator!=(const substring& ss, const char* str)
+{
+  return !(ss == str);
+}
+
+inline bool operator!=(const char* str, const substring& ss)
+{
+  return !(ss == str);
+}
+
+inline bool operator!=(const substring& ss1, const substring& ss2)
+{
+  return !(ss1 == ss2);
+}
+
 size_t substring_len(substring& s);
 
 inline char* safe_index(char* start, char v, char* max)
-
-std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty = false)
 {
-  std::vector<std::string> tokens;
-  std::string current = "";
+  while (start != max && *start != v) start++;
+  return start;
+}
+
+inline std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty = false)
+{
+  std::vector<substring> tokens;
+  substring current;
+  current.begin = s.begin;
   bool in_escape = false;
-  for(auto c : s)
+  char* reading_head = s.begin;
+  char* writing_head = s.begin;
+
+  while(reading_head < s.end)
   {
+    char current_character = *reading_head++;
+
     if(in_escape)
     {
-      current += c;
+      *writing_head++ = current_character;
       in_escape = false;
     }
     else
     {
-      if(c == delim)
+      if(current_character == delim)
       {
-        if (current != "" || allow_empty)
+        current.end = writing_head++;
+        *current.end = '\0';
+        if(current.begin != current.end || allow_empty)
         {
           tokens.push_back(current);
+          current.begin = writing_head;
+          current.end = writing_head;
         }
-
-        current.clear();
       }
-      else if (c == '\\')
+      else if (current_character == '\\')
       {
         in_escape = !in_escape;
       }
       else
       {
-        current += c;
+        *writing_head++ = current_character;
       }
     }
   }
 
-  if (!current.empty() || (current.empty() && allow_empty))
+  if(current.begin != current.end || allow_empty)
+  {
+    current.end = writing_head;
     tokens.push_back(current);
+  }
 
   return tokens;
 }

@@ -1605,19 +1605,16 @@ char** to_argv(std::string const& s, int& argc)
   c[1] = ' ';
   strcpy(c + 2, s.c_str());
   substring ss = {c, c + s.length() + 2};
-  std::vector<substring> foo;
-  tokenize(' ', ss, foo);
-  escaped_tokenize(' ', ss, foo);
+  std::vector<substring> tokens = escaped_tokenize(' ', ss);
 
   char** argv = calloc_or_throw<char*>(tokens.size());
   for (size_t i = 0; i < tokens.size(); i++)
   {
-    *(foo[i].end) = '\0';
-    argv[i] = calloc_or_throw<char>(foo[i].end - foo[i].begin + 1);
-    sprintf(argv[i], "%s", foo[i].begin);
+    argv[i] = calloc_or_throw<char>(tokens[i].end - tokens[i].begin + 1);
+    sprintf(argv[i], "%s", tokens[i].begin);
   }
 
-  argc = (int)foo.size();
+  argc = (int)tokens.size();
   free(c);
   return argv;
 }
