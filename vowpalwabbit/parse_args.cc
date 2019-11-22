@@ -1603,7 +1603,7 @@ char** to_argv(std::string const& s, int& argc)
   char* c = calloc_or_throw<char>(s.length() + 3);
   c[0] = 'b';
   c[1] = ' ';
-  strcpy(c + 2, s.c_str());
+  std::strcpy(c + 2, s.c_str());
   substring ss = {c, c + s.length() + 2};
   std::vector<substring> tokens = escaped_tokenize(' ', ss);
 

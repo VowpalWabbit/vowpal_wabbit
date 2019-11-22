@@ -50,36 +50,12 @@ void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false
 bool substring_equal(const substring& a, const substring& b);
 bool substring_equal(const substring& ss, const char* str);
 
-inline bool operator==(const substring& ss, const char* str)
-{
-  return substring_equal(ss, str);
-}
-
-inline bool operator==(const char* str, const substring& ss)
-{
-  return substring_equal(ss, str);
-}
-
-inline bool operator==(const substring& ss1, const substring& ss2)
-{
-  return substring_equal(ss1, ss2);
-}
-
-inline bool operator!=(const substring& ss, const char* str)
-{
-  return !(ss == str);
-}
-
-inline bool operator!=(const char* str, const substring& ss)
-{
-  return !(ss == str);
-}
-
-inline bool operator!=(const substring& ss1, const substring& ss2)
-{
-  return !(ss1 == ss2);
-}
-
+bool operator==(const substring& ss, const char* str);
+bool operator==(const char* str, const substring& ss);
+bool operator==(const substring& ss1, const substring& ss2);
+bool operator!=(const substring& ss, const char* str);
+bool operator!=(const char* str, const substring& ss);
+bool operator!=(const substring& ss1, const substring& ss2);
 size_t substring_len(substring& s);
 
 inline char* safe_index(char* start, char v, char* max)
@@ -88,57 +64,8 @@ inline char* safe_index(char* start, char v, char* max)
   return start;
 }
 
-inline std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty = false)
-{
-  std::vector<substring> tokens;
-  substring current;
-  current.begin = s.begin;
-  bool in_escape = false;
-  char* reading_head = s.begin;
-  char* writing_head = s.begin;
-
-  while(reading_head < s.end)
-  {
-    char current_character = *reading_head++;
-
-    if(in_escape)
-    {
-      *writing_head++ = current_character;
-      in_escape = false;
-    }
-    else
-    {
-      if(current_character == delim)
-      {
-        current.end = writing_head++;
-        *current.end = '\0';
-        if(current.begin != current.end || allow_empty)
-        {
-          tokens.push_back(current);
-          current.begin = writing_head;
-          current.end = writing_head;
-        }
-      }
-      else if (current_character == '\\')
-      {
-        in_escape = !in_escape;
-      }
-      else
-      {
-        *writing_head++ = current_character;
-      }
-    }
-  }
-
-  if(current.begin != current.end || allow_empty)
-  {
-    current.end = writing_head;
-    tokens.push_back(current);
-  }
-
-  return tokens;
-}
-
+// Note this will destructively parse the passed in substring as it replaces delimiters with '\0'
+std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty = false);
 
 inline const char* safe_index(const char* start, char v, const char* max)
 {
