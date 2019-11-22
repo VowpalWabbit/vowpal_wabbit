@@ -1732,7 +1732,7 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
   return ret;
 }
 
-vw* initialize_escaped(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize_escaped(std::string const& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = to_argv_escaped(s, argc);
