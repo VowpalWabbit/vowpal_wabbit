@@ -242,7 +242,8 @@ py::list my_parse(vw_ptr& all, char* str)
   for (auto ex : examples)
   {
     VW::setup_example(*all, ex);
-    example_collection.append(ex);
+    example_collection.append(
+        boost::shared_ptr<example>(ex, [all](example* example) { VW::finish_example(*all.get(), *example); }));
   }
   examples.clear();
   examples.delete_v();
