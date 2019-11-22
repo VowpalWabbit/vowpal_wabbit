@@ -60,7 +60,8 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pMULTICLASS: ec.get_multiclass_prediction,
         pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
         pylibvw.vw.pPROB: ec.get_prob,
-        pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars
+        pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
+        pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores
     }
     return switch_prediction_type[prediction_type]()
 
