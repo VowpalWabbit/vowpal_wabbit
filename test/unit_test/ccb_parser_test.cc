@@ -73,7 +73,10 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_CLOSE(label.outcome->cost, 1.0f, FLOAT_TOL);
     BOOST_CHECK_EQUAL(label.outcome->probabilities.size(), 1);
     BOOST_CHECK_EQUAL(label.outcome->probabilities[0].action, 1);
-    BOOST_CHECK_CLOSE(label.outcome->probabilities[0].score, .5f, CCB::label
+    BOOST_CHECK_CLOSE(label.outcome->probabilities[0].score, .5f, FLOAT_TOL);
+    BOOST_CHECK_EQUAL(label.type, CCB::example_type::slot);
+    lp.delete_label(&label);
+  }
   {
     CCB::label label;
     memset(&label, 0, sizeof(label));
