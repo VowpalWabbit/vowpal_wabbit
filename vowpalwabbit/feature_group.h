@@ -301,6 +301,7 @@ struct features
      i._begin = i._end = i.end_array = nullptr;
      auto & s = other.space_names;
      s._begin = s._end = s.end_array = nullptr;
+     other.sum_feat_sq = 0;
    }
    features & operator=(features&& other)
    {
@@ -315,6 +316,7 @@ struct features
      i._begin = i._end = i.end_array = nullptr;
      auto & s = other.space_names;
      s._begin = s._end = s.end_array = nullptr;
+     other.sum_feat_sq = 0;
      return *this;
    }
 
@@ -350,7 +352,7 @@ struct features
       indicies.end() = indicies.begin() + i;
     if (space_names.begin() != space_names.end())
     {
-	  free_space_names((size_t)i);
+      free_space_names((size_t)i);
       space_names.end() = space_names.begin() + i;
     }
   }

@@ -114,13 +114,14 @@ struct no_lock_object_pool
     }
   }
 
-  std::queue<T*> m_pool;
-  std::vector<std::pair<T*, T*>> m_chunk_bounds;
-  std::vector<std::unique_ptr<T[]>> m_chunks;
   TInitializer m_initializer;
   TCleanup m_cleanup;
-  size_t m_initial_chunk_size = 0;
-  size_t m_chunk_size = 8;
+  const size_t m_initial_chunk_size = 0;
+  const size_t m_chunk_size = 8;
+
+  std::vector<std::unique_ptr<T[]>> m_chunks;
+  std::vector<std::pair<T*, T*>> m_chunk_bounds;
+  std::queue<T*> m_pool;
 };
 
 template <typename T, typename TAllocator, typename TDeleter>
@@ -206,6 +207,7 @@ struct object_pool
     return inner_pool.is_from_pool(obj);
   }
 
+  private:
   mutable std::mutex m_lock;
   no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
 };

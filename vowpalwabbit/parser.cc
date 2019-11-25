@@ -964,7 +964,7 @@ example* example_initializer::operator()(example* ex)
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();
   ex->indices = v_init<namespace_index>();
-  memset(&ex->feature_space, 0, sizeof(ex->feature_space));
+  memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
   return ex;
 }
 
@@ -977,7 +977,6 @@ void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &al
 void free_parser(vw& all)
 {
   all.p->words.delete_v();
-  all.p->name.delete_v();
 
   if (!all.ngram_strings.empty())
     all.p->gram_mask.delete_v();
