@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include <algorithm>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 typedef unsigned int uint32_t;
@@ -43,7 +44,7 @@ typedef int socket_t;
 #include <future>
 #endif
 #include "vw_exception.h"
-#include <assert.h>
+#include <cassert>
 
 constexpr size_t ar_buf_size = 1 << 16;
 
@@ -85,7 +86,7 @@ class AllReduce
     assert(node < total);
   }
 
-  virtual ~AllReduce() {}
+  virtual ~AllReduce() = default;
 };
 
 struct Data
@@ -189,7 +190,7 @@ class AllReduceSockets : public AllReduce
   void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos)
   {
     size_t my_bufsize =
-        (std::min)(ar_buf_size, (std::min)(left_read_pos, right_read_pos) / sizeof(T) * sizeof(T) - parent_sent_pos);
+        std::min(ar_buf_size, std::min(left_read_pos, right_read_pos) / sizeof(T) * sizeof(T) - parent_sent_pos);
 
     if (my_bufsize > 0)
     {  // going to pass up this chunk of data to the parent
@@ -212,7 +213,7 @@ class AllReduceSockets : public AllReduce
     if (socks.children[1] != -1)
       FD_SET(socks.children[1], &fds);
 
-    socket_t max_fd = (std::max)(socks.children[0], socks.children[1]) + 1;
+    socket_t max_fd = std::max(socks.children[0], socks.children[1]) + 1;
     size_t child_read_pos[2] = {0, 0};  // First unread float from left and right children
     int child_unprocessed[2] = {0, 0};  // The number of bytes sent by the child but not yet added to the buffer
     char child_read_buf[2][ar_buf_size + sizeof(T) - 1];
@@ -250,7 +251,7 @@ class AllReduceSockets : public AllReduce
               THROW("I think child has no data to send but he thinks he has "
                   << FD_ISSET(socks.children[0], &fds) << " " << FD_ISSET(socks.children[1], &fds));
 
-            size_t count = (std::min)(ar_buf_size, n - child_read_pos[i]);
+            size_t count = std::min(ar_buf_size, n - child_read_pos[i]);
             int read_size = recv(socks.children[i], &child_read_buf[i][child_unprocessed[i]], (int)count, 0);
             if (read_size == -1)
               THROWERRNO("recv from child");
@@ -292,7 +293,7 @@ class AllReduceSockets : public AllReduce
   {
   }
 
-  virtual ~AllReduceSockets() {}
+  virtual ~AllReduceSockets() = default;
 
   template <class T, void (*f)(T&, const T&)>
   void all_reduce(T* buffer, const size_t n)

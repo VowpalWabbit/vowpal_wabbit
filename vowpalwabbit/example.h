@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
@@ -101,9 +101,9 @@ void free_flatten_example(flat_example* fec);
 
 inline int example_is_newline(example const& ec)
 {  // if only index is constant namespace or no index
-  if (ec.tag.size() > 0)
+  if (!ec.tag.empty())
     return false;
-  return ((ec.indices.size() == 0) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
+  return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
 }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }

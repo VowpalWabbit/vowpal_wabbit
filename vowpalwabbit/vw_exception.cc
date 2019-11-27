@@ -1,19 +1,20 @@
 #include "vw_exception.h"
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <Windows.h>
 #endif
 
 namespace VW
 {
-vw_exception::vw_exception(const char* pfile, int plineNumber, std::string pmessage)
+vw_exception::vw_exception(const char* pfile, int plineNumber, std::string const& pmessage) noexcept
     : file(pfile), message(pmessage), lineNumber(plineNumber)
 {
 }
 
-vw_exception::vw_exception(const vw_exception& ex) : file(ex.file), message(ex.message), lineNumber(ex.lineNumber) {}
+vw_exception::vw_exception(const vw_exception& ex) noexcept : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)  {}
 
-vw_exception& vw_exception::operator=(const vw_exception& other)
+vw_exception& vw_exception::operator=(const vw_exception& other) noexcept
 {
   // check for self-assignment
   if (&other == this)
@@ -26,9 +27,9 @@ vw_exception& vw_exception::operator=(const vw_exception& other)
   return *this;
 }
 
-vw_exception::~vw_exception() _NOEXCEPT {}
+vw_exception::~vw_exception() noexcept = default;
 
-const char* vw_exception::what() const _NOEXCEPT { return message.c_str(); }
+const char* vw_exception::what() const noexcept { return message.c_str(); }
 
 const char* vw_exception::Filename() const { return file; }
 

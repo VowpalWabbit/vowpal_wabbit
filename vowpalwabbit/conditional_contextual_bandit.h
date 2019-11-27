@@ -21,7 +21,7 @@ namespace CCB {
   void calculate_and_insert_interactions(
     example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions);
 
-  // Each positon in outer array is implicitly the decision corresponding to that index. Each inner array is the result of CB for that call.
+  // Each position in outer array is implicitly the decision corresponding to that index. Each inner array is the result of CB for that call.
   typedef v_array<ACTION_SCORE::action_scores> decision_scores_t;
 
   LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);

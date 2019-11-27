@@ -4,14 +4,15 @@
 
 #include <boost/thread/thread.hpp>
 
-using namespace std;
-
 int runcount = 100;
+
+using std::cerr;
+using std::endl;
 
 class Worker
 {
 public:
-  Worker(vw & instance, string & vw_init_string, vector<double> & ref)
+  Worker(vw & instance, std::string & vw_init_string, std::vector<double> & ref)
     : m_vw(instance)
     , m_referenceValues(ref)
     , vw_init_string(vw_init_string)
@@ -26,7 +27,7 @@ public:
 
     int errorCount = 0;
     for (int i = 0; i < runcount; ++i)
-    { vector<double>::iterator it = m_referenceValues.begin();
+    { std::vector<double>::iterator it = m_referenceValues.begin();
       ezexample ex(&m_vw, false, m_vw_parser);
 
       ex(vw_namespace('s'))
@@ -61,7 +62,7 @@ public:
       if (*it != ex()) { cerr << "fail!" << endl; ++errorCount; }
       ++it;
 
-      //cout << "."; cout.flush();
+      //cout << ".";std::cout.flush();
     }
     cerr << "error count = " << errorCount << endl;
     VW::finish(*m_vw_parser);
@@ -71,8 +72,8 @@ public:
 private:
   vw & m_vw;
   vw * m_vw_parser;
-  vector<double> & m_referenceValues;
-  string & vw_init_string;
+  std::vector<double> & m_referenceValues;
+  std::string & vw_init_string;
 };
 
 int main(int argc, char *argv[])
@@ -83,10 +84,10 @@ int main(int argc, char *argv[])
   int threadcount = atoi(argv[1]);
   runcount = atoi(argv[2]);
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
-  string vw_init_string_all    = "-t --ldf_override s --quiet -q st --noconstant --hash all -i train.w";
-  string vw_init_string_parser = "-t --ldf_override s --quiet -q st --noconstant --hash all --noop";   // this needs to have enough arguments to get the parser right
-  vw*vw = VW::initialize(vw_init_string_all);
-  vector<double> results;
+  std::string vw_init_string_all    = "-t --ldf_override s --quiet -q st --noconstant --hash all -i train.w";
+  std::string vw_init_string_parser = "-t --ldf_override s --quiet -q st --noconstant --hash all --noop";   // this needs to have enough arguments to get the parser right
+  vw* vw = VW::initialize(vw_init_string_all);
+  std::vector<double> results;
 
   // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
   { ezexample ex(vw, false);

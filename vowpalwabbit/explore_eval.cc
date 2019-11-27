@@ -2,9 +2,9 @@
 #include "cb_algs.h"
 #include "vw.h"
 #include "cb_adf.h"
-#include "cb_explore_adf.h"
 #include "rand48.h"
 #include "gen_cs_example.h"
+#include <memory>
 
 // Do evaluation of nonstationary policies.
 // input = contextual bandit label
@@ -12,7 +12,6 @@
 
 using namespace LEARNER;
 using namespace CB_ALGS;
-using namespace std;
 using namespace VW::config;
 
 namespace EXPLORE_EVAL
@@ -21,6 +20,7 @@ struct explore_eval
 {
   CB::cb_class known_cost;
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   uint64_t offset;
   CB::label action_label;
   CB::label empty_label;
@@ -37,11 +37,11 @@ void finish(explore_eval& data)
 {
   if (!data.all->quiet)
   {
-    data.all->trace_message << "update count = " << data.update_count << endl;
+    data.all->trace_message << "update count = " << data.update_count << std::endl;
     if (data.violations > 0)
-      data.all->trace_message << "violation count = " << data.violations << endl;
+      data.all->trace_message << "violation count = " << data.violations << std::endl;
     if (!data.fixed_multiplier)
-      data.all->trace_message << "final multiplier = " << data.multiplier << endl;
+      data.all->trace_message << "final multiplier = " << data.multiplier << std::endl;
   }
 }
 
@@ -84,8 +84,8 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   if (all.raw_prediction > 0)
   {
-    string outputString;
-    stringstream outputStringStream(outputString);
+    std::string outputString;
+    std::stringstream outputStringStream(outputString);
     v_array<CB::cb_class> costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
@@ -115,7 +115,7 @@ void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
   if (ec_seq.size() > 0)
   {
     output_example_seq(all, data, ec_seq);
-    CB_ADF::global_print_newline(all);
+    CB_ADF::global_print_newline(all.final_prediction_sink);
   }
   VW::finish_example(all, ec_seq);
 }
@@ -148,14 +148,14 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
     float threshold = action_probability / data.known_cost.probability;
 
     if (!data.fixed_multiplier)
-      data.multiplier = min(data.multiplier, 1 / threshold);
+      data.multiplier = std::min(data.multiplier, 1 / threshold);
     else
       threshold *= data.multiplier;
 
     if (threshold > 1. + 1e-6)
       data.violations++;
 
-    if (merand48(data.all->random_state) < threshold)
+    if (data._random_state->get_and_update_random() < threshold)
     {
       example* ec_found = nullptr;
       for (example*& ec : ec_seq)
@@ -197,6 +197,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->_random_state = all.get_random_state();
 
   if (options.was_supplied("multiplier"))
     data->fixed_multiplier = true;

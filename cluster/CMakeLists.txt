@@ -17,7 +17,10 @@ endif()
 target_include_directories(spanning_tree PRIVATE ${vowpal_wabbit_dir})
 target_link_libraries(spanning_tree PRIVATE ${LINK_THREADS})
 
+
 if(VW_INSTALL)
-  install(TARGETS spanning_tree
-    RUNTIME DESTINATION bin)
+  install(
+    TARGETS spanning_tree
+    EXPORT VowpalWabbitConfig
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()

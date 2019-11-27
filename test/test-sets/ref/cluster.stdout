@@ -1,0 +1,7 @@
+Starting spanning_tree with args: --nondaemon
+Starting VW with args: --span_server localhost --total 2 --node 0 --unique_id 1234 -d train-sets/0001.dat
+Starting VW with args: --span_server localhost --total 2 --node 1 --unique_id 1234 -d train-sets/0002.dat -f final.model
+VW succeeded
+VW succeeded
+Running test on produced model...
+Running VW with args: -d test-sets/0001.dat -i final.model -t -p cluster.predict

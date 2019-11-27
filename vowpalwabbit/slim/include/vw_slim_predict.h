@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <array>
 
 // avoid mmap dependency
 #define DISABLE_SHARED_WEIGHTS
@@ -28,7 +29,7 @@ namespace vw_slim { namespace internal {
     Val2 _val2;
 
     location_value(
-        const location_reference<typename It1, typename It2>& rhs)
+        const location_reference<It1, It2>& rhs)
     : _val1(*rhs._ptr1), _val2(*rhs._ptr2) {}
   };
 
@@ -61,6 +62,12 @@ namespace vw_slim { namespace internal {
       *_ptr1 = *rhs._ptr1;
       *_ptr2 = *rhs._ptr2;
       return *this;
+    }
+
+    friend void swap(const location_reference& a, const location_reference& b)
+    {
+      std::iter_swap(a._ptr1, b._ptr1);
+      std::iter_swap(a._ptr2, b._ptr2);
     }
   };
 
@@ -217,7 +224,7 @@ class vw_predict
   std::string _version;
   std::string _command_line_arguments;
   std::vector<std::string> _interactions;
-  bool _ignore_linear[256];
+  std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
   vw_predict_exploration _exploration;
@@ -248,7 +255,7 @@ class vw_predict
     _model_loaded = false;
 
     // required for inline_predict
-    memset(_ignore_linear, false, sizeof(_ignore_linear));
+    _ignore_linear.fill(false);
 
     model_parser mp(model, length);
 
@@ -570,8 +577,8 @@ class vw_predict
     // Pdf starts out in the same order as ranking.  Ranking and pdf should been sorted
     // in the order specified by scores.
     using CP = internal::collection_pair_iterator<OutputIt, PdfIt>;
-    using Iter = CP::Iter;
-    using Loc = CP::Loc;
+    using Iter = typename CP::Iter;
+    using Loc = typename CP::Loc;
     const Iter begin_coll(ranking_begin, pdf_first);
     const Iter end_coll(ranking_last, pdf_last);
     std::sort(begin_coll, end_coll,

@@ -20,8 +20,7 @@
 #define VWDLL_EXPORTS
 #include "../vowpalwabbit/vwdll.h"
 
-using namespace std;
-namespace py=boost::python;
+namespace py = boost::python;
 
 typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
@@ -34,6 +33,7 @@ const size_t lMULTICLASS = 2;
 const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
 const size_t lMAX = 5;
+const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
@@ -43,12 +43,13 @@ const size_t pMULTICLASS = 4;
 const size_t pMULTILABELS = 5;
 const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
+const size_t pDECISION_SCORES = 8;
 
 
 void dont_delete_me(void*arg) { }
 
-vw_ptr my_initialize(string args)
-{ if (args.find_first_of("--no_stdin") == string::npos)
+vw_ptr my_initialize(std::string args)
+{ if (args.find_first_of("--no_stdin") == std::string::npos)
     args += " --no_stdin";
   vw*foo = VW::initialize(args);
   return boost::shared_ptr<vw>(foo, dont_delete_me);
@@ -64,7 +65,7 @@ void my_finish(vw_ptr all)
 { VW::finish(*all, false);  // don't delete all because python will do that for us!
 }
 
-void my_save(vw_ptr all, string name)
+void my_save(vw_ptr all, std::string name)
 { VW::save_predictor(*all, name);
 }
 
@@ -76,7 +77,7 @@ void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*al
 
 const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
 
-string get_arguments(vw_ptr all)
+std::string get_arguments(vw_ptr all)
 {
   VW::config::options_serializer_boost_po serializer;
   for (auto const& option : all->options->get_all_options())
@@ -100,7 +101,8 @@ label_parser* get_label_parser(vw*all, size_t labelType)
     case lMULTICLASS:        return &MULTICLASS::mc_label;
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT: return &CB::cb_label;
-    default: cerr << "get_label_parser called on invalid label type" << endl; throw exception();
+    case lCONDITIONAL_CONTEXTUAL_BANDIT: return &CCB::ccb_label_parser;
+    default: std::cerr << "get_label_parser called on invalid label type" << std::endl; throw std::exception();
   }
 }
 
@@ -118,8 +120,12 @@ size_t my_get_label_type(vw*all)
   else if (lp->parse_label == CB::cb_label.parse_label)
   { return lCONTEXTUAL_BANDIT;
   }
+  else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
+  {
+    return lCONDITIONAL_CONTEXTUAL_BANDIT;
+  }
   else
-  { cerr << "unsupported label parser used" << endl; throw exception();
+  { std::cerr << "unsupported label parser used" << std::endl; throw std::exception();
   }
 }
 
@@ -133,7 +139,8 @@ size_t my_get_prediction_type(vw_ptr all)
     case prediction_type::multilabels:     return pMULTILABELS;
     case prediction_type::prob:            return pPROB;
     case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
-    default: cerr << "unsupported prediction type used" << endl; throw exception();
+    case prediction_type::decision_probs:  return pDECISION_SCORES;
+    default: std::cerr << "unsupported prediction type used" << std::endl; throw std::exception();
   }
 }
 
@@ -180,14 +187,9 @@ example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existi
 multi_ex unwrap_example_list(py::list& ec)
 {
   multi_ex ex_coll;
-  for (ssize_t i = 0; i<len(ec); i++)
+  for (ssize_t i = 0; i < py::len(ec); i++)
   {
-    py::object eci = ec[i];
-    py::extract<example_ptr> get_ex(eci);
-    example_ptr ecp;
-    if (get_ex.check())
-      ecp = get_ex();
-    ex_coll.push_back(ecp.get());
+    ex_coll.push_back(py::extract<example_ptr>(ec[i])().get());
   }
   return ex_coll;
 }
@@ -240,7 +242,8 @@ py::list my_parse(vw_ptr& all, char* str)
   for (auto ex : examples)
   {
     VW::setup_example(*all, ex);
-    example_collection.append(ex);
+    example_collection.append(
+        boost::shared_ptr<example>(ex, [all](example* example) { VW::finish_example(*all.get(), *example); }));
   }
   examples.clear();
   examples.delete_v();
@@ -253,14 +256,14 @@ void my_learn_multi_ex(vw_ptr& all, py::list& ec)
 void my_predict_multi_ex(vw_ptr& all, py::list& ec)
 { predict_or_learn<false>(all, ec); }
 
-string varray_char_to_string(v_array<char> &a)
-{ string ret = "";
+std::string varray_char_to_string(v_array<char> &a)
+{ std::string ret = "";
   for (auto c : a)
     ret += c;
   return ret;
 }
 
-string my_get_tag(example_ptr ec)
+std::string my_get_tag(example_ptr ec)
 { return varray_char_to_string(ec->tag);
 }
 
@@ -306,17 +309,17 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
     py::extract<py::tuple> get_tup(ai);
     if (get_tup.check())
     { py::tuple fv = get_tup();
-      if (len(fv) != 2) { cerr << "warning: malformed feature in list" << endl; continue; } // TODO str(ai)
+      if (len(fv) != 2) { std::cerr << "warning: malformed feature in list" << std::endl; continue; } // TODO str(ai)
       py::extract<float> get_val(fv[1]);
       if (get_val.check())
         f.x = get_val();
-      else { cerr << "warning: malformed feature in list" << endl; continue; }
+      else { std::cerr << "warning: malformed feature in list" << std::endl; continue; }
       ai = fv[0];
     }
 
     if (f.x != 0.)
     { bool got = false;
-      py::extract<string> get_str(ai);
+      py::extract<std::string> get_str(ai);
       if (get_str.check())
       { f.weight_index = VW::hash_feature(*vw, get_str(), ns_hash);
         got = true;
@@ -324,7 +327,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       else
       { py::extract<uint32_t> get_int(ai);
         if (get_int.check()) { f.weight_index = get_int(); got = true; }
-        else { cerr << "warning: malformed feature in list" << endl; continue; }
+        else { std::cerr << "warning: malformed feature in list" << std::endl; continue; }
       }
       if (got)
       { ec->feature_space[ns].push_back(f.x, f.weight_index);
@@ -360,7 +363,7 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
     chCheckKey = objectVal.ptr()->ob_type->tp_name[0];
     if (chCheckKey != 'l') continue;
 
-    py::extract<string> ns_e(objectKey);
+    py::extract<std::string> ns_e(objectKey);
     if (ns_e().length() < 1) continue;
     py::extract<py::list> list_e(objectVal);
     py::list list = list_e();
@@ -409,13 +412,13 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->loss = 0.;
 
   if (all.ignore_some)
-  { cerr << "error: cannot unsetup example when some namespaces are ignored!" << endl;
-    throw exception();
+  { std::cerr << "error: cannot unsetup example when some namespaces are ignored!" << std::endl;
+    throw std::exception();
   }
 
   if(all.ngram_strings.size() > 0)
-  { cerr << "error: cannot unsetup example when ngrams are in use!" << endl;
-    throw exception();
+  { std::cerr << "error: cannot unsetup example when ngrams are in use!" << std::endl;
+    throw std::exception();
   }
 
   if (all.add_constant)
@@ -425,7 +428,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     for (size_t i=0; i<N; i++)
     { int j = (int)(N - 1 - i);
       if (ae->indices[j] == constant_namespace)
-      { if (hit_constant >= 0) { cerr << "error: hit constant namespace twice!" << endl; throw exception(); }
+      { if (hit_constant >= 0) { std::cerr << "error: hit constant namespace twice!" << std::endl; throw std::exception(); }
         hit_constant = j;
         break;
       }
@@ -445,7 +448,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 }
 
 
-void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelType)
+void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 { // SPEEDUP: if it's already set properly, don't modify
   label_parser& old_lp = vw->p->lp;
   vw->p->lp = *get_label_parser(&*vw, labelType);
@@ -474,16 +477,35 @@ py::list ex_get_scalars(example_ptr ec)
 }
 
 py::list ex_get_action_scores(example_ptr ec)
-{ py::list values;
-  v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
+{
+  py::list values;
+  auto const& scores = ec->pred.a_s;
   std::vector<float> ordered_scores(scores.size());
-  for (auto action_score: scores)
+  for (auto const& action_score: scores)
   {
-     ordered_scores[action_score.action] = action_score.score;
+    ordered_scores[action_score.action] = action_score.score;
   }
 
   for (auto action_score: ordered_scores)
-  { values.append(action_score);
+  {
+    values.append(action_score);
+  }
+
+  return values;
+}
+
+py::list ex_get_decision_scores(example_ptr ec)
+{
+  py::list values;
+  for (auto const& scores : ec->pred.decision_scores)
+  {
+    py::list inner_list;
+    for (auto action_score: scores)
+    {
+      inner_list.append(py::make_tuple(action_score.action, action_score.score));
+    }
+
+    values.append(inner_list);
   }
 
   return values;
@@ -526,14 +548,14 @@ double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
 bool search_should_output(search_ptr sch) { return sch->output().good(); }
-void search_output(search_ptr sch, string s) { sch->output() << s; }
+void search_output(search_ptr sch, std::string s) { sch->output() << s; }
 
 /*
 uint32_t search_predict_one_all(search_ptr sch, example_ptr ec, uint32_t one_ystar) {
   return sch->predict(ec.get(), one_ystar, NULL);
 }
 
-uint32_t search_predict_one_some(search_ptr sch, example_ptr ec, uint32_t one_ystar, vector<uint32_t>& yallowed) {
+uint32_t search_predict_one_some(search_ptr sch, example_ptr ec, uint32_t one_ystar, std::vector<uint32_t>& yallowed) {
   v_array<uint32_t> yallowed_va;
   yallowed_va.begin       = yallowed.data();
   yallowed_va.end         = yallowed_va.begin + yallowed.size();
@@ -542,7 +564,7 @@ uint32_t search_predict_one_some(search_ptr sch, example_ptr ec, uint32_t one_ys
   return sch->predict(ec.get(), one_ystar, &yallowed_va);
 }
 
-uint32_t search_predict_many_all(search_ptr sch, example_ptr ec, vector<uint32_t>& ystar) {
+uint32_t search_predict_many_all(search_ptr sch, example_ptr ec, std::vector<uint32_t>& ystar) {
   v_array<uint32_t> ystar_va;
   ystar_va.begin       = ystar.data();
   ystar_va.end         = ystar_va.begin + ystar.size();
@@ -551,7 +573,7 @@ uint32_t search_predict_many_all(search_ptr sch, example_ptr ec, vector<uint32_t
   return sch->predict(ec.get(), &ystar_va, NULL);
 }
 
-uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, vector<uint32_t>& ystar, vector<uint32_t>& yallowed) {
+uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<uint32_t>& ystar, std::vector<uint32_t>& yallowed) {
   v_array<uint32_t> ystar_va;
   ystar_va.begin       = ystar.data();
   ystar_va.end         = ystar_va.begin + ystar.size();
@@ -568,12 +590,12 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, vector<uint32_
 
 void verify_search_set_properly(search_ptr sch)
 { if (sch->task_name == NULL)
-  { cerr << "set_structured_predict_hook: search task not initialized properly" << endl;
-    throw exception();
+  { std::cerr << "set_structured_predict_hook: search task not initialized properly" << std::endl;
+    throw std::exception();
   }
   if (strcmp(sch->task_name, "hook") != 0)
-  { cerr << "set_structured_predict_hook: trying to set hook when search task is not 'hook'!" << endl;
-    throw exception();
+  { std::cerr << "set_structured_predict_hook: trying to set hook when search task is not 'hook'!" << std::endl;
+    throw std::exception();
   }
 }
 
@@ -592,7 +614,7 @@ void search_run_fn(Search::search&sch)
   catch(...)
   { PyErr_Print();
     PyErr_Clear();
-    throw exception();
+    throw std::exception();
   }
 }
 
@@ -605,7 +627,7 @@ void search_setup_fn(Search::search&sch)
   catch(...)
   { PyErr_Print();
     PyErr_Clear();
-    throw exception();
+    throw std::exception();
   }
 }
 
@@ -618,7 +640,7 @@ void search_takedown_fn(Search::search&sch)
   catch(...)
   { PyErr_Print();
     PyErr_Clear();
-    throw exception();
+    throw std::exception();
   }
 }
 
@@ -654,17 +676,17 @@ void set_structured_predict_hook(search_ptr sch, py::object run_object, py::obje
 
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
-bool po_exists(search_ptr sch, string arg)
+bool po_exists(search_ptr sch, std::string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   return d->arg->was_supplied(arg);
 }
 
-string po_get_string(search_ptr sch, string arg)
+std::string po_get_string(search_ptr sch, std::string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  return d->arg->get_typed_option<string>(arg).value();
+  return d->arg->get_typed_option<std::string>(arg).value();
 }
 
-int32_t po_get_int(search_ptr sch, string arg)
+int32_t po_get_int(search_ptr sch, std::string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   try { return d->arg->get_typed_option<int>(arg).value(); }
   catch (...) {}
@@ -686,7 +708,7 @@ int32_t po_get_int(search_ptr sch, string arg)
   return d->arg->get_typed_option<int>(arg).value();
 }
 
-PyObject* po_get(search_ptr sch, string arg)
+PyObject* po_get(search_ptr sch, std::string arg)
 { try
   { return py::incref(py::object(po_get_string(sch, arg)).ptr());
   }
@@ -763,6 +785,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
   .def_readonly("lCostSensitive", lCOST_SENSITIVE, "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
   .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT, "Contextual bandit label type -- used as input to the example() initializer")
+  .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT, "Conditional Contextual bandit label type -- used as input to the example() initializer")
 
   .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
   .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
@@ -772,6 +795,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
   .def_readonly("pPROB", pPROB, "Probability prediction type")
   .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
+  .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
 ;
 
   // define the example class
@@ -820,6 +844,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_prob", &ex_get_prob, "Get probability from example prediction")
   .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
   .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
+  .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
   .def("get_multilabel_predictions", &ex_get_multilabel_predictions, "Get multilabel predictions from example prediction")
   .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction, "Assuming a cost_sensitive label type, get the prediction")
   .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs, "Assuming a cost_sensitive label type, get the total number of label/cost pairs")

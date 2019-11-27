@@ -9,12 +9,12 @@ license as described in the file LICENSE.
 #include <unistd.h>
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include <fcntl.h>
 #include "v_array.h"
 #include <iostream>
 #include <sstream>
-#include <errno.h>
+#include <cerrno>
 #include <stdexcept>
 #include "hash.h"
 #include "vw_exception.h"
@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #endif
 
 #ifdef _WIN32
+#define NOMINMAX
 #define ssize_t int64_t
 #include <io.h>
 #include <sys/stat.h>
@@ -84,6 +85,11 @@ class io_buf
     if (!_verify_hash)
       THROW("HASH WAS NOT CALCULATED");
     return _hash;
+  }
+
+  virtual int open_file(const char* name, bool stdin_off)
+  {
+    return open_file(name, stdin_off, READ);
   }
 
   virtual int open_file(const char* name, bool stdin_off, int flag = READ)
@@ -194,7 +200,7 @@ class io_buf
 
   virtual void flush()
   {
-    if (files.size() > 0)
+    if (!files.empty())
     {
       if (write_file(files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
         std::cerr << "error, failed to write example\n";
@@ -204,7 +210,7 @@ class io_buf
 
   virtual bool close_file()
   {
-    if (files.size() > 0)
+    if (!files.empty())
     {
       close_file_or_socket(files.pop());
       return true;
@@ -299,7 +305,6 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
   }
   else
     return bin_write(io, data, (uint32_t)len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
@@ -322,7 +327,6 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stri
   }
   else
     return io.bin_write_fixed(data, len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
