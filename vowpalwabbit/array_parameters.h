@@ -16,6 +16,7 @@
 #endif
 
 #include "array_parameters_dense.h"
+#include "vw_exception.h"
 
 class sparse_parameters;
 typedef std::unordered_map<uint64_t, weight*> weight_map;
