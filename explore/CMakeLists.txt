@@ -1,19 +1,19 @@
 set(explore_all_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/explore.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/explore.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore/explore.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/explore_internal.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/explore_internal.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore/explore_internal.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/hash.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/hash.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore/hash.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/future_compat.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/future_compat.h>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore/future_compat.h>)
 
 add_library(explore INTERFACE)
 add_library(VowpalWabbit::explore ALIAS explore)
 
 target_include_directories(explore INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore/>)
 
 target_sources(explore INTERFACE ${explore_all_headers})
 
@@ -31,5 +31,5 @@ if(VW_INSTALL)
   # Explore target headers
   install(
     FILES ${explore_all_headers}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/explore)
 endif()

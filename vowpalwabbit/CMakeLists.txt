@@ -187,5 +187,5 @@ if(VW_INSTALL)
   # VW target headers
   install(
     FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit)
 endif()
