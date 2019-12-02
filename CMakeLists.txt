@@ -87,8 +87,9 @@ if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAV
 endif()
 
 # Add -ffast-math for speed, remove for testability.
-set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse)
-set(linux_debug_config -g -O0)
+# no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
+set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse -fno-stack-check)
+set(linux_debug_config -g -O0 -fno-stack-check)
 
 if((NOT PROFILE) AND (NOT GCOV))
   set(linux_release_config ${linux_release_config} -fomit-frame-pointer)

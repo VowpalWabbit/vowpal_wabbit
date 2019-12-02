@@ -203,7 +203,8 @@ bool launchDebugger();
 
 #define EXPAND( x ) x
 #define GET_MACRO(_1, _2, NAME, ...) NAME
-#define THROW_OR_RETURN(...) EXPAND(GET_MACRO(__VA_ARGS__, THROW_OR_RETURN_NORMAL, THROW_OR_RETURN_VOID)(__VA_ARGS__))
+// UNUSED is used to silence the warning: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+#define THROW_OR_RETURN(...) EXPAND(GET_MACRO(__VA_ARGS__, THROW_OR_RETURN_NORMAL, THROW_OR_RETURN_VOID, UNUSED)(__VA_ARGS__))
 
 #ifdef VW_NOEXCEPT
 
