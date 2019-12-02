@@ -417,12 +417,10 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       add_node_id_feature(b, cn, ec);
 
       ec.l.simple = {1.f};
-      ec.weight = 1.f;
       ec.initial = 0.f;
 
       base.learn(ec, b.max_routers + mc.label - 1);
       ec.l.simple = {-1.f};
-      ec.weight = 1.f;
       ec.initial = 0.f;
 
       for (node_pred* ls = b.nodes[cn].preds.begin();

@@ -53,7 +53,7 @@ class gd_prediction_cache
 {
   std::vector<polyprediction> _cache;
 
-  public:
+ public:
   bool inline get_value(uint64_t ft_offset, polyprediction& pred)
   {
     if (_cache.size() > ft_offset)
@@ -73,10 +73,17 @@ class gd_prediction_cache
     _cache[ft_offset] = pred;
   }
 
-  void inline clear()
-  {
-    _cache.clear();
-  }
+  void inline clear() { _cache.clear(); }
+};
+
+class gd_prediction_cache_noop
+{
+ public:
+  bool inline get_value(uint64_t, polyprediction&) { return false; }
+
+  void inline set_value(uint64_t, const polyprediction&) {}
+
+  void inline clear() {}
 };
 
 struct example : public example_predict  // core example datatype.
@@ -97,8 +104,13 @@ struct example : public example_predict  // core example datatype.
   // output prediction
   polyprediction pred;
 
-  // EXPERIMENTAL
+// EXPERIMENTAL
+#ifdef _DEBUG
   gd_prediction_cache GD_PREDICTION_CACHE;
+#else
+  gd_prediction_cache_noop GD_PREDICTION_CACHE;
+#endif
+
   float weight;       // a relative importance weight for the example, default = 1
   v_array<char> tag;  // An identifier for the example.
   size_t example_counter;
