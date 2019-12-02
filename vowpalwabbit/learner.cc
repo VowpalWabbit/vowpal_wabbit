@@ -138,7 +138,6 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
     : _context(context) {}
 
     void on_example(example* ec) {
-      ec->GD_PREDICTION_CACHE.clear();
       if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
         _context.template process<example, learn_ex>(*ec);
       else if (ec->end_pass)
