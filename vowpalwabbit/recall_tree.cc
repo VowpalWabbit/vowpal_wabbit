@@ -359,7 +359,10 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   float imp_weight = fabs((float)(delta_left - delta_right));
 
   ec.l.simple = {route_label};
-  ec.weight = imp_weight;
+  // Bug?  looks like imp_weight was not used since ec.l.simple.weight is not used in gd.
+  // Only ec.weight is used in gd.  ec.imp_weight is now set to 0 instead of ec.l.simple.weight.
+  // This causes different results during RunTests
+  // ec.weight = imp_weight;
   ec.initial = 0.f;
 
   base.learn(ec, b.nodes[cn].base_router);
@@ -416,12 +419,12 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       ec.l.simple = {1.f};
       ec.weight = 1.f;
       ec.initial = 0.f;
-      
+
       base.learn(ec, b.max_routers + mc.label - 1);
       ec.l.simple = {-1.f};
       ec.weight = 1.f;
       ec.initial = 0.f;
-      
+
       for (node_pred* ls = b.nodes[cn].preds.begin();
            ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
       {
