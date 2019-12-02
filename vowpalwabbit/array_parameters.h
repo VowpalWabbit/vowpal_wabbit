@@ -98,7 +98,10 @@ class sparse_parameters
   sparse_parameters(const sparse_parameters& other) { shallow_copy(other); }
   sparse_parameters(sparse_parameters&&) = delete;
 
-  weight* first() { throw 1; }  // TODO: Throw better exceptions. Allreduce currently not supported in sparse.
+  weight* first()
+  {
+    THROW("Allreduce currently not supported in sparse");
+  }
 
   // iterator with stride
   iterator begin()
@@ -207,7 +210,7 @@ class sparse_parameters
 #ifndef _WIN32
   void share(size_t /* length */)
   {
-    throw 1;  // TODO: add better exceptions
+    THROW("Operation not supported on Windows");
   }
 #endif
 
@@ -230,7 +233,7 @@ class parameters
  public:
   bool adaptive;
   bool normalized;
-  
+
   bool sparse;
   dense_parameters dense_weights;
   sparse_parameters sparse_weights;

@@ -1857,13 +1857,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
           {
             if (priv.is_ldf)
             {
-              std::cerr << "search cannot use state representations in ldf mode" << endl;
-              throw std::exception();
+              THROW("search cannot use state representations in ldf mode");
             }
             if (ecs[0].passthrough)
             {
-              std::cerr << "search cannot passthrough" << endl;
-              throw std::exception();
+              THROW("search cannot passthrough");
             }
             ecs[0].passthrough = &priv.last_action_repr;
           }

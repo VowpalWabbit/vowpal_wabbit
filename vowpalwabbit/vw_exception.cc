@@ -61,7 +61,7 @@ struct StopWatchData
 StopWatch::StopWatch() : data(new StopWatchData())
 {
   if (!::QueryPerformanceFrequency(&data->frequency_))
-    throw "Error with QueryPerformanceFrequency";
+    THROW("Error with QueryPerformanceFrequency");
   ::QueryPerformanceCounter(&data->startTime_);
 }
 

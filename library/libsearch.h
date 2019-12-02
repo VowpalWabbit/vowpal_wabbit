@@ -60,8 +60,8 @@ private:
   static void _search_run_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    { std::cerr << "error: calling _search_run_fn without setting run object" << std::endl;
-      throw std::exception();
+    {
+      THROW("error: calling _search_run_fn without setting run object");
     }
     ((SearchTask*)d->run_object)->_run(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
@@ -69,8 +69,8 @@ private:
   static void _search_setup_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    { std::cerr << "error: calling _search_setup_fn without setting run object" << std::endl;
-      throw std::exception();
+    {
+      THROW("error: calling _search_setup_fn without setting run object");
     }
     ((SearchTask*)d->run_object)->_setup(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
@@ -78,8 +78,8 @@ private:
   static void _search_takedown_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    { std::cerr << "error: calling _search_takedown_fn without setting run object" << std::endl;
-      throw std::exception();
+    {
+      THROW("error: calling _search_takedown_fn without setting run object");
     }
     ((SearchTask*)d->run_object)->_takedown(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
