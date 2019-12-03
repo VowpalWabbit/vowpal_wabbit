@@ -16,6 +16,7 @@
 #endif
 
 #include "array_parameters_dense.h"
+#include "vw_exception.h"
 
 class sparse_parameters;
 typedef std::unordered_map<uint64_t, weight*> weight_map;
@@ -98,7 +99,10 @@ class sparse_parameters
   sparse_parameters(const sparse_parameters& other) { shallow_copy(other); }
   sparse_parameters(sparse_parameters&&) = delete;
 
-  weight* first() { throw 1; }  // TODO: Throw better exceptions. Allreduce currently not supported in sparse.
+  weight* first()
+  {
+    THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr);
+  }
 
   // iterator with stride
   iterator begin()
@@ -207,7 +211,7 @@ class sparse_parameters
 #ifndef _WIN32
   void share(size_t /* length */)
   {
-    throw 1;  // TODO: add better exceptions
+    THROW_OR_RETURN("Operation not supported on Windows");
   }
 #endif
 
@@ -230,7 +234,7 @@ class parameters
  public:
   bool adaptive;
   bool normalized;
-  
+
   bool sparse;
   dense_parameters dense_weights;
   sparse_parameters sparse_weights;

@@ -227,9 +227,14 @@ class Generator : public SearchTask<input, output>
 public:
 
   Generator(vw& vw_obj, Trie* _dict=nullptr) : SearchTask<input,output>(vw_obj), dist(0), dict(_dict)    // must run parent constructor!
-  { sch.set_options( Search::AUTO_CONDITION_FEATURES | Search::NO_CACHING | Search::ACTION_COSTS );  // TODO: if action costs is specified but no allowed actions provided, don't segfault :P
+  {
+    // TODO: if action costs is specified but no allowed actions provided, don't segfault :P
+    sch.set_options(Search::AUTO_CONDITION_FEATURES | Search::NO_CACHING | Search::ACTION_COSTS);
     HookTask::task_data& d = *sch.get_task_data<HookTask::task_data>();
-    if (d.num_actions != 29) throw std::exception();
+    if (d.num_actions != 29)
+    {
+      THROW("Error: d.num_actions was not 29");
+    }
   }
 
   void _run(Search::search& sch, input& in, output& out)
@@ -404,9 +409,9 @@ Trie load_dictionary(const char* fname)
 
 void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t print_every=0)
 { std::ifstream h(fname);
-  if (! h.is_open())
-  { cerr << "cannot open file " << fname << endl;
-    throw std::exception();
+  if (!h.is_open())
+  {
+    THROW("cannot open file " << fname);
   }
   std::string line;
   output out;
