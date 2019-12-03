@@ -198,7 +198,22 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
 endif()
 
 add_library(rapidjson INTERFACE)
-target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
+target_include_directories(rapidjson INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+if(VW_INSTALL)
+  install(
+    TARGETS rapidjson
+    EXPORT VowpalWabbitConfig)
+
+  install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/rapidjson/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
+  )
+endif()
+
 
 add_subdirectory(explore)
 add_subdirectory(cluster)
