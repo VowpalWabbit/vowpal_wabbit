@@ -102,7 +102,7 @@ std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empt
           tokens.push_back(current);
         }
 
-        // Regardless of whether the token was saved, we nee to reset the current token.
+        // Regardless of whether the token was saved, we need to reset the current token.
         current.begin = writing_head;
         current.end = writing_head;
       }
