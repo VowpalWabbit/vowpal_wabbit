@@ -21,6 +21,8 @@ if(WIN32)
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
+set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
+set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
 
@@ -242,11 +244,11 @@ if(VW_INSTALL)
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
 
-  configure_file(libvw.pc.in libvw.pc)
-  configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
+  configure_file(libvw.pc.in libvw.pc @ONLY)
+  configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
-    DESTINATION lib/pkgconfig)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
   install(EXPORT VowpalWabbitConfig
     FILE

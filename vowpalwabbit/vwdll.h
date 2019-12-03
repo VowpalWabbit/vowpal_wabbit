@@ -63,9 +63,13 @@ extern "C"
 
 #ifdef USE_CODECVT
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t* pstrArgs);
+  VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pstrArgs);
 #endif
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char* pstrArgs);
+  VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs);
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(
+      const char* pstrArgs, const char* modelData, size_t modelDataSize);
+  VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(
       const char* pstrArgs, const char* modelData, size_t modelDataSize);
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char* extraArgs);
 
