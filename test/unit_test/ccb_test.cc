@@ -12,7 +12,7 @@
 
 BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
 {
-  auto& vw = *VW::initialize("--ccb_explore_adf", nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
   auto shared_ex = VW::read_example(vw, "ccb shared |User f");
   multi_ex actions;
   actions.push_back(VW::read_example(vw, "ccb action |Action f"));

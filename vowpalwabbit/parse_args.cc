@@ -1598,7 +1598,26 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
   }
 }
 
-char** get_argv_from_string(std::string s, int& argc)
+char** to_argv_escaped(std::string const& s, int& argc)
+{
+  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str() + s.length())};
+  std::vector<substring> tokens = escaped_tokenize(' ', ss);
+  char** argv = calloc_or_throw<char*>(tokens.size() + 1);
+  argv[0] = calloc_or_throw<char>(2);
+  argv[0][0] = 'b';
+  argv[0][1] = '\0';
+
+  for (size_t i = 0; i < tokens.size(); i++)
+  {
+    argv[i + 1] = calloc_or_throw<char>(tokens[i].end - tokens[i].begin + 1);
+    sprintf(argv[i + 1], "%s", tokens[i].begin);
+  }
+
+  argc = static_cast<int>(tokens.size() + 1);
+  return argv;
+}
+
+char** to_argv(std::string const& s, int& argc)
 {
   char* c = calloc_or_throw<char>(s.length() + 3);
   c[0] = 'b';
@@ -1619,6 +1638,12 @@ char** get_argv_from_string(std::string s, int& argc)
   argc = (int)foo.size();
   free(c);
   return argv;
+}
+
+
+char** get_argv_from_string(std::string s, int& argc)
+{
+  return to_argv(s, argc);
 }
 
 void free_args(int argc, char* argv[])
@@ -1687,7 +1712,7 @@ vw* initialize(
 vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
-  char** argv = get_argv_from_string(s, argc);
+  char** argv = to_argv(s, argc);
   vw* ret = nullptr;
 
   try
@@ -1703,6 +1728,27 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
   free_args(argc, argv);
   return ret;
 }
+
+vw* initialize_escaped(std::string const& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  int argc = 0;
+  char** argv = to_argv_escaped(s, argc);
+  vw* ret = nullptr;
+
+  try
+  {
+    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+  }
+  catch (...)
+  {
+    free_args(argc, argv);
+    throw;
+  }
+
+  free_args(argc, argv);
+  return ret;
+}
+
 
 vw* initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
