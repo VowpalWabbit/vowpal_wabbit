@@ -184,6 +184,25 @@ BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
 }
 
+BOOST_AUTO_TEST_CASE(overridable_values_duplicate_command_line) {
+  int int_opt;
+
+  char command_line[] = "exe --int_opt 3 --int_opt 5";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
+    new options_boost_po(argc, argv.get()));
+
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("int_opt", int_opt).allow_override());
+
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
+
+  BOOST_CHECK_EQUAL(int_opt, 5);
+}
+
 //BOOST_AUTO_TEST_CASE(positional_data_value) {
 //  std::string data;
 //
