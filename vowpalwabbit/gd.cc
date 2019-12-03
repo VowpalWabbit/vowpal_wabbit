@@ -590,7 +590,7 @@ float get_scale(gd& g, example& /* ec */, float weight)
   float update_scale = g.all->eta * weight;
   if (!adaptive)
   {
-    float t = (float)(g.all->sd->t + weight - g.all->sd->weighted_holdout_examples);
+    float t = (float)(g.all->sd->t + weight - g.all->sd->weighted_holdout_examples - g.all->sd->weighted_unlabeled_examples);
     update_scale *= powf(t, g.neg_power_t);
   }
   return update_scale;
