@@ -101,7 +101,7 @@ class sparse_parameters
 
   weight* first()
   {
-    THROW_OR_RETURN_NORMAL("Allreduce currently not supported in sparse", nullptr);
+    THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr);
   }
 
   // iterator with stride
@@ -211,7 +211,7 @@ class sparse_parameters
 #ifndef _WIN32
   void share(size_t /* length */)
   {
-    THROW_OR_RETURN_VOID("Operation not supported on Windows");
+    THROW_OR_RETURN("Operation not supported on Windows");
   }
 #endif
 
