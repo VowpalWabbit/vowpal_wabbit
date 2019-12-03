@@ -101,7 +101,7 @@ class sparse_parameters
 
   weight* first()
   {
-    THROW_OR_RETURN_VOID("Allreduce currently not supported in sparse");
+    THROW_OR_RETURN_NORMAL("Allreduce currently not supported in sparse", nullptr);
   }
 
   // iterator with stride
