@@ -106,9 +106,11 @@ struct cb_adf
   void learn_DR(multi_learner& base, multi_ex& examples);
   void learn_DM(multi_learner& base, multi_ex& examples);
   void learn_SM(multi_learner& base, multi_ex& examples);
-
   template <bool predict>
   void learn_MTR(multi_learner& base, multi_ex& examples);
+
+  void save_prediction(const action_scores& a_s);
+  void restore_prediction(action_scores& a_s);
 };
 
 CB::cb_class get_observed_cost(multi_ex& examples)
@@ -240,6 +242,12 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   }
 }
 
+void cb_adf::save_prediction(const action_scores& a_s)
+{ copy_array(_a_s, a_s); }
+
+void cb_adf::restore_prediction(action_scores& a_s)
+{ copy_array(a_s, _a_s); }
+
 void cb_adf::learn_DR(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
@@ -258,7 +266,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   if (predict)  // first get the prediction to return
   {
     gen_cs_example_ips(examples, _cs_labels);
-    call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+//    call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
     std::swap(examples[0]->pred.a_s, _a_s);
   }
   // second train on _one_ action (which requires up to 3 examples).
@@ -315,11 +323,7 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
   if (is_learn && test_adf_sequence(ec_seq) != nullptr)
   {
-    /*	v_array<float> temp_scores;
-    temp_scores = v_init<float>();
-    do_actual_learning<false>(data,base);
-    for (size_t i = 0; i < data.ec_seq[0]->pred.a_s.size(); i++)
-    temp_scores.push_back(data.ec_seq[0]->pred.a_s[i].score);*/
+    restore_prediction(ec_seq[0]->pred.a_s);
     switch (_gen_cs.cb_type)
     {
       case CB_TYPE_IPS:
@@ -343,16 +347,12 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
-
-    /*      for (size_t i = 0; i < temp_scores.size(); i++)
-    if (temp_scores[i] != data.ec_seq[0]->pred.a_s[i].score)
-     std::cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
-    data.ec_seq[0]->pred.a_s[i].action << std::endl; temp_scores.delete_v();*/
   }
   else
   {
     gen_cs_test_example(ec_seq, _cs_labels);  // create test labels.
     call_cs_ldf<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+    save_prediction(ec_seq[0]->pred.a_s);
   }
 }
 
