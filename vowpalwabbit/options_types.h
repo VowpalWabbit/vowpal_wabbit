@@ -37,7 +37,7 @@ namespace is_scalar_impl {
 }
 
 template <typename T> struct is_scalar_option_type {
-  static constexpr bool const value = is_scalar_impl::is_scalar_option_type<std::decay_t<T>>::value;
+  static constexpr bool const value = is_scalar_impl::is_scalar_option_type<typename std::decay<T>::type>::value;
 };
 
 }  // namespace config
