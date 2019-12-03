@@ -83,7 +83,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("first", tau).keep().help("tau-first exploration"))
-      .add(make_option("epsilon", epsilon).keep().help("epsilon-greedy exploration"));
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option || !options.was_supplied("first"))
