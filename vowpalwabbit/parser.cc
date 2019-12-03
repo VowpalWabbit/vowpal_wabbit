@@ -518,7 +518,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (std::exception const& ex)
+      catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (!temp.empty())
@@ -527,7 +527,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         }
         else
         {
-          throw ex;
+          throw;
         }
       }
 

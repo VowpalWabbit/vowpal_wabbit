@@ -102,7 +102,7 @@ label_parser* get_label_parser(vw*all, size_t labelType)
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT: return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT: return &CCB::ccb_label_parser;
-    default: std::cerr << "get_label_parser called on invalid label type" << std::endl; throw std::exception();
+    default: THROW("get_label_parser called on invalid label type");
   }
 }
 
@@ -125,7 +125,8 @@ size_t my_get_label_type(vw*all)
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
   }
   else
-  { std::cerr << "unsupported label parser used" << std::endl; throw std::exception();
+  {
+    THROW("unsupported label parser used");
   }
 }
 
@@ -140,7 +141,7 @@ size_t my_get_prediction_type(vw_ptr all)
     case prediction_type::prob:            return pPROB;
     case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
     case prediction_type::decision_probs:  return pDECISION_SCORES;
-    default: std::cerr << "unsupported prediction type used" << std::endl; throw std::exception();
+    default: THROW("unsupported prediction type used");
   }
 }
 
@@ -412,13 +413,13 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->loss = 0.;
 
   if (all.ignore_some)
-  { std::cerr << "error: cannot unsetup example when some namespaces are ignored!" << std::endl;
-    throw std::exception();
+  {
+    THROW("error: cannot unsetup example when some namespaces are ignored!");
   }
 
   if(all.ngram_strings.size() > 0)
-  { std::cerr << "error: cannot unsetup example when ngrams are in use!" << std::endl;
-    throw std::exception();
+  {
+    THROW("error: cannot unsetup example when ngrams are in use!");
   }
 
   if (all.add_constant)
@@ -428,7 +429,11 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     for (size_t i=0; i<N; i++)
     { int j = (int)(N - 1 - i);
       if (ae->indices[j] == constant_namespace)
-      { if (hit_constant >= 0) { std::cerr << "error: hit constant namespace twice!" << std::endl; throw std::exception(); }
+      {
+        if (hit_constant >= 0)
+        {
+          THROW("error: hit constant namespace twice!");
+        }
         hit_constant = j;
         break;
       }
@@ -589,13 +594,15 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<ui
 */
 
 void verify_search_set_properly(search_ptr sch)
-{ if (sch->task_name == NULL)
-  { std::cerr << "set_structured_predict_hook: search task not initialized properly" << std::endl;
-    throw std::exception();
+{
+  if (sch->task_name == nullptr)
+  {
+    THROW("set_structured_predict_hook: search task not initialized properly");
   }
-  if (strcmp(sch->task_name, "hook") != 0)
-  { std::cerr << "set_structured_predict_hook: trying to set hook when search task is not 'hook'!" << std::endl;
-    throw std::exception();
+
+  if (std::strcmp(sch->task_name, "hook") != 0)
+  {
+    THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'!");
   }
 }
 
@@ -605,42 +612,54 @@ uint32_t search_get_num_actions(search_ptr sch)
   return (uint32_t)d->num_actions;
 }
 
-void search_run_fn(Search::search&sch)
-{ try
-  { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+void search_run_fn(Search::search& sch)
+{
+  try
+  {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->run_object;
     run.attr("__call__")();
   }
-  catch(...)
-  { PyErr_Print();
+  catch (...)
+  {
+    // TODO: Properly translate and return Python exception. #2169
+    PyErr_Print();
     PyErr_Clear();
-    throw std::exception();
+    THROW("Exception in 'search_run_fn'");
   }
 }
 
-void search_setup_fn(Search::search&sch)
-{ try
-  { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+void search_setup_fn(Search::search& sch)
+{
+  try
+  {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->setup_object;
     run.attr("__call__")();
   }
-  catch(...)
-  { PyErr_Print();
+  catch (...)
+  {
+    // TODO: Properly translate and return Python exception. #2169
+    PyErr_Print();
     PyErr_Clear();
-    throw std::exception();
+    THROW("Exception in 'search_setup_fn'");
   }
 }
 
-void search_takedown_fn(Search::search&sch)
-{ try
-  { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+void search_takedown_fn(Search::search& sch)
+{
+  try
+  {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->takedown_object;
     run.attr("__call__")();
   }
-  catch(...)
-  { PyErr_Print();
+  catch (...)
+  {
+    // TODO: Properly translate and return Python exception. #2169
+    PyErr_Print();
     PyErr_Clear();
-    throw std::exception();
+    THROW("Exception in 'search_takedown_fn'");
   }
 }
 
