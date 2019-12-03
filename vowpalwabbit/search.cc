@@ -301,6 +301,7 @@ search::~search()
     search_private& priv = *this->priv;
     clear_cache_hash_map(priv);
 
+    priv._random_state.~shared_ptr<rand_state>();
     delete priv.truth_string;
     delete priv.pred_string;
     delete priv.bad_string_stream;
