@@ -13,20 +13,19 @@ struct scorer
 template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
 {
-  if (is_learn && ec.l.simple.label != FLT_MAX)
-  {
+  // Predict does not need set_minmax
+  if (is_learn)
     s.all->set_minmax(s.all->sd, ec.l.simple.label);
-    if (ec.weight > 0)
-    {
-      base.learn(ec);
-      ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-    }
-  }
+
+  if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
+    base.learn(ec);
   else
-  {
     base.predict(ec);
-    ec.pred.scalar = link(ec.pred.scalar);
-  }
+
+  if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
+    ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+
+  ec.pred.scalar = link(ec.pred.scalar);
 }
 
 template <float (*link)(float in)>
