@@ -116,10 +116,13 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
   }
-  else
-  {
-    predict(data, base, examples);
-  }
+
+  // Notes:  Predict will be called as part of workflow before learn.
+  // No need to call predict again here.
+  //else
+  //{
+  //  predict(data, base, examples);
+  //}
 }
 
 template <typename ExploreType>
