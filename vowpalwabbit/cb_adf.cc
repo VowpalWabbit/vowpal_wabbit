@@ -263,12 +263,6 @@ void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
 template <bool predict>
 void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 {
-  if (predict)  // first get the prediction to return
-  {
-    gen_cs_example_ips(examples, _cs_labels);
-//    call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
-    std::swap(examples[0]->pred.a_s, _a_s);
-  }
   // second train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.

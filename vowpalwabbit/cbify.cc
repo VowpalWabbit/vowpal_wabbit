@@ -323,6 +323,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     else
       data.cb_costs[i] = ec.l.cb.costs;
     ec.l.cs.costs = data.cs_costs[i];
+    data.cb_as[i] = ec.pred.a_s;
     ec.pred = data.saved_predictions[i];
   }
 }
