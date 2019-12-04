@@ -5,6 +5,8 @@ license as described in the file LICENSE.
  */
 #pragma once
 #include <cmath>
+#include <string>
+#include <vector>
 #include <iostream>
 #include <stdint.h>
 #include <math.h>

@@ -21,6 +21,8 @@ if(WIN32)
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
+set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
+set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
 
@@ -196,7 +198,22 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
 endif()
 
 add_library(rapidjson INTERFACE)
-target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
+target_include_directories(rapidjson INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+if(VW_INSTALL)
+  install(
+    TARGETS rapidjson
+    EXPORT VowpalWabbitConfig)
+
+  install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/rapidjson/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
+  )
+endif()
+
 
 add_subdirectory(explore)
 add_subdirectory(cluster)
@@ -242,11 +259,11 @@ if(VW_INSTALL)
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
 
-  configure_file(libvw.pc.in libvw.pc)
-  configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
+  configure_file(libvw.pc.in libvw.pc @ONLY)
+  configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc
-    DESTINATION lib/pkgconfig)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
   install(EXPORT VowpalWabbitConfig
     FILE

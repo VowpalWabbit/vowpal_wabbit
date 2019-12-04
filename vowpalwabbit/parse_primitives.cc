@@ -26,6 +26,60 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
+std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty)
+{
+  std::vector<substring> tokens;
+  substring current;
+  current.begin = s.begin;
+  bool in_escape = false;
+  char* reading_head = s.begin;
+  char* writing_head = s.begin;
+
+  while(reading_head < s.end)
+  {
+    char current_character = *reading_head++;
+
+    if(in_escape)
+    {
+      *writing_head++ = current_character;
+      in_escape = false;
+    }
+    else
+    {
+      if(current_character == delim)
+      {
+        current.end = writing_head++;
+        *current.end = '\0';
+        if(current.begin != current.end || allow_empty)
+        {
+          tokens.push_back(current);
+        }
+
+        // Regardless of whether the token was saved, we need to reset the current token.
+        current.begin = writing_head;
+        current.end = writing_head;
+      }
+      else if (current_character == '\\')
+      {
+        in_escape = !in_escape;
+      }
+      else
+      {
+        *writing_head++ = current_character;
+      }
+    }
+  }
+
+  current.end = writing_head;
+  *current.end = '\0';
+  if(current.begin != current.end || allow_empty)
+  {
+    tokens.push_back(current);
+  }
+
+  return tokens;
+}
+
 std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss)
 {
   VW::string_view* it = ss.cbegin();

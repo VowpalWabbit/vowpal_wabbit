@@ -22,8 +22,12 @@ using namespace VW::config;
 
 namespace CCB
 {
+void default_label(void* v);
+
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
+  // Since read_cached_features doesn't default the label we must do it here.
+  default_label(v);
   CCB::label* ld = static_cast<CCB::label*>(v);
 
   if (ld->outcome)
@@ -162,8 +166,16 @@ void cache_label(void* v, io_buf& cache)
 void default_label(void* v)
 {
   CCB::label* ld = static_cast<CCB::label*>(v);
-  ld->outcome = nullptr;
-  ld->explicit_included_actions = v_init<uint32_t>();
+
+  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
+  if(ld->outcome)
+  {
+    ld->outcome->probabilities.delete_v();
+    delete ld->outcome;
+    ld->outcome = nullptr;
+  }
+
+  ld->explicit_included_actions.clear();
   ld->type = example_type::unset;
   ld->weight = 1.0;
 }

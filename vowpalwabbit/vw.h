@@ -35,10 +35,20 @@ vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLo
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* seed_vw_model(
     vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+// Allows the input command line string to have spaces escaped by '\'
+vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
+VW_DEPRECATED("By value version is deprecated, pass std::string by const ref instead using `to_argv`")
 char** get_argv_from_string(std::string s, int& argc);
+
+// The argv array from both of these functions must be freed.
+char** to_argv(std::string const& s, int& argc);
+char** to_argv_escaped(std::string const& s, int& argc);
+void free_args(int argc, char* argv[]);
+
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
 /*
