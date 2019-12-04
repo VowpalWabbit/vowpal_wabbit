@@ -28,16 +28,21 @@ void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty =
 {
   ret.clear();
   size_t end_pos = 0;
+  bool last_space = false;
 
   while (!s.empty() && ((end_pos = s.find(delim)) != VW::string_view::npos))
   {
+    last_space = end_pos == 0;
     if (allow_empty || end_pos > 0)
       ret.emplace_back(s.substr(0, end_pos));
     s.remove_prefix(end_pos + 1);
   }
-  if (!s.empty())
+  if (!s.empty() || (last_space && allow_empty))
     ret.emplace_back(s.substr(0));
 }
+
+// This function returns a vector of strings (not string_views) because we need to remove the escape characters
+std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty = false);
 
 inline const char* safe_index(const char* start, char v, const char* max)
 {

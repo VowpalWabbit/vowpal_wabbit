@@ -26,57 +26,46 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
-std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty)
+std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
-  std::vector<substring> tokens;
-  substring current;
-  current.begin = s.begin;
-  bool in_escape = false;
-  char* reading_head = s.begin;
-  char* writing_head = s.begin;
+  std::vector<std::string> tokens;
+  std::string current;
+  size_t end_pos = 0;
+  const char delims[3] = {'\\', delim, '\0'};
+  bool last_space = false;
 
-  while(reading_head < s.end)
+  while (!s.empty() && ((end_pos = s.find_first_of(delims)) != VW::string_view::npos))
   {
-    char current_character = *reading_head++;
-
-    if(in_escape)
+    if(s[end_pos] == '\\')
     {
-      *writing_head++ = current_character;
-      in_escape = false;
+      current.append(s.begin(), end_pos);
+      s.remove_prefix(end_pos + 1);
+
+      // always insert the next character after an escape if it exists
+      if(!s.empty())
+      {
+	current.append(s.begin(), 1);
+	s.remove_prefix(1);
+      }
     }
     else
     {
-      if(current_character == delim)
+      last_space = end_pos == 0;
+      current.append(s.begin(), end_pos);
+      s.remove_prefix(end_pos + 1);
+      if(!current.empty() || allow_empty)
       {
-        current.end = writing_head++;
-        *current.end = '\0';
-        if(current.begin != current.end || allow_empty)
-        {
-          tokens.push_back(current);
-        }
-
-        // Regardless of whether the token was saved, we need to reset the current token.
-        current.begin = writing_head;
-        current.end = writing_head;
+	tokens.push_back(current);
       }
-      else if (current_character == '\\')
-      {
-        in_escape = !in_escape;
-      }
-      else
-      {
-        *writing_head++ = current_character;
-      }
+      current.clear();
     }
   }
-
-  current.end = writing_head;
-  *current.end = '\0';
-  if(current.begin != current.end || allow_empty)
+  // write whatever's left into the vector
+  if (!s.empty() || !current.empty() || (last_space && allow_empty))
   {
+    current.append(s.begin(), s.length());
     tokens.push_back(current);
   }
-
   return tokens;
 }
 

@@ -1594,8 +1594,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
 
 char** to_argv_escaped(std::string const& s, int& argc)
 {
-  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str() + s.length())};
-  std::vector<substring> tokens = escaped_tokenize(' ', ss);
+  std::vector<std::string> tokens = escaped_tokenize(' ', s);
   char** argv = calloc_or_throw<char*>(tokens.size() + 1);
   argv[0] = calloc_or_throw<char>(2);
   argv[0][0] = 'b';
@@ -1603,8 +1602,8 @@ char** to_argv_escaped(std::string const& s, int& argc)
 
   for (size_t i = 0; i < tokens.size(); i++)
   {
-    argv[i + 1] = calloc_or_throw<char>(tokens[i].end - tokens[i].begin + 1);
-    sprintf(argv[i + 1], "%s", tokens[i].begin);
+    argv[i + 1] = calloc_or_throw<char>(tokens[i].length() + 1);
+    sprintf(argv[i + 1], "%s", tokens[i].data());
   }
 
   argc = static_cast<int>(tokens.size() + 1);
