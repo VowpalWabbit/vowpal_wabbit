@@ -24,7 +24,7 @@ boosting.h bs.h cache.h cb_adf.h cb_algs.h cb_explore_adf_bag.h cb_explore_adf_c
 cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h cb_explore_adf_regcb.h
 cb_explore_adf_softmax.h cb_explore.h cb.h cbify.h ccb_label.h classweight.h comp_io.h
 conditional_contextual_bandit.h confidence.h config.h.in constant.h correctedMath.h cost_sensitive.h
-crossplat_compat.h cs_active.h csoaa.h ect.h error_reporting.h example_predict.h example.h
+crossplat_compat.h cs_active.h csoaa.h distributionally_robust.h ect.h error_reporting.h example_predict.h example.h
 explore_eval.h expreplay.h ezexample.h feature_group.h ftrl.h gd_mf.h gd_predict.h gd.h
 gen_cs_example.h global_data.h hashstring.h interact.h interactions_predict.h interactions.h
 io_buf.h kernel_svm.h label_dictionary.h label_parser.h lda_core.h learner.h log_multi.h
@@ -46,7 +46,7 @@ set(vw_all_sources
   cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc cb_explore_adf_softmax.cc cb_explore.cc cb_sample.cc cb.cc cbify.cc
   ccb_label.cc classweight.cc comp_io.cc conditional_contextual_bandit.cc confidence.cc
-  cost_sensitive.cc cs_active.cc csoaa.cc ect.cc example.cc explore_eval.cc ftrl.cc gd_mf.cc gd.cc
+  cost_sensitive.cc cs_active.cc csoaa.cc distributionally_robust.cc ect.cc example.cc explore_eval.cc ftrl.cc gd_mf.cc gd.cc
   gen_cs_example.cc global_data.cc interact.cc interactions.cc io_buf.cc kernel_svm.cc
   label_dictionary.cc lda_core.cc learner.cc log_multi.cc loss_functions.cc lrq.cc lrqfa.cc
   marginal.cc memory_tree.cc mf.cc multiclass.cc multilabel_oaa.cc multilabel.cc mwt.cc network.cc
