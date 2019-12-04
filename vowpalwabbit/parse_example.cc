@@ -458,7 +458,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   }
 
   if (!all->p->words.empty())
-    all->p->lp.parse_label(all->p, all->sd, &ae->l, all->p->words);
+    all->p->lp.parse_label(all->p, all->p->_shared_data, &ae->l, all->p->words);
 
   if (bar_idx != VW::string_view::npos)
   {

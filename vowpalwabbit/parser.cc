@@ -411,6 +411,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;
+      all.p->_shared_data = sd;
 
       // create children
       size_t num_children = all.num_children;
@@ -852,7 +853,7 @@ void parse_example_label(vw& all, example& ec, std::string label)
   v_array<VW::string_view> words = v_init<VW::string_view>();
 
   tokenize(' ', label, words);
-  all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
+  all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
   words.clear();
   words.delete_v();
 }

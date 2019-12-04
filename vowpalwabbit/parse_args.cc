@@ -1318,6 +1318,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     options.add_and_parse(vw_args);
 
     all.p = new parser{ring_size, strict_parse};
+    all.p->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1593,25 +1594,27 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
 
 char** get_argv_from_string(std::string s, int& argc)
 {
-  std::string str("b ");
-  str += s;
-  VW::string_view strview(str);
+  VW::string_view strview(s);
   std::vector<VW::string_view> foo;
   tokenize(' ', strview, foo);
 
-  char** argv = calloc_or_throw<char*>(foo.size());
+  char** argv = calloc_or_throw<char*>(foo.size() + 1);
+  // small optimization to avoid a string copy before tokenizing
+  argv[0] = calloc_or_throw<char>(2);
+  argv[0][0] = 'b';
+  argv[0][1] = '\0';
   for (size_t i = 0; i < foo.size(); i++)
   {
     size_t len = foo[i].length();
-    argv[i] = calloc_or_throw<char>(len + 1);
-    memcpy(argv[i], foo[i].data(), len);
-    // copy() is supported with VW::string_view, not with string_ref
+    argv[i+1] = calloc_or_throw<char>(len + 1);
+    memcpy(argv[i+1], foo[i].data(), len);
+    // copy() is supported with boost::string_view, not with string_ref
     //foo[i].copy(argv[i], len);
     // unnecessary because of the calloc, but needed if we change stuff in the future
     // argv[i][len] = '\0';
   }
 
-  argc = (int)foo.size();
+  argc = (int)foo.size() + 1;
   return argv;
 }
 
@@ -1739,6 +1742,7 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
+  new_model->p->_shared_data = new_model->sd;
 
   return new_model;
 }

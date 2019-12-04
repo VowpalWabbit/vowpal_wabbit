@@ -93,7 +93,7 @@ struct v_array
       erase_count = 0;
     }
     for (T* item = _begin; item != _end; ++item)
-	  item->~T();
+      item->~T();
     _end = _begin;
   }
   void delete_v()
