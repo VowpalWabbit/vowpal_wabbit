@@ -1,8 +1,6 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 
 /*
  * Implementation of online boosting algorithms from
@@ -10,11 +8,11 @@
  *    ICML-2015.
  */
 
-#include <float.h>
-#include <limits.h>
-#include <math.h>
+#include <cfloat>
+#include <climits>
+#include <cmath>
 #include "correctedMath.h"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <vector>

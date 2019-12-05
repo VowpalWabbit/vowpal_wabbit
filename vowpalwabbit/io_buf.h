@@ -1,15 +1,19 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 #pragma once
-#ifndef _WIN32
-#include <sys/types.h>
+
+#ifdef _WIN32
+#define NOMINMAX
+#define ssize_t int64_t
+#include <io.h>
+#include <sys/stat.h>
+#else
 #include <unistd.h>
 #endif
 
 #include <cstdio>
+#include <cstdint>
 #include <fcntl.h>
 #include "v_array.h"
 #include <iostream>
@@ -22,13 +26,6 @@ license as described in the file LICENSE.
 
 #ifndef O_LARGEFILE  // for OSX
 #define O_LARGEFILE 0
-#endif
-
-#ifdef _WIN32
-#define NOMINMAX
-#define ssize_t int64_t
-#include <io.h>
-#include <sys/stat.h>
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:

@@ -1,20 +1,12 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 #include <fstream>
 #include <sstream>
-#include <float.h>
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#else
-#include <netdb.h>
-#endif
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cfloat>
+#include <cstring>
+#include <cstdio>
+#include <cassert>
 #include <memory>
 
 #include "parse_example.h"

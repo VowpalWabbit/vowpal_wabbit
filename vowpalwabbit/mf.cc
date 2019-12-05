@@ -1,14 +1,6 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
-#ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
-#else
-#include <netdb.h>
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 #include "reductions.h"
 #include "gd.h"
 

@@ -1,7 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
 #include <cstring>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 
 #include "cache.h"
 #include "accumulate.h"

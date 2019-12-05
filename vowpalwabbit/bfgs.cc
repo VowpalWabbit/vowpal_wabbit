@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
 /*
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
@@ -113,7 +112,7 @@ struct bfgs
   }
 };
 
-constexpr char* curv_message =
+constexpr const char* curv_message =
     "Zero or negative curvature detected.\n"
     "To increase curvature you can increase regularization or rescale features.\n"
     "It is also possible that you have reached numerical accuracy\n"

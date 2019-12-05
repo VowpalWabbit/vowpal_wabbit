@@ -1,9 +1,13 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
 #include <cmath>
 #include <errno.h>
 #include "reductions.h"
 #include "v_hashmap.h"
 #include "rand48.h"
-#include "float.h"
+#include <cfloat>
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"

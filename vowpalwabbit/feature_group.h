@@ -1,21 +1,14 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 
 #pragma once
 
 #include <memory>
 #include <string>
 #include <cstddef>
+#include <cstdint>
 #include "v_array.h"
-
-#ifndef _WIN32
-#include <sys/types.h>
-#else
-#define ssize_t int64_t
-#endif
 
 typedef float feature_value;
 typedef uint64_t feature_index;

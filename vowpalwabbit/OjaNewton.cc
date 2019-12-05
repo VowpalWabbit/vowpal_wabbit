@@ -1,14 +1,12 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.    Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 #include <string>
 #include "gd.h"
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
-#include <math.h>
+#include <cmath>
 #include <memory>
 
 using namespace LEARNER;

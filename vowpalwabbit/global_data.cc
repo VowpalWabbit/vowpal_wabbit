@@ -1,15 +1,13 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
-#include <stdio.h>
-#include <float.h>
-#include <errno.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+#include <cstdio>
+#include <cfloat>
+#include <cerrno>
 #include <iostream>
 #include <sstream>
-#include <math.h>
-#include <assert.h>
+#include <cmath>
+#include <cassert>
 
 #include "global_data.h"
 #include "gd.h"

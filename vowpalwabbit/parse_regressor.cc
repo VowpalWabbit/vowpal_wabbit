@@ -1,30 +1,23 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
+#include <cstdlib>
+#include <cstdint>
+#include <cmath>
+#include <cstdarg>
+
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+#include <numeric>
 
 #include "crossplat_compat.h"
-
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-
-#include <stdlib.h>
-#include <stdint.h>
-#include <math.h>
-#include <cmath>
-#include <algorithm>
-#include <stdarg.h>
-#include <numeric>
 #include "rand48.h"
 #include "global_data.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
-
 #include "options_serializer_boost_po.h"
 
 template <class T>

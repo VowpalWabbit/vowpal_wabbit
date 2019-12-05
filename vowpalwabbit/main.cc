@@ -1,24 +1,9 @@
-
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#else
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#endif
-#include <sys/timeb.h>
-#include "parse_args.h"
-#include "parse_regressor.h"
-#include "accumulate.h"
-#include "best_constant.h"
-#include "vw_exception.h"
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 #include <fstream>
 
+#include "vw.h"
 #include "options.h"
 #include "options_boost_po.h"
 
@@ -75,7 +60,7 @@ int main(int argc, char* argv[])
     // support multiple vw instances for training of the same datafile for the same instance
     std::vector<std::unique_ptr<options_boost_po>> arguments;
     std::vector<vw*> alls;
-    if (argc == 3 && !strcmp(argv[1], "--args"))
+    if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
 
@@ -109,9 +94,6 @@ int main(int argc, char* argv[])
     }
 
     vw& all = *alls[0];
-
-    // struct timeb t_start, t_end;
-    // ftime(&t_start);
 
     if (should_use_onethread)
     {

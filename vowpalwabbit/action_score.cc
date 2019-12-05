@@ -1,5 +1,10 @@
-#include "v_array.h"
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
 #include "action_score.h"
+
+#include "v_array.h"
 #include "io_buf.h"
 #include "global_data.h"
 

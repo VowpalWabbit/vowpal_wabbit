@@ -1,23 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 #pragma once
 #include <cmath>
 #include <string>
 #include <vector>
 #include <iostream>
-#include <stdint.h>
-#include <math.h>
+#include <cstdint>
+#include <cmath>
 #include "v_array.h"
 #include "hashstring.h"
-
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#include <Windows.h>
-#endif
 
 std::ostream& operator<<(std::ostream& os, const substring& ss);
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);

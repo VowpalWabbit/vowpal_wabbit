@@ -1,11 +1,9 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
 
 #include <cmath>
-#include <math.h>
+#include <cmath>
 #include <cctype>
 #include "parse_example.h"
 #include "hash.h"
