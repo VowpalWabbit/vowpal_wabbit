@@ -144,6 +144,7 @@
     <ClInclude Include="crossplat_compat.h" />
     <ClInclude Include="cs_active.h" />
     <ClInclude Include="csoaa.h" />
+    <ClInclude Include="distributionally_robust.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="explore_eval.h" />
@@ -259,6 +260,7 @@
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
+    <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
