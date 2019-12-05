@@ -262,7 +262,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   }
 
   // Set explore_type
-  size_t problem_multiplier = cover_size + 1;
+  const size_t problem_multiplier = cover_size + 1;
 
   LEARNER::multi_learner* base = LEARNER::as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;

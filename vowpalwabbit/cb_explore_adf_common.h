@@ -69,10 +69,9 @@ struct cb_explore_adf_base
   CB::label _action_label;
   CB::label _empty_label;
   ExploreType explore;
-
- public:
+public:
   template <typename... Args >
-  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...) {}
+  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...){}
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void predict(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
@@ -116,13 +115,13 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
   }
-
-  // Notes:  Predict will be called as part of workflow before learn.
-  // No need to call predict again here.
-  //else
-  //{
-  //  predict(data, base, examples);
-  //}
+  else
+  {
+    // Notes:  Predict will be called as part of workflow before learn.
+    // No need to call predict again here ... however not all top level reductions
+    // do this.  So have to leave this in for now.
+    predict(data, base, examples);
+  }
 }
 
 template <typename ExploreType>
