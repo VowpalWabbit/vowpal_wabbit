@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
       if (alls.size() == 1)
         LEARNER::generic_driver_onethread(all);
       else
-        throw "--onethread doesn't make sense with multiple learners";
+        THROW("--onethread doesn't make sense with multiple learners");
     }
     else
     {

@@ -105,6 +105,11 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   if (!cb_sample_option)
     return nullptr;
 
+  if (options.was_supplied("no_predict"))
+  {
+    THROW("cb_sample cannot be used with no_predict, as there would be no predictions to sample.");
+  }
+
   auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
       learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs));

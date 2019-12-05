@@ -18,8 +18,10 @@
 
 #ifdef HAS_STD14
 #define VW_STD14_CONSTEXPR constexpr
+#define VW_DEPRECATED(message) [[deprecated(message)]]
 #else
 #define VW_STD14_CONSTEXPR
+#define VW_DEPRECATED(message)
 #endif
 
 #else
