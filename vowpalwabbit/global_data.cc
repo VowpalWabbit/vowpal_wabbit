@@ -14,6 +14,12 @@
 #include "gd.h"
 #include "vw_exception.h"
 
+#ifdef _WIN32
+#define NOMINMAX
+#include <WinSock2.h>
+#include <Windows.h>
+#endif
+
 struct global_prediction
 {
   float p;
