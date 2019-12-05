@@ -90,7 +90,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 
     // Stash the CCB labels before rewriting them.
     data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type, ex->l.conditional_contextual_bandit.outcome,
-        ex->l.conditional_contextual_bandit.explicit_included_actions});
+          ex->l.conditional_contextual_bandit.explicit_included_actions, 0.});
   }
 
   return true;
@@ -461,7 +461,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   for (size_t i = 0; i < examples.size(); i++)
   {
     examples[i]->l.conditional_contextual_bandit = {
-        data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions};
+      data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
   }
 
   // Save the predictions
