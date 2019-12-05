@@ -325,6 +325,7 @@ search::~search()
     delete priv.truth_string;
     delete priv.pred_string;
     delete priv.bad_string_stream;
+    priv.rawOutputString.~basic_string();
     priv.test_action_sequence.~vector<action>();
     priv.dat_new_feature_audit_ss.~basic_stringstream();
     priv.neighbor_features.delete_v();
@@ -341,7 +342,7 @@ search::~search()
     priv.condition_on_actions.delete_v();
     priv.learn_allowed_actions.delete_v();
     priv.ldf_test_label.costs.delete_v();
-    //priv.last_action_repr.delete_v();
+    priv.last_action_repr.~features();
     priv.active_uncertainty.delete_v();
     for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
     priv.active_known.delete_v();

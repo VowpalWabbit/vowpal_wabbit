@@ -18,11 +18,6 @@ struct interact
   float n1_feat_sq;
   float total_sum_feat_sq;
   size_t num_features;
-
-  ~interact()
-  {
-    //feat_store.delete_v();
-  }
 };
 
 bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)

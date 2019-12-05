@@ -4,8 +4,6 @@
 
 namespace LabelDict
 {
-constexpr size_t hash_lab(size_t lab) noexcept { return 328051 + 94389193 * lab; }
-
 void del_example_namespace(example& ec, namespace_index ns, features& fs)
 {
   // print_update is called after this del_example_namespace,

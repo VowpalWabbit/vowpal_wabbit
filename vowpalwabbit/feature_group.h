@@ -276,7 +276,6 @@ struct features
     sum_feat_sq = 0.f;
   }
 
-  // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
   ~features() { 
      values.delete_v();
      indicies.delete_v();
@@ -296,11 +295,17 @@ struct features
    {
      // We need to null out all the v_arrays to prevent double freeing during moves
      auto & v = other.values;
-     v._begin = v._end = v.end_array = nullptr;
+     v._begin = nullptr;
+     v._end = nullptr;
+     v.end_array = nullptr;
      auto & i = other.indicies;
-     i._begin = i._end = i.end_array = nullptr;
+     i._begin = nullptr;
+     i._end = nullptr;
+     i.end_array = nullptr;
      auto & s = other.space_names;
-     s._begin = s._end = s.end_array = nullptr;
+     s._begin = nullptr;
+     s._end = nullptr;
+     s.end_array = nullptr;
      other.sum_feat_sq = 0;
    }
    features & operator=(features&& other)
@@ -311,11 +316,17 @@ struct features
      sum_feat_sq = other.sum_feat_sq;
      // We need to null out all the v_arrays to prevent double freeing during moves
      auto & v = other.values;
-     v._begin = v._end = v.end_array = nullptr;
+     v._begin = nullptr;
+     v._end = nullptr;
+     v.end_array = nullptr;
      auto & i = other.indicies;
-     i._begin = i._end = i.end_array = nullptr;
+     i._begin = nullptr;
+     i._end = nullptr;
+     i.end_array = nullptr;
      auto & s = other.space_names;
-     s._begin = s._end = s.end_array = nullptr;
+     s._begin = nullptr;
+     s._end = nullptr;
+     s.end_array = nullptr;
      other.sum_feat_sq = 0;
      return *this;
    }

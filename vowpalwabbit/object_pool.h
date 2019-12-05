@@ -116,8 +116,8 @@ struct no_lock_object_pool
 
   TInitializer m_initializer;
   TCleanup m_cleanup;
-  const size_t m_initial_chunk_size = 0;
-  const size_t m_chunk_size = 8;
+  size_t m_initial_chunk_size = 0;
+  size_t m_chunk_size = 8;
 
   std::vector<std::unique_ptr<T[]>> m_chunks;
   std::vector<std::pair<T*, T*>> m_chunk_bounds;

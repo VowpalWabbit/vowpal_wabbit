@@ -52,7 +52,7 @@ template <bool audit>
 class TC_parser
 {
  public:
-  const VW::string_view _line;
+  VW::string_view _line;
   size_t _read_idx;
   float _cur_channel_v;
   bool _new_index;

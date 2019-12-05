@@ -739,11 +739,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (!all.quiet)
       all.trace_message << "creating quadratic features for pairs: ";
 
-    for (auto i = quadratics.begin(); i != quadratics.end(); ++i)
+    for (auto& i : quadratics)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
+      i = spoof_hex_encoded_namespaces(i);
       if (!all.quiet)
-        all.trace_message << *i << " ";
+        all.trace_message << i << " ";
     }
 
     expanded_interactions =
@@ -1919,25 +1919,6 @@ void finish(vw& all, bool delete_all)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
   all.final_prediction_sink.delete_v();
 
-  // TODO: is the following code supposed to clear the loaded_dictionaries vector?
-  /*
-  for (size_t i = 0; i < all.loaded_dictionaries.size(); i++)
-  {
-    // Warning C6001 is triggered by the following:
-    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using
-    // 'free(all.loaded_dictionaries[i].name)'
-    //
-    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the
-    // warning goes away. Disable SDL warning.
-    //    #pragma warning(disable:6001)
-    free_it(all.loaded_dictionaries[i].name);
-    //#pragma warning(default:6001)
-
-    all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
-    all.loaded_dictionaries[i].dict->delete_v();
-    free_it(all.loaded_dictionaries[i].dict);
-  }
-  */
   all.loaded_dictionaries.clear();
   // TODO: should we be clearing the namespace dictionaries?
   for (auto & ns_dict : all.namespace_dictionaries)
