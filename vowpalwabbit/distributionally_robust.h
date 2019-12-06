@@ -52,7 +52,7 @@ class ChiSquared
   public:
     // alpha: confidence level
     // tau: count decay time constant
-    ChiSquared(double _alpha, 
+    explicit ChiSquared(double _alpha, 
                double _tau, 
                double _wmin = 0, 
                double _wmax = std::numeric_limits<double>::infinity(),

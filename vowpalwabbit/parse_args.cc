@@ -32,6 +32,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "cb_dro.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_bag.h"
 #include "cb_explore_adf_cover.h"
@@ -1287,6 +1288,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(VW::cb_explore_adf::first::setup);
   all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
   all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
+  all.reduction_stack.push(cb_dro_setup);
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);

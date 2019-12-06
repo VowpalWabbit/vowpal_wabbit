@@ -20,7 +20,7 @@ endif()
 set(vw_all_headers
 accumulate.h action_score.h active_cover.h active.h allreduce.h array_parameters_dense.h
 array_parameters.h audit_regressor.h autolink.h baseline.h beam.h best_constant.h bfgs.h binary.h
-boosting.h bs.h cache.h cb_adf.h cb_algs.h cb_explore_adf_bag.h cb_explore_adf_common.h
+boosting.h bs.h cache.h cb_adf.h cb_algs.h cb_dro.h cb_explore_adf_bag.h cb_explore_adf_common.h
 cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h cb_explore_adf_regcb.h
 cb_explore_adf_softmax.h cb_explore.h cb.h cbify.h ccb_label.h classweight.h comp_io.h
 conditional_contextual_bandit.h confidence.h config.h.in constant.h correctedMath.h cost_sensitive.h
@@ -43,7 +43,7 @@ vwdll.h warm_cb.h
 set(vw_all_sources
   accumulate.cc action_score.cc active_cover.cc active.cc audit_regressor.cc autolink.cc baseline.cc
   best_constant.cc bfgs.cc binary.cc boosting.cc bs.cc cache.cc cb_adf.cc cb_algs.cc
-  cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc
+  cb_dro.cc cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc cb_explore_adf_softmax.cc cb_explore.cc cb_sample.cc cb.cc cbify.cc
   ccb_label.cc classweight.cc comp_io.cc conditional_contextual_bandit.cc confidence.cc
   cost_sensitive.cc cs_active.cc csoaa.cc distributionally_robust.cc ect.cc example.cc explore_eval.cc ftrl.cc gd_mf.cc gd.cc
