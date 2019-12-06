@@ -44,13 +44,13 @@ bool isclose(double x, double y, double atol=1e-8)
   return std::abs(x - y) <= (atol + rtol * std::abs(y));
 }
 
-void ChiSquared::recompute_duals()
+ChiSquared::Duals ChiSquared::recompute_duals()
 {
-  duals.unbounded = 1;
-
   if (n <= 0)
     {
-      return;
+      duals = { true, 0, 0, 0, 0 };
+
+      return duals;
     }
 
   double uncwfake = sumw < n ? wmax : wmin;
@@ -97,15 +97,15 @@ void ChiSquared::recompute_duals()
 
               if (isclose(kappa, 0))
                 {
-                  Duals candidate = { false, true, 0, 0, 0, 0 };
+                  Duals candidate = { true, 0, 0, 0, 0 };
                   candidates.push_back(std::make_pair(r, candidate));
                 }
               else
                 {
                   double gstar = x - std::sqrt(2 * y * z);
-		  double gamma = -kappa * (1 + n) / n + (r * sumw - sumwr) / n;
-		  double beta = -sign * r;
-                  Duals candidate = { false, false, kappa, gamma, beta, n };
+                  double gamma = -kappa * (1 + n) / n + (r * sumw - sumwr) / n;
+                  double beta = -sign * r;
+                  Duals candidate = { false, kappa, gamma, beta, n };
                   candidates.push_back(std::make_pair(gstar, candidate));
                 }
             }
@@ -122,7 +122,7 @@ void ChiSquared::recompute_duals()
              {
                 double x = barwr + ((1 - barw) * (barwsqr - barw * barwr) / (barwsq - barw*barw));
                 double y = (barwsqr - barw * barwr)*(barwsqr - barw * barwr) / (barwsq - barw*barw) - (barwsqrsq - barwr*barwr);
-                double z = phi + (1/2) * (1 - barw)*(1 - barw) / (barwsq - barw*barw);
+                double z = phi + 0.5 * (1 - barw)*(1 - barw) / (barwsq - barw*barw);
 
                 if (isclose(y * z, 0, 1e-9))
                   {
@@ -135,15 +135,15 @@ void ChiSquared::recompute_duals()
 
                     if (isclose(kappa, 0))
                       {
-                        Duals candidate = { false, true, 0, 0, 0, 0 };
+                        Duals candidate = { true, 0, 0, 0, 0 };
                         candidates.push_back(std::make_pair(r, candidate));
                       }
                     else
                       {
                         double gstar = x - std::sqrt(2 * y * z);
-                        double beta = -kappa * (1 - barw) - (barwsqr - barw * barwr) / (barwsq - barw*barw);
+                        double beta = (-kappa * (1 - barw) - (barwsqr - barw * barwr)) / (barwsq - barw*barw);
                         double gamma = -kappa - beta * barw - barwr;
-                        Duals candidate = { false, false, kappa, gamma, beta, n };
+                        Duals candidate = { false, kappa, gamma, beta, n };
                         candidates.push_back(std::make_pair(gstar, candidate));
                       }
                   }
@@ -153,7 +153,7 @@ void ChiSquared::recompute_duals()
 
   if (candidates.empty())
     {
-      duals = { false, true, 0, 0, 0, 0 };
+      duals = { true, 0, 0, 0, 0 };
     }
   else
     {
@@ -167,6 +167,8 @@ void ChiSquared::recompute_duals()
 
       duals = std::get<1>(*it);
     }
+
+  return duals;
 }
 
 }

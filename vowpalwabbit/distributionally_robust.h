@@ -17,22 +17,19 @@ namespace distributionally_robust
 
 class ChiSquared
 {
-  private:
+  public:
     struct Duals
     {
-      bool stale;
       bool unbounded;
       double kappa;
       double gamma;
       double beta;
       double n;
 
-      double qfunc(double w, double r)
-        {
-          return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa);
-        }
+      double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
     };
-    
+
+  private:
     double alpha;
     double tau;
     double wmin;
@@ -49,6 +46,7 @@ class ChiSquared
 
     double delta;
 
+    bool duals_stale;
     Duals duals;
 
   public:
@@ -72,7 +70,8 @@ class ChiSquared
         sumwr(0),
         sumwsqr(0),
         sumwsqrsq(0),
-        delta(chisq_onedof_isf(alpha))
+        delta(chisq_onedof_isf(alpha)),
+        duals_stale(true)
       {
         if (alpha > 1 || alpha <= 0)
           {
@@ -93,8 +92,6 @@ class ChiSquared
           {
             throw std::invalid_argument("invalid limits on r");
           }
-
-        duals.stale = true;
       }
 
     ChiSquared& update(double w, double r)
@@ -109,14 +106,14 @@ class ChiSquared
         rmin = std::min(rmin, r);
         rmax = std::max(rmax, r);
 
-        duals.stale = true;
+        duals_stale = true;
 
         return *this;
       }
 
     double qlb(double w, double r)
       {
-        if (duals.stale)
+        if (duals_stale)
           {
             recompute_duals();
           }
@@ -124,7 +121,7 @@ class ChiSquared
         return duals.qfunc(w, r);
       }
 
-    void recompute_duals();
+    Duals recompute_duals();
     static double chisq_onedof_isf(double alpha);
 };
 

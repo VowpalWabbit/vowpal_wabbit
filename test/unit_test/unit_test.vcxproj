@@ -46,6 +46,7 @@
     <ClInclude Include="test_common.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DistributionallyRobustUnitTest.ipynb" />
     <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
