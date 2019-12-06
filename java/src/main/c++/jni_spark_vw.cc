@@ -414,6 +414,82 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   }
 }
 
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditLabel(
+    JNIEnv* env, jobject exampleObj, jint action, jdouble cost, jdouble probability)
+{
+  INIT_VARS
+
+  try
+  {
+    CB::label* ld = &ex->l.cb;
+    CB::cb_class f;
+
+    f.action = (uint32_t)action;
+    f.cost = (float)cost;
+    f.probability = (float)probability;
+
+    ld->costs.push_back(f);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSharedLabel(JNIEnv* env, jobject exampleObj)
+{
+  INIT_VARS
+
+  try
+  {
+    // https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/vowpalwabbit/parse_example_json.h#L437
+    CB::label* ld = &ex->l.cb;
+    CB::cb_class f;
+
+    f.partial_prediction = 0.;
+    f.action = (uint32_t)uniform_hash("shared", 6, 0);
+    f.cost = FLT_MAX;
+    f.probability = -1.f;
+
+    ld->costs.push_back(f);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setConditionalContextualBanditLabel(JNIEnv* env,
+    jobject exampleObj, jint type, jintArray actions, jdoubleArray costs, jdoubleArray probabilities,
+    jdoubleArray actionIdsToInclude)
+{
+  INIT_VARS
+
+  try
+  {
+    CCB::label* ld = &ex->l.conditional_contextual_bandit;
+
+    switch (type)
+    {
+      case 0:  // shared
+        ld->type = CCB::example_type::shared;
+        break;
+
+      case 1:  // action
+        // TODO
+        break;
+
+      case 2:  // slot
+        // TODO
+        break;
+    }
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
 // re-use prediction conversation methods
 jobject multilabel_predictor(example* vec, JNIEnv* env);
 jfloatArray scalars_predictor(example* vec, JNIEnv* env);

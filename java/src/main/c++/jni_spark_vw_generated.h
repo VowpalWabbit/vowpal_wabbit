@@ -129,6 +129,17 @@ extern "C"
    */
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(JNIEnv *, jobject, jfloat, jfloat);
 
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditLabel(
+      JNIEnv *, jobject, jint, jfloat, jfloat);
+
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSharedLabel(JNIEnv *, jobject);
+
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setConditionalContextualBanditSharedLabel(
+      JNIEnv *, jobject);
+
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMulticlassLabel(
+      JNIEnv *, jobject, jint, jfloat);
+
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
    * Method:    learn
