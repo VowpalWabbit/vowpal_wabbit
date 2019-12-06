@@ -57,3 +57,28 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test:
     BOOST_TEST(duals[i].n == d.n);
   }
 }
+
+BOOST_AUTO_TEST_CASE(distributionally_robust_qlb, *boost::unit_test::tolerance(2e-5))
+{
+  // see DistributionallyRobustUnitTest.ipynb
+
+  std::pair<double, double> data[] = {{0.4692680899768591, 0.08779271803562538},
+      {3.010121430917521, 0.1488852932982503}, {1.3167456935454493, 0.5579699034039329},
+      {0.9129425537759532, 0.6202896863254631}, {0.16962487046234628, 0.7284609393916186},
+      {0.16959629191460518, 0.10028857734263497}, {0.059838768608680676, 0.5165390922355259},
+      {2.0112308644799395, 0.4596272470443479}, {0.9190821536272645, 0.4352012556681023},
+      {1.2312500617045903, 0.40365563207132593}};
+
+  double qlbs[] = {1, 0.13620517641052662, -0.17768396518176874, 0.03202698335276157, 0.20163624787093867,
+      0.19427440609482105, 0.22750472815940542, 0.01392757858090217, 0.10533233309112934, 0.08141788541188416};
+
+  auto onlinechisq = std::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
+
+  for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
+  {
+    onlinechisq->update(data[i].first, data[i].second);
+    auto v = onlinechisq->qlb(data[i].first, data[i].second);
+
+    BOOST_TEST(qlbs[i] == v);
+  }
+}
