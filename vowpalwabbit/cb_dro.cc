@@ -24,13 +24,13 @@ struct cb_dro_data
     //    in prediction mode with exploration (aka --cb_explore_adf)
     //    or in (off-policy) learning without exploration (aka --cb_adf)
     //
-    // In practice, nobody seems to do "truly online policy learning"
-    // aka "--cb_explore_adf while supplying data with labels."  Arguably
-    // distributional robustness is not important for on-policy learning.
+    // In practice, nobody seems to do
+    // "off policy learning on the stochastic exploration policy".
     //
     // Ergo, the following always optimizes the bound on the derived
-    // deterministic argmax score policy.
-
+    // deterministic argmax score policy.  This makes things easy because
+    // the scores are not necessarily probabilities unless exploration is enabled,
+    // but the argmax is always proper.
 
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
