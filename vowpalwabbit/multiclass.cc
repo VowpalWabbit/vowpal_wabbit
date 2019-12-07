@@ -110,13 +110,14 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
 void print_probability(vw& all, example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
-  pred_ss << prediction << "(" << std::setw(2) << std::setprecision(0) << std::fixed << 100 * ec.pred.scalars[prediction - 1] << "%)";
+  pred_ss << prediction << "(" << std::setw(2) << std::setprecision(0) << std::fixed
+          << 100 * ec.pred.scalars[prediction - 1] << "%)";
 
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(
-      all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features, all.progress_add, all.progress_arg);
+  all.sd->print_update(all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
+      all.progress_add, all.progress_arg);
 }
 
 void print_score(vw& all, example& ec, uint32_t prediction)
@@ -127,8 +128,8 @@ void print_score(vw& all, example& ec, uint32_t prediction)
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(
-      all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features, all.progress_add, all.progress_arg);
+  all.sd->print_update(all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
+      all.progress_add, all.progress_arg);
 }
 
 void direct_print_update(vw& all, example& ec, uint32_t prediction)

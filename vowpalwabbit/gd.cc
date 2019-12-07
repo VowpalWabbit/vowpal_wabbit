@@ -65,10 +65,10 @@ inline float quake_InvSqrt(float x)
   // Carmack/Quake/SGI fast method:
   float xhalf = 0.5f * x;
   static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
-  int i = reinterpret_cast<int&>(x);        // store floating-point bits in integer
-  i = 0x5f3759d5 - (i >> 1);       // initial guess for Newton's method
-  x =  reinterpret_cast<float&>(i);            // convert new bits into float
-  x = x * (1.5f - xhalf * x * x);  // One round of Newton's method
+  int i = reinterpret_cast<int&>(x);  // store floating-point bits in integer
+  i = 0x5f3759d5 - (i >> 1);          // initial guess for Newton's method
+  x = reinterpret_cast<float&>(i);    // convert new bits into float
+  x = x * (1.5f - xhalf * x * x);     // One round of Newton's method
   return x;
 }
 
@@ -248,7 +248,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     tempstream << ':' << (index >> stride_shift) << ':' << ft_weight << ':'
                << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
 
-    if (weights.adaptive) // adaptive
+    if (weights.adaptive)  // adaptive
       tempstream << '@' << (&weights[index])[1];
 
     string_value sv = {weights[index] * ft_weight, ns_pre + tempstream.str()};
@@ -283,8 +283,8 @@ void print_lda_features(vw& all, example& ec)
     for (features::iterator_all& f : fs.values_indices_audit())
     {
       std::cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
-           << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
-      for (size_t k = 0; k < all.lda; k++)std::cout << ':' << (&weights[f.index()])[k];
+                << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+      for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
   }
   std::cout << " total of " << count << " features." << std::endl;
@@ -585,7 +585,8 @@ float get_scale(gd& g, example& /* ec */, float weight)
   float update_scale = g.all->eta * weight;
   if (!adaptive)
   {
-    float t = (float)(g.all->sd->t + weight - g.all->sd->weighted_holdout_examples - g.all->sd->weighted_unlabeled_examples);
+    float t =
+        (float)(g.all->sd->t + weight - g.all->sd->weighted_holdout_examples - g.all->sd->weighted_unlabeled_examples);
     update_scale *= powf(t, g.neg_power_t);
   }
   return update_scale;
@@ -1121,15 +1122,11 @@ base_learner* setup(options_i& options, vw& all)
   bool normalized = false;
 
   option_group_definition new_options("Gradient Descent options");
-  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.")
-                 .keep(all.save_resume))
-      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.")
-                .keep(all.save_resume))
+  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.").keep(all.save_resume))
+      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.").keep(all.save_resume))
       .add(make_option("adax", adax).help("use adaptive learning rates with x^2 instead of g^2x^2"))
-      .add(make_option("invariant", invariant).help("use safe/importance aware updates.")
-                .keep(all.save_resume))
-      .add(make_option("normalized", normalized).help("use per feature normalized updates")
-                .keep(all.save_resume))
+      .add(make_option("invariant", invariant).help("use safe/importance aware updates.").keep(all.save_resume))
+      .add(make_option("normalized", normalized).help("use per feature normalized updates").keep(all.save_resume))
       .add(make_option("sparse_l2", g->sparse_l2).default_value(0.f).help("use per feature normalized updates"))
       .add(make_option("l1_state", all.sd->gravity)
                .keep(all.save_resume)
@@ -1149,7 +1146,6 @@ base_learner* setup(options_i& options, vw& all)
   all.weights.normalized = true;
   g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.power_t;
-
 
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1

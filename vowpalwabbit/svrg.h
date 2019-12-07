@@ -6,4 +6,3 @@
 #include "reductions_fwd.h"
 
 LEARNER::base_learner* svrg_setup(VW::config::options_i& options, vw& all);
-

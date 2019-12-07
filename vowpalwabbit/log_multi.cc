@@ -156,7 +156,7 @@ inline void update_min_count(log_multi& b, uint32_t node)
 
 void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
-  for (uint32_t i = 0; i < depth; i++)std::cout << "\t";
+  for (uint32_t i = 0; i < depth; i++) std::cout << "\t";
   std::cout << node.min_count << " " << node.left << " " << node.right;
   std::cout << " label = " << node.max_count_label << " labels = ";
   for (size_t i = 0; i < node.preds.size(); i++)

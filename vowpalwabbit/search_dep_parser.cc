@@ -449,8 +449,8 @@ void get_hybrid_action_cost(Search::search &sch, size_t idx, uint64_t n)
       action_loss[REDUCE_RIGHT] += 1;
 }
 
-void get_cost_to_go_losses(
-    Search::search &sch, v_array<std::pair<action, float>> &gold_action_losses, uint32_t left_label, uint32_t right_label)
+void get_cost_to_go_losses(Search::search &sch, v_array<std::pair<action, float>> &gold_action_losses,
+    uint32_t left_label, uint32_t right_label)
 {
   task_data *data = sch.get_task_data<task_data>();
   bool &one_learner = data->one_learner;
@@ -722,7 +722,8 @@ void run(Search::search &sch, multi_ex &ec)
         {
           gold_action_losses.clear();
           for (size_t i = 1; i <= data->num_label; i++)
-            gold_action_losses.push_back(std::make_pair((action)i, i != (a_id == REDUCE_LEFT ? left_label : right_label)));
+            gold_action_losses.push_back(
+                std::make_pair((action)i, i != (a_id == REDUCE_LEFT ? left_label : right_label)));
           t_id = P.set_tag((ptag)count)
                      .set_input(*(data->ex))
                      .set_allowed(gold_action_losses)

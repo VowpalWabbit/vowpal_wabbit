@@ -152,7 +152,6 @@ bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
   return false;
 }
 
-
 inline void safe_memcpy(char*& __dest, size_t& __dest_size, const void* __src, size_t __n)
 {
   resize_buf_if_needed(__dest, __dest_size, __n);
@@ -582,7 +581,8 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
       // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors" << std::endl;
+        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
+                          << std::endl;
       }
     }
   }

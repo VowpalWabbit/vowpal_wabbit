@@ -11,7 +11,6 @@
 #include "accumulate.h"
 #include "best_constant.h"
 
-
 namespace no_label
 {
 char* bufread_no_label(shared_data*, label_data*, char* c) { return c; }
@@ -37,9 +36,9 @@ void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
     case 0:
       break;
     default:
-     std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
+      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
       for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
-     std::cout << std::endl;
+      std::cout << std::endl;
   }
 }
 

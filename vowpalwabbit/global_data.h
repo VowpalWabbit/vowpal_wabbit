@@ -457,32 +457,34 @@ struct vw
   // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> triples;  // triples of features to cross.
   bool ignore_some;
-  std::array<bool, NUM_NAMESPACES> ignore; // a set of namespaces to ignore
+  std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
   std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
 
-  bool redefine_some;           // --redefine param was used
-  std::array<unsigned char, NUM_NAMESPACES> redefine; // keeps new chars for namespaces
+  bool redefine_some;                                  // --redefine param was used
+  std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
   std::vector<std::string> ngram_strings;
   std::vector<std::string> skip_strings;
-  std::array<uint32_t, NUM_NAMESPACES> ngram;                       // ngrams to generate.
-  std::array<uint32_t, NUM_NAMESPACES> skips;                       // skips in ngrams.
-  std::vector<std::string> limit_strings;    // descriptor of feature limits
-  std::array<uint32_t, NUM_NAMESPACES> limit;                       // count to limit features by
-  std::array<uint64_t, NUM_NAMESPACES> affix_features;              // affixes to generate (up to 16 per namespace - 4 bits per affix)
-  std::array<bool, NUM_NAMESPACES> spelling_features;               // generate spelling features for which namespace
-  std::vector<std::string> dictionary_path;  // where to look for dictionaries
+  std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
+  std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
+  std::vector<std::string> limit_strings;      // descriptor of feature limits
+  std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
+  std::array<uint64_t, NUM_NAMESPACES>
+      affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
+  std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
+  std::vector<std::string> dictionary_path;            // where to look for dictionaries
 
   // This array is required to be value initialized so that the std::vectors are constructed.
-  std::array<std::vector<feature_dict*>, NUM_NAMESPACES> namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
-  std::vector<dictionary_info> loaded_dictionaries;        // which dictionaries have we loaded from a file to memory?
+  std::array<std::vector<feature_dict*>, NUM_NAMESPACES>
+      namespace_dictionaries{};                      // each namespace has a list of dictionaries attached to it
+  std::vector<dictionary_info> loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
 
   void (*delete_prediction)(void*);
   bool audit;     // should I print lots of debugging information?
   bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?
   bool active;
-  bool invariant_updates;   // Should we use importance aware/safe updates
+  bool invariant_updates;  // Should we use importance aware/safe updates
   uint64_t random_seed;
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
@@ -560,6 +562,7 @@ void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
 void get_prediction(int sock, float& res, float& weight);
-void compile_gram(std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
+void compile_gram(
+    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);

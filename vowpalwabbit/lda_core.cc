@@ -637,8 +637,8 @@ static inline float average_diff(vw &all, float *oldgamma, float *newgamma)
   // This warps the normal sense of "inner product", but it accomplishes the same
   // thing as the "plain old" for loop. clang does a good job of reducing the
   // common subexpressions.
-  sum = std::inner_product(oldgamma, oldgamma + all.lda, newgamma, 0.0f,
-      [](float accum, float absdiff) { return accum + absdiff; },
+  sum = std::inner_product(
+      oldgamma, oldgamma + all.lda, newgamma, 0.0f, [](float accum, float absdiff) { return accum + absdiff; },
       [](float old_g, float new_g) { return std::abs(old_g - new_g); });
 
   normalizer = std::accumulate(newgamma, newgamma + all.lda, 0.0f);

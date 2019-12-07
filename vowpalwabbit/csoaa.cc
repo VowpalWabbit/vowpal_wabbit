@@ -24,10 +24,7 @@ struct csoaa
 {
   uint32_t num_classes;
   polyprediction* pred;
-  ~csoaa()
-  {
-    free(pred);
-  }
+  ~csoaa() { free(pred); }
 };
 
 template <bool is_learn>
@@ -235,9 +232,10 @@ void unsubtract_example(example* ec)
 
   if (ec->indices.last() != wap_ldf_namespace)
   {
-    std::cerr << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
-            "after and not removed!"
-         << std::endl;
+    std::cerr
+        << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
+           "after and not removed!"
+        << std::endl;
     return;
   }
 
@@ -848,8 +846,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   {
     if (all.training)
       THROW("ldf requires either m/multiline or mc/multiline-classifier");
-    if ((ldf_arg == "singleline" || ldf_arg == "s") ||
-        (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
+    if ((ldf_arg == "singleline" || ldf_arg == "s") || (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
       THROW(
           "ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no "
           "longer supported");
