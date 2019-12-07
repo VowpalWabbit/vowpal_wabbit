@@ -172,16 +172,14 @@ TEST(PairIteratorTestSuite, simple_test)
   using SecondVal = float;
   using FirstIt = FirstVal*;
   using SecondIt = SecondVal*;
-  using iter = vw_slim::internal::collection_pair_iterator<FirstIt,SecondIt>;
+  using iter = vw_slim::internal::collection_pair_iterator<FirstIt, SecondIt>;
   using loc = vw_slim::internal::location_value<FirstIt, SecondIt>;
   using loc_ref = vw_slim::internal::location_reference<FirstIt, SecondIt>;
 
   const iter begin_coll(std::begin(actions), std::begin(pdf));
   const iter end_coll(std::end(actions), std::end(pdf));
   size_t diff = end_coll - begin_coll;
-  std::sort(begin_coll, end_coll, [&scores](const loc& l, const loc& r) {
-    return scores[l._val1] < scores[r._val1];
-  });
+  std::sort(begin_coll, end_coll, [&scores](const loc& l, const loc& r) { return scores[l._val1] < scores[r._val1]; });
 
   EXPECT_THAT(actions, ElementsAre(1, 2, 0));
   EXPECT_THAT(pdf, ElementsAre(1.0f, 2.0f, 0.0f));
