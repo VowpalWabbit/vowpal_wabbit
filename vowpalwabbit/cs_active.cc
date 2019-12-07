@@ -59,10 +59,7 @@ struct cs_active
   float distance_to_range;
   float range;
 
-  ~cs_active()
-  {
-    examples_by_queries.delete_v();
-  }
+  ~cs_active() { examples_by_queries.delete_v(); }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -245,7 +242,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       n_overlapped += (uint32_t)(lqd.is_range_overlapped);
       // large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
       // if(cl.is_range_overlapped && is_learn)
-      //{ std::cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ",
+      //{ std::cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred <<
+      //",
       // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
       //}
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);

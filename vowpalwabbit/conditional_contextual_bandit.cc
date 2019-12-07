@@ -90,7 +90,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 
     // Stash the CCB labels before rewriting them.
     data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type, ex->l.conditional_contextual_bandit.outcome,
-          ex->l.conditional_contextual_bandit.explicit_included_actions, 0.});
+        ex->l.conditional_contextual_bandit.explicit_included_actions, 0.});
   }
 
   return true;
@@ -174,7 +174,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 
 void clear_pred_and_label(ccb& data)
 {
-   // Don't need to return to pool, as that will be done when the example is output.
+  // Don't need to return to pool, as that will be done when the example is output.
 
   // This just needs to be cleared as it is reused.
   data.actions[data.action_with_label]->l.cb.costs.clear();
@@ -461,7 +461,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   for (size_t i = 0; i < examples.size(); i++)
   {
     examples[i]->l.conditional_contextual_bandit = {
-      data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
+        data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
   }
 
   // Save the predictions
@@ -646,7 +646,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  if(options.was_supplied("cb_sample") && slate)
+  if (options.was_supplied("cb_sample") && slate)
   {
     THROW("--slate and --cb_sample cannot be supplied together");
   }

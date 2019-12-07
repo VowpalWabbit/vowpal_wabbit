@@ -20,7 +20,6 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "array_parameters.h"
 
-
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -31,10 +30,7 @@ struct gdmf
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
-  ~gdmf()
-  {
-    scalars.delete_v();
-  }
+  ~gdmf() { scalars.delete_v(); }
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
@@ -64,12 +60,13 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
           for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           {
             std::cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':'
-                 << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
+                      << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
+                      << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
             std::cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':'
-                 << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
-                 << ':' << f2.value();
+                      << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
+                      << ':' << f2.value();
             std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
             std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];

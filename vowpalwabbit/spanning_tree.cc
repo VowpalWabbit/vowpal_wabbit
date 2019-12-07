@@ -18,7 +18,6 @@ license as described in the file LICENSE.
 #include <map>
 #include <future>
 
-
 struct client
 {
   uint32_t client_ip;
@@ -182,7 +181,7 @@ void SpanningTree::Run()
 
     if (!m_quiet)
       std::cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
-           << ") serv=" << servInfo << std::endl;
+                << ") serv=" << servInfo << std::endl;
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
@@ -219,8 +218,8 @@ void SpanningTree::Run()
     if (id >= total)
     {
       if (!m_quiet)
-       std::cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total
-             << " !" << std::endl;
+        std::cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id
+                  << " >=  " << total << " !" << std::endl;
       ok = false;
     }
     partial partial_nodeset;
@@ -255,8 +254,8 @@ void SpanningTree::Run()
         if (partial_nodeset.nodes[i].client_ip == (uint32_t)-1)
         {
           if (!m_quiet)
-           std::cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled) << " nodes out of "
-                 << total << " for example node " << i << std::endl;
+            std::cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled)
+                      << " nodes out of " << total << " for example node " << i << std::endl;
           break;
         }
       }

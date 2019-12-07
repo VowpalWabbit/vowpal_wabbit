@@ -19,10 +19,7 @@ struct interact
   float total_sum_feat_sq;
   size_t num_features;
 
-  ~interact()
-  {
-    feat_store.delete_v();
-  }
+  ~interact() { feat_store.delete_v(); }
 };
 
 bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
@@ -69,13 +66,15 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features." << std::endl;
+      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features."
+                << std::endl;
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features." << std::endl;
+      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features."
+                << std::endl;
       return;
     }
 

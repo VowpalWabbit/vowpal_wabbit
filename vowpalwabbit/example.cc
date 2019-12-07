@@ -232,7 +232,7 @@ void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_pre
     delete ec.passthrough;
   }
 
-  for (auto & j : ec.feature_space) j.delete_v();
+  for (auto& j : ec.feature_space) j.delete_v();
 
   ec.indices.delete_v();
 }

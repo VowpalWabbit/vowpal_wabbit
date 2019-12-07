@@ -121,10 +121,12 @@ extern "C"
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char* s, const char* h);
 #ifdef USE_CODECVT
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t* s, size_t u);
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t* s, size_t u, const char16_t* h, unsigned int num_bits);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(
+      const char16_t* s, size_t u, const char16_t* h, unsigned int num_bits);
 #endif
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char* s, size_t u);
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char* s, size_t u, const char* h, unsigned int num_bits);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(
+      const char* s, size_t u, const char* h, unsigned int num_bits);
 
   VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e);
   VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e);
