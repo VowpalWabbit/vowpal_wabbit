@@ -9,10 +9,13 @@ license as described in the file LICENSE.
 #include "reductions_fwd.h"
 #include <vector>
 
-namespace VW {
-namespace cb_explore_adf {
-namespace first {
-LEARNER::base_learner *setup(VW::config::options_i &options, vw &all);
-} // namespace first
-} // namespace cb_explore_adf
-} // namespace VW
+namespace VW
+{
+namespace cb_explore_adf
+{
+namespace first
+{
+LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+}  // namespace first
+}  // namespace cb_explore_adf
+}  // namespace VW

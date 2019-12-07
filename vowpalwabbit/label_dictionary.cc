@@ -1,23 +1,21 @@
-#include "label_dictionary.h"
-#include "cost_sensitive.h"
 #include "reductions.h"
+#include "cost_sensitive.h"
+#include "label_dictionary.h"
 
-namespace LabelDict {
-constexpr size_t hash_lab(size_t lab) noexcept {
-  return 328051 + 94389193 * lab;
-}
+namespace LabelDict
+{
+constexpr size_t hash_lab(size_t lab) noexcept { return 328051 + 94389193 * lab; }
 
-void del_example_namespace(example &ec, namespace_index ns, features &fs) {
+void del_example_namespace(example& ec, namespace_index ns, features& fs)
+{
   // print_update is called after this del_example_namespace,
   // so we need to keep the ec.num_features correct,
-  // so shared features are included in the reported number of "current
-  // features"
+  // so shared features are included in the reported number of "current features"
   // ec.num_features -= numf;
-  features &del_target = ec.feature_space[(size_t)ns];
+  features& del_target = ec.feature_space[(size_t)ns];
   assert(del_target.size() >= fs.size());
   assert(ec.indices.size() > 0);
-  if (ec.indices.last() == ns &&
-      ec.feature_space[(size_t)ns].size() == fs.size())
+  if (ec.indices.last() == ns && ec.feature_space[(size_t)ns].size() == fs.size())
     ec.indices.pop();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   ec.num_features -= fs.size();
@@ -25,10 +23,12 @@ void del_example_namespace(example &ec, namespace_index ns, features &fs) {
   del_target.sum_feat_sq -= fs.sum_feat_sq;
 }
 
-void add_example_namespace(example &ec, namespace_index ns, features &fs) {
+void add_example_namespace(example& ec, namespace_index ns, features& fs)
+{
   bool has_ns = false;
   for (size_t i = 0; i < ec.indices.size(); i++)
-    if (ec.indices[i] == (size_t)ns) {
+    if (ec.indices[i] == (size_t)ns)
+    {
       has_ns = true;
       break;
     }
@@ -37,8 +37,9 @@ void add_example_namespace(example &ec, namespace_index ns, features &fs) {
     ec.indices.push_back((size_t)ns);
 
   bool audit = fs.space_names.size() > 0;
-  features &add_fs = ec.feature_space[(size_t)ns];
-  for (size_t i = 0; i < fs.size(); ++i) {
+  features& add_fs = ec.feature_space[(size_t)ns];
+  for (size_t i = 0; i < fs.size(); ++i)
+  {
     add_fs.push_back(fs.values[i], fs.indicies[i]);
     if (audit)
       add_fs.space_names.push_back(fs.space_names[i]);
@@ -48,56 +49,62 @@ void add_example_namespace(example &ec, namespace_index ns, features &fs) {
   ec.num_features += fs.size();
 }
 
-void add_example_namespaces_from_example(example &target, example &source) {
-  for (namespace_index idx : source.indices) {
+void add_example_namespaces_from_example(example& target, example& source)
+{
+  for (namespace_index idx : source.indices)
+  {
     if (idx == constant_namespace)
       continue;
     add_example_namespace(target, idx, source.feature_space[idx]);
   }
 }
 
-void del_example_namespaces_from_example(example &target, example &source) {
-  if (source.indices.size() ==
-      0) // making sure we can deal with empty shared example
+void del_example_namespaces_from_example(example& target, example& source)
+{
+  if (source.indices.size() == 0)  // making sure we can deal with empty shared example
     return;
-  namespace_index *idx = source.indices.end();
+  namespace_index* idx = source.indices.end();
   idx--;
-  for (; idx >= source.indices.begin(); idx--) {
+  for (; idx >= source.indices.begin(); idx--)
+  {
     if (*idx == constant_namespace)
       continue;
     del_example_namespace(target, *idx, source.feature_space[*idx]);
   }
 }
 
-void add_example_namespace_from_memory(label_feature_map &lfm, example &ec,
-                                       size_t lab) {
+void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
+{
   size_t lab_hash = hash_lab(lab);
-  features &res = lfm.get(lab, lab_hash);
+  features& res = lfm.get(lab, lab_hash);
   if (res.size() == 0)
     return;
   add_example_namespace(ec, static_cast<unsigned char>('l'), res);
 }
 
-void del_example_namespace_from_memory(label_feature_map &lfm, example &ec,
-                                       size_t lab) {
+void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)
+{
   size_t lab_hash = hash_lab(lab);
-  features &res = lfm.get(lab, lab_hash);
+  features& res = lfm.get(lab, lab_hash);
   if (res.size() == 0)
     return;
   del_example_namespace(ec, static_cast<unsigned char>('l'), res);
 }
 
-void set_label_features(label_feature_map &lfm, size_t lab, features &fs) {
+void set_label_features(label_feature_map& lfm, size_t lab, features& fs)
+{
   size_t lab_hash = hash_lab(lab);
   if (lfm.contains(lab, lab_hash))
     return;
   lfm.put_after_get(lab, lab_hash, fs);
 }
 
-void free_label_features(label_feature_map &lfm) {
-  void *label_iter = lfm.iterator();
-  while (label_iter != nullptr) {
-    features *res = lfm.iterator_get_value(label_iter);
+void free_label_features(label_feature_map& lfm)
+{
+  void* label_iter = lfm.iterator();
+  while (label_iter != nullptr)
+  {
+    features* res = lfm.iterator_get_value(label_iter);
     res->values.delete_v();
     res->indicies.delete_v();
     res->space_names.delete_v();
@@ -107,4 +114,4 @@ void free_label_features(label_feature_map &lfm) {
   lfm.clear();
   lfm.delete_v();
 }
-} // namespace LabelDict
+}  // namespace LabelDict

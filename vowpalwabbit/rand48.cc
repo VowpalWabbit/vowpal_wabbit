@@ -13,13 +13,12 @@ constexpr uint64_t c = 2147483647;
 
 constexpr int bias = 127 << 23;
 
-float merand48(uint64_t &initial) {
-  static_assert(
-      sizeof(int) == sizeof(float),
-      "Floats and ints are converted between, they must be the same size.");
+float merand48(uint64_t& initial)
+{
+  static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
   initial = a * initial + c;
   int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias;
-  return reinterpret_cast<float &>(temp) - 1;
+  return reinterpret_cast<float&>(temp) - 1;
 }
 
 float merand48_noadvance(uint64_t v) { return merand48(v); }

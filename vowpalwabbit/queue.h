@@ -2,33 +2,38 @@
 
 #include <queue>
 
-// Mutex and CV cannot be used in managed C++, tell the compiler that this is
-// unmanaged even if included in a managed
+// Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
 #pragma managed(push, off)
 #undef _M_CEE
-#include <condition_variable>
 #include <mutex>
+#include <condition_variable>
 #define _M_CEE 001
 #pragma managed(pop)
 #else
-#include <condition_variable>
 #include <mutex>
+#include <condition_variable>
 #endif
 
-namespace VW {
-template <typename T> class ptr_queue {
-public:
+namespace VW
+{
+template <typename T>
+class ptr_queue
+{
+ public:
   ptr_queue(size_t max_size) : max_size(max_size) {}
 
-  T *pop() {
+  T* pop()
+  {
     std::unique_lock<std::mutex> lock(mut);
-    while (!done && object_queue.size() == 0) {
+    while (!done && object_queue.size() == 0)
+    {
       is_not_empty.wait(lock);
     }
 
-    if (done && object_queue.size() == 0) {
+    if (done && object_queue.size() == 0)
+    {
       return nullptr;
     }
 
@@ -40,9 +45,11 @@ public:
     return item;
   }
 
-  void push(T *item) {
+  void push(T* item)
+  {
     std::unique_lock<std::mutex> lock(mut);
-    while (object_queue.size() == max_size) {
+    while (object_queue.size() == max_size)
+    {
       is_not_full.wait(lock);
     }
 
@@ -52,7 +59,8 @@ public:
     is_not_empty.notify_all();
   }
 
-  void set_done() {
+  void set_done()
+  {
     done = true;
 
     is_not_empty.notify_all();
@@ -61,9 +69,9 @@ public:
 
   size_t size() const { return object_queue.size(); }
 
-private:
+ private:
   size_t max_size;
-  std::queue<T *> object_queue;
+  std::queue<T*> object_queue;
   std::mutex mut;
 
   bool done = false;
@@ -71,4 +79,4 @@ private:
   std::condition_variable is_not_full;
   std::condition_variable is_not_empty;
 };
-} // namespace VW
+}  // namespace VW
