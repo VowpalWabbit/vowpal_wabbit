@@ -10,11 +10,11 @@ license as described in the file LICENSE.
 
 struct rand_state;
 
-LEARNER::base_learner* bs_setup(VW::config::options_i& options, vw& all);
+LEARNER::base_learner *bs_setup(VW::config::options_i &options, vw &all);
 
-namespace BS
-{
-inline uint32_t weight_gen(std::shared_ptr<rand_state>& state)  // sampling from Poisson with rate 1
+namespace BS {
+inline uint32_t weight_gen(
+    std::shared_ptr<rand_state> &state) // sampling from Poisson with rate 1
 {
   float temp = state->get_and_update_random();
   if (temp <= 0.3678794411714423215955)
@@ -59,4 +59,4 @@ inline uint32_t weight_gen(std::shared_ptr<rand_state>& state)  // sampling from
     return 19;
   return 20;
 }
-}  // namespace BS
+} // namespace BS

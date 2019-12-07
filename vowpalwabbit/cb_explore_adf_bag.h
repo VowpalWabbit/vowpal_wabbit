@@ -7,18 +7,15 @@ license as described in the file LICENSE.
 
 #include "reductions_fwd.h"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 struct rand_state;
 
-namespace VW
-{
-namespace cb_explore_adf
-{
-namespace bag
-{
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
-}  // namespace bag
-}  // namespace cb_explore_adf
-}  // namespace VW
+namespace VW {
+namespace cb_explore_adf {
+namespace bag {
+LEARNER::base_learner *setup(VW::config::options_i &options, vw &all);
+} // namespace bag
+} // namespace cb_explore_adf
+} // namespace VW

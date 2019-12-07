@@ -8,8 +8,7 @@ license as described in the file LICENSE.
 #include "options.h"
 
 // Used in parse_source
-struct input_options
-{
+struct input_options {
   bool daemon;
   bool foreground;
   size_t port;
@@ -24,11 +23,15 @@ struct input_options
   bool compressed;
 };
 
-// trace listener + context need to be passed at initialization to capture all messages.
-vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-void parse_modules(VW::config::options_i& options, vw& all);
-void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad = false);
+// trace listener + context need to be passed at initialization to capture all
+// messages.
+vw &parse_args(VW::config::options_i &options,
+               trace_message_t trace_listener = nullptr,
+               void *trace_context = nullptr);
+void parse_modules(VW::config::options_i &options, vw &all);
+void parse_sources(VW::config::options_i &options, vw &all, io_buf &model,
+                   bool skipModelLoad = false);
 
-LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
+LEARNER::base_learner *setup_base(VW::config::options_i &options, vw &all);
 
-std::string spoof_hex_encoded_namespaces(const std::string& arg);
+std::string spoof_hex_encoded_namespaces(const std::string &arg);

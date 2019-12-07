@@ -8,4 +8,4 @@ license as described in the file LICENSE.
 
 #include "reductions_fwd.h"
 
-LEARNER::base_learner* topk_setup(VW::config::options_i& options, vw& all);
+LEARNER::base_learner *topk_setup(VW::config::options_i &options, vw &all);

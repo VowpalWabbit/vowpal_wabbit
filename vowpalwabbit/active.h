@@ -3,11 +3,10 @@
 
 struct rand_state;
 
-struct active
-{
+struct active {
   float active_c0;
-  vw* all;  // statistics, loss
+  vw *all; // statistics, loss
   std::shared_ptr<rand_state> _random_state;
 };
 
-LEARNER::base_learner* active_setup(VW::config::options_i& options, vw& all);
+LEARNER::base_learner *active_setup(VW::config::options_i &options, vw &all);

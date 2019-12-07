@@ -1,8 +1,7 @@
 #include "primitives.h"
-#include <intrin.h>
 #include <array>
 #include <bitset>
-
+#include <intrin.h>
 
 // sum_of_squares_func get_sum_of_squares()
 //{
@@ -23,11 +22,11 @@
 //  // static bool AVX(void) { return CPU_Rep.f_1_ECX_[28]; }
 //}
 
-float sum_of_squares(float* begin, float* end)
-{
+float sum_of_squares(float *begin, float *end) {
   float sum = 0;
 
-  for (; begin != end; begin++) sum += *begin * *begin;
+  for (; begin != end; begin++)
+    sum += *begin * *begin;
 
   return sum;
 }
