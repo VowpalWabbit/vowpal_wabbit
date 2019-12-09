@@ -355,6 +355,7 @@ struct learner
       finisher_fd.base->finish();
       free(finisher_fd.base);
     }
+    name.~basic_string();
   }
 
   void end_pass()
