@@ -27,3 +27,8 @@ extern label_parser simple_label_parser;
 bool summarize_holdout_set(vw& all, size_t& no_win_counter);
 void print_update(vw& all, example& ec);
 void output_and_account_example(vw& all, example& ec);
+
+namespace VW {
+  const float NA_0 = 0.f;   // constant to signal intitializing unused member
+  const float NA_1 = 1.f;    // constant to signal intitializing unused member
+}

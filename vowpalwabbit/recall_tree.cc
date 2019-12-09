@@ -259,8 +259,7 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example&
   uint32_t amaxscore = 0;
 
   add_node_id_feature(b, cn, ec);
-  ec.l.simple = {FLT_MAX};
-  ec.initial = 0.f;
+  ec.l.simple = {FLT_MAX, VW::NA_1, VW::NA_0};
   float maxscore = std::numeric_limits<float>::lowest();
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -313,8 +312,7 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
-  ec.l.simple = {FLT_MAX};
-  ec.initial = 0.f;
+  ec.l.simple = {FLT_MAX, VW::NA_1, VW::NA_0};
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -356,14 +354,18 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   double delta_left = nl * (new_left - old_left) + mc.weight * new_left;
   double delta_right = nr * (new_right - old_right) + mc.weight * new_right;
   float route_label = delta_left < delta_right ? -1.f : 1.f;
-  float imp_weight = fabs((float)(delta_left - delta_right));
 
-  ec.l.simple = {route_label};
-  // Bug?  looks like imp_weight was not used since ec.l.simple.weight is not used in gd.
+  // Bug?
+  // Notes: imp_weight does not seem to be used since it was not set to
+  // ec.weight before.  ec.l.simple.weight was not used in gd.
+  // float imp_weight = fabs((float)(delta_left - delta_right));
+
+  ec.l.simple = {route_label, VW::NA_1, VW::NA_0};
+  // Bug?  
+  // Notes: looks like imp_weight was not used since ec.l.simple.weight is not used in gd.
   // Only ec.weight is used in gd.  ec.imp_weight is now set to 0 instead of ec.l.simple.weight.
   // This causes different results during RunTests
   // ec.weight = imp_weight;
-  ec.initial = 0.f;
 
   base.learn(ec, b.nodes[cn].base_router);
 
@@ -416,12 +418,9 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
       add_node_id_feature(b, cn, ec);
 
-      ec.l.simple = {1.f};
-      ec.initial = 0.f;
-
+      ec.l.simple = {1.f, VW::NA_1, VW::NA_0};
       base.learn(ec, b.max_routers + mc.label - 1);
-      ec.l.simple = {-1.f};
-      ec.initial = 0.f;
+      ec.l.simple = {-1.f, VW::NA_1, VW::NA_0};
 
       for (node_pred* ls = b.nodes[cn].preds.begin();
            ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)

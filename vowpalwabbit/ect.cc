@@ -198,7 +198,7 @@ uint32_t ect_predict(ect& e, single_learner& base, example& ec)
   uint32_t finals_winner = 0;
 
   // Binary final elimination tournament first
-  ec.l.simple = {FLT_MAX};
+  ec.l.simple = {FLT_MAX, VW::NA_1, VW::NA_0};
 
   for (size_t i = e.tree_height - 1; i != (size_t)0 - 1; i--)
   {

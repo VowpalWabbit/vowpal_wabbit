@@ -61,12 +61,11 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
-  // std::cerr << "------------- passthrough" << std::endl;
   COST_SENSITIVE::label ld = ec.l.cs;
   uint32_t prediction = 1;
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
-  ec.l.simple = {0.};
+  ec.l.simple = {0., VW::NA_1, VW::NA_0};
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
@@ -75,7 +74,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   }
   else if (DO_MULTIPREDICT && !is_learn)
   {
-    ec.l.simple = {FLT_MAX};
+    ec.l.simple = {FLT_MAX, VW::NA_1, VW::NA_0};
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
     {
@@ -262,7 +261,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
 
   // WARNING: Access of label information when making prediction is problematic.
   // What should be done here about ec.l.simple?
-  const label_data simple_label{FLT_MAX};
+  const label_data simple_label{FLT_MAX, VW::NA_1, VW::NA_0};
   ec.l.simple = simple_label;
   base.predict(ec);  // make a prediction
 

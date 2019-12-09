@@ -50,9 +50,9 @@ struct cb_adf
   v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t _offset;
+  const bool _no_predict;
   const bool _rank_all;
   const float _clip_p;
-  const bool _no_predict;
 
  public:
   template <bool is_learn>

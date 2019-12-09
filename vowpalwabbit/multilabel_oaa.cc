@@ -22,7 +22,7 @@ void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
   MULTILABEL::labels preds = ec.pred.multilabels;
   preds.label_v.clear();
 
-  ec.l.simple = {FLT_MAX};
+  ec.l.simple = {FLT_MAX, VW::NA_1, VW::NA_0};
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {
