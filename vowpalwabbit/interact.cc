@@ -64,13 +64,15 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features." << std::endl;
+      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features."
+                << std::endl;
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features." << std::endl;
+      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features."
+                << std::endl;
       return;
     }
 

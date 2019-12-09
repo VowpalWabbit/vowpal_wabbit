@@ -40,7 +40,7 @@ struct cbify
   std::vector<ACTION_SCORE::action_scores> cb_as;
 
   ~cbify()
-  {   
+  {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
 

@@ -23,7 +23,7 @@ namespace VW
 template <typename T>
 struct default_cleanup
 {
-  void operator()(T*){}
+  void operator()(T*) {}
 };
 
 template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
@@ -139,10 +139,7 @@ struct value_object_pool
     }
   }
 
-  void return_object(T obj)
-  {
-    m_pool.push(obj);
-  }
+  void return_object(T obj) { m_pool.push(obj); }
 
   T get_object()
   {
@@ -158,10 +155,7 @@ struct value_object_pool
 
   bool empty() const { return m_pool.empty(); }
 
-  size_t size() const
-  {
-    return m_pool.size();
-  }
+  size_t size() const { return m_pool.size(); }
 
  private:
   std::stack<T> m_pool;
@@ -175,7 +169,8 @@ struct object_pool
   object_pool() = default;
   object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
       : inner_pool(initial_chunk_size, initializer, chunk_size)
-  {}
+  {
+  }
 
   void return_object(T* obj)
   {
@@ -186,7 +181,7 @@ struct object_pool
   T* get_object()
   {
     std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.get_object( );
+    return inner_pool.get_object();
   }
 
   bool empty() const

@@ -74,7 +74,8 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
     for (auto const& option : parsed_options.options)
     {
-      // If the supplied option is interpreted as a number, then ignore it. There are no options like this and it is just a false positive.
+      // If the supplied option is interpreted as a number, then ignore it. There are no options like this and it is
+      // just a false positive.
       if (is_number(option.string_key))
       {
         m_ignore_supplied.insert(option.string_key);

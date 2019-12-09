@@ -205,8 +205,8 @@ struct search_private
   v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
   v_array<action_repr> ptag_to_action;          // tag to action mapping for conditioning
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
-                                        // vector cuz we might expose it to the library
-  action learn_oracle_action;           // store an oracle action for debugging purposes
+                                             // vector cuz we might expose it to the library
+  action learn_oracle_action;                // store an oracle action for debugging purposes
   features last_action_repr;
 
   polylabel* allowed_actions_cache;
@@ -382,7 +382,7 @@ search::~search()
   free(this->priv);
 }
 
-std:: string audit_feature_space("conditional");
+std::string audit_feature_space("conditional");
 uint64_t conditional_constant = 8290743;
 
 inline bool need_memo_foreach_action(search_private& priv)
@@ -1015,7 +1015,8 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
     cs_costs_erase(isCB, lab);
     for (action k = 0; k < ec_cnt; k++)
       cs_cost_push_back(isCB, lab, k, array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
-    // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index << ':'
+    // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index
+    // << ':'
     // << lab.cs.costs[i].x; cdbg << " ]" << endl;
   }
   else if (priv.use_action_costs)
@@ -1048,7 +1049,8 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
         for (action k = 0; k < priv.A; k++) cs_cost_push_back(isCB, lab, k + 1, 1.);
         set_to_one = true;
       }
-      // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index <<
+      // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index
+      // <<
       // ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
       if (oracle_actions_cnt <= 1)  // common case to speed up
       {
@@ -1520,7 +1522,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t i = 0; i < losses.cs.costs.size(); i++)
       losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
   }
-  // std::cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) std::cerr << ' ' << losses.cs.costs[i].class_index
+  // std::cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) std::cerr << ' ' <<
+  // losses.cs.costs[i].class_index
   // << ':' << losses.cs.costs[i].x; std::cerr << " ]" << endl;
 
   if (!priv.is_ldf)  // not LDF
@@ -2539,7 +2542,7 @@ void search_initialize(vw* all, search& sch)
 
   new (&priv.rawOutputString) std::string();
   priv.rawOutputStringStream = new std::stringstream(priv.rawOutputString);
-  new (&priv.test_action_sequence)std::vector<action>();
+  new (&priv.test_action_sequence) std::vector<action>();
   new (&priv.dat_new_feature_audit_ss) std::stringstream();
 }
 

@@ -8,11 +8,11 @@
 #include "accumulate.h"
 #include "best_constant.h"
 
-
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   memcpy(&ld->label, c, sizeof(ld->label));
-  //  std::cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label << std::endl;
+  //  std::cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<
+  //  std::endl;
   c += sizeof(ld->label);
   memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);

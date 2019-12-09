@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "constant.h"
 
-
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
@@ -247,7 +246,7 @@ class TC_parser
         // Heterogeneous lookup not yet implemented in std
         // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0919r0.html
         const std::string feature_name_str(feature_name);
-        for (auto map : (*_namespace_dictionaries)[_index])
+        for (const auto& map : (*_namespace_dictionaries)[_index])
         {
           const auto& feats_it = map->find(feature_name_str);
           if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))

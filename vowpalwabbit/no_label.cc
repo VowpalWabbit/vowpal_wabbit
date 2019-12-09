@@ -8,7 +8,6 @@
 #include "accumulate.h"
 #include "best_constant.h"
 
-
 namespace no_label
 {
 char* bufread_no_label(shared_data*, label_data*, char* c) { return c; }

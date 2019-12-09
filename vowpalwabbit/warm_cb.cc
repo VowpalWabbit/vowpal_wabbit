@@ -158,7 +158,7 @@ void finish(warm_cb& data)
     std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
     std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
     std::cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
-         << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
+              << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 

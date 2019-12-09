@@ -59,9 +59,7 @@ class features_value_iterator
  public:
   features_value_iterator(feature_value* begin) : _begin(begin) {}
 
-  features_value_iterator(const features_value_iterator& other)
-    : _begin(other._begin)
-  { }
+  features_value_iterator(const features_value_iterator& other) : _begin(other._begin) {}
 
   features_value_iterator& operator++()
   {
@@ -349,7 +347,7 @@ struct features
 
   void clear()
   {
-  	sum_feat_sq = 0.f;
+    sum_feat_sq = 0.f;
     values.clear();
     indicies.clear();
     space_names.clear();

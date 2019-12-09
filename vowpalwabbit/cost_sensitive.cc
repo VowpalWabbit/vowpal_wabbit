@@ -252,7 +252,8 @@ void output_example(vw& all, example& ec)
         min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      std::cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << std::endl;
+      std::cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?"
+                << std::endl;
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?

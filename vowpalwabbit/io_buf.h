@@ -87,10 +87,7 @@ class io_buf
     return _hash;
   }
 
-  virtual int open_file(const char* name, bool stdin_off)
-  {
-    return open_file(name, stdin_off, READ);
-  }
+  virtual int open_file(const char* name, bool stdin_off) { return open_file(name, stdin_off, READ); }
 
   virtual int open_file(const char* name, bool stdin_off, int flag = READ)
   {
@@ -147,11 +144,7 @@ class io_buf
     head = space.begin();
   }
 
-  io_buf() :
-    _verify_hash{false},
-    _hash{0},
-    count{0},
-    current{0}
+  io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
   {
     space = v_init<char>();
     files = v_init<int>();
