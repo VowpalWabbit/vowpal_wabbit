@@ -418,14 +418,15 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
   EXPECT_THAT(rankings, ranking_expected);
 }
 
-TEST(VowpalWabbitSlim, interaction_num_bits_bug) {
-
+TEST(VowpalWabbitSlim, interaction_num_bits_bug)
+{
   std::ifstream input("data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
   input.seekg(0, std::ios::end);
   auto length = input.tellg();
   input.seekg(0, std::ios::beg);
   std::unique_ptr<char> buffer_ptr(new char[length]);
-  input.read(buffer_ptr.get(), length); // Extract how many bytes need to be decoded and resize the payload based on those bytes.
+  input.read(buffer_ptr.get(),
+      length);  // Extract how many bytes need to be decoded and resize the payload based on those bytes.
 
   vw_slim::vw_predict<sparse_parameters> vw;
 

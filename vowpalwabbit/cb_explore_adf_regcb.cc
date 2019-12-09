@@ -58,8 +58,9 @@ struct cb_explore_adf_regcb
 
 cb_explore_adf_regcb::cb_explore_adf_regcb(
     bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost)
-  : _regcbopt(regcbopt), _c0(c0), _first_only(first_only), _min_cb_cost(min_cb_cost), _max_cb_cost(max_cb_cost)
-{}
+    : _regcbopt(regcbopt), _c0(c0), _first_only(first_only), _min_cb_cost(min_cb_cost), _max_cb_cost(max_cb_cost)
+{
+}
 
 // TODO: same as cs_active.cc, move to shared place
 float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, float tol)

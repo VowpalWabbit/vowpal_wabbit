@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
+#include "future_compat.h"
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
@@ -109,7 +110,7 @@ struct parser
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
 
-/* [[deprecated]] */
+VW_DEPRECATED("Function is no longer used")
 void adjust_used_index(vw& all);
 
 // parser control

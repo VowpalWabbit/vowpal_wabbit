@@ -33,6 +33,7 @@ const size_t lMULTICLASS = 2;
 const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
 const size_t lMAX = 5;
+const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
@@ -42,6 +43,7 @@ const size_t pMULTICLASS = 4;
 const size_t pMULTILABELS = 5;
 const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
+const size_t pDECISION_SCORES = 8;
 
 
 void dont_delete_me(void*arg) { }
@@ -99,7 +101,8 @@ label_parser* get_label_parser(vw*all, size_t labelType)
     case lMULTICLASS:        return &MULTICLASS::mc_label;
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT: return &CB::cb_label;
-    default: std::cerr << "get_label_parser called on invalid label type" << std::endl; throw std::exception();
+    case lCONDITIONAL_CONTEXTUAL_BANDIT: return &CCB::ccb_label_parser;
+    default: THROW("get_label_parser called on invalid label type");
   }
 }
 
@@ -117,8 +120,13 @@ size_t my_get_label_type(vw*all)
   else if (lp->parse_label == CB::cb_label.parse_label)
   { return lCONTEXTUAL_BANDIT;
   }
+  else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
+  {
+    return lCONDITIONAL_CONTEXTUAL_BANDIT;
+  }
   else
-  { std::cerr << "unsupported label parser used" << std::endl; throw std::exception();
+  {
+    THROW("unsupported label parser used");
   }
 }
 
@@ -132,7 +140,8 @@ size_t my_get_prediction_type(vw_ptr all)
     case prediction_type::multilabels:     return pMULTILABELS;
     case prediction_type::prob:            return pPROB;
     case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
-    default: std::cerr << "unsupported prediction type used" << std::endl; throw std::exception();
+    case prediction_type::decision_probs:  return pDECISION_SCORES;
+    default: THROW("unsupported prediction type used");
   }
 }
 
@@ -179,14 +188,9 @@ example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existi
 multi_ex unwrap_example_list(py::list& ec)
 {
   multi_ex ex_coll;
-  for (ssize_t i = 0; i<len(ec); i++)
+  for (ssize_t i = 0; i < py::len(ec); i++)
   {
-    py::object eci = ec[i];
-    py::extract<example_ptr> get_ex(eci);
-    example_ptr ecp;
-    if (get_ex.check())
-      ecp = get_ex();
-    ex_coll.push_back(ecp.get());
+    ex_coll.push_back(py::extract<example_ptr>(ec[i])().get());
   }
   return ex_coll;
 }
@@ -239,7 +243,8 @@ py::list my_parse(vw_ptr& all, char* str)
   for (auto ex : examples)
   {
     VW::setup_example(*all, ex);
-    example_collection.append(ex);
+    example_collection.append(
+        boost::shared_ptr<example>(ex, [all](example* example) { VW::finish_example(*all.get(), *example); }));
   }
   examples.clear();
   examples.delete_v();
@@ -408,13 +413,13 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->loss = 0.;
 
   if (all.ignore_some)
-  { std::cerr << "error: cannot unsetup example when some namespaces are ignored!" << std::endl;
-    throw std::exception();
+  {
+    THROW("error: cannot unsetup example when some namespaces are ignored!");
   }
 
   if(all.ngram_strings.size() > 0)
-  { std::cerr << "error: cannot unsetup example when ngrams are in use!" << std::endl;
-    throw std::exception();
+  {
+    THROW("error: cannot unsetup example when ngrams are in use!");
   }
 
   if (all.add_constant)
@@ -424,7 +429,11 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     for (size_t i=0; i<N; i++)
     { int j = (int)(N - 1 - i);
       if (ae->indices[j] == constant_namespace)
-      { if (hit_constant >= 0) { std::cerr << "error: hit constant namespace twice!" << std::endl; throw std::exception(); }
+      {
+        if (hit_constant >= 0)
+        {
+          THROW("error: hit constant namespace twice!");
+        }
         hit_constant = j;
         break;
       }
@@ -473,16 +482,35 @@ py::list ex_get_scalars(example_ptr ec)
 }
 
 py::list ex_get_action_scores(example_ptr ec)
-{ py::list values;
-  v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
+{
+  py::list values;
+  auto const& scores = ec->pred.a_s;
   std::vector<float> ordered_scores(scores.size());
-  for (auto action_score: scores)
+  for (auto const& action_score: scores)
   {
-     ordered_scores[action_score.action] = action_score.score;
+    ordered_scores[action_score.action] = action_score.score;
   }
 
   for (auto action_score: ordered_scores)
-  { values.append(action_score);
+  {
+    values.append(action_score);
+  }
+
+  return values;
+}
+
+py::list ex_get_decision_scores(example_ptr ec)
+{
+  py::list values;
+  for (auto const& scores : ec->pred.decision_scores)
+  {
+    py::list inner_list;
+    for (auto action_score: scores)
+    {
+      inner_list.append(py::make_tuple(action_score.action, action_score.score));
+    }
+
+    values.append(inner_list);
   }
 
   return values;
@@ -566,13 +594,15 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<ui
 */
 
 void verify_search_set_properly(search_ptr sch)
-{ if (sch->task_name == NULL)
-  { std::cerr << "set_structured_predict_hook: search task not initialized properly" << std::endl;
-    throw std::exception();
+{
+  if (sch->task_name == nullptr)
+  {
+    THROW("set_structured_predict_hook: search task not initialized properly");
   }
-  if (strcmp(sch->task_name, "hook") != 0)
-  { std::cerr << "set_structured_predict_hook: trying to set hook when search task is not 'hook'!" << std::endl;
-    throw std::exception();
+
+  if (std::strcmp(sch->task_name, "hook") != 0)
+  {
+    THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'!");
   }
 }
 
@@ -582,42 +612,54 @@ uint32_t search_get_num_actions(search_ptr sch)
   return (uint32_t)d->num_actions;
 }
 
-void search_run_fn(Search::search&sch)
-{ try
-  { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+void search_run_fn(Search::search& sch)
+{
+  try
+  {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->run_object;
     run.attr("__call__")();
   }
-  catch(...)
-  { PyErr_Print();
+  catch (...)
+  {
+    // TODO: Properly translate and return Python exception. #2169
+    PyErr_Print();
     PyErr_Clear();
-    throw std::exception();
+    THROW("Exception in 'search_run_fn'");
   }
 }
 
-void search_setup_fn(Search::search&sch)
-{ try
-  { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+void search_setup_fn(Search::search& sch)
+{
+  try
+  {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->setup_object;
     run.attr("__call__")();
   }
-  catch(...)
-  { PyErr_Print();
+  catch (...)
+  {
+    // TODO: Properly translate and return Python exception. #2169
+    PyErr_Print();
     PyErr_Clear();
-    throw std::exception();
+    THROW("Exception in 'search_setup_fn'");
   }
 }
 
-void search_takedown_fn(Search::search&sch)
-{ try
-  { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+void search_takedown_fn(Search::search& sch)
+{
+  try
+  {
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->takedown_object;
     run.attr("__call__")();
   }
-  catch(...)
-  { PyErr_Print();
+  catch (...)
+  {
+    // TODO: Properly translate and return Python exception. #2169
+    PyErr_Print();
     PyErr_Clear();
-    throw std::exception();
+    THROW("Exception in 'search_takedown_fn'");
   }
 }
 
@@ -762,6 +804,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
   .def_readonly("lCostSensitive", lCOST_SENSITIVE, "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
   .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT, "Contextual bandit label type -- used as input to the example() initializer")
+  .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT, "Conditional Contextual bandit label type -- used as input to the example() initializer")
 
   .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
   .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
@@ -771,6 +814,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
   .def_readonly("pPROB", pPROB, "Probability prediction type")
   .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
+  .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
 ;
 
   // define the example class
@@ -819,6 +863,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_prob", &ex_get_prob, "Get probability from example prediction")
   .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
   .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
+  .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
   .def("get_multilabel_predictions", &ex_get_multilabel_predictions, "Get multilabel predictions from example prediction")
   .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction, "Assuming a cost_sensitive label type, get the prediction")
   .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs, "Assuming a cost_sensitive label type, get the total number of label/cost pairs")

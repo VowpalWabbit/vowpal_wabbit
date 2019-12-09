@@ -12,7 +12,6 @@ from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets.svmlight_format import dump_svmlight_file
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import shuffle
-from sklearn.externals import joblib
 from vowpalwabbit import pyvw
 
 
@@ -448,14 +447,18 @@ class VW(BaseEstimator):
 
     def save(self, filename):
         """Save model to file"""
-        joblib.dump(dict(params=self.get_params(), coefs=self.get_coefs(), fit=self.fit_), filename=filename)
+        model = self.get_vw()
+        model.save(filename)
 
     def load(self, filename):
         """Load model from file"""
-        obj = joblib.load(filename=filename)
-        self.set_params(**obj['params'])
-        self.set_coefs(obj['coefs'])
-        self.fit_ = obj['fit']
+        params = {}
+        params.update(self.params)
+        params["initial_regressor"] = filename
+        self.set_params(**params)
+
+        # Assume that the model is already fitted when loaded from file.
+        self.fit_ = True
 
 
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):

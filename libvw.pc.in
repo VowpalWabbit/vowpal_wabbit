@@ -1,12 +1,12 @@
 prefix=@CMAKE_INSTALL_PREFIX@
-exec_prefix==@CMAKE_INSTALL_PREFIX@/bin
-libdir=@CMAKE_INSTALL_PREFIX@/lib
-includedir=@CMAKE_INSTALL_PREFIX@/include/vowpalwabbit
+exec_prefix=@CMAKE_INSTALL_FULL_BINDIR@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 
 Name: Vowpal Wabbit
-Description: Vowpal Wabbit Machine Learning System
-URL: @PACKAGE_URL@
+Description: @VW_PROJECT_DESCRIPTION@
+URL: @VW_PROJECT_URL@
 Version: @PACKAGE_VERSION@
 Requires: zlib
-Libs: -L@CMAKE_INSTALL_PREFIX@/lib -lvw -lallreduce @CMAKE_THREAD_LIBS_INIT@ @BOOST_LINK_LIBRARIES@
-Cflags: -I@CMAKE_INSTALL_PREFIX@/include/vowpalwabbit
+Libs: -L${libdir} -lvw -lallreduce @CMAKE_THREAD_LIBS_INIT@ @BOOST_LINK_LIBRARIES@
+Cflags: -I${includedir}

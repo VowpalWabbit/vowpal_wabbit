@@ -32,4 +32,3 @@ void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool 
 LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
 
 std::string spoof_hex_encoded_namespaces(const std::string& arg);
-// char** get_argv_from_string(string s, int& argc);

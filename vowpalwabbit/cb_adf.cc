@@ -59,37 +59,25 @@ struct cb_adf
   void do_actual_learning(LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
-  cb_adf(shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
-      : _sd(sd), _model_file_ver(model_file_ver), _rank_all(rank_all), _clip_p(clip_p), _no_predict(no_predict)
+  cb_adf(
+      shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
+      : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
   {
     _gen_cs.cb_type = cb_type;
   }
 
-  void set_scorer(LEARNER::single_learner* scorer)
-  {
-    _gen_cs.scorer = scorer;
-  }
+  void set_scorer(LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
 
-  bool get_rank_all() const
-  {
-    return _rank_all;
-  }
+  bool get_rank_all() const { return _rank_all; }
 
-  const cb_to_cs_adf& get_gen_cs() const
-  {
-    return _gen_cs;
-  }
+  const cb_to_cs_adf& get_gen_cs() const { return _gen_cs; }
 
-  const VW::version_struct* get_model_file_ver() const
-  {
-    return _model_file_ver;
-  }
+  const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 
   ~cb_adf()
   {
     _cb_labels.delete_v();
-    for (auto& prepped_cs_label : _prepped_cs_labels)
-      prepped_cs_label.costs.delete_v();
+    for (auto& prepped_cs_label : _prepped_cs_labels) prepped_cs_label.costs.delete_v();
     _prepped_cs_labels.delete_v();
     _cs_labels.costs.delete_v();
     _backup_weights.delete_v();
@@ -199,8 +187,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 
   // Lambda is -1 in the call to generate_softmax because in vw, lower score is better; for softmax higher score is
   // better.
-  generate_softmax(
-      -1.0, begin_scores(_a_s), end_scores(_a_s), begin_scores(_prob_s), end_scores(_prob_s));
+  generate_softmax(-1.0, begin_scores(_a_s), end_scores(_a_s), begin_scores(_prob_s), end_scores(_prob_s));
 
   // TODO: Check Marco's example that causes VW to report prob > 1.
 
@@ -270,8 +257,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   uint32_t nf = (uint32_t)examples[_gen_cs.mtr_example]->num_features;
   float old_weight = examples[_gen_cs.mtr_example]->weight;
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p *
-      ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
+  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
@@ -475,21 +461,17 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
     return;
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), "", read, msg, text);
 
   msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
 }
 
-void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq)
-{
-  c.do_actual_learning<true>(base, ec_seq);
-}
+void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<true>(base, ec_seq); }
 
-void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq)
-{
-  c.do_actual_learning<false>(base, ec_seq);
-}
+void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<false>(base, ec_seq); }
 
 }  // namespace CB_ADF
 using namespace CB_ADF;
@@ -510,7 +492,10 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
-      .add(make_option("clip_p", clip_p).keep().default_value(0.f).help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
+      .add(make_option("clip_p", clip_p)
+               .keep()
+               .default_value(0.f)
+               .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
@@ -552,7 +537,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   }
 
   if (clip_p > 0.f && cb_type == CB_TYPE_SM)
-    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped." << std::endl;
+    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
+                      << std::endl;
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

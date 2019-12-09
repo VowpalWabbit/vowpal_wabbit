@@ -49,9 +49,10 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void* v) {
-    CB::label* ld = (CB::label*)v;
-    return ld->weight;
+float weight(void* v)
+{
+  CB::label* ld = (CB::label*)v;
+  return ld->weight;
 }
 
 char* bufcache_label(CB::label* ld, char* c)
@@ -221,7 +222,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
-float weight(void* v) {
+float weight(void* v)
+{
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
   return ld->event.weight;
 }

@@ -1094,7 +1094,7 @@ void end_pass(memory_tree& b)
 {
   b.current_pass++;
   std::cout << "######### Current Pass: " << b.current_pass
-            << ", with number of memories stored so far: " << b.examples.size() << std::endl;
+            << ", with number of memories strored so far: " << b.examples.size() << std::endl;
 }
 
 ///////////////////Save & Load//////////////////////////////////////

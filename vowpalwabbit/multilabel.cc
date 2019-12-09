@@ -2,7 +2,6 @@
 #include "gd.h"
 #include "vw.h"
 
-
 namespace MULTILABEL
 {
 char* bufread_label(labels* ld, char* c, io_buf& cache)

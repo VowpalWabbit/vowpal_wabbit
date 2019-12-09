@@ -84,9 +84,9 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 {
   return all.weights.sparse
       ? foreach_feature<R, S, T, sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-            all.ignore_linear, *ec.interactions , all.permutations, ec, dat)
+            all.ignore_linear, *ec.interactions, all.permutations, ec, dat)
       : foreach_feature<R, S, T, dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions , all.permutations, ec, dat);
+            *ec.interactions, all.permutations, ec, dat);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,

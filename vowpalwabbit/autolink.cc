@@ -10,26 +10,27 @@ using namespace VW::config;
 
 namespace VW
 {
-  struct autolink
-  {
-    autolink(uint32_t d, uint32_t stride_shift);
-    void predict(LEARNER::single_learner& base, example& ec);
-    void learn(LEARNER::single_learner& base, example& ec);
+struct autolink
+{
+  autolink(uint32_t d, uint32_t stride_shift);
+  void predict(LEARNER::single_learner& base, example& ec);
+  void learn(LEARNER::single_learner& base, example& ec);
 
-  private:
-    void prepare_example(LEARNER::single_learner& base, example& ec);
-    void reset_example(example& ec);
+ private:
+  void prepare_example(LEARNER::single_learner& base, example& ec);
+  void reset_example(example& ec);
 
-    // degree of the polynomial
-    const uint32_t _poly_degree;
-    const uint32_t _stride_shift;
-    static constexpr int AUTOCONSTANT = 524267083;
-  };
-}
+  // degree of the polynomial
+  const uint32_t _poly_degree;
+  const uint32_t _stride_shift;
+  static constexpr int AUTOCONSTANT = 524267083;
+};
+}  // namespace VW
 
 VW::autolink::autolink(uint32_t poly_degree, uint32_t stride_shift)
-  : _poly_degree(poly_degree), _stride_shift(stride_shift)
-{}
+    : _poly_degree(poly_degree), _stride_shift(stride_shift)
+{
+}
 
 void VW::autolink::predict(LEARNER::single_learner& base, example& ec)
 {

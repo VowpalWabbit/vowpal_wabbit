@@ -37,8 +37,7 @@ struct cb_explore_adf_first
   void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
 };
 
-cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon)
-  : _tau(tau), _epsilon(epsilon) {}
+cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon) : _tau(tau), _epsilon(epsilon) {}
 
 template <bool is_learn>
 void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)

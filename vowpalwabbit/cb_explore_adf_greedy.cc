@@ -30,6 +30,7 @@ struct cb_explore_adf_greedy
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+
  private:
   template <bool is_learn>
   void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
@@ -37,7 +38,9 @@ struct cb_explore_adf_greedy
 };
 
 cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
- : _epsilon(epsilon), _first_only(first_only) {}
+    : _epsilon(epsilon), _first_only(first_only)
+{
+}
 
 
 void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
@@ -84,9 +87,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().help("epsilon-greedy exploration"))
-      .add(make_option("first_only", first_only)
-               .keep()
-               .help("Only explore the first action in a tie-breaking event"));
+      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
   options.add_and_parse(new_options);
 
   // NOTE: epsilon-greedy is the default explore type. This basically runs if none of the other explore strategies are

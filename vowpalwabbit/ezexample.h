@@ -42,7 +42,7 @@ class ezexample
     vw_par_ref->p->lp.default_label(&new_ec->l);
     new_ec->tag.clear();
     new_ec->indices.clear();
-    for (auto & i : new_ec->feature_space) i.clear();
+    for (auto& i : new_ec->feature_space) i.clear();
 
     new_ec->ft_offset = 0;
     new_ec->num_features = 0;
@@ -69,7 +69,7 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (bool & ns_exist : ns_exists) ns_exist = false;
+    for (bool& ns_exist : ns_exists) ns_exist = false;
 
     example_changed_since_prediction = true;
   }

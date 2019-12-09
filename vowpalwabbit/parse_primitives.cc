@@ -43,6 +43,72 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
+bool operator==(const substring& ss, const char* str) { return substring_equal(ss, str); }
+
+bool operator==(const char* str, const substring& ss) { return substring_equal(ss, str); }
+
+bool operator==(const substring& ss1, const substring& ss2) { return substring_equal(ss1, ss2); }
+
+bool operator!=(const substring& ss, const char* str) { return !(ss == str); }
+
+bool operator!=(const char* str, const substring& ss) { return !(ss == str); }
+
+bool operator!=(const substring& ss1, const substring& ss2) { return !(ss1 == ss2); }
+
+std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty)
+{
+  std::vector<substring> tokens;
+  substring current;
+  current.begin = s.begin;
+  bool in_escape = false;
+  char* reading_head = s.begin;
+  char* writing_head = s.begin;
+
+  while (reading_head < s.end)
+  {
+    char current_character = *reading_head++;
+
+    if (in_escape)
+    {
+      *writing_head++ = current_character;
+      in_escape = false;
+    }
+    else
+    {
+      if (current_character == delim)
+      {
+        current.end = writing_head++;
+        *current.end = '\0';
+        if (current.begin != current.end || allow_empty)
+        {
+          tokens.push_back(current);
+        }
+
+        // Regardless of whether the token was saved, we need to reset the current token.
+        current.begin = writing_head;
+        current.end = writing_head;
+      }
+      else if (current_character == '\\')
+      {
+        in_escape = !in_escape;
+      }
+      else
+      {
+        *writing_head++ = current_character;
+      }
+    }
+  }
+
+  current.end = writing_head;
+  *current.end = '\0';
+  if (current.begin != current.end || allow_empty)
+  {
+    tokens.push_back(current);
+  }
+
+  return tokens;
+}
+
 std::ostream& operator<<(std::ostream& os, const substring& ss)
 {
   std::string s(ss.begin, ss.end - ss.begin);

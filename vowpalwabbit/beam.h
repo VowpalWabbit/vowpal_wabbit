@@ -252,7 +252,8 @@ class beam
           if (is_equivalent(A[i].data, A[j].data))
           {
             A[j].active = false;  // TODO: if kbest is on, do recomb_friends
-            // std::cerr << "equivalent " << i << "," << j << ": " << ((size_t)A[i].data) << " and " << ((size_t)A[j].data)
+            // std::cerr << "equivalent " << i << "," << j << ": " << ((size_t)A[i].data) << " and " <<
+            // ((size_t)A[j].data)
             // << std::endl;
           }
         }

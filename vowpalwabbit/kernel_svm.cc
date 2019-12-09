@@ -422,7 +422,7 @@ float poly_kernel(const flat_example* fec1, const flat_example* fec2, int power)
 {
   float dotprod = linear_kernel(fec1, fec2);
   // std::cerr<<"Bandwidth = "<<bandwidth<< endl;
-  //std::cout<<pow(1 + dotprod, power)<< endl;
+  // std::cout<<pow(1 + dotprod, power)<< endl;
   return pow(1 + dotprod, power);
 }
 
@@ -460,7 +460,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   for (size_t i = 0; i < n; i++)
   {
     ec_arr[i]->compute_kernels(params);
-    //std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
+    // std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
       scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
     else
@@ -774,7 +774,7 @@ void train(svm_params& params)
       if (model_pos >= 0)
       {
         bool overshoot = update(params, model_pos);
-        //std::cout<<model_pos<<":alpha = "<<model->alpha[model_pos]<< endl;
+        // std::cout<<model_pos<<":alpha = "<<model->alpha[model_pos]<< endl;
 
         double* subopt = calloc_or_throw<double>(model->num_support);
         for (size_t j = 0; j < params.reprocess; j++)

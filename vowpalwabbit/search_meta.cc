@@ -23,7 +23,7 @@ void run(Search::search& sch, multi_ex& ec)
       .foreach_action(
           [](Search::search& /*sch*/, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
             std::cerr << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a
-                 << ", taken=" << taken << ", a_cost=" << a_cost << ")" << std::endl;
+                      << ", taken=" << taken << ", a_cost=" << a_cost << ")" << std::endl;
           })
 
       .post_prediction([](Search::search& /*sch*/, size_t t, action a, float a_cost) -> void {
@@ -31,7 +31,8 @@ void run(Search::search& sch, multi_ex& ec)
       })
 
       .maybe_override_prediction([](Search::search& /*sch*/, size_t t, action& a, float& a_cost) -> bool {
-        std::cerr << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << std::endl;
+        std::cerr << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")"
+                  << std::endl;
         return false;
       })
 
@@ -197,8 +198,8 @@ void run(Search::search& sch, multi_ex& ec)
   }
 
   // sort the finals by cost
-  stable_sort(
-      d.final.begin(), d.final.end(), [](const std::pair<branch, std::string*>& a, const std::pair<branch, std::string*>& b) -> bool {
+  stable_sort(d.final.begin(), d.final.end(),
+      [](const std::pair<branch, std::string*>& a, const std::pair<branch, std::string*>& b) -> bool {
         return a.first.first < b.first.first;
       });
 

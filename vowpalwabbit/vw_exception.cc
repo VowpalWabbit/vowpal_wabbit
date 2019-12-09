@@ -12,7 +12,10 @@ vw_exception::vw_exception(const char* pfile, int plineNumber, std::string const
 {
 }
 
-vw_exception::vw_exception(const vw_exception& ex) noexcept : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)  {}
+vw_exception::vw_exception(const vw_exception& ex) noexcept
+    : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)
+{
+}
 
 vw_exception& vw_exception::operator=(const vw_exception& other) noexcept
 {
@@ -61,7 +64,7 @@ struct StopWatchData
 StopWatch::StopWatch() : data(new StopWatchData())
 {
   if (!::QueryPerformanceFrequency(&data->frequency_))
-    throw "Error with QueryPerformanceFrequency";
+    THROW("Error with QueryPerformanceFrequency");
   ::QueryPerformanceCounter(&data->startTime_);
 }
 

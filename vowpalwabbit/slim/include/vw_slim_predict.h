@@ -14,147 +14,151 @@
 #include "model_parser.h"
 #include "opts.h"
 
-namespace vw_slim { namespace internal {
-  template <typename It1, typename It2>
-  class location_reference;
+namespace vw_slim
+{
+namespace internal
+{
+template <typename It1, typename It2>
+class location_reference;
 
-  template <typename It1, typename It2>
-  class location_value
+template <typename It1, typename It2>
+class location_value
+{
+ public:
+  using Val1 = typename std::iterator_traits<It1>::value_type;
+  using Val2 = typename std::iterator_traits<It2>::value_type;
+
+  Val1 _val1;
+  Val2 _val2;
+
+  location_value(const location_reference<It1, It2>& rhs) : _val1(*rhs._ptr1), _val2(*rhs._ptr2) {}
+};
+
+template <typename It1, typename It2>
+class location_reference
+{
+ public:
+  It1 _ptr1;
+  It2 _ptr2;
+  using Ref = location_reference<It1, It2>;
+  using Val = location_value<It1, It2>;
+
+  location_reference() = delete;
+
+  location_reference(const Ref& other) : _ptr1(other._ptr1), _ptr2(other._ptr2) {}
+
+  location_reference(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
+
+  location_reference& operator=(const Val& rhs)
   {
-   public:
-    using Val1 = typename std::iterator_traits<It1>::value_type;
-    using Val2 = typename std::iterator_traits<It2>::value_type;
+    *_ptr1 = rhs._val1;
+    *_ptr2 = rhs._val2;
+    return *this;
+  }
 
-    Val1 _val1;
-    Val2 _val2;
-
-    location_value(
-        const location_reference<typename It1, typename It2>& rhs)
-    : _val1(*rhs._ptr1), _val2(*rhs._ptr2) {}
-  };
-
-  template <typename It1, typename It2>
-  class location_reference
+  location_reference& operator=(const Ref& rhs)
   {
-   public:
-    It1 _ptr1;
-    It2 _ptr2;
-    using Ref = location_reference<It1, It2>;
-    using Val = location_value<It1, It2>;
+    *_ptr1 = *rhs._ptr1;
+    *_ptr2 = *rhs._ptr2;
+    return *this;
+  }
 
-    location_reference() = delete;
-
-    location_reference(const Ref& other)
-    : _ptr1(other._ptr1), _ptr2(other._ptr2) {}
-
-    location_reference(It1 first, It2 second)
-    : _ptr1(first), _ptr2(second) {}
-
-    location_reference& operator=(const Val& rhs)
-    {
-      *_ptr1 = rhs._val1;
-      *_ptr2 = rhs._val2;
-      return *this;
-    }
-
-    location_reference& operator=(const Ref& rhs)
-    {
-      *_ptr1 = *rhs._ptr1;
-      *_ptr2 = *rhs._ptr2;
-      return *this;
-    }
-  };
-
-  template <typename It1, typename It2>
-  class collection_pair_iterator
-      : public std::iterator<std::random_access_iterator_tag,
-            location_value<It1, It2>,         // value type
-            size_t,                           // difference type
-            location_reference<It1, It2>      // reference_type
-            >
+  friend void swap(const location_reference& a, const location_reference& b)
   {
-    It1 _ptr1;
-    It2 _ptr2;
+    std::iter_swap(a._ptr1, b._ptr1);
+    std::iter_swap(a._ptr2, b._ptr2);
+  }
+};
 
-   public:
-    using Iter = collection_pair_iterator<It1, It2>;
-    using Loc = location_value<It1, It2>;
-    using Ref = location_reference<It1, It2>;
+template <typename It1, typename It2>
+class collection_pair_iterator
+    : public std::iterator<std::random_access_iterator_tag, location_value<It1, It2>,  // value type
+          size_t,                                                                      // difference type
+          location_reference<It1, It2>                                                 // reference_type
+          >
+{
+  It1 _ptr1;
+  It2 _ptr2;
 
-    collection_pair_iterator(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
+ public:
+  using Iter = collection_pair_iterator<It1, It2>;
+  using Loc = location_value<It1, It2>;
+  using Ref = location_reference<It1, It2>;
 
-    // must support: a) default-construction, b) copy-construction, c) copy-assignment, d) destruction
-    collection_pair_iterator() = default;
-    collection_pair_iterator(const collection_pair_iterator& rhs) = default;
-    collection_pair_iterator& operator=(const collection_pair_iterator& rhs) = default;
+  collection_pair_iterator(It1 first, It2 second) : _ptr1(first), _ptr2(second) {}
 
-    // must support: a == b; a != b;
-    bool operator==(const Iter& rhs) const { return (_ptr1 == rhs._ptr1 && _ptr2 == rhs._ptr2); }
-    bool operator!=(const Iter& rhs) const { return !(operator==(rhs)); }
+  // must support: a) default-construction, b) copy-construction, c) copy-assignment, d) destruction
+  collection_pair_iterator() = default;
+  collection_pair_iterator(const collection_pair_iterator& rhs) = default;
+  collection_pair_iterator& operator=(const collection_pair_iterator& rhs) = default;
 
-    // must support: b = *a; a->m ;
-    // must support: *a = t;
-    Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
+  // must support: a == b; a != b;
+  bool operator==(const Iter& rhs) const { return (_ptr1 == rhs._ptr1 && _ptr2 == rhs._ptr2); }
+  bool operator!=(const Iter& rhs) const { return !(operator==(rhs)); }
 
-    // must support: ++a; a++; *a++;
-    Iter& operator++()
-    {
-      ++_ptr1;
-      ++_ptr2;
-      return *this;
-    }
+  // must support: b = *a; a->m ;
+  // must support: *a = t;
+  Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
 
-    Iter operator++(int)
-    {
-      Iter ret(*this);
-      ++_ptr1;
-      ++_ptr2;
-      return ret;
-    }
+  // must support: ++a; a++; *a++;
+  Iter& operator++()
+  {
+    ++_ptr1;
+    ++_ptr2;
+    return *this;
+  }
 
-    // must support: --a; a--; *a--;
-    Iter& operator--()
-    {
-      --_ptr1;
-      --_ptr2;
-      return *this;
-    }
+  Iter operator++(int)
+  {
+    Iter ret(*this);
+    ++_ptr1;
+    ++_ptr2;
+    return ret;
+  }
 
-    Iter operator--(int)
-    {
-      Iter ret(*this);
-      --_ptr1;
-      --_ptr2;
-      return ret;
-    }
+  // must support: --a; a--; *a--;
+  Iter& operator--()
+  {
+    --_ptr1;
+    --_ptr2;
+    return *this;
+  }
 
-    // must support: a + n; n + a; a - n; a - b
-    Iter operator+(const size_t n) const { return Iter(_ptr1 + n, _ptr2 + n); }
-    // friend Iter operator+(const size_t, const Iter&);
-    Iter operator-(const size_t n) const { return Iter(_ptr1 - n, _ptr2 - n); }
-    size_t operator-(const Iter& rhs) const { return _ptr1 - rhs._ptr1; }
+  Iter operator--(int)
+  {
+    Iter ret(*this);
+    --_ptr1;
+    --_ptr2;
+    return ret;
+  }
 
-    // must support: a > b; a < b; a <= b; a >= b;
-    bool operator<(const Iter& rhs) const { return _ptr1 < rhs._ptr1; }
-    bool operator>(const Iter& rhs) const { return _ptr1 > rhs._ptr1; }
-    bool operator<=(const Iter& rhs) const { return _ptr1 <= rhs._ptr1; }
-    bool operator>=(const Iter& rhs) const { return _ptr1 >= rhs._ptr1; }
+  // must support: a + n; n + a; a - n; a - b
+  Iter operator+(const size_t n) const { return Iter(_ptr1 + n, _ptr2 + n); }
+  // friend Iter operator+(const size_t, const Iter&);
+  Iter operator-(const size_t n) const { return Iter(_ptr1 - n, _ptr2 - n); }
+  size_t operator-(const Iter& rhs) const { return _ptr1 - rhs._ptr1; }
 
-    // must support: a += n; a -= n;
-    Iter& operator+=(size_t n)
-    {
-      _ptr1 += n;
-      _ptr2 += n;
-      return *this;
-    }
+  // must support: a > b; a < b; a <= b; a >= b;
+  bool operator<(const Iter& rhs) const { return _ptr1 < rhs._ptr1; }
+  bool operator>(const Iter& rhs) const { return _ptr1 > rhs._ptr1; }
+  bool operator<=(const Iter& rhs) const { return _ptr1 <= rhs._ptr1; }
+  bool operator>=(const Iter& rhs) const { return _ptr1 >= rhs._ptr1; }
 
-    Iter& operator-=(size_t n)
-    {
-      _ptr1 -= n;
-      _ptr2 -= n;
-      return *this;
-    }
-  };
+  // must support: a += n; a -= n;
+  Iter& operator+=(size_t n)
+  {
+    _ptr1 += n;
+    _ptr2 += n;
+    return *this;
+  }
+
+  Iter& operator-=(size_t n)
+  {
+    _ptr1 -= n;
+    _ptr2 -= n;
+    return *this;
+  }
+};
 }  // namespace internal
 }  // namespace vw_slim
 
@@ -554,10 +558,8 @@ class vw_predict
   }
 
   template <typename PdfIt, typename InputScoreIt, typename OutputIt>
-  static int sort_by_scores(
-    PdfIt pdf_first, PdfIt pdf_last,
-    InputScoreIt scores_first, InputScoreIt scores_last,
-    OutputIt ranking_begin, OutputIt ranking_last)
+  static int sort_by_scores(PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last,
+      OutputIt ranking_begin, OutputIt ranking_last)
   {
     const size_t pdf_size = pdf_last - pdf_first;
     const size_t ranking_size = ranking_last - ranking_begin;
@@ -571,17 +573,17 @@ class vw_predict
     // Pdf starts out in the same order as ranking.  Ranking and pdf should been sorted
     // in the order specified by scores.
     using CP = internal::collection_pair_iterator<OutputIt, PdfIt>;
-    using Iter = CP::Iter;
-    using Loc = CP::Loc;
+    using Iter = typename CP::Iter;
+    using Loc = typename CP::Loc;
     const Iter begin_coll(ranking_begin, pdf_first);
     const Iter end_coll(ranking_last, pdf_last);
-    std::sort(begin_coll, end_coll,
-        [&scores_first](const Loc& l, const Loc& r)
-        { return scores_first[size_t(l._val1)] < scores_first[size_t(r._val1)]; });
+    std::sort(begin_coll, end_coll, [&scores_first](const Loc& l, const Loc& r) {
+      return scores_first[size_t(l._val1)] < scores_first[size_t(r._val1)];
+    });
 
     return S_EXPLORATION_OK;
   }
 
   uint32_t feature_index_num_bits() { return _num_bits; }
 };
-}// namespace vw_slim
+}  // namespace vw_slim

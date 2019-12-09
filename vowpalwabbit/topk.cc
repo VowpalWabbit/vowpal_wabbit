@@ -17,24 +17,26 @@ using namespace VW::config;
 
 namespace VW
 {
-  class topk
-  {
-    using container_t = std::multimap<float, v_array<char>>;
-  public:
-    using const_iterator_t = container_t::const_iterator;
-    topk(uint32_t k_num);
+class topk
+{
+  using container_t = std::multimap<float, v_array<char>>;
 
-    void predict(LEARNER::single_learner& base, multi_ex& ec_seq);
-    void learn(LEARNER::single_learner& base, multi_ex& ec_seq);
-    std::pair<const_iterator_t, const_iterator_t> get_container_view();
-    void clear_container();
-  private:
-    void update_priority_queue(float pred, v_array<char>& tag);
+ public:
+  using const_iterator_t = container_t::const_iterator;
+  topk(uint32_t k_num);
 
-    const uint32_t _k_num;
-    container_t _pr_queue;
-  };
-}
+  void predict(LEARNER::single_learner& base, multi_ex& ec_seq);
+  void learn(LEARNER::single_learner& base, multi_ex& ec_seq);
+  std::pair<const_iterator_t, const_iterator_t> get_container_view();
+  void clear_container();
+
+ private:
+  void update_priority_queue(float pred, v_array<char>& tag);
+
+  const uint32_t _k_num;
+  container_t _pr_queue;
+};
+}  // namespace VW
 
 VW::topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
@@ -74,12 +76,9 @@ std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> VW::topk::get_
   return {_pr_queue.cbegin(), _pr_queue.cend()};
 }
 
-void VW::topk::clear_container()
-{
-  _pr_queue.clear();
-}
+void VW::topk::clear_container() { _pr_queue.clear(); }
 
-void print_result(int file_descriptor, std::pair<VW::topk::const_iterator_t,  VW::topk::const_iterator_t> const& view)
+void print_result(int file_descriptor, std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view)
 {
   if (file_descriptor >= 0)
   {

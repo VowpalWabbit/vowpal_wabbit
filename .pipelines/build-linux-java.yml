@@ -5,7 +5,7 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 container:
-  image: vowpalwabbit/centos7.6.1810-build:0.1.0
+  image: vowpalwabbit/centos7_6_1810-build:0.2.0
   endpoint: DockerHub
 
 steps:
@@ -19,4 +19,8 @@ steps:
     ossrh_gpg: $(ossrh_gpg)
     ossrh_username: $(ossrh_username)
     ossrh_password: $(ossrh_password)
-
+- task: PublishBuildArtifacts@1
+  inputs: 
+    pathtoPublish: build/java/libvw_jni.so
+    artifactName: 'vw-static-linux-64'
+  displayName: 'java artifact linux 64'

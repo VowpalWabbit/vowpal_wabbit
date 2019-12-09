@@ -113,7 +113,7 @@ struct bfgs
   }
 };
 
-constexpr char* curv_message =
+constexpr const char* curv_message =
     "Zero or negative curvature detected.\n"
     "To increase curvature you can increase regularization or rescale features.\n"
     "It is also possible that you have reached numerical accuracy\n"
@@ -1049,10 +1049,11 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     if (!all->quiet)
       std::cerr << "m = " << m << std::endl
-           << "Allocated "
-           << ((long unsigned int)all->length() * (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
-                  20)
-           << "M for weights and mem" << std::endl;
+                << "Allocated "
+                << ((long unsigned int)all->length() *
+                           (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
+                       20)
+                << "M for weights and mem" << std::endl;
 
     b.net_time = 0.0;
     ftime(&b.t_start_global);

@@ -43,7 +43,7 @@ struct cbify
   std::vector<polyprediction> saved_predictions;
 
   ~cbify()
-  {   
+  {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
 

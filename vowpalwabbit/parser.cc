@@ -518,7 +518,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         all.example_parser->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (std::exception const& ex)
+      catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (!temp.empty())
@@ -527,13 +527,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         }
         else
         {
-          throw ex;
+          throw;
         }
       }
 
       if (input_options.json || input_options.dsjson)
       {
-
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
@@ -974,7 +973,9 @@ example* example_initializer::operator()(example* ex)
   return ex;
 }
 
-void adjust_used_index(vw&) { /* no longer used */ }
+void adjust_used_index(vw&)
+{ /* no longer used */
+}
 
 namespace VW
 {
