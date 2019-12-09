@@ -488,9 +488,9 @@ size_t suboptimality(svm_model* model, double* subopt)
   double max_val = 0;
   for (size_t i = 0; i < model->num_support; i++)
   {
-    float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
+    float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple().label;
 
-    if ((tmp < model->support_vec[i]->ex.l.simple.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
+    if ((tmp < model->support_vec[i]->ex.l.simple().weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
     else
       subopt[i] = 0;
@@ -559,7 +559,7 @@ bool update(svm_params& params, size_t pos)
   bool overshoot = false;
   // params.all->opts_n_args.trace_message<<"Updating model "<<pos<<" "<<model->num_support<<" ";
   svm_example* fec = model->support_vec[pos];
-  label_data& ld = fec->ex.l.simple;
+  label_data& ld = fec->ex.l.simple();
   fec->compute_kernels(params);
   float* inprods = fec->krow.begin();
   float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
@@ -573,8 +573,8 @@ bool update(svm_params& params, size_t pos)
   // std::cout<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld.label<<"
   // "<<model->delta[pos]<<" " << ai<<" "<<params.lambda<< endl;
 
-  if (ai > fec->ex.l.simple.weight)
-    ai = fec->ex.l.simple.weight;
+  if (ai > fec->ex.l.simple().weight)
+    ai = fec->ex.l.simple().weight;
   else if (ai < 0)
     ai = 0;
 
@@ -593,7 +593,7 @@ bool update(svm_params& params, size_t pos)
 
   for (size_t i = 0; i < model->num_support; i++)
   {
-    label_data& ldi = model->support_vec[i]->ex.l.simple;
+    label_data& ldi = model->support_vec[i]->ex.l.simple();
     model->delta[i] += diff * inprods[i] * ldi.label / params.lambda;
   }
 
@@ -735,7 +735,7 @@ void train(svm_params& params)
         if (params._random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          fec->ex.l.simple.weight *= 1 / queryp;
+          fec->ex.l.simple().weight *= 1 / queryp;
           train_pool[i] = 1;
         }
       }
@@ -839,7 +839,7 @@ void learn(svm_params& params, single_learner&, example& ec)
     predict(params, &sec, &score, 1);
     ec.pred.scalar = score;
     // std::cout<<"Score = "<<score<< endl;
-    ec.loss = std::max(0.f, 1.f - score * ec.l.simple.label);
+    ec.loss = std::max(0.f, 1.f - score * ec.l.simple().label);
     params.loss_sum += ec.loss;
     if (params.all->training && ec.example_counter % 100 == 0)
       trim_cache(params);

@@ -13,23 +13,19 @@
 
 namespace no_label
 {
-char* bufread_no_label(shared_data*, label_data*, char* c) { return c; }
+size_t read_cached_no_label(shared_data*, new_polylabel&, io_buf&) { return 1; }
 
-size_t read_cached_no_label(shared_data*, void*, io_buf&) { return 1; }
+float get_weight(new_polylabel&) { return 1.; }
 
-float get_weight(void*) { return 1.; }
+void cache_no_label(new_polylabel&, io_buf&) {}
 
-char* bufcache_no_label(label_data*, char* c) { return c; }
+void default_no_label(new_polylabel&) {}
 
-void cache_no_label(void*, io_buf&) {}
+bool test_label(new_polylabel&) { return false; }
 
-void default_no_label(void*) {}
+void delete_no_label(new_polylabel&) {}
 
-bool test_label(void*) { return false; }
-
-void delete_no_label(void*) {}
-
-void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
+void parse_no_label(parser*, shared_data*, new_polylabel&, v_array<substring>& words)
 {
   switch (words.size())
   {
@@ -69,7 +65,7 @@ void output_and_account_no_label_example(vw& all, example& ec)
   print_no_label_update(all, ec);
 }
 
-void return_no_label_example(vw& all, void*, example& ec)
+void return_no_label_example(vw& all, new_polylabel&, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);

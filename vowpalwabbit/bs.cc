@@ -34,8 +34,8 @@ struct bs
 void bs_predict_mean(vw& all, example& ec, std::vector<double>& pred_vec)
 {
   ec.pred.scalar = (float)accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0) / pred_vec.size();
-  if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  if (ec.weight > 0 && ec.l.simple().label != FLT_MAX)
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
 }
 
 void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
@@ -128,7 +128,7 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
 
   // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes"
   // and getLoss()
-  ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
+  ec.loss = ((ec.pred.scalar == ec.l.simple().label) ? 0.f : 1.f) * ec.weight;
 }
 
 void print_result(int f, float res, v_array<char> tag, float lb, float ub)
@@ -148,7 +148,7 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
 
 void output_example(vw& all, bs& d, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)

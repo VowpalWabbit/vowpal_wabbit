@@ -99,18 +99,18 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
   if (is_learn)
   {
     vw& all = *cs_a.all;
-    ec.l.simple.weight = 1.;
+    ec.l.simple().weight = 1.;
     ec.weight = 1.;
     if (is_simulation)
     {
       // In simulation mode
       if (query_this_label)
       {
-        ec.l.simple.label = cost;
+        ec.l.simple().label = cost;
         all.sd->queries += 1;
       }
       else
-        ec.l.simple.label = FLT_MAX;
+        ec.l.simple().label = FLT_MAX;
     }
     else
     {
@@ -119,16 +119,16 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
       // If the cost of this label was not queried, then skip it.
       if (query_needed)
       {
-        ec.l.simple.label = cost;
+        ec.l.simple().label = cost;
         if ((cost < cs_a.cost_min) || (cost > cs_a.cost_max))
           cerr << "warning: cost " << cost << " outside of cost range [" << cs_a.cost_min << ", " << cs_a.cost_max
                << "]!" << endl;
       }
       else
-        ec.l.simple.label = FLT_MAX;
+        ec.l.simple().label = FLT_MAX;
     }
 
-    if (ec.l.simple.label != FLT_MAX)
+    if (ec.l.simple().label != FLT_MAX)
       base.learn(ec, i - 1);
   }
   else if (!is_simulation)
@@ -180,7 +180,7 @@ template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
   // cerr << "------------- passthrough" << endl;
-  COST_SENSITIVE::label ld = ec.l.cs;
+  COST_SENSITIVE::label ld = ec.l.cs();
 
   // cerr << "is_learn=" << is_learn << " ld.costs.size()=" << ld.costs.size() << endl;
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
@@ -216,7 +216,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
-  ec.l.simple = {0., 0., 0.};
+  ec.l.simple() = {0., 0., 0.};
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round
@@ -306,7 +306,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   }
 
   ec.pred.multiclass = prediction;
-  ec.l.cs = ld;
+  ec.l.cs() = ld;
 }
 
 void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec); }

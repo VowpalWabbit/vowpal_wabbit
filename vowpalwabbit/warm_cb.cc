@@ -175,8 +175,8 @@ void copy_example_to_adf(warm_cb& data, example& ec)
   {
     auto& eca = *data.ecs[a];
     // clear label
-    auto& lab = eca.l.cb;
-    CB::cb_label.default_label(&lab);
+    auto& lab = eca.l;
+    CB::cb_label.default_label(lab);
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -191,7 +191,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l))
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l))
     {
       eca.tag.push_back('n');
     }
@@ -355,14 +355,14 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
   {
     csls[a].costs[0].class_index = a + 1;
     if (use_cs)
-      csls[a].costs[0].x = loss_cs(data, ec.l.cs.costs, a + 1);
+      csls[a].costs[0].x = loss_cs(data, ec.l.cs().costs, a + 1);
     else
-      csls[a].costs[0].x = loss(data, ec.l.multi.label, a + 1);
+      csls[a].costs[0].x = loss(data, ec.l.multi().label, a + 1);
   }
   for (size_t a = 0; a < data.num_actions; ++a)
   {
-    cbls[a] = data.ecs[a]->l.cb;
-    data.ecs[a]->l.cs = csls[a];
+    cbls[a] = data.ecs[a]->l.cb();
+    data.ecs[a]->l.cs() = csls[a];
   }
 
   std::vector<float> old_weights;
@@ -378,7 +378,7 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
 
   for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 
-  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->l.cb = cbls[a];
+  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->l.cb() = cbls[a];
 }
 
 template <bool use_cs>
@@ -417,7 +417,7 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
 
   // add cb label to chosen action
   auto& cl = data.cl_adf;
-  auto& lab = data.ecs[cl.action - 1]->l.cb;
+  auto& lab = data.ecs[cl.action - 1]->l.cb();
   lab.costs.push_back(cl);
 
   std::vector<float> old_weights;
@@ -447,9 +447,9 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
     THROW("No action with non-zero probability found!");
 
   if (use_cs)
-    cl.cost = loss_cs(data, ec.l.cs.costs, cl.action);
+    cl.cost = loss_cs(data, ec.l.cs().costs, cl.action);
   else
-    cl.cost = loss(data, ec.l.multi.label, cl.action);
+    cl.cost = loss(data, ec.l.multi().label, cl.action);
 
   if (ec_type == INTERACTION)
     accumu_costs_iv_adf(data, base, ec);
@@ -477,12 +477,12 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs)
-    data.cs_label = ec.l.cs;
+    data.cs_label = ec.l.cs();
   else
   {
-    data.mc_label = ec.l.multi;
+    data.mc_label = ec.l.multi();
     if (data.ws_iter < data.ws_period)
-      ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
+      ec.l.multi().label = corrupt_action(data, data.mc_label.label, WARM_START);
   }
 
   // Warm start phase
@@ -513,9 +513,9 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 
   // Restore the original labels
   if (use_cs)
-    ec.l.cs = data.cs_label;
+    ec.l.cs() = data.cs_label;
   else
-    ec.l.multi = data.mc_label;
+    ec.l.multi() = data.mc_label;
 }
 
 void init_adf_data(warm_cb& data, const uint32_t num_actions)
@@ -529,7 +529,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   for (size_t a = 0; a < num_actions; ++a)
   {
     data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
-    auto& lab = data.ecs[a]->l.cb;
+    auto& lab = data.ecs[a]->l.cb();
     CB::cb_label.default_label(&lab);
   }
 

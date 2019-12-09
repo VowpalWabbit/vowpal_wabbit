@@ -93,8 +93,8 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, replace the label example with an empty one
-    data._action_label = label_example->l.cb;
-    label_example->l.cb = data._empty_label;
+    data._action_label = label_example->l.cb();
+    label_example->l.cb() = data._empty_label;
   }
 
   data.explore.predict(base, examples);
@@ -102,7 +102,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, restore label
-    label_example->l.cb = data._action_label;
+    label_example->l.cb() = data._action_label;
   }
 }
 
@@ -164,7 +164,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    v_array<CB::cb_class> costs = ec.l.cb().costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {

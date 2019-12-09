@@ -143,7 +143,7 @@ void reset_state(vw& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-constexpr bool test_example(example& ec) noexcept { return ec.l.simple.label == FLT_MAX; }
+bool test_example(example& ec) noexcept { return ec.l.simple().label == FLT_MAX; }
 
 float bfgs_predict(vw& all, example& ec)
 {
@@ -156,7 +156,7 @@ inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
 float predict_and_gradient(vw& all, example& ec)
 {
   float fp = bfgs_predict(all, ec);
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
@@ -169,7 +169,7 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 
 void update_preconditioner(vw& all, example& ec)
 {
-  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
   GD::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
@@ -177,7 +177,7 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(vw& all, example& ec)
 {
-  float temp = ec.l.simple.initial;
+  float temp = ec.l.simple().initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
 }
@@ -859,7 +859,7 @@ int process_pass(vw& all, bfgs& b)
 
 void process_example(vw& all, bfgs& b, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   if (b.first_pass)
     b.importance_weight_sum += ec.weight;
 

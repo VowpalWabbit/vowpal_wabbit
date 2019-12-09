@@ -34,7 +34,7 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
   if (is_learn)
   {
     ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
-    ec.l.simple.label = cost;
+    ec.l.simple().label = cost;
     base.learn(ec, i - 1);
   }
   else
@@ -55,11 +55,11 @@ template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
   // std::cerr << "------------- passthrough" << std::endl;
-  COST_SENSITIVE::label ld = ec.l.cs;
+  COST_SENSITIVE::label ld = ec.l.cs();
   uint32_t prediction = 1;
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
-  ec.l.simple = {0., 0., 0.};
+  ec.l.simple() = {0., 0., 0.};
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
@@ -68,7 +68,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   }
   else if (DO_MULTIPREDICT && !is_learn)
   {
-    ec.l.simple = {FLT_MAX, 0.f, 0.f};
+    ec.l.simple() = {FLT_MAX, 0.f, 0.f};
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
     {
@@ -107,7 +107,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   }
 
   ec.pred.multiclass = prediction;
-  ec.l.cs = ld;
+  ec.l.cs() = ld;
 }
 
 void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
@@ -169,7 +169,7 @@ bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or jus
     return false;
   if (ec.indices[0] != 'l')
     return false;
-  v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
+  v_array<COST_SENSITIVE::wclass> costs = ec.l.cs().costs;
   for (auto const& cost : costs)
     if ((cost.class_index != 0) || (cost.x <= 0.))
       return false;
@@ -248,14 +248,14 @@ void unsubtract_example(example* ec)
 
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
-  COST_SENSITIVE::label ld = ec.l.cs;
+  COST_SENSITIVE::label ld = ec.l.cs();
   label_data simple_label;
   simple_label.initial = 0.;
   simple_label.label = FLT_MAX;
 
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
-  ec.l.simple = simple_label;
+  ec.l.simple() = simple_label;
   uint64_t old_offset = ec.ft_offset;
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -263,7 +263,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
   LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-  ec.l.cs = ld;
+  ec.l.cs() = ld;
 }
 
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
@@ -276,7 +276,7 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
-    assert(ec->l.cs.costs.size() == 1);
+    assert(ec->l.cs().costs.size() == 1);
 
     if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
     {
@@ -291,7 +291,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   std::vector<COST_SENSITIVE::wclass*> all_costs;
-  for (const auto& example : ec_seq) all_costs.push_back(&example->l.cs.costs[0]);
+  for (const auto& example : ec_seq) all_costs.push_back(&example->l.cs().costs[0]);
   compute_wap_values(all_costs);
 
   for (size_t k1 = 0; k1 < K; k1++)
@@ -299,8 +299,8 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     example* ec1 = ec_seq[k1];
 
     // save original variables
-    COST_SENSITIVE::label save_cs_label = ec1->l.cs;
-    label_data& simple_label = ec1->l.simple;
+    COST_SENSITIVE::label save_cs_label = ec1->l.cs();
+    label_data& simple_label = ec1->l.simple();
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1)
@@ -311,7 +311,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     for (size_t k2 = k1 + 1; k2 < K; k2++)
     {
       example* ec2 = ec_seq[k2];
-      v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs.costs;
+      v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs().costs;
 
       if (costs2[0].class_index == (uint32_t)-1)
         continue;
@@ -341,7 +341,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
     // restore original cost-sensitive label, sum of importance weights
-    ec1->l.cs = save_cs_label;
+    ec1->l.cs() = save_cs_label;
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
@@ -353,7 +353,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 
   for (const auto& example : ec_seq)
   {
-    float ec_cost = example->l.cs.costs[0].x;
+    float ec_cost = example->l.cs().costs[0].x;
     if (ec_cost < min_cost)
       min_cost = ec_cost;
     if (ec_cost > max_cost)
@@ -363,7 +363,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   for (const auto& ec : ec_seq)
   {
     // save original variables
-    label save_cs_label = ec->l.cs;
+    label save_cs_label = ec->l.cs();
     v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
 
     // build example for the base learner
@@ -386,7 +386,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    ec->l.simple = simple_label;
+    ec->l.simple() = simple_label;
 
     // learn
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
@@ -398,7 +398,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     ec->weight = old_weight;
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
-    ec->l.cs = save_cs_label;
+    ec->l.cs() = save_cs_label;
     ec->partial_prediction = costs[0].partial_prediction;
   }
 }
@@ -497,7 +497,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     for (size_t k = 0; k < K; k++)
     {
       if (k == predicted_K)
-        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
+        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs().costs[0].class_index;
       else
         ec_seq[k]->pred.multiclass = 0;
     }
@@ -540,7 +540,7 @@ void global_print_newline(vw& all)
 
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
-  label& ld = ec.l.cs;
+  label& ld = ec.l.cs();
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
   if (example_is_newline(ec))
@@ -569,7 +569,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
         predicted_K = (uint32_t)k;
       }
     }
-    predicted_class = (*ec_seq)[predicted_K]->l.cs.costs[0].class_index;
+    predicted_class = (*ec_seq)[predicted_K]->l.cs().costs[0].class_index;
   }
   else
     predicted_class = ec.pred.multiclass;
@@ -613,7 +613,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
 void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
 {
-  label& ld = head_ec.l.cs;
+  label& ld = head_ec.l.cs();
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
   if (example_is_newline(head_ec))
@@ -635,7 +635,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
         break;
       if (preds[0].action == idx)
       {
-        loss = ex->l.cs.costs[0].x;
+        loss = ex->l.cs().costs[0].x;
         hit_loss = true;
       }
       idx++;
@@ -694,7 +694,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
       for (size_t k = 0; k < K; k++)
       {
-        float ec_cost = ec_seq[k]->l.cs.costs[0].x;
+        float ec_cost = ec_seq[k]->l.cs().costs[0].x;
         if (ec_cost < min_cost)
         {
           min_cost = ec_cost;
@@ -739,7 +739,7 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
 void inline process_label(ldf& data, example* ec)
 {
   auto new_fs = ec->feature_space[ec->indices[0]];
-  auto& costs = ec->l.cs.costs;
+  auto& costs = ec->l.cs().costs;
   for (auto const& cost : costs)
   {
     const auto lab = (size_t)cost.x;

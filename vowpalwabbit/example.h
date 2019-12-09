@@ -19,6 +19,7 @@
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
 #include <vector>
+#include "vw_exception.h"
 
 typedef union
 {
@@ -31,6 +32,141 @@ typedef union
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;
+
+enum class label_type_tag
+{
+  unset,
+  empty,
+  simple,
+  multi,
+  cs,
+  cb,
+  conditional_contextual_bandit,
+  cb_eval,
+  multilabels
+};
+
+struct new_polylabel
+{
+  mutable polylabel internal_union;
+  mutable label_type_tag tag = label_type_tag::unset;
+
+  new_polylabel() {
+    memset(&internal_union, 0, sizeof(polylabel));
+  }
+ 
+  no_label::no_label& empty() const
+  {
+    if (tag != label_type_tag::empty)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::empty;
+    }
+   
+    return internal_union.empty;
+  }
+
+
+  label_data& simple() const
+  {
+    if (tag != label_type_tag::simple)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::simple;
+    }else
+    {
+      THROW("Polylabel already set");
+    }
+
+    return internal_union.simple;
+  }
+
+
+  MULTICLASS::label_t& multi() const
+  {
+    if (tag != label_type_tag::multi)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::multi;
+    }else
+    {
+      THROW("Polylabel already set");
+    }
+
+    return internal_union.multi;
+  }
+
+
+  COST_SENSITIVE::label& cs() const
+  {
+    if (tag != label_type_tag::cs)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::cs;
+    }else
+    {
+      THROW("Polylabel already set");
+    }
+
+    return internal_union.cs;
+  }
+
+  CB::label& cb() const
+  {
+    if (tag != label_type_tag::cb)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::cb;
+    }else
+    {
+      THROW("Polylabel already set");
+    }
+
+    return internal_union.cb;
+  }
+  CCB::label& conditional_contextual_bandit() const
+  {
+    if (tag != label_type_tag::conditional_contextual_bandit)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::conditional_contextual_bandit;
+    }else
+    {
+      THROW("Polylabel already set");
+    }
+
+    return internal_union.conditional_contextual_bandit;
+  }
+
+
+  CB_EVAL::label& cb_eval() const
+  {
+    if (tag != label_type_tag::cb_eval)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::cb_eval;
+    }else
+    {
+      THROW("Polylabel already set");
+    }
+
+    return internal_union.cb_eval;
+  }
+
+  MULTILABEL::labels& multilabels()
+  {
+    if (tag != label_type_tag::multilabels)
+    {
+      memset(&internal_union, 0, sizeof(polylabel));
+      tag = label_type_tag::multilabels;
+    }else
+    {
+      THROW("Polylabel already set");
+    }
+
+    return internal_union.multilabels;
+  }
+};
 
 inline void delete_scalars(void* v)
 {
@@ -52,7 +188,7 @@ typedef union
 struct example : public example_predict  // core example datatype.
 {
   // input fields
-  polylabel l;
+  new_polylabel l;
 
   // output prediction
   polyprediction pred;
@@ -81,7 +217,7 @@ struct vw;
 
 struct flat_example
 {
-  polylabel l;
+  new_polylabel l;
 
   size_t tag_len;
   char* tag;  // An identifier for the example.

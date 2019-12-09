@@ -74,7 +74,7 @@ struct boosting
 template <bool is_learn>
 void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   float final_prediction = 0;
 
@@ -142,7 +142,7 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   float final_prediction = 0;
 
@@ -200,7 +200,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
 template <bool is_learn>
 void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   float final_prediction = 0, partial_prediction = 0;
 

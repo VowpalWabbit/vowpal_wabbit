@@ -641,7 +641,7 @@ void generateGrams(vw& all, example*& ex)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.p->lp.default_label(&ae->l);
+  all.p->lp.default_label(ae->l);
   ae->end_pass = true;
   all.p->in_pass_counter = 0;
 }
@@ -680,7 +680,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.p->write_cache)
   {
-    all.p->lp.cache_label(&ae->l, *(all.p->output));
+    all.p->lp.cache_label(ae->l, *(all.p->output));
     cache_features(*(all.p->output), ae, all.parse_mask);
   }
 
@@ -695,12 +695,12 @@ void setup_example(vw& all, example* ae)
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
       all.p->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
-  ae->test_only |= all.p->lp.test_label(&ae->l);
+  ae->test_only |= all.p->lp.test_label(ae->l);
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
 
-  ae->weight = all.p->lp.get_weight(&ae->l);
+  ae->weight = all.p->lp.get_weight(ae->l);
 
   if (all.ignore_some)
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
@@ -751,7 +751,7 @@ namespace VW
 example* new_unused_example(vw& all)
 {
   example* ec = &get_unused_example(&all);
-  all.p->lp.default_label(&ec->l);
+  all.p->lp.default_label(ec->l);
   all.p->begin_parsed_examples++;
   ec->example_counter = (size_t)all.p->begin_parsed_examples;
   return ec;
@@ -781,15 +781,15 @@ void add_constant_feature(vw& vw, example* ec)
 
 void add_label(example* ec, float label, float weight, float base)
 {
-  ec->l.simple.label = label;
-  ec->l.simple.initial = base;
+  ec->l.simple().label = label;
+  ec->l.simple().initial = base;
   ec->weight = weight;
 }
 
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
-  all.p->lp.default_label(&ret->l);
+  all.p->lp.default_label(ret->l);
 
   if (label.length() > 0)
     parse_example_label(all, *ret, label);
@@ -847,7 +847,7 @@ void parse_example_label(vw& all, example& ec, std::string label)
   char* cstr = (char*)label.c_str();
   substring str = {cstr, cstr + label.length()};
   tokenize(' ', str, words);
-  all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
+  all.p->lp.parse_label(all.p, all.sd, ec.l, words);
   words.clear();
   words.delete_v();
 }
@@ -908,11 +908,11 @@ example* get_example(parser* p) { return p->ready_parsed_examples.pop(); }
 
 float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
 
-float get_label(example* ec) { return ec->l.simple.label; }
+float get_label(example* ec) { return ec->l.simple().label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) { return ec->l.simple.initial; }
+float get_initial(example* ec) { return ec->l.simple().initial; }
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 
@@ -954,7 +954,7 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 example* example_initializer::operator()(example* ex)
 {
-  memset(&ex->l, 0, sizeof(polylabel));
+  ex->l = new_polylabel();
   ex->in_use = false;
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();

@@ -113,7 +113,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
     }
     VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
     base.predict(*data.ec);
-    ec.l.simple.initial = data.ec->pred.scalar;
+    ec.l.simple().initial = data.ec->pred.scalar;
     base.predict(ec);
   }
   else
@@ -124,7 +124,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
     const float pred = ec.pred.scalar;  // save 'safe' prediction
 
     // now learn
-    data.ec->l.simple = ec.l.simple;
+    data.ec->l.simple() = ec.l.simple();
     if (!data.global_only)
     {
       // move label & constant features data over to baseline example
@@ -150,7 +150,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       base.learn(*data.ec);
 
     // regress residual
-    ec.l.simple.initial = data.ec->pred.scalar;
+    ec.l.simple().initial = data.ec->pred.scalar;
     base.learn(ec);
 
     if (!data.global_only)
@@ -175,7 +175,7 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
 
   // sensitivity of baseline term
   VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
-  data.ec->l.simple.label = ec.l.simple.label;
+  data.ec->l.simple().label = ec.l.simple().label;
   data.ec->pred.scalar = ec.pred.scalar;
   // std::cout << "before base" << std::endl;
   const float baseline_sens = base.sensitivity(*data.ec);
@@ -183,7 +183,7 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
 
   // sensitivity of residual
   as_singleline(&base)->predict(*data.ec);
-  ec.l.simple.initial = data.ec->pred.scalar;
+  ec.l.simple().initial = data.ec->pred.scalar;
   const float sens = base.sensitivity(ec);
   // std::cout << " residual sens: " << sens << std::endl;
   return baseline_sens + sens;

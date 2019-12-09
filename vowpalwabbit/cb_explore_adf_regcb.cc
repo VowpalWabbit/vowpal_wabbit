@@ -106,7 +106,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   for (const auto& ex : examples)
   {
     _ex_as.push_back(ex->pred.a_s);
-    _ex_costs.push_back(ex->l.cb.costs);
+    _ex_costs.push_back(ex->l.cb().costs);
   }
 
   // set regressor predictions
@@ -121,7 +121,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   for (size_t a = 0; a < num_actions; ++a)
   {
     example* ec = examples[a];
-    ec->l.simple.label = cmin - 1;
+    ec->l.simple().label = cmin - 1;
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
@@ -137,7 +137,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
 
     if (!min_only)
     {
-      ec->l.simple.label = cmax + 1;
+      ec->l.simple().label = cmax + 1;
       sens = base.sensitivity(*ec);
       if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens))
       {
@@ -157,7 +157,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   for (size_t i = 0; i < examples.size(); ++i)
   {
     examples[i]->pred.a_s = _ex_as[i];
-    examples[i]->l.cb.costs = _ex_costs[i];
+    examples[i]->l.cb().costs = _ex_costs[i];
   }
 }
 
@@ -168,7 +168,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, m
   {
     for (size_t i = 0; i < examples.size() - 1; ++i)
     {
-      CB::label& ld = examples[i]->l.cb;
+      CB::label& ld = examples[i]->l.cb();
       if (ld.costs.size() == 1)
         ld.costs[0].probability = 1.f;  // no importance weighting
     }

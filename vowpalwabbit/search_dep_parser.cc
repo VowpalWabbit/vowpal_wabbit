@@ -101,7 +101,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   else
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
 
-  sch.set_label_parser(COST_SENSITIVE::cs_label, [](polylabel &l) -> bool { return l.cs.costs.size() == 0; });
+  sch.set_label_parser(COST_SENSITIVE::cs_label, [](new_polylabel &l) -> bool { return l.cs().costs.size() == 0; });
 }
 
 void finish(Search::search &sch)
@@ -565,7 +565,7 @@ void setup(Search::search &sch, multi_ex &ec)
   gold_tags.push_back(0);
   for (size_t i = 0; i < n; i++)
   {
-    v_array<COST_SENSITIVE::wclass> &costs = ec[i]->l.cs.costs;
+    v_array<COST_SENSITIVE::wclass> &costs = ec[i]->l.cs().costs;
     uint32_t head, tag;
     if (data->old_style_labels)
     {

@@ -21,7 +21,7 @@ template <bool is_learn>
 float get_cost_pred(
     LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 {
-  CB::label ld = ec.l.cb;
+  CB::label ld = ec.l.cb();
 
   label_data simple_temp;
   simple_temp.initial = 0.;
@@ -32,7 +32,7 @@ float get_cost_pred(
 
   const bool baseline_enabled_old = BASELINE::baseline_enabled(&ec);
   BASELINE::set_baseline_enabled(&ec);
-  ec.l.simple = simple_temp;
+  ec.l.simple() = simple_temp;
   polyprediction p = ec.pred;
   if (is_learn && known_cost != nullptr && index == known_cost->action)
   {
@@ -49,7 +49,7 @@ float get_cost_pred(
   float pred = ec.pred.scalar;
   ec.pred = p;
 
-  ec.l.cb = ld;
+  ec.l.cb() = ld;
 
   return pred;
 }

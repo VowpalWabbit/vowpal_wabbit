@@ -10,20 +10,20 @@
 
 namespace MULTICLASS
 {
-char* bufread_label(label_t* ld, char* c)
+char* bufread_label(label_t& ld, char* c)
 {
-  memcpy(&ld->label, c, sizeof(ld->label));
-  c += sizeof(ld->label);
-  memcpy(&ld->weight, c, sizeof(ld->weight));
-  c += sizeof(ld->weight);
+  memcpy(&ld.label, c, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(&ld.weight, c, sizeof(ld.weight));
+  c += sizeof(ld.weight);
   return c;
 }
 
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
+size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
 {
-  label_t* ld = (label_t*)v;
+ auto ld = v.multi();
   char* c;
-  size_t total = sizeof(ld->label) + sizeof(ld->weight);
+  size_t total = sizeof(ld.label) + sizeof(ld.weight);
   if (cache.buf_read(c, total) < total)
     return 0;
   bufread_label(ld, c);
@@ -31,65 +31,65 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void* v)
+float weight(new_polylabel& v)
 {
-  label_t* ld = (label_t*)v;
-  return (ld->weight > 0) ? ld->weight : 0.f;
+ auto ld = v.multi();
+  return (ld.weight > 0) ? ld.weight : 0.f;
 }
 
-char* bufcache_label(label_t* ld, char* c)
+char* bufcache_label(label_t& ld, char* c)
 {
-  memcpy(c, &ld->label, sizeof(ld->label));
-  c += sizeof(ld->label);
-  memcpy(c, &ld->weight, sizeof(ld->weight));
-  c += sizeof(ld->weight);
+  memcpy(c, &ld.label, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(c, &ld.weight, sizeof(ld.weight));
+  c += sizeof(ld.weight);
   return c;
 }
 
-void cache_label(void* v, io_buf& cache)
+void cache_label(new_polylabel& v, io_buf& cache)
 {
   char* c;
-  label_t* ld = (label_t*)v;
-  cache.buf_write(c, sizeof(ld->label) + sizeof(ld->weight));
+ auto ld = v.multi();
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
   bufcache_label(ld, c);
 }
 
-void default_label(void* v)
+void default_label(new_polylabel& v)
 {
-  label_t* ld = (label_t*)v;
-  ld->label = (uint32_t)-1;
-  ld->weight = 1.;
+ auto ld = v.multi();
+  ld.label = (uint32_t)-1;
+  ld.weight = 1.;
 }
 
-bool test_label(void* v)
+bool test_label(new_polylabel& v)
 {
-  label_t* ld = (label_t*)v;
-  return ld->label == (uint32_t)-1;
+ auto ld = v.multi();
+  return ld.label == (uint32_t)-1;
 }
 
-void delete_label(void*) {}
+void delete_label(new_polylabel&) {}
 
-void parse_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser*, shared_data* sd, new_polylabel& v, v_array<substring>& words)
 {
-  label_t* ld = (label_t*)v;
+ auto ld = v.multi();
 
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
-      ld->weight = 1.0;
+      ld.label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
+      ld.weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
+      ld.label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
+      ld.weight = float_of_substring(words[1]);
       break;
     default:
       std::cerr << "malformed example!\n";
       std::cerr << "words.size() = " << words.size() << std::endl;
   }
-  if (ld->label == 0)
+  if (ld.label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
         << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
@@ -99,7 +99,7 @@ label_parser mc_label = {default_label, parse_label, cache_label, read_cached_la
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
-  substring ss_label = all.sd->ldict->get(ec.l.multi.label);
+  substring ss_label = all.sd->ldict->get(ec.l.multi().label);
   substring ss_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(all.holdout_set_off, all.current_pass,
       !ss_label.begin ? "unknown" : std::string(ss_label.begin, ss_label.end - ss_label.begin),
@@ -114,7 +114,7 @@ void print_probability(vw& all, example& ec, uint32_t prediction)
           << 100 * ec.pred.scalars[prediction - 1] << "%)";
 
   std::stringstream label_ss;
-  label_ss << ec.l.multi.label;
+  label_ss << ec.l.multi().label;
 
   all.sd->print_update(all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
       all.progress_add, all.progress_arg);
@@ -126,7 +126,7 @@ void print_score(vw& all, example& ec, uint32_t prediction)
   pred_ss << prediction;
 
   std::stringstream label_ss;
-  label_ss << ec.l.multi.label;
+  label_ss << ec.l.multi().label;
 
   all.sd->print_update(all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
       all.progress_add, all.progress_arg);
@@ -134,7 +134,7 @@ void print_score(vw& all, example& ec, uint32_t prediction)
 
 void direct_print_update(vw& all, example& ec, uint32_t prediction)
 {
-  all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction, ec.num_features,
+  all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi().label, prediction, ec.num_features,
       all.progress_add, all.progress_arg);
 }
 
@@ -159,10 +159,10 @@ void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update
 void finish_example(vw& all, example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1)
+  if (ec.l.multi().label != (uint32_t)ec.pred.multiclass && ec.l.multi().label != (uint32_t)-1)
     loss = ec.weight;
 
-  all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, update_loss && (ec.l.multi().label != (uint32_t)-1), loss, ec.weight, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)

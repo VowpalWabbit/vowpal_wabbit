@@ -107,7 +107,7 @@ void copy_example_to_adf(cbify& data, example& ec)
   {
     auto& eca = *adf_data.ecs[a];
     // clear label
-    auto& lab = eca.l.cb;
+    auto& lab = eca.l.cb();
     CB::cb_label.default_label(&lab);
 
     // copy data
@@ -137,12 +137,12 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
   if (use_cs)
-    csl = ec.l.cs;
+    csl = ec.l.cs();
   else
-    ld = ec.l.multi;
+    ld = ec.l.multi();
 
   data.cb_label.costs.clear();
-  ec.l.cb = data.cb_label;
+  ec.l.cb() = data.cb_label;
   ec.pred.a_s = data.a_s;
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
@@ -167,7 +167,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 
   // Create a new cb label
   data.cb_label.costs.push_back(cl);
-  ec.l.cb = data.cb_label;
+  ec.l.cb() = data.cb_label;
 
   if (is_learn)
     base.learn(ec);
@@ -176,9 +176,9 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   data.a_s = ec.pred.a_s;
 
   if (use_cs)
-    ec.l.cs = csl;
+    ec.l.cs() = csl;
   else
-    ec.l.multi = ld;
+    ec.l.multi() = ld;
 
   ec.pred.multiclass = cl.action;
 }
@@ -190,9 +190,9 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
   if (use_cs)
-    csl = ec.l.cs;
+    csl = ec.l.cs();
   else
-    ld = ec.l.multi;
+    ld = ec.l.multi();
 
   copy_example_to_adf(data, ec);
   base.predict(data.adf_data.ecs);
@@ -217,7 +217,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
     cl.cost = loss(data, ld.label, cl.action);
 
   // add cb label to chosen action
-  auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
+  auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb();
   lab.costs.clear();
   lab.costs.push_back(cl);
 
@@ -236,7 +236,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
   for (size_t a = 0; a < num_actions; ++a)
   {
     adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
-    auto& lab = adf_data.ecs[a]->l.cb;
+    auto& lab = adf_data.ecs[a]->l.cb();
     CB::cb_label.default_label(&lab);
     adf_data.ecs[a]->interactions = &data.all->interactions;
   }
@@ -255,10 +255,10 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    data.cs_costs[i] = ec.l.cs.costs;
+    data.cs_costs[i] = ec.l.cs().costs;
     data.cb_costs[i].clear();
     data.cb_as[i].clear();
-    ec.l.cb.costs = data.cb_costs[i];
+    ec.l.cb().costs = data.cb_costs[i];
     ec.pred.a_s = data.cb_as[i];
   }
 
@@ -283,8 +283,8 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   // add cb label to chosen action
   data.cb_label.costs.clear();
   data.cb_label.costs.push_back(cl);
-  data.cb_costs[cl.action - 1] = ec_seq[cl.action - 1]->l.cb.costs;
-  ec_seq[cl.action - 1]->l.cb = data.cb_label;
+  data.cb_costs[cl.action - 1] = ec_seq[cl.action - 1]->l.cb().costs;
+  ec_seq[cl.action - 1]->l.cb() = data.cb_label;
 
   base.learn(ec_seq);
 
@@ -294,10 +294,10 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     auto& ec = *ec_seq[i];
     data.cb_as[i] = ec.pred.a_s;  // store action_score vector for later reuse.
     if (i == cl.action - 1)
-      data.cb_label = ec.l.cb;
+      data.cb_label = ec.l.cb();
     else
-      data.cb_costs[i] = ec.l.cb.costs;
-    ec.l.cs.costs = data.cs_costs[i];
+      data.cb_costs[i] = ec.l.cb().costs;
+    ec.l.cs().costs = data.cs_costs[i];
     if (i == cl.action - 1)
       ec.pred.multiclass = cl.action;
     else
@@ -307,7 +307,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
-  COST_SENSITIVE::label& ld = ec.l.cs;
+  COST_SENSITIVE::label& ld = ec.l.cs();
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
 
   if (example_is_newline(ec))

@@ -85,7 +85,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
 example* alloc_examples(size_t, size_t);
-void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*) = nullptr);
+void dealloc_example(void (*delete_label)(new_polylabel&), example& ec, void (*delete_prediction)(void*) = nullptr);
 
 void parse_example_label(vw& all, example& ec, std::string label);
 void setup_examples(vw& all, v_array<example*>& examples);

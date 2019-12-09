@@ -8,10 +8,10 @@
 
 namespace MULTILABEL
 {
-char* bufread_label(labels* ld, char* c, io_buf& cache)
+char* bufread_label(labels& ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t*)c;
-  ld->label_v.clear();
+  ld.label_v.clear();
   c += sizeof(size_t);
   size_t total = sizeof(uint32_t) * num;
   if (cache.buf_read(c, (int)total) < total)
@@ -23,16 +23,16 @@ char* bufread_label(labels* ld, char* c, io_buf& cache)
   {
     uint32_t temp = *(uint32_t*)c;
     c += sizeof(uint32_t);
-    ld->label_v.push_back(temp);
+    ld.label_v.push_back(temp);
   }
 
   return c;
 }
 
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
+size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
 {
-  labels* ld = (labels*)v;
-  ld->label_v.clear();
+  auto ld = v.multilabels();
+  ld.label_v.clear();
   char* c;
   size_t total = sizeof(size_t);
   if (cache.buf_read(c, (int)total) < total)
@@ -42,62 +42,63 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void*) { return 1.; }
+float weight(new_polylabel&) { return 1.; }
 
-char* bufcache_label(labels* ld, char* c)
+char* bufcache_label(labels& ld, char* c)
 {
-  *(size_t*)c = ld->label_v.size();
+  *(size_t*)c = ld.label_v.size();
   c += sizeof(size_t);
-  for (unsigned int i = 0; i < ld->label_v.size(); i++)
+  for (unsigned int i = 0; i < ld.label_v.size(); i++)
   {
-    *(uint32_t*)c = ld->label_v[i];
+    *(uint32_t*)c = ld.label_v[i];
     c += sizeof(uint32_t);
   }
   return c;
 }
 
-void cache_label(void* v, io_buf& cache)
+void cache_label(new_polylabel& v, io_buf& cache)
 {
   char* c;
-  labels* ld = (labels*)v;
-  cache.buf_write(c, sizeof(size_t) + sizeof(uint32_t) * ld->label_v.size());
+  auto ld = v.multilabels();
+  cache.buf_write(c, sizeof(size_t) + sizeof(uint32_t) * ld.label_v.size());
   bufcache_label(ld, c);
 }
 
-void default_label(void* v)
+void default_label(new_polylabel& v)
 {
-  labels* ld = (labels*)v;
-  ld->label_v.clear();
+  auto ld = v.multilabels();
+  ld.label_v.clear();
 }
 
-bool test_label(void* v)
+bool test_label(new_polylabel& v)
 {
-  labels* ld = (labels*)v;
-  return ld->label_v.size() == 0;
+  auto ld = v.multilabels();
+  return ld.label_v.size() == 0;
 }
 
-void delete_label(void* v)
+void delete_label(new_polylabel& v)
 {
-  labels* ld = (labels*)v;
-  if (ld)
-    ld->label_v.delete_v();
+  // TODO handle deletion
+  auto ld = v.multilabels();
+  // if (ld)
+  //   ld.label_v.delete_v();
 }
 
-void copy_label(void* dst, void* src)
+void copy_label(new_polylabel& dst, new_polylabel& src)
 {
-  if (dst && src)
-  {
-    labels* ldD = (labels*)dst;
-    labels* ldS = (labels*)src;
-    copy_array(ldD->label_v, ldS->label_v);
-  }
+  // if (dst && src)
+  // {
+    auto ldD = dst.multilabels();
+    auto ldS = src.multilabels();
+    copy_array(ldD.label_v, ldS.label_v);
+  // }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<substring>& words)
 {
-  labels* ld = (labels*)v;
+  auto ld = v.multilabels();
 
-  ld->label_v.clear();
+  ld.label_v.clear();
   switch (words.size())
   {
     case 0:
@@ -109,7 +110,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       {
         *(p->parse_name[i].end) = '\0';
         uint32_t n = atoi(p->parse_name[i].begin);
-        ld->label_v.push_back(n);
+        ld.label_v.push_back(n);
       }
       break;
     default:
@@ -130,7 +131,7 @@ void print_update(vw& all, bool is_test, example& ec)
     if (is_test)
       label_string << " unknown";
     else
-      for (size_t i = 0; i < ec.l.multilabels.label_v.size(); i++) label_string << " " << ec.l.multilabels.label_v[i];
+      for (size_t i = 0; i < ec.l.multilabels().label_v.size(); i++) label_string << " " << ec.l.multilabels().label_v[i];
 
     std::stringstream pred_string;
     for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
@@ -143,14 +144,14 @@ void print_update(vw& all, bool is_test, example& ec)
 
 void output_example(vw& all, example& ec)
 {
-  labels& ld = ec.l.multilabels;
+  labels& ld = ec.l.multilabels();
 
   float loss = 0.;
-  if (!test_label(&ld))
+  if (!test_label(ec.l))
   {
     // need to compute exact loss
     labels preds = ec.pred.multilabels;
-    labels given = ec.l.multilabels;
+    labels given = ec.l.multilabels();
 
     uint32_t preds_index = 0;
     uint32_t given_index = 0;
@@ -177,7 +178,7 @@ void output_example(vw& all, example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(ec.l), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (sink >= 0)
@@ -194,6 +195,6 @@ void output_example(vw& all, example& ec)
       all.print_text(sink, ss.str(), ec.tag);
     }
 
-  print_update(all, test_label(&ec.l.multilabels), ec);
+  print_update(all, test_label(ec.l), ec);
 }
 }  // namespace MULTILABEL

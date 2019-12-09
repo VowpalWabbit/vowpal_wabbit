@@ -90,7 +90,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    v_array<CB::cb_class> costs = ec.l.cb().costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -131,13 +131,13 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
   if (label_example != nullptr)  // extract label
   {
-    data.action_label = label_example->l.cb;
-    label_example->l.cb = data.empty_label;
+    data.action_label = label_example->l.cb();
+    label_example->l.cb() = data.empty_label;
   }
   multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)  // restore label
-    label_example->l.cb = data.action_label;
+    label_example->l.cb() = data.action_label;
 
   data.known_cost = CB_ADF::get_observed_cost(ec_seq);
   if (label_example != nullptr && is_learn)
@@ -164,12 +164,12 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
       example* ec_found = nullptr;
       for (example*& ec : ec_seq)
       {
-        if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
+        if (ec->l.cb().costs.size() == 1 && ec->l.cb().costs[0].cost != FLT_MAX && ec->l.cb().costs[0].probability > 0)
           ec_found = ec;
         if (threshold > 1)
           ec->weight *= threshold;
       }
-      ec_found->l.cb.costs[0].probability = action_probability;
+      ec_found->l.cb().costs[0].probability = action_probability;
 
       multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
@@ -178,7 +178,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
         float inv_threshold = 1.f / threshold;
         for (auto& ec : ec_seq) ec->weight *= inv_threshold;
       }
-      ec_found->l.cb.costs[0].probability = data.known_cost.probability;
+      ec_found->l.cb().costs[0].probability = data.known_cost.probability;
       data.update_count++;
     }
   }

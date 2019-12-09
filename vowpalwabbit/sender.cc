@@ -74,7 +74,7 @@ void receive_result(sender& s)
   example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
   ec.pred.scalar = res;
 
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
 
   return_simple_example(*(s.all), nullptr, ec);
@@ -85,8 +85,8 @@ void learn(sender& s, LEARNER::single_learner&, example& ec)
   if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
     receive_result(s);
 
-  s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  s.all->p->lp.cache_label(&ec.l, *s.buf);  // send label information.
+  s.all->set_minmax(s.all->sd, ec.l.simple().label);
+  s.all->p->lp.cache_label(ec.l, *s.buf);  // send label information.
   cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, (uint32_t)s.all->parse_mask);
   s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;

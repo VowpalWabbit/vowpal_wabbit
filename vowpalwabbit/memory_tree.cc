@@ -49,12 +49,12 @@ void copy_example_data(example* dst, example* src, bool oas = false)  // copy ex
   if (oas == false)
   {
     dst->l = src->l;
-    dst->l.multi.label = src->l.multi.label;
+    dst->l.multi().label = src->l.multi().label;
   }
   else
   {
-    dst->l.multilabels.label_v.delete_v();
-    copy_array(dst->l.multilabels.label_v, src->l.multilabels.label_v);
+    dst->l.multilabels().label_v.delete_v();
+    copy_array(dst->l.multilabels().label_v, src->l.multilabels().label_v);
   }
   VW::copy_example_data(false, dst, src);
 }
@@ -388,16 +388,16 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   MULTILABEL::labels preds;
   if (b.oas == false)
   {
-    mc = ec.l.multi;
+    mc = ec.l.multi();
     save_multi_pred = ec.pred.multiclass;
   }
   else
   {
-    multilabels = ec.l.multilabels;
+    multilabels = ec.l.multilabels();
     preds = ec.pred.multilabels;
   }
 
-  ec.l.simple = {1.f, 1.f, 0.};
+  ec.l.simple() = {1.f, 1.f, 0.};
   base.predict(ec, b.nodes[cn].base_router);
   float prediction = ec.pred.scalar;
   // float imp_weight = 1.f; //no importance weight.
@@ -406,10 +406,10 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
       (float)((1. - b.alpha) * log(b.nodes[cn].nl / (b.nodes[cn].nr + 1e-1)) / log(2.) + b.alpha * prediction);
   float route_label = weighted_value < 0.f ? -1.f : 1.f;
 
-  // ec.l.simple = {route_label, imp_weight, 0.f};
+  // ec.l.simple() = {route_label, imp_weight, 0.f};
   float ec_input_weight = ec.weight;
   ec.weight = 1.f;
-  ec.l.simple = {route_label, 1., 0.f};
+  ec.l.simple() = {route_label, 1., 0.f};
   base.learn(ec, b.nodes[cn].base_router);  // update the router according to the new example.
 
   base.predict(ec, b.nodes[cn].base_router);
@@ -417,13 +417,13 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
 
   if (b.oas == false)
   {
-    ec.l.multi = mc;
+    ec.l.multi() = mc;
     ec.pred.multiclass = save_multi_pred;
   }
   else
   {
     ec.pred.multilabels = preds;
-    ec.l.multilabels = multilabels;
+    ec.l.multilabels() = multilabels;
   }
   ec.weight = ec_input_weight;
 
@@ -471,16 +471,16 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
     MULTILABEL::labels preds;
     if (b.oas == false)
     {
-      mc = b.examples[ec_pos]->l.multi;
+      mc = b.examples[ec_pos]->l.multi();
       save_multi_pred = b.examples[ec_pos]->pred.multiclass;
     }
     else
     {
-      multilabels = b.examples[ec_pos]->l.multilabels;
+      multilabels = b.examples[ec_pos]->l.multilabels();
       preds = b.examples[ec_pos]->pred.multilabels;
     }
 
-    b.examples[ec_pos]->l.simple = {1.f, 1.f, 0.f};
+    b.examples[ec_pos]->l.simple() = {1.f, 1.f, 0.f};
     base.predict(*b.examples[ec_pos], b.nodes[cn].base_router);  // re-predict
     float scalar = b.examples[ec_pos]->pred.scalar;              // this is spliting the leaf.
     if (scalar < 0)
@@ -498,13 +498,13 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
 
     if (b.oas == false)
     {
-      b.examples[ec_pos]->l.multi = mc;
+      b.examples[ec_pos]->l.multi() = mc;
       b.examples[ec_pos]->pred.multiclass = save_multi_pred;
     }
     else
     {
       b.examples[ec_pos]->pred.multilabels = preds;
-      b.examples[ec_pos]->l.multilabels = multilabels;
+      b.examples[ec_pos]->l.multilabels() = multilabels;
     }
   }
   b.nodes[cn].examples_index.delete_v();                                                 // empty the cn's example list
@@ -563,7 +563,7 @@ void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_
   for (size_t i = 0; i < b.nodes[cn].examples_index.size(); i++)
   {  // scan through each memory in the leaf
     uint32_t loc = b.nodes[cn].examples_index[i];
-    for (uint32_t lab : b.examples[loc]->l.multilabels.label_v)
+    for (uint32_t lab : b.examples[loc]->l.multilabels().label_v)
     {  // scan through each label:
       if (v_array_contains(leaf_labs, lab) == false)
         leaf_labs.push_back(lab);
@@ -575,18 +575,18 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
 {
   v_array<uint32_t> leaf_labs = v_init<uint32_t>();
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
-  MULTILABEL::labels multilabels = ec.l.multilabels;
+  MULTILABEL::labels multilabels = ec.l.multilabels();
   MULTILABEL::labels preds = ec.pred.multilabels;
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple() = {FLT_MAX, 1.f, 0.f};
   for (size_t i = 0; i < leaf_labs.size(); i++)
   {
-    ec.l.simple.label = -1.f;
+    ec.l.simple().label = -1.f;
     if (v_array_contains(multilabels.label_v, leaf_labs[i]))
-      ec.l.simple.label = 1.f;
+      ec.l.simple().label = 1.f;
     base.learn(ec, b.max_routers + 1 + leaf_labs[i]);
   }
   ec.pred.multilabels = preds;
-  ec.l.multilabels = multilabels;
+  ec.l.multilabels() = multilabels;
 }
 
 inline uint32_t compute_hamming_loss_via_oas(
@@ -595,9 +595,9 @@ inline uint32_t compute_hamming_loss_via_oas(
   selected_labs.delete_v();
   v_array<uint32_t> leaf_labs = v_init<uint32_t>();
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels stored in the leaf.
-  MULTILABEL::labels multilabels = ec.l.multilabels;
+  MULTILABEL::labels multilabels = ec.l.multilabels();
   MULTILABEL::labels preds = ec.pred.multilabels;
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple() = {FLT_MAX, 1.f, 0.f};
   for (size_t i = 0; i < leaf_labs.size(); i++)
   {
     base.predict(ec, b.max_routers + 1 + leaf_labs[i]);
@@ -606,9 +606,9 @@ inline uint32_t compute_hamming_loss_via_oas(
       selected_labs.push_back(leaf_labs[i]);
   }
   ec.pred.multilabels = preds;
-  ec.l.multilabels = multilabels;
+  ec.l.multilabels() = multilabels;
 
-  return hamming_loss(ec.l.multilabels.label_v, selected_labs);
+  return hamming_loss(ec.l.multilabels().label_v, selected_labs);
 }
 
 // pick up the "closest" example in the leaf using the score function.
@@ -629,7 +629,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
       {
         float tmp_s = normalized_linear_prod(b, &ec, b.examples[loc]);
         diag_kronecker_product_test(ec, *b.examples[loc], *b.kprod_ec, b.oas);
-        b.kprod_ec->l.simple = {FLT_MAX, 0., tmp_s};
+        b.kprod_ec->l.simple() = {FLT_MAX, 0., tmp_s};
         base.predict(*b.kprod_ec, b.max_routers);
         score = b.kprod_ec->partial_prediction;
       }
@@ -651,15 +651,15 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
 // for any two examples, use number of overlap labels to indicate the similarity between these two examples.
 float get_overlap_from_two_examples(example& ec1, example& ec2)
 {
-  return (float)over_lap(ec1.l.multilabels.label_v, ec2.l.multilabels.label_v);
+  return (float)over_lap(ec1.l.multilabels().label_v, ec2.l.multilabels().label_v);
 }
 
 // we use F1 score as the reward signal
 float F1_score_for_two_examples(example& ec1, example& ec2)
 {
   float num_overlaps = get_overlap_from_two_examples(ec1, ec2);
-  float v1 = (float)(num_overlaps / (1e-7 + ec1.l.multilabels.label_v.size() * 1.));
-  float v2 = (float)(num_overlaps / (1e-7 + ec2.l.multilabels.label_v.size() * 1.));
+  float v1 = (float)(num_overlaps / (1e-7 + ec1.l.multilabels().label_v.size() * 1.));
+  float v2 = (float)(num_overlaps / (1e-7 + ec2.l.multilabels().label_v.size() * 1.));
   if (num_overlaps == 0.f)
     return 0.f;
   else
@@ -675,17 +675,17 @@ void predict(memory_tree& b, single_learner& base, example& ec)
   MULTILABEL::labels preds;
   if (b.oas == false)
   {
-    mc = ec.l.multi;
+    mc = ec.l.multi();
     save_multi_pred = ec.pred.multiclass;
   }
   else
   {
-    multilabels = ec.l.multilabels;
+    multilabels = ec.l.multilabels();
     preds = ec.pred.multilabels;
   }
 
   uint64_t cn = 0;
-  ec.l.simple = {-1.f, 1.f, 0.};
+  ec.l.simple() = {-1.f, 1.f, 0.};
   while (b.nodes[cn].internal == 1)
   {  // if it's internal{
     base.predict(ec, b.nodes[cn].base_router);
@@ -695,13 +695,13 @@ void predict(memory_tree& b, single_learner& base, example& ec)
 
   if (b.oas == false)
   {
-    ec.l.multi = mc;
+    ec.l.multi() = mc;
     ec.pred.multiclass = save_multi_pred;
   }
   else
   {
     ec.pred.multilabels = preds;
-    ec.l.multilabels = multilabels;
+    ec.l.multilabels() = multilabels;
   }
 
   int64_t closest_ec = 0;
@@ -709,11 +709,11 @@ void predict(memory_tree& b, single_learner& base, example& ec)
   {
     closest_ec = pick_nearest(b, base, cn, ec);
     if (closest_ec != -1)
-      ec.pred.multiclass = b.examples[closest_ec]->l.multi.label;
+      ec.pred.multiclass = b.examples[closest_ec]->l.multi().label;
     else
       ec.pred.multiclass = 0;
 
-    if (ec.l.multi.label != ec.pred.multiclass)
+    if (ec.l.multi().label != ec.pred.multiclass)
     {
       ec.loss = ec.weight;
       b.num_mistakes++;
@@ -743,15 +743,15 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   MULTILABEL::labels preds;
   if (b.oas == false)
   {
-    mc = ec.l.multi;
+    mc = ec.l.multi();
     save_multi_pred = ec.pred.multiclass;
   }
   else
   {
-    multilabels = ec.l.multilabels;
+    multilabels = ec.l.multilabels();
     preds = ec.pred.multilabels;
   }
-  ec.l.simple = {FLT_MAX, 1., 0.0};
+  ec.l.simple() = {FLT_MAX, 1., 0.0};
   while (b.nodes[cn].internal != -1)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -761,13 +761,13 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
 
   if (b.oas == false)
   {
-    ec.l.multi = mc;
+    ec.l.multi() = mc;
     ec.pred.multiclass = save_multi_pred;
   }
   else
   {
     ec.pred.multilabels = preds;
-    ec.l.multilabels = multilabels;
+    ec.l.multilabels() = multilabels;
   }
 
   // get to leaf now:
@@ -776,7 +776,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   closest_ec = pick_nearest(b, base, cn, ec);  // no randomness for picking example.
   if (b.oas == false)
   {
-    if ((closest_ec != -1) && (b.examples[closest_ec]->l.multi.label == ec.l.multi.label))
+    if ((closest_ec != -1) && (b.examples[closest_ec]->l.multi().label == ec.l.multi().label))
       reward = 1.f;
   }
   else
@@ -790,7 +790,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   {
     float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
     diag_kronecker_product_test(ec, *b.examples[closest_ec], *b.kprod_ec, b.oas);
-    b.kprod_ec->l.simple = {reward, 1.f, -score};
+    b.kprod_ec->l.simple() = {reward, 1.f, -score};
     b.kprod_ec->weight = weight;
     base.learn(*b.kprod_ec, b.max_routers);
   }
@@ -814,11 +814,11 @@ void learn_at_leaf_random(
   }
   if (ec_id != -1)
   {
-    if (b.examples[ec_id]->l.multi.label == ec.l.multi.label)
+    if (b.examples[ec_id]->l.multi().label == ec.l.multi().label)
       reward = 1.f;
     float score = normalized_linear_prod(b, &ec, b.examples[ec_id]);
     diag_kronecker_product_test(ec, *b.examples[ec_id], *b.kprod_ec, b.oas);
-    b.kprod_ec->l.simple = {reward, 1.f, -score};
+    b.kprod_ec->l.simple() = {reward, 1.f, -score};
     b.kprod_ec->weight = weight;  //* b.nodes[leaf_id].examples_index.size();
     base.learn(*b.kprod_ec, b.max_routers);
   }
@@ -836,17 +836,17 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   MULTILABEL::labels preds;
   if (b.oas == false)
   {
-    mc = ec.l.multi;
+    mc = ec.l.multi();
     save_multi_pred = ec.pred.multiclass;
   }
   else
   {
-    multilabels = ec.l.multilabels;
+    multilabels = ec.l.multilabels();
     preds = ec.pred.multilabels;
   }
 
   path.clear();
-  ec.l.simple = {FLT_MAX, 1.0, 0.0};
+  ec.l.simple() = {FLT_MAX, 1.0, 0.0};
   while (b.nodes[cn].internal != -1)
   {
     path.push_back(cn);  // path stores node id from the root to the leaf
@@ -861,13 +861,13 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 
   if (b.oas == false)
   {
-    ec.l.multi = mc;
+    ec.l.multi() = mc;
     ec.pred.multiclass = save_multi_pred;
   }
   else
   {
     ec.pred.multilabels = preds;
-    ec.l.multilabels = multilabels;
+    ec.l.multilabels() = multilabels;
   }
 
   // std::cout<<"at route to leaf: "<<path.size()<< std::endl;
@@ -916,10 +916,10 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       MULTILABEL::labels multilabels;
       MULTILABEL::labels preds;
       if (b.oas == false)
-        mc = ec.l.multi;
+        mc = ec.l.multi();
       else
       {
-        multilabels = ec.l.multilabels;
+        multilabels = ec.l.multilabels();
         preds = ec.pred.multilabels;
       }
 
@@ -928,15 +928,15 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
         ec.weight = 100.f;
       else if (ec.weight < .01f)
         ec.weight = 0.01f;
-      ec.l.simple = {objective < 0. ? -1.f : 1.f, 1.f, 0.};
+      ec.l.simple() = {objective < 0. ? -1.f : 1.f, 1.f, 0.};
       base.learn(ec, b.nodes[cn].base_router);
 
       if (b.oas == false)
-        ec.l.multi = mc;
+        ec.l.multi() = mc;
       else
       {
         ec.pred.multilabels = preds;
-        ec.l.multilabels = multilabels;
+        ec.l.multilabels() = multilabels;
       }
       ec.weight = ec_input_weight;  // restore the original weight
     }
@@ -1095,18 +1095,18 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   writeit(ec->ft_offset, "ft_offset");
   if (oas == false)
   {  // multi-class
-    writeit(ec->l.multi.label, "multiclass_label");
-    writeit(ec->l.multi.weight, "multiclass_weight");
+    writeit(ec->l.multi().label, "multiclass_label");
+    writeit(ec->l.multi().weight, "multiclass_weight");
   }
   else
   {  // multi-label
-    writeitvar(ec->l.multilabels.label_v.size(), "label_size", label_size);
+    writeitvar(ec->l.multilabels().label_v.size(), "label_size", label_size);
     if (read)
     {
-      ec->l.multilabels.label_v.clear();
-      for (uint32_t i = 0; i < label_size; i++) ec->l.multilabels.label_v.push_back(0);
+      ec->l.multilabels().label_v.clear();
+      for (uint32_t i = 0; i < label_size; i++) ec->l.multilabels().label_v.push_back(0);
     }
-    for (uint32_t i = 0; i < label_size; i++) writeit(ec->l.multilabels.label_v[i], "ec_label");
+    for (uint32_t i = 0; i < label_size; i++) writeit(ec->l.multilabels().label_v[i], "ec_label");
   }
 
   writeitvar(ec->tag.size(), "tags", tag_number);

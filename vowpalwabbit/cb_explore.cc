@@ -57,7 +57,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
   // Explore tau times, then act according to optimal.
   action_scores probs = ec.pred.a_s;
 
-  if (is_learn && ec.l.cb.costs[0].probability < 1)
+  if (is_learn && ec.l.cb().costs[0].probability < 1)
     base.learn(ec);
   else
     base.predict(ec);
@@ -176,14 +176,14 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(counter * num_actions));
 
-  data.cb_label = ec.l.cb;
+  data.cb_label = ec.l.cb();
 
-  ec.l.cs = data.cs_label;
+  ec.l.cs() = data.cs_label;
   get_cover_probabilities(data, base, ec, probs);
 
   if (is_learn)
   {
-    ec.l.cb = data.cb_label;
+    ec.l.cb() = data.cb_label;
     base.learn(ec);
 
     // Now update oracles
@@ -191,12 +191,12 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     // 1. Compute loss vector
     data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
-    ec.l.cb = data.cb_label;
+    ec.l.cb() = data.cb_label;
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
-    ec.l.cs = data.second_cs_label;
+    ec.l.cs() = data.second_cs_label;
     // 2. Update functions
     for (size_t i = 0; i < cover_size; i++)
     {
@@ -218,7 +218,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     }
   }
 
-  ec.l.cb = data.cb_label;
+  ec.l.cb() = data.cb_label;
   ec.pred.a_s = probs;
 }
 
@@ -230,7 +230,7 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
     if (is_test)
       label_string << " unknown";
     else
-      label_string << ec.l.cb.costs[0].action;
+      label_string << ec.l.cb().costs[0].action;
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
         all.progress_add, all.progress_arg);
   }
@@ -269,7 +269,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
 void finish_example(vw& all, cb_explore& c, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb);
+  output_example(all, c, ec, ec.l.cb());
   VW::finish_example(all, ec);
 }
 }  // namespace CB_EXPLORE

@@ -16,20 +16,20 @@ struct multi_oaa
 template <bool is_learn>
 void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
 {
-  MULTILABEL::labels multilabels = ec.l.multilabels;
+  MULTILABEL::labels multilabels = ec.l.multilabels();
   MULTILABEL::labels preds = ec.pred.multilabels;
   preds.label_v.clear();
 
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple() = {FLT_MAX, 1.f, 0.f};
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {
     if (is_learn)
     {
-      ec.l.simple.label = -1.f;
+      ec.l.simple().label = -1.f;
       if (multilabels.label_v.size() > multilabel_index && multilabels.label_v[multilabel_index] == i)
       {
-        ec.l.simple.label = 1.f;
+        ec.l.simple().label = 1.f;
         multilabel_index++;
       }
       base.learn(ec, i);
@@ -44,7 +44,7 @@ void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
               << "} This won't work right." << std::endl;
 
   ec.pred.multilabels = preds;
-  ec.l.multilabels = multilabels;
+  ec.l.multilabels() = multilabels;
 }
 
 void finish_example(vw& all, multi_oaa&, example& ec)
@@ -68,7 +68,7 @@ LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;
   all.label_type = label_type::multi;
-  all.delete_prediction = MULTILABEL::multilabel.delete_label;
+  all.delete_prediction = [](void* array) { ((v_array<uint32_t>*)array)->delete_v(); };
 
   return make_base(l);
 }

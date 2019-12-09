@@ -423,7 +423,7 @@ class TC_parser
 
 void substring_to_example(vw* all, example* ae, substring example)
 {
-  all->p->lp.default_label(&ae->l);
+  all->p->lp.default_label(ae->l);
   char* bar_location = safe_index(example.begin, '|', example.end);
   char* tab_location = safe_index(example.begin, '\t', bar_location);
   substring label_space;
@@ -456,7 +456,7 @@ void substring_to_example(vw* all, example* ae, substring example)
   }
 
   if (!all->p->words.empty())
-    all->p->lp.parse_label(all->p, all->sd, &ae->l, all->p->words);
+    all->p->lp.parse_label(all->p, all->sd, ae->l, all->p->words);
 
   if (all->audit || all->hash_inv)
     TC_parser<true> parser_line(bar_location, example.end, *all, ae);

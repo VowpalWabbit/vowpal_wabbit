@@ -42,7 +42,7 @@ void run(Search::search& sch, multi_ex& ec)
   Search::predictor P(sch, (ptag)0);
   for (size_t i = 0; i < ec.size(); i++)
   {
-    action oracle = ec[i]->l.multi.label;
+    action oracle = ec[i]->l.multi().label;
     size_t prediction = P.set_tag((ptag)i + 1)
                             .set_input(*ec[i])
                             .set_oracle(oracle)
@@ -96,9 +96,9 @@ void convert_bio_to_bilou(multi_ex& ec)
 {
   for (size_t n = 0; n < ec.size(); n++)
   {
-    MULTICLASS::label_t& ylab = ec[n]->l.multi;
+    MULTICLASS::label_t& ylab = ec[n]->l.multi();
     action y = ylab.label;
-    action nexty = (n == ec.size() - 1) ? 0 : ec[n + 1]->l.multi.label;
+    action nexty = (n == ec.size() - 1) ? 0 : ec[n + 1]->l.multi().label;
     if (y == 1)  // do nothing
       ;
     else if (y % 2 == 0)  // this is a begin-X
@@ -198,7 +198,7 @@ void takedown(Search::search& sch, multi_ex& ec)
   if (D.encoding == BILOU)
     for (size_t n = 0; n < ec.size(); n++)
     {
-      MULTICLASS::label_t ylab = ec[n]->l.multi;
+      MULTICLASS::label_t ylab = ec[n]->l.multi();
       ylab.label = bilou_to_bio(ylab.label);
     }
 }
@@ -213,7 +213,7 @@ void run(Search::search& sch, multi_ex& ec)
     action last_prediction = 1;
     for (size_t i = 0; i < ec.size(); i++)
     {
-      action oracle = ec[i]->l.multi.label;
+      action oracle = ec[i]->l.multi().label;
       size_t len = y_allowed->size();
       P.set_tag((ptag)i + 1);
       P.set_learner_id(pass - 1);
@@ -286,7 +286,7 @@ void run(Search::search& sch, multi_ex& ec)
   Search::predictor P(sch, (ptag)0);
   for (size_t i = 0; i < ec.size(); i++)
   {
-    action oracle = ec[i]->l.multi.label;
+    action oracle = ec[i]->l.multi().label;
     for (size_t k = 0; k < K; k++) costs[k] = 1.;
     costs[oracle - 1] = 0.;
     size_t prediction = P.set_tag((ptag)i + 1)
@@ -343,12 +343,12 @@ void run(Search::search& sch, multi_ex& ec)
   uint32_t max_prediction = 1;
   uint32_t max_label = 1;
 
-  for (size_t i = 0; i < ec.size(); i++) max_label = std::max(ec[i]->l.multi.label, max_label);
+  for (size_t i = 0; i < ec.size(); i++) max_label = std::max(ec[i]->l.multi().label, max_label);
 
   for (ptag i = 0; i < ec.size(); i++)
   {
     // labels should be 1 or 2, and our output is MAX of all predicted values
-    uint32_t oracle = D.predict_max ? max_label : ec[i]->l.multi.label;
+    uint32_t oracle = D.predict_max ? max_label : ec[i]->l.multi().label;
     uint32_t prediction = sch.predict(*ec[i], i + 1, &oracle, 1, &i, "p");
 
     max_prediction = std::max(prediction, max_prediction);
@@ -381,9 +381,9 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
   example* ldf_examples = VW::alloc_examples(sizeof(CS::label), num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
-    CS::label& lab = ldf_examples[a].l.cs;
-    CS::cs_label.default_label(&lab);
-    lab.costs.push_back(default_wclass);
+    auto l = ldf_examples[a].l;
+    CS::cs_label.default_label(l);
+    l.cs().costs.push_back(default_wclass);
     ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
   }
 
@@ -430,7 +430,7 @@ void run(Search::search& sch, multi_ex& ec)
       }
 
       // regardless of whether the example is needed or not, the class info is needed
-      CS::label& lab = data->ldf_examples[a].l.cs;
+      CS::label& lab = data->ldf_examples[a].l.cs();
       // need to tell search what the action id is, so that it can add history features correctly!
       lab.costs[0].x = 0.;
       lab.costs[0].class_index = a + 1;
@@ -438,7 +438,7 @@ void run(Search::search& sch, multi_ex& ec)
       lab.costs[0].wap_value = 0.;
     }
 
-    action oracle = ec[i]->l.multi.label - 1;
+    action oracle = ec[i]->l.multi().label - 1;
     action pred_id = P.set_tag((ptag)(i + 1))
                          .set_input(data->ldf_examples, data->num_actions)
                          .set_oracle(oracle)

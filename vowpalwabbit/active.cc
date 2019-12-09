@@ -67,7 +67,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
     }
     else
     {
-      ec.l.simple.label = FLT_MAX;
+      ec.l.simple().label = FLT_MAX;
       ec.weight = 0.f;
     }
   }
@@ -81,7 +81,7 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   else
     base.predict(ec);
 
-  if (ec.l.simple.label == FLT_MAX)
+  if (ec.l.simple().label == FLT_MAX)
   {
     float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
@@ -108,7 +108,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
 
 void output_and_account_example(vw& all, active& a, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)

@@ -101,7 +101,7 @@ void print_result(int file_descriptor, std::pair<VW::topk::const_iterator_t, VW:
 
 void output_example(vw& all, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX)

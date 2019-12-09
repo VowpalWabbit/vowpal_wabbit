@@ -13,12 +13,12 @@ using namespace LEARNER;
 
 namespace CB
 {
-char* bufread_label(CB::label* ld, char* c, io_buf& cache)
+char* bufread_label(CB::label& ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t*)c;
-  ld->costs.clear();
+  ld.costs.clear();
   c += sizeof(size_t);
-  size_t total = sizeof(cb_class) * num + sizeof(ld->weight);
+  size_t total = sizeof(cb_class) * num + sizeof(ld.weight);
   if (cache.buf_read(c, total) < total)
   {
     std::cout << "error in demarshal of cost data" << std::endl;
@@ -28,17 +28,16 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
   {
     cb_class temp = *(cb_class*)c;
     c += sizeof(cb_class);
-    ld->costs.push_back(temp);
+    ld.costs.push_back(temp);
   }
-  memcpy(&ld->weight, c, sizeof(ld->weight));
-  c += sizeof(ld->weight);
+  memcpy(&ld.weight, c, sizeof(ld.weight));
+  c += sizeof(ld.weight);
   return c;
 }
 
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
+size_t read_cached_label(shared_data*, CB::label& ld, io_buf& cache)
 {
-  CB::label* ld = (CB::label*)v;
-  ld->costs.clear();
+  ld.costs.clear();
   char* c;
   size_t total = sizeof(size_t);
   if (cache.buf_read(c, total) < total)
@@ -48,71 +47,101 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void* v)
+
+size_t read_cached_label(shared_data* s, new_polylabel& v, io_buf& cache)
 {
-  CB::label* ld = (CB::label*)v;
-  return ld->weight;
+  return CB::read_cached_label(s, v.cb(), cache);
 }
 
-char* bufcache_label(CB::label* ld, char* c)
+float weight(CB::label& ld) {
+    return ld.weight;
+}
+
+float weight(new_polylabel& v) {
+
+    return CB::weight(v.cb());
+}
+
+char* bufcache_label(CB::label& ld, char* c)
 {
-  *(size_t*)c = ld->costs.size();
+  *(size_t*)c = ld.costs.size();
   c += sizeof(size_t);
-  for (auto const& cost : ld->costs)
+  for (auto const& cost : ld.costs)
   {
     *(cb_class*)c = cost;
     c += sizeof(cb_class);
   }
-  memcpy(c, &ld->weight, sizeof(ld->weight));
-  c += sizeof(ld->weight);
+  memcpy(c, &ld.weight, sizeof(ld.weight));
+  c += sizeof(ld.weight);
   return c;
 }
 
-void cache_label(void* v, io_buf& cache)
+void cache_label(CB::label& ld, io_buf& cache)
 {
   char* c;
-  CB::label* ld = (CB::label*)v;
-  cache.buf_write(c, sizeof(size_t) + sizeof(cb_class) * ld->costs.size() + sizeof(ld->weight));
+  cache.buf_write(c, sizeof(size_t) + sizeof(cb_class) * ld.costs.size() + sizeof(ld.weight));
   bufcache_label(ld, c);
 }
 
-void default_label(void* v)
+void cache_label(new_polylabel& v, io_buf& cache)
 {
-  CB::label* ld = (CB::label*)v;
-  ld->costs.clear();
-  ld->weight = 1;
+  CB::cache_label(v.cb(), cache);
 }
 
-bool test_label(void* v)
+void default_label(CB::label& ld)
 {
-  CB::label* ld = (CB::label*)v;
-  if (ld->costs.empty())
+  ld.costs.clear();
+  ld.weight = 1;
+}
+
+void default_label(new_polylabel& v)
+{
+  CB::default_label(v.cb());
+}
+
+
+bool test_label(CB::label& ld)
+{
+  if (ld.costs.empty())
     return true;
-  for (auto const& cost : ld->costs)
+  for (auto const& cost : ld.costs)
     if (FLT_MAX != cost.cost && cost.probability > 0.)
       return false;
   return true;
 }
 
-void delete_label(void* v)
+bool test_label(new_polylabel& v)
 {
-  CB::label* ld = (CB::label*)v;
-  ld->costs.delete_v();
+  return CB::test_label(v.cb());
 }
 
-void copy_label(void* dst, void* src)
+void delete_label(CB::label& ld)
 {
-  CB::label* ldD = (CB::label*)dst;
-  CB::label* ldS = (CB::label*)src;
-  copy_array(ldD->costs, ldS->costs);
-  ldD->weight = ldS->weight;
+  ld.costs.delete_v();
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void delete_label(new_polylabel& v)
 {
-  CB::label* ld = (CB::label*)v;
-  ld->costs.clear();
-  ld->weight = 1.0;
+  CB::delete_label(v.cb());
+}
+
+void copy_label(CB::label& ldD, CB::label& ldS)
+{
+  copy_array(ldD.costs, ldS.costs);
+  ldD.weight = ldS.weight;
+}
+
+void copy_label(new_polylabel& dst, new_polylabel& src)
+{
+  CB::label& ldD = dst.cb();
+  CB::label& ldS = src.cb();
+  CB::copy_label(ldD, ldS);
+}
+
+void parse_label(parser* p, shared_data*, CB::label& ld, v_array<substring>& words)
+{
+  ld.costs.clear();
+  ld.weight = 1.0;
 
   for (auto const& word : words)
   {
@@ -159,8 +188,13 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
         std::cerr << "shared feature vectors should not have costs" << std::endl;
     }
 
-    ld->costs.push_back(f);
+    ld.costs.push_back(f);
   }
+}
+
+void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)
+{
+  CB::parse_label(p, sd, v.cb(), words);
 }
 
 label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
@@ -168,7 +202,7 @@ label_parser cb_label = {default_label, parse_label, cache_label, read_cached_la
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
+  v_array<CB::cb_class> costs = ec.l.cb().costs;
   if (costs.size() != 1)
     return false;
   if (costs[0].probability == -1.f)
@@ -217,73 +251,72 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
-float weight(void* v)
-{
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
-  return ld->event.weight;
+float weight(new_polylabel& v) {
+  auto ld = v.cb_eval();
+  return ld.event.weight;
 }
 
-size_t read_cached_label(shared_data* sd, void* v, io_buf& cache)
+size_t read_cached_label(shared_data* sd, new_polylabel& v, io_buf& cache)
 {
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
+  auto ld = v.cb_eval();
   char* c;
   size_t total = sizeof(uint32_t);
   if (cache.buf_read(c, total) < total)
     return 0;
-  ld->action = *(uint32_t*)c;
+  ld.action = *(uint32_t*)c;
 
-  return total + CB::read_cached_label(sd, &(ld->event), cache);
+  return total + CB::read_cached_label(sd, ld.event, cache);
 }
 
-void cache_label(void* v, io_buf& cache)
+void cache_label(new_polylabel& v, io_buf& cache)
 {
   char* c;
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
+  auto ld = v.cb_eval();
   cache.buf_write(c, sizeof(uint32_t));
-  *(uint32_t*)c = ld->action;
+  *(uint32_t*)c = ld.action;
 
-  CB::cache_label(&(ld->event), cache);
+  CB::cache_label(ld.event, cache);
 }
 
-void default_label(void* v)
+void default_label(new_polylabel& v)
 {
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
-  CB::default_label(&(ld->event));
-  ld->action = 0;
+  auto ld = v.cb_eval();
+  CB::default_label(ld.event);
+  ld.action = 0;
 }
 
-bool test_label(void* v)
+bool test_label(new_polylabel& v)
 {
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
-  return CB::test_label(&ld->event);
+  auto ld = v.cb_eval();
+  return CB::test_label(ld.event);
 }
 
-void delete_label(void* v)
+void delete_label(new_polylabel& v)
 {
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
-  CB::delete_label(&(ld->event));
+  auto ld = v.cb_eval();
+  CB::delete_label(ld.event);
 }
 
-void copy_label(void* dst, void* src)
+void copy_label(new_polylabel& dst, new_polylabel& src)
 {
-  CB_EVAL::label* ldD = (CB_EVAL::label*)dst;
-  CB_EVAL::label* ldS = (CB_EVAL::label*)src;
-  CB::copy_label(&(ldD->event), &(ldS)->event);
-  ldD->action = ldS->action;
+  auto ldD = dst.cb_eval();
+  auto ldS = src.cb_eval();
+  CB::copy_label(ldD.event, ldS.event);
+  ldD.action = ldS.action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)
 {
-  CB_EVAL::label* ld = (CB_EVAL::label*)v;
+  auto ld = v.cb_eval();
 
   if (words.size() < 2)
     THROW("Evaluation can not happen without an action and an exploration");
 
-  ld->action = (uint32_t)hashstring(words[0], 0);
+  ld.action = (uint32_t)hashstring(words[0], 0);
 
   words.begin()++;
 
-  CB::parse_label(p, sd, &(ld->event), words);
+  CB::parse_label(p, sd, ld.event, words);
 
   words.begin()--;
 }

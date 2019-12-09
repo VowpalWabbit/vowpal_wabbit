@@ -362,7 +362,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 
 inline float trunc_predict(vw& all, example& ec, double gravity)
 {
-  trunc_data temp = {ec.l.simple.initial, (float)gravity};
+  trunc_data temp = {ec.l.simple().initial, (float)gravity};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
   return temp.prediction;
 }
@@ -401,7 +401,7 @@ void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *g.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple().initial;
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {
@@ -539,7 +539,7 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
 float get_pred_per_update(gd& g, example& ec)
 {
   // We must traverse the features in _precisely_ the same order as during training.
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   vw& all = *g.all;
 
   float grad_squared = ec.weight;
@@ -607,7 +607,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 float compute_update(gd& g, example& ec)
 {
   // invariant: not a test label, importance weight > 0
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   vw& all = *g.all;
 
   float update = 0.;
@@ -660,7 +660,7 @@ void learn(gd& g, base_learner& base, example& ec)
 {
   // invariant: not a test label, importance weight > 0
   assert(ec.in_use);
-  assert(ec.l.simple.label != FLT_MAX);
+  assert(ec.l.simple().label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, base, ec);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);

@@ -41,4 +41,19 @@ struct label
 };
 
 extern label_parser ccb_label_parser;
+
+// struct v_ccb_label_parser : public v_label_parser
+// {
+//   void default_label(new_polylabel&) override;
+//   void parse_label(parser*, shared_data*, new_polylabel&, v_array<substring>&) override;
+//   void cache_label(new_polylabel&, io_buf& cache) override;
+//   void read_cached_label(shared_data*, new_polylabel&, io_buf& cache) override;
+//   void delete_label(new_polylabel&) override;
+//   float get_weight(new_polylabel&) override;
+//   void copy_label(new_polylabel&, new_polylabel&) override;
+//   bool test_label(new_polylabel&) override;
+//   size_t get_label_size() override;
+
+// };
+
 }  // namespace CCB

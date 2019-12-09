@@ -89,7 +89,7 @@ struct task_data
   float true_counts_total;
 };
 
-inline bool example_is_test(polylabel& l) { return l.cs.costs.size() == 0; }
+inline bool example_is_test(new_polylabel& l) { return l.cs().costs.size() == 0; }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
@@ -140,7 +140,7 @@ void finish(Search::search& sch)
   delete D;
 }
 
-inline bool example_is_edge(example* e) { return e->l.cs.costs.size() > 1; }
+inline bool example_is_edge(example* e) { return e->l.cs().costs.size() > 1; }
 
 void run_bfs(task_data& D, multi_ex& ec)
 {
@@ -158,9 +158,9 @@ void run_bfs(task_data& D, multi_ex& ec)
     {
       uint32_t n = D.bfs[i];
       for (size_t id : D.adj[n])
-        for (size_t j = 0; j < ec[id]->l.cs.costs.size(); j++)
+        for (size_t j = 0; j < ec[id]->l.cs().costs.size(); j++)
         {
-          uint32_t m = ec[id]->l.cs.costs[j].class_index;
+          uint32_t m = ec[id]->l.cs().costs[j].class_index;
           if ((m > 0) && (!touched[m - 1]))
           {
             D.bfs.push_back(m - 1);
@@ -200,9 +200,9 @@ void setup(Search::search& sch, multi_ex& ec)
         THROW("error: got a node after getting edges!");
 
       D.N++;
-      if (ec[i]->l.cs.costs.size() > 0)
+      if (ec[i]->l.cs().costs.size() > 0)
       {
-        D.true_counts[ec[i]->l.cs.costs[0].class_index] += 1.;
+        D.true_counts[ec[i]->l.cs().costs[0].class_index] += 1.;
         D.true_counts_total += 1.;
       }
     }
@@ -214,15 +214,15 @@ void setup(Search::search& sch, multi_ex& ec)
 
   for (size_t i = D.N; i < ec.size(); i++)
   {
-    for (size_t n = 0; n < ec[i]->l.cs.costs.size(); n++)
+    for (size_t n = 0; n < ec[i]->l.cs().costs.size(); n++)
     {
-      if (ec[i]->l.cs.costs[n].class_index > D.N)
-        THROW("error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > "
+      if (ec[i]->l.cs().costs[n].class_index > D.N)
+        THROW("error: edge source points to too large of a node id: " << (ec[i]->l.cs().costs[n].class_index) << " > "
                                                                       << D.N);
     }
-    for (size_t n = 0; n < ec[i]->l.cs.costs.size(); n++)
+    for (size_t n = 0; n < ec[i]->l.cs().costs.size(); n++)
     {
-      size_t nn = ec[i]->l.cs.costs[n].class_index;
+      size_t nn = ec[i]->l.cs().costs[n].class_index;
       if ((nn > 0) &&
           (((D.adj[nn - 1].size() == 0) || (D.adj[nn - 1][D.adj[nn - 1].size() - 1] != i))))  // don't allow dups
         D.adj[nn - 1].push_back(i);
@@ -280,9 +280,9 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     {
       bool n_in_sink = true;
       if (D.directed)
-        for (size_t j = 0; j < ec[i]->l.cs.costs.size() - 1; j++)
+        for (size_t j = 0; j < ec[i]->l.cs().costs.size() - 1; j++)
         {
-          size_t m = ec[i]->l.cs.costs[j].class_index;
+          size_t m = ec[i]->l.cs().costs[j].class_index;
           if (m == 0)
             break;
           if (m - 1 == n)
@@ -293,15 +293,15 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
         }
 
       bool m_in_sink = false;
-      for (size_t j = 0; j < ec[i]->l.cs.costs.size(); j++)
+      for (size_t j = 0; j < ec[i]->l.cs().costs.size(); j++)
       {
-        size_t m = ec[i]->l.cs.costs[j].class_index;
+        size_t m = ec[i]->l.cs().costs[j].class_index;
         if (m == 0)
         {
           m_in_sink = true;
           continue;
         }
-        if (j == ec[i]->l.cs.costs.size() - 1)
+        if (j == ec[i]->l.cs().costs.size() - 1)
           m_in_sink = true;
         m--;
         if (m == n)
@@ -411,7 +411,7 @@ void run(Search::search& sch, multi_ex& ec)
     for (int n_id = start; n_id != end; n_id += step)
     {
       uint32_t n = D.bfs[n_id];
-      uint32_t k = (ec[n]->l.cs.costs.size() > 0) ? ec[n]->l.cs.costs[0].class_index : 0;
+      uint32_t k = (ec[n]->l.cs().costs.size() > 0) ? ec[n]->l.cs().costs[0].class_index : 0;
 
       bool add_features = /* D.use_structure && */ sch.predictNeedsExample();
       // add_features = false;
@@ -437,9 +437,9 @@ void run(Search::search& sch, multi_ex& ec)
       // add all the conditioning
       for (size_t i = 0; i < D.adj[n].size(); i++)
       {
-        for (size_t j = 0; j < ec[i]->l.cs.costs.size(); j++)
+        for (size_t j = 0; j < ec[i]->l.cs().costs.size(); j++)
         {
-          uint32_t m = ec[i]->l.cs.costs[j].class_index;
+          uint32_t m = ec[i]->l.cs().costs[j].class_index;
           if (m == 0)
             continue;
           m--;
@@ -451,15 +451,15 @@ void run(Search::search& sch, multi_ex& ec)
 
       // make the prediction
       D.pred[n] = P.predict();
-      if (ec[n]->l.cs.costs.size() > 0)  // for test examples
-        sch.loss((ec[n]->l.cs.costs[0].class_index == D.pred[n]) ? 0.f : (last_loop ? 0.5f : loss_val));
+      if (ec[n]->l.cs().costs.size() > 0)  // for test examples
+        sch.loss((ec[n]->l.cs().costs[0].class_index == D.pred[n]) ? 0.f : (last_loop ? 0.5f : loss_val));
 
       if (add_features)
         del_edge_features(D, n, ec);
     }
   }
 
-  for (uint32_t n = 0; n < D.N; n++) D.confusion_matrix[IDX(ec[n]->l.cs.costs[0].class_index, D.pred[n])]++;
+  for (uint32_t n = 0; n < D.N; n++) D.confusion_matrix[IDX(ec[n]->l.cs().costs[0].class_index, D.pred[n])]++;
   sch.loss(1.f - macro_f(D));
 
   if (sch.output().good())

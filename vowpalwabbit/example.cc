@@ -35,10 +35,10 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(void*, void*))
+void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(new_polylabel&, new_polylabel&))
 {
   if (copy_label)
-    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
+    copy_label(dst->l, src->l);  // TODO: we really need to delete_label on dst :(
   else
     dst->l = src->l;
 }
@@ -81,7 +81,8 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->interactions = src->interactions;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+void copy_example_data(
+    bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(new_polylabel&, new_polylabel&))
 {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
@@ -151,7 +152,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.l.simple.weight = ec->weight;
+  fec.l.simple().weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)
@@ -214,10 +215,10 @@ example* alloc_examples(size_t, size_t count = 1)
   return ec;
 }
 
-void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
+void dealloc_example(void (*delete_label)(new_polylabel&), example& ec, void (*delete_prediction)(void*))
 {
   if (delete_label)
-    delete_label(&ec.l);
+    delete_label(ec.l);
 
   if (delete_prediction)
     delete_prediction(&ec.pred);

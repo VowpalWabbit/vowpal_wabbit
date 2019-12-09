@@ -44,7 +44,7 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(vw& all, example& ec)
 {
-  float acc = ec.l.simple.initial;
+  float acc = ec.l.simple().initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
@@ -64,7 +64,7 @@ void predict(svrg& s, single_learner&, example& ec)
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
 {
-  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label) * ec.weight;
+  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple().label) * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --

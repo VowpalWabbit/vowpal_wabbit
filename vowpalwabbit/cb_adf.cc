@@ -105,9 +105,9 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   size_t i = 0;
   for (example*& ec : examples)
   {
-    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
+    if (ec->l.cb().costs.size() == 1 && ec->l.cb().costs[0].cost != FLT_MAX && ec->l.cb().costs[0].probability > 0)
     {
-      ld = ec->l.cb;
+      ld = ec->l.cb();
       index = (int)i;
     }
     ++i;
@@ -160,7 +160,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    CB::label ld = examples[i]->l.cb;
+    CB::label ld = examples[i]->l.cb();
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       chosen_action = i;
@@ -251,8 +251,14 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
   uint32_t nf = (uint32_t)examples[_gen_cs.mtr_example]->num_features;
   float old_weight = examples[_gen_cs.mtr_example]->weight;
+<<<<<<< Updated upstream
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
   examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
+=======
+  const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb().costs[0].probability, _clip_p);
+  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p *
+      ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
+>>>>>>> Stashed changes
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
@@ -274,11 +280,11 @@ example* test_adf_sequence(multi_ex& ec_seq)
   for (auto* ec : ec_seq)
   {
     // Check if there is more than one cost for this example.
-    if (ec->l.cb.costs.size() > 1)
+    if (ec->l.cb().costs.size() > 1)
       THROW("cb_adf: badly formatted example, only one cost can be known.");
 
     // Check whether the cost was initialized to a value.
-    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
+    if (ec->l.cb().costs.size() == 1 && ec->l.cb().costs[0].cost != FLT_MAX)
     {
       ret = ec;
       count += 1;
@@ -389,7 +395,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    v_array<CB::cb_class> costs = ec.l.cb().costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -405,7 +411,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  label& ld = ec.l.cb;
+  label& ld = ec.l.cb();
   v_array<CB::cb_class> costs = ld.costs;
 
   if (example_is_newline_not_header(ec))

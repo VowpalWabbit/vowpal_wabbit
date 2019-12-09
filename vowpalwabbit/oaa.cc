@@ -30,17 +30,17 @@ struct oaa
 
 void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
 {
-  MULTICLASS::label_t ld = ec.l.multi;
+  MULTICLASS::label_t ld = ec.l.multi();
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
     std::cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
-  ec.l.simple = {1., 0.f, 0.f};  // truth
+  ec.l.simple() = {1., 0.f, 0.f};  // truth
   base.learn(ec, ld.label - 1);
 
   size_t prediction = ld.label;
   float best_partial_prediction = ec.partial_prediction;
 
-  ec.l.simple.label = -1.;
+  ec.l.simple().label = -1.;
   float weight_temp = ec.weight;
   ec.weight *= ((float)o.k) / (float)o.num_subsample;
   size_t p = o.subsample_id;
@@ -62,14 +62,14 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
   o.subsample_id = p;
 
   ec.pred.multiclass = (uint32_t)prediction;
-  ec.l.multi = ld;
+  ec.l.multi() = ld;
   ec.weight = weight_temp;
 }
 
 template <bool is_learn, bool print_all, bool scores, bool probabilities>
 void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
 {
-  MULTICLASS::label_t mc_label_data = ec.l.multi;
+  MULTICLASS::label_t mc_label_data = ec.l.multi();
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
     std::cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
@@ -79,7 +79,7 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   if (scores)
     scores_array = ec.pred.scalars;
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple() = {FLT_MAX, 0.f, 0.f};
   base.multipredict(ec, 0, o.k, o.pred, true);
   for (uint32_t i = 2; i <= o.k; i++)
     if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar)
@@ -92,7 +92,7 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   {
     for (uint32_t i = 1; i <= o.k; i++)
     {
-      ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f};
+      ec.l.simple() = {(mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f};
       ec.pred.scalar = o.pred[i - 1].scalar;
       base.update(ec, i - 1);
     }
@@ -126,7 +126,7 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   else
     ec.pred.multiclass = prediction;
 
-  ec.l.multi = mc_label_data;
+  ec.l.multi() = mc_label_data;
 }
 
 // TODO: partial code duplication with multiclass.cc:finish_example
@@ -144,8 +144,8 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   float correct_class_prob = 0;
   if (probabilities)
   {
-    if (ec.l.multi.label <= o.k)  // prevent segmentation fault if labeĺ==(uint32_t)-1
-      correct_class_prob = ec.pred.scalars[ec.l.multi.label - 1];
+    if (ec.l.multi().label <= o.k)  // prevent segmentation fault if labeĺ==(uint32_t)-1
+      correct_class_prob = ec.pred.scalars[ec.l.multi().label - 1];
     if (correct_class_prob > 0)
       multiclass_log_loss = -log(correct_class_prob) * ec.weight;
     if (ec.test_only)
@@ -162,7 +162,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
       prediction = i;
   prediction++;  // prediction is 1-based index (not 0-based)
   float zero_one_loss = 0;
-  if (ec.l.multi.label != prediction)
+  if (ec.l.multi().label != prediction)
     zero_one_loss = ec.weight;
 
   // === Print probabilities for all classes
@@ -183,7 +183,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   for (int sink : all.final_prediction_sink) all.print_text(sink, outputStringStream.str(), ec.tag);
 
   // === Report updates using zero-one loss
-  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ec.l.multi().label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
   // Alternatively, we could report multiclass_log_loss.
   // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
   // Even better would be to report both losses, but this would mean to increase

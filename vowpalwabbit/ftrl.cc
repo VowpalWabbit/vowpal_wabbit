@@ -87,7 +87,7 @@ void multipredict(
     ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *b.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple().initial;
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
@@ -243,21 +243,21 @@ void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 
 void update_after_prediction_proximal(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_cb(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
 }

@@ -61,7 +61,7 @@ template <bool is_learn>
 void make_marginal(data& sm, example& ec)
 {
   uint64_t mask = sm.all->weights.mask();
-  float label = ec.l.simple.label;
+  float label = ec.l.simple().label;
   vw& all = *sm.all;
   sm.alg_loss = 0.;
   sm.net_weight = 0.;
@@ -137,7 +137,7 @@ void compute_expert_loss(data& sm, example& ec)
 {
   vw& all = *sm.all;
   // add in the feature-based expert and normalize,
-  float label = ec.l.simple.label;
+  float label = ec.l.simple().label;
 
   if (sm.net_weight + sm.net_feature_weight > 0.)
     sm.average_pred += sm.net_feature_weight * sm.feature_pred;
@@ -162,7 +162,7 @@ void update_marginal(data& sm, example& ec)
 {
   vw& all = *sm.all;
   uint64_t mask = sm.all->weights.mask();
-  float label = ec.l.simple.label;
+  float label = ec.l.simple().label;
   float weight = ec.weight;
   if (sm.unweighted_marginals)
     weight = 1.;
@@ -194,7 +194,7 @@ void update_marginal(data& sm, example& ec)
           e.second.weight = get_adanormalhedge_weights(e.second.regret, e.second.abs_regret);
         }
 
-        m.first = m.first * (1. - sm.decay) + ec.l.simple.label * weight;
+        m.first = m.first * (1. - sm.decay) + ec.l.simple().label * weight;
         m.second = m.second * (1. - sm.decay) + weight;
       }
   }

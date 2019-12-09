@@ -120,7 +120,7 @@ void finish_setup(nn& n, vw& all)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
   n.hiddenbias.total_sum_feat_sq++;
-  n.hiddenbias.l.simple.label = FLT_MAX;
+  n.hiddenbias.l.simple().label = FLT_MAX;
   n.hiddenbias.weight = 1;
   n.hiddenbias.in_use = true;
 
@@ -134,7 +134,7 @@ void finish_setup(nn& n, vw& all)
         audit_strings_ptr(new audit_strings("", "OutputWeight")));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.total_sum_feat_sq++;
-  n.outputweight.l.simple.label = FLT_MAX;
+  n.outputweight.l.simple().label = FLT_MAX;
   n.outputweight.weight = 1;
   n.outputweight.in_use = true;
 
@@ -158,7 +158,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   shared_data* save_sd = n.all->sd;
   n.all->sd = &sd;
 
-  label_data ld = ec.l.simple;
+  label_data ld = ec.l.simple();
   void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
   float save_min_label;
   float save_max_label;
@@ -193,9 +193,9 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
       {
-        n.hiddenbias.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5);
+        n.hiddenbias.l.simple().label = (float)(n._random_state->get_and_update_random() - 0.5);
         base.learn(n.hiddenbias, i);
-        n.hiddenbias.l.simple.label = FLT_MAX;
+        n.hiddenbias.l.simple().label = FLT_MAX;
       }
 
     base.multipredict(ec, 0, n.k, hidden_units, true);
@@ -261,9 +261,9 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     if (wf == 0)
     {
       float sqrtk = std::sqrt((float)n.k);
-      n.outputweight.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5) / sqrtk;
+      n.outputweight.l.simple().label = (float)(n._random_state->get_and_update_random() - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
-      n.outputweight.l.simple.label = FLT_MAX;
+      n.outputweight.l.simple().label = FLT_MAX;
     }
   }
 
@@ -342,9 +342,9 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
           float nu = n.outputweight.pred.scalar;
           float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-          ec.l.simple.label = GD::finalize_prediction(n.all->sd, hidden_units[i].scalar - gradhw);
+          ec.l.simple().label = GD::finalize_prediction(n.all->sd, hidden_units[i].scalar - gradhw);
           ec.pred.scalar = hidden_units[i].scalar;
-          if (ec.l.simple.label != hidden_units[i].scalar)
+          if (ec.l.simple().label != hidden_units[i].scalar)
             base.update(ec, i);
         }
       }
@@ -357,7 +357,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     }
   }
 
-  ec.l.simple.label = ld.label;
+  ec.l.simple().label = ld.label;
 
   if (!converse)
   {

@@ -251,13 +251,13 @@ void train_node(
     log_multi& b, single_learner& base, example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
-    ec.l.simple.label = -1.f;
+    ec.l.simple().label = -1.f;
   else
-    ec.l.simple.label = 1.f;
+    ec.l.simple().label = 1.f;
 
   base.learn(ec, b.nodes[current].base_predictor);  // depth
 
-  ec.l.simple.label = FLT_MAX;
+  ec.l.simple().label = FLT_MAX;
   base.predict(ec, b.nodes[current].base_predictor);  // depth
 
   b.nodes[current].Eh += (double)ec.partial_prediction;
@@ -302,9 +302,9 @@ inline uint32_t descend(node& n, float prediction)
 
 void predict(log_multi& b, single_learner& base, example& ec)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
+  MULTICLASS::label_t mc = ec.l.multi();
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple() = {FLT_MAX, 0.f, 0.f};
   uint32_t cn = 0;
   uint32_t depth = 0;
   while (b.nodes[cn].internal)
@@ -314,22 +314,22 @@ void predict(log_multi& b, single_learner& base, example& ec)
     depth++;
   }
   ec.pred.multiclass = b.nodes[cn].max_count_label;
-  ec.l.multi = mc;
+  ec.l.multi() = mc;
 }
 
 void learn(log_multi& b, single_learner& base, example& ec)
 {
   //    verify_min_dfs(b, b.nodes[0]);
-  if (ec.l.multi.label == (uint32_t)-1 || b.progress)
+  if (ec.l.multi().label == (uint32_t)-1 || b.progress)
     predict(b, base, ec);
 
-  if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
+  if (ec.l.multi().label != (uint32_t)-1)  // if training the tree
   {
-    MULTICLASS::label_t mc = ec.l.multi;
+    MULTICLASS::label_t mc = ec.l.multi();
     uint32_t start_pred = ec.pred.multiclass;
 
     uint32_t class_index = 0;
-    ec.l.simple = {FLT_MAX, 0.f, 0.f};
+    ec.l.simple() = {FLT_MAX, 0.f, 0.f};
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))
@@ -342,7 +342,7 @@ void learn(log_multi& b, single_learner& base, example& ec)
     b.nodes[cn].min_count++;
     update_min_count(b, cn);
     ec.pred.multiclass = start_pred;
-    ec.l.multi = mc;
+    ec.l.multi() = mc;
   }
 }
 

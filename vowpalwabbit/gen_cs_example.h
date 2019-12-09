@@ -50,7 +50,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
-  CB::label ld = ec.l.cb;
+  CB::label ld = ec.l.cb();
 
   float min = FLT_MAX;
   uint32_t argmin = 1;
@@ -262,10 +262,10 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   size_t index = 0;
   for (auto ec : examples)
   {
-    cb_labels.push_back(ec->l.cb);
+    cb_labels.push_back(ec->l.cb());
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.cs = prepped_cs_labels[index++];
+    ec->l.cs() = prepped_cs_labels[index++];
     ec->ft_offset = offset;
   }
 
@@ -277,11 +277,11 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
     base.predict(examples, (int32_t)id);
 
   // 3rd: restore cb_label for each example
-  // (**ec).l.cb = array.element.
+  // (**ec).l.cb() = array.element.
   // and restore offsets
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    examples[i]->l.cb = cb_labels[i];
+    examples[i]->l.cb() = cb_labels[i];
     examples[i]->ft_offset = saved_offset;
   }
 }

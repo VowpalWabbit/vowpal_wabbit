@@ -94,7 +94,7 @@ template <class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
 {
   vw& all = *d.all;
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   float prediction = ld.initial;
 
   for (std::string& i : d.all->pairs)
@@ -185,7 +185,7 @@ template <class T>
 void mf_train(gdmf& d, example& ec, T& weights)
 {
   vw& all = *d.all;
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
@@ -318,7 +318,7 @@ void learn(gdmf& d, single_learner&, example& ec)
   vw& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple.label != FLT_MAX)
+  if (all.training && ec.l.simple().label != FLT_MAX)
     mf_train(d, ec);
 }
 

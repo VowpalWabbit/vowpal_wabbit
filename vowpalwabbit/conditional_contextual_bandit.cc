@@ -76,7 +76,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
   for (auto ex : examples)
   {
-    switch (ex->l.conditional_contextual_bandit.type)
+    switch (ex->l.conditional_contextual_bandit().type)
     {
       case example_type::shared:
         data.shared = ex;
@@ -93,8 +93,8 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
     }
 
     // Stash the CCB labels before rewriting them.
-    data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type, ex->l.conditional_contextual_bandit.outcome,
-        ex->l.conditional_contextual_bandit.explicit_included_actions, 0.});
+    data.stored_labels.push_back({ex->l.conditional_contextual_bandit().type, ex->l.conditional_contextual_bandit().outcome,
+        ex->l.conditional_contextual_bandit().explicit_included_actions, 0.});
   }
 
   return true;
@@ -114,8 +114,8 @@ bool sanity_checks(ccb& data)
   {
     for (auto slot : data.slots)
     {
-      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
-          slot->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+      if (slot->l.conditional_contextual_bandit().outcome != nullptr &&
+          slot->l.conditional_contextual_bandit().outcome->probabilities.size() == 0)
       {
         std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
         return false;
@@ -128,23 +128,23 @@ bool sanity_checks(ccb& data)
 // create empty/default cb labels
 void create_cb_labels(ccb& data)
 {
-  data.shared->l.cb.costs = data.cb_label_pool.get_object();
-  data.shared->l.cb.costs.push_back(data.default_cb_label);
+  data.shared->l.cb().costs = data.cb_label_pool.get_object();
+  data.shared->l.cb().costs.push_back(data.default_cb_label);
   for (example* action : data.actions)
   {
-    action->l.cb.costs = data.cb_label_pool.get_object();
+    action->l.cb().costs = data.cb_label_pool.get_object();
   }
-  data.shared->l.cb.weight = 1.0;
+  data.shared->l.cb().weight = 1.0;
 }
 
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
+  return_v_array(data.shared->l.cb().costs, data.cb_label_pool);
 
   for (example* action : data.actions)
   {
-    return_v_array(action->l.cb.costs, data.cb_label_pool);
+    return_v_array(action->l.cb().costs, data.cb_label_pool);
   }
 }
 
@@ -157,7 +157,7 @@ void attach_label_to_example(
   data.cb_label.probability = outcome->probabilities[0].score;
   data.cb_label.cost = outcome->cost;
 
-  example->l.cb.costs.push_back(data.cb_label);
+  example->l.cb().costs.push_back(data.cb_label);
 }
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
@@ -181,7 +181,7 @@ void clear_pred_and_label(ccb& data)
   // Don't need to return to pool, as that will be done when the example is output.
 
   // This just needs to be cleared as it is reused.
-  data.actions[data.action_with_label]->l.cb.costs.clear();
+  data.actions[data.action_with_label]->l.cb().costs.clear();
 }
 
 // true if there exists at least 1 action in the cb multi-example
@@ -323,7 +323,7 @@ void calculate_and_insert_interactions(
 template <bool is_learn>
 void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
 {
-  bool slot_has_label = slot->l.conditional_contextual_bandit.outcome != nullptr;
+  bool slot_has_label = slot->l.conditional_contextual_bandit().outcome != nullptr;
 
   // Merge the slot features with the shared example and set it in the cb multi-example
   // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
@@ -331,7 +331,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   cb_ex.push_back(data.shared);
 
   // Retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
-  auto& explicit_includes = slot->l.conditional_contextual_bandit.explicit_included_actions;
+  auto& explicit_includes = slot->l.conditional_contextual_bandit().explicit_included_actions;
   if (explicit_includes.size() != 0)
   {
     // First time seeing this, initialize the vector with falses so we can start setting each included action.
@@ -367,11 +367,11 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
     data.origin_index[index++] = (uint32_t)i;
 
     // Remember the index of the chosen action
-    if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+    if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit().outcome->probabilities[0].action)
     {
       // This is used to remove the label later.
       data.action_with_label = (uint32_t)i;
-      attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
+      attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit().outcome, data);
     }
   }
 
@@ -464,7 +464,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Restore ccb labels to the example objects.
   for (size_t i = 0; i < examples.size(); i++)
   {
-    examples[i]->l.conditional_contextual_bandit = {
+    examples[i]->l.conditional_contextual_bandit() = {
         data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
   }
 
@@ -505,7 +505,7 @@ void print_update(vw& all, std::vector<example*>& slots, decision_scores_t& deci
     {
       counter++;
 
-      auto outcome = slot->l.conditional_contextual_bandit.outcome;
+      auto outcome = slot->l.conditional_contextual_bandit().outcome;
       if (outcome == nullptr)
       {
         label_str += delim;
@@ -572,7 +572,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   {
     num_features += ec->num_features;
 
-    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+    if (ec->l.conditional_contextual_bandit().type == CCB::example_type::slot)
     {
       slots.push_back(ec);
     }
@@ -583,7 +583,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   auto preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
-    auto outcome = slots[i]->l.conditional_contextual_bandit.outcome;
+    auto outcome = slots[i]->l.conditional_contextual_bandit().outcome;
     if (outcome != nullptr)
     {
       num_labelled++;
@@ -687,5 +687,5 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
+bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit().type == example_type::shared; }
 }  // namespace CCB

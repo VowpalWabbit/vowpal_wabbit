@@ -30,7 +30,7 @@ struct cb_sample_data
 
     int labelled_action = -1;
     // Find that chosen action in the learning case, skip the shared example.
-    auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+    auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb().costs.empty(); });
     if (it != examples.end())
     {
       labelled_action = std::distance(examples.begin(), it);

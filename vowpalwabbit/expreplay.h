@@ -40,7 +40,7 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
 {  // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
-  if (!is_learn || lp.get_weight(&ec.l) == 0.)
+  if (!is_learn || lp.get_weight(ec.l) == 0.)
     return;
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
@@ -57,7 +57,7 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
   er.filled[n] = true;
   VW::copy_example_data(er.all->audit, &er.buf[n], &ec);  // don't copy the label
   if (lp.copy_label)
-    lp.copy_label(&er.buf[n].l, &ec.l);
+    lp.copy_label(er.buf[n].l, ec.l);
   else
     er.buf[n].l = ec.l;
 }
@@ -110,7 +110,7 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
   er->buf->interactions = &all.interactions;
 
   if (er_level == 'c')
-    for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+    for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs().costs = v_init<COST_SENSITIVE::wclass>();
 
   er->filled = calloc_or_throw<bool>(er->N);
 

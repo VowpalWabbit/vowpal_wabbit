@@ -21,20 +21,20 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   float threshold = 0.f;
   float sensitivity = 0.f;
 
-  float existing_label = ec.l.simple.label;
+  float existing_label = ec.l.simple().label;
   if (existing_label == FLT_MAX)
   {
     base.predict(ec);
     float opposite_label = 1.f;
     if (ec.pred.scalar > 0)
       opposite_label = -1.f;
-    ec.l.simple.label = opposite_label;
+    ec.l.simple().label = opposite_label;
   }
 
   if (!is_confidence_after_training)
     sensitivity = base.sensitivity(ec);
 
-  ec.l.simple.label = existing_label;
+  ec.l.simple().label = existing_label;
   if (is_learn)
     base.learn(ec);
   else
@@ -64,7 +64,7 @@ void confidence_print_result(int f, float res, float confidence, v_array<char> t
 
 void output_and_account_confidence_example(vw& all, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)

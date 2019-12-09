@@ -79,7 +79,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
     CS::wclass default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < 10; a++)
     {
-      ldf_examples[a].l.cs.costs.push_back(default_wclass);
+      ldf_examples[a].l.cs().costs.push_back(default_wclass);
       ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
     }
     my_task_data->ldf_entity = ldf_examples;
@@ -146,7 +146,7 @@ size_t predict_entity(
   if (my_task_data->allow_skip)
   {
     v_array<uint32_t> star_labels = v_init<uint32_t>();
-    star_labels.push_back(ex->l.multi.label);
+    star_labels.push_back(ex->l.multi().label);
     star_labels.push_back(LABEL_SKIP);
     my_task_data->y_allowed_entity.push_back(LABEL_SKIP);
     prediction = Search::predictor(sch, my_tag)
@@ -165,7 +165,7 @@ size_t predict_entity(
       {
         VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
         update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a + 1));
-        CS::label& lab = my_task_data->ldf_entity[a].l.cs;
+        CS::label& lab = my_task_data->ldf_entity[a].l.cs();
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = a;
         lab.costs[0].partial_prediction = 0.f;
@@ -173,7 +173,7 @@ size_t predict_entity(
       }
       prediction = Search::predictor(sch, my_tag)
                        .set_input(my_task_data->ldf_entity, 4)
-                       .set_oracle(ex->l.multi.label - 1)
+                       .set_oracle(ex->l.multi().label - 1)
                        .set_learner_id(1)
                        .predict() +
           1;
@@ -182,7 +182,7 @@ size_t predict_entity(
     {
       prediction = Search::predictor(sch, my_tag)
                        .set_input(*ex)
-                       .set_oracle(ex->l.multi.label)
+                       .set_oracle(ex->l.multi().label)
                        .set_allowed(my_task_data->y_allowed_entity)
                        .set_learner_id(0)
                        .predict();
@@ -195,7 +195,7 @@ size_t predict_entity(
   {
     loss = my_task_data->skip_cost;
   }
-  else if (prediction != ex->l.multi.label)
+  else if (prediction != ex->l.multi().label)
     loss = my_task_data->entity_cost;
   sch.loss(loss);
   return prediction;
@@ -229,7 +229,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   if (my_task_data->allow_skip)
   {
     v_array<uint32_t> star_labels = v_init<uint32_t>();
-    star_labels.push_back(ex->l.multi.label);
+    star_labels.push_back(ex->l.multi().label);
     star_labels.push_back(LABEL_SKIP);
     constrained_relation_labels.push_back(LABEL_SKIP);
     prediction = Search::predictor(sch, my_tag)
@@ -252,12 +252,12 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
         VW::copy_example_data(false, &my_task_data->ldf_relation[a], ex);
         update_example_indicies(
             true, &my_task_data->ldf_relation[a], 28904713, 4832917 * (uint64_t)(constrained_relation_labels[a]));
-        CS::label& lab = my_task_data->ldf_relation[a].l.cs;
+        CS::label& lab = my_task_data->ldf_relation[a].l.cs();
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = constrained_relation_labels[a];
         lab.costs[0].partial_prediction = 0.f;
         lab.costs[0].wap_value = 0.f;
-        if (constrained_relation_labels[a] == ex->l.multi.label)
+        if (constrained_relation_labels[a] == ex->l.multi().label)
         {
           correct_label = (int)a;
         }
@@ -273,7 +273,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
     {
       prediction = Search::predictor(sch, my_tag)
                        .set_input(*ex)
-                       .set_oracle(ex->l.multi.label)
+                       .set_oracle(ex->l.multi().label)
                        .set_allowed(constrained_relation_labels)
                        .set_learner_id(1)
                        .predict();
@@ -285,9 +285,9 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   {
     loss = my_task_data->skip_cost;
   }
-  else if (prediction != ex->l.multi.label)
+  else if (prediction != ex->l.multi().label)
   {
-    if (ex->l.multi.label == R_NONE)
+    if (ex->l.multi().label == R_NONE)
     {
       loss = my_task_data->relation_none_cost;
     }
