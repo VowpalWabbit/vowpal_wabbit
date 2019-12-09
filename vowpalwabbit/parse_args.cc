@@ -885,7 +885,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     for (auto & i : keeps)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
+      for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
     }
 
     if (!all.quiet)
