@@ -100,7 +100,7 @@ struct example : public example_predict  // core example datatype.
   // 4) This cause two breaches of label independence abstraction during predict()
   //      a) All reductions depending on gd had to initalize example.l to sane values before base.predict()
   //      b) All reductions had to save label state before calling base.predict()
-  // Making it impossible to remove depenence of predict on label
+  // Making it impossible to remove dependence of predict on label
   float initial;
 
   // output prediction
@@ -124,6 +124,7 @@ struct example : public example_predict  // core example datatype.
   bool end_pass;  // special example indicating end of pass.
   bool sorted;    // Are the features sorted or not?
   bool in_use;    // in use or not (for the parser)
+  bool predict_called_before_learn; // If the driver calls predict before learn, this flag will be set
 };
 
 struct vw;

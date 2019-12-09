@@ -111,15 +111,16 @@ inline void cb_explore_adf_base<ExploreType>::learn(
   example* label_example = CB_ADF::test_adf_sequence(examples);
   if (label_example != nullptr)
   {
+    // Notes:  Label exists so call learn()
     data._known_cost = CB_ADF::get_observed_cost(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
   }
-  else
+  else if (!examples[0]->predict_called_before_learn)
   {
     // Notes:  Predict will be called as part of workflow before learn.
     // No need to call predict again here ... however not all top level reductions
-    // do this.  So have to leave this in for now.
+    // do this.  So have to call in some cases
     predict(data, base, examples);
   }
 }

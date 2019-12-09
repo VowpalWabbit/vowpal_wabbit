@@ -250,7 +250,7 @@ void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
 template <bool predict>
 void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 {
-  // second train on _one_ action (which requires up to 3 examples).
+  // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
   gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
