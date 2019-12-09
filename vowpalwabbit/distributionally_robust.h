@@ -123,6 +123,7 @@ class ChiSquared
 
     Duals recompute_duals();
     static double chisq_onedof_isf(double alpha);
+    const double& effn() { return n; }
 };
 
 }
