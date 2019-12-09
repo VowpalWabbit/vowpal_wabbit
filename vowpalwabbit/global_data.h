@@ -98,6 +98,7 @@ class namedlabels
     if (iter == m_name2id.end())
     {
       std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
+      return 0;
     }
     return iter->second;
   }
