@@ -1,13 +1,12 @@
 #include <cmath>
 #include <errno.h>
 #include "reductions.h"
-#include "v_hashmap.h"
-#include "rand48.h"
 #include "float.h"
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"
-//#define B_SEARCH_MAX_ITER 50
+#include "debug_log.h"
+
 #define B_SEARCH_MAX_ITER 20
 
 using namespace LEARNER;
@@ -16,6 +15,9 @@ using namespace VW::config;
 
 using std::cerr;
 using std::endl;
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::gd
 
 struct lq_data
 {
@@ -43,7 +45,6 @@ struct cs_active
   size_t min_labels;
   size_t max_labels;
 
-  bool print_debug_stuff;
   bool is_baseline;
   bool use_domination;
 
@@ -91,7 +92,6 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
     float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
-  // cerr << "base.predict ==> partial_prediction=" << ec.partial_prediction << endl;
   if (is_learn)
   {
     vw& all = *cs_a.all;
@@ -153,8 +153,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
     min_pred = cs_a.cost_min;
     max_pred = cs_a.cost_max;
     is_range_large = true;
-    if (cs_a.print_debug_stuff)
-      cerr << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
+    VW_DBG(ec) << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
            << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
   }
   else
@@ -165,8 +164,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
     min_pred =
         std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
-    if (cs_a.print_debug_stuff)
-      cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
+    VW_DBG(ec) << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
            << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
   }
 }
@@ -174,10 +172,8 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
 template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
-  // cerr << "------------- passthrough" << endl;
   COST_SENSITIVE::label ld = ec.l.cs;
 
-  // cerr << "is_learn=" << is_learn << " ld.costs.size()=" << ld.costs.size() << endl;
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
   {
     // save regressor
@@ -196,12 +192,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     cerr << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
     cerr << endl << "average distance to range = " << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
     cerr << endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
-
-    /*
-    for (size_t i=0; i<cs_a.all->sd->distance_to_range.size(); i++)
-    {  cerr << endl << "label " << i << ", average distance to range = " <<
-    cs_a.all->sd->distance_to_range[i]/((float)(cs_a.t-1));
-    }*/
 
     cerr << endl << endl;
   }
@@ -258,8 +248,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           lqd.cl.partial_prediction, query_label, lqd.query_needed);
       if (lqd.query_needed)
         ec.pred.multilabels.label_v.push_back(lqd.cl.class_index);
-      if (cs_a.print_debug_stuff)
-        cerr << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction
+
+      VW_DBG(ec) << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction
              << " score=" << score << " pp=" << lqd.cl.partial_prediction << " ql=" << query_label
              << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " ["
              << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped
@@ -273,8 +263,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       cs_a.num_any_queries++;
 
     cs_a.examples_by_queries[cs_a.all->sd->queries - queries] += 1;
-    // if(any_query)
-    // cs_a.num_any_queries++;
 
     ec.partial_prediction = score;
     if (is_learn)
@@ -319,9 +307,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
       .add(make_option("max_labels", data->max_labels).default_value(-1).help("maximum number of label queries."))
       .add(make_option("min_labels", data->min_labels).default_value(-1).help("minimum number of label queries."))
       .add(make_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."))
-      .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."))
-      // TODO replace with trace and quiet
-      .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
+      .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."));
   options.add_and_parse(new_options);
 
   data->use_domination = true;

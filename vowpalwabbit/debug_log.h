@@ -10,6 +10,7 @@ struct vw_dbg
   const static bool binary          = false;
   const static bool cb_adf          = false;
   const static bool csoaa           = false;
+  const static bool cs_active       = false;
 
   const static bool track_stack     = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa;
 };
