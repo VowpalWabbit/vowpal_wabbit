@@ -66,7 +66,7 @@ class namedlabels
 {
  private:
   // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
-  const std::string m_label_list;
+  std::string m_label_list;
   std::vector<VW::string_view> m_id2name;
   std::unordered_map<VW::string_view, uint64_t> m_name2id;
   uint32_t m_K;
