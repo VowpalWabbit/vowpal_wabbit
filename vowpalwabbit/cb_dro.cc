@@ -35,42 +35,45 @@ struct cb_dro_data
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
     if (is_learn)
+    {
+      auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+
+      if (it != examples.end())
       {
-        auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+        CB::cb_class logged = (*it)->l.cb.costs[0];
+        uint32_t labelled_action = std::distance(examples.begin(), it);
 
-        if (it != examples.end())
-        {
-          CB::cb_class logged = (*it)->l.cb.costs[0];
-          uint32_t labelled_action = std::distance(examples.begin(), it);
+        auto action_scores = examples[0]->pred.a_s;
 
-          auto action_scores = examples[0]->pred.a_s;
+        auto maxit = std::max_element(action_scores.begin(),
+                                      action_scores.end(),
+                                      [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; });
+        uint32_t chosen_action = maxit->action;
 
-          auto maxit = std::max_element(action_scores.begin(),
-                                        action_scores.end(),
-                                        [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; });
-          uint32_t chosen_action = maxit->action;
+        float w = logged.probability > 0 && chosen_action == labelled_action ? 1 / logged.probability : 0;
+        // TODO: rmin, rmax (?)
+        float r = -logged.cost;
 
-          float w = logged.probability > 0 && chosen_action == labelled_action ? 1 / logged.probability : 0;
-          // TODO: rmin, rmax (?)
-          float r = -logged.cost;
+        chisq.update(w, r);
 
-          chisq.update(w, r);
+        float qlb = chisq.effn() * chisq.qlb(w, r);
 
-          float qlb = chisq.qlb(w, r);
+        if (qlb > 0)
+          {
+            // save the original weights and scale the example weights
+            std::vector<float> save_weight;
+            std::transform(examples.begin(), examples.end(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
+            std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
 
-          // save the original weights and scale the example weights
-          std::vector<double> save_weight;
-          std::transform(examples.begin(), examples.end(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
-          std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
+            // TODO: make sure descendants "do the right thing" with example->weight
+            multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
 
-          // TODO: make sure descendants "do the right thing" with example->weight
-          multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
-
-          // restore the original weights
-          auto save_weight_it = save_weight.begin();
-          std::for_each(examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
-        }
+            // restore the original weights
+            auto save_weight_it = save_weight.begin();
+            std::for_each(examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
+          }
       }
+    }
   }
 
  private:
