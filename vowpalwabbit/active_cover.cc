@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <cmath>
-#include <cerrno>
+#include <errno.h>
 #include <memory>
 #include "reductions.h"
 #include "rand48.h"

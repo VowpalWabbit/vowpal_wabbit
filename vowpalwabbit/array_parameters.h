@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string.h>
 #include <unordered_map>
 #include <cstddef>
 

@@ -4,7 +4,6 @@
 
 // This implements various accumulate functions building on top of allreduce.
 #pragma once
-
 #include "global_data.h"
 
 void accumulate(vw& all, parameters& weights, size_t o);

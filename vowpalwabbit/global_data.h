@@ -43,6 +43,7 @@
 
 #include "options.h"
 #include "version.h"
+#include <memory>
 
 typedef float weight;
 

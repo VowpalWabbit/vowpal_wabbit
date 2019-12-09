@@ -23,6 +23,13 @@
 #define O_LARGEFILE 0
 #endif
 
+#ifdef _WIN32
+#define NOMINMAX
+#define ssize_t int64_t
+#include <io.h>
+#include <sys/stat.h>
+#endif
+
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
 ** |__________|__________|__________|__________|__________|__________|__________|__________|   **

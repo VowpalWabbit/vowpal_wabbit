@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <cfloat>
+#include <float.h>
 #include "vw.h"
 
 inline void count_label(shared_data* sd, float l)

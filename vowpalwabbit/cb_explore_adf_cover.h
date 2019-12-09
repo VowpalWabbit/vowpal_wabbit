@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
 
 #include "cb_explore_adf_common.h"

@@ -3,9 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-
 #include <memory>
-#include "reductions_fwd.h"
 
 struct rand_state;
 
