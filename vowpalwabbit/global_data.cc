@@ -14,7 +14,6 @@
 #include "gd.h"
 #include "vw_exception.h"
 
-
 struct global_prediction
 {
   float p;
@@ -188,7 +187,8 @@ void vw::finish_example(multi_ex& ec)
   LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
+void compile_gram(
+    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)
   {

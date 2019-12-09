@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include "reductions.h"
 
-
 using namespace VW::config;
 
 namespace CLASSWEIGHTS

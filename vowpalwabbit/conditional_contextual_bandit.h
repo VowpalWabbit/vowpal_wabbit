@@ -12,22 +12,25 @@
 #include "action_score.h"
 #include "options.h"
 
-
-namespace LEARNER {
-  template<class T, class E> struct learner;
-  using base_learner = learner<char, char>;
-}
+namespace LEARNER
+{
+template <class T, class E>
+struct learner;
+using base_learner = learner<char, char>;
+}  // namespace LEARNER
 
 struct vw;
 struct example;
 
-namespace CCB {
-  void calculate_and_insert_interactions(
+namespace CCB
+{
+void calculate_and_insert_interactions(
     example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions);
 
-  // Each position in outer array is implicitly the decision corresponding to that index. Each inner array is the result of CB for that call.
-  typedef v_array<ACTION_SCORE::action_scores> decision_scores_t;
+// Each position in outer array is implicitly the decision corresponding to that index. Each inner array is the result
+// of CB for that call.
+typedef v_array<ACTION_SCORE::action_scores> decision_scores_t;
 
-  LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
-  bool ec_is_example_header(example const& ec);
-  }
+LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
+bool ec_is_example_header(example const& ec);
+}  // namespace CCB

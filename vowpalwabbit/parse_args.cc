@@ -184,8 +184,8 @@ void parse_dictionary_argument(vw& all, std::string str)
   io->close_file();
 
   if (!all.quiet)
-    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash << std::dec
-                      << endl;
+    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
+                      << std::dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
@@ -535,7 +535,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.ignore_some_linear != vw2.ignore_some_linear)
     return "ignore_some_linear";
 
-  if (vw1.ignore_some_linear && !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
+  if (vw1.ignore_some_linear &&
+      !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
     return "ignore_linear";
 
   if (vw1.redefine_some != vw2.redefine_some)
@@ -626,7 +627,8 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
                .keep()
-               .help("redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in form "
+               .help("redefine namespaces beginning with characters of std::string S as namespace N. <arg> shall be in "
+                     "form "
                      "'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a "
                      "wildcard in S.")
                .keep())
@@ -889,7 +891,8 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     for (std::vector<std::string>::iterator i = keeps.begin(); i != keeps.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      for (std::string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = false;
+      for (std::string::const_iterator j = i->begin(); j != i->end(); j++)
+        all.ignore[(size_t)(unsigned char)*j] = false;
     }
 
     if (!all.quiet)
@@ -1639,11 +1642,7 @@ char** to_argv(std::string const& s, int& argc)
   return argv;
 }
 
-
-char** get_argv_from_string(std::string s, int& argc)
-{
-  return to_argv(s, argc);
-}
+char** get_argv_from_string(std::string s, int& argc) { return to_argv(s, argc); }
 
 void free_args(int argc, char* argv[])
 {
@@ -1674,7 +1673,7 @@ vw* initialize(
     // Loads header of model files and loads the command line options into the options object.
     load_header_merge_options(options, all, *model);
 
-   std::vector<std::string> dictionary_nses;
+    std::vector<std::string> dictionary_nses;
     parse_modules(options, all, dictionary_nses);
 
     parse_sources(options, all, *model, skipModelLoad);
@@ -1687,7 +1686,7 @@ vw* initialize(
     // upon direct query for help -- spit it out to stdout;
     if (options.get_typed_option<bool>("help").value())
     {
-     cout << options.help();
+      cout << options.help();
       exit(0);
     }
 
@@ -1728,7 +1727,8 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
   return ret;
 }
 
-vw* initialize_escaped(std::string const& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize_escaped(
+    std::string const& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = to_argv_escaped(s, argc);
@@ -1747,7 +1747,6 @@ vw* initialize_escaped(std::string const& s, io_buf* model, bool skipModelLoad, 
   free_args(argc, argv);
   return ret;
 }
-
 
 vw* initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)

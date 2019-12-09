@@ -18,5 +18,5 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
 
 namespace VW
 {
-  uint32_t convert(size_t number);
+uint32_t convert(size_t number);
 }

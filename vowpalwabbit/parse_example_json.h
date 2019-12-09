@@ -1371,12 +1371,17 @@ void read_line_json(
 
 inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
-  if (all.label_type == label_type::label_type_t::cb) {
-    for (auto& e: examples) {
+  if (all.label_type == label_type::label_type_t::cb)
+  {
+    for (auto& e : examples)
+    {
       e->l.cb.weight = 1 - pdrop;
     }
-  } else if (all.label_type == label_type::label_type_t::ccb) {
-    for (auto& e: examples) {
+  }
+  else if (all.label_type == label_type::label_type_t::ccb)
+  {
+    for (auto& e : examples)
+    {
       e->l.conditional_contextual_bandit.weight = 1 - pdrop;
     }
   }

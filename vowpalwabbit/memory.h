@@ -44,8 +44,8 @@ void destroy_free(void* temp)
   free(temp);
 }
 
-template <class T, typename ...Args>
-free_ptr<T> scoped_calloc_or_throw(Args&& ...args)
+template <class T, typename... Args>
+free_ptr<T> scoped_calloc_or_throw(Args&&... args)
 {
   T* temp = calloc_or_throw<T>(1);
   new (temp) T(std::forward<Args>(args)...);

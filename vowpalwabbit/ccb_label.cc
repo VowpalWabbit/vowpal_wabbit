@@ -111,7 +111,8 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return read_count;
 }
 
-float ccb_weight(void* v) {
+float ccb_weight(void* v)
+{
   CCB::label* ld = (CCB::label*)v;
   return ld->weight;
 }
@@ -127,8 +128,7 @@ void cache_label(void* v, io_buf& cache)
                     + sizeof(uint32_t)                                                         // probabilities size
                     + sizeof(ACTION_SCORE::action_score) * ld->outcome->probabilities.size())  // probabilities
       + sizeof(uint32_t)  // explicit_included_actions size
-      + sizeof(uint32_t) * ld->explicit_included_actions.size()
-      + sizeof(ld->weight);
+      + sizeof(uint32_t) * ld->explicit_included_actions.size() + sizeof(ld->weight);
 
   cache.buf_write(c, size);
 
@@ -171,7 +171,7 @@ void default_label(void* v)
   CCB::label* ld = static_cast<CCB::label*>(v);
 
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if(ld->outcome)
+  if (ld->outcome)
   {
     ld->outcome->probabilities.delete_v();
     delete ld->outcome;

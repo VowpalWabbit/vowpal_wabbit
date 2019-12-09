@@ -38,7 +38,7 @@ struct mwt
   {
     evals.delete_v();
     policies.delete_v();
-    for (auto & i : feature_space) i.delete_v();
+    for (auto& i : feature_space) i.delete_v();
     indices.delete_v();
   }
 };
