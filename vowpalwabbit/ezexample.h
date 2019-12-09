@@ -1,7 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
 #pragma once
 #include <cstdio>
-#include "../vowpalwabbit/parser.h"
-#include "../vowpalwabbit/vw.h"
+#include "parser.h"
+#include "vw.h"
 
 typedef uint32_t fid;
 

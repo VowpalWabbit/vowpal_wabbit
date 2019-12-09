@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
 #include "version.h"
 
 #include <cstdio>
@@ -10,9 +14,9 @@ namespace VW {
     rev = rv;
   }
 
-  version_struct::version_struct(const char* v_str) 
-  { 
-    from_string(v_str); 
+  version_struct::version_struct(const char* v_str)
+  {
+    from_string(v_str);
   }
 
   version_struct::version_struct(const version_struct& v)
@@ -30,13 +34,13 @@ namespace VW {
   }
 
   void version_struct::operator=(const char* v_str)
-  { 
-    from_string(v_str); 
+  {
+    from_string(v_str);
   }
 
   bool version_struct::operator==(const version_struct& v)  const
-  { 
-    return (major == v.major && minor == v.minor && rev == v.rev); 
+  {
+    return (major == v.major && minor == v.minor && rev == v.rev);
   }
 
   bool version_struct::operator==(const char* v_str) const
@@ -127,7 +131,7 @@ namespace VW {
     std::string s = v_str;
     return s;
   }
-  
+
   void version_struct::from_string(const char* str)
   {
 #ifdef _WIN32

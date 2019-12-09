@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <cinttypes>
@@ -20,7 +24,7 @@ namespace VW {
 
     void operator=(const version_struct& v);
     void operator=(const char* v_str);
-    
+
     bool operator==(const version_struct& v) const;
     bool operator==(const char* v_str) const;
 
