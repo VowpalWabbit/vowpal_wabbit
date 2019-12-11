@@ -55,7 +55,7 @@ struct cb_sample_data
       assert(result == S_EXPLORATION_OK);
       _UNUSED(result);
     }
-    else
+    else if (!first_example->predict_called_before_learn)
     {
       // No label to learn from.  Just sample the action_scores.
       sample(first_example);
