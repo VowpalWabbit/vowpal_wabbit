@@ -1,10 +1,12 @@
 #include "reductions.h"
 #include "cb_sample.h"
 #include "explore.h"
+#include "action_score.h"
 
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
+using ACTION_SCORE::action_score;
 
 namespace VW
 {
@@ -45,7 +47,7 @@ struct cb_sample_data
       // Find where the labeled action is in the final prediction to determine if swapping needs to occur.
       // This only matters if the prediction decided to explore, but the same output should happen for the learn case.
       const auto a_s_it = std::find_if(action_scores.begin(), action_scores.end(),
-        [&](auto &a_s) { return a_s.action == labeled_action; });
+        [&](action_score &a_s) { return a_s.action == labeled_action; });
       if (a_s_it != action_scores.end())
         chosen_action = uint32_t(std::distance(action_scores.begin(), a_s_it));
 
