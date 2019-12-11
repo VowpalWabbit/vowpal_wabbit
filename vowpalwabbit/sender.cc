@@ -77,7 +77,7 @@ void receive_result(sender& s)
   label_data& ld = ec.l.simple();
   ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
 
-  return_simple_example(*(s.all), nullptr, ec);
+  return_simple_example_explicit(*(s.all), ec);
 }
 
 void learn(sender& s, LEARNER::single_learner&, example& ec)

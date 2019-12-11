@@ -272,13 +272,13 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
   if (ec_seq.empty())
     isTest = true;
   else
-    isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[0]->l);
+    isTest = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs().costs.size() == 1);
 
-    if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
+    if (COST_SENSITIVE::cs_label.test_label(ec->l) != isTest)
     {
       isTest = true;
       data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << std::endl;
@@ -574,7 +574,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   else
     predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -608,7 +608,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
@@ -626,7 +626,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   float loss = 0.;
   v_array<action_score>& preds = head_ec.pred.a_s;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&head_ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
     size_t idx = 0;
     for (example* ex : *ec_seq)
@@ -661,7 +661,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&head_ec.l), head_ec, ec_seq, true, 0);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)

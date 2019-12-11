@@ -174,7 +174,7 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
-    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.all->p->lp.default_label(ctx.ex->l);
 
     // don't allow { { { } } }
     if (ctx.previous_state == this)
@@ -245,11 +245,11 @@ class LabelObjectState : public BaseState<audit>
   {
     if (ctx.all->label_type == label_type::ccb)
     {
-      auto ld = (CCB::label*)&ctx.ex->l.conditional_contextual_bandit();
+      auto ld = ctx.ex->l.conditional_contextual_bandit();
 
       for (auto id : inc)
       {
-        ld->explicit_included_actions.push_back(id);
+        ld.explicit_included_actions.push_back(id);
       }
       inc.clear();
 
@@ -269,14 +269,14 @@ class LabelObjectState : public BaseState<audit>
         actions.clear();
         probs.clear();
 
-        ld->outcome = outcome;
+        ld.outcome = outcome;
         cb_label = {0., 0, 0., 0.};
       }
     }
     else if (found_cb)
     {
-      CB::label* ld = (CB::label*)&ctx.ex->l;
-      ld->costs.push_back(cb_label);
+      auto ld = ctx.ex->l.cb();
+      ld.costs.push_back(cb_label);
 
       found_cb = false;
       cb_label = {0., 0, 0., 0.};
@@ -458,7 +458,7 @@ struct MultiState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.all->p->lp.default_label(ctx.ex->l);
     if (ctx.all->label_type == label_type::ccb)
     {
       ctx.ex->l.conditional_contextual_bandit().type = CCB::example_type::action;
@@ -503,7 +503,7 @@ struct SlotsState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.all->p->lp.default_label(ctx.ex->l);
     ctx.ex->l.conditional_contextual_bandit().type = CCB::example_type::slot;
 
     ctx.examples->push_back(ctx.ex);
@@ -831,7 +831,7 @@ class DefaultState : public BaseState<audit>
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-          ctx.all->p->lp.default_label(&ctx.ex->l);
+          ctx.all->p->lp.default_label(ctx.ex->l);
           ctx.ex->l.conditional_contextual_bandit().type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
@@ -1293,7 +1293,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
     ctx.init(all);
     ctx.examples = examples;
     ctx.ex = (*examples)[0];
-    all->p->lp.default_label(&ctx.ex->l);
+    all->p->lp.default_label(ctx.ex->l);
 
     ctx.stream = stream;
     ctx.stream_end = stream_end;

@@ -173,7 +173,7 @@ void default_label(new_polylabel& v)
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
   if (ld.outcome)
   {
-    ld.outcome.probabilities.delete_v();
+    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }

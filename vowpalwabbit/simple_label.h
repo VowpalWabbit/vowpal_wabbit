@@ -14,7 +14,8 @@ struct label_data
   float initial;
 };
 
-void return_simple_example(vw& all, void*, example& ec);
+void return_simple_example(vw& all, new_polylabel&, example& ec);
+void return_simple_example_explicit(vw& all, example& ec);
 
 extern label_parser simple_label;
 

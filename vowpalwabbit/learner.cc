@@ -169,7 +169,7 @@ class multi_example_handler
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.p->lp.test_label(&ec->l);
+    const bool is_test_ec = master.p->lp.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
     if (!is_newline)
     {

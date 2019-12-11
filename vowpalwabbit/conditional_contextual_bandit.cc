@@ -687,5 +687,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit().type == example_type::shared; }
+bool ec_is_example_header(example const& ec)
+  {
+  return ec.l.get_type() == label_type_t::conditional_contextual_bandit
+    && ec.l.conditional_contextual_bandit().type == example_type::shared;
+  }
 }  // namespace CCB

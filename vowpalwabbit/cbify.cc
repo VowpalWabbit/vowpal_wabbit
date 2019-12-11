@@ -45,7 +45,7 @@ struct cbify
 
   ~cbify()
   {
-    CB::cb_label.delete_label(&cb_label);
+    CB::delete_label(cb_label);
     a_s.delete_v();
 
     if (use_adf)
@@ -108,7 +108,7 @@ void copy_example_to_adf(cbify& data, example& ec)
     auto& eca = *adf_data.ecs[a];
     // clear label
     auto& lab = eca.l.cb();
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -123,7 +123,7 @@ void copy_example_to_adf(cbify& data, example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l))
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l))
     {
       eca.tag.push_back('n');
     }
@@ -237,7 +237,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
   {
     adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
     auto& lab = adf_data.ecs[a]->l.cb();
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
     adf_data.ecs[a]->interactions = &data.all->interactions;
   }
 }
@@ -321,7 +321,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   uint32_t predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -354,7 +354,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_example_seq(vw& all, multi_ex& ec_seq)

@@ -251,14 +251,8 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
   uint32_t nf = (uint32_t)examples[_gen_cs.mtr_example]->num_features;
   float old_weight = examples[_gen_cs.mtr_example]->weight;
-<<<<<<< Updated upstream
-  const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
-=======
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb().costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p *
-      ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
->>>>>>> Stashed changes
+  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)

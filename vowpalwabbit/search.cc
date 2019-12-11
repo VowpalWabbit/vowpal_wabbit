@@ -1312,7 +1312,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1);
 
-  CS::cs_label.default_label(priv.ldf_test_label);
+  CS::default_label(priv.ldf_test_label);
   CS::wclass wc = {0., 1, 0., 0.};
   priv.ldf_test_label.costs.push_back(wc);
 
@@ -2339,9 +2339,9 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       for (size_t n = 0; n < priv.learn_ec_copy.size(); n++)
       {
         if (sch.priv->is_ldf)
-          CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs());
+          CS::cs_label.delete_label(priv.learn_ec_copy[n].l);
         else
-          MC::mc_label.delete_label(&priv.learn_ec_copy[n].l.multi());
+          MC::mc_label.delete_label(priv.learn_ec_copy[n].l);
       }
     if (priv.cb_learner)
       priv.learn_losses.cb().costs.clear();
@@ -2521,7 +2521,7 @@ void search_initialize(vw* all, search& sch)
   priv.active_uncertainty = v_init<std::pair<float, size_t>>();
   priv.active_known = v_init<v_array<std::pair<CS::wclass&, bool>>>();
 
-  CS::cs_label.default_label(priv.empty_cs_label);
+  CS::default_label(priv.empty_cs_label);
 
   new (&priv.rawOutputString) std::string();
   priv.rawOutputStringStream = new std::stringstream(priv.rawOutputString);

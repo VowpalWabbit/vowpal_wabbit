@@ -1306,7 +1306,8 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
 
     all.p->lp = MULTILABEL::multilabel;
     all.label_type = label_type::multi;
-    all.delete_prediction = MULTILABEL::multilabel.delete_label;
+    // TODO resolve prediction deletion
+    all.delete_prediction = [](void* array) { ((v_array<uint32_t>*)array)->delete_v(); };
 
     return make_base(l);
   }

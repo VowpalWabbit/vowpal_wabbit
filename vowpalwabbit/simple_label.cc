@@ -137,6 +137,12 @@ void output_and_account_example(vw& all, example& ec)
   print_update(all, ec);
 }
 
+void return_simple_example_explicit(vw& all, example& ec)
+{
+  output_and_account_example(all, ec);
+  VW::finish_example(all, ec);
+}
+
 void return_simple_example(vw& all, new_polylabel&, example& ec)
 {
   output_and_account_example(all, ec);

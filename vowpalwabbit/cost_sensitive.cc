@@ -89,10 +89,15 @@ void cache_label(new_polylabel& v, io_buf& cache)
   bufcache_label(ld, c);
 }
 
+void default_label(label& label)
+{
+  label.costs.clear();
+}
+
 void default_label(new_polylabel& v)
 {
   auto ld = v.cs();
-  ld.costs.clear();
+  default_label(ld);
 }
 
 bool test_label(new_polylabel& v)
@@ -106,10 +111,15 @@ bool test_label(new_polylabel& v)
   return true;
 }
 
+void delete_label(label& label)
+{
+  //
+}
+
 void delete_label(new_polylabel& v)
 {
   // TODO: work out how to do this safely
-  auto ld = v.cs();
+  delete_label(v.cs());
   // if (ld.costs.size() > 0)
   //   ld.costs.delete_v();
 }
