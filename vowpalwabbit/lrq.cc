@@ -1,3 +1,6 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <cstring>
 #include <cfloat>
 #include "reductions.h"
@@ -171,7 +174,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (auto & lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 

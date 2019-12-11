@@ -1,10 +1,10 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 #include <cmath>
+#include <string>
+#include <vector>
 #include <iostream>
 #include <stdint.h>
 #include <math.h>
@@ -48,6 +48,12 @@ void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false
 bool substring_equal(const substring& a, const substring& b);
 bool substring_equal(const substring& ss, const char* str);
 
+bool operator==(const substring& ss, const char* str);
+bool operator==(const char* str, const substring& ss);
+bool operator==(const substring& ss1, const substring& ss2);
+bool operator!=(const substring& ss, const char* str);
+bool operator!=(const char* str, const substring& ss);
+bool operator!=(const substring& ss1, const substring& ss2);
 size_t substring_len(substring& s);
 
 inline char* safe_index(char* start, char v, char* max)
@@ -55,6 +61,9 @@ inline char* safe_index(char* start, char v, char* max)
   while (start != max && *start != v) start++;
   return start;
 }
+
+// Note this will destructively parse the passed in substring as it replaces delimiters with '\0'
+std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty = false);
 
 inline void print_substring(substring s) { std::cout.write(s.begin, s.end - s.begin); }
 

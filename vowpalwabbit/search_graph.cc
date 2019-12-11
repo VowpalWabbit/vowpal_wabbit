@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "search_graph.h"
 #include "vw.h"
 #include "gd.h"
@@ -79,13 +77,13 @@ struct task_data
   size_t wpp;
 
   // per-example data
-  uint32_t N;                   // number of nodes
-  uint32_t E;                   // number of edges
-  std::vector<std::vector<size_t>> adj;   // adj[n] is a vector of *edge example ids* that contain n
-  std::vector<uint32_t> bfs;         // order of nodes to process
-  std::vector<size_t> pred;          // predictions
-  example* cur_node;            // pointer to the current node for add_edge_features_fn
-  float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
+  uint32_t N;                            // number of nodes
+  uint32_t E;                            // number of edges
+  std::vector<std::vector<size_t>> adj;  // adj[n] is a vector of *edge example ids* that contain n
+  std::vector<uint32_t> bfs;             // order of nodes to process
+  std::vector<size_t> pred;              // predictions
+  example* cur_node;                     // pointer to the current node for add_edge_features_fn
+  float* neighbor_predictions;           // prediction on this neighbor for add_edge_features_fn
   uint32_t* confusion_matrix;
   float* true_counts;
   float true_counts_total;
@@ -323,7 +321,8 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
 
     if (pred_total == 0.)
       continue;
-    // std::cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) std::cerr << ' ' << D.neighbor_predictions[k]; std::cerr
+    // std::cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) std::cerr << ' ' <<
+    // D.neighbor_predictions[k]; std::cerr
     // << " ]" << std::endl;
     for (size_t k = 0; k < D.numN; k++) D.neighbor_predictions[k] /= pred_total;
     example& edge = *ec[i];

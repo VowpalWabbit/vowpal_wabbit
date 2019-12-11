@@ -1,9 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
 #ifdef _WIN32
 #define NOMINMAX
 #include <WinSock2.h>
@@ -118,7 +116,7 @@ int main(int argc, char* argv[])
       if (alls.size() == 1)
         LEARNER::generic_driver_onethread(all);
       else
-        throw "--onethread doesn't make sense with multiple learners";
+        THROW("--onethread doesn't make sense with multiple learners");
     }
     else
     {

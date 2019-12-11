@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <cstring>
 #include <float.h>
 #include <math.h>
@@ -6,7 +10,6 @@
 #include "cache.h"
 #include "accumulate.h"
 #include "best_constant.h"
-
 
 namespace no_label
 {
@@ -33,9 +36,9 @@ void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
     case 0:
       break;
     default:
-     std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
+      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
       for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
-     std::cout << std::endl;
+      std::cout << std::endl;
   }
 }
 

@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "vw.h"
 #include "reductions.h"
 #include "gd.h"
@@ -40,7 +38,7 @@ struct mwt
   {
     evals.delete_v();
     policies.delete_v();
-    for (auto & i : feature_space) i.delete_v();
+    for (auto& i : feature_space) i.delete_v();
     indices.delete_v();
   }
 };

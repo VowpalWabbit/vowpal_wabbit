@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 #ifndef _WIN32
 #include <sys/types.h>
@@ -87,10 +86,7 @@ class io_buf
     return _hash;
   }
 
-  virtual int open_file(const char* name, bool stdin_off)
-  {
-    return open_file(name, stdin_off, READ);
-  }
+  virtual int open_file(const char* name, bool stdin_off) { return open_file(name, stdin_off, READ); }
 
   virtual int open_file(const char* name, bool stdin_off, int flag = READ)
   {
@@ -147,11 +143,7 @@ class io_buf
     head = space.begin();
   }
 
-  io_buf() :
-    _verify_hash{false},
-    _hash{0},
-    count{0},
-    current{0}
+  io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
   {
     space = v_init<char>();
     files = v_init<int>();

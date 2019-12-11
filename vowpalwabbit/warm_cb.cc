@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <float.h>
 #include "reductions.h"
 #include "cb_algs.h"
@@ -158,7 +162,7 @@ void finish(warm_cb& data)
     std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
     std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
     std::cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
-         << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
+              << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 

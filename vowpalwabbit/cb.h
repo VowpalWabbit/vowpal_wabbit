@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
 #include "label_parser.h"
@@ -28,7 +26,7 @@ struct label
   float weight;
 };
 
-extern label_parser cb_label;            // for learning
+extern label_parser cb_label;                  // for learning
 bool ec_is_example_header(example const& ec);  // example headers look like "shared"
 
 void print_update(vw& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool action_scores);

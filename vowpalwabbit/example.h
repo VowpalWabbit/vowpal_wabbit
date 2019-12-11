@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
 
@@ -22,7 +20,8 @@ license as described in the file LICENSE.
 #include "ccb_label.h"
 #include <vector>
 
-typedef union {
+typedef union
+{
   no_label::no_label empty;
   label_data simple;
   MULTICLASS::label_t multi;
@@ -39,7 +38,8 @@ inline void delete_scalars(void* v)
   preds->delete_v();
 }
 
-typedef union {
+typedef union
+{
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.

@@ -3,7 +3,6 @@
 #include <array>
 #include <bitset>
 
-
 // sum_of_squares_func get_sum_of_squares()
 //{
 //  std::array<int, 4> cpui;

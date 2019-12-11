@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "cb_explore_adf_softmax.h"
 #include "reductions.h"
 #include "cb_adf.h"
@@ -35,8 +39,7 @@ struct cb_explore_adf_softmax
   void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
 };
 
-cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda)
-  : _epsilon(epsilon), _lambda(lambda) {}
+cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda) : _epsilon(epsilon), _lambda(lambda) {}
 
 template <bool is_learn>
 void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
@@ -44,7 +47,8 @@ void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base,
   LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  exploration::generate_softmax(-_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+  exploration::generate_softmax(
+      -_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
@@ -89,8 +93,8 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_softmax>;
   auto data = scoped_calloc_or_throw<explore_type>(epsilon, lambda);
-  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(data, base, explore_type::learn,
-          explore_type::predict, problem_multiplier, prediction_type::action_probs);
+  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

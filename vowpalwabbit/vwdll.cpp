@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved.  Released under a BSD
+// license as described in the file LICENSE.
+
 #include <memory>
 #include <codecvt>
 #include <locale>
@@ -44,12 +48,24 @@ extern "C"
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs)
 { return VW_InitializeA(utf16_to_utf8(pstrArgs).c_str());
 }
+
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pstrArgs)
+{
+  return VW_InitializeEscapedA(utf16_to_utf8(pstrArgs).c_str());
+}
 #endif
 
 
 VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs)
 { string s(pstrArgs);
   vw* all = VW::initialize(s);
+  return static_cast<VW_HANDLE>(all);
+}
+
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs)
+{
+  std::string s(pstrArgs);
+  auto all = VW::initialize_escaped(s);
   return static_cast<VW_HANDLE>(all);
 }
 
@@ -378,6 +394,15 @@ VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstr
 
     vw* all = VW::initialize(string(pstrArgs), buf.get());
     return static_cast<VW_HANDLE>(all);
+}
+
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(const char * pstrArgs, const char * modelData, size_t modelDataSize)
+{
+  std::unique_ptr<memory_io_buf> buf(new memory_io_buf());
+  buf->write_file(-1, modelData, modelDataSize);
+
+  auto all = VW::initialize_escaped(std::string(pstrArgs), buf.get());
+  return static_cast<VW_HANDLE>(all);
 }
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_CopyModelData(VW_HANDLE handle, VW_IOBUF* outputBufferHandle, char** outputData, size_t* outputSize) {

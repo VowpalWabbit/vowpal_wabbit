@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 /*
   Initial implementation by Hal Daume and John Langford.  Reimplementation
   by John Langford.
@@ -52,9 +50,9 @@ struct ect
 
   ~ect()
   {
-    for (auto & all_level : all_levels)
+    for (auto& all_level : all_levels)
     {
-      for (auto & t : all_level) t.delete_v();
+      for (auto& t : all_level) t.delete_v();
       all_level.delete_v();
     }
     all_levels.delete_v();
@@ -86,8 +84,8 @@ size_t final_depth(size_t eliminations)
 
 bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 {
-  auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
-    [](v_array<uint32_t>& tournament){ return !tournament.empty(); });
+  auto const first_non_empty_tournament = std::find_if(
+      tournaments.cbegin(), tournaments.cend(), [](v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
 }
 

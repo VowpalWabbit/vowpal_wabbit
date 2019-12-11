@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <sstream>
 #include <float.h>
 #include "reductions.h"
@@ -43,7 +41,7 @@ void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
   }
   if (is_learn && multilabel_index < multilabels.label_v.size())
     std::cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k - 1
-         << "} This won't work right." << std::endl;
+              << "} This won't work right." << std::endl;
 
   ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;
