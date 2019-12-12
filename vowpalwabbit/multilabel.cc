@@ -130,11 +130,10 @@ void print_update(vw& all, bool is_test, example& ec)
     if (is_test)
       label_string << " unknown";
     else
-      for (size_t i = 0; i < ec.l.multilabels.label_v.size(); i++) label_string << " " << ec.l.multilabels.label_v[i];
+      for (unsigned int i : ec.l.multilabels.label_v) label_string << " " << i;
 
     std::stringstream pred_string;
-    for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
-      pred_string << " " << ec.pred.multilabels.label_v[i];
+    for (unsigned int i : ec.pred.multilabels.label_v) pred_string << " " << i;
 
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
         all.progress_add, all.progress_arg);
@@ -149,8 +148,8 @@ void output_example(vw& all, example& ec)
   if (!test_label(&ld))
   {
     // need to compute exact loss
-    labels preds = ec.pred.multilabels;
-    labels given = ec.l.multilabels;
+    const labels preds = ec.pred.multilabels;
+    const labels given = ec.l.multilabels;
 
     uint32_t preds_index = 0;
     uint32_t given_index = 0;
