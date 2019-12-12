@@ -911,9 +911,9 @@ base_learner* csldf_setup(options_i& options, vw& all)
   single_learner* pbase = as_singleline(setup_base(*all.options, all));
   learner<ldf, multi_ex>* pl = nullptr;
   if (ld->rank)
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type::action_scores, "csoaa_ldf_rank");
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type::action_scores, "csoaa_ldf_rank", false);
   else
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type::multiclass, "csoaa_ldf");
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type::multiclass, "csoaa_ldf", false);
 
   pl->set_finish_example(finish_multiline_example);
   pl->set_end_pass(end_pass);
