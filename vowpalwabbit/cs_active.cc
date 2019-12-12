@@ -21,7 +21,7 @@ using std::cerr;
 using std::endl;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::gd
+#define VW_DEBUG_LOG vw_dbg::cs_active
 
 struct lq_data
 {
@@ -30,7 +30,7 @@ struct lq_data
   float min_pred;            // The min cost for this label predicted by the current set of good regressors
   bool is_range_large;       // Indicator of whether this label's cost range was large
   bool is_range_overlapped;  // Indicator of whether this label's cost range overlaps with the cost range that has the
-                             // minimnum max_pred
+                             // minimum max_pred
   bool query_needed;         // Used in reduction mode: tell upper-layer whether a query is needed for this label
   COST_SENSITIVE::wclass& cl;
 };
@@ -351,9 +351,9 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type::multilabels, "cs_active-sim")
+            predict_or_learn<false, true>, data->num_classes, prediction_type::multilabels, "cs_active-sim", false)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type::multilabels, "cs_active");
+            predict_or_learn<false, false>, data->num_classes, prediction_type::multilabels, "cs_active", false);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
