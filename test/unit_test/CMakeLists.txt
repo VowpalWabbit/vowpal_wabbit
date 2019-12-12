@@ -10,7 +10,13 @@ target_link_libraries(vw-unit-test.out PRIVATE vw allreduce Boost::unit_test_fra
 
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   target_sources(vw-unit-test.out PUBLIC vwdll_test.cc)
-  target_link_libraries(vw-unit-test.out PRIVATE vw_c_wrapper)
+  target_link_libraries(vw-unit-test.out PUBLIC vw_c_wrapper)
+
+  add_custom_command (TARGET vw-unit-test.out POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:vw_c_wrapper>
+      $<TARGET_FILE_DIR:vw-unit-test.out>
+  )
 endif()
 
 # Communicate that Boost Unit Test is being statically linked
