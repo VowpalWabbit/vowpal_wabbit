@@ -31,7 +31,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
 
 size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
 {
-  auto ld = v.multilabels();
+  auto& ld = v.multilabels();
   ld.label_v.clear();
   char* c;
   size_t total = sizeof(size_t);
@@ -59,27 +59,27 @@ char* bufcache_label(labels& ld, char* c)
 void cache_label(new_polylabel& v, io_buf& cache)
 {
   char* c;
-  auto ld = v.multilabels();
+  auto& ld = v.multilabels();
   cache.buf_write(c, sizeof(size_t) + sizeof(uint32_t) * ld.label_v.size());
   bufcache_label(ld, c);
 }
 
 void default_label(new_polylabel& v)
 {
-  auto ld = v.multilabels();
+  auto& ld = v.multilabels();
   ld.label_v.clear();
 }
 
 bool test_label(new_polylabel& v)
 {
-  auto ld = v.multilabels();
+  auto& ld = v.multilabels();
   return ld.label_v.size() == 0;
 }
 
 void delete_label(new_polylabel& v)
 {
   // TODO handle deletion
-  auto ld = v.multilabels();
+  auto& ld = v.multilabels();
   // if (ld)
   //   ld.label_v.delete_v();
 }
@@ -96,7 +96,7 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
 
 void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<substring>& words)
 {
-  auto ld = v.multilabels();
+  auto& ld = v.multilabels();
 
   ld.label_v.clear();
   switch (words.size())

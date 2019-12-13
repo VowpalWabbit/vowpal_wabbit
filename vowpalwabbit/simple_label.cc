@@ -28,7 +28,7 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 
 size_t read_cached_simple_label(shared_data* sd, new_polylabel& in_ld, io_buf& cache)
 {
-  auto ld = in_ld.simple();
+  auto& ld = in_ld.simple();
   char* c;
   size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
   if (cache.buf_read(c, total) < total)
@@ -57,14 +57,14 @@ char* bufcache_simple_label(label_data& ld, char* c)
 void cache_simple_label(new_polylabel& v, io_buf& cache)
 {
   char* c;
-  auto ld = v.simple();
+  auto& ld = v.simple();
   cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial));
   bufcache_simple_label(ld, c);
 }
 
 void default_simple_label(new_polylabel& v)
 {
-  auto ld = v.simple();
+  auto& ld = v.simple();
   ld.label = FLT_MAX;
   ld.weight = 1.;
   ld.initial = 0.;
@@ -72,7 +72,7 @@ void default_simple_label(new_polylabel& v)
 
 bool test_label(new_polylabel& v)
 {
-  auto ld = v.simple();
+  auto& ld = v.simple();
   return ld.label == FLT_MAX;
 }
 
@@ -80,7 +80,7 @@ void delete_simple_label(new_polylabel&) {}
 
 void parse_simple_label(parser*, shared_data* sd, new_polylabel& v, v_array<substring>& words)
 {
-  auto ld = v.simple();
+  auto& ld = v.simple();
 
   switch (words.size())
   {

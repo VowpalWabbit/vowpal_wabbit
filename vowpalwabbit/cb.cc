@@ -202,11 +202,14 @@ label_parser cb_label = {default_label, parse_label, cache_label, read_cached_la
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
-  v_array<CB::cb_class> costs = ec.l.cb().costs;
-  if (costs.size() != 1)
-    return false;
-  if (costs[0].probability == -1.f)
-    return true;
+  if(ec.l.get_type() == label_type_t::cb){
+    v_array<CB::cb_class> costs = ec.l.cb().costs;
+    if (costs.size() != 1)
+      return false;
+    if (costs[0].probability == -1.f)
+      return true;
+  }
+
   return false;
 }
 
@@ -252,13 +255,13 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 namespace CB_EVAL
 {
 float weight(new_polylabel& v) {
-  auto ld = v.cb_eval();
+  auto& ld = v.cb_eval();
   return ld.event.weight;
 }
 
 size_t read_cached_label(shared_data* sd, new_polylabel& v, io_buf& cache)
 {
-  auto ld = v.cb_eval();
+  auto& ld = v.cb_eval();
   char* c;
   size_t total = sizeof(uint32_t);
   if (cache.buf_read(c, total) < total)
@@ -271,7 +274,7 @@ size_t read_cached_label(shared_data* sd, new_polylabel& v, io_buf& cache)
 void cache_label(new_polylabel& v, io_buf& cache)
 {
   char* c;
-  auto ld = v.cb_eval();
+  auto& ld = v.cb_eval();
   cache.buf_write(c, sizeof(uint32_t));
   *(uint32_t*)c = ld.action;
 
@@ -280,20 +283,20 @@ void cache_label(new_polylabel& v, io_buf& cache)
 
 void default_label(new_polylabel& v)
 {
-  auto ld = v.cb_eval();
+  auto& ld = v.cb_eval();
   CB::default_label(ld.event);
   ld.action = 0;
 }
 
 bool test_label(new_polylabel& v)
 {
-  auto ld = v.cb_eval();
+  auto& ld = v.cb_eval();
   return CB::test_label(ld.event);
 }
 
 void delete_label(new_polylabel& v)
 {
-  auto ld = v.cb_eval();
+  auto& ld = v.cb_eval();
   CB::delete_label(ld.event);
 }
 
@@ -307,7 +310,7 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
 
 void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)
 {
-  auto ld = v.cb_eval();
+  auto& ld = v.cb_eval();
 
   if (words.size() < 2)
     THROW("Evaluation can not happen without an action and an exploration");

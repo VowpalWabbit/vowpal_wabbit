@@ -55,7 +55,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
 
 size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
 {
-  auto ld = v.cs();
+  auto& ld = v.cs();
 
   ld.costs.clear();
   char* c;
@@ -84,7 +84,7 @@ char* bufcache_label(label& ld, char* c)
 void cache_label(new_polylabel& v, io_buf& cache)
 {
   char* c;
-  auto ld = v.cs();
+  auto& ld = v.cs();
   cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld.costs.size());
   bufcache_label(ld, c);
 }
@@ -96,13 +96,13 @@ void default_label(label& label)
 
 void default_label(new_polylabel& v)
 {
-  auto ld = v.cs();
+  auto& ld = v.cs();
   default_label(ld);
 }
 
 bool test_label(new_polylabel& v)
 {
-  auto ld = v.cs();
+  auto& ld = v.cs();
   if (ld.costs.size() == 0)
     return true;
   for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -136,7 +136,7 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
 
 void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)
 {
-  auto ld = v.cs();
+  auto& ld = v.cs();
   ld.costs.clear();
 
   // handle shared and label first
@@ -312,7 +312,7 @@ void finish_example(vw& all, example& ec)
 
 bool example_is_test(example& ec)
 {
-  v_array<COST_SENSITIVE::wclass> costs = ec.l.cs().costs;
+  v_array<COST_SENSITIVE::wclass>& costs = ec.l.cs().costs;
   if (costs.size() == 0)
     return true;
   for (size_t j = 0; j < costs.size(); j++)
@@ -323,13 +323,18 @@ bool example_is_test(example& ec)
 
 bool ec_is_example_header(example const& ec)  // example headers look like "shared"
 {
-  v_array<COST_SENSITIVE::wclass> costs = ec.l.cs().costs;
-  if (costs.size() != 1)
-    return false;
-  if (costs[0].class_index != 0)
-    return false;
-  if (costs[0].x != -FLT_MAX)
-    return false;
-  return true;
+  if(ec.l.get_type() == label_type_t::cs)
+  {
+    v_array<COST_SENSITIVE::wclass>& costs = ec.l.cs().costs;
+    if (costs.size() != 1)
+      return false;
+    if (costs[0].class_index != 0)
+      return false;
+    if (costs[0].x != -FLT_MAX)
+      return false;
+    return true;
+  }
+
+  return false;
 }
 }  // namespace COST_SENSITIVE

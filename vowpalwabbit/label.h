@@ -9,8 +9,7 @@
 #include "example_predict.h"
 #include "ccb_label.h"
 
-typedef union
-{
+typedef union {
   no_label::no_label empty;
   label_data simple;
   MULTICLASS::label_t multi;
@@ -21,9 +20,8 @@ typedef union
   MULTILABEL::labels multilabels;
 } polylabel;
 
-
 #define TO_STRING_CASE(enum_type) \
-  case enum_type:       \
+  case enum_type:                 \
     return #enum_type;
 
 enum class label_type_t
@@ -38,7 +36,6 @@ enum class label_type_t
   cb_eval,
   multilabels
 };
-
 
 inline const char* to_string(label_type_t label_type)
 {
@@ -58,56 +55,85 @@ inline const char* to_string(label_type_t label_type)
   }
 }
 
-
 struct new_polylabel
 {
   mutable polylabel internal_union;
   mutable label_type_t tag = label_type_t::unset;
 
-  new_polylabel() {
-  }
+  new_polylabel() {}
 
-  label_type_t get_type() const
+  label_type_t get_type() const { return tag; }
+
+  void reset() const
   {
-    return tag;
-  }
+    switch (tag)
+    {
+      case (label_type_t::unset):
+        break;
+      case (label_type_t::empty):
+        break;
+      case (label_type_t::simple):
+        break;
+      case (label_type_t::multi):
+        break;
+      case (label_type_t::cs):
+        break;
+      case (label_type_t::cb):
+        break;
+      case (label_type_t::conditional_contextual_bandit):
+        break;
+      case (label_type_t::cb_eval):
+        break;
+      case (label_type_t::multilabels):
+        break;
+      default:;
+    }
 
-  void clear() {
-
+    tag = label_type_t::unset;
   }
 
   no_label::no_label& empty() const
   {
     if (tag != label_type_t::empty)
     {
-      if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::empty) << std::endl;}
-      memset(&internal_union, 0, sizeof(polylabel));
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::empty) << std::endl;
+      }
+
+      reset();
+      new (&internal_union.empty) no_label::no_label();
       tag = label_type_t::empty;
     }
 
     return internal_union.empty;
   }
 
-
   label_data& simple() const
   {
     if (tag != label_type_t::simple)
     {
-            if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::simple) << std::endl;}
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::simple) << std::endl;
+      }
 
-      memset(&internal_union, 0, sizeof(polylabel));
+      reset();
+      new (&internal_union.simple) label_data();
       tag = label_type_t::simple;
     }
 
     return internal_union.simple;
   }
 
-
   MULTICLASS::label_t& multi() const
   {
     if (tag != label_type_t::multi)
     {
-            if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::multi) << std::endl;}
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::multi) << std::endl;
+      }
 
       memset(&internal_union, 0, sizeof(polylabel));
       tag = label_type_t::multi;
@@ -116,12 +142,14 @@ struct new_polylabel
     return internal_union.multi;
   }
 
-
   COST_SENSITIVE::label& cs() const
   {
     if (tag != label_type_t::cs)
     {
-            if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::cs) << std::endl;}
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::cs) << std::endl;
+      }
 
       memset(&internal_union, 0, sizeof(polylabel));
       tag = label_type_t::cs;
@@ -133,7 +161,10 @@ struct new_polylabel
   {
     if (tag != label_type_t::cb)
     {
-            if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::cb) << std::endl;}
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::cb) << std::endl;
+      }
 
       memset(&internal_union, 0, sizeof(polylabel));
       tag = label_type_t::cb;
@@ -145,7 +176,11 @@ struct new_polylabel
   {
     if (tag != label_type_t::conditional_contextual_bandit)
     {
-            if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::conditional_contextual_bandit) << std::endl;}
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::conditional_contextual_bandit)
+                  << std::endl;
+      }
 
       memset(&internal_union, 0, sizeof(polylabel));
       tag = label_type_t::conditional_contextual_bandit;
@@ -158,7 +193,10 @@ struct new_polylabel
   {
     if (tag != label_type_t::cb_eval)
     {
-            if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::cb_eval) << std::endl;}
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::cb_eval) << std::endl;
+      }
 
       memset(&internal_union, 0, sizeof(polylabel));
       tag = label_type_t::cb_eval;
@@ -171,7 +209,10 @@ struct new_polylabel
   {
     if (tag != label_type_t::multilabels)
     {
-            if(tag != label_type_t::unset) { std::cout << "prev: " << to_string(tag)  << ", to: " << to_string(label_type_t::multilabels) << std::endl;}
+      if (tag != label_type_t::unset)
+      {
+        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::multilabels) << std::endl;
+      }
 
       memset(&internal_union, 0, sizeof(polylabel));
       tag = label_type_t::multilabels;
