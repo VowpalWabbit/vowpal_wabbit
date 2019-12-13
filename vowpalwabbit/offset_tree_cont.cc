@@ -1,4 +1,4 @@
-﻿#include "offset_tree_cont.h"
+#include "offset_tree_cont.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
 #include <algorithm>
@@ -49,15 +49,17 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes)
     return;
   }
 
-  uint32_t depth = 0;
   try
   {
-    // TODO: check below
+    // Number of nodes in a minimal binary tree := (2 * LeafCount) - 1
     nodes.reserve(2 * _num_leaf_nodes - 1);
-    uint32_t i = 0;
-    uint32_t depth_const = 1;
-    nodes.emplace_back(i, 0, 0, i, depth, true);  // root is the parent of itself
-    while (i < _num_leaf_nodes - 1)
+
+    //  Insert Root Node: First node in the collection, Parent is itself
+    //  {node_id, left_id, right_id, parent_id, depth, is_leaf}
+    nodes.emplace_back(0, 0, 0, 0, 0, true);
+
+    uint32_t depth = 0, depth_const = 1;
+    for (uint32_t i = 0; i < _num_leaf_nodes - 1; ++i)
     {
       nodes[i].left_id = 2 * i + 1;
       nodes[i].right_id = 2 * i + 2;
@@ -66,15 +68,15 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes)
         depth_const = (1 << (++depth + 1)) - 1;
       nodes.emplace_back(2 * i + 1, 0, 0, i, depth, true);
       nodes.emplace_back(2 * i + 2, 0, 0, i, depth, true);
-      i++;
     }
+
+    _initialized = true;
+    _depth = depth;
   }
   catch (std::bad_alloc& e)
   {
     THROW("Unable to allocate memory for offset tree.  Label count:" << _num_leaf_nodes << " bad_alloc:" << e.what());
   }
-  _initialized = true;
-  _depth = depth;
 }
 
 uint32_t min_depth_binary_tree::internal_node_count() const { return (uint32_t)nodes.size() - _num_leaf_nodes; }
