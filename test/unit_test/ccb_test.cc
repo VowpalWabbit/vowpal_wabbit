@@ -19,8 +19,8 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   actions.push_back(VW::read_example(vw, "ccb action |Other f |Action f"));
 
   std::vector<std::string> interactions;
-  std::vector<std::string> compare_set = {{'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
-      {'O', (char)ccb_id_namespace}};
+  std::vector<std::string> compare_set = {
+      {'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace}, {'O', (char)ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
@@ -39,7 +39,6 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   VW::finish_example(vw, *shared_ex);
   VW::finish(vw);
 }
-
 
 BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
@@ -73,4 +72,64 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 
   vw.finish_example(examples);
   VW::finish(vw);
+}
+
+/*
+from vowpalwabbit import pyvw
+
+data = "0.19574759682114784 | 1:1.430"
+
+def run_simulation(vw, predict_first):
+       if predict_first:
+           vw.predict(data)
+       vw.learn(data)
+       w = vw.predict("| 1:1.0")
+       print("   w=", w)
+
+command =
+
+vw = pyvw.vw(command)
+run_simulation(vw=vw, predict_first=True)
+
+vw = pyvw.vw(command)
+run_simulation(vw=vw, predict_first=False)
+*/
+
+BOOST_AUTO_TEST_CASE(predict_modifying_state)
+{
+  float prediction_one;
+  {
+    auto& vw =
+        *VW::initialize("--quiet --sgd --noconstant --learning_rate 0.1");
+    auto pre_learn_predict_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
+    auto learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
+    auto predict_example = *VW::read_example(vw, "| 1:1.0");
+
+    vw.predict(pre_learn_predict_example);
+    vw.finish_example(pre_learn_predict_example);
+    vw.learn(learn_example);
+    vw.finish_example(learn_example);
+    vw.predict(predict_example);
+    prediction_one = predict_example.pred.scalar;
+    vw.finish_example(predict_example);
+    VW::finish(vw);
+  }
+
+  float prediction_two;
+  {
+    auto& vw =
+        *VW::initialize("--quiet --sgd --noconstant --learning_rate 0.1");
+
+    auto learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
+    auto predict_example = *VW::read_example(vw, "| 1:1.0");
+
+    vw.learn(learn_example);
+    vw.finish_example(learn_example);
+    vw.predict(predict_example);
+    prediction_two = predict_example.pred.scalar;
+    vw.finish_example(predict_example);
+    VW::finish(vw);
+  }
+
+  BOOST_CHECK_EQUAL(prediction_one, prediction_two);
 }
