@@ -11,6 +11,12 @@
 #include "v_array.h"
 #include "hashstring.h"
 
+#ifdef _WIN32
+#define NOMINMAX
+#include <WinSock2.h>
+#include <Windows.h>
+#endif
+
 std::ostream& operator<<(std::ostream& os, const substring& ss);
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);
 
