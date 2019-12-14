@@ -32,7 +32,7 @@ loss_functions.h lrq.h lrqfa.h marginal.h memory_tree.h memory.h mf.h multiclass
 multilabel.h mwt.h network.h nn.h no_label.h noop.h oaa.h object_pool.h OjaNewton.h
 options_boost_po.h options_serializer_boost_po.h options_types.h options.h parse_args.h
 parse_dispatch_loop.h parse_example_json.h parse_example.h parse_primitives.h parse_regressor.h
-parser.h primitives.h print.h queue.h rand48.h recall_tree.h reductions.h scorer.h
+parser.h print.h queue.h rand48.h recall_tree.h reductions.h scorer.h
 search_dep_parser.h search_entityrelationtask.h search_graph.h search_hooktask.h search_meta.h
 search_multiclasstask.h search_sequencetask.h search.h sender.h shared_feature_merger.h
 simple_label.h spanning_tree.h stable_unique.h stagewise_poly.h svrg.h topk.h unique_sort.h

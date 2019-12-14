@@ -17,6 +17,7 @@
 #include "vw_exception.h"
 #include <fstream>
 
+#include "vw.h"
 #include "options.h"
 #include "options_boost_po.h"
 
@@ -73,7 +74,7 @@ int main(int argc, char* argv[])
     // support multiple vw instances for training of the same datafile for the same instance
     std::vector<std::unique_ptr<options_boost_po>> arguments;
     std::vector<vw*> alls;
-    if (argc == 3 && !strcmp(argv[1], "--args"))
+    if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
 
@@ -107,9 +108,6 @@ int main(int argc, char* argv[])
     }
 
     vw& all = *alls[0];
-
-    // struct timeb t_start, t_end;
-    // ftime(&t_start);
 
     if (should_use_onethread)
     {

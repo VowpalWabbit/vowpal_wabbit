@@ -2,11 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <stdio.h>
-#include <float.h>
+#include <cstdio>
+#include <cfloat>
 #include <sstream>
 #include <fstream>
-//#include <boost/filesystem.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
@@ -1876,16 +1875,14 @@ void finish(vw& all, bool delete_all)
   // implement finally.
   // finalize_regressor can throw if it can't write the file.
   // we still want to free up all the memory.
-  vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
-  bool finalize_regressor_exception_thrown = false;
+  std::exception_ptr finalize_regressor_exception;
   try
   {
     finalize_regressor(all, all.final_regressor_name);
   }
-  catch (vw_exception& e)
+  catch (...)
   {
-    finalize_regressor_exception = e;
-    finalize_regressor_exception_thrown = true;
+    finalize_regressor_exception = std::current_exception();
   }
 
   if (all.l != nullptr)
@@ -1949,7 +1946,7 @@ void finish(vw& all, bool delete_all)
   if (delete_all)
     delete &all;
 
-  if (finalize_regressor_exception_thrown)
-    throw finalize_regressor_exception;
+  if (finalize_regressor_exception)
+    std::rethrow_exception(finalize_regressor_exception);
 }
 }  // namespace VW
