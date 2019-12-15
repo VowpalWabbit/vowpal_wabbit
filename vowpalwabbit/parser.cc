@@ -399,6 +399,17 @@ void enable_sources(vw& all, bool quiet, size_t passes)
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
       cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
 
+
+    // Enable TCP_NODELAY -- hopefully this gets us around 40ms delay issue
+    int yes = 1;
+    if (setsockopt(all.p->bound_sock,
+                        IPPROTO_TCP,
+                        TCP_NODELAY,
+                        (char *) &yes, 
+                        sizeof(int)) < 0)
+          cerr << "setsockopt TCP_NODELAY: " << strerror(errno) << endl;
+
+
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
