@@ -123,6 +123,13 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     THROW("cb_dro_tau must be in (0, 1]");
   }
 
+  if (!all.quiet)
+  {
+    std::cerr << "Using DRO for CB learning" << std::endl;
+    std::cerr << "cb_dro_alpha = " << alpha << std::endl;
+    std::cerr << "cb_dro_tau = " << tau << std::endl;
+  }
+
   auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau);
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
       learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs));
