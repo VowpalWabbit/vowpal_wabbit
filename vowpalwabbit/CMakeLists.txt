@@ -87,6 +87,11 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_definitions(vw PUBLIC __extern_always_inline=inline)
 endif()
 
+# Add natvis file if the Generator is Visual Studio
+if (MSVC_IDE)
+  target_sources(vw PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/vw_types.natvis> )
+endif()
+
 # Clang-cl on Windows has issues with our usage of SIMD types. Turn it off explicitly for Windows + clang-cl to mitigate.
 # See issue #
 if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
