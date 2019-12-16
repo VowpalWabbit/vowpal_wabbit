@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <cstdint>
 #include <algorithm>
 
@@ -232,7 +230,7 @@ void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_pre
     delete ec.passthrough;
   }
 
-  for (auto & j : ec.feature_space) j.delete_v();
+  for (auto& j : ec.feature_space) j.delete_v();
 
   ec.indices.delete_v();
 }

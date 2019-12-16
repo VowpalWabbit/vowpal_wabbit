@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
 
@@ -1373,12 +1371,17 @@ void read_line_json(
 
 inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
-  if (all.label_type == label_type::label_type_t::cb) {
-    for (auto& e: examples) {
+  if (all.label_type == label_type::label_type_t::cb)
+  {
+    for (auto& e : examples)
+    {
       e->l.cb.weight = 1 - pdrop;
     }
-  } else if (all.label_type == label_type::label_type_t::ccb) {
-    for (auto& e: examples) {
+  }
+  else if (all.label_type == label_type::label_type_t::ccb)
+  {
+    for (auto& e : examples)
+    {
       e->l.conditional_contextual_bandit.weight = 1 - pdrop;
     }
   }

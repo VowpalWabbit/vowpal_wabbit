@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
@@ -67,7 +65,8 @@ static inline float fastpow2(float p)
   float clipp = (p < -126) ? -126.0f : p;
   int w = (int)clipp;
   float z = clipp - w + offset;
-  union {
+  union
+  {
     uint32_t i;
     float f;
   } v = {cast_uint32_t((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};

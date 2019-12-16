@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "spanning_tree.h"
 #include "vw_exception.h"
@@ -17,7 +15,6 @@ license as described in the file LICENSE.
 #include <cmath>
 #include <map>
 #include <future>
-
 
 struct client
 {
@@ -182,7 +179,7 @@ void SpanningTree::Run()
 
     if (!m_quiet)
       std::cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
-           << ") serv=" << servInfo << std::endl;
+                << ") serv=" << servInfo << std::endl;
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
@@ -219,8 +216,8 @@ void SpanningTree::Run()
     if (id >= total)
     {
       if (!m_quiet)
-       std::cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total
-             << " !" << std::endl;
+        std::cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id
+                  << " >=  " << total << " !" << std::endl;
       ok = false;
     }
     partial partial_nodeset;
@@ -255,8 +252,8 @@ void SpanningTree::Run()
         if (partial_nodeset.nodes[i].client_ip == (uint32_t)-1)
         {
           if (!m_quiet)
-           std::cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled) << " nodes out of "
-                 << total << " for example node " << i << std::endl;
+            std::cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled)
+                      << " nodes out of " << total << " for example node " << i << std::endl;
           break;
         }
       }

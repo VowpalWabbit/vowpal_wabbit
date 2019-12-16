@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "vw_exception.h"
 
 #ifdef _WIN32
@@ -12,7 +16,10 @@ vw_exception::vw_exception(const char* pfile, int plineNumber, std::string const
 {
 }
 
-vw_exception::vw_exception(const vw_exception& ex) noexcept : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)  {}
+vw_exception::vw_exception(const vw_exception& ex) noexcept
+    : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)
+{
+}
 
 vw_exception& vw_exception::operator=(const vw_exception& other) noexcept
 {

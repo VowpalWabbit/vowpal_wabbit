@@ -1,8 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "interactions.h"
 
 #include "vw_exception.h"
 #include <algorithm>
-
 
 namespace INTERACTIONS
 {
@@ -201,8 +204,8 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 #endif
 
 // lookup table of factorials up tu 21!
-constexpr int64_t fast_factorial[] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800,
-    87178291200, 1307674368000, 20922789888000, 355687428096000, 6402373705728000, 121645100408832000,
+constexpr int64_t fast_factorial[] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600,
+    6227020800, 87178291200, 1307674368000, 20922789888000, 355687428096000, 6402373705728000, 121645100408832000,
     2432902008176640000};
 constexpr size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_factorial);
 

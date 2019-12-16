@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <stdio.h>
 #include <float.h>
 #include <errno.h>
@@ -14,7 +13,6 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "gd.h"
 #include "vw_exception.h"
-
 
 struct global_prediction
 {
@@ -189,7 +187,8 @@ void vw::finish_example(multi_ex& ec)
   LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
+void compile_gram(
+    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)
   {

@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <cmath>
 #include <math.h>
@@ -12,7 +10,6 @@ license as described in the file LICENSE.
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
-
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
@@ -79,7 +76,8 @@ class TC_parser
   {
     std::stringstream ss;
     ss << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
-       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\"" << std::endl;
+       << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
+       << std::endl;
     if (p->strict_parse)
     {
       THROW_EX(VW::strict_parse_exception, ss.str());
@@ -239,7 +237,7 @@ class TC_parser
       }
       if ((*namespace_dictionaries)[index].size() > 0)
       {
-        for(auto map : (*namespace_dictionaries)[index])
+        for (auto map : (*namespace_dictionaries)[index])
         {
           uint64_t hash = uniform_hash(feature_name.begin, feature_name.end - feature_name.begin, quadratic_constant);
           features* feats = map->get(feature_name, hash);

@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <cfloat>
 #include <cmath>
 #include <cerrno>
@@ -30,10 +28,7 @@ struct bs
   vw* all;  // for raw prediction and loss
   std::shared_ptr<rand_state> _random_state;
 
-  ~bs()
-  {
-    delete pred_vec;
-  }
+  ~bs() { delete pred_vec; }
 };
 
 void bs_predict_mean(vw& all, example& ec, std::vector<double>& pred_vec)

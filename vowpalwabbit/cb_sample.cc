@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "reductions.h"
 #include "cb_sample.h"
 #include "explore.h"
@@ -13,8 +17,8 @@ namespace VW
 // cb_sample is used to automatically sample and swap from a cb explore pdf.
 struct cb_sample_data
 {
-  explicit cb_sample_data(std::shared_ptr<rand_state>& random_state) : _random_state(random_state) {}
-  explicit cb_sample_data(std::shared_ptr<rand_state>&& random_state) : _random_state(random_state) {}
+  explicit cb_sample_data(std::shared_ptr<rand_state> &random_state) : _random_state(random_state) {}
+  explicit cb_sample_data(std::shared_ptr<rand_state> &&random_state) : _random_state(random_state) {}
 
   template <bool is_learn>
   inline void learn_or_predict(multi_learner &base, multi_ex &examples)

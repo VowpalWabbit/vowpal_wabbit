@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 #include <stdint.h>
 #include <algorithm>
@@ -71,8 +70,10 @@ struct cb_explore_adf_base
   ExploreType explore;
 
  public:
-  template <typename... Args >
-  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...) {}
+  template <typename... Args>
+  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...)
+  {
+  }
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void predict(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);

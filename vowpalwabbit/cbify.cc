@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw.h"
@@ -40,7 +44,7 @@ struct cbify
   std::vector<ACTION_SCORE::action_scores> cb_as;
 
   ~cbify()
-  {   
+  {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
 

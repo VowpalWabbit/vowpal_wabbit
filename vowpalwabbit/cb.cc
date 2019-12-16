@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <cfloat>
 
 #include "example.h"
@@ -49,9 +48,10 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void* v) {
-    CB::label* ld = (CB::label*)v;
-    return ld->weight;
+float weight(void* v)
+{
+  CB::label* ld = (CB::label*)v;
+  return ld->weight;
 }
 
 char* bufcache_label(CB::label* ld, char* c)
@@ -217,7 +217,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
-float weight(void* v) {
+float weight(void* v)
+{
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
   return ld->event.weight;
 }
@@ -287,6 +288,6 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   words.begin()--;
 }
 
-label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
-    copy_label, test_label, sizeof(CB_EVAL::label)};
+label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
+    test_label, sizeof(CB_EVAL::label)};
 }  // namespace CB_EVAL

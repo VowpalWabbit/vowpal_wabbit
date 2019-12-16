@@ -44,8 +44,9 @@ class SequenceLabeler(pyvw.SearchTask):
             pos,word = sentence[n]
             # use "with...as..." to guarantee that the example is finished properly
             ex = [ self.makeExample(word,p) for p in [DET,NOUN,VERB,ADJ] ]
-            pred = self.sch.predict(examples=ex, my_tag=n+1, oracle=pos-1, condition=(n,'p'))
-            output.append(pred + 1)
+            pred = self.sch.predict(examples=ex, my_tag=n+1, oracle=pos, condition=(n,'p'))
+            vw.finish_example(ex)
+            output.append(pred)
         return output
 
 # initialize VW as usual, but use 'hook' as the search_task

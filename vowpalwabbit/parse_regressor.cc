@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <fstream>
 #include <iostream>
 
@@ -158,7 +156,6 @@ bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
   }
   return false;
 }
-
 
 inline void safe_memcpy(char*& __dest, size_t& __dest_size, const void* __src, size_t __n)
 {
@@ -589,7 +586,8 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
       // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors" << std::endl;
+        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
+                          << std::endl;
       }
     }
   }

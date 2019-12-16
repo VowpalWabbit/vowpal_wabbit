@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <string.h>
@@ -99,10 +103,7 @@ class sparse_parameters
   sparse_parameters(const sparse_parameters& other) { shallow_copy(other); }
   sparse_parameters(sparse_parameters&&) = delete;
 
-  weight* first()
-  {
-    THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr);
-  }
+  weight* first() { THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr); }
 
   // iterator with stride
   iterator begin()
@@ -209,10 +210,7 @@ class sparse_parameters
   }
 
 #ifndef _WIN32
-  void share(size_t /* length */)
-  {
-    THROW_OR_RETURN("Operation not supported on Windows");
-  }
+  void share(size_t /* length */) { THROW_OR_RETURN("Operation not supported on Windows"); }
 #endif
 
   ~sparse_parameters()
