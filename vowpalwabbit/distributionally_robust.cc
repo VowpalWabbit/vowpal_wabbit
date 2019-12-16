@@ -97,7 +97,7 @@ ChiSquared::Duals ChiSquared::recompute_duals()
 
               if (isclose(kappa, 0))
                 {
-                  Duals candidate = { true, 0, 0, 0, 0 };
+                  Duals candidate = { true, 0, 0, 0, n };
                   candidates.push_back(std::make_pair(r, candidate));
                 }
               else
@@ -135,7 +135,7 @@ ChiSquared::Duals ChiSquared::recompute_duals()
 
                     if (isclose(kappa, 0))
                       {
-                        Duals candidate = { true, 0, 0, 0, 0 };
+                        Duals candidate = { true, 0, 0, 0, n };
                         candidates.push_back(std::make_pair(r, candidate));
                       }
                     else
@@ -153,7 +153,7 @@ ChiSquared::Duals ChiSquared::recompute_duals()
 
   if (candidates.empty())
     {
-      duals = { true, 0, 0, 0, 0 };
+      duals = { true, 0, 0, 0, n };
     }
   else
     {
