@@ -203,9 +203,9 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
     _backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action]->weight = example_weight * (1.0f - action_score.score);
+      examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
     else
-      examples[current_action]->weight = example_weight * action_score.score;
+      examples[current_action]->weight *= example_weight * action_score.score;
 
     if (examples[current_action]->weight <= 1e-15)
       examples[current_action]->weight = 0;
