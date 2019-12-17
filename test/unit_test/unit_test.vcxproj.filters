@@ -57,6 +57,9 @@
     <ClCompile Include="distributionally_robust_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="prediction_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test_common.h">

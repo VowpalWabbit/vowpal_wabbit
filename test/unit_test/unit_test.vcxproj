@@ -31,6 +31,7 @@
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
+    <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="vwdll_test.cc" />
   </ItemGroup>
