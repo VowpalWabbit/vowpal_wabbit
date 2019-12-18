@@ -25,7 +25,7 @@ struct cb_dro_data
     //    or in (off-policy) learning without exploration (aka --cb_adf)
     //
     // In practice, nobody seems to do
-    // "off policy learning on the stochastic exploration policy".
+    // "off policy learning of the stochastic exploration policy".
     //
     // Ergo, the following always optimizes the bound on the associated
     // deterministic argmax score policy.
