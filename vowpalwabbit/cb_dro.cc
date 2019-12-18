@@ -129,6 +129,11 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     THROW("cb_dro_tau must be in (0, 1]");
   }
 
+  if (wmax < 1)
+  {
+    THROW("wmax must be at least 1");
+  }
+
   if (!all.quiet)
   {
     std::cerr << "Using DRO for CB learning" << std::endl;
