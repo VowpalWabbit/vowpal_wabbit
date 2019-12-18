@@ -96,17 +96,23 @@ class ChiSquared
 
     ChiSquared& update(double w, double r)
       {
-        n = tau * n + 1;
-        sumw = tau * sumw + w;
-        sumwsq = tau * sumwsq + w*w;
-        sumwr = tau * sumwr + w*r;
-        sumwsqr = tau * sumwsqr + w*w*r;
-        sumwsqrsq = tau * sumwsqrsq + w*w*r*r;
+        if (w >= 0)
+          {
+            n = tau * n + 1;
+            sumw = tau * sumw + w;
+            sumwsq = tau * sumwsq + w*w;
+            sumwr = tau * sumwr + w*r;
+            sumwsqr = tau * sumwsqr + w*w*r;
+            sumwsqrsq = tau * sumwsqrsq + w*w*r*r;
 
-        rmin = std::min(rmin, r);
-        rmax = std::max(rmax, r);
+            rmin = std::min(rmin, r);
+            rmax = std::max(rmax, r);
 
-        duals_stale = true;
+            wmin = std::min(wmin, w);
+            wmax = std::max(wmax, w);
+
+            duals_stale = true;
+          }
 
         return *this;
       }

@@ -15,7 +15,7 @@ struct cb_dro_data
 {
   explicit cb_dro_data(double alpha, double tau) : chisq(alpha, tau) {}
 
-  template <bool is_learn>
+  template <bool is_learn, bool is_explore>
   inline void learn_or_predict(multi_learner &base, multi_ex &examples)
   {
     // Some explanation required.
@@ -27,10 +27,8 @@ struct cb_dro_data
     // In practice, nobody seems to do
     // "off policy learning on the stochastic exploration policy".
     //
-    // Ergo, the following always optimizes the bound on the derived
-    // deterministic argmax score policy.  This makes things easy because
-    // the scores are not necessarily probabilities unless exploration is enabled,
-    // but the argmax is always proper.
+    // Ergo, the following always optimizes the bound on the associated
+    // deterministic argmax score policy.
 
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
@@ -45,33 +43,39 @@ struct cb_dro_data
 
         auto action_scores = examples[0]->pred.a_s;
 
-        auto maxit = std::max_element(action_scores.begin(),
-                                      action_scores.end(),
-                                      [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; });
+        // cb_explore_adf => want maximum probability
+        // cb_adf => want minimum cost
+
+        auto maxit = is_explore
+                     ? std::max_element (action_scores.begin(),
+                                         action_scores.end(),
+                                         [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; })
+                     : std::min_element (action_scores.begin(),
+                                         action_scores.end(),
+                                         [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; });
         uint32_t chosen_action = maxit->action;
 
-        float w = logged.probability > 0 && chosen_action == labelled_action ? 1 / logged.probability : 0;
-        // TODO: rmin, rmax (?)
+        float w = logged.probability > 0 ? 1 / logged.probability : 0;
         float r = -logged.cost;
 
-        chisq.update(w, r);
+        chisq.update(chosen_action == labelled_action ? w : 0, r);
 
         float qlb = chisq.effn() * chisq.qlb(w, r);
 
-        if (qlb > 0)
-          {
-            // save the original weights and scale the example weights
-            std::vector<float> save_weight;
-            std::transform(examples.begin(), examples.end(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
-            std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
+        // avoid pathological cases
+        qlb = std::max(qlb, 0.01f);
 
-            // TODO: make sure descendants "do the right thing" with example->weight
-            multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+        // save the original weights and scale the example weights
+        std::vector<float> save_weight;
+        std::transform(examples.begin(), examples.end(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
+        std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
 
-            // restore the original weights
-            auto save_weight_it = save_weight.begin();
-            std::for_each(examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
-          }
+        // TODO: make sure descendants "do the right thing" with example->weight
+        multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+
+        // restore the original weights
+        auto save_weight_it = save_weight.begin();
+        std::for_each(examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
       }
     }
   }
@@ -81,10 +85,10 @@ struct cb_dro_data
 };
 }  // namespace VW
 
-template <bool is_learn>
+template <bool is_learn, bool is_explore>
 void learn_or_predict(cb_dro_data &data, multi_learner &base, multi_ex &examples)
 {
-  data.learn_or_predict<is_learn>(base, examples);
+  data.learn_or_predict<is_learn, is_explore>(base, examples);
 }
 
 base_learner *cb_dro_setup(options_i &options, vw &all)
@@ -108,9 +112,9 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     THROW("cb_dro cannot be used with no_predict");
   }
 
-  if (!options.was_supplied("cb_adf"))
+  if (!options.was_supplied("cb_adf") && !options.was_supplied("cb_explore_adf"))
   {
-    THROW("cb_dro requires cb_adf");
+    THROW("cb_dro requires cb_adf or cb_explore_adf");
   }
 
   if (alpha <= 0 || alpha >= 1)
@@ -131,6 +135,12 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
   }
 
   auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau);
-  return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
-      learn_or_predict<false>, 1 /* weights */, prediction_type::action_probs));
+  if (options.was_supplied("cb_explore_adf"))
+    {
+      return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>, learn_or_predict<false, true>, 1 /* weights */, prediction_type::action_probs));
+    }
+  else
+    {
+      return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, false>, learn_or_predict<false, false>, 1 /* weights */, prediction_type::action_probs));
+    }
 }
