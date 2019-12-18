@@ -47,6 +47,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="offset_tree_cont_tests.h" />
     <ClInclude Include="test_common.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
