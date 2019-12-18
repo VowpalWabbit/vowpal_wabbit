@@ -13,7 +13,7 @@ namespace VW
 {
 struct cb_dro_data
 {
-  explicit cb_dro_data(double alpha, double tau) : chisq(alpha, tau) {}
+  explicit cb_dro_data(double alpha, double tau, double wmax) : chisq(alpha, tau, 0, wmax) {}
 
   template <bool is_learn, bool is_explore>
   inline void learn_or_predict(multi_learner &base, multi_ex &examples)
@@ -95,12 +95,14 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
 {
   double alpha;
   double tau;
+  double wmax;
   bool cb_dro_option = false;
 
   option_group_definition new_options("CB Distributionally Robust Optimization");
   new_options.add(make_option("cb_dro", cb_dro_option).keep().help("Use DRO for cb learning"))
       .add(make_option("cb_dro_alpha", alpha).default_value(0.05).keep().help("Confidence level for cb dro"))
-      .add(make_option("cb_dro_tau", tau).default_value(0.999).keep().help("Time constant for count decay for cb dro"));
+      .add(make_option("cb_dro_tau", tau).default_value(0.999).keep().help("Time constant for count decay for cb dro"))
+      .add(make_option("cb_dro_wmax", wmax).default_value(std::numeric_limits<double>::infinity()).keep().help("maximum importance weight for cb_dro"));
 
   options.add_and_parse(new_options);
 
@@ -132,9 +134,10 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     std::cerr << "Using DRO for CB learning" << std::endl;
     std::cerr << "cb_dro_alpha = " << alpha << std::endl;
     std::cerr << "cb_dro_tau = " << tau << std::endl;
+    std::cerr << "cb_dro_wmax = " << wmax << std::endl;
   }
 
-  auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau);
+  auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau, wmax);
   if (options.was_supplied("cb_explore_adf"))
     {
       return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>, learn_or_predict<false, true>, 1 /* weights */, prediction_type::action_probs));
