@@ -39,7 +39,7 @@ union polyprediction
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc
   polyprediction() { memset(this, 0, sizeof(polyprediction)); }
-  ~polyprediction() {  }
+  ~polyprediction() { }
 };
 
 struct example : public example_predict  // core example datatype.

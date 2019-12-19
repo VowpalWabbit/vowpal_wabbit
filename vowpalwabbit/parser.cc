@@ -956,7 +956,7 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 example* example_initializer::operator()(example* ex)
 {
-  ex->l = new_polylabel();
+  new (&ex->l) new_polylabel();
   ex->in_use = false;
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();

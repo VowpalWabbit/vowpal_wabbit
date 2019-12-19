@@ -111,7 +111,8 @@ size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
   return read_count;
 }
 
-float ccb_weight(new_polylabel& v) {
+float ccb_weight(new_polylabel& v)
+{
   CCB::label& ld = (CCB::label&)v;
   return ld.weight;
 }
@@ -123,12 +124,11 @@ void cache_label(new_polylabel& v, io_buf& cache)
   size_t size = sizeof(uint8_t)  // type
       + sizeof(bool)             // outcome exists?
       + (ld.outcome == nullptr ? 0
-                                : sizeof(ld.outcome->cost)                                    // cost
-                    + sizeof(uint32_t)                                                         // probabilities size
+                               : sizeof(ld.outcome->cost)                                     // cost
+                    + sizeof(uint32_t)                                                        // probabilities size
                     + sizeof(ACTION_SCORE::action_score) * ld.outcome->probabilities.size())  // probabilities
       + sizeof(uint32_t)  // explicit_included_actions size
-      + sizeof(uint32_t) * ld.explicit_included_actions.size()
-      + sizeof(ld.weight);
+      + sizeof(uint32_t) * ld.explicit_included_actions.size() + sizeof(ld.weight);
 
   cache.buf_write(c, size);
 
@@ -191,14 +191,7 @@ bool test_label(new_polylabel& v)
 
 void delete_label(new_polylabel& v)
 {
-  CCB::label& ld = v.conditional_contextual_bandit();
-  if (ld.outcome)
-  {
-    ld.outcome->probabilities.delete_v();
-    delete ld.outcome;
-    ld.outcome = nullptr;
-  }
-  ld.explicit_included_actions.delete_v();
+  v.reset();
 }
 
 void copy_label(new_polylabel& dst, new_polylabel& src)

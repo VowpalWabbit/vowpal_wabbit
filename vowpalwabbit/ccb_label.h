@@ -38,6 +38,78 @@ struct label
   conditional_contextual_bandit_outcome* outcome;
   v_array<uint32_t> explicit_included_actions;
   float weight;
+
+  label() : type(example_type::unset), outcome(nullptr), weight(0.f) { explicit_included_actions = v_init<uint32_t>(); }
+  label(example_type type, conditional_contextual_bandit_outcome* outcome, v_array<uint32_t>& explicit_included_actions,
+      float weight)
+      : type(type), outcome(outcome), explicit_included_actions(explicit_included_actions), weight(weight)
+  {
+  }
+
+  label(label&& other)
+  {
+    type = example_type::unset;
+    std::swap(type, other.type);
+    outcome = nullptr;
+    std::swap(outcome, other.outcome);
+    explicit_included_actions = v_init<uint32_t>();
+    std::swap(explicit_included_actions, other.explicit_included_actions);
+    weight = 0.f;
+    std::swap(weight, other.weight);
+  }
+  label& operator=(label&& other)
+  {
+    type = example_type::unset;
+    std::swap(type, other.type);
+    if (outcome)
+    {
+      outcome->probabilities.delete_v();
+      delete outcome;
+      outcome = nullptr;
+    }
+    std::swap(outcome, other.outcome);
+
+    explicit_included_actions.delete_v();
+    explicit_included_actions = v_init<uint32_t>();
+    std::swap(explicit_included_actions, other.explicit_included_actions);
+
+    weight = 0.f;
+    std::swap(weight, other.weight);
+
+    return *this;
+  }
+
+  label(label& other) {
+    type = other.type;
+    // todo copyconstructor of outcome
+    outcome = other.outcome;
+    explicit_included_actions = v_init<uint32_t>();
+    copy_array(explicit_included_actions, other.explicit_included_actions);
+    weight = other.weight;
+  }
+  label& operator=(label& other) {
+    type = other.type;
+    if (outcome)
+    {
+      outcome->probabilities.delete_v();
+      delete outcome;
+    }
+    outcome = other.outcome;
+    explicit_included_actions.delete_v();
+    copy_array(explicit_included_actions, other.explicit_included_actions);
+    weight = other.weight;
+    return *this;
+  }
+
+  ~label()
+  {
+    if (outcome)
+    {
+      outcome->probabilities.delete_v();
+      delete outcome;
+    }
+    explicit_included_actions.delete_v();
+  }
 };
 
 extern label_parser ccb_label_parser;

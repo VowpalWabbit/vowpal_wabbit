@@ -134,7 +134,6 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   io.head = io.space.begin();
 
   auto uncached_label = scoped_calloc_or_throw<new_polylabel>();
-  lp.default_label(*uncached_label.get());
   lp.read_cached_label(nullptr, *uncached_label.get(), io);
 
   BOOST_CHECK_EQUAL(uncached_label->conditional_contextual_bandit().explicit_included_actions.size(), 2);
