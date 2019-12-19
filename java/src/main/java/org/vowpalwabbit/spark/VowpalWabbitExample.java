@@ -29,6 +29,11 @@ public class VowpalWabbitExample implements Closeable {
     public native void clear();
 
     /**
+     * Create an empty new line example.
+     */
+    public native void makeEmpty();
+
+    /**
      * Adds the dense features values to the supplied namespace. The
      * {@code baseIndex} is expected to be pre-hashed (e.g. hash(namespace)).
      * 
@@ -68,6 +73,11 @@ public class VowpalWabbitExample implements Closeable {
      * Mark this as a shared CB label.
      */
     public native void setSharedLabel();
+
+    /**
+     * Initializes the label.
+     */
+    public native void setDefaultLabel();
 
     /**
      * Set CCB label:

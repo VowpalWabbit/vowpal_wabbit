@@ -25,6 +25,20 @@ extern "C"
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
+   * Method:    learn
+   * Signature: ([)V
+   */
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(JNIEnv *, jobject, jobjectArray);
+
+  /*
+   * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
+   * Method:    predict
+   * Signature: ([])J
+   */
+  JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict(JNIEnv *, jobject, jobjectArray);
+
+  /*
+   * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
    * Method:    performRemainingPasses
    * Signature: ()V
    */
@@ -106,6 +120,8 @@ extern "C"
    */
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNIEnv *, jobject);
 
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaultLabel(JNIEnv *, jobject);
+
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
    * Method:    addToNamespaceDense
@@ -124,13 +140,20 @@ extern "C"
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
+   * Method:    addToNamespaceSparse
+   * Signature: ()V
+   */
+  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_makeEmpty(JNIEnv *, jobject);
+
+  /*
+   * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
    * Method:    setLabel
    * Signature: (FF)V
    */
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(JNIEnv *, jobject, jfloat, jfloat);
 
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditLabel(
-      JNIEnv *, jobject, jint, jfloat, jfloat);
+      JNIEnv *, jobject, jint, jdouble, jdouble);
 
   JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSharedLabel(JNIEnv *, jobject);
 

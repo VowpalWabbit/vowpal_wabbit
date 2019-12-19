@@ -81,6 +81,84 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   }
 }
 
+void populateMultiEx(JNIEnv* env, jobjectArray examples, multi_ex& ex_coll)
+{
+  bool fieldIdInitialized = false;
+
+  int length = env->GetArrayLength(examples);
+  if (length > 0)
+  {
+    jobject ex = env->GetObjectArrayElement(examples, 0);
+
+    jclass cls = env->GetObjectClass(ex);
+    jfieldID fieldId = env->GetFieldID(cls, "nativePointer", "J");
+
+    for (int i = 0; i < length; i++)
+    {
+      ex = env->GetObjectArrayElement(examples, i);
+
+      ex_coll.push_back((example*)get_native_pointer(env, ex));
+    }
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
+    JNIEnv* env, jobject vwObj, jobjectArray examples)
+{
+  auto all = (vw*)get_native_pointer(env, vwObj);
+
+  multi_ex ex_coll;
+  try
+  {
+    populateMultiEx(env, examples, ex_coll);
+
+    all->learn(ex_coll);
+
+    // as this is not a ring-based example it is not freed
+    as_multiline(all->l)->finish_example(*all, ex_coll);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict(
+    JNIEnv* env, jobject vwObj, jobjectArray examples)
+{
+  auto all = (vw*)get_native_pointer(env, vwObj);
+
+  multi_ex ex_coll;
+  try
+  {
+    populateMultiEx(env, examples, ex_coll);
+
+    all->predict(ex_coll);
+
+    // TODO: support more than just CB - why not distribution over actions?
+    // auto& a_s = ex->pred.a_s;
+    // auto values = gcnew cli::array<ActionScore>((int)a_s.size());
+
+    // auto index = 0;
+    // for (auto& as : a_s)
+    // { values[index].Action = as.action;
+    //   values[index].Score = as.score;
+    //   index++;
+    // }
+
+    // return values;
+
+    // as this is not a ring-based example it is not freed
+    as_multiline(all->l)->finish_example(*all, ex_coll);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+
+  return nullptr;
+}
+
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRemainingPasses(JNIEnv* env, jobject vwObj)
 {
   auto all = (vw*)get_native_pointer(env, vwObj);
@@ -305,6 +383,23 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   }
 }
 
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_makeEmpty(JNIEnv* env, jobject exampleObj)
+{
+  INIT_VARS
+
+  try
+  {
+    char empty = '\0';
+    VW::read_line(*all, ex, &empty);
+
+    VW::setup_example(*all, ex);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
 void addNamespaceIfNotExists(vw* all, example* ex, char ns)
 {
   if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end())
@@ -407,6 +502,20 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
     ld->weight = weight;
 
     count_label(all->sd, ld->label);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaultLabel(JNIEnv* env, jobject exampleObj)
+{
+  INIT_VARS
+
+  try
+  {
+    all->p->lp.default_label(&ex->l);
   }
   catch (...)
   {
