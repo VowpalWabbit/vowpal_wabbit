@@ -856,6 +856,8 @@ void empty_example(vw& /*all*/, example& ec)
 {
   for (features& fs : ec) fs.clear();
 
+  ec.l.reset();
+
   ec.indices.clear();
   ec.tag.clear();
   ec.sorted = false;

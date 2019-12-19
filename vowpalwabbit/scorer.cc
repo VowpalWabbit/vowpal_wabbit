@@ -17,14 +17,17 @@ struct scorer
 template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
 {
-  s.all->set_minmax(s.all->sd, ec.l.simple().label);
-  if (is_learn && ec.l.simple().label != FLT_MAX && ec.weight > 0)
+  // LDA uses this reduction and explicitly uses no label and so we must check here before using it.
+  const float simple_label = ec.l.get_type() == label_type_t::simple ? ec.l.simple().label : 0.f;
+
+  s.all->set_minmax(s.all->sd, simple_label);
+  if (is_learn && simple_label != FLT_MAX && ec.weight > 0)
     base.learn(ec);
   else
     base.predict(ec);
 
-  if (ec.weight > 0 && ec.l.simple().label != FLT_MAX)
-    ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
+  if (ec.weight > 0 && simple_label != FLT_MAX)
+    ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, simple_label) * ec.weight;
 
   ec.pred.scalar = link(ec.pred.scalar);
 }

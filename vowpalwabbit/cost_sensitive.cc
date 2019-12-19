@@ -55,7 +55,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
 
 size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
 {
-  auto& ld = v.cs();
+  auto& ld = v.init_as_cs();
 
   ld.costs.clear();
   char* c;
@@ -89,14 +89,11 @@ void cache_label(new_polylabel& v, io_buf& cache)
   bufcache_label(ld, c);
 }
 
-void default_label(label& label)
-{
-  label.costs.clear();
-}
+void default_label(label& label) { label.costs.clear(); }
 
 void default_label(new_polylabel& v)
 {
-  auto& ld = v.cs();
+  auto& ld = v.init_as_cs();
   default_label(ld);
 }
 
@@ -118,10 +115,13 @@ void delete_label(label& label)
 
 void delete_label(new_polylabel& v)
 {
-  // TODO: work out how to do this safely
-  delete_label(v.cs());
-  // if (ld.costs.size() > 0)
-  //   ld.costs.delete_v();
+  if (v.get_type() == label_type_t::cs)
+  {
+    // TODO: work out how to do this safely
+    delete_label(v.cs());
+    // if (ld.costs.size() > 0)
+    //   ld.costs.delete_v();
+  }
 }
 
 void copy_label(new_polylabel& dst, new_polylabel& src)
@@ -312,7 +312,7 @@ void finish_example(vw& all, example& ec)
 
 bool example_is_test(example& ec)
 {
-  v_array<COST_SENSITIVE::wclass>& costs = ec.l.cs().costs;
+  auto& costs = ec.l.cs().costs;
   if (costs.size() == 0)
     return true;
   for (size_t j = 0; j < costs.size(); j++)
@@ -323,9 +323,9 @@ bool example_is_test(example& ec)
 
 bool ec_is_example_header(example const& ec)  // example headers look like "shared"
 {
-  if(ec.l.get_type() == label_type_t::cs)
+  if (ec.l.get_type() == label_type_t::cs)
   {
-    v_array<COST_SENSITIVE::wclass>& costs = ec.l.cs().costs;
+    auto& costs = ec.l.cs().costs;
     if (costs.size() != 1)
       return false;
     if (costs[0].class_index != 0)

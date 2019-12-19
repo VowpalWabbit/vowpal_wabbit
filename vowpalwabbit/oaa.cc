@@ -79,7 +79,8 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   if (scores)
     scores_array = ec.pred.scalars;
 
-  ec.l.simple() = {FLT_MAX, 0.f, 0.f};
+  ec.l.reset();
+  ec.l.init_as_simple(FLT_MAX, 0.f, 0.f);
   base.multipredict(ec, 0, o.k, o.pred, true);
   for (uint32_t i = 2; i <= o.k; i++)
     if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar)
@@ -92,14 +93,15 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   {
     for (uint32_t i = 1; i <= o.k; i++)
     {
-      ec.l.simple() = {(mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f};
+      ec.l.reset();
+      ec.l.init_as_simple((mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f);
       ec.pred.scalar = o.pred[i - 1].scalar;
       base.update(ec, i - 1);
     }
   }
 
   if (print_all)
-  {
+  { 
     outputStringStream << "1:" << o.pred[0].scalar;
     for (uint32_t i = 2; i <= o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar;
     o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
@@ -126,7 +128,8 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   else
     ec.pred.multiclass = prediction;
 
-  ec.l.multi() = mc_label_data;
+  ec.l.reset();
+  ec.l.init_as_multi(mc_label_data);
 }
 
 // TODO: partial code duplication with multiclass.cc:finish_example

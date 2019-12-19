@@ -9,7 +9,7 @@
 #include "example_predict.h"
 #include "ccb_label.h"
 
-typedef union {
+union polylabel {
   no_label::no_label empty;
   label_data simple;
   MULTICLASS::label_t multi;
@@ -18,7 +18,10 @@ typedef union {
   CCB::label conditional_contextual_bandit;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
-} polylabel;
+
+  polylabel() { memset(this, 0, sizeof(polylabel)); }
+  ~polylabel() { }
+};
 
 #define TO_STRING_CASE(enum_type) \
   case enum_type:                 \
@@ -57,34 +60,59 @@ inline const char* to_string(label_type_t label_type)
 
 struct new_polylabel
 {
-  mutable polylabel internal_union;
-  mutable label_type_t tag = label_type_t::unset;
+ private:
+  polylabel internal_union;
+  label_type_t tag = label_type_t::unset;
 
+  inline void ensure_is_type(label_type_t type) const
+  {
+    if (tag != type)
+    {
+      THROW("Expected type: " << to_string(type) << ", but found: " << to_string(tag));
+    }
+  }
+
+  template <typename T>
+  void destruct(T& item)
+  {
+    item.~T();
+  }
+
+ public:
   new_polylabel() {}
 
   label_type_t get_type() const { return tag; }
 
-  void reset() const
+  void reset()
   {
     switch (tag)
     {
       case (label_type_t::unset):
+        // Nothing to do! Whatever was in here has already been destroyed.
         break;
       case (label_type_t::empty):
+        destruct(internal_union.empty);
         break;
       case (label_type_t::simple):
+        destruct(internal_union.simple);
         break;
       case (label_type_t::multi):
+        destruct(internal_union.multi);
         break;
       case (label_type_t::cs):
+        destruct(internal_union.cs);
         break;
       case (label_type_t::cb):
+        destruct(internal_union.cb);
         break;
       case (label_type_t::conditional_contextual_bandit):
+        destruct(internal_union.conditional_contextual_bandit);
         break;
       case (label_type_t::cb_eval):
+        destruct(internal_union.cb_eval);
         break;
       case (label_type_t::multilabels):
+        destruct(internal_union.multilabels);
         break;
       default:;
     }
@@ -92,132 +120,170 @@ struct new_polylabel
     tag = label_type_t::unset;
   }
 
-  no_label::no_label& empty() const
+  template <typename... Args>
+  no_label::no_label& init_as_empty(Args&&... args)
   {
-    if (tag != label_type_t::empty)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::empty) << std::endl;
-      }
-
-      reset();
-      new (&internal_union.empty) no_label::no_label();
-      tag = label_type_t::empty;
-    }
-
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.empty) no_label::no_label(std::forward<Args>(args)...);
+    tag = label_type_t::empty;
     return internal_union.empty;
   }
 
-  label_data& simple() const
+  const no_label::no_label& empty() const
   {
-    if (tag != label_type_t::simple)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::simple) << std::endl;
-      }
+    ensure_is_type(label_type_t::empty);
+    return internal_union.empty;
+  }
 
-      reset();
-      new (&internal_union.simple) label_data();
-      tag = label_type_t::simple;
-    }
+  no_label::no_label& empty()
+  {
+    ensure_is_type(label_type_t::empty);
+    return internal_union.empty;
+  }
 
+  template <typename... Args>
+  label_data& init_as_simple(Args&&... args)
+  {
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.simple) label_data(std::forward<Args>(args)...);
+    tag = label_type_t::simple;
     return internal_union.simple;
   }
 
-  MULTICLASS::label_t& multi() const
+  const label_data& simple() const
   {
-    if (tag != label_type_t::multi)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::multi) << std::endl;
-      }
+    ensure_is_type(label_type_t::simple);
+    return internal_union.simple;
+  }
 
-      memset(&internal_union, 0, sizeof(polylabel));
-      tag = label_type_t::multi;
-    }
+  label_data& simple()
+  {
+    ensure_is_type(label_type_t::simple);
+    return internal_union.simple;
+  }
 
+  template <typename... Args>
+  MULTICLASS::label_t& init_as_multi(Args&&... args)
+  {
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.multi) MULTICLASS::label_t(std::forward<Args>(args)...);
+    tag = label_type_t::multi;
     return internal_union.multi;
   }
 
-  COST_SENSITIVE::label& cs() const
+  const MULTICLASS::label_t& multi() const
   {
-    if (tag != label_type_t::cs)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::cs) << std::endl;
-      }
+    ensure_is_type(label_type_t::multi);
+    return internal_union.multi;
+  }
 
-      memset(&internal_union, 0, sizeof(polylabel));
-      tag = label_type_t::cs;
-    }
+  MULTICLASS::label_t& multi()
+  {
+    ensure_is_type(label_type_t::multi);
+    return internal_union.multi;
+  }
+
+  template <typename... Args>
+  COST_SENSITIVE::label& init_as_cs(Args&&... args)
+  {
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.cs) COST_SENSITIVE::label(std::forward<Args>(args)...);
+    tag = label_type_t::cs;
     return internal_union.cs;
   }
 
-  CB::label& cb() const
+  const COST_SENSITIVE::label& cs() const
   {
-    if (tag != label_type_t::cb)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::cb) << std::endl;
-      }
+    ensure_is_type(label_type_t::cs);
+    return internal_union.cs;
+  }
 
-      memset(&internal_union, 0, sizeof(polylabel));
-      tag = label_type_t::cb;
-    }
+  COST_SENSITIVE::label& cs()
+  {
+    ensure_is_type(label_type_t::cs);
+    return internal_union.cs;
+  }
 
+  template <typename... Args>
+  CB::label& init_as_cb(Args&&... args)
+  {
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.cb) CB::label(std::forward<Args>(args)...);
+    tag = label_type_t::cb;
     return internal_union.cb;
   }
-  CCB::label& conditional_contextual_bandit() const
+  const CB::label& cb() const
   {
-    if (tag != label_type_t::conditional_contextual_bandit)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::conditional_contextual_bandit)
-                  << std::endl;
-      }
+    ensure_is_type(label_type_t::cb);
+    return internal_union.cb;
+  }
 
-      memset(&internal_union, 0, sizeof(polylabel));
-      tag = label_type_t::conditional_contextual_bandit;
-    }
+  CB::label& cb()
+  {
+    ensure_is_type(label_type_t::cb);
+    return internal_union.cb;
+  }
 
+  template <typename... Args>
+  CCB::label& init_as_conditional_contextual_bandit(Args&&... args)
+  {
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.conditional_contextual_bandit) CCB::label(std::forward<Args>(args)...);
+    tag = label_type_t::conditional_contextual_bandit;
     return internal_union.conditional_contextual_bandit;
   }
 
-  CB_EVAL::label& cb_eval() const
+  const CCB::label& conditional_contextual_bandit() const
   {
-    if (tag != label_type_t::cb_eval)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::cb_eval) << std::endl;
-      }
+    ensure_is_type(label_type_t::conditional_contextual_bandit);
+    return internal_union.conditional_contextual_bandit;
+  }
 
-      memset(&internal_union, 0, sizeof(polylabel));
-      tag = label_type_t::cb_eval;
-    }
+  CCB::label& conditional_contextual_bandit()
+  {
+    ensure_is_type(label_type_t::conditional_contextual_bandit);
+    return internal_union.conditional_contextual_bandit;
+  }
 
+  template <typename... Args>
+  CB_EVAL::label& init_as_cb_eval(Args&&... args)
+  {
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.cb_eval) CB_EVAL::label(std::forward<Args>(args)...);
+    tag = label_type_t::cb_eval;
     return internal_union.cb_eval;
   }
 
-  MULTILABEL::labels& multilabels() const
+  const CB_EVAL::label& cb_eval() const
   {
-    if (tag != label_type_t::multilabels)
-    {
-      if (tag != label_type_t::unset)
-      {
-        std::cout << "prev: " << to_string(tag) << ", to: " << to_string(label_type_t::multilabels) << std::endl;
-      }
+    ensure_is_type(label_type_t::cb_eval);
+    return internal_union.cb_eval;
+  }
 
-      memset(&internal_union, 0, sizeof(polylabel));
-      tag = label_type_t::multilabels;
-    }
+  CB_EVAL::label& cb_eval()
+  {
+    ensure_is_type(label_type_t::cb_eval);
+    return internal_union.cb_eval;
+  }
 
+  template <typename... Args>
+  MULTILABEL::labels& init_as_multilabels(Args&&... args)
+  {
+    ensure_is_type(label_type_t::unset);
+    new (&internal_union.multilabels) MULTILABEL::labels(std::forward<Args>(args)...);
+    tag = label_type_t::multilabels;
+    return internal_union.multilabels;
+  }
+
+  const MULTILABEL::labels& multilabels() const
+  {
+    ensure_is_type(label_type_t::multilabels);
+    return internal_union.multilabels;
+  }
+
+  MULTILABEL::labels& multilabels()
+  {
+    ensure_is_type(label_type_t::multilabels);
     return internal_union.multilabels;
   }
 };

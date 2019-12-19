@@ -32,6 +32,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.passes_complete++;
 
         // setup an end_pass example
+        examples[0]->l.reset();
         all.p->lp.default_label(examples[0]->l);
         examples[0]->end_pass = true;
         all.p->in_pass_counter = 0;

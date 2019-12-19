@@ -47,20 +47,14 @@ size_t read_cached_label(shared_data*, CB::label& ld, io_buf& cache)
   return total;
 }
 
-
 size_t read_cached_label(shared_data* s, new_polylabel& v, io_buf& cache)
 {
-  return CB::read_cached_label(s, v.cb(), cache);
+  return CB::read_cached_label(s, v.init_as_cb(), cache);
 }
 
-float weight(CB::label& ld) {
-    return ld.weight;
-}
+float weight(CB::label& ld) { return ld.weight; }
 
-float weight(new_polylabel& v) {
-
-    return CB::weight(v.cb());
-}
+float weight(new_polylabel& v) { return CB::weight(v.cb()); }
 
 char* bufcache_label(CB::label& ld, char* c)
 {
@@ -83,10 +77,7 @@ void cache_label(CB::label& ld, io_buf& cache)
   bufcache_label(ld, c);
 }
 
-void cache_label(new_polylabel& v, io_buf& cache)
-{
-  CB::cache_label(v.cb(), cache);
-}
+void cache_label(new_polylabel& v, io_buf& cache) { CB::cache_label(v.cb(), cache); }
 
 void default_label(CB::label& ld)
 {
@@ -94,11 +85,7 @@ void default_label(CB::label& ld)
   ld.weight = 1;
 }
 
-void default_label(new_polylabel& v)
-{
-  CB::default_label(v.cb());
-}
-
+void default_label(new_polylabel& v) { CB::default_label(v.init_as_cb()); }
 
 bool test_label(CB::label& ld)
 {
@@ -110,19 +97,14 @@ bool test_label(CB::label& ld)
   return true;
 }
 
-bool test_label(new_polylabel& v)
-{
-  return CB::test_label(v.cb());
-}
+bool test_label(new_polylabel& v) { return CB::test_label(v.cb()); }
 
-void delete_label(CB::label& ld)
-{
-  ld.costs.delete_v();
-}
+void delete_label(CB::label& ld) { ld.costs.delete_v(); }
 
 void delete_label(new_polylabel& v)
 {
-  CB::delete_label(v.cb());
+  if (v.get_type() == label_type_t::cb)
+    CB::delete_label(v.cb());
 }
 
 void copy_label(CB::label& ldD, CB::label& ldS)
@@ -202,7 +184,8 @@ label_parser cb_label = {default_label, parse_label, cache_label, read_cached_la
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
-  if(ec.l.get_type() == label_type_t::cb){
+  if (ec.l.get_type() == label_type_t::cb)
+  {
     v_array<CB::cb_class> costs = ec.l.cb().costs;
     if (costs.size() != 1)
       return false;
@@ -254,7 +237,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
-float weight(new_polylabel& v) {
+float weight(new_polylabel& v)
+{
   auto& ld = v.cb_eval();
   return ld.event.weight;
 }
@@ -283,7 +267,7 @@ void cache_label(new_polylabel& v, io_buf& cache)
 
 void default_label(new_polylabel& v)
 {
-  auto& ld = v.cb_eval();
+  auto& ld = v.init_as_cb_eval();
   CB::default_label(ld.event);
   ld.action = 0;
 }

@@ -28,7 +28,7 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 
 size_t read_cached_simple_label(shared_data* sd, new_polylabel& in_ld, io_buf& cache)
 {
-  auto& ld = in_ld.simple();
+  auto& ld = in_ld.init_as_simple();
   char* c;
   size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
   if (cache.buf_read(c, total) < total)
@@ -64,7 +64,7 @@ void cache_simple_label(new_polylabel& v, io_buf& cache)
 
 void default_simple_label(new_polylabel& v)
 {
-  auto& ld = v.simple();
+  auto& ld = v.init_as_simple();
   ld.label = FLT_MAX;
   ld.weight = 1.;
   ld.initial = 0.;

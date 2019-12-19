@@ -196,7 +196,8 @@ uint32_t ect_predict(ect& e, single_learner& base, example& ec)
   uint32_t finals_winner = 0;
 
   // Binary final elimination tournament first
-  ec.l.simple() = {FLT_MAX, 0., 0.};
+  ec.l.reset();
+  ec.l.init_as_simple(FLT_MAX, 0.f, 0.f);
 
   for (size_t i = e.tree_height - 1; i != (size_t)0 - 1; i--)
   {
@@ -246,7 +247,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
     else
       simple_temp.label = 1;
 
-    ec.l.simple() = simple_temp;
+    ec.l.reset();
+    ec.l.init_as_simple(simple_temp);
     base.learn(ec, id - e.k);
     float old_weight = ec.weight;
     ec.weight = 0.;
@@ -296,7 +298,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
         else
           simple_temp.label = 1;
         simple_temp.weight = (float)(1 << (e.tree_height - i - 1));
-        ec.l.simple() = simple_temp;
+        ec.l.reset();
+        ec.l.init_as_simple(simple_temp);
 
         uint32_t problem_number = e.last_pair + j * (1 << (i + 1)) + (1 << i) - 1;
 
@@ -320,7 +323,9 @@ void predict(ect& e, single_learner& base, example& ec)
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
     std::cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << std::endl;
   ec.pred.multiclass = ect_predict(e, base, ec);
-  ec.l.multi() = mc;
+
+  ec.l.reset();
+  ec.l.init_as_multi(mc);
 }
 
 void learn(ect& e, single_learner& base, example& ec)
@@ -331,7 +336,9 @@ void learn(ect& e, single_learner& base, example& ec)
 
   if (mc.label != (uint32_t)-1)
     ect_train(e, base, ec);
-  ec.l.multi() = mc;
+
+  ec.l.reset();
+  ec.l.init_as_multi(mc);
   ec.pred.multiclass = pred;
 }
 

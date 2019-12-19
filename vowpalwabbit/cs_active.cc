@@ -180,7 +180,7 @@ template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
   // cerr << "------------- passthrough" << endl;
-  COST_SENSITIVE::label ld = ec.l.cs();
+  COST_SENSITIVE::label ld = std::move(ec.l.cs());
 
   // cerr << "is_learn=" << is_learn << " ld.costs.size()=" << ld.costs.size() << endl;
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
@@ -216,7 +216,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
-  ec.l.simple() = {0., 0., 0.};
+  ec.l.reset();
+  ec.l.init_as_simple();
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round
@@ -306,7 +307,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   }
 
   ec.pred.multiclass = prediction;
-  ec.l.cs() = ld;
+  ec.l.reset();
+  ec.l.init_as_cs(std::move(ld));
 }
 
 void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec); }

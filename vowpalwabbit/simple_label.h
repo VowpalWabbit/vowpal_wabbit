@@ -12,6 +12,9 @@ struct label_data
   float label;
   float weight;
   float initial;
+
+  label_data() : label(0.f), weight(0.f), initial(0.f) {}
+  label_data(float label, float weight, float initial) : label(label), weight(weight), initial(initial) {}
 };
 
 void return_simple_example(vw& all, new_polylabel&, example& ec);

@@ -168,7 +168,7 @@ void cache_label(new_polylabel& v, io_buf& cache)
 
 void default_label(new_polylabel& v)
 {
-  CCB::label& ld = v.conditional_contextual_bandit();
+  CCB::label& ld = v.init_as_conditional_contextual_bandit();
 
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
   if (ld.outcome)

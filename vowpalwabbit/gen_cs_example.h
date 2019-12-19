@@ -262,10 +262,11 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   size_t index = 0;
   for (auto ec : examples)
   {
-    cb_labels.push_back(ec->l.cb());
+    cb_labels.push_back(std::move(ec->l.cb()));
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.cs() = prepped_cs_labels[index++];
+    ec->l.reset();
+    ec->l.init_as_cs(prepped_cs_labels[index++]);
     ec->ft_offset = offset;
   }
 
@@ -281,7 +282,8 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   // and restore offsets
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    examples[i]->l.cb() = cb_labels[i];
+    examples[i]->l.reset();
+    examples[i]->l.init_as_cb(std::move(cb_labels[i]));
     examples[i]->ft_offset = saved_offset;
   }
 }

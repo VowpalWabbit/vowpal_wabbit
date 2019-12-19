@@ -22,6 +22,7 @@
 #endif
 
 #include "memory.h"
+#include "future_compat.h"
 
 const size_t erase_point = ~((1u << 10u) - 1u);
 
@@ -36,6 +37,7 @@ struct v_array
   T* end_array;
   size_t erase_count;
 
+
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
@@ -48,10 +50,8 @@ struct v_array
 
   // v_array cannot have a user-defined constructor, because it participates in various unions.
   // union members cannot have user-defined constructors.
-  // v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
-  // ~v_array() {
-  //  delete_v();
-  // }
+  //v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
+  //~v_array() { delete_v(); }
   T last() const { return *(_end - 1); }
   T pop() { return *(--_end); }
   bool empty() const { return _begin == _end; }
@@ -93,6 +93,8 @@ struct v_array
     for (T* item = _begin; item != _end; ++item) item->~T();
     _end = _begin;
   }
+
+  //VW_DEPRECATED("delete_v is no longer supported. Use the desuctor of the object to clean up.")
   void delete_v()
   {
     if (_begin != nullptr)
@@ -176,7 +178,7 @@ struct v_array
 template <class T>
 inline v_array<T> v_init()
 {
-  return {nullptr, nullptr, nullptr, 0};
+  return v_array<T>();
 }
 
 template <class T>
@@ -258,7 +260,7 @@ std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
   return os;
 }
 
-typedef v_array<unsigned char> v_string;
+using v_string = v_array<unsigned char>;
 
 inline v_string string2v_string(const std::string& s)
 {

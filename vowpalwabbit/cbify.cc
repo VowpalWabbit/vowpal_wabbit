@@ -142,7 +142,8 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
     ld = ec.l.multi();
 
   data.cb_label.costs.clear();
-  ec.l.cb() = data.cb_label;
+  ec.l.reset();
+  ec.l.init_as_cb(data.cb_label);
   ec.pred.a_s = data.a_s;
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
@@ -175,10 +176,11 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   data.a_s.clear();
   data.a_s = ec.pred.a_s;
 
+  ec.l.reset();
   if (use_cs)
-    ec.l.cs() = csl;
+    ec.l.init_as_cs(std::move(csl));
   else
-    ec.l.multi() = ld;
+    ec.l.init_as_multi(std::move(ld));
 
   ec.pred.multiclass = cl.action;
 }
@@ -236,7 +238,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
   for (size_t a = 0; a < num_actions; ++a)
   {
     adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
-    auto& lab = adf_data.ecs[a]->l.cb();
+    auto& lab = adf_data.ecs[a]->l.init_as_cb();
     CB::default_label(lab);
     adf_data.ecs[a]->interactions = &data.all->interactions;
   }

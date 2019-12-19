@@ -25,7 +25,7 @@ struct cb
   ~cb()
   {
     cb_cs_ld.costs.delete_v();
-    //COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
+    // COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
   }
 };
 
@@ -47,7 +47,7 @@ bool know_all_cost_example(CB::label& ld)
 template <bool is_learn>
 void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
-  CB::label ld = ec.l.cb();
+  CB::label ld = std::move(ec.l.cb());
   cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld);
   if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
@@ -58,7 +58,8 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
   if (c.cb_type != CB_TYPE_DM)
   {
-    ec.l.cs() = data.cb_cs_ld;
+    ec.l.reset();
+    ec.l.init_as_cs(data.cb_cs_ld);
 
     if (is_learn)
       base.learn(ec);
@@ -67,7 +68,8 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
     for (size_t i = 0; i < ld.costs.size(); i++)
       ld.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
-    ec.l.cb() = ld;
+    ec.l.reset();
+    ec.l.init_as_cb(std::move(ld));
   }
 }
 

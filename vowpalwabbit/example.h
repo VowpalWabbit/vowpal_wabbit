@@ -21,6 +21,7 @@
 #include <vector>
 #include "vw_exception.h"
 #include "label.h"
+#include "prediction.h"
 
 inline void delete_scalars(void* v)
 {
@@ -28,7 +29,7 @@ inline void delete_scalars(void* v)
   preds->delete_v();
 }
 
-typedef union
+union polyprediction
 {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
@@ -37,7 +38,9 @@ typedef union
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc
-} polyprediction;
+  polyprediction() { memset(this, 0, sizeof(polyprediction)); }
+  ~polyprediction() {  }
+};
 
 struct example : public example_predict  // core example datatype.
 {

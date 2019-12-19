@@ -7,30 +7,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-namespace prediction_type
-{
-#define CASE(type) \
-  case type:       \
-    return #type;
-
-const char* to_string(prediction_type_t prediction_type)
-{
-  switch (prediction_type)
-  {
-    CASE(scalar)
-    CASE(scalars)
-    CASE(action_scores)
-    CASE(action_probs)
-    CASE(multiclass)
-    CASE(multilabels)
-    CASE(prob)
-    CASE(multiclassprobs)
-    default:
-      return "<unsupported>";
-  }
-}
-}  // namespace prediction_type
-
 namespace LEARNER
 {
 void learn_ex(example& ec, vw& all)

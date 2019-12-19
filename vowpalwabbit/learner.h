@@ -8,26 +8,9 @@
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
+#include "prediction.h"
 
 #include <memory>
-
-namespace prediction_type
-{
-enum prediction_type_t
-{
-  scalar,
-  scalars,
-  action_scores,
-  action_probs,
-  multiclass,
-  multilabels,
-  prob,
-  multiclassprobs,
-  decision_probs
-};
-
-const char* to_string(prediction_type_t prediction_type);
-}  // namespace prediction_type
 
 namespace LEARNER
 {

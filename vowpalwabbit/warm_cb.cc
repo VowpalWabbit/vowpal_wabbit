@@ -175,8 +175,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
   {
     auto& eca = *data.ecs[a];
     // clear label
-    auto& lab = eca.l;
-    CB::cb_label.default_label(lab);
+    CB::default_label(eca.l.cb());
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -361,8 +360,9 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
   }
   for (size_t a = 0; a < data.num_actions; ++a)
   {
-    cbls[a] = data.ecs[a]->l.cb();
-    data.ecs[a]->l.cs() = csls[a];
+    cbls[a] = std::move(data.ecs[a]->l.cb());
+    data.ecs[a]->l.reset();
+    data.ecs[a]->l.init_as_cs(std::move(csls[a]));
   }
 
   std::vector<float> old_weights;
@@ -378,7 +378,11 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
 
   for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 
-  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->l.cb() = cbls[a];
+  for (size_t a = 0; a < data.num_actions; ++a)
+  {
+    data.ecs[a]->l.reset();
+    data.ecs[a]->l.init_as_cb(std::move(cbls[a]));
+  }
 }
 
 template <bool use_cs>
@@ -529,7 +533,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   for (size_t a = 0; a < num_actions; ++a)
   {
     data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
-    auto& lab = data.ecs[a]->l.cb();
+    auto& lab = data.ecs[a]->l.init_as_cb();
     CB::default_label(lab);
   }
 

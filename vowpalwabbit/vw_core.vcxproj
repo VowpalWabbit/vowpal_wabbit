@@ -157,6 +157,7 @@
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="interactions.h" />
     <ClInclude Include="io_buf.h" />
+    <ClInclude Include="label.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
@@ -190,6 +191,7 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="prediction.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="queue.h" />

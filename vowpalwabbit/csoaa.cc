@@ -55,11 +55,13 @@ template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
   // std::cerr << "------------- passthrough" << std::endl;
-  COST_SENSITIVE::label ld = ec.l.cs();
+  COST_SENSITIVE::label ld = std::move(ec.l.cs());
   uint32_t prediction = 1;
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
-  ec.l.simple() = {0., 0., 0.};
+
+  ec.l.reset();
+  ec.l.init_as_simple();
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
@@ -107,7 +109,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   }
 
   ec.pred.multiclass = prediction;
-  ec.l.cs() = ld;
+  ec.l.reset();
+  ec.l.init_as_cs(std::move(ld));
 }
 
 void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
@@ -255,7 +258,9 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
 
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
-  ec.l.simple() = simple_label;
+  ec.l.reset();
+  ec.l.init_as_simple(simple_label);
+
   uint64_t old_offset = ec.ft_offset;
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -263,7 +268,8 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
   LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-  ec.l.cs() = ld;
+  ec.l.reset();
+  ec.l.init_as_cs(ld);
 }
 
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
@@ -298,11 +304,10 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
   {
     example* ec1 = ec_seq[k1];
 
-    // save original variables
-    COST_SENSITIVE::label save_cs_label = ec1->l.cs();
-    label_data& simple_label = ec1->l.simple();
+    // Save original label.
+    COST_SENSITIVE::label save_cs_label(std::move(ec1->l.cs()));
 
-    v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
+    auto& costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1)
       continue;
 
@@ -311,7 +316,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     for (size_t k2 = k1 + 1; k2 < K; k2++)
     {
       example* ec2 = ec_seq[k2];
-      v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs().costs;
+      auto& costs2 = ec2->l.cs().costs;
 
       if (costs2[0].class_index == (uint32_t)-1)
         continue;
@@ -323,8 +328,10 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
-      simple_label.initial = 0.;
+      ec1->l.reset();
+      label_data& simple_label = ec1->l.init_as_simple();
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
+
       float old_weight = ec1->weight;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
@@ -340,8 +347,9 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     }
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
-    // restore original cost-sensitive label, sum of importance weights
-    ec1->l.cs() = save_cs_label;
+    // Restore original cost-sensitive label, sum of importance weights.
+    ec1->l.reset();
+    ec1->l.init_as_cs(std::move(save_cs_label));
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
@@ -364,7 +372,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   {
     // save original variables
     label save_cs_label = ec->l.cs();
-    v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
+    v_array<COST_SENSITIVE::wclass>& costs = save_cs_label.costs;
 
     // build example for the base learner
     label_data simple_label;
@@ -386,7 +394,8 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    ec->l.simple() = simple_label;
+    ec->l.reset();
+    ec->l.init_as_simple(simple_label);
 
     // learn
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
@@ -398,7 +407,8 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     ec->weight = old_weight;
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
-    ec->l.cs() = save_cs_label;
+    ec->l.reset();
+    ec->l.init_as_cs(save_cs_label);
     ec->partial_prediction = costs[0].partial_prediction;
   }
 }

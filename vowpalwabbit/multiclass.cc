@@ -21,7 +21,7 @@ char* bufread_label(label_t& ld, char* c)
 
 size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
 {
- auto& ld = v.multi();
+  auto& ld = v.init_as_multi();
   char* c;
   size_t total = sizeof(ld.label) + sizeof(ld.weight);
   if (cache.buf_read(c, total) < total)
@@ -56,7 +56,7 @@ void cache_label(new_polylabel& v, io_buf& cache)
 
 void default_label(new_polylabel& v)
 {
- auto& ld = v.multi();
+  auto& ld = v.init_as_multi();
   ld.label = (uint32_t)-1;
   ld.weight = 1.;
 }
