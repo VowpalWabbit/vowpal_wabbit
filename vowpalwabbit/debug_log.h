@@ -12,7 +12,7 @@ struct vw_dbg
   const static bool csoaa           = false;
   const static bool cs_active       = false;
 
-  const static bool track_stack     = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa;
+  const static bool track_stack = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa | cs_active;
 };
 
 #define VW_DEBUG_LOG vw_dbg::default_log
