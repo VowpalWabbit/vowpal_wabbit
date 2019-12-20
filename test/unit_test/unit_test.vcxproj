@@ -30,6 +30,7 @@
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
+    <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="vwdll_test.cc" />
   </ItemGroup>
@@ -153,7 +154,6 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
     <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
@@ -171,7 +171,6 @@
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
   </Target>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
