@@ -21,7 +21,7 @@ using namespace VW::config;
 #ifdef VW_DEBUG_LOG
 #undef VW_DEBUG_LOG
 #endif
-#define VW_DEBUG_LOG csoaa
+#define VW_DEBUG_LOG vw_dbg::csoaa
 
 namespace CSOAA
 {
@@ -312,6 +312,8 @@ void base_learn_restore_pred(single_learner& base, example* ec1)
 
 void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
+  VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
+
   size_t K = ec_seq.size();
   std::vector<COST_SENSITIVE::wclass*> all_costs;
   for (const auto& example : ec_seq) all_costs.push_back(&example->l.cs.costs[0]);
@@ -368,6 +370,8 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 
 void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
+  VW_DBG(ec_seq) << "do_actual_learning_oaa()" << std::endl;
+
   float min_cost = FLT_MAX;
   float max_cost = -FLT_MAX;
 
@@ -911,9 +915,9 @@ base_learner* csldf_setup(options_i& options, vw& all)
   single_learner* pbase = as_singleline(setup_base(*all.options, all));
   learner<ldf, multi_ex>* pl = nullptr;
   if (ld->rank)
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type::action_scores, "csoaa_ldf_rank", false);
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type::action_scores, "csoaa_ldf_rank");
   else
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type::multiclass, "csoaa_ldf", false);
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type::multiclass, "csoaa_ldf");
 
   pl->set_finish_example(finish_multiline_example);
   pl->set_end_pass(end_pass);
