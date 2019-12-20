@@ -76,6 +76,10 @@ int main(int argc, char* argv[])
     if (argc == 3 && !strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
+      if (!arg_file)
+      {
+        THROW("Could not open file: " << argv[2]);
+      }
 
       int line_count = 1;
       std::string line;
@@ -85,12 +89,11 @@ int main(int argc, char* argv[])
         sstr << line << " -f model." << (line_count++);
         sstr << " --no_stdin";  // can't use stdin with multiple models
 
-        std::cout << sstr.str() << std::endl;
-        std::string str = sstr.str();
-        const char* new_args = str.c_str();
+        const std::string new_args = sstr.str();
+        std::cout << new_args << std::endl;
 
         int l_argc;
-        char** l_argv = VW::get_argv_from_string(new_args, l_argc);
+        char** l_argv = VW::to_argv(new_args, l_argc);
 
         std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
         ptr->add_and_parse(driver_config);
