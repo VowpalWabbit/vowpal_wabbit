@@ -7,9 +7,11 @@ import re
 import io
 
 from scipy.sparse import csr_matrix
+import sklearn
+from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
-from sklearn.datasets.svmlight_format import dump_svmlight_file
+from sklearn.datasets import dump_svmlight_file
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import shuffle
 from vowpalwabbit import pyvw
@@ -347,7 +349,14 @@ class VW(BaseEstimator):
             Output vector relative to X.
         """
 
-        check_is_fitted(self, 'fit_')
+        if sklearn.__version__ < '0.22':
+            check_is_fitted(self, 'fit_')
+        else:
+            check_is_fitted(self)
+            if not hasattr(self, 'fit_'):
+                msg = ("This %(name)s instance is not fitted yet. Call 'fit' with "
+                       "appropriate arguments before using this method.")
+                raise NotFittedError(msg % {'name': self.__class__.__name__})
 
         try:
             num_samples = X.shape[0] if X.ndim > 1 else len(X)
