@@ -89,7 +89,7 @@ class namedlabels
 
   uint32_t getK() { return m_K; }
 
-  uint64_t get(VW::string_view s) const
+  uint32_t get(VW::string_view s) const
   {
     auto iter = m_name2id.find(s);
     if (iter == m_name2id.end())
@@ -107,7 +107,7 @@ class namedlabels
       return VW::string_view();
     }
     else
-      return m_id2name[v - 1];
+      return m_id2name[(size_t)(v - 1)];
   }
 };
 
