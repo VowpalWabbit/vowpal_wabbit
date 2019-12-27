@@ -4,9 +4,6 @@
 #include "crossplat_compat.h"
 
 #include <cfloat>
-#ifdef _WIN32
-#define NOMINMAX
-#endif
 
 #if !defined(VW_NO_INLINE_SIMD)
 #if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))

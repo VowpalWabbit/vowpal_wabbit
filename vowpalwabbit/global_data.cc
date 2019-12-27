@@ -18,6 +18,8 @@
 #define NOMINMAX
 #include <WinSock2.h>
 #include <Windows.h>
+#else
+#include <sys/socket.h>
 #endif
 
 struct global_prediction
