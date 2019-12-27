@@ -120,7 +120,7 @@ void finish_setup(nn& n, vw& all)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
   n.hiddenbias.total_sum_feat_sq++;
-  n.hiddenbias.l.simple().label = FLT_MAX;
+  n.hiddenbias.l.init_as_simple().label = FLT_MAX;
   n.hiddenbias.weight = 1;
   n.hiddenbias.in_use = true;
 
@@ -134,7 +134,7 @@ void finish_setup(nn& n, vw& all)
         audit_strings_ptr(new audit_strings("", "OutputWeight")));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.total_sum_feat_sq++;
-  n.outputweight.l.simple().label = FLT_MAX;
+  n.outputweight.l.init_as_simple().label = FLT_MAX;
   n.outputweight.weight = 1;
   n.outputweight.in_use = true;
 

@@ -327,7 +327,7 @@ template <bool use_cs>
 void add_to_vali(warm_cb& data, example& ec)
 {
   // TODO: set the first parameter properly
-  example* ec_copy = VW::alloc_examples(sizeof(polylabel), 1);
+  example* ec_copy = VW::alloc_examples(0 /*unused*/, 1);
 
   if (use_cs)
     VW::copy_example_data(false, ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
