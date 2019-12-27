@@ -12,13 +12,13 @@ namespace VW
 template <typename T>
 struct v_array_allocator
 {
-  v_array<T> operator()() { return v_init<T>(); }
+  v_array<T> operator()() { return v_array<T>(); }
 };
 
 template <typename T>
 struct v_array_deleter
 {
-  void operator()(v_array<T>& array) { array.delete_v(); }
+  void operator()(v_array<T>& array) { array.~v_array(); }
 };
 
 template <typename T>

@@ -53,7 +53,7 @@ void VW::autolink::learn(LEARNER::single_learner& base, example& ec)
 void VW::autolink::prepare_example(LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
-  float base_pred = ec.pred.scalar;
+  float base_pred = ec.pred.scalar();
 
   // Add features of label.
   ec.indices.push_back(autolink_namespace);
@@ -63,7 +63,7 @@ void VW::autolink::prepare_example(LEARNER::single_learner& base, example& ec)
     if (base_pred != 0.)
     {
       fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift));
-      base_pred *= ec.pred.scalar;
+      base_pred *= ec.pred.scalar();
     }
   }
   ec.total_sum_feat_sq += fs.sum_feat_sq;

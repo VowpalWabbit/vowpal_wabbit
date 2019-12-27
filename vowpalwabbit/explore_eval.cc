@@ -61,7 +61,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   size_t num_features = 0;
 
   float loss = 0.;
-  ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
+  ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.action_scores();
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
@@ -84,7 +84,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.action_scores(), ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -142,7 +142,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
   data.known_cost = CB_ADF::get_observed_cost(ec_seq);
   if (label_example != nullptr && is_learn)
   {
-    ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
+    ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.action_scores();
 
     float action_probability = 0;
     for (size_t i = 0; i < a_s.size(); i++)
@@ -211,14 +211,12 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   if (!options.was_supplied("cb_explore_adf"))
     options.insert("cb_explore_adf", "");
 
-  all.delete_prediction = nullptr;
-
   multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
   learner<explore_eval, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::action_probs);
+      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

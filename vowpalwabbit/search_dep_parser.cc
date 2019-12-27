@@ -107,21 +107,11 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
 void finish(Search::search &sch)
 {
   task_data *data = sch.get_task_data<task_data>();
-  data->valid_actions.delete_v();
-  data->valid_action_temp.delete_v();
-  data->gold_heads.delete_v();
-  data->gold_tags.delete_v();
-  data->stack.delete_v();
-  data->heads.delete_v();
-  data->tags.delete_v();
-  data->temp.delete_v();
-  data->action_loss.delete_v();
-  data->gold_actions.delete_v();
-  data->gold_action_losses.delete_v();
-  data->gold_action_temp.delete_v();
-  VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
+
+  data->ex->~example();
   free(data->ex);
-  for (size_t i = 0; i < 6; i++) data->children[i].delete_v();
+  for (size_t i = 0; i < 6; i++)
+    data->children[i].~v_array();
   delete data;
 }
 

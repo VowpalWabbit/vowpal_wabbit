@@ -16,7 +16,7 @@ struct oaa
 {
   uint64_t k;
   vw* all;                    // for raw
-  polyprediction* pred;       // for multipredict
+  new_polyprediction* pred;       // for multipredict
   uint64_t num_subsample;     // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id;        // for randomized subsampling, where do we live in the list
@@ -61,7 +61,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
   }
   o.subsample_id = p;
 
-  ec.pred.multiclass = (uint32_t)prediction;
+  ec.pred.multiclass() = (uint32_t)prediction;
   ec.l.multi() = ld;
   ec.weight = weight_temp;
 }
@@ -77,17 +77,17 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   uint32_t prediction = 1;
   v_array<float> scores_array;
   if (scores)
-    scores_array = ec.pred.scalars;
+    scores_array = ec.pred.scalars();
 
   ec.l.reset();
   ec.l.init_as_simple(FLT_MAX, 0.f, 0.f);
   base.multipredict(ec, 0, o.k, o.pred, true);
   for (uint32_t i = 2; i <= o.k; i++)
-    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar)
+    if (o.pred[i - 1].scalar() > o.pred[prediction - 1].scalar())
       prediction = i;
 
   if (ec.passthrough)
-    for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
+    for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar());
 
   if (is_learn)
   {
@@ -95,38 +95,38 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
     {
       ec.l.reset();
       ec.l.init_as_simple((mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f);
-      ec.pred.scalar = o.pred[i - 1].scalar;
+      ec.pred.scalar() = o.pred[i - 1].scalar();
       base.update(ec, i - 1);
     }
   }
 
   if (print_all)
   { 
-    outputStringStream << "1:" << o.pred[0].scalar;
-    for (uint32_t i = 2; i <= o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar;
+    outputStringStream << "1:" << o.pred[0].scalar();
+    for (uint32_t i = 2; i <= o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar();
     o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   if (scores)
   {
     scores_array.clear();
-    for (uint32_t i = 0; i < o.k; i++) scores_array.push_back(o.pred[i].scalar);
-    ec.pred.scalars = scores_array;
+    for (uint32_t i = 0; i < o.k; i++) scores_array.push_back(o.pred[i].scalar());
+    ec.pred.scalars() = scores_array;
 
     if (probabilities)
     {
       float sum_prob = 0;
       for (uint32_t i = 0; i < o.k; i++)
       {
-        ec.pred.scalars[i] = 1.f / (1.f + correctedExp(-o.pred[i].scalar));
-        sum_prob += ec.pred.scalars[i];
+        ec.pred.scalars()[i] = 1.f / (1.f + correctedExp(-o.pred[i].scalar()));
+        sum_prob += ec.pred.scalars()[i];
       }
       float inv_sum_prob = 1.f / sum_prob;
-      for (uint32_t i = 0; i < o.k; i++) ec.pred.scalars[i] *= inv_sum_prob;
+      for (uint32_t i = 0; i < o.k; i++) ec.pred.scalars()[i] *= inv_sum_prob;
     }
   }
   else
-    ec.pred.multiclass = prediction;
+    ec.pred.multiclass() = prediction;
 
   ec.l.reset();
   ec.l.init_as_multi(mc_label_data);
@@ -148,7 +148,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   if (probabilities)
   {
     if (ec.l.multi().label <= o.k)  // prevent segmentation fault if labeĺ==(uint32_t)-1
-      correct_class_prob = ec.pred.scalars[ec.l.multi().label - 1];
+      correct_class_prob = ec.pred.scalars()[ec.l.multi().label - 1];
     if (correct_class_prob > 0)
       multiclass_log_loss = -log(correct_class_prob) * ec.weight;
     if (ec.test_only)
@@ -161,7 +161,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   // but we cannot store it in ec.pred union because we store ec.pred.probs there.
   uint32_t prediction = 0;
   for (uint32_t i = 1; i < o.k; i++)
-    if (ec.pred.scalars[i] > ec.pred.scalars[prediction])
+    if (ec.pred.scalars()[i] > ec.pred.scalars()[prediction])
       prediction = i;
   prediction++;  // prediction is 1-based index (not 0-based)
   float zero_one_loss = 0;
@@ -181,7 +181,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     }
     else
       outputStringStream << i + 1;
-    outputStringStream << ':' << ec.pred.scalars[i];
+    outputStringStream << ':' << ec.pred.scalars()[i];
   }
   for (int sink : all.final_prediction_sink) all.print_text(sink, outputStringStream.str(), ec.tag);
 
@@ -221,7 +221,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
 
   data->all = &all;
-  data->pred = calloc_or_throw<polyprediction>(data->k);
+  data->pred = calloc_or_throw<new_polyprediction>(data->k);
   data->subsample_order = nullptr;
   data->subsample_id = 0;
   if (data->num_subsample > 0)
@@ -250,7 +250,6 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   auto base = as_singleline(setup_base(options, all));
   if (probabilities || scores)
   {
-    all.delete_prediction = delete_scalars;
     if (probabilities)
     {
       auto loss_function_type = all.loss->getType();
@@ -258,23 +257,23 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
         all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
-          predict_or_learn<false, false, true, true>, all.p, data->k, prediction_type::scalars);
+          predict_or_learn<false, false, true, true>, all.p, data->k, prediction_type_t::scalars);
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
       l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
-          predict_or_learn<false, false, true, false>, all.p, data->k, prediction_type::scalars);
+          predict_or_learn<false, false, true, false>, all.p, data->k, prediction_type_t::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (all.raw_prediction > 0)
     l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
-        predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type::multiclass);
+        predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type_t::multiclass);
   else
     l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
-        predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type::multiclass);
+        predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type_t::multiclass);
 
   if (data_ptr->num_subsample > 0)
   {

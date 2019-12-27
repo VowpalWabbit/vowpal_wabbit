@@ -148,7 +148,7 @@ void compute_expert_loss(data& sm, example& ec)
   }
   float inv_weight = 1.0f / (sm.net_weight + sm.net_feature_weight);
   sm.average_pred *= inv_weight;
-  ec.pred.scalar = sm.average_pred;
+  ec.pred.scalar() = sm.average_pred;
   ec.partial_prediction = sm.average_pred;
 
   if (is_learn)
@@ -208,7 +208,7 @@ void predict_or_learn(data& sm, LEARNER::single_learner& base, example& ec)
     if (sm.update_before_learn)
     {
       base.predict(ec);
-      float pred = ec.pred.scalar;
+      float pred = ec.pred.scalar();
       if (sm.compete)
       {
         sm.feature_pred = pred;
@@ -218,14 +218,14 @@ void predict_or_learn(data& sm, LEARNER::single_learner& base, example& ec)
       update_marginal(sm, ec);  // update features before learning.
       make_marginal<is_learn>(sm, ec);
       base.learn(ec);
-      ec.pred.scalar = pred;
+      ec.pred.scalar() = pred;
     }
     else
     {
       base.learn(ec);
       if (sm.compete)
       {
-        sm.feature_pred = ec.pred.scalar;
+        sm.feature_pred = ec.pred.scalar();
         compute_expert_loss<is_learn>(sm, ec);
       }
       update_marginal(sm, ec);
@@ -233,7 +233,7 @@ void predict_or_learn(data& sm, LEARNER::single_learner& base, example& ec)
   else
   {
     base.predict(ec);
-    float pred = ec.pred.scalar;
+    float pred = ec.pred.scalar();
     if (sm.compete)
     {
       sm.feature_pred = pred;

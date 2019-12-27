@@ -6,6 +6,7 @@ LEARNER::base_learner* mwt_setup(VW::config::options_i& options, vw& all);
 
 namespace MWT
 {
+VW_DEPRECATED("no longer used")
 void delete_scalars(void* v);
 void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag);
 }  // namespace MWT

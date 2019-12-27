@@ -27,8 +27,7 @@ struct expreplay
   {
     for (size_t n = 0; n < N; n++)
     {
-      lp.delete_label(buf[n].l);
-      VW::dealloc_example(NULL, buf[n], NULL);  // TODO: need to free label
+      buf[n].~example();
     }
     free(buf);
     free(filled);
@@ -64,7 +63,7 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
 
 template <label_parser& lp>
 void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
-    polyprediction* pred, bool finalize_predictions)
+    new_polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }
@@ -110,7 +109,8 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
   er->buf->interactions = &all.interactions;
 
   if (er_level == 'c')
-    for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs().costs = v_init<COST_SENSITIVE::wclass>();
+    for (size_t n = 0; n < er->N; n++)
+      er->buf[n].l.init_as_cs();
 
   er->filled = calloc_or_throw<bool>(er->N);
 

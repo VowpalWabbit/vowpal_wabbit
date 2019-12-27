@@ -154,11 +154,10 @@ class TC_parser
       fs.push_back(v, word_hash);
       if (audit)
       {
-        v_array<char> feature_v = v_init<char>();
+        v_array<char> feature_v;
         push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
         feature_v.push_back('\0');
         fs.space_names.push_back(audit_strings_ptr(new audit_strings(base, feature_v.begin())));
-        feature_v.delete_v();
       }
       if ((*affix_features)[index] > 0 && (feature_name.end != feature_name.begin))
       {
@@ -183,7 +182,7 @@ class TC_parser
           affix_fs.push_back(v, word_hash);
           if (audit)
           {
-            v_array<char> affix_v = v_init<char>();
+            v_array<char> affix_v;
             if (index != ' ')
               affix_v.push_back(index);
             affix_v.push_back(is_prefix ? '+' : '-');
@@ -224,7 +223,7 @@ class TC_parser
         spell_fs.push_back(v, word_hash);
         if (audit)
         {
-          v_array<char> spelling_v = v_init<char>();
+          v_array<char> spelling_v;
           if (index != ' ')
           {
             spelling_v.push_back(index);
@@ -316,7 +315,7 @@ class TC_parser
       substring name = read_name();
       if (audit)
       {
-        v_array<char> base_v_array = v_init<char>();
+        v_array<char> base_v_array;
         push_many(base_v_array, name.begin, name.end - name.begin);
         base_v_array.push_back('\0');
         if (base != nullptr)
@@ -398,7 +397,6 @@ class TC_parser
 
   TC_parser(char* reading_head, char* endLine, vw& all, example* ae)
   {
-    spelling = v_init<char>();
     if (endLine != reading_head)
     {
       this->beginLine = reading_head;

@@ -32,7 +32,6 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
 void finish(Search::search& sch)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
-  my_task_data->y_allowed.delete_v();
   delete my_task_data;
 }
 

@@ -58,7 +58,6 @@ size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
   if (is_outcome_present)
   {
     ld.outcome = new CCB::conditional_contextual_bandit_outcome();
-    ld.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     next_read_size = sizeof(ld.outcome->cost);
     if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
@@ -173,7 +172,6 @@ void default_label(new_polylabel& v)
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
   if (ld.outcome)
   {
-    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }
@@ -202,7 +200,6 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
   if (ldSrc.outcome)
   {
     ldDst.outcome = new CCB::conditional_contextual_bandit_outcome();
-    ldDst.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     ldDst.outcome->cost = ldSrc.outcome->cost;
     copy_array(ldDst.outcome->probabilities, ldSrc.outcome->probabilities);
@@ -239,16 +236,15 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(substring& outcome)
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
-  auto split_commas = v_init<substring>();
+  v_array<substring> split_commas;
   tokenize(',', outcome, split_commas);
 
-  auto split_colons = v_init<substring>();
+   v_array<substring> split_colons;
   tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3)
     THROW("Malformed ccb label");
 
-  ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
   ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
 
   ccb_outcome.cost = float_of_substring(split_colons[1]);
@@ -264,9 +260,6 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(substring& outcome)
       THROW("Must be action probability pairs");
     ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
   }
-
-  split_colons.delete_v();
-  split_commas.delete_v();
 
   return &ccb_outcome;
 }

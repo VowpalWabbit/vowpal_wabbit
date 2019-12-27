@@ -47,7 +47,7 @@ class node_pred
   }
 };
 
-typedef struct
+struct node
 {
   // everyone has
   uint32_t parent;           // the parent node
@@ -68,7 +68,7 @@ typedef struct
   // leaf has
   uint32_t max_count;        // the number of samples of the most common label
   uint32_t max_count_label;  // the most common label
-} node;
+};
 
 struct log_multi
 {
@@ -83,13 +83,6 @@ struct log_multi
   uint32_t swap_resist;
 
   uint32_t nbofswaps;
-
-  ~log_multi()
-  {
-    // save_node_stats(b);
-    for (auto& node : nodes) node.preds.delete_v();
-    nodes.delete_v();
-  }
 };
 
 inline void init_leaf(node& n)
@@ -112,7 +105,6 @@ inline node init_node()
 
   node.parent = 0;
   node.min_count = 0;
-  node.preds = v_init<node_pred>();
   init_leaf(node);
 
   return node;
@@ -310,10 +302,10 @@ void predict(log_multi& b, single_learner& base, example& ec)
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_predictor);  // depth
-    cn = descend(b.nodes[cn], ec.pred.scalar);
+    cn = descend(b.nodes[cn], ec.pred.scalar());
     depth++;
   }
-  ec.pred.multiclass = b.nodes[cn].max_count_label;
+  ec.pred.multiclass() = b.nodes[cn].max_count_label;
   ec.l.multi() = mc;
 }
 
@@ -326,7 +318,7 @@ void learn(log_multi& b, single_learner& base, example& ec)
   if (ec.l.multi().label != (uint32_t)-1)  // if training the tree
   {
     MULTICLASS::label_t mc = ec.l.multi();
-    uint32_t start_pred = ec.pred.multiclass;
+    uint32_t start_pred = ec.pred.multiclass();
 
     uint32_t class_index = 0;
     ec.l.simple() = {FLT_MAX, 0.f, 0.f};
@@ -335,13 +327,13 @@ void learn(log_multi& b, single_learner& base, example& ec)
     while (children(b, cn, class_index, mc.label))
     {
       train_node(b, base, ec, cn, class_index, depth);
-      cn = descend(b.nodes[cn], ec.pred.scalar);
+      cn = descend(b.nodes[cn], ec.pred.scalar());
       depth++;
     }
 
     b.nodes[cn].min_count++;
     update_min_count(b, cn);
-    ec.pred.multiclass = start_pred;
+    ec.pred.multiclass() = start_pred;
     ec.l.multi() = mc;
   }
 }

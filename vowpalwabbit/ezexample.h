@@ -260,7 +260,7 @@ class ezexample
   float predict()
   {
     setup_for_predict();
-    return ec->pred.scalar;
+    return ec->pred.scalar();
   }
 
   float predict_partial()

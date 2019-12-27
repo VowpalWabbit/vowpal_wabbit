@@ -85,31 +85,19 @@ struct warm_cb
 
   ~warm_cb()
   {
-    CB::delete_label(cb_label);
-    a_s.delete_v();
+    delete[] csls;
+    delete[] cbls;
 
-    for (size_t a = 0; a < num_actions; ++a)
+    for (auto& ex : ecs)
     {
-      COST_SENSITIVE::delete_label(csls[a]);
-    }
-    free(csls);
-    free(cbls);
-
-    for (size_t a = 0; a < num_actions; ++a)
-    {
-      ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *ecs[a]);
-      free_it(ecs[a]);
+      ex->~example();
+      free(ex);
     }
 
-    a_s_adf.delete_v();
-    for (size_t i = 0; i < ws_vali.size(); ++i)
+    for (auto& ex : ws_vali)
     {
-      if (use_cs)
-        VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *ws_vali[i]);
-      else
-        VW::dealloc_example(MULTICLASS::mc_label.delete_label, *ws_vali[i]);
-      free(ws_vali[i]);
+      ex->~example();
+      free(ex);
     }
   }
 };
@@ -307,7 +295,7 @@ uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, example& ec,
 {
   copy_example_to_adf(data, ec);
   base.predict(data.ecs, i);
-  return data.ecs[0]->pred.a_s[0].action + 1;
+  return data.ecs[0]->pred.action_scores()[0].action + 1;
 }
 
 void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
@@ -393,7 +381,7 @@ void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, i
   if (ind_update(data, ec_type))
     learn_sup_adf<use_cs>(data, ec, ec_type);
 
-  ec.pred.multiclass = action;
+  ec.pred.multiclass() = action;
 }
 
 uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
@@ -405,12 +393,12 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
 
   auto& out_ec = *data.ecs[0];
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
-          end_scores(out_ec.pred.a_s), chosen_action))
+  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_scores()),
+          end_scores(out_ec.pred.action_scores()), chosen_action))
     THROW("Failed to sample from pdf");
 
   auto& a_s = data.a_s_adf;
-  copy_array<action_score>(a_s, out_ec.pred.a_s);
+  copy_array<action_score>(a_s, out_ec.pred.action_scores());
 
   return chosen_action;
 }
@@ -461,7 +449,7 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
   if (ind_update(data, ec_type))
     learn_bandit_adf(data, base, ec, ec_type);
 
-  ec.pred.multiclass = cl.action;
+  ec.pred.multiclass() = cl.action;
 }
 
 void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
@@ -512,7 +500,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
   else
   {
     ec.weight = 0;
-    ec.pred.multiclass = 1;
+    ec.pred.multiclass() = 1;
   }
 
   // Restore the original labels
@@ -538,13 +526,13 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   }
 
   // The rest of the initialization is for warm start CB
-  data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
+  data.csls = new COST_SENSITIVE::label[num_actions];
   for (uint32_t a = 0; a < num_actions; ++a)
   {
     COST_SENSITIVE::default_label(data.csls[a]);
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
-  data.cbls = calloc_or_throw<CB::label>(num_actions);
+  data.cbls = new CB::label[num_actions];
 
   data.ws_train_size = data.ws_period;
   data.ws_vali_size = 0;
@@ -656,7 +644,6 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
         data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
 
   l->set_finish(finish);
-  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }

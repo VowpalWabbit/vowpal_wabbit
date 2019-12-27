@@ -56,7 +56,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
     float k = (float)all.sd->t;
     float threshold = 0.f;
 
-    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
+    ec.confidence = fabsf(ec.pred.scalar() - threshold) / base.sensitivity(ec);
     float importance = query_decision(a, ec.confidence, k);
 
     if (importance > 0)
@@ -84,7 +84,7 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   if (ec.l.simple().label == FLT_MAX)
   {
     float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
-    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
+    ec.confidence = fabsf(ec.pred.scalar() - threshold) / base.sensitivity(ec);
   }
 }
 
@@ -122,7 +122,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (auto i : all.final_prediction_sink)
   {
-    active_print_result(i, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i, ec.pred.scalar(), ai, ec.tag);
   }
 
   print_update(all, ec);

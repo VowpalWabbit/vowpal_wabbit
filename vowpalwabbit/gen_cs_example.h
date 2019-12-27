@@ -115,7 +115,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
     }
   }
 
-  ec.pred.multiclass = argmin;
+  ec.pred.multiclass() = argmin;
 }
 
 template <bool is_learn>

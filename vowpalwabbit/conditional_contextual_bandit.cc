@@ -167,7 +167,7 @@ void attach_label_to_example(
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
-  auto& pred = data.shared->pred.a_s;
+  auto& pred = data.shared->pred.action_scores();
   decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
@@ -381,7 +381,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, CCB::label& slot_label, cc
   }
 
   // Must provide a prediction that cb can write into, this will be saved into the decision scores object later.
-  data.shared->pred.a_s = data.action_score_pool.get_object();
+  data.shared->pred.action_scores() = data.action_score_pool.get_object();
 
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
   // example.
@@ -409,7 +409,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
-  auto decision_scores = examples[0]->pred.decision_scores;
+  auto decision_scores = examples[0]->pred.decision_scores();
 
   // for each slot, re-build the cb example and call cb_explore_adf
   size_t slot_id = 0;
@@ -476,7 +476,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   data.stored_labels.clear();
 
   // Save the predictions
-  examples[0]->pred.decision_scores = decision_scores;
+  examples[0]->pred.decision_scores() = decision_scores;
 }
 
 void print_decision_scores(int f, decision_scores_t& decision_scores)
@@ -587,7 +587,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
 
   // Is it hold out?
   size_t num_labelled = 0;
-  auto preds = ec_seq[0]->pred.decision_scores;
+  auto preds = ec_seq[0]->pred.decision_scores();
   for (size_t i = 0; i < slots.size(); i++)
   {
     auto outcome = slots[i]->l.conditional_contextual_bandit().outcome;
@@ -612,7 +612,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   all.sd->update(holdout_example, num_labelled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto sink : all.final_prediction_sink)
-    print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
+    print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores());
 
   CCB::print_update(all, slots, preds, num_features);
 }
@@ -625,11 +625,11 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores)
+  for (auto& a_s : ec_seq[0]->pred.decision_scores())
   {
     return_v_array(a_s, data.action_score_pool);
   }
-  ec_seq[0]->pred.decision_scores.clear();
+  ec_seq[0]->pred.decision_scores().clear();
 
   VW::finish_example(all, ec_seq);
 }
@@ -686,9 +686,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   learner<ccb, multi_ex>& l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_scores);
-
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
+      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_scores);
 
   l.set_finish_example(finish_multiline_example);
   return make_base(l);

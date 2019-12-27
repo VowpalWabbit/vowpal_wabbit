@@ -229,8 +229,8 @@ void parse_dictionary_argument(vw& all, std::string str)
         if (new_buffer == nullptr)
         {
           free(buffer);
+          ec->~example();
           free(ec);
-          VW::dealloc_example(all.p->lp.delete_label, *ec);
           delete map;
           io->close_file();
           delete io;
@@ -284,7 +284,7 @@ void parse_dictionary_argument(vw& all, std::string str)
   free(buffer);
   io->close_file();
   delete io;
-  VW::dealloc_example(all.p->lp.delete_label, *ec);
+  ec->~example();
   free(ec);
 
   if (!all.quiet)
@@ -1901,10 +1901,7 @@ void finish(vw& all, bool delete_all)
   // TODO: migrate all finalization into parser destructor
   if (all.p != nullptr)
   {
-    free_parser(all);
     finalize_source(all.p);
-    all.p->parse_name.clear();
-    all.p->parse_name.delete_v();
     delete all.p;
   }
 
@@ -1925,7 +1922,7 @@ void finish(vw& all, bool delete_all)
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
-  all.final_prediction_sink.delete_v();
+  all.final_prediction_sink.clear();
   for (size_t i = 0; i < all.loaded_dictionaries.size(); i++)
   {
     // Warning C6001 is triggered by the following:

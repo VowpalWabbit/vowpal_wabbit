@@ -33,9 +33,9 @@ struct bs
 
 void bs_predict_mean(vw& all, example& ec, std::vector<double>& pred_vec)
 {
-  ec.pred.scalar = (float)accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0) / pred_vec.size();
+  ec.pred.scalar() = (float)accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple().label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
 }
 
 void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
@@ -124,11 +124,11 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
   delete[] pred_vec_int;
 
   // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-  ec.pred.scalar = (float)current_label;
+  ec.pred.scalar() = (float)current_label;
 
   // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes"
   // and getLoss()
-  ec.loss = ((ec.pred.scalar == ec.l.simple().label) ? 0.f : 1.f) * ec.weight;
+  ec.loss = ((ec.pred.scalar() == ec.l.simple().label) ? 0.f : 1.f) * ec.weight;
 }
 
 void print_result(int f, float res, v_array<char> tag, float lb, float ub)
@@ -167,7 +167,7 @@ void output_example(vw& all, bs& d, example& ec)
     }
   }
 
-  for (int sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
+  for (int sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar(), ec.tag, d.lb, d.ub);
 
   print_update(all, ec);
 }
@@ -192,7 +192,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
     else
       base.predict(ec, i - 1);
 
-    d.pred_vec->push_back(ec.pred.scalar);
+    d.pred_vec->push_back(ec.pred.scalar());
 
     if (shouldOutput)
     {

@@ -53,7 +53,7 @@ bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */
 
   // Get loss difference
   float middle = 0.f;
-  ec.confidence = fabsf(ec.pred.scalar - middle) / base.sensitivity(ec);
+  ec.confidence = fabsf(ec.pred.scalar() - middle) / base.sensitivity(ec);
 
   float k = (float)all.sd->t;
   float loss_delta = ec.confidence / k;
@@ -112,7 +112,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
   for (size_t i = 0; i < a.cover_size; i++)
   {
     l.predict(ec, i + 1);
-    q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+    q2 += ((float)(sign(ec.pred.scalar()) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
   }
 
   p = std::sqrt(q2) / (1 + std::sqrt(q2));
@@ -141,7 +141,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
   {
     vw& all = *a.all;
 
-    float prediction = ec.pred.scalar;
+    float prediction = ec.pred.scalar();
     float t = (float)a.all->sd->t;
     float ec_input_weight = ec.weight;
     float ec_input_label = ec.l.simple().label;
@@ -214,20 +214,20 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       base.predict(ec, i + 1);
 
       // Update numerator of lambda
-      a.lambda_n[i] += 2.f * ((float)(sign(ec.pred.scalar) != sign(prediction))) * cost_delta;
+      a.lambda_n[i] += 2.f * ((float)(sign(ec.pred.scalar()) != sign(prediction))) * cost_delta;
       a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
+      a.lambda_d[i] += ((float)(sign(ec.pred.scalar()) != sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
 
       // Accumulating weights of learners in the cover
-      q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+      q2 += ((float)(sign(ec.pred.scalar()) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
     }
 
     // Restoring the weight, the label, and the prediction
     ec.weight = ec_output_weight;
     ec.l.simple().label = ec_output_label;
-    ec.pred.scalar = prediction;
+    ec.pred.scalar() = prediction;
   }
 }
 

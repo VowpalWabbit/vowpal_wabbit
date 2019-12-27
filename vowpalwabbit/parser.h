@@ -41,14 +41,6 @@ struct parser
     this->input = new io_buf{};
     this->output = new io_buf{};
     this->lp = simple_label;
-
-    // Free parser must still be used for the following fields.
-    this->words = v_init<substring>();
-    this->name = v_init<substring>();
-    this->parse_name = v_init<substring>();
-    this->gram_mask = v_init<size_t>();
-    this->ids = v_init<size_t>();
-    this->counts = v_init<size_t>();
   }
 
   ~parser()
@@ -119,4 +111,6 @@ void set_done(vw& all);
 void reset_source(vw& all, size_t numbits);
 void finalize_source(parser* source);
 void set_compressed(parser* par);
+
+VW_DEPRECATED("no longer needed")
 void free_parser(vw& all);

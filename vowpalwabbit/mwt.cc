@@ -36,10 +36,7 @@ struct mwt
 
   ~mwt()
   {
-    evals.delete_v();
-    policies.delete_v();
     for (auto& i : feature_space) i.delete_v();
-    indices.delete_v();
   }
 };
 
@@ -118,7 +115,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   // modify the predictions to use a vector with a score for each evaluated feature.
-  v_array<float> preds = ec.pred.scalars;
+  v_array<float> preds = ec.pred.scalars();
 
   if (learn)
   {
@@ -138,10 +135,10 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   // modify the predictions to use a vector with a score for each evaluated feature.
   preds.clear();
   if (learn)
-    preds.push_back((float)ec.pred.multiclass);
+    preds.push_back((float)ec.pred.multiclass());
   for (uint64_t index : c.policies) preds.push_back((float)c.evals[index].cost / (float)c.total);
 
-  ec.pred.scalars = preds;
+  ec.pred.scalars() = preds;
 }
 
 void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
@@ -175,17 +172,17 @@ void finish_example(vw& all, mwt& c, example& ec)
   float loss = 0.;
   if (c.learn)
     if (c.observation != nullptr)
-      loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars[0]);
+      loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars()[0]);
   all.sd->update(ec.test_only, c.observation != nullptr, loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) print_scalars(sink, ec.pred.scalars, ec.tag);
+  for (int sink : all.final_prediction_sink) print_scalars(sink, ec.pred.scalars(), ec.tag);
 
   if (c.learn)
   {
-    v_array<float> temp = ec.pred.scalars;
-    ec.pred.multiclass = (uint32_t)temp[0];
+    v_array<float> temp = ec.pred.scalars();
+    ec.pred.multiclass() = (uint32_t)temp[0];
     CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
-    ec.pred.scalars = temp;
+    ec.pred.scalars() = temp;
   }
   VW::finish_example(all, ec);
 }
@@ -251,7 +248,6 @@ base_learner* mwt_setup(options_i& options, vw& all)
   calloc_reserve(c->evals, all.length());
   c->evals.end() = c->evals.begin() + all.length();
 
-  all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
@@ -271,13 +267,13 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type::scalars);
+          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars);
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type::scalars);
+          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars);
   else
     l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type::scalars);
+        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

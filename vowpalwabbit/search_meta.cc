@@ -69,17 +69,11 @@ struct task_data
   std::stringstream* kbest_out;
   task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb)
   {
-    branches = v_init<branch>();
-    final = v_init<std::pair<branch, std::string*> >();
-    trajectory = v_init<act_score>();
     output_string = nullptr;
     kbest_out = nullptr;
   }
   ~task_data()
   {
-    branches.delete_v();
-    final.delete_v();
-    trajectory.delete_v();
     delete output_string;
     delete kbest_out;
   }

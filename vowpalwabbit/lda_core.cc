@@ -736,10 +736,10 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     for (size_t k = 0; k < l.topics; k++) new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
-  ec->pred.scalars.clear();
-  ec->pred.scalars.resize(l.topics);
-  memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
-  ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
+  ec->pred.scalars().clear();
+  ec->pred.scalars().resize(l.topics);
+  memcpy(ec->pred.scalars().begin(), new_gamma.begin(), l.topics * sizeof(float));
+  ec->pred.scalars().end() = ec->pred.scalars().begin() + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
 
@@ -851,7 +851,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 void return_example(vw &all, example &ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
-  for (int f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars, ec.tag);
+  for (int f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars(), ec.tag);
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
     all.sd->print_update(
@@ -871,12 +871,12 @@ void learn_batch(lda &l)
     // do in this case, we just return.
     for (size_t d = 0; d < l.examples.size(); d++)
     {
-      l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize(l.topics);
-      memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
-      l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
+      l.examples[d]->pred.scalars().clear();
+      l.examples[d]->pred.scalars().resize(l.topics);
+      memset(l.examples[d]->pred.scalars().begin(), 0, l.topics * sizeof(float));
+      l.examples[d]->pred.scalars().end() = l.examples[d]->pred.scalars().begin() + l.topics;
 
-      l.examples[d]->pred.scalars.clear();
+      l.examples[d]->pred.scalars().clear();
       return_example(*l.all, *l.examples[d]);
     }
     l.examples.clear();
@@ -1322,7 +1322,6 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     return nullptr;
 
   all.lda = (uint32_t)ld->topics;
-  all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;
@@ -1361,7 +1360,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type::scalars);
+      prediction_type_t::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

@@ -99,7 +99,7 @@ bool test_label(CB::label& ld)
 
 bool test_label(new_polylabel& v) { return CB::test_label(v.cb()); }
 
-void delete_label(CB::label& ld) { ld.costs.delete_v(); }
+void delete_label(CB::label& ld) { ld.costs.~v_array(); }
 
 void delete_label(new_polylabel& v)
 {
@@ -202,7 +202,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
   {
     size_t num_features = ec.num_features;
 
-    size_t pred = ec.pred.multiclass;
+    size_t pred = ec.pred.multiclass();
     if (ec_seq != nullptr)
     {
       num_features = 0;
@@ -221,8 +221,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     {
       std::ostringstream pred_buf;
       pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ');
-      if (!ec.pred.a_s.empty())
-        pred_buf << ec.pred.a_s[0].action << ":" << ec.pred.a_s[0].score << "...";
+      if (!ec.pred.action_scores().empty())
+        pred_buf << ec.pred.action_scores()[0].action << ":" << ec.pred.action_scores()[0].score << "...";
       else
         pred_buf << "no action";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features,

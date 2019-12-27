@@ -134,7 +134,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
-  ACTION_SCORE::action_scores preds = ec.pred.a_s;
+  ACTION_SCORE::action_scores preds = ec.pred.action_scores();
 
   for (const auto& example : ec_seq)
   {
@@ -158,7 +158,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.action_scores(), ec.tag);
 
   if (all.raw_prediction > 0)
   {

@@ -21,12 +21,6 @@ struct cb
 {
   cb_to_cs cbcs;
   COST_SENSITIVE::label cb_cs_ld;
-
-  ~cb()
-  {
-    cb_cs_ld.costs.delete_v();
-    // COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
-  }
 };
 
 bool know_all_cost_example(CB::label& ld)
@@ -86,7 +80,7 @@ void learn_eval(cb& data, single_learner&, example& ec)
   for (size_t i = 0; i < ld.event.costs.size(); i++)
     ld.event.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
 
-  ec.pred.multiclass = ec.l.cb_eval().action;
+  ec.pred.multiclass() = ec.l.cb_eval().action;
 }
 
 void output_example(vw& all, cb& data, example& ec, CB::label& ld)
@@ -95,11 +89,11 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 
   cb_to_cs& c = data.cbcs;
   if (!CB::test_label(ld))
-    loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
+    loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass());
 
   all.sd->update(ec.test_only, !CB::test_label(ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass(), 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -198,13 +192,13 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   learner<cb, example>* l;
   if (eval)
   {
-    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
+    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
     l = &init_learner(
-        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type::multiclass);
+        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;

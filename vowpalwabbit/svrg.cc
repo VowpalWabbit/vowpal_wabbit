@@ -59,7 +59,7 @@ float predict_stable(const svrg& s, example& ec)
 void predict(svrg& s, single_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
 }
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
@@ -93,7 +93,7 @@ void update_inner(const svrg& s, example& ec)
 {
   update u;
   // |ec| already has prediction according to inner weights.
-  u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar);
+  u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar());
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
   u.eta = s.all->eta;
   u.norm = (float)s.stable_grad_count;

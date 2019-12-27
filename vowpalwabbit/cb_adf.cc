@@ -70,21 +70,6 @@ struct cb_adf
 
   const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 
-  ~cb_adf()
-  {
-    _cb_labels.delete_v();
-    for (auto& prepped_cs_label : _prepped_cs_labels) prepped_cs_label.costs.delete_v();
-    _prepped_cs_labels.delete_v();
-    _cs_labels.costs.delete_v();
-    _backup_weights.delete_v();
-    _backup_nf.delete_v();
-    _prob_s.delete_v();
-
-    _a_s.delete_v();
-    _a_s_mtr_cs.delete_v();
-    _gen_cs.pred_scores.costs.delete_v();
-  }
-
  private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
   void learn_DR(multi_learner& base, multi_ex& examples);
@@ -98,7 +83,6 @@ struct cb_adf
 CB::cb_class get_observed_cost(multi_ex& examples)
 {
   CB::label ld;
-  ld.costs = v_init<cb_class>();
   int index = -1;
   CB::cb_class known_cost;
 
@@ -148,10 +132,10 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   _a_s.clear();
   _prob_s.clear();
   // TODO: Check that predicted scores are always stored with the first example
-  for (uint32_t i = 0; i < examples[0]->pred.a_s.size(); i++)
+  for (uint32_t i = 0; i < examples[0]->pred.action_scores().size(); i++)
   {
-    _a_s.push_back({examples[0]->pred.a_s[i].action, examples[0]->pred.a_s[i].score});
-    _prob_s.push_back({examples[0]->pred.a_s[i].action, 0.0});
+    _a_s.push_back({examples[0]->pred.action_scores()[i].action, examples[0]->pred.action_scores()[i].score});
+    _prob_s.push_back({examples[0]->pred.action_scores()[i].action, 0.0});
   }
 
   float sign_offset = 1.0;  // To account for negative rewards/costs
@@ -243,7 +227,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   {
     gen_cs_example_ips(examples, _cs_labels);
     call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
-    std::swap(examples[0]->pred.a_s, _a_s);
+    std::swap(examples[0]->pred.action_scores(), _a_s);
   }
   // second train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
@@ -254,13 +238,13 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb().costs[0].probability, _clip_p);
   examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
 
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.action_scores(), _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
   GEN_CS::call_cs_ldf<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
-  std::swap(examples[0]->pred.a_s, _a_s);
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.action_scores(), _a_s_mtr_cs);
+  std::swap(examples[0]->pred.action_scores(), _a_s);
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
@@ -300,8 +284,8 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
     /*	v_array<float> temp_scores;
     temp_scores = v_init<float>();
     do_actual_learning<false>(data,base);
-    for (size_t i = 0; i < data.ec_seq[0]->pred.a_s.size(); i++)
-    temp_scores.push_back(data.ec_seq[0]->pred.a_s[i].score);*/
+    for (size_t i = 0; i < data.ec_seq[0]->pred.action_scores().size(); i++)
+    temp_scores.push_back(data.ec_seq[0]->pred.action_scores()[i].score);*/
     switch (_gen_cs.cb_type)
     {
       case CB_TYPE_IPS:
@@ -327,9 +311,9 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
     }
 
     /*      for (size_t i = 0; i < temp_scores.size(); i++)
-    if (temp_scores[i] != data.ec_seq[0]->pred.a_s[i].score)
-     std::cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
-    data.ec_seq[0]->pred.a_s[i].action << std::endl; temp_scores.delete_v();*/
+    if (temp_scores[i] != data.ec_seq[0]->pred.action_scores()[i].score)
+     std::cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.action_scores()[i].score << " for " <<
+    data.ec_seq[0]->pred.action_scores()[i].action << std::endl; temp_scores.delete_v();*/
   }
   else
   {
@@ -357,7 +341,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
 {
   size_t num_features = 0;
 
-  uint32_t action = ec.pred.a_s[0].action;
+  uint32_t action = ec.pred.action_scores()[0].action;
   for (const auto& example : *ec_seq) num_features += example->num_features;
 
   float loss = 0.;
@@ -382,7 +366,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  uint32_t action = ec.pred.a_s[0].action;
+  uint32_t action = ec.pred.action_scores()[0].action;
   for (int sink : all.final_prediction_sink) all.print(sink, (float)action, 0, ec.tag);
 
   if (all.raw_prediction > 0)
@@ -413,7 +397,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.action_scores(), ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -542,8 +526,6 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
                       << std::endl;
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Push necessary flags.
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
       !options.was_supplied("csoaa_rank"))
@@ -572,7 +554,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l =
-      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type::action_scores);
+      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

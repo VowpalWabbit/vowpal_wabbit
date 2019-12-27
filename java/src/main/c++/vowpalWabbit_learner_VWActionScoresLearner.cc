@@ -7,7 +7,7 @@ jobject action_scores_prediction(example *vec, JNIEnv *env)
   jclass action_score_class = env->FindClass("vowpalWabbit/responses/ActionScore");
   jmethodID action_score_constructor = env->GetMethodID(action_score_class, "<init>", "(IF)V");
 
-  ACTION_SCORE::action_scores a_s = vec->pred.a_s;
+  ACTION_SCORE::action_scores a_s = vec->pred.action_scores();
   size_t num_values = a_s.size();
   jobjectArray j_action_scores = env->NewObjectArray(num_values, action_score_class, 0);
 

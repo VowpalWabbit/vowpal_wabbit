@@ -298,7 +298,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   {
     if (!quiet)
       all.trace_message << "using no cache" << endl;
-    all.p->output->space.delete_v();
+    all.p->output->space.~v_array();
   }
 }
 
@@ -843,13 +843,11 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<substring> words = v_init<substring>();
+  v_array<substring> words;
   char* cstr = (char*)label.c_str();
   substring str = {cstr, cstr + label.length()};
   tokenize(' ', str, words);
   all.p->lp.parse_label(all.p, all.sd, ec.l, words);
-  words.clear();
-  words.delete_v();
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -857,6 +855,7 @@ void empty_example(vw& /*all*/, example& ec)
   for (features& fs : ec) fs.clear();
 
   ec.l.reset();
+  ec.pred.reset();
 
   ec.indices.clear();
   ec.tag.clear();
@@ -908,7 +907,7 @@ namespace VW
 {
 example* get_example(parser* p) { return p->ready_parsed_examples.pop(); }
 
-float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
+float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars()[i]; }
 
 float get_label(example* ec) { return ec->l.simple().label; }
 
@@ -916,22 +915,22 @@ float get_importance(example* ec) { return ec->weight; }
 
 float get_initial(example* ec) { return ec->l.simple().initial; }
 
-float get_prediction(example* ec) { return ec->pred.scalar; }
+float get_prediction(example* ec) { return ec->pred.scalar(); }
 
-float get_cost_sensitive_prediction(example* ec) { return (float)ec->pred.multiclass; }
+float get_cost_sensitive_prediction(example* ec) { return (float)ec->pred.multiclass(); }
 
-v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars; }
+v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars(); }
 
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 {
-  MULTILABEL::labels labels = ec->pred.multilabels;
+  MULTILABEL::labels labels = ec->pred.multilabels();
   len = labels.label_v.size();
   return labels.label_v.begin();
 }
 
 float get_action_score(example* ec, size_t i)
 {
-  ACTION_SCORE::action_scores scores = ec->pred.a_s;
+  ACTION_SCORE::action_scores scores = ec->pred.action_scores();
 
   if (i < scores.size())
   {
@@ -943,7 +942,7 @@ float get_action_score(example* ec, size_t i)
   }
 }
 
-size_t get_action_score_length(example* ec) { return ec->pred.a_s.size(); }
+size_t get_action_score_length(example* ec) { return ec->pred.action_scores().size(); }
 
 size_t get_tag_length(example* ec) { return ec->tag.size(); }
 
@@ -957,10 +956,11 @@ float get_confidence(example* ec) { return ec->confidence; }
 example* example_initializer::operator()(example* ex)
 {
   new (&ex->l) new_polylabel();
+  new (&ex->pred) new_polyprediction();
   ex->in_use = false;
   ex->passthrough = nullptr;
-  ex->tag = v_init<char>();
-  ex->indices = v_init<namespace_index>();
+  ex->tag.clear();
+  ex->indices.clear();
   memset(&ex->feature_space, 0, sizeof(ex->feature_space));
   return ex;
 }
@@ -973,33 +973,9 @@ namespace VW
 {
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
+
 void free_parser(vw& all)
-{
-  all.p->words.delete_v();
-  all.p->name.delete_v();
-
-  if (!all.ngram_strings.empty())
-    all.p->gram_mask.delete_v();
-
-  io_buf* output = all.p->output;
-  if (output != nullptr)
-  {
-    output->finalname.delete_v();
-    output->currentname.delete_v();
-  }
-
-  while (!all.p->example_pool.empty())
-  {
-    example* temp = all.p->example_pool.get_object();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-  }
-
-  while (all.p->ready_parsed_examples.size() != 0)
-  {
-    example* temp = all.p->ready_parsed_examples.pop();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-  }
-  all.p->counts.delete_v();
+{  
 }
 
 namespace VW

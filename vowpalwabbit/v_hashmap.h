@@ -98,7 +98,7 @@ class v_hashmap
     equivalent = nullptr;
   }
 
-  void delete_v() { dat.delete_v(); }
+  void delete_v() { dat.~v_array(); }
 
   ~v_hashmap() { delete_v(); }
 
@@ -166,7 +166,7 @@ class v_hashmap
   void double_size()
   {  //    printf("doubling size!\n");
     // remember the old occupants
-    v_array<hash_elem> tmp = v_array<hash_elem>();
+    v_array<hash_elem> tmp;
     tmp.resize(num_occupants + 10);
     for (hash_elem* e = dat.begin(); e != dat.end_array; e++)
       if (e->occupied)
@@ -185,7 +185,6 @@ class v_hashmap
       //      std::cerr << "reinserting " << e->key << " at " << last_position << std::endl;
       put_after_get_nogrow(e.key, e.hash, e.val);
     }
-    tmp.delete_v();
   }
 
   bool is_equivalent(const K& key, const K& key2)

@@ -280,8 +280,7 @@ vw::vw()
   current_pass = 0;
 
   data_filename = "";
-  delete_prediction = nullptr;
-
+  
   bfgs = false;
   no_bias = false;
   hessian_on = false;

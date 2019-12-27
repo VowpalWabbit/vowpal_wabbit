@@ -28,7 +28,6 @@ struct gdmf
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
-  ~gdmf() { scalars.delete_v(); }
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
@@ -78,7 +77,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
+  print_result(d.all->stdout_fileno, ec.pred.scalar(), -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -154,15 +153,15 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   all.set_minmax(all.sd, ld.label);
 
-  ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(all.sd, ec.partial_prediction);
 
   if (ld.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar(), ld.label) * ec.weight;
 
   if (all.audit)
     mf_print_audit_features(d, ec, 0);
 
-  return ec.pred.scalar;
+  return ec.pred.scalar();
 }
 
 float mf_predict(gdmf& d, example& ec)
@@ -190,7 +189,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
   float eta_t = all.eta / powf((float)all.sd->t + ec.weight, (float)all.power_t) / 3.f * ec.weight;
-  float update = all.loss->getUpdate(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
+  float update = all.loss->getUpdate(ec.pred.scalar(), ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
   float regularization = eta_t * all.l2_lambda;
 

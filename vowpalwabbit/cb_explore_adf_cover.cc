@@ -44,7 +44,7 @@ struct cb_explore_adf_cover
  public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, bool first_only,
       LEARNER::multi_learner* cs_ldf_learner, LEARNER::single_learner* scorer, size_t cb_type);
-  ~cb_explore_adf_cover();
+  ~cb_explore_adf_cover() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -85,7 +85,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
     GEN_CS::gen_cs_example_ips(examples, _cs_labels);
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.action_scores();
   const uint32_t num_actions = (uint32_t)preds.size();
 
   float additive_probability = 1.f / (float)_cover_size;
@@ -164,17 +164,6 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
     ++_counter;
 }
 
-cb_explore_adf_cover::~cb_explore_adf_cover()
-{
-  _cb_labels.delete_v();
-  for (size_t i = 0; i < _prepped_cs_labels.size(); i++) _prepped_cs_labels[i].costs.delete_v();
-  _prepped_cs_labels.delete_v();
-  _cs_labels_2.costs.delete_v();
-  _cs_labels.costs.delete_v();
-  _action_probs.delete_v();
-  _gen_cs.pred_scores.costs.delete_v();
-}
-
 LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -216,8 +205,6 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
     options.insert("cb_adf", "");
   }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Set cb_type
   size_t cb_type_enum;
   if (type_string.compare("dr") == 0)
@@ -249,7 +236,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
   LEARNER::learner<explore_type, multi_ex>& l = init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type::action_probs);
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

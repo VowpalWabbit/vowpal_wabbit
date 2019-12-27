@@ -52,7 +52,7 @@ void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, m
   else
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.action_scores();
   uint32_t num_actions = (uint32_t)preds.size();
 
   if (_tau)
@@ -95,8 +95,6 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
     options.insert("cb_adf", "");
   }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   size_t problem_multiplier = 1;
 
   LEARNER::multi_learner* base = LEARNER::as_multiline(setup_base(options, all));
@@ -107,7 +105,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(tau, epsilon);
 
   LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type::action_probs);
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

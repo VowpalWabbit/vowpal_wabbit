@@ -43,7 +43,7 @@ void VW::topk::predict(LEARNER::single_learner& base, multi_ex& ec_seq)
   for (auto ec : ec_seq)
   {
     base.predict(*ec);
-    update_priority_queue(ec->pred.scalar, ec->tag);
+    update_priority_queue(ec->pred.scalar(), ec->tag);
   }
 }
 
@@ -52,7 +52,7 @@ void VW::topk::learn(LEARNER::single_learner& base, multi_ex& ec_seq)
   for (auto ec : ec_seq)
   {
     base.learn(*ec);
-    update_priority_queue(ec->pred.scalar, ec->tag);
+    update_priority_queue(ec->pred.scalar(), ec->tag);
   }
 }
 

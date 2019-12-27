@@ -284,7 +284,6 @@ void clear_memo_foreach_action(search_private& priv)
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
     if (priv.memo_foreach_action[i])
     {
-      priv.memo_foreach_action[i]->delete_v();
       delete priv.memo_foreach_action[i];
     }
   priv.memo_foreach_action.clear();
@@ -299,40 +298,13 @@ search::~search()
     search_private& priv = *this->priv;
     clear_cache_hash_map(priv);
 
-    priv._random_state.~shared_ptr<rand_state>();
+
     delete priv.truth_string;
     delete priv.pred_string;
     delete priv.bad_string_stream;
-    priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
-    priv.rawOutputString.~basic_string();
-    priv.test_action_sequence.~vector<action>();
-    priv.dat_new_feature_audit_ss.~basic_stringstream();
-    priv.neighbor_features.delete_v();
-    priv.timesteps.delete_v();
-    if (priv.cb_learner)
-      priv.learn_losses.cb().costs.delete_v();
-    else
-      priv.learn_losses.cs().costs.delete_v();
-    if (priv.cb_learner)
-      priv.gte_label.cb().costs.delete_v();
-    else
-      priv.gte_label.cs().costs.delete_v();
 
-    priv.condition_on_actions.delete_v();
-    priv.learn_allowed_actions.delete_v();
-    priv.ldf_test_label.costs.delete_v();
-    priv.last_action_repr.delete_v();
-    priv.active_uncertainty.delete_v();
-    for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
-    priv.active_known.delete_v();
-
-    if (priv.cb_learner)
-      priv.allowed_actions_cache.cb().costs.delete_v();
-    else
-      priv.allowed_actions_cache.cs().costs.delete_v();
-
-    priv.train_trajectory.delete_v();
-    for (Search::action_repr& ar : priv.ptag_to_action)
+    delete priv.rawOutputStringStream;
+    for (auto& ar : priv.ptag_to_action)
     {
       if (ar.repr != nullptr)
       {
@@ -341,22 +313,9 @@ search::~search()
         cdbg << "delete_v" << endl;
       }
     }
-    priv.ptag_to_action.delete_v();
     clear_memo_foreach_action(priv);
-    priv.memo_foreach_action.delete_v();
 
-    // destroy copied examples if we needed them
-    if (!priv.examples_dont_change)
-    {
-      void (*delete_label)(new_polylabel&) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-      for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
-      priv.learn_ec_copy.delete_v();
-    }
-    priv.learn_condition_on_names.delete_v();
-    priv.learn_condition_on.delete_v();
-    priv.learn_condition_on_act.delete_v();
-
-    delete priv.rawOutputStringStream;
+    this->priv->~search_private();
   }
   free(this->priv);
 }
@@ -1182,7 +1141,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
 
   as_singleline(priv.base_learner)->predict(ec, policy);
 
-  uint32_t act = ec.pred.multiclass;
+  uint32_t act = ec.pred.multiclass();
   cdbg << "a=" << act << " from";
   if (allowed_actions)
   {
@@ -1274,7 +1233,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
          "}" << endl; */
       CS::wclass& wc = ec.l.cs().costs[k];
       // Get query_needed from pred
-      bool query_needed = v_array_contains(ec.pred.multilabels.label_v, wc.class_index);
+      bool query_needed = v_array_contains(ec.pred.multilabels().label_v, wc.class_index);
       std::pair<CS::wclass&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);
@@ -2000,7 +1959,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
     /*
     float k = (float)priv.total_examples_generated;
-    priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar,
+    priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar(),
     priv.all->eta / powf(k, priv.all->power_t)); float importance = query_decision(active_str, *priv.ec_seq[t], k); if
     (importance > 0.) timesteps.push_back(pair<size_t,size_t>(0,t));
     */

@@ -47,7 +47,6 @@ struct svm_example
   v_array<float> krow;
   flat_example ex;
 
-  ~svm_example();
   void init_svm_example(flat_example* fec);
   int compute_kernels(svm_params& params);
   int clear_kernels();
@@ -79,9 +78,9 @@ void free_svm_model(svm_model* model)
     model->support_vec[i] = 0;
   }
 
-  model->support_vec.delete_v();
-  model->alpha.delete_v();
-  model->delta.delete_v();
+  model->support_vec.~v_array();
+  model->alpha.~v_array();
+  model->delta.~v_array();
   free(model);
 }
 
@@ -148,15 +147,6 @@ void svm_example::init_svm_example(flat_example* fec)
 {
   ex = *fec;
   free(fec);
-}
-
-svm_example::~svm_example()
-{
-  krow.delete_v();
-  // free flatten example contents
-  flat_example* fec = &calloc_or_throw<flat_example>();
-  *fec = ex;
-  free_flatten_example(fec);  // free contents of flat example and frees fec.
 }
 
 float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type);
@@ -277,7 +267,6 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
       {
         features& fs = fec->fs;
         size_t len = fs.size();
-        fs.values = v_init<feature_value>();
         fs.values.resize(len);
         brw = model_file.bin_read_fixed((char*)fs.values.begin(), len * sizeof(feature_value), "");
         if (!brw)
@@ -285,7 +274,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         fs.values.end() = fs.values.begin() + len;
 
         len = fs.indicies.size();
-        fs.indicies = v_init<feature_index>();
+        fs.indicies;
         fs.indicies.resize(len);
         brw = model_file.bin_read_fixed((char*)fs.indicies.begin(), len * sizeof(feature_index), "");
         if (!brw)
@@ -475,7 +464,7 @@ void predict(svm_params& params, single_learner&, example& ec)
     sec->init_svm_example(fec);
     float score;
     predict(params, &sec, &score, 1);
-    ec.pred.scalar = score;
+    ec.pred.scalar() = score;
     sec->~svm_example();
     free(sec);
   }
@@ -650,7 +639,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   {
     queries = calloc_or_throw<char>(total_sum);
     memcpy(queries + prev_sum, b->space.begin(), b->head - b->space.begin());
-    b->space.delete_v();
+    b->space.clear();
     all_reduce<char, copy_char>(all, queries, total_sum);
 
     b->space.begin() = queries;
@@ -837,7 +826,7 @@ void learn(svm_params& params, single_learner&, example& ec)
     sec->init_svm_example(fec);
     float score = 0;
     predict(params, &sec, &score, 1);
-    ec.pred.scalar = score;
+    ec.pred.scalar() = score;
     // std::cout<<"Score = "<<score<< endl;
     ec.loss = std::max(0.f, 1.f - score * ec.l.simple().label);
     params.loss_sum += ec.loss;

@@ -111,7 +111,7 @@ void print_probability(vw& all, example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
   pred_ss << prediction << "(" << std::setw(2) << std::setprecision(0) << std::fixed
-          << 100 * ec.pred.scalars[prediction - 1] << "%)";
+          << 100 * ec.pred.scalars()[prediction - 1] << "%)";
 
   std::stringstream label_ss;
   label_ss << ec.l.multi().label;
@@ -146,7 +146,7 @@ void print_update(vw& all, example& ec, uint32_t prediction)
     if (!all.sd->ldict)
       T(all, ec, prediction);
     else
-      print_label_pred(all, ec, ec.pred.multiclass);
+      print_label_pred(all, ec, ec.pred.multiclass());
   }
 }
 
@@ -159,21 +159,21 @@ void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update
 void finish_example(vw& all, example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi().label != (uint32_t)ec.pred.multiclass && ec.l.multi().label != (uint32_t)-1)
+  if (ec.l.multi().label != (uint32_t)ec.pred.multiclass() && ec.l.multi().label != (uint32_t)-1)
     loss = ec.weight;
 
   all.sd->update(ec.test_only, update_loss && (ec.l.multi().label != (uint32_t)-1), loss, ec.weight, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)
-      all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(sink, (float)ec.pred.multiclass(), 0, ec.tag);
     else
     {
-      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
+      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass());
       all.print_text(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
-  MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
+  MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass());
   VW::finish_example(all, ec);
 }
 }  // namespace MULTICLASS

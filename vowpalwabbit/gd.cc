@@ -53,7 +53,7 @@ struct gd
   void (*learn)(gd&, base_learner&, example&);
   void (*update)(gd&, base_learner&, example&);
   float (*sensitivity)(gd&, base_learner&, example&);
-  void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
+  void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, new_polyprediction*, bool);
   bool adaptive_input;
   bool normalized_input;
   bool adax;
@@ -329,7 +329,7 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    print_result(all.stdout_fileno, ec.pred.scalar, -1, ec.tag);
+    print_result(all.stdout_fileno, ec.pred.scalar(), -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -383,7 +383,13 @@ void predict(gd& g, base_learner&, example& ec)
     ec.partial_prediction = inline_predict(all, ec);
 
   ec.partial_prediction *= (float)all.sd->contraction;
-  ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
+
+  if (ec.pred.get_type() != prediction_type_t::unset)
+  {
+    ec.pred.reset();
+  }
+
+  ec.pred.init_as_scalar() = finalize_prediction(all.sd, ec.partial_prediction);
   if (audit)
     print_audit_features(all, ec);
 }
@@ -393,15 +399,15 @@ inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx,
 {
   size_t index = fi;
   for (size_t c = 0; c < mp.count; c++, index += mp.step)
-    mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity);
+    mp.pred[c].scalar() += fx * trunc_weight(mp.weights[index], mp.gravity);
 }
 
 template <bool l1, bool audit>
 void multipredict(
-    gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    gd& g, base_learner&, example& ec, size_t count, size_t step, new_polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *g.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple().initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar() = ec.l.simple().initial;
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {
@@ -420,14 +426,14 @@ void multipredict(
       foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(all, ec, mp);
   }
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
+    for (size_t c = 0; c < count; c++) pred[c].scalar() *= (float)all.sd->contraction;
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
+    for (size_t c = 0; c < count; c++) pred[c].scalar() = finalize_prediction(all.sd, pred[c].scalar());
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
     {
-      ec.pred.scalar = pred[c].scalar;
+      ec.pred.scalar() = pred[c].scalar();
       print_audit_features(all, ec);
       ec.ft_offset += (uint64_t)step;
     }
@@ -544,7 +550,7 @@ float get_pred_per_update(gd& g, example& ec)
 
   float grad_squared = ec.weight;
   if (!adax)
-    grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
+    grad_squared *= all.loss->getSquareGrad(ec.pred.scalar(), ld.label);
 
   if (grad_squared == 0 && !stateless)
     return 1.;
@@ -611,21 +617,21 @@ float compute_update(gd& g, example& ec)
   vw& all = *g.all;
 
   float update = 0.;
-  ec.updated_prediction = ec.pred.scalar;
-  if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
+  ec.updated_prediction = ec.pred.scalar();
+  if (all.loss->getLoss(all.sd, ec.pred.scalar(), ld.label) > 0.)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
     if (invariant)
-      update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update);
+      update = all.loss->getUpdate(ec.pred.scalar(), ld.label, update_scale, pred_per_update);
     else
-      update = all.loss->getUnsafeUpdate(ec.pred.scalar, ld.label, update_scale);
+      update = all.loss->getUnsafeUpdate(ec.pred.scalar(), ld.label, update_scale);
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;
 
     if (all.reg_mode && fabs(update) > 1e-8)
     {
-      double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
+      double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar(), ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
       if (fabs(dev1) > 1e-8)
         all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
@@ -635,7 +641,7 @@ float compute_update(gd& g, example& ec)
   }
 
   if (sparse_l2)
-    update -= g.sparse_l2 * ec.pred.scalar;
+    update -= g.sparse_l2 * ec.pred.scalar();
 
   return update;
 }

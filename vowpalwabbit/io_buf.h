@@ -145,18 +145,8 @@ class io_buf
 
   io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
   {
-    space = v_init<char>();
-    files = v_init<int>();
-    currentname = v_init<char>();
-    finalname = v_init<char>();
     space.resize(INITIAL_BUFF_SIZE);
     head = space.begin();
-  }
-
-  virtual ~io_buf()
-  {
-    files.delete_v();
-    space.delete_v();
   }
 
   void set(char* p) { head = p; }

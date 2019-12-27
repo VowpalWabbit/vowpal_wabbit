@@ -77,17 +77,17 @@ template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
   if (audit)
     GD::print_audit_features(*(b.all), ec);
 }
 
 template <bool audit>
 void multipredict(
-    ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    ftrl& b, base_learner&, example& ec, size_t count, size_t step, new_polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *b.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple().initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar() = ec.l.simple().initial;
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
@@ -100,14 +100,14 @@ void multipredict(
     GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   }
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
+    for (size_t c = 0; c < count; c++) pred[c].scalar() *= (float)all.sd->contraction;
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
+    for (size_t c = 0; c < count; c++) pred[c].scalar() = GD::finalize_prediction(all.sd, pred[c].scalar());
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
     {
-      ec.pred.scalar = pred[c].scalar;
+      ec.pred.scalar() = pred[c].scalar();
       GD::print_audit_features(all, ec);
       ec.ft_offset += (uint64_t)step;
     }
@@ -229,7 +229,7 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
 
   ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
 void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
@@ -238,26 +238,26 @@ void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 
   GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
   ec.partial_prediction = b.data.predict;
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
 void update_after_prediction_proximal(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_cb(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
 }

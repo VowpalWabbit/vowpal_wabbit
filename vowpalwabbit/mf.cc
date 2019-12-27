@@ -36,13 +36,6 @@ struct mf
   features temp_features;
 
   vw* all;  // for pairs? and finalize
-
-  ~mf()
-  {
-    // clean up local v_arrays
-    indices.delete_v();
-    sub_predictions.delete_v();
-  }
 };
 
 template <bool cache_sub_predictions>
@@ -104,18 +97,18 @@ void predict(mf& data, single_learner& base, example& ec)
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
 void learn(mf& data, single_learner& base, example& ec)
 {
   // predict with current weights
   predict<true>(data, base, ec);
-  float predicted = ec.pred.scalar;
+  float predicted = ec.pred.scalar();
 
   // update linear weights
   base.update(ec);
-  ec.pred.scalar = ec.updated_prediction;
+  ec.pred.scalar() = ec.updated_prediction;
 
   // store namespace indices
   copy_array(data.indices, ec.indices);
@@ -154,7 +147,7 @@ void learn(mf& data, single_learner& base, example& ec)
         // compute new l_k * x_l scaling factors
         // base.predict(ec, k);
         // data.sub_predictions[2*k-1] = ec.partial_prediction;
-        // ec.pred.scalar = ec.updated_prediction;
+        // ec.pred.scalar() = ec.updated_prediction;
       }
 
       // set example to right namespace only
@@ -171,7 +164,7 @@ void learn(mf& data, single_learner& base, example& ec)
 
         // update r^k using base learner
         base.update(ec, k + data.rank);
-        ec.pred.scalar = ec.updated_prediction;
+        ec.pred.scalar() = ec.updated_prediction;
 
         // restore right namespace features
         fs.deep_copy_from(data.temp_features);
@@ -182,7 +175,7 @@ void learn(mf& data, single_learner& base, example& ec)
   copy_array(ec.indices, data.indices);
 
   // restore original prediction
-  ec.pred.scalar = predicted;
+  ec.pred.scalar() = predicted;
 }
 
 void finish(mf& o)

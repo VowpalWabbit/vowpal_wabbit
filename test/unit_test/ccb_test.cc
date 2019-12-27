@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 
   vw.predict(examples);
 
-  auto& decision_scores = examples[0]->pred.decision_scores;
+  auto& decision_scores = examples[0]->pred.decision_scores();
   BOOST_CHECK_EQUAL(decision_scores.size(), 3);
 
   BOOST_CHECK_EQUAL(decision_scores[0].size(), 1);

@@ -229,12 +229,12 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       if (all.sd->ldict)
       {
         if (action_scores)
-          pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action);
+          pred_buf << all.sd->ldict->get(ec.pred.action_scores()[0].action);
         else
           pred_buf << all.sd->ldict->get(prediction);
       }
       else
-        pred_buf << ec.pred.a_s[0].action;
+        pred_buf << ec.pred.action_scores()[0].action;
       if (action_scores)
         pred_buf << ".....";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features,
@@ -255,7 +255,7 @@ void output_example(vw& all, example& ec)
   if (!test_label(ec.l))
   {
     // need to compute exact loss
-    size_t pred = (size_t)ec.pred.multiclass;
+    size_t pred = (size_t)ec.pred.multiclass();
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
@@ -279,10 +279,10 @@ void output_example(vw& all, example& ec)
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)
-      all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(sink, (float)ec.pred.multiclass(), 0, ec.tag);
     else
     {
-      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
+      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass());
       all.print_text(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
@@ -299,7 +299,7 @@ void output_example(vw& all, example& ec)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, test_label(ec.l), ec, nullptr, false, ec.pred.multiclass);
+  print_update(all, test_label(ec.l), ec, nullptr, false, ec.pred.multiclass());
 }
 
 void finish_example(vw& all, example& ec)

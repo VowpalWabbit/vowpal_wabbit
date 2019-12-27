@@ -112,25 +112,25 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 
       base.predict(ec, i);
 
-      // ec.pred.scalar is now the i-th learner prediction on this example
-      s += ld.label * ec.pred.scalar;
+      // ec.pred.scalar() is now the i-th learner prediction on this example
+      s += ld.label * ec.pred.scalar();
 
-      final_prediction += ec.pred.scalar;
+      final_prediction += ec.pred.scalar();
 
       base.learn(ec, i);
     }
     else
     {
       base.predict(ec, i);
-      final_prediction += ec.pred.scalar;
+      final_prediction += ec.pred.scalar();
     }
   }
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar() = sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
+  if (ld.label == ec.pred.scalar())
     ec.loss = 0.;
   else
     ec.loss = ec.weight;
@@ -163,13 +163,13 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
 
       base.predict(ec, i);
       float z;
-      z = ld.label * ec.pred.scalar;
+      z = ld.label * ec.pred.scalar();
 
       s += z * o.alpha[i];
 
-      // if ld.label * ec.pred.scalar < 0, learner i made a mistake
+      // if ld.label * ec.pred.scalar() < 0, learner i made a mistake
 
-      final_prediction += ec.pred.scalar * o.alpha[i];
+      final_prediction += ec.pred.scalar() * o.alpha[i];
 
       // update alpha
       o.alpha[i] += eta * z / (1 + correctedExp(s));
@@ -183,15 +183,15 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
     else
     {
       base.predict(ec, i);
-      final_prediction += ec.pred.scalar * o.alpha[i];
+      final_prediction += ec.pred.scalar() * o.alpha[i];
     }
   }
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar() = sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
+  if (ld.label == ec.pred.scalar())
     ec.loss = 0.;
   else
     ec.loss = ec.weight;
@@ -225,16 +225,16 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
       base.predict(ec, i);
       float z;
 
-      z = ld.label * ec.pred.scalar;
+      z = ld.label * ec.pred.scalar();
 
       s += z * o.alpha[i];
 
       if (v_partial_sum <= stopping_point)
       {
-        final_prediction += ec.pred.scalar * o.alpha[i];
+        final_prediction += ec.pred.scalar() * o.alpha[i];
       }
 
-      partial_prediction += ec.pred.scalar * o.alpha[i];
+      partial_prediction += ec.pred.scalar() * o.alpha[i];
 
       v_partial_sum += o.v[i];
 
@@ -259,7 +259,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
       base.predict(ec, i);
       if (v_partial_sum <= stopping_point)
       {
-        final_prediction += ec.pred.scalar * o.alpha[i];
+        final_prediction += ec.pred.scalar() * o.alpha[i];
       }
       else
       {
@@ -282,9 +282,9 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar() = sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
+  if (ld.label == ec.pred.scalar())
     ec.loss = 0.;
   else
     ec.loss = ec.weight;

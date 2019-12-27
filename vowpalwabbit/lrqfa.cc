@@ -109,12 +109,12 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     // Restore example
     if (iter == 0)
     {
-      first_prediction = ec.pred.scalar;
+      first_prediction = ec.pred.scalar();
       first_loss = ec.loss;
     }
     else
     {
-      ec.pred.scalar = first_prediction;
+      ec.pred.scalar() = first_prediction;
       ec.loss = first_loss;
     }
 

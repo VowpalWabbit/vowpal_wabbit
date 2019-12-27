@@ -179,8 +179,6 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 void finish(Search::search& sch)
 {
   task_data* D = sch.get_task_data<task_data>();
-  D->allowed_actions.delete_v();
-  D->only_two_allowed.delete_v();
   delete D;
 }
 
@@ -400,7 +398,8 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 void finish(Search::search& sch)
 {
   task_data* data = sch.get_task_data<task_data>();
-  for (size_t a = 0; a < data->num_actions; a++) VW::dealloc_example(CS::cs_label.delete_label, data->ldf_examples[a]);
+  for (size_t a = 0; a < data->num_actions; a++)
+    data->ldf_examples[a].~example();
   free(data->ldf_examples);
   free(data);
 }

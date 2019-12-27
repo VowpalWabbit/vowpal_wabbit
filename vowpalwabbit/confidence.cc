@@ -26,7 +26,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   {
     base.predict(ec);
     float opposite_label = 1.f;
-    if (ec.pred.scalar > 0)
+    if (ec.pred.scalar() > 0)
       opposite_label = -1.f;
     ec.l.simple().label = opposite_label;
   }
@@ -43,7 +43,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   if (is_confidence_after_training)
     sensitivity = base.sensitivity(ec);
 
-  ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
+  ec.confidence = fabsf(ec.pred.scalar() - threshold) / sensitivity;
 }
 
 void confidence_print_result(int f, float res, float confidence, v_array<char> tag)
@@ -75,7 +75,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
   {
     int f = (int)all.final_prediction_sink[i];
-    confidence_print_result(f, ec.pred.scalar, ec.confidence, ec.tag);
+    confidence_print_result(f, ec.pred.scalar(), ec.confidence, ec.tag);
   }
 
   print_update(all, ec);

@@ -29,6 +29,21 @@ const size_t erase_point = ~((1u << 10u) - 1u);
 template <class T>
 struct v_array
 {
+ private:
+   void delete_v_array()
+   {
+     if (_begin != nullptr)
+     {
+       for (T* item = _begin; item != _end; ++item) item->~T();
+       free(_begin);
+     }
+     _begin = nullptr;
+     _end = nullptr;
+     end_array = nullptr;
+     erase_count = 0;
+  }
+
+ public:
   // private:
   T* _begin;
   T* _end;
@@ -36,7 +51,6 @@ struct v_array
  public:
   T* end_array;
   size_t erase_count;
-
 
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
@@ -48,10 +62,43 @@ struct v_array
   inline T* cbegin() const { return _begin; }
   inline T* cend() const { return _end; }
 
-  // v_array cannot have a user-defined constructor, because it participates in various unions.
-  // union members cannot have user-defined constructors.
-  //v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
-  //~v_array() { delete_v(); }
+  v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
+  ~v_array() { delete_v_array(); }
+
+  v_array(v_array<T>&& other)
+  {
+    delete_v_array();
+    erase_count = 0;
+    std::swap(_begin, other._begin);
+    std::swap(_end, other._end);
+    std::swap(end_array, other.end_array);
+    std::swap(erase_count, other.erase_count);
+  }
+
+  v_array<T>& operator=(v_array<T>&& other)
+  {
+    delete_v_array();
+    erase_count = 0;
+    std::swap(_begin, other._begin);
+    std::swap(_end, other._end);
+    std::swap(end_array, other.end_array);
+    std::swap(erase_count, other.erase_count);
+    return *this;
+  }
+
+  v_array(const v_array<T>& other)
+  {
+    delete_v_array();
+    copy_array(*this, other);
+  }
+
+  v_array<T>& operator=(const v_array<T>& other)
+  {
+    delete_v_array();
+    copy_array(*this, other);
+    return *this;
+  }
+
   T last() const { return *(_end - 1); }
   T pop() { return *(--_end); }
   bool empty() const { return _begin == _end; }
@@ -94,15 +141,9 @@ struct v_array
     _end = _begin;
   }
 
-  //VW_DEPRECATED("delete_v is no longer supported. Use the desuctor of the object to clean up.")
-  void delete_v()
-  {
-    if (_begin != nullptr)
-    {
-      for (T* item = _begin; item != _end; ++item) item->~T();
-      free(_begin);
-    }
-    _begin = _end = end_array = nullptr;
+  VW_DEPRECATED("delete_v is no longer supported. Use the destructor of the object to clean up.")
+  void delete_v() {
+    delete_v_array();
   }
   void push_back(const T& new_ele)
   {
@@ -176,6 +217,7 @@ struct v_array
 };
 
 template <class T>
+VW_DEPRECATED("v_init is no longer supported, use the constructor.")
 inline v_array<T> v_init()
 {
   return v_array<T>();
@@ -264,7 +306,7 @@ using v_string = v_array<unsigned char>;
 
 inline v_string string2v_string(const std::string& s)
 {
-  v_string res = v_init<unsigned char>();
+  v_string res;
   if (!s.empty())
     push_many(res, (unsigned char*)s.data(), s.size());
   return res;

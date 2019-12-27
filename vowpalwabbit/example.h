@@ -23,10 +23,11 @@
 #include "label.h"
 #include "prediction.h"
 
+VW_DEPRECATED("no longer used")
 inline void delete_scalars(void* v)
 {
-  v_array<float>* preds = (v_array<float>*)v;
-  preds->delete_v();
+  //v_array<float>* preds = (v_array<float>*)v;
+  //preds->delete_v();
 }
 
 struct example : public example_predict  // core example datatype.
@@ -55,6 +56,15 @@ struct example : public example_predict  // core example datatype.
   bool end_pass;  // special example indicating end of pass.
   bool sorted;    // Are the features sorted or not?
   bool in_use;    // in use or not (for the parser)
+
+  ~example()
+  {
+    if (passthrough)
+    {
+      passthrough->delete_v();
+      delete passthrough;
+    }
+  }
 };
 
 struct vw;
@@ -73,6 +83,13 @@ struct flat_example
   size_t num_features;      // precomputed, cause it's fast&easy.
   float total_sum_feat_sq;  // precomputed, cause it's kind of fast & easy.
   features fs;              // all the features
+
+  ~flat_example()
+  {
+    fs.delete_v();
+    if (tag_len > 0)
+      free(tag);
+  }
 };
 
 flat_example* flatten_example(vw& all, example* ec);

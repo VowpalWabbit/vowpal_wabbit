@@ -41,7 +41,7 @@ inline func_data tuple_dbf(void* data, base_learner* base, void (*func)(void*))
 struct learn_data
 {
   using fn = void (*)(void* data, base_learner& base, void* ex);
-  using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
+  using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, new_polyprediction* pred,
       bool finalize_predictions);
 
   void* data;
@@ -129,7 +129,7 @@ struct learner
   std::shared_ptr<void> learner_data;
   learner(){};  // Should only be able to construct a learner through init_learner function
  public:
-  prediction_type::prediction_type_t pred_type;
+  prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
   bool is_multiline;  // Is this a single-line or multi-line reduction?
@@ -156,7 +156,7 @@ struct learner
     decrement_offset(ec, increment, i);
   }
 
-  inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
+  inline void multipredict(E& ec, size_t lo, size_t count, new_polyprediction* pred, bool finalize_predictions)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -169,7 +169,7 @@ struct learner
         if (finalize_predictions)
           pred[c] = ec.pred;  // TODO: this breaks for complex labels because = doesn't do deep copy!
         else
-          pred[c].scalar = ec.partial_prediction;
+          pred[c].scalar() = ec.partial_prediction;
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         increment_offset(ec, increment, 1);
@@ -195,7 +195,7 @@ struct learner
     learn_fd.learn_f = (learn_data::fn)u;
   }
   template <class L>
-  inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
+  inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, new_polyprediction*, bool))
   {
     learn_fd.multipredict_f = (learn_data::multi_fn)u;
   }
@@ -293,7 +293,7 @@ struct learner
 
   template <class L>
   static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type::prediction_type_t pred_type)
+      prediction_type_t pred_type)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
@@ -348,7 +348,7 @@ struct learner
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type::prediction_type_t pred_type)
+    size_t ws, prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
@@ -362,7 +362,7 @@ learner<T, E>& init_learner(
     free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t params_per_weight)
 {
   auto ret =
-      &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type::scalar);
+      &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar);
 
   dat.release();
   return *ret;
@@ -373,12 +373,12 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight)
 {
   return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type::scalar);
+      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar);
 }
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type::prediction_type_t pred_type)
+    size_t params_per_weight, prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type);
   dat.release();
@@ -417,7 +417,7 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+    prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
@@ -430,7 +430,7 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+    prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
   dat.release();
@@ -455,7 +455,7 @@ multi_learner* as_multiline(learner<T, E>* l)
 
 template <class T, class E>
 single_learner* as_singleline(learner<T, E>* l)
-{
+ {
   if (!l->is_multiline)  // Tried to use a multiline reduction as a singleline reduction
     return (single_learner*)(l);
   THROW("Tried to use a multiline reduction as a singleline reduction");

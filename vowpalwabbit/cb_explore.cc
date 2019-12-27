@@ -43,8 +43,6 @@ struct cb_explore
 
   ~cb_explore()
   {
-    preds.delete_v();
-    cover_probs.delete_v();
     COST_SENSITIVE::delete_label(cbcs.pred_scores);
     COST_SENSITIVE::delete_label(cs_label);
     COST_SENSITIVE::delete_label(second_cs_label);
@@ -55,7 +53,7 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore tau times, then act according to optimal.
-  action_scores probs = ec.pred.a_s;
+  action_scores probs = ec.pred.action_scores();
 
   if (is_learn && ec.l.cb().costs[0].probability < 1)
     base.learn(ec);
@@ -71,12 +69,12 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
   }
   else
   {
-    uint32_t chosen = ec.pred.multiclass - 1;
+    uint32_t chosen = ec.pred.multiclass() - 1;
     for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
     probs[chosen].score = 1.0;
   }
 
-  ec.pred.a_s = probs;
+  ec.pred.action_scores() = probs;
 }
 
 template <bool is_learn>
@@ -84,8 +82,8 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 {
   // Explore uniform random an epsilon fraction of the time.
   // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
-  // ec.pred.a_s = probs; will restore the than free'd memory
-  action_scores probs = ec.pred.a_s;
+  // ec.pred.action_scores() = probs; will restore the than free'd memory
+  action_scores probs = ec.pred.action_scores();
   probs.clear();
 
   if (is_learn)
@@ -96,16 +94,16 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
   // pre-allocate pdf
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
-  generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
+  generate_epsilon_greedy(data.epsilon, ec.pred.multiclass() - 1, begin_scores(probs), end_scores(probs));
 
-  ec.pred.a_s = probs;
+  ec.pred.action_scores() = probs;
 }
 
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 {
   // Randomize over predictions from a base set of predictors
-  action_scores probs = ec.pred.a_s;
+  action_scores probs = ec.pred.action_scores();
   probs.clear();
 
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
@@ -117,13 +115,13 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
       base.learn(ec, i);
     else
       base.predict(ec, i);
-    uint32_t chosen = ec.pred.multiclass - 1;
+    uint32_t chosen = ec.pred.multiclass() - 1;
     probs[chosen].score += prob;
     if (is_learn)
       for (uint32_t j = 1; j < count; j++) base.learn(ec, i);
   }
 
-  ec.pred.a_s = probs;
+  ec.pred.action_scores() = probs;
 }
 
 void get_cover_probabilities(cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs)
@@ -140,7 +138,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
       data.cs->predict(ec, i);
     else
       data.cs->predict(ec, i + 1);
-    uint32_t pred = ec.pred.multiclass;
+    uint32_t pred = ec.pred.multiclass();
     probs[pred - 1].score += additive_probability;
     data.preds.push_back((uint32_t)pred);
   }
@@ -161,7 +159,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   uint32_t num_actions = data.cbcs.num_actions;
 
-  action_scores probs = ec.pred.a_s;
+  action_scores probs = ec.pred.action_scores();
   probs.clear();
   data.cs_label.costs.clear();
 
@@ -219,7 +217,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   }
 
   ec.l.cb() = data.cb_label;
-  ec.pred.a_s = probs;
+  ec.pred.action_scores() = probs;
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
@@ -243,20 +241,20 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
 
   if ((c.known_cost = get_observed_cost(ld)) != nullptr)
-    for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+    for (uint32_t i = 0; i < ec.pred.action_scores().size(); i++)
+      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.action_scores()[i].score;
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
   std::stringstream ss;
   float maxprob = 0.;
   uint32_t maxid = 0;
-  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+  for (uint32_t i = 0; i < ec.pred.action_scores().size(); i++)
   {
-    ss << std::fixed << ec.pred.a_s[i].score << " ";
-    if (ec.pred.a_s[i].score > maxprob)
+    ss << std::fixed << ec.pred.action_scores()[i].score << " ";
+    if (ec.pred.action_scores()[i].score > maxprob)
     {
-      maxprob = ec.pred.a_s[i].score;
+      maxprob = ec.pred.action_scores()[i].score;
       maxid = i + 1;
     }
   }
@@ -303,7 +301,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     options.insert("cb", ss.str());
   }
 
-  all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
 
   single_learner* base = as_singleline(setup_base(options, all));
@@ -315,22 +312,20 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
     data->second_cs_label.costs.resize(num_actions);
     data->second_cs_label.costs.end() = data->second_cs_label.costs.begin() + num_actions;
-    data->cover_probs = v_init<float>();
     data->cover_probs.resize(num_actions);
-    data->preds = v_init<uint32_t>();
     data->preds.resize(data->cover_size);
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type::action_probs);
+        prediction_type_t::action_probs);
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type::action_probs);
+        prediction_type_t::action_probs);
   else if (options.was_supplied("first"))
     l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
+        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_probs);
   else  // greedy
     l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);
+        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_probs);
 
   l->set_finish_example(finish_example);
   return make_base(*l);

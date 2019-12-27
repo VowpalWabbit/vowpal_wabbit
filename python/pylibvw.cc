@@ -136,15 +136,15 @@ size_t my_get_label_type(vw*all)
 
 size_t my_get_prediction_type(vw_ptr all)
 { switch (all->l->pred_type)
-  { case prediction_type::scalar:          return pSCALAR;
-    case prediction_type::scalars:         return pSCALARS;
-    case prediction_type::action_scores:   return pACTION_SCORES;
-    case prediction_type::action_probs:    return pACTION_PROBS;
-    case prediction_type::multiclass:      return pMULTICLASS;
-    case prediction_type::multilabels:     return pMULTILABELS;
-    case prediction_type::prob:            return pPROB;
-    case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
-    case prediction_type::decision_scores:  return pDECISION_SCORES;
+  { case prediction_type_t::scalar:          return pSCALAR;
+    case prediction_type_t::scalars:         return pSCALARS;
+    case prediction_type_t::action_scores:   return pACTION_SCORES;
+    case prediction_type_t::action_probs:    return pACTION_PROBS;
+    case prediction_type_t::multiclass:      return pMULTICLASS;
+    case prediction_type_t::multilabels:     return pMULTILABELS;
+    case prediction_type_t::prob:            return pPROB;
+    case prediction_type_t::multiclassprobs: return pMULTICLASSPROBS;
+    case prediction_type_t::decision_scores:  return pDECISION_SCORES;
     default: THROW("unsupported prediction type used");
   }
 }
@@ -468,16 +468,16 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t la
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple().label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple().weight; }
 float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple().initial; }
-float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
-float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
+float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar(); }
+float ex_get_prob(example_ptr ec) { return ec->pred.prob(); }
 
 uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi().label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi().weight; }
-uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
+uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass(); }
 
 py::list ex_get_scalars(example_ptr ec)
 { py::list values;
-  v_array<float> scalars = ec->pred.scalars;
+  v_array<float> scalars = ec->pred.scalars();
 
   for (float s : scalars)
   { values.append(s);
@@ -488,7 +488,7 @@ py::list ex_get_scalars(example_ptr ec)
 py::list ex_get_action_scores(example_ptr ec)
 {
   py::list values;
-  auto const& scores = ec->pred.a_s;
+  auto const& scores = ec->pred.action_scores();
   std::vector<float> ordered_scores(scores.size());
   for (auto const& action_score: scores)
   {
@@ -506,7 +506,7 @@ py::list ex_get_action_scores(example_ptr ec)
 py::list ex_get_decision_scores(example_ptr ec)
 {
   py::list values;
-  for (auto const& scores : ec->pred.decision_scores)
+  for (auto const& scores : ec->pred.decision_scores())
   {
     py::list inner_list;
     for (auto action_score: scores)
@@ -522,7 +522,7 @@ py::list ex_get_decision_scores(example_ptr ec)
 
 py::list ex_get_multilabel_predictions(example_ptr ec)
 { py::list values;
-  MULTILABEL::labels labels = ec->pred.multilabels;
+  MULTILABEL::labels labels = ec->pred.multilabels();
 
   for (uint32_t l : labels.label_v)
   { values.append(l);
@@ -530,14 +530,14 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   return values;
 }
 
-uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
+uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass(); }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs().costs.size(); }
 float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].x; }
 uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].class_index; }
 float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].partial_prediction; }
 float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].wap_value; }
 
-uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
+uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass(); }
 uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb().costs.size(); }
 float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb().costs[i].cost; }
 uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb().costs[i].action; }

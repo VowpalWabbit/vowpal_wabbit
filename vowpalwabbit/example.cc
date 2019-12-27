@@ -126,7 +126,6 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
   fs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
-  fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
   feature_map_len = fs.feature_map.size();
@@ -186,6 +185,7 @@ flat_example* flatten_sort_example(vw& all, example* ec)
   return fec;
 }
 
+VW_DEPRECATED("")
 void free_flatten_example(flat_example* fec)
 {
   // note: The label memory should be freed by by freeing the original example.
@@ -215,25 +215,10 @@ example* alloc_examples(size_t, size_t count = 1)
   return ec;
 }
 
+VW_DEPRECATED("You can just delete the example now")
 void dealloc_example(void (*delete_label)(new_polylabel&), example& ec, void (*delete_prediction)(void*))
 {
-  if (delete_label)
-    delete_label(ec.l);
-
-  if (delete_prediction)
-    delete_prediction(&ec.pred);
-
-  ec.tag.delete_v();
-
-  if (ec.passthrough)
-  {
-    ec.passthrough->delete_v();
-    delete ec.passthrough;
-  }
-
-  for (auto& j : ec.feature_space) j.delete_v();
-
-  ec.indices.delete_v();
+  ec.~example();
 }
 
 void finish_example(vw&, example&);

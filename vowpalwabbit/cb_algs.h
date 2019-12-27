@@ -34,7 +34,7 @@ float get_cost_pred(
   BASELINE::set_baseline_enabled(&ec);
   ec.l.reset();
   ec.l.init_as_simple(simple_temp);
-  polyprediction p = ec.pred;
+  new_polyprediction p = std::move(ec.pred);
   if (is_learn && known_cost != nullptr && index == known_cost->action)
   {
     float old_weight = ec.weight;
@@ -47,8 +47,8 @@ float get_cost_pred(
 
   if (!baseline_enabled_old)
     BASELINE::reset_baseline_disabled(&ec);
-  float pred = ec.pred.scalar;
-  ec.pred = p;
+  float pred = ec.pred.scalar();
+  ec.pred = std::move(p);
 
   ec.l.reset();
   ec.l.init_as_cb(std::move(ld));

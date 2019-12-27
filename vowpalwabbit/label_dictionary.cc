@@ -109,9 +109,9 @@ void free_label_features(label_feature_map& lfm)
   while (label_iter != nullptr)
   {
     features* res = lfm.iterator_get_value(label_iter);
-    res->values.delete_v();
-    res->indicies.delete_v();
-    res->space_names.delete_v();
+    res->values.~v_array();
+    res->indicies.~v_array();
+    res->space_names.~v_array();
 
     label_iter = lfm.iterator_next(label_iter);
   }

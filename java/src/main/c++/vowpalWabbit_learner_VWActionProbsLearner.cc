@@ -10,7 +10,7 @@ jobject action_probs_prediction(example *vec, JNIEnv *env)
   // The action_probs prediction_type_t is just a placeholder identifying when the aciton_scores
   // should be treated as probabilities or scores.  That is why this function references a_s yet returns
   // ActionProbs to the Java side.
-  ACTION_SCORE::action_scores a_s = vec->pred.a_s;
+  ACTION_SCORE::action_scores a_s = vec->pred.action_scores();
   size_t num_values = a_s.size();
   jobjectArray j_action_probs = env->NewObjectArray(num_values, action_prob_class, 0);
 

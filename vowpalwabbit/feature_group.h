@@ -266,9 +266,6 @@ struct features
 
   features()
   {
-    values = v_init<feature_value>();
-    indicies = v_init<feature_index>();
-    space_names = v_init<audit_strings_ptr>();
     sum_feat_sq = 0.f;
   }
 
@@ -326,9 +323,9 @@ struct features
 
   void delete_v()
   {
-    values.delete_v();
-    indicies.delete_v();
-    space_names.delete_v();
+    values.~v_array();
+    indicies.~v_array();
+    space_names.~v_array();
   }
 
   void push_back(feature_value v, feature_index i)
@@ -345,7 +342,7 @@ struct features
 
     if (!space_names.empty())
     {
-      v_array<feature_slice> slice = v_init<feature_slice>();
+      v_array<feature_slice> slice;
       for (size_t i = 0; i < indicies.size(); i++)
       {
         feature_slice temp = {values[i], indicies[i] & parse_mask, *space_names[i].get()};
@@ -358,11 +355,10 @@ struct features
         indicies[i] = slice[i].weight_index;
         *space_names[i].get() = slice[i].space_name;
       }
-      slice.delete_v();
     }
     else
     {
-      v_array<feature> slice = v_init<feature>();
+      v_array<feature> slice;
       for (size_t i = 0; i < indicies.size(); i++)
       {
         feature temp = {values[i], indicies[i] & parse_mask};
@@ -374,7 +370,6 @@ struct features
         values[i] = slice[i].x;
         indicies[i] = slice[i].weight_index;
       }
-      slice.delete_v();
     }
     return true;
   }

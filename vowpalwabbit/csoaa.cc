@@ -23,7 +23,7 @@ namespace CSOAA
 struct csoaa
 {
   uint32_t num_classes;
-  polyprediction* pred;
+  new_polyprediction* pred;
   ~csoaa() { free(pred); }
 };
 
@@ -74,11 +74,11 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
     {
-      add_passthrough_feature(ec, i, c.pred[i - 1].scalar);
-      if (c.pred[i - 1].scalar < c.pred[prediction - 1].scalar)
+      add_passthrough_feature(ec, i, c.pred[i - 1].scalar());
+      if (c.pred[i - 1].scalar() < c.pred[prediction - 1].scalar())
         prediction = i;
     }
-    ec.partial_prediction = c.pred[prediction - 1].scalar;
+    ec.partial_prediction = c.pred[prediction - 1].scalar();
   }
   else
   {
@@ -108,7 +108,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       add_passthrough_feature(ec, constant * 3, 1.);
   }
 
-  ec.pred.multiclass = prediction;
+  ec.pred.multiclass() = prediction;
   ec.l.reset();
   ec.l.init_as_cs(std::move(ld));
 }
@@ -125,10 +125,10 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   if (!options.was_supplied("csoaa"))
     return nullptr;
 
-  c->pred = calloc_or_throw<polyprediction>(c->num_classes);
+  c->pred = calloc_or_throw<new_polyprediction>(c->num_classes);
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, c->num_classes, prediction_type::multiclass);
+      predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
   all.p->lp = cs_label;
   all.label_type = label_type::cs;
 
@@ -161,8 +161,6 @@ struct ldf
   ~ldf()
   {
     LabelDict::free_label_features(label_features);
-    a_s.delete_v();
-    stored_preds.delete_v();
   }
 };
 
@@ -458,7 +456,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     for (uint32_t k = 0; k < K; k++)
     {
       example* ec = ec_seq[k];
-      data.stored_preds.push_back(ec->pred.a_s);
+      data.stored_preds.push_back(ec->pred.action_scores());
       make_single_prediction(data, base, *ec);
       action_score s;
       s.score = ec->partial_prediction;
@@ -497,8 +495,8 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     data.stored_preds[0].clear();
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.a_s = data.stored_preds[k];
-      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
+      ec_seq[k]->pred.action_scores() = data.stored_preds[k];
+      ec_seq[0]->pred.action_scores().push_back(data.a_s[k]);
     }
   }
   else
@@ -506,10 +504,11 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k = 0; k < K; k++)
     {
-      if (k == predicted_K)
-        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs().costs[0].class_index;
-      else
-        ec_seq[k]->pred.multiclass = 0;
+      ec_seq[k]->pred.reset();
+      ec_seq[k]->pred.init_as_multiclass() =
+        k == predicted_K
+          ? ec_seq[k]->l.cs().costs[0].class_index
+          : 0;
     }
   }
 
@@ -524,13 +523,13 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
       // so we need to take score = -partial_prediction,
       // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
       float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
-      example->pred.prob = prob;
+      example->pred.prob() = prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (const auto& example : ec_seq)
     {
-      example->pred.prob /= sum_prob;
+      example->pred.prob() /= sum_prob;
     }
   }
 }
@@ -566,7 +565,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   if (data.is_probabilities)
   {
     // predicted_K was already computed in do_actual_learning(),
-    // but we cannot store it in ec.pred union because we store ec.pred.prob there.
+    // but we cannot store it in ec.pred union because we store ec.pred.prob() there.
     // So we must compute it again.
     uint32_t predicted_K = 0;
     float min_score = FLT_MAX;
@@ -582,7 +581,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     predicted_class = (*ec_seq)[predicted_K]->l.cs().costs[0].class_index;
   }
   else
-    predicted_class = ec.pred.multiclass;
+    predicted_class = ec.pred.multiclass();
 
   if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
@@ -602,7 +601,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   }
 
   for (int sink : all.final_prediction_sink)
-    all.print(sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
+    all.print(sink, data.is_probabilities ? ec.pred.prob() : (float)ec.pred.multiclass(), 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -634,7 +633,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   all.sd->total_features += head_ec.num_features;
 
   float loss = 0.;
-  v_array<action_score>& preds = head_ec.pred.a_s;
+  v_array<action_score>& preds = head_ec.pred.action_scores();
 
   if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
@@ -655,7 +654,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     assert(loss >= 0);
   }
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
+  for (int sink : all.final_prediction_sink) print_action_score(sink, head_ec.pred.action_scores(), head_ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -693,7 +692,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
     if (all.raw_prediction > 0)
     {
-      v_array<char> empty = {nullptr, nullptr, nullptr, 0};
+      v_array<char> empty;
       all.print_text(all.raw_prediction, "", empty);
     }
 
@@ -713,7 +712,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
       }
 
       float multiclass_log_loss = 999;  // -log(0) = plus infinity
-      float correct_class_prob = ec_seq[correct_class_k]->pred.prob;
+      float correct_class_prob = ec_seq[correct_class_k]->pred.prob();
       if (correct_class_prob > 0)
         multiclass_log_loss = -log(correct_class_prob);
 
@@ -841,8 +840,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
   }
   if (options.was_supplied("ldf_override"))
     ldf_arg = ldf_override;
-  if (ld->rank)
-    all.delete_prediction = delete_action_scores;
 
   all.p->lp = COST_SENSITIVE::cs_label;
   all.label_type = label_type::cs;
@@ -877,14 +874,14 @@ base_learner* csldf_setup(options_i& options, vw& all)
   features fs;
   ld->label_features.init(256, fs, LabelDict::size_t_eq);
   ld->label_features.get(1, 94717244);  // TODO: figure this out
-  prediction_type::prediction_type_t pred_type;
+  prediction_type_t pred_type;
 
   if (ld->rank)
-    pred_type = prediction_type::action_scores;
+    pred_type = prediction_type_t::action_scores;
   else if (ld->is_probabilities)
-    pred_type = prediction_type::prob;
+    pred_type = prediction_type_t::prob;
   else
-    pred_type = prediction_type::multiclass;
+    pred_type = prediction_type_t::multiclass;
 
   ld->read_example_this_loop = 0;
   learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>,

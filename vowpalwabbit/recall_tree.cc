@@ -52,7 +52,6 @@ struct node
       , n(0)
       , entropy(0)
       , passes(1)
-      , preds(v_init<node_pred>())
   {
   }
 };
@@ -72,12 +71,6 @@ struct recall_tree
   float bern_hyper;
 
   bool randomized_routing;
-
-  ~recall_tree()
-  {
-    for (auto& node : nodes) node.preds.delete_v();
-    nodes.delete_v();
-  }
 };
 
 float to_prob(float x)
@@ -252,7 +245,7 @@ void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi();
-  uint32_t save_pred = ec.pred.multiclass;
+  uint32_t save_pred = ec.pred.multiclass();
 
   uint32_t amaxscore = 0;
 
@@ -274,7 +267,7 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example&
   remove_node_id_feature(b, cn, ec);
 
   ec.l.multi() = mc;
-  ec.pred.multiclass = save_pred;
+  ec.pred.multiclass() = save_pred;
 
   return amaxscore;
 }
@@ -309,7 +302,7 @@ bool stop_recurse_check(recall_tree& b, uint32_t parent, uint32_t child)
 predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 {
   MULTICLASS::label_t mc = ec.l.multi();
-  uint32_t save_pred = ec.pred.multiclass;
+  uint32_t save_pred = ec.pred.multiclass();
 
   ec.l.simple() = {FLT_MAX, 0.f, 0.f};
   while (b.nodes[cn].internal)
@@ -325,7 +318,7 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
   }
 
   ec.l.multi() = mc;
-  ec.pred.multiclass = save_pred;
+  ec.pred.multiclass() = save_pred;
 
   return predict_type(cn, oas_predict(b, base, cn, ec));
 }
@@ -334,13 +327,13 @@ void predict(recall_tree& b, single_learner& base, example& ec)
 {
   predict_type pred = predict_from(b, base, ec, 0);
 
-  ec.pred.multiclass = pred.class_prediction;
+  ec.pred.multiclass() = pred.class_prediction;
 }
 
 float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 {
   MULTICLASS::label_t mc = ec.l.multi();
-  uint32_t save_pred = ec.pred.multiclass;
+  uint32_t save_pred = ec.pred.multiclass();
 
   // minimize entropy
   // better than maximize expected likelihood, and the proofs go through :)
@@ -363,10 +356,10 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   // TODO: (doesn't play well with link function)
   base.predict(ec, b.nodes[cn].base_router);
 
-  float save_scalar = ec.pred.scalar;
+  float save_scalar = ec.pred.scalar();
 
   ec.l.multi() = mc;
-  ec.pred.multiclass = save_pred;
+  ec.pred.multiclass() = save_pred;
 
   return save_scalar;
 }
@@ -405,7 +398,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
     if (is_candidate(b, cn, ec))
     {
       MULTICLASS::label_t mc = ec.l.multi();
-      uint32_t save_pred = ec.pred.multiclass;
+      uint32_t save_pred = ec.pred.multiclass();
 
       add_node_id_feature(b, cn, ec);
 
@@ -423,7 +416,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       remove_node_id_feature(b, cn, ec);
 
       ec.l.multi() = mc;
-      ec.pred.multiclass = save_pred;
+      ec.pred.multiclass() = save_pred;
     }
   }
 }

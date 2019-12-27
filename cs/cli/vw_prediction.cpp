@@ -9,7 +9,7 @@
 
 namespace VW
 {
-void CheckExample(vw* vw, example* ex, prediction_type::prediction_type_t type)
+void CheckExample(vw* vw, example* ex, prediction_type_t type)
 { if (vw == nullptr)
     throw gcnew ArgumentNullException("vw");
 
@@ -20,9 +20,9 @@ void CheckExample(vw* vw, example* ex, prediction_type::prediction_type_t type)
   if (ex_pred_type != type)
   { auto sb = gcnew StringBuilder();
     sb->Append("Prediction type must be ");
-    sb->Append(gcnew String(prediction_type::to_string(type)));
+    sb->Append(gcnew String(prediction_type_t::to_string(type)));
     sb->Append(" but is ");
-    sb->Append(gcnew String(prediction_type::to_string(ex_pred_type)));
+    sb->Append(gcnew String(prediction_type_t::to_string(ex_pred_type)));
 
     throw gcnew ArgumentException(sb->ToString());
   }
@@ -56,7 +56,7 @@ cli::array<float>^ VowpalWabbitScalarsPredictionFactory::Create(vw* vw, example*
 { CheckExample(vw, ex, PredictionType);
 
   try
-  { auto& scalars = ex->pred.scalars;
+  { auto& scalars = ex->pred.scalars();
     auto values = gcnew cli::array<float>((int)scalars.size());
     int index = 0;
     for (float s : scalars)
@@ -70,7 +70,7 @@ cli::array<float>^ VowpalWabbitScalarsPredictionFactory::Create(vw* vw, example*
 float VowpalWabbitProbabilityPredictionFactory::Create(vw* vw, example* ex)
 { CheckExample(vw, ex, PredictionType);
 
-  return ex->pred.prob;
+  return ex->pred.prob();
 }
 
 float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
@@ -107,11 +107,11 @@ Dictionary<int, float>^ VowpalWabbitMulticlassProbabilitiesPredictionFactory::Cr
 uint32_t VowpalWabbitMulticlassPredictionFactory::Create(vw* vw, example* ex)
 { CheckExample(vw, ex, PredictionType);
 
-  return ex->pred.multiclass;
+  return ex->pred.multiclass();
 }
 
 cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
-{ CheckExample(vw, ex, prediction_type::multilabels);
+{ CheckExample(vw, ex, prediction_type_t::multilabels);
 
   size_t length;
   uint32_t* labels;
@@ -135,7 +135,7 @@ cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example
 cli::array<ActionScore>^ VowpalWabbitActionScoreBasePredictionFactory::Create(vw* vw, example* ex)
 { CheckExample(vw, ex, PredictionType);
 
-  auto& a_s = ex->pred.a_s;
+  auto& a_s = ex->pred.action_scores();
   auto values = gcnew cli::array<ActionScore>((int)a_s.size());
 
   auto index = 0;
@@ -153,7 +153,7 @@ cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* e
     throw gcnew ArgumentNullException("ex");
 
   auto values = gcnew cli::array<float>(vw->lda);
-  Marshal::Copy(IntPtr(ex->pred.scalars.begin()), values, 0, vw->lda);
+  Marshal::Copy(IntPtr(ex->pred.scalars().begin()), values, 0, vw->lda);
 
   return values;
 }
@@ -163,26 +163,26 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex
     throw gcnew ArgumentNullException("ex");
 
   switch (vw->l->pred_type)
-  { case prediction_type::scalar:
+  { case prediction_type_t::scalar:
       return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
-    case prediction_type::scalars:
+    case prediction_type_t::scalars:
       return VowpalWabbitPredictionType::Scalars->Create(vw, ex);
-    case prediction_type::multiclass:
+    case prediction_type_t::multiclass:
       return VowpalWabbitPredictionType::Multiclass->Create(vw, ex);
-    case prediction_type::multilabels:
+    case prediction_type_t::multilabels:
       return VowpalWabbitPredictionType::Multilabel->Create(vw, ex);
-    case prediction_type::action_scores:
+    case prediction_type_t::action_scores:
       return VowpalWabbitPredictionType::ActionScore->Create(vw, ex);
-    case prediction_type::action_probs:
+    case prediction_type_t::action_probs:
       return VowpalWabbitPredictionType::ActionProbabilities->Create(vw, ex);
-    case prediction_type::prob:
+    case prediction_type_t::prob:
       return VowpalWabbitPredictionType::Probability->Create(vw, ex);
-    case prediction_type::multiclassprobs:
+    case prediction_type_t::multiclassprobs:
       return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
     default:
     { auto sb = gcnew StringBuilder();
       sb->Append("Unsupported prediction type: ");
-      sb->Append(gcnew String(prediction_type::to_string(vw->l->pred_type)));
+      sb->Append(gcnew String(prediction_type_t::to_string(vw->l->pred_type)));
       throw gcnew ArgumentException(sb->ToString());
     }
   }

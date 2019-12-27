@@ -392,7 +392,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec)
   ON.data.prediction = 0;
   GD::foreach_feature<update_data, make_pred>(*ON.all, ec, ON.data);
   ec.partial_prediction = (float)ON.data.prediction;
-  ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(ON.all->sd, ec.partial_prediction);
 }
 
 void update_Z_and_wbar(update_data& data, float x, float& wref)
@@ -456,7 +456,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
   predict(ON, base, ec);
 
   update_data& data = ON.data;
-  data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple().label) * ec.l.simple().weight;
+  data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar(), ec.l.simple().label) * ec.l.simple().weight;
   data.g /= 2;  // for half square loss
 
   if (ON.normalize)

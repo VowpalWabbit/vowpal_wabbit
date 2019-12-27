@@ -30,7 +30,7 @@ struct multipredict_info
 {
   size_t count;
   size_t step;
-  polyprediction* pred;
+  new_polyprediction* pred;
   const T& weights; /* & for l1: */
   float gravity;
 };
@@ -41,7 +41,7 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
   if ((-1e-10 < fx) && (fx < 1e-10))
     return;
   uint64_t mask = mp.weights.mask();
-  polyprediction* p = mp.pred;
+  new_polyprediction* p = mp.pred;
   fi &= mask;
   uint64_t top = fi + (uint64_t)((mp.count - 1) * mp.step);
   uint64_t i = 0;
@@ -49,14 +49,14 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
   {
     i += fi;
     for (; i <= top; i += mp.step, ++p)
-      p->scalar +=
+      p->scalar() +=
           fx * mp.weights[i];  // TODO: figure out how to use weight_parameters::iterator (not using change_begin())
   }
   else  // TODO: this could be faster by unrolling into two loops
     for (size_t c = 0; c < mp.count; ++c, fi += (uint64_t)mp.step, ++p)
     {
       fi &= mask;
-      p->scalar += fx * mp.weights[fi];
+      p->scalar() += fx * mp.weights[fi];
     }
 }
 

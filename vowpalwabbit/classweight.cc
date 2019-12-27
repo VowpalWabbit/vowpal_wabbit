@@ -52,10 +52,10 @@ static void predict_or_learn(classweights& cweights, LEARNER::single_learner& ba
 {
   switch (pred_type)
   {
-    case prediction_type::scalar:
+    case prediction_type_t::scalar:
       ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple().label);
       break;
-    case prediction_type::multiclass:
+    case prediction_type_t::multiclass:
       ec.weight *= cweights.get_class_weight(ec.l.multi().label);
       break;
     default:
@@ -91,12 +91,12 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
   LEARNER::learner<classweights, example>* ret;
-  if (base->pred_type == prediction_type::scalar)
-    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::scalar>,
-        predict_or_learn<false, prediction_type::scalar>);
-  else if (base->pred_type == prediction_type::multiclass)
-    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::multiclass>,
-        predict_or_learn<false, prediction_type::multiclass>);
+  if (base->pred_type == prediction_type_t::scalar)
+    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, static_cast<int>(prediction_type_t::scalar)>,
+        predict_or_learn<false, static_cast<int>(prediction_type_t::scalar)>);
+  else if (base->pred_type == prediction_type_t::multiclass)
+    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, static_cast<int>(prediction_type_t::multiclass)>,
+        predict_or_learn<false, static_cast<int>(prediction_type_t::multiclass)>);
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);

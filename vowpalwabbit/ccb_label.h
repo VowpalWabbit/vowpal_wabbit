@@ -33,13 +33,13 @@ enum example_type : uint8_t
 
 struct label
 {
-  example_type type;
+  example_type type = example_type::unset;
   // Outcome may be unset.
-  conditional_contextual_bandit_outcome* outcome;
+  conditional_contextual_bandit_outcome* outcome = nullptr;
   v_array<uint32_t> explicit_included_actions;
-  float weight;
+  float weight = 0.f;
 
-  label() : type(example_type::unset), outcome(nullptr), weight(0.f) { explicit_included_actions = v_init<uint32_t>(); }
+  label() = default;
   label(example_type type, conditional_contextual_bandit_outcome* outcome, v_array<uint32_t>& explicit_included_actions,
       float weight)
       : type(type), outcome(outcome), explicit_included_actions(explicit_included_actions), weight(weight)
@@ -52,7 +52,7 @@ struct label
     std::swap(type, other.type);
     outcome = nullptr;
     std::swap(outcome, other.outcome);
-    explicit_included_actions = v_init<uint32_t>();
+    explicit_included_actions.clear();
     std::swap(explicit_included_actions, other.explicit_included_actions);
     weight = 0.f;
     std::swap(weight, other.weight);
@@ -61,16 +61,11 @@ struct label
   {
     type = example_type::unset;
     std::swap(type, other.type);
-    if (outcome)
-    {
-      outcome->probabilities.delete_v();
-      delete outcome;
-      outcome = nullptr;
-    }
+    delete outcome;
+    outcome = nullptr;
     std::swap(outcome, other.outcome);
 
-    explicit_included_actions.delete_v();
-    explicit_included_actions = v_init<uint32_t>();
+    explicit_included_actions.clear();
     std::swap(explicit_included_actions, other.explicit_included_actions);
 
     weight = 0.f;
@@ -79,38 +74,28 @@ struct label
     return *this;
   }
 
-  label(const label& other) {
+  label(const label& other)
+  {
     type = other.type;
     // todo copyconstructor of outcome
     outcome = other.outcome;
-    explicit_included_actions = v_init<uint32_t>();
+    explicit_included_actions.clear();
     copy_array(explicit_included_actions, other.explicit_included_actions);
     weight = other.weight;
   }
 
-  label& operator=(const label& other) {
+  label& operator=(const label& other)
+  {
     type = other.type;
-    if (outcome)
-    {
-      outcome->probabilities.delete_v();
-      delete outcome;
-    }
+    delete outcome;
     outcome = other.outcome;
-    explicit_included_actions.delete_v();
+    explicit_included_actions.clear();
     copy_array(explicit_included_actions, other.explicit_included_actions);
     weight = other.weight;
     return *this;
   }
 
-  ~label()
-  {
-    if (outcome)
-    {
-      outcome->probabilities.delete_v();
-      delete outcome;
-    }
-    explicit_included_actions.delete_v();
-  }
+  ~label() { delete outcome; }
 };
 
 extern label_parser ccb_label_parser;

@@ -95,8 +95,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 void finish(Search::search& sch)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
-  my_task_data->y_allowed_entity.delete_v();
-  my_task_data->y_allowed_relation.delete_v();
   if (my_task_data->search_order == 3)
   {
     for (size_t a = 0; a < 10; a++) VW::dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
@@ -145,7 +143,7 @@ size_t predict_entity(
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels = v_init<uint32_t>();
+    v_array<uint32_t> star_labels;
     star_labels.push_back(ex->l.multi().label);
     star_labels.push_back(LABEL_SKIP);
     my_task_data->y_allowed_entity.push_back(LABEL_SKIP);
@@ -207,7 +205,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   task_data* my_task_data = sch.get_task_data<task_data>();
   size_t hist[2];
   decode_tag(ex->tag, type, id1, id2);
-  v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
+  v_array<uint32_t> constrained_relation_labels;
   if (my_task_data->constraints && predictions[id1] != 0 && predictions[id2] != 0)
   {
     hist[0] = predictions[id1];
@@ -228,7 +226,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels = v_init<uint32_t>();
+    v_array<uint32_t> star_labels;
     star_labels.push_back(ex->l.multi().label);
     star_labels.push_back(LABEL_SKIP);
     constrained_relation_labels.push_back(LABEL_SKIP);
@@ -297,7 +295,6 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
     }
   }
   sch.loss(loss);
-  constrained_relation_labels.delete_v();
   return prediction;
 }
 
@@ -407,7 +404,7 @@ void run(Search::search& sch, multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
 
-  v_array<size_t> predictions = v_init<size_t>();
+  v_array<size_t> predictions;
   for (size_t i = 0; i < ec.size(); i++)
   {
     predictions.push_back(0);
@@ -436,7 +433,6 @@ void run(Search::search& sch, multi_ex& ec)
     if (sch.output().good())
       sch.output() << predictions[i] << ' ';
   }
-  predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)

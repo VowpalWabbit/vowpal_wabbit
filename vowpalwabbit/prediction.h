@@ -1,17 +1,19 @@
 #pragma once
 
-enum class prediction_type_t
+enum class prediction_type_t : int
 {
   unset,
   scalar,
   scalars,
-  a_s,
-  // action_probs,
+  action_scores,
   multiclass,
   multilabels,
   prob,
-  // multiclassprobs,
-  decision_scores
+  decision_scores,
+
+  // These are synonyms for action_scores. They should not be used with this union and should never be the tag.
+  multiclassprobs,
+  action_probs,
 };
 
 #define TO_STRING_CASE(enum_type) \
@@ -25,13 +27,14 @@ inline const char* to_string(prediction_type_t prediction_type)
     TO_STRING_CASE(prediction_type_t::unset)
     TO_STRING_CASE(prediction_type_t::scalar)
     TO_STRING_CASE(prediction_type_t::scalars)
-    TO_STRING_CASE(prediction_type_t::a_s)
+    TO_STRING_CASE(prediction_type_t::action_scores)
     TO_STRING_CASE(prediction_type_t::decision_scores)
-    // TO_STRING_CASE(prediction_type_t::action_probs)
     TO_STRING_CASE(prediction_type_t::multiclass)
     TO_STRING_CASE(prediction_type_t::multilabels)
     TO_STRING_CASE(prediction_type_t::prob)
-    // TO_STRING_CASE(prediction_type_t::multiclassprobs)
+
+    TO_STRING_CASE(prediction_type_t::action_probs)
+    TO_STRING_CASE(prediction_type_t::multiclassprobs)
     default:
       return "<unsupported>";
   }
@@ -43,7 +46,7 @@ struct new_polyprediction
   union {
     float _scalar;
     v_array<float> _scalars;           // a sequence of scalar predictions
-    ACTION_SCORE::action_scores _a_s;  // a sequence of classes with scores.  Also used for probabilities.
+    ACTION_SCORE::action_scores _action_scores;  // a sequence of classes with scores.  Also used for probabilities.
     CCB::decision_scores_t _decision_scores;
     uint32_t _multiclass;
     MULTILABEL::labels _multilabels;
@@ -79,8 +82,8 @@ struct new_polyprediction
       case (prediction_type_t::scalars):
         init_as_scalars(other.scalars());
         break;
-      case (prediction_type_t::a_s):
-        init_as_a_s(other.a_s());
+      case (prediction_type_t::action_scores):
+        init_as_action_scores(other.action_scores());
         break;
       case (prediction_type_t::decision_scores):
         init_as_decision_scores(other.decision_scores());
@@ -98,7 +101,7 @@ struct new_polyprediction
     }
   }
 
-  void copy_from(const new_polyprediction&& other)
+  void move_from(const new_polyprediction&& other)
   {
     reset();
     switch (_tag)
@@ -111,8 +114,8 @@ struct new_polyprediction
       case (prediction_type_t::scalars):
         init_as_scalars(other.scalars());
         break;
-      case (prediction_type_t::a_s):
-        init_as_a_s(other.a_s());
+      case (prediction_type_t::action_scores):
+        init_as_action_scores(other.action_scores());
         break;
       case (prediction_type_t::decision_scores):
         init_as_decision_scores(other.decision_scores());
@@ -172,8 +175,8 @@ struct new_polyprediction
       case (prediction_type_t::scalars):
         destruct(_scalars);
         break;
-      case (prediction_type_t::a_s):
-        destruct(_a_s);
+      case (prediction_type_t::action_scores):
+        destruct(_action_scores);
         break;
       case (prediction_type_t::decision_scores):
         destruct(_decision_scores);
@@ -236,24 +239,24 @@ struct new_polyprediction
   }
 
   template <typename... Args>
-  ACTION_SCORE::action_scores& init_as_a_s(Args&&... args)
+  ACTION_SCORE::action_scores& init_as_action_scores(Args&&... args)
   {
     ensure_is_type(prediction_type_t::unset);
-    new (&_a_s) ACTION_SCORE::action_scores(std::forward<Args>(args)...);
-    _tag = prediction_type_t::a_s;
-    return _a_s;
+    new (&_action_scores) ACTION_SCORE::action_scores(std::forward<Args>(args)...);
+    _tag = prediction_type_t::action_scores;
+    return _action_scores;
   }
 
-  const ACTION_SCORE::action_scores& a_s() const
+  const ACTION_SCORE::action_scores& action_scores() const
   {
-    ensure_is_type(prediction_type_t::a_s);
-    return _a_s;
+    ensure_is_type(prediction_type_t::action_scores);
+    return _action_scores;
   }
 
-  ACTION_SCORE::action_scores& a_s()
+  ACTION_SCORE::action_scores& action_scores()
   {
-    ensure_is_type(prediction_type_t::a_s);
-    return _a_s;
+    ensure_is_type(prediction_type_t::action_scores);
+    return _action_scores;
   }
 
   template <typename... Args>
