@@ -179,7 +179,7 @@ struct search_private
   action learn_oracle_action;                // store an oracle action for debugging purposes
   features last_action_repr;
 
-  new_polylabel* allowed_actions_cache;
+  new_polylabel allowed_actions_cache;
 
   size_t loss_declared_cnt;                 // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
@@ -327,9 +327,9 @@ search::~search()
     priv.active_known.delete_v();
 
     if (priv.cb_learner)
-      priv.allowed_actions_cache->cb().costs.delete_v();
+      priv.allowed_actions_cache.cb().costs.delete_v();
     else
-      priv.allowed_actions_cache->cs().costs.delete_v();
+      priv.allowed_actions_cache.cs().costs.delete_v();
 
     priv.train_trajectory.delete_v();
     for (Search::action_repr& ar : priv.ptag_to_action)
@@ -356,7 +356,6 @@ search::~search()
     priv.learn_condition_on.delete_v();
     priv.learn_condition_on_act.delete_v();
 
-    free(priv.allowed_actions_cache);
     delete priv.rawOutputStringStream;
   }
   free(this->priv);
@@ -882,7 +881,10 @@ void del_example_conditioning(search_private& priv, example& ec)
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
-inline size_t cs_get_costs_size(bool isCB, new_polylabel& ld) { return isCB ? ld.cb().costs.size() : ld.cs().costs.size(); }
+inline size_t cs_get_costs_size(bool isCB, new_polylabel& ld)
+{
+  return isCB ? ld.cb().costs.size() : ld.cs().costs.size();
+}
 
 inline uint32_t cs_get_cost_index(bool isCB, new_polylabel& ld, size_t k)
 {
@@ -936,7 +938,7 @@ new_polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const 
     size_t allowed_actions_cnt, const float* allowed_actions_cost)
 {
   bool isCB = priv.cb_learner;
-  new_polylabel& ld = *priv.allowed_actions_cache;
+  new_polylabel& ld = priv.allowed_actions_cache;
   uint32_t num_costs = (uint32_t)cs_get_costs_size(isCB, ld);
 
   if (priv.is_ldf)  // LDF version easier
@@ -1143,7 +1145,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
     v_array<action_cache>* this_cache = new v_array<action_cache>();
     *this_cache = v_init<action_cache>();
     // TODO we don't really need to construct this new_polylabel
-    new_polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
+    new_polylabel l = std::move(allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost));
     size_t K = cs_get_costs_size(priv.cb_learner, l);
     for (size_t k = 0; k < K; k++)
     {
@@ -1154,6 +1156,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
     assert(priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1);
     priv.memo_foreach_action.push_back(this_cache);
     cdbg << "memo_foreach_action[" << priv.meta_t + priv.t - 1 << "] = " << this_cache << " from oracle" << endl;
+    priv.allowed_actions_cache = std::move(l);
   }
   return a;
 }
@@ -1164,13 +1167,13 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
                              // appropriate cost for that action
 {
   vw& all = *priv.all;
-  auto old_label = ec.l;
-  bool need_partial_predictions = need_memo_foreach_action(priv) ||
+  auto old_label = std::move(ec.l);
+  const bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1) || priv.active_csoaa;
   if ((allowed_actions_cnt > 0) || need_partial_predictions)
-    ec.l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
+    ec.l = std::move(allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost));
   else
-    ec.l.cs() = priv.empty_cs_label;
+    ec.l.init_as_cs() = priv.empty_cs_label;
 
   cdbg << "allowed_actions_cnt=" << allowed_actions_cnt << ", ec.l = [";
   for (size_t i = 0; i < ec.l.cs().costs.size(); i++)
@@ -1266,7 +1269,8 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
                                           ? ec.l.cs().costs[k].partial_prediction
                                           : FLT_MAX );
                                           cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() -
-         1) << "] = certain=" << ec.l.cs().costs[k].pred_is_certain << ", cost=" << ec.l.cs().costs[k].partial_prediction <<
+         1) << "] = certain=" << ec.l.cs().costs[k].pred_is_certain << ", cost=" <<
+         ec.l.cs().costs[k].partial_prediction <<
          "}" << endl; */
       CS::wclass& wc = ec.l.cs().costs[k];
       // Get query_needed from pred
@@ -1278,8 +1282,8 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       // << ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" << wc.query_needed << " max_pred=" <<
       // wc.max_pred << " min_pred=" << wc.min_pred << " is_range_overlapped=" << wc.is_range_overlapped << "
       // is_range_large=" << wc.is_range_large << endl;
-      // query_needed=" << ec.l.cs().costs[k].query_needed << ", cost=" << ec.l.cs().costs[k].partial_prediction << "}" <<
-      // endl;
+      // query_needed=" << ec.l.cs().costs[k].query_needed << ", cost=" << ec.l.cs().costs[k].partial_prediction << "}"
+      // << endl;
     }
   }
 
@@ -1297,7 +1301,12 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     all.print_text(all.raw_prediction, priv.rawOutputStringStream->str(), ec.tag);
   }
 
-  ec.l = old_label;
+  if ((allowed_actions_cnt > 0) || need_partial_predictions)
+  {
+    priv.allowed_actions_cache = std::move(ec.l);
+  }
+  
+  ec.l = std::move(old_label);
 
   priv.total_predictions_made++;
   priv.num_features += ec.num_features;
@@ -1335,7 +1344,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     if (start_K > 0)
       LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
 
-    new_polylabel old_label = ecs[a].l;
+    new_polylabel old_label = std::move(ecs[a].l);
     ecs[a].l.cs() = priv.ldf_test_label;
 
     multi_ex tmp;
@@ -1362,7 +1371,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       this_cache->push_back(action_cache(0., a, false, ecs[a].partial_prediction));
 
     priv.num_features += ecs[a].num_features;
-    ecs[a].l = old_label;
+    ecs[a].l = std::move(old_label);
     if (start_K > 0)
       LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
   }
@@ -1495,7 +1504,8 @@ void generate_training_example(search_private& priv, new_polylabel& losses, floa
   {
     if (min_loss == FLT_MAX)
       for (size_t i = 0; i < losses.cb().costs.size(); i++) min_loss = std::min(min_loss, losses.cb().costs[i].cost);
-    for (size_t i = 0; i < losses.cb().costs.size(); i++) losses.cb().costs[i].cost = losses.cb().costs[i].cost - min_loss;
+    for (size_t i = 0; i < losses.cb().costs.size(); i++)
+      losses.cb().costs[i].cost = losses.cb().costs[i].cost - min_loss;
   }
   else
   {
@@ -2301,8 +2311,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       //                           priv.learn_loss);
     }
     if (priv.active_csoaa_verify > 0.)
-      verify_active_csoaa(
-          priv.learn_losses.cs(), priv.active_known[priv.learn_t], ec_seq[0]->example_counter, priv.active_csoaa_verify);
+      verify_active_csoaa(priv.learn_losses.cs(), priv.active_known[priv.learn_t], ec_seq[0]->example_counter,
+          priv.active_csoaa_verify);
 
     if (skipped_all_actions)
     {
@@ -2793,20 +2803,19 @@ base_learner* setup(options_i& options, vw& all)
     THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
   // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-  priv.allowed_actions_cache = &calloc_or_throw<new_polylabel>();
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(*priv.allowed_actions_cache);
+    CB::default_label(priv.allowed_actions_cache.init_as_cb());
     priv.learn_losses.cb().costs = v_init<CB::cb_class>();
     priv.gte_label.cb().costs = v_init<CB::cb_class>();
   }
   else
   {
     priv.cb_learner = false;
-    CS::cs_label.default_label(*priv.allowed_actions_cache);
-    priv.learn_losses.cs().costs = v_init<CS::wclass>();
-    priv.gte_label.cs().costs = v_init<CS::wclass>();
+    CS::default_label(priv.allowed_actions_cache.init_as_cs());
+    priv.learn_losses.init_as_cs().costs = v_init<CS::wclass>();
+    priv.gte_label.init_as_cs().costs = v_init<CS::wclass>();
   }
 
   ensure_param(priv.beta, 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");

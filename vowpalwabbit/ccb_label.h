@@ -79,7 +79,7 @@ struct label
     return *this;
   }
 
-  label(label& other) {
+  label(const label& other) {
     type = other.type;
     // todo copyconstructor of outcome
     outcome = other.outcome;
@@ -87,7 +87,8 @@ struct label
     copy_array(explicit_included_actions, other.explicit_included_actions);
     weight = other.weight;
   }
-  label& operator=(label& other) {
+
+  label& operator=(const label& other) {
     type = other.type;
     if (outcome)
     {
