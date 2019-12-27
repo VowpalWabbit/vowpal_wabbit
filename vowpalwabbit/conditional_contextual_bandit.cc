@@ -686,7 +686,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   learner<ccb, multi_ex>& l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
+      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_scores);
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

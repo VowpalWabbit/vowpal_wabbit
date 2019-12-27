@@ -144,7 +144,7 @@ size_t my_get_prediction_type(vw_ptr all)
     case prediction_type::multilabels:     return pMULTILABELS;
     case prediction_type::prob:            return pPROB;
     case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
-    case prediction_type::decision_probs:  return pDECISION_SCORES;
+    case prediction_type::decision_scores:  return pDECISION_SCORES;
     default: THROW("unsupported prediction type used");
   }
 }

@@ -29,26 +29,13 @@ inline void delete_scalars(void* v)
   preds->delete_v();
 }
 
-union polyprediction
-{
-  float scalar;
-  v_array<float> scalars;           // a sequence of scalar predictions
-  ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  CCB::decision_scores_t decision_scores;
-  uint32_t multiclass;
-  MULTILABEL::labels multilabels;
-  float prob;  // for --probabilities --csoaa_ldf=mc
-  polyprediction() { memset(this, 0, sizeof(polyprediction)); }
-  ~polyprediction() { }
-};
-
 struct example : public example_predict  // core example datatype.
 {
   // input fields
   new_polylabel l;
 
   // output prediction
-  polyprediction pred;
+  new_polyprediction pred;
 
   float weight;       // a relative importance weight for the example, default = 1
   v_array<char> tag;  // An identifier for the example.
