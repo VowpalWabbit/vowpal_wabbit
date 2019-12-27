@@ -378,10 +378,10 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   CS::wclass default_wclass = {0., 0, 0., 0.};
 
-  example* ldf_examples = VW::alloc_examples(sizeof(CS::label), num_actions);
+  example* ldf_examples = VW::alloc_examples(0 /*unused*/, num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
-    auto l = ldf_examples[a].l;
+    auto& l = ldf_examples[a].l;
     CS::cs_label.default_label(l);
     l.cs().costs.push_back(default_wclass);
     ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;

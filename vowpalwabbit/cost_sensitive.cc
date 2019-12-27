@@ -126,12 +126,10 @@ void delete_label(new_polylabel& v)
 
 void copy_label(new_polylabel& dst, new_polylabel& src)
 {
-  // if (dst.costs && src.costs)
-  // {
-  //   label* ldD = (label*)dst;
-  //   label* ldS = (label*)src;
-  //   copy_array(ldD->costs, ldS->costs);
-  // }
+  dst.reset();
+  auto& dest_label = dst.init_as_cs();
+  auto& src_label = src.cs();
+  copy_array(dest_label.costs, src_label.costs);
 }
 
 void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)

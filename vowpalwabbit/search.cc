@@ -786,7 +786,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
   uint64_t extra_offset = 0;
   if (priv.is_ldf)
-    if (ec.l.cs().costs.size() > 0)
+    if (ec.l.get_type() == label_type_t::cs && ec.l.cs().costs.size() > 0)
       extra_offset = 3849017 * ec.l.cs().costs[0].class_index;
 
   size_t I = condition_on_cnt;
@@ -1345,7 +1345,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
 
     new_polylabel old_label = std::move(ecs[a].l);
-    ecs[a].l.cs() = priv.ldf_test_label;
+    ecs[a].l.init_as_cs() = priv.ldf_test_label;
 
     multi_ex tmp;
     uint64_t old_offset = ecs[a].ft_offset;
