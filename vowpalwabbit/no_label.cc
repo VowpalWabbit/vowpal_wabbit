@@ -6,6 +6,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include "vw_string_view.h"
 
 #include "cache.h"
 #include "accumulate.h"
@@ -25,7 +26,7 @@ bool test_label(new_polylabel&) { return false; }
 
 void delete_no_label(new_polylabel&) {}
 
-void parse_no_label(parser*, shared_data*, new_polylabel&, v_array<substring>& words)
+void parse_no_label(parser*, shared_data*, new_polylabel&, v_array<VW::string_view>& words)
 {
   switch (words.size())
   {
@@ -33,7 +34,7 @@ void parse_no_label(parser*, shared_data*, new_polylabel&, v_array<substring>& w
       break;
     default:
       std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
+      for (const auto & word : words) std::cout << word;
       std::cout << std::endl;
   }
 }

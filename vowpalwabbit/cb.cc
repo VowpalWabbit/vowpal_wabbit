@@ -120,7 +120,7 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
   CB::copy_label(ldD, ldS);
 }
 
-void parse_label(parser* p, shared_data*, CB::label& ld, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view>& words)
 {
   ld.costs.clear();
   ld.weight = 1.0;
@@ -134,18 +134,18 @@ void parse_label(parser* p, shared_data*, CB::label& ld, v_array<substring>& wor
       THROW("malformed cost specification: " << p->parse_name);
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)hashstring(p->parse_name[0], 0);
+    f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
     f.cost = FLT_MAX;
 
     if (p->parse_name.size() > 1)
-      f.cost = float_of_substring(p->parse_name[1]);
+      f.cost = float_of_string(p->parse_name[1]);
 
     if (std::isnan(f.cost))
       THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
     f.probability = .0;
     if (p->parse_name.size() > 2)
-      f.probability = float_of_substring(p->parse_name[2]);
+      f.probability = float_of_string(p->parse_name[2]);
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
@@ -160,7 +160,7 @@ void parse_label(parser* p, shared_data*, CB::label& ld, v_array<substring>& wor
       std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << std::endl;
       f.probability = .0;
     }
-    if (substring_equal(p->parse_name[0], "shared"))
+    if (p->parse_name[0] == "shared")
     {
       if (p->parse_name.size() == 1)
       {
@@ -292,14 +292,14 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
   ldD.action = ldS.action;
 }
 
-void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.cb_eval();
 
   if (words.size() < 2)
     THROW("Evaluation can not happen without an action and an exploration");
 
-  ld.action = (uint32_t)hashstring(words[0], 0);
+  ld.action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
 
   words.begin()++;
 

@@ -145,7 +145,7 @@ struct svm_params
 
 void svm_example::init_svm_example(flat_example* fec)
 {
-  ex = *fec;
+  ex = std::move(*fec);
   free(fec);
 }
 

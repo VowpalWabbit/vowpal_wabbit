@@ -9,6 +9,7 @@
 #include "rand48.h"
 #include "reductions.h"
 #include "gd.h"  // for GD::foreach_feature
+#include "parse_primitives.h"
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
 #include "search_dep_parser.h"
@@ -30,6 +31,8 @@ using std::endl;
 
 namespace Search
 {
+using byte_array = std::unique_ptr<uint8_t[]>;
+
 search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
     &EntityRelationTask::task, &HookTask::task, &GraphTask::task, nullptr};  // must nullptr terminate!
@@ -136,6 +139,31 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
 
 struct search_private
 {
+ private:
+  struct cached_item_equivalent
+  {
+    bool operator()(const byte_array& A, const byte_array& B) const
+    {
+      size_t sz_A = *A.get();
+      size_t sz_B = *B.get();
+      if (sz_A != sz_B)
+        return false;
+      return memcmp(A.get(), B.get(), sz_A) == 0;
+    }
+  };
+  struct cached_item_hash
+  {
+    size_t operator()(const byte_array& key) const
+    {
+      size_t sz = *key.get();
+      return uniform_hash(key.get(), sz, 3419);
+    }
+  };
+
+ public:
+  using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
+
+ public:
   vw* all;
   std::shared_ptr<rand_state> _random_state;
 
@@ -234,7 +262,7 @@ struct search_private
   size_t total_predictions_made;
   size_t total_cache_hits;
 
-  v_hashmap<unsigned char*, scored_action> cache_hash_map;
+  cache_map cache_hash_map;
 
   // for foreach_feature temporary storage for conditioning
   uint64_t dat_new_feature_idx;
@@ -272,13 +300,6 @@ struct search_private
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 };
 
-void free_key(unsigned char* mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
-void clear_cache_hash_map(search_private& priv)
-{
-  priv.cache_hash_map.iter(free_key);
-  priv.cache_hash_map.clear();
-}
-
 void clear_memo_foreach_action(search_private& priv)
 {
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
@@ -296,7 +317,6 @@ search::~search()
   if (this->priv && this->priv->all)
   {
     search_private& priv = *this->priv;
-    clear_cache_hash_map(priv);
 
 
     delete priv.truth_string;
@@ -308,7 +328,6 @@ search::~search()
     {
       if (ar.repr != nullptr)
       {
-        ar.repr->delete_v();
         delete ar.repr;
         cdbg << "delete_v" << endl;
       }
@@ -671,7 +690,6 @@ void reset_search_structure(search_private& priv)
   {
     if (ar.repr != nullptr)
     {
-      ar.repr->delete_v();
       delete ar.repr;
     }
   }
@@ -1400,6 +1418,7 @@ bool cached_item_equivalent(unsigned char* const& A, unsigned char* const& B)
     return false;
   return memcmp(A, B, sz_A) == 0;
 }
+
 // returns true if found and do_store is false. if do_store is true, always returns true.
 bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on,
     const char* condition_on_names, action_repr* condition_on_actions, size_t condition_on_cnt, int policy,
@@ -1415,8 +1434,8 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   if (sz % 4 != 0)
     sz += 4 - (sz % 4);  // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-  unsigned char* item = calloc_or_throw<unsigned char>(sz);
-  unsigned char* here = item;
+  byte_array item(new uint8_t[sz]);
+  uint8_t* here = item.get();
   *here = (unsigned char)sz;
   here += sizeof(size_t);
   *here = mytag;
@@ -1436,19 +1455,17 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
   }
-  uint64_t hash = uniform_hash(item, sz, 3419);
-
   if (do_store)
   {
-    priv.cache_hash_map.put(item, hash, scored_action(a, a_cost));
+    priv.cache_hash_map.emplace(std::move(item), scored_action(a, a_cost));
     return true;
   }
   else  // its a find
   {
-    scored_action sa = priv.cache_hash_map.get(item, hash);
-    a = sa.a;
-    a_cost = sa.s;
-    free(item);
+    auto sa_iter = priv.cache_hash_map.find(item);
+    if(sa_iter == priv.cache_hash_map.end()) return false;
+    a = sa_iter->second.a;
+    a_cost = sa_iter->second.s;
     return a != (action)-1;
   }
 }
@@ -2142,7 +2159,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
 
   // if (! priv.no_caching)
-  clear_cache_hash_map(priv);
+  priv.cache_hash_map.clear();
 
   cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
   cdbg << "must_run_test = " << must_run_test(all, ec_seq, is_test_ex) << endl;
@@ -2185,7 +2202,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
        << priv.read_example_last_pass << ") ========================================" << endl;
   // std::cerr << "training" << endl;
 
-  clear_cache_hash_map(priv);
+  priv.cache_hash_map.clear();
   reset_search_structure(priv);
   clear_memo_foreach_action(priv);
   priv.state = INIT_TRAIN;
@@ -2481,9 +2498,8 @@ void search_initialize(vw* all, search& sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa((action)-1, 0.);
-  new (&priv.cache_hash_map) v_hashmap<unsigned char*, scored_action>();
-  priv.cache_hash_map.set_default_value(sa);
-  priv.cache_hash_map.set_equivalent(cached_item_equivalent);
+  // unnecessary if priv has a proper constructor
+  new (&priv.cache_hash_map) search_private::cache_map();
 
   sch.task_data = nullptr;
 
@@ -2591,48 +2607,44 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   return allowed;
 }
 
-void parse_neighbor_features(std::string& nf_string, search& sch)
+void parse_neighbor_features(VW::string_view nf_strview, search& sch)
 {
   search_private& priv = *sch.priv;
   priv.neighbor_features.clear();
-  size_t len = nf_string.length();
-  if (len == 0)
+  if (nf_strview.empty())
     return;
 
-  char* cstr = new char[len + 1];
-  strcpy(cstr, nf_string.c_str());
-
-  char* p = strtok(cstr, ",");
-  std::vector<substring> cmd;
-  while (p != 0)
+  std::vector<VW::string_view> cmd;
+  size_t start_idx = 0;
+  size_t end_idx = 0;
+  while (!nf_strview.empty())
   {
-    cmd.clear();
-    substring me = {p, p + strlen(p)};
-    tokenize(':', me, cmd, true);
+    end_idx = nf_strview.find(',');
+    VW::string_view strview = nf_strview.substr(0, end_idx);
+    if (end_idx != VW::string_view::npos)
+      nf_strview.remove_prefix(end_idx + 1);
 
+    cmd.clear();
+    tokenize(':', strview, cmd, true);
     int32_t posn = 0;
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_substring(cmd[0]);
+      posn = int_of_string(cmd[0]);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_substring(cmd[0]);
-      ns = (cmd[1].end > cmd[1].begin) ? cmd[1].begin[0] : ' ';
+      posn = int_of_string(cmd[0]);
+      ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else
     {
-      std::cerr << "warning: ignoring malformed neighbor specification: '" << p << "'" << endl;
+      std::cerr << "warning: ignoring malformed neighbor specification: '" << strview << "'" << endl;
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
     priv.neighbor_features.push_back(enc);
-
-    p = strtok(nullptr, ",");
   }
-
-  delete[] cstr;
 }
 
 base_learner* setup(options_i& options, vw& all)
@@ -2946,7 +2958,7 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        priv->ptag_to_action[mytag].repr->delete_v();
+        //priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
       }
     }
@@ -2990,7 +3002,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        priv->ptag_to_action[mytag].repr->delete_v();
+        //priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
       }
     }
@@ -3067,8 +3079,8 @@ std::string search::pretty_label(action a)
 {
   if (this->priv->all->sd->ldict)
   {
-    substring ss = this->priv->all->sd->ldict->get(a);
-    return std::string(ss.begin, ss.end - ss.begin);
+    auto sv = this->priv->all->sd->ldict->get(a);
+    return sv.to_string();
   }
   else
   {

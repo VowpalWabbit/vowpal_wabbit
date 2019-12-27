@@ -36,8 +36,8 @@ parser.h primitives.h print.h queue.h rand48.h recall_tree.h reductions.h scorer
 search_dep_parser.h search_entityrelationtask.h search_graph.h search_hooktask.h search_meta.h
 search_multiclasstask.h search_sequencetask.h search.h sender.h shared_feature_merger.h
 simple_label.h spanning_tree.h stable_unique.h stagewise_poly.h svrg.h topk.h unique_sort.h
-v_array.h v_hashmap.h version.h vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h
-vwdll.h warm_cb.h
+v_array.h version.h vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h
+vwdll.h warm_cb.h vw_string_view.h
 )
 
 set(vw_all_sources
@@ -62,7 +62,7 @@ add_library(vw ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} ZLIB::ZLIB
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
@@ -85,6 +85,11 @@ target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:ND
 # Only define if Clang is not used
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_definitions(vw PUBLIC __extern_always_inline=inline)
+endif()
+
+# Add natvis file if the Generator is Visual Studio
+if (MSVC_IDE)
+  target_sources(vw PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/vw_types.natvis> )
 endif()
 
 # Clang-cl on Windows has issues with our usage of SIMD types. Turn it off explicitly for Windows + clang-cl to mitigate.

@@ -13,12 +13,11 @@
 
 using namespace VW::config;
 
-bool is_number(const std::string& s)
+bool is_number(const VW::string_view& s)
 {
-  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str()) + s.size()};
-  auto endptr = ss.end;
-  auto f = parseFloat(ss.begin, &endptr);
-  if ((endptr == ss.begin && ss.begin != ss.end) || std::isnan(f))
+  size_t endidx = 0;
+  auto f = parse_float_string_view(s, endidx);
+  if ((endidx == 0 && !s.empty()) || std::isnan(f))
   {
     return false;
   }

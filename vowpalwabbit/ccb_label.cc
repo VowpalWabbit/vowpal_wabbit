@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <cmath>
+#include "vw_string_view.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -210,10 +211,10 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
   ldDst.weight = ldSrc.weight;
 }
 
-ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, const substring& probability_str)
+ACTION_SCORE::action_score convert_to_score(const VW::string_view& action_id_str, const VW::string_view& probability_str)
 {
-  auto action_id = static_cast<uint32_t>(int_of_substring(action_id_str));
-  auto probability = float_of_substring(probability_str);
+  auto action_id = static_cast<uint32_t>(int_of_string(action_id_str));
+  auto probability = float_of_string(probability_str);
   if (std::isnan(probability))
     THROW("error NaN probability: " << probability_str);
 
@@ -232,14 +233,14 @@ ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, cons
 }
 
 //<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
-CCB::conditional_contextual_bandit_outcome* parse_outcome(substring& outcome)
+CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outcome)
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
-  v_array<substring> split_commas;
+  auto split_commas = v_init<VW::string_view>();
   tokenize(',', outcome, split_commas);
 
-   v_array<substring> split_colons;
+  auto split_colons = v_init<VW::string_view>();
   tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3)
@@ -247,7 +248,7 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(substring& outcome)
 
   ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
 
-  ccb_outcome.cost = float_of_substring(split_colons[1]);
+  ccb_outcome.cost = float_of_string(split_colons[1]);
   if (std::isnan(ccb_outcome.cost))
     THROW("error NaN cost: " << split_colons[1]);
 
@@ -264,40 +265,40 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(substring& outcome)
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label& ld, v_array<substring>& split_inclusions)
+void parse_explicit_inclusions(CCB::label& ld, v_array<VW::string_view>& split_inclusions)
 {
   for (const auto& inclusion : split_inclusions)
   {
-    ld.explicit_included_actions.push_back(int_of_substring(inclusion));
+    ld->explicit_included_actions.push_back(int_of_string(inclusion));
   }
 }
 
-void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<VW::string_view>& words)
 {
   CCB::label& ld = v.conditional_contextual_bandit();
   ld.weight = 1.0;
 
   if (words.size() < 2)
     THROW("ccb labels may not be empty");
-  if (!substring_equal(words[0], "ccb"))
+  if (!(words[0] == "ccb"))
   {
     THROW("ccb labels require the first word to be ccb");
   }
 
   auto type = words[1];
-  if (substring_equal(type, "shared"))
+  if (type == "shared")
   {
     if (words.size() > 2)
       THROW("shared labels may not have a cost");
     ld.type = CCB::example_type::shared;
   }
-  else if (substring_equal(type, "action"))
+  else if (type == "action")
   {
     if (words.size() > 2)
       THROW("action labels may not have a cost");
     ld.type = CCB::example_type::action;
   }
-  else if (substring_equal(type, "slot"))
+  else if (type == "slot")
   {
     if (words.size() > 4)
       THROW("ccb slot label can only have a type cost and exclude list");
@@ -306,8 +307,8 @@ void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<substring>& 
     // Skip the first two words "ccb <type>"
     for (size_t i = 2; i < words.size(); i++)
     {
-      auto is_outcome = std::find(words[i].begin, words[i].end, ':');
-      if (is_outcome != words[i].end)
+      auto is_outcome = words[i].find(':');
+      if (is_outcome != VW::string_view::npos)
       {
         if (ld.outcome != nullptr)
         {

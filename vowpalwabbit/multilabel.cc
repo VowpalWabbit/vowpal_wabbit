@@ -94,7 +94,7 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
   // }
 }
 
-void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.multilabels();
 
@@ -106,16 +106,15 @@ void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<substring>& 
     case 1:
       tokenize(',', words[0], p->parse_name);
 
-      for (size_t i = 0; i < p->parse_name.size(); i++)
+      for (const auto & parse_name : p->parse_name)
       {
-        *(p->parse_name[i].end) = '\0';
-        uint32_t n = atoi(p->parse_name[i].begin);
+        uint32_t n = int_of_string(parse_name);
         ld.label_v.push_back(n);
       }
       break;
     default:
       std::cerr << "example with an odd label, what is ";
-      for (size_t i = 0; i < words.size(); i++) std::cerr << words[i].begin << " ";
+      for (const auto & word : words) std::cerr << word << " ";
       std::cerr << std::endl;
   }
 }

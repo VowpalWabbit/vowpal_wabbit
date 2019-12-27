@@ -312,6 +312,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   all.p->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
+  // default text reader
+  all.p->text_reader = VW::read_lines;
+
   if (all.daemon || all.active)
   {
 #ifdef _WIN32
@@ -406,6 +409,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;
+      all.p->_shared_data = sd;
 
       // create children
       size_t num_children = all.num_children;
@@ -689,12 +693,14 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
 
-  ae->example_counter = (size_t)(all.p->end_parsed_examples);
+  ae->example_counter = (size_t)(all.p->end_parsed_examples.load());
   if (!all.p->emptylines_separate_examples)
     all.p->in_pass_counter++;
 
+  // Determine if this example is part of the holdout set.
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
       all.p->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
+  // If this example has a test only label then it is true regardless.
   ae->test_only |= all.p->lp.test_label(ae->l);
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
@@ -729,7 +735,7 @@ void setup_example(vw& all, example* ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (features& fs : *ae)
+  for (const features& fs : *ae)
   {
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
@@ -753,7 +759,7 @@ example* new_unused_example(vw& all)
   example* ec = &get_unused_example(&all);
   all.p->lp.default_label(ec->l);
   all.p->begin_parsed_examples++;
-  ec->example_counter = (size_t)all.p->begin_parsed_examples;
+  ec->example_counter = (size_t)all.p->begin_parsed_examples.load();
   return ec;
 }
 example* read_example(vw& all, char* example_line)
@@ -843,11 +849,12 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<substring> words;
-  char* cstr = (char*)label.c_str();
-  substring str = {cstr, cstr + label.length()};
-  tokenize(' ', str, words);
-  all.p->lp.parse_label(all.p, all.sd, ec.l, words);
+  v_array<VW::string_view> words;
+
+  tokenize(' ', label, words);
+  all.p->lp.parse_label(all.p, all.p->_shared_data, ec.l, words);
+  words.clear();
+  words.delete_v();
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -867,7 +874,7 @@ void clean_example(vw& all, example& ec, bool rewind)
 {
   if (rewind)
   {
-    assert(all.p->begin_parsed_examples > 0);
+    assert(all.p->begin_parsed_examples.load() > 0);
     all.p->begin_parsed_examples--;
   }
 
@@ -892,7 +899,7 @@ void finish_example(vw& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(vw& all, v_array<example*> examples)
+void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
   all.p->end_parsed_examples += examples.size();
   for (auto example : examples)
@@ -959,9 +966,7 @@ example* example_initializer::operator()(example* ex)
   new (&ex->pred) new_polyprediction();
   ex->in_use = false;
   ex->passthrough = nullptr;
-  ex->tag.clear();
-  ex->indices.clear();
-  memset(&ex->feature_space, 0, sizeof(ex->feature_space));
+  memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
   return ex;
 }
 
@@ -973,9 +978,8 @@ namespace VW
 {
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
-
 void free_parser(vw& all)
-{  
+{
 }
 
 namespace VW

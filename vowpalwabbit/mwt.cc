@@ -33,11 +33,6 @@ struct mwt
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   vw* all;
-
-  ~mwt()
-  {
-    for (auto& i : feature_space) i.delete_v();
-  }
 };
 
 inline bool observed_cost(CB::cb_class* cl)

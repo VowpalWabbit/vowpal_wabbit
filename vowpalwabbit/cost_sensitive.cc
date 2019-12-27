@@ -7,10 +7,11 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include <cmath>
+#include "vw_string_view.h"
 
 namespace COST_SENSITIVE
 {
-void name_value(substring& s, v_array<substring>& name, float& v)
+void name_value(VW::string_view& s, v_array<VW::string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -21,14 +22,12 @@ void name_value(substring& s, v_array<substring>& name, float& v)
       v = 1.;
       break;
     case 2:
-      v = float_of_substring(name[1]);
+      v = float_of_string(name[1]);
       if (std::isnan(v))
         THROW("error NaN value for: " << name[0]);
       break;
     default:
-      std::cerr << "example with a wierd name.  What is '";
-      std::cerr.write(s.begin, s.end - s.begin);
-      std::cerr << "'?\n";
+      std::cerr << "example with a wierd name.  What is '" << s << "'?\n";
   }
 }
 
@@ -132,7 +131,7 @@ void copy_label(new_polylabel& dst, new_polylabel& src)
   copy_array(dest_label.costs, src_label.costs);
 }
 
-void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.cs();
   ld.costs.clear();
@@ -142,12 +141,12 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring
   {
     float fx;
     name_value(words[0], p->parse_name, fx);
-    bool eq_shared = substring_equal(p->parse_name[0], "***shared***");
-    bool eq_label = substring_equal(p->parse_name[0], "***label***");
+    bool eq_shared = p->parse_name[0] == "***shared***";
+    bool eq_label = p->parse_name[0] == "***label***";
     if (!sd->ldict)
     {
-      eq_shared |= substring_equal(p->parse_name[0], "shared");
-      eq_label |= substring_equal(p->parse_name[0], "label");
+      eq_shared |= p->parse_name[0] == "shared";
+      eq_label |= p->parse_name[0] == "label";
     }
     if (eq_shared || eq_label)
     {
@@ -167,7 +166,7 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring
           std::cerr << "label feature vectors should have exactly one cost on: " << words[0] << std::endl;
         else
         {
-          wclass f = {float_of_substring(p->parse_name[1]), 0, 0., 0.};
+          wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }
@@ -186,13 +185,13 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
     {
-      f.class_index =
-          sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
+      f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0])
+                                : (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
       if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
     else
-      THROW("malformed cost specification on '" << (p->parse_name[0].begin) << "'");
+      THROW("malformed cost specification on '" << (p->parse_name[0]) << "'");
 
     ld.costs.push_back(f);
   }
@@ -282,8 +281,8 @@ void output_example(vw& all, example& ec)
       all.print(sink, (float)ec.pred.multiclass(), 0, ec.tag);
     else
     {
-      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass());
-      all.print_text(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass());
+      all.print_text(sink, sv_pred.to_string(), ec.tag);
     }
 
   if (all.raw_prediction > 0)

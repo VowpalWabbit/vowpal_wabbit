@@ -7,6 +7,7 @@
 #include "explore.h"
 
 #include "rand48.h"
+#include "vw_string_view.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -62,8 +63,8 @@ struct cb_sample_data
         if (strncmp(examples[0]->tag.begin(), SEED_IDENTIFIER.c_str(), SEED_IDENTIFIER.size()) == 0 &&
             examples[0]->tag.size() > SEED_IDENTIFIER.size())
         {
-          substring tag_seed{examples[0]->tag.begin() + 5, examples[0]->tag.begin() + examples[0]->tag.size()};
-          seed = uniform_hash(tag_seed.begin, substring_len(tag_seed), 0);
+          VW::string_view tag_seed(examples[0]->tag.begin() + 5, examples[0]->tag.size());
+          seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
           tag_provided_seed = true;
         }
       }

@@ -42,11 +42,6 @@ struct data
       expert_state;  // pair of weights on marginal and feature based predictors, one per marginal feature
 
   vw* all;
-
-  ~data()
-  {
-    for (size_t i = 0; i < 256; i++) temp[i].delete_v();
-  }
 };
 
 float get_adanormalhedge_weights(float R, float C)

@@ -293,7 +293,7 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     add_feature(ex, temp[j] + additional_offset, val_namespace, mask, multiplier);
   }
   size_t count = 0;
-  for (features fs : *data->ex)
+  for (features& fs : *data->ex)
   {
     fs.sum_feat_sq = (float)fs.size();
     count += fs.size();

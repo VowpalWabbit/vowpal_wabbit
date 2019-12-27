@@ -90,7 +90,6 @@
 using std::cerr;
 using std::cout;
 using std::endl;
-
 using namespace VW::config;
 
 //
@@ -162,11 +161,11 @@ void parse_dictionary_argument(vw& all, std::string str)
   // in the case of just 'foo.txt' it's applied to the default namespace
 
   char ns = ' ';
-  const char* s = str.c_str();
+  VW::string_view s(str);
   if ((str.length() > 2) && (str[1] == ':'))
   {
     ns = str[0];
-    s += 2;
+    s.remove_prefix(2);
   }
 
   std::string fname = find_in_path(all.dictionary_path, std::string(s));
@@ -205,8 +204,8 @@ void parse_dictionary_argument(vw& all, std::string str)
                                                          << ", opening failed");
   }
 
-  feature_dict* map = &calloc_or_throw<feature_dict>();
-  map->init(1023, nullptr, substring_equal);
+  std::shared_ptr<feature_dict> map = std::make_shared<feature_dict>();
+  map->max_load_factor(0.25);
   example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
@@ -231,7 +230,6 @@ void parse_dictionary_argument(vw& all, std::string str)
           free(buffer);
           ec->~example();
           free(ec);
-          delete map;
           io->close_file();
           delete io;
           THROW("error: memory allocation failed in reading dictionary");
@@ -251,13 +249,9 @@ void parse_dictionary_argument(vw& all, std::string str)
       continue;  // no word
     if (*d != ' ' && *d != '\t')
       continue;  // reached end of line
-    char* word = calloc_or_throw<char>(d - c);
-    memcpy(word, c, d - c);
-    substring ss = {word, word + (d - c)};
-    uint64_t hash = uniform_hash(ss.begin, ss.end - ss.begin, quadratic_constant);
-    if (map->get(ss, hash) != nullptr)  // don't overwrite old values!
+    std::string word(c, d - c);
+    if (map->find(word) != map->end())  // don't overwrite old values!
     {
-      free(word);
       continue;
     }
     d--;
@@ -266,12 +260,11 @@ void parse_dictionary_argument(vw& all, std::string str)
     // now we just need to grab stuff from the default namespace of ec!
     if (ec->feature_space[def].size() == 0)
     {
-      free(word);
       continue;
     }
-    features* arr = new features;
+    std::unique_ptr<features> arr(new features);
     arr->deep_copy_from(ec->feature_space[def]);
-    map->put(ss, hash, arr);
+    map->emplace(word, std::move(arr));
 
     // clear up ec
     ec->tag.clear();
@@ -289,11 +282,10 @@ void parse_dictionary_argument(vw& all, std::string str)
 
   if (!all.quiet)
     all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
-                      << endl;
+                      << std::endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = {calloc_or_throw<char>(strlen(s) + 1), fd_hash, map};
-  strcpy(info.name, s);
+  dictionary_info info = {s.to_string(), fd_hash, map};
   all.loaded_dictionaries.push_back(info);
 }
 
@@ -376,7 +368,7 @@ void parse_diagnostics(options_i& options, vw& all)
   // Upon direct query for version -- spit it out to stdout
   if (version_arg)
   {
-    cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
+    std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
     exit(0);
   }
 
@@ -391,7 +383,7 @@ void parse_diagnostics(options_i& options, vw& all)
       if (all.progress_arg < 1)
       {
         all.trace_message << "warning: additive --progress <int>"
-                          << " can't be < 1: forcing to 1" << endl;
+                          << " can't be < 1: forcing to 1" << std::endl;
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
@@ -404,13 +396,13 @@ void parse_diagnostics(options_i& options, vw& all)
       if (all.progress_arg <= 1.0)
       {
         all.trace_message << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
-                          << endl;
+                          << std::endl;
         all.progress_arg += 1.0;
       }
       else if (all.progress_arg > 9.0)
       {
         all.trace_message << "warning: multiplicative --progress <float>"
-                          << " is > 9.0: you probably meant to use an integer" << endl;
+                          << " is > 9.0: you probably meant to use an integer" << std::endl;
       }
       all.sd->dump_interval = 1.0;
     }
@@ -488,7 +480,7 @@ input_options parse_source(vw& all, options_i& options)
           options.was_supplied("output_feature_regularizer_text")))
   {
     all.holdout_set_off = true;
-    all.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
+    all.trace_message << "Making holdout_set_off=true since output regularizer specified" << std::endl;
   }
 
   return parsed_options;
@@ -501,6 +493,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 {
   if (vw1.p->hasher != vw2.p->hasher)
     return "hasher";
+
 
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
     return "spelling_features";
@@ -582,7 +575,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
       else
       {
-        cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+        std::cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
         res.push_back(arg[pos++]);
       }
     }
@@ -731,7 +724,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
                          "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
-                      << endl;
+                      << std::endl;
 
     // in case arrays were already filled in with values from old model file - reset them
     if (!all.pairs.empty())
@@ -747,25 +740,25 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (!all.quiet)
       all.trace_message << "creating quadratic features for pairs: ";
 
-    for (std::vector<std::string>::iterator i = quadratics.begin(); i != quadratics.end(); ++i)
+    for (auto& i : quadratics)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
+      i = spoof_hex_encoded_namespaces(i);
       if (!all.quiet)
-        all.trace_message << *i << " ";
+        all.trace_message << i << " ";
     }
 
     expanded_interactions =
         INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.quiet)
-      all.trace_message << endl;
+      all.trace_message << std::endl;
   }
 
   if (options.was_supplied("cubic"))
   {
     if (!all.quiet)
       all.trace_message << "creating cubic features for triples: ";
-    for (std::vector<std::string>::iterator i = cubics.begin(); i != cubics.end(); ++i)
+    for (auto i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
@@ -777,14 +770,14 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!all.quiet)
-      all.trace_message << endl;
+      all.trace_message << std::endl;
   }
 
   if (options.was_supplied("interactions"))
   {
     if (!all.quiet)
       all.trace_message << "creating features for following interactions: ";
-    for (std::vector<std::string>::iterator i = interactions.begin(); i != interactions.end(); ++i)
+    for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
@@ -795,7 +788,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!all.quiet)
-      all.trace_message << endl;
+      all.trace_message << std::endl;
   }
 
   if (expanded_interactions.size() > 0)
@@ -807,12 +800,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     if (removed_cnt > 0)
       all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
-                        << endl
-                        << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+                        << std::endl
+                        << "You can use --leave_duplicate_interactions to disable this behaviour." << std::endl;
     if (sorted_cnt > 0)
       all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has "
                            "been changed. Interactions affected: "
-                        << sorted_cnt << '.' << endl;
+                        << sorted_cnt << '.' << std::endl;
 
     if (all.interactions.size() > 0)
     {
@@ -823,7 +816,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     all.interactions = expanded_interactions;
 
     // copy interactions of size 2 and 3 to old vectors for backward compatibility
-    for (auto& i : expanded_interactions)
+    for (const auto& i : expanded_interactions)
     {
       const size_t len = i.size();
       if (len == 2)
@@ -845,10 +838,10 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some = true;
 
-    for (std::vector<std::string>::iterator i = ignores.begin(); i != ignores.end(); i++)
+    for (auto & i : ignores)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      for (std::string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = true;
+      i = spoof_hex_encoded_namespaces(i);
+      for (auto j : i) all.ignore[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.quiet)
@@ -857,7 +850,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto const& ignore : ignores)
         for (auto const character : ignore) all.trace_message << character << " ";
 
-      all.trace_message << endl;
+      all.trace_message << std::endl;
     }
   }
 
@@ -865,11 +858,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some_linear = true;
 
-    for (std::vector<std::string>::iterator i = ignore_linears.begin(); i != ignore_linears.end(); i++)
+    for (auto & i : ignore_linears)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      for (std::string::const_iterator j = i->begin(); j != i->end(); j++)
-        all.ignore_linear[(size_t)(unsigned char)*j] = true;
+      i = spoof_hex_encoded_namespaces(i);
+      for (auto j : i)
+        all.ignore_linear[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.quiet)
@@ -878,7 +871,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto const& ignore : ignore_linears)
         for (auto const character : ignore) all.trace_message << character << " ";
 
-      all.trace_message << endl;
+      all.trace_message << std::endl;
     }
   }
 
@@ -888,11 +881,10 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     all.ignore_some = true;
 
-    for (std::vector<std::string>::iterator i = keeps.begin(); i != keeps.end(); i++)
+    for (auto & i : keeps)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      for (std::string::const_iterator j = i->begin(); j != i->end(); j++)
-        all.ignore[(size_t)(unsigned char)*j] = false;
+      i = spoof_hex_encoded_namespaces(i);
+      for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
     }
 
     if (!all.quiet)
@@ -901,7 +893,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto const& keep : keeps)
         for (auto const character : keep) all.trace_message << character << " ";
 
-      all.trace_message << endl;
+      all.trace_message << std::endl;
     }
   }
 
@@ -916,9 +908,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
 
-    for (std::vector<std::string>::iterator arg_iter = redefines.begin(); arg_iter != redefines.end(); arg_iter++)
+    for (const auto & arg : redefines)
     {
-      std::string argument = spoof_hex_encoded_namespaces(*arg_iter);
+      const std::string & argument = spoof_hex_encoded_namespaces(arg);
       size_t arg_len = argument.length();
 
       size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
@@ -948,7 +940,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       if (++operator_pos > 3)  // seek operator end
         all.trace_message
             << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('"
-            << new_namespace << "') will be used as target namespace." << endl;
+            << new_namespace << "') will be used as target namespace." << std::endl;
 
       all.redefine_some = true;
 
@@ -976,7 +968,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   if (options.was_supplied("dictionary"))
   {
     if (options.was_supplied("dictionary_path"))
-      for (std::string path : dictionary_path)
+      for (const std::string & path : dictionary_path)
         if (directory_exists(path))
           all.dictionary_path.push_back(path);
     if (directory_exists("."))
@@ -1052,7 +1044,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (test_only || all.eta == 0.)
   {
     if (!all.quiet)
-      all.trace_message << "only testing" << endl;
+      all.trace_message << "only testing" << std::endl;
     all.training = false;
     if (all.lda > 0)
       all.eta = 0;
@@ -1073,19 +1065,19 @@ void parse_example_tweaks(options_i& options, vw& all)
     all.sd->ldict = &calloc_or_throw<namedlabels>();
     new (all.sd->ldict) namedlabels(named_labels);
     if (!all.quiet)
-      all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+      all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << std::endl;
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   if (all.l1_lambda < 0.)
   {
-    all.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
+    all.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << std::endl;
     all.l1_lambda = 0.;
   }
   if (all.l2_lambda < 0.)
   {
-    all.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
+    all.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << std::endl;
     all.l2_lambda = 0.;
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
@@ -1093,9 +1085,9 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (!all.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-      all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
+      all.trace_message << "using l1 regularization = " << all.l1_lambda << std::endl;
     if (all.reg_mode > 1)
-      all.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
+      all.trace_message << "using l2 regularization = " << all.l2_lambda << std::endl;
   }
 }
 
@@ -1114,7 +1106,7 @@ void parse_output_preds(options_i& options, vw& all)
   if (options.was_supplied("predictions"))
   {
     if (!all.quiet)
-      all.trace_message << "predictions = " << predictions << endl;
+      all.trace_message << "predictions = " << predictions << std::endl;
 
     if (predictions == "stdout")
     {
@@ -1131,7 +1123,7 @@ void parse_output_preds(options_i& options, vw& all)
       f = open(fstr, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
 #endif
       if (f < 0)
-        all.trace_message << "Error opening the predictions file: " << fstr << endl;
+        all.trace_message << "Error opening the predictions file: " << fstr << std::endl;
       all.final_prediction_sink.push_back((size_t)f);
     }
   }
@@ -1140,10 +1132,10 @@ void parse_output_preds(options_i& options, vw& all)
   {
     if (!all.quiet)
     {
-      all.trace_message << "raw predictions = " << raw_predictions << endl;
+      all.trace_message << "raw predictions = " << raw_predictions << std::endl;
       if (options.was_supplied("binary"))
         all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
-                          << endl;
+                          << std::endl;
     }
     if (raw_predictions == "stdout")
       all.raw_prediction = 1;  // stdout
@@ -1183,7 +1175,7 @@ void parse_output_model(options_i& options, vw& all)
   options.add_and_parse(output_model_options);
 
   if (all.final_regressor_name.compare("") && !all.quiet)
-    all.trace_message << "final_regressor = " << all.final_regressor_name << endl;
+    all.trace_message << "final_regressor = " << all.final_regressor_name << std::endl;
 
   if (options.was_supplied("invert_hash"))
     all.hash_inv = true;
@@ -1327,6 +1319,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     options.add_and_parse(vw_args);
 
     all.p = new parser{ring_size, strict_parse};
+    all.p->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1538,12 +1531,12 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
 
   if (!all.quiet)
   {
-    all.trace_message << "Num weight bits = " << all.num_bits << endl;
-    all.trace_message << "learning rate = " << all.eta << endl;
-    all.trace_message << "initial_t = " << all.sd->t << endl;
-    all.trace_message << "power_t = " << all.power_t << endl;
+    all.trace_message << "Num weight bits = " << all.num_bits << std::endl;
+    all.trace_message << "learning rate = " << all.eta << std::endl;
+    all.trace_message << "initial_t = " << all.sd->t << std::endl;
+    all.trace_message << "power_t = " << all.power_t << std::endl;
     if (all.numpasses > 1)
-      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << std::endl;
   }
 }
 
@@ -1573,7 +1566,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
   std::string cmd = ss->str();
   size_t pos = cmd.find(flag_to_replace);
   if (pos == std::string::npos)
-    // flag currently not present in command std::string, so just append it to command std::string
+    // flag currently not present in command string, so just append it to command string
     *ss << " " << flag_to_replace << new_value;
   else
   {
@@ -1602,8 +1595,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
 
 char** to_argv_escaped(std::string const& s, int& argc)
 {
-  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str() + s.length())};
-  std::vector<substring> tokens = escaped_tokenize(' ', ss);
+  std::vector<std::string> tokens = escaped_tokenize(' ', s);
   char** argv = calloc_or_throw<char*>(tokens.size() + 1);
   argv[0] = calloc_or_throw<char>(2);
   argv[0][0] = 'b';
@@ -1611,8 +1603,8 @@ char** to_argv_escaped(std::string const& s, int& argc)
 
   for (size_t i = 0; i < tokens.size(); i++)
   {
-    argv[i + 1] = calloc_or_throw<char>(tokens[i].end - tokens[i].begin + 1);
-    sprintf(argv[i + 1], "%s", tokens[i].begin);
+    argv[i + 1] = calloc_or_throw<char>(tokens[i].length() + 1);
+    sprintf(argv[i + 1], "%s", tokens[i].data());
   }
 
   argc = static_cast<int>(tokens.size() + 1);
@@ -1621,24 +1613,27 @@ char** to_argv_escaped(std::string const& s, int& argc)
 
 char** to_argv(std::string const& s, int& argc)
 {
-  char* c = calloc_or_throw<char>(s.length() + 3);
-  c[0] = 'b';
-  c[1] = ' ';
-  strcpy(c + 2, s.c_str());
-  substring ss = {c, c + s.length() + 2};
-  std::vector<substring> foo;
-  tokenize(' ', ss, foo);
+  VW::string_view strview(s);
+  std::vector<VW::string_view> foo;
+  tokenize(' ', strview, foo);
 
-  char** argv = calloc_or_throw<char*>(foo.size());
+  char** argv = calloc_or_throw<char*>(foo.size() + 1);
+  // small optimization to avoid a string copy before tokenizing
+  argv[0] = calloc_or_throw<char>(2);
+  argv[0][0] = 'b';
+  argv[0][1] = '\0';
   for (size_t i = 0; i < foo.size(); i++)
   {
-    *(foo[i].end) = '\0';
-    argv[i] = calloc_or_throw<char>(foo[i].end - foo[i].begin + 1);
-    sprintf(argv[i], "%s", foo[i].begin);
+    size_t len = foo[i].length();
+    argv[i+1] = calloc_or_throw<char>(len + 1);
+    memcpy(argv[i+1], foo[i].data(), len);
+    // copy() is supported with boost::string_view, not with string_ref
+    //foo[i].copy(argv[i], len);
+    // unnecessary because of the calloc, but needed if we change stuff in the future
+    // argv[i][len] = '\0';
   }
 
-  argc = (int)foo.size();
-  free(c);
+  argc = (int)foo.size() + 1;
   return argv;
 }
 
@@ -1696,7 +1691,7 @@ vw* initialize(
   }
   catch (std::exception& e)
   {
-    all.trace_message << "Error: " << e.what() << endl;
+    all.trace_message << "Error: " << e.what() << std::endl;
     finish(all);
     throw;
   }
@@ -1789,15 +1784,9 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
+  new_model->p->_shared_data = new_model->sd;
 
   return new_model;
-}
-
-void delete_dictionary_entry(substring ss, features* A)
-{
-  free(ss.begin);
-  A->delete_v();
-  delete A;
 }
 
 void sync_stats(vw& all)
@@ -1826,17 +1815,17 @@ void finish(vw& all, bool delete_all)
   {
     all.trace_message.precision(6);
     all.trace_message << std::fixed;
-    all.trace_message << endl << "finished run";
+    all.trace_message << std::endl << "finished run";
     if (all.current_pass == 0 || all.current_pass == 1)
-      all.trace_message << endl << "number of examples = " << all.sd->example_number;
+      all.trace_message << std::endl << "number of examples = " << all.sd->example_number;
     else
     {
-      all.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      all.trace_message << endl << "passes used = " << all.current_pass;
+      all.trace_message << std::endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+      all.trace_message << std::endl << "passes used = " << all.current_pass;
     }
-    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
-    all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
-    all.trace_message << endl << "average loss = ";
+    all.trace_message << std::endl << "weighted example sum = " << all.sd->weighted_examples();
+    all.trace_message << std::endl << "weighted label sum = " << all.sd->weighted_labels;
+    all.trace_message << std::endl << "average loss = ";
     if (all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
         all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
@@ -1849,11 +1838,11 @@ void finish(vw& all, bool delete_all)
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        all.trace_message << endl
+        all.trace_message << std::endl
                           << "average multiclass log loss = "
                           << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << endl
+        all.trace_message << std::endl
                           << "average multiclass log loss = "
                           << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
@@ -1862,15 +1851,15 @@ void finish(vw& all, bool delete_all)
     float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
-      all.trace_message << endl << "best constant = " << best_constant;
+      all.trace_message << std::endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
-        all.trace_message << endl << "best constant's loss = " << best_constant_loss;
+        all.trace_message << std::endl << "best constant's loss = " << best_constant_loss;
     }
 
-    all.trace_message << endl << "total feature number = " << all.sd->total_features;
+    all.trace_message << std::endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      all.trace_message << endl << "total queries = " << all.sd->queries;
-    all.trace_message << endl;
+      all.trace_message << std::endl << "total queries = " << all.sd->queries;
+    all.trace_message << std::endl;
   }
 
   // implement finally.
@@ -1922,23 +1911,15 @@ void finish(vw& all, bool delete_all)
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
-  all.final_prediction_sink.clear();
-  for (size_t i = 0; i < all.loaded_dictionaries.size(); i++)
-  {
-    // Warning C6001 is triggered by the following:
-    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using
-    // 'free(all.loaded_dictionaries[i].name)'
-    //
-    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the
-    // warning goes away. Disable SDL warning.
-    //    #pragma warning(disable:6001)
-    free_it(all.loaded_dictionaries[i].name);
-    //#pragma warning(default:6001)
+  all.final_prediction_sink.delete_v();
 
-    all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
-    all.loaded_dictionaries[i].dict->delete_v();
-    free_it(all.loaded_dictionaries[i].dict);
+  all.loaded_dictionaries.clear();
+  // TODO: should we be clearing the namespace dictionaries?
+  for (auto & ns_dict : all.namespace_dictionaries)
+  {
+    ns_dict.clear();
   }
+
   delete all.loss;
 
   delete all.all_reduce;

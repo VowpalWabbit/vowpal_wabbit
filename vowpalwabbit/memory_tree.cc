@@ -70,7 +70,9 @@ inline void free_example(example* ec)
 void diag_kronecker_prod_fs_test(
     features& f1, features& f2, features& prod_f, float& total_sum_feat_sq, float norm_sq1, float norm_sq2)
 {
-  prod_f.delete_v();
+  // originally called delete_v, but that doesn't seem right. Clearing instead
+  //prod_f.~features();
+  prod_f.clear();
   if (f2.indicies.size() == 0)
     return;
 
