@@ -251,8 +251,13 @@ std::string simple_label_to_string(const example& ec)
 
 std::string depth_indent_string(const example& ec)
 {
+  return depth_indent_string(ec.stack_depth);
+}
+
+std::string depth_indent_string(int32_t stack_depth)
+{
   std::stringstream strstream;
-  for (uint32_t i = 0; i < ec.stack_depth - 1; i++)
+  for (uint32_t i = 0; i < stack_depth - 1; i++)
   {
     strstream << "| ";
   }
