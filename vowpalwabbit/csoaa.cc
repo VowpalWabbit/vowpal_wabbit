@@ -245,13 +245,15 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
   COST_SENSITIVE::label ld = ec.l.cs();
   label_data simple_label;
-  simple_label.initial = 0.;
   simple_label.label = FLT_MAX;
 
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
   ec.l.reset();
   ec.l.init_as_simple(simple_label);
+
+  ec.pred.reset();
+  ec.pred.init_as_scalar(0.f);
 
   uint64_t old_offset = ec.ft_offset;
   ec.ft_offset = data.ft_offset;
@@ -450,7 +452,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     for (uint32_t k = 0; k < K; k++)
     {
       example* ec = ec_seq[k];
-      data.stored_preds.push_back(ec->pred.action_scores());
+      data.stored_preds.push_back(std::move(ec->pred.action_scores()));
       make_single_prediction(data, base, *ec);
       action_score s;
       s.score = ec->partial_prediction;
@@ -489,7 +491,8 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     data.stored_preds[0].clear();
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.action_scores() = data.stored_preds[k];
+      ec_seq[k]->pred.reset();
+      ec_seq[k]->pred.init_as_action_scores() = std::move(data.stored_preds[k]);
       ec_seq[0]->pred.action_scores().push_back(data.a_s[k]);
     }
   }
@@ -499,10 +502,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     for (size_t k = 0; k < K; k++)
     {
       ec_seq[k]->pred.reset();
-      ec_seq[k]->pred.init_as_multiclass() =
-        k == predicted_K
-          ? ec_seq[k]->l.cs().costs[0].class_index
-          : 0;
+      ec_seq[k]->pred.init_as_multiclass() = k == predicted_K ? ec_seq[k]->l.cs().costs[0].class_index : 0;
     }
   }
 
@@ -742,7 +742,7 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
  */
 void inline process_label(ldf& data, example* ec)
 {
-  //auto new_fs = ec->feature_space[ec->indices[0]];
+  // auto new_fs = ec->feature_space[ec->indices[0]];
   auto& costs = ec->l.cs().costs;
   for (auto const& cost : costs)
   {

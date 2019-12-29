@@ -71,7 +71,7 @@ void predict_eval(cb&, single_learner&, example&) { THROW("can not use a test la
 
 void learn_eval(cb& data, single_learner&, example& ec)
 {
-  CB_EVAL::label ld = ec.l.cb_eval();
+  CB_EVAL::label& ld = ec.l.cb_eval();
 
   cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld.event);

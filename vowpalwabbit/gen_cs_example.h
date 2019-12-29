@@ -50,7 +50,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
-  CB::label ld = ec.l.cb();
+  CB::label& ld = ec.l.cb();
 
   float min = FLT_MAX;
   uint32_t argmin = 1;

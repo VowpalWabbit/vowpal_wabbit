@@ -1911,7 +1911,6 @@ void finish(vw& all, bool delete_all)
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
-  all.final_prediction_sink.delete_v();
 
   all.loaded_dictionaries.clear();
   // TODO: should we be clearing the namespace dictionaries?

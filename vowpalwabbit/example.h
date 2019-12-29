@@ -26,8 +26,8 @@
 VW_DEPRECATED("no longer used")
 inline void delete_scalars(void* v)
 {
-  //v_array<float>* preds = (v_array<float>*)v;
-  //preds->delete_v();
+  // v_array<float>* preds = (v_array<float>*)v;
+  // preds->delete_v();
 }
 
 struct example : public example_predict  // core example datatype.
@@ -61,7 +61,6 @@ struct example : public example_predict  // core example datatype.
   {
     if (passthrough)
     {
-      passthrough->delete_v();
       delete passthrough;
     }
   }
@@ -74,7 +73,7 @@ struct flat_example
   new_polylabel l;
 
   size_t tag_len;
-  char* tag;  // An identifier for the example.
+  char* tag = nullptr;  // An identifier for the example.
 
   size_t example_counter;
   uint64_t ft_offset;
@@ -86,10 +85,29 @@ struct flat_example
 
   ~flat_example()
   {
-    fs.delete_v();
     if (tag_len > 0)
       free(tag);
   }
+
+ /* flat_example(const flat_example& other) {
+    l = other.l;
+    if (tag_len > 0)
+      free(tag);
+    memcpy(tag, other.tag, other.tag_len);
+    tag_len = other.tag_len;
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = other.fs;
+  }
+
+  flat_example& operator=(const flat_example& other) {}
+
+  flat_example(flat_example&& other) {}
+
+  flat_example& operator=(flat_example&& other) {}*/
 };
 
 flat_example* flatten_example(vw& all, example* ec);

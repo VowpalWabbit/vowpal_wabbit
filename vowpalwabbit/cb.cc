@@ -174,7 +174,7 @@ void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view
   }
 }
 
-void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
 {
   CB::parse_label(p, sd, v.cb(), words);
 }

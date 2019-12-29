@@ -674,7 +674,8 @@ example& get_unused_example(vw* all)
 
 void setup_examples(vw& all, v_array<example*>& examples)
 {
-  for (example* ae : examples) setup_example(all, ae);
+  for (example* ae : examples)
+    setup_example(all, ae);
 }
 
 void setup_example(vw& all, example* ae)
@@ -749,6 +750,37 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
+
+  // Prediction type should be preinitialized for the given reductions expected type.
+  if(ae->pred.get_type() == prediction_type_t::unset)
+  {
+    switch (all.l->pred_type)
+    {
+      case (prediction_type_t::scalar):
+        ae->pred.init_as_scalar();
+        break;
+      case (prediction_type_t::scalars):
+        ae->pred.init_as_scalars();
+        break;
+      case (prediction_type_t::action_scores):
+        ae->pred.init_as_action_scores();
+        break;
+      case (prediction_type_t::decision_scores):
+        ae->pred.init_as_decision_scores();
+        break;
+      case (prediction_type_t::multiclass):
+        ae->pred.init_as_multiclass();
+        break;
+      case (prediction_type_t::multilabels):
+        ae->pred.init_as_multilabels();
+        break;
+      case (prediction_type_t::prob):
+        ae->pred.init_as_prob();
+        break;
+      default:
+        THROW(to_string(all.l->pred_type) << " is not supported here");
+    }
+  }
 }
 }  // namespace VW
 
@@ -853,13 +885,12 @@ void parse_example_label(vw& all, example& ec, std::string label)
 
   tokenize(' ', label, words);
   all.p->lp.parse_label(all.p, all.p->_shared_data, ec.l, words);
-  words.clear();
-  words.delete_v();
 }
 
 void empty_example(vw& /*all*/, example& ec)
 {
-  for (features& fs : ec) fs.clear();
+  for (features& fs : ec)
+    fs.clear();
 
   ec.l.reset();
   ec.pred.reset();

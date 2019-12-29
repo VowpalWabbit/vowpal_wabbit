@@ -51,9 +51,6 @@ struct ccb
   std::string id_namespace_str;
 
   size_t base_learner_stride_shift;
-
-  VW::v_array_pool<CB::cb_class> cb_label_pool;
-  VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
 };
 
 namespace CCB
@@ -130,12 +127,11 @@ bool sanity_checks(ccb& data)
 void create_cb_labels(ccb& data)
 {
   data.shared->l.init_as_cb();
-  data.shared->l.cb().costs = data.cb_label_pool.get_object();
   data.shared->l.cb().costs.push_back(data.default_cb_label);
   for (example* action : data.actions)
   {
     action->l.reset();
-    action->l.init_as_cb().costs = data.cb_label_pool.get_object();
+    action->l.init_as_cb();
   }
   data.shared->l.cb().weight = 1.0;
 }
@@ -143,12 +139,9 @@ void create_cb_labels(ccb& data)
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  return_v_array(data.shared->l.cb().costs, data.cb_label_pool);
   data.shared->l.reset();
-
   for (example* action : data.actions)
   {
-    return_v_array(action->l.cb().costs, data.cb_label_pool);
     action->l.reset();
   }
 }
@@ -380,8 +373,8 @@ void build_cb_example(multi_ex& cb_ex, example* slot, CCB::label& slot_label, cc
     }
   }
 
-  // Must provide a prediction that cb can write into, this will be saved into the decision scores object later.
-  data.shared->pred.action_scores() = data.action_score_pool.get_object();
+  data.shared->pred.reset();
+  data.shared->pred.init_as_action_scores();
 
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
   // example.
@@ -409,7 +402,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
-  auto decision_scores = examples[0]->pred.decision_scores();
+  auto decision_scores = std::move(examples[0]->pred.decision_scores());
 
   // for each slot, re-build the cb example and call cb_explore_adf
   size_t slot_id = 0;
@@ -445,7 +438,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     else
     {
       // the cb example contains no action => cannot decide
-      decision_scores.push_back(data.action_score_pool.get_object());
+      decision_scores.push_back(ACTION_SCORE::action_scores());
     }
 
     data.shared->interactions = data.original_interactions;
@@ -476,7 +469,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   data.stored_labels.clear();
 
   // Save the predictions
-  examples[0]->pred.decision_scores() = decision_scores;
+  examples[0]->pred.reset();
+  examples[0]->pred.init_as_decision_scores(std::move(decision_scores));
 }
 
 void print_decision_scores(int f, decision_scores_t& decision_scores)
@@ -624,12 +618,6 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
-
-  for (auto& a_s : ec_seq[0]->pred.decision_scores())
-  {
-    return_v_array(a_s, data.action_score_pool);
-  }
-  ec_seq[0]->pred.decision_scores().clear();
 
   VW::finish_example(all, ec_seq);
 }

@@ -1120,7 +1120,6 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN))
   {
     v_array<action_cache>* this_cache = new v_array<action_cache>();
-    *this_cache = v_init<action_cache>();
     // TODO we don't really need to construct this new_polylabel
     new_polylabel l = std::move(allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost));
     size_t K = cs_get_costs_size(priv.cb_learner, l);
@@ -1186,7 +1185,6 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     if (need_memo_foreach_action(priv) && (override_action == (action)-1))
     {
       this_cache = new v_array<action_cache>();
-      *this_cache = v_init<action_cache>();
     }
     for (size_t k = 0; k < K; k++)
     {
@@ -1235,7 +1233,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     while (priv.active_known.size() <= cur_t)
     {
       priv.active_known.push_back(v_array<std::pair<CS::wclass&, bool>>());
-      priv.active_known[priv.active_known.size() - 1] = v_init<std::pair<CS::wclass&, bool>>();
+      priv.active_known[priv.active_known.size() - 1] = v_array<std::pair<CS::wclass&, bool>>();
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].clear();
@@ -1312,7 +1310,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   if (need_partial_predictions)
   {
     this_cache = new v_array<action_cache>();
-    *this_cache = v_init<action_cache>();
   }
 
   for (action a = (uint32_t)start_K; a < ec_cnt; a++)
@@ -1371,7 +1368,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       priv.memo_foreach_action.push_back(this_cache);
     else
     {
-      this_cache->delete_v();
       delete this_cache;
     }
   }
@@ -2039,7 +2035,6 @@ struct final_item
 
 void free_final_item(final_item* p)
 {
-  p->prefix->delete_v();
   delete p->prefix;
   delete p;
 }
@@ -2503,9 +2498,6 @@ void search_initialize(vw* all, search& sch)
 
   sch.task_data = nullptr;
 
-  priv.active_uncertainty = v_init<std::pair<float, size_t>>();
-  priv.active_known = v_init<v_array<std::pair<CS::wclass&, bool>>>();
-
   CS::default_label(priv.empty_cs_label);
 
   new (&priv.rawOutputString) std::string();
@@ -2584,11 +2576,11 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   }
   fclose(f);
 
-  v_array<CS::label> allowed = v_init<CS::label>();
+  v_array<CS::label> allowed;
 
   for (size_t from = 0; from < A; from++)
   {
-    v_array<CS::wclass> costs = v_init<CS::wclass>();
+    v_array<CS::wclass> costs;
 
     for (size_t to = 0; to < A; to++)
       if (bg[from * (A + 1) + to])
@@ -2778,15 +2770,15 @@ base_learner* setup(options_i& options, vw& all)
   {
     priv.cb_learner = true;
     CB::default_label(priv.allowed_actions_cache.init_as_cb());
-    priv.learn_losses.cb().costs = v_init<CB::cb_class>();
-    priv.gte_label.cb().costs = v_init<CB::cb_class>();
+    priv.learn_losses.cb().costs = v_array<CB::cb_class>();
+    priv.gte_label.cb().costs = v_array<CB::cb_class>();
   }
   else
   {
     priv.cb_learner = false;
     CS::default_label(priv.allowed_actions_cache.init_as_cs());
-    priv.learn_losses.init_as_cs().costs = v_init<CS::wclass>();
-    priv.gte_label.init_as_cs().costs = v_init<CS::wclass>();
+    priv.learn_losses.init_as_cs().costs = v_array<CS::wclass>();
+    priv.gte_label.init_as_cs().costs = v_array<CS::wclass>();
   }
 
   ensure_param(priv.beta, 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
@@ -3107,11 +3099,6 @@ predictor::predictor(search& sch, ptag my_tag)
     , learner_id(0)
     , sch(sch)
 {
-  oracle_actions = v_init<action>();
-  condition_on_tags = v_init<ptag>();
-  condition_on_names = v_init<char>();
-  allowed_actions = v_init<action>();
-  allowed_actions_cost = v_init<float>();
 }
 
 void predictor::free_ec()
@@ -3119,24 +3106,16 @@ void predictor::free_ec()
   if (ec_alloced)
   {
     if (is_ldf)
-      for (size_t i = 0; i < ec_cnt; i++) VW::dealloc_example(CS::cs_label.delete_label, ec[i]);
+      for (size_t i = 0; i < ec_cnt; i++) ec[i].~example();
     else
-      VW::dealloc_example(nullptr, *ec);
+      ec->~example();
     free(ec);
   }
 }
 
 predictor::~predictor()
 {
-  if (!oracle_is_pointer)
-    oracle_actions.delete_v();
-  if (!allowed_is_pointer)
-    allowed_actions.delete_v();
-  if (!allowed_cost_is_pointer)
-    allowed_actions_cost.delete_v();
   free_ec();
-  condition_on_tags.delete_v();
-  condition_on_names.delete_v();
 }
 predictor& predictor::reset()
 {
@@ -3258,7 +3237,7 @@ predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, 
   else  // old_size == 0, clear_first is irrelevant
   {
     if (!A_is_ptr)
-      A.delete_v();  // avoid memory leak
+      A.clear();  // avoid memory leak
 
     A.begin() = a;
     if (a != nullptr)  // a is not nullptr

@@ -76,7 +76,6 @@ struct new_polylabel
   // These two functions only differ by parameter
   void copy_from(const new_polylabel& other)
   {
-    reset();
     switch (other._tag)
     {
       case (label_type_t::unset):
@@ -111,7 +110,6 @@ struct new_polylabel
 
   void move_from(new_polylabel&& other)
   {
-    reset();
     switch (other._tag)
     {
       case (label_type_t::unset):
@@ -151,22 +149,26 @@ struct new_polylabel
 
   new_polylabel(new_polylabel&& other)
   {
+    _tag = label_type_t::unset;
     move_from(std::move(other));
     other.reset();
   }
 
   new_polylabel& operator=(new_polylabel&& other)
   {
+    reset();
     move_from(std::move(other));
     other.reset();
     return *this;
   }
 
   new_polylabel(const new_polylabel& other) {
+    _tag = label_type_t::unset;
     copy_from(other);
   }
 
   new_polylabel& operator=(const new_polylabel& other) {
+    reset();
     copy_from(other);
     return *this;
   }

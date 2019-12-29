@@ -38,8 +38,6 @@ struct sender
 
   ~sender()
   {
-    buf->files.delete_v();
-    buf->space.delete_v();
     free(delay_ring);
     delete buf;
   }
@@ -82,6 +80,7 @@ void receive_result(sender& s)
 
 void learn(sender& s, LEARNER::single_learner&, example& ec)
 {
+  assert(ec.pred.get_type() == prediction_type_t::scalar);
   if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
     receive_result(s);
 

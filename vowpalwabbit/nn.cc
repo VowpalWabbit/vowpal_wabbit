@@ -38,8 +38,8 @@ struct nn
   float* hidden_units;
   bool* dropped_out;
 
-  polyprediction* hidden_units_pred;
-  polyprediction* hiddenbias_pred;
+  new_polyprediction* hidden_units_pred;
+  new_polyprediction* hiddenbias_pred;
 
   vw* all;  // many things
   std::shared_ptr<rand_state> _random_state;
@@ -49,11 +49,12 @@ struct nn
     delete squared_loss;
     free(hidden_units);
     free(dropped_out);
+    if (hidden_units_pred)
+      hidden_units_pred->~new_polyprediction();
+    if (hiddenbias_pred)
+      hiddenbias_pred->~new_polyprediction();
     free(hidden_units_pred);
     free(hiddenbias_pred);
-    VW::dealloc_example(nullptr, output_layer);
-    VW::dealloc_example(nullptr, hiddenbias);
-    VW::dealloc_example(nullptr, outputweight);
   }
 };
 
@@ -177,7 +178,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     sd_guard(n.all, &sd);
 
 
-    label_data ld = ec.l.simple();
+    label_data& ld = ec.l.simple();
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
@@ -224,8 +225,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       if (ec.passthrough)
         for (unsigned int i = 0; i < n.k; ++i)
         {
-          add_passthrough_feature(ec, i * 2, hiddenbias_pred[i].scalar);
-          add_passthrough_feature(ec, i * 2 + 1, hidden_units[i].scalar);
+          add_passthrough_feature(ec, i * 2, hiddenbias_pred[i].scalar());
+          add_passthrough_feature(ec, i * 2 + 1, hidden_units[i].scalar());
         }
     }
 
@@ -234,8 +235,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       {
         if (i > 0)
           outputStringStream << ' ';
-        outputStringStream << i << ':' << hidden_units[i].scalar << ','
-                           << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
+        outputStringStream << i << ':' << hidden_units[i].scalar() << ','
+                           << fasttanh(hidden_units[i].scalar());  // TODO: huh, what was going on here?
       }
 
     n.all->loss = save_loss;
@@ -265,7 +266,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     for (unsigned int i = 0; i < n.k; ++i)
     {
-      float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
+      float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar());
       features& out_fs = n.output_layer.feature_space[nn_output_namespace];
       out_fs.values[i] = sigmah;
 
@@ -274,7 +275,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
 
       n.outputweight.feature_space[nn_output_namespace].indicies[0] = out_fs.indicies[i];
       base.predict(n.outputweight, n.k);
-      float wf = n.outputweight.pred.scalar;
+      float wf = n.outputweight.pred.scalar();
 
       // avoid saddle point at 0
       if (wf == 0)
@@ -370,12 +371,12 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
             n.outputweight.feature_space[nn_output_namespace].indicies[0] =
                 n.output_layer.feature_space[nn_output_namespace].indicies[i];
             base.predict(n.outputweight, n.k);
-            float nu = n.outputweight.pred.scalar;
+            float nu = n.outputweight.pred.scalar();
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ec.l.simple().label = GD::finalize_prediction(n.all->sd, hidden_units[i].scalar - gradhw);
-            ec.pred.scalar = hidden_units[i].scalar;
-            if (ec.l.simple().label != hidden_units[i].scalar)
+            ec.l.simple().label = GD::finalize_prediction(n.all->sd, hidden_units[i].scalar() - gradhw);
+            ec.pred.scalar() = hidden_units[i].scalar();
+            if (ec.l.simple().label != hidden_units[i].scalar())
               base.update(ec, i);
           }
         }
@@ -409,14 +410,14 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     }
 
     ec.partial_prediction = save_partial_prediction;
-    ec.pred.scalar = save_final_prediction;
+    ec.pred.scalar() = save_final_prediction;
     ec.loss = save_ec_loss;
   }
   n.all->set_minmax(n.all->sd, sd.min_label);
   n.all->set_minmax(n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction* pred,
+void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, new_polyprediction* pred,
     bool finalize_predictions)
 {
   for (size_t c = 0; c < count; c++)
@@ -428,7 +429,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
     if (finalize_predictions)
       pred[c] = ec.pred;
     else
-      pred[c].scalar = ec.partial_prediction;
+      pred[c].scalar() = ec.partial_prediction;
     ec.ft_offset += (uint64_t)step;
   }
   ec.ft_offset -= (uint64_t)(step * count);
@@ -438,7 +439,7 @@ void finish_example(vw& all, nn&, example& ec)
 {
   int save_raw_prediction = all.raw_prediction;
   all.raw_prediction = -1;
-  return_simple_example(all, nullptr, ec);
+  return_simple_example_explicit(all, ec);
   all.raw_prediction = save_raw_prediction;
 }
 
@@ -487,8 +488,8 @@ base_learner* nn_setup(options_i& options, vw& all)
 
   n->hidden_units = calloc_or_throw<float>(n->k);
   n->dropped_out = calloc_or_throw<bool>(n->k);
-  n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
-  n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
+  n->hidden_units_pred = calloc_or_throw<new_polyprediction>(n->k);
+  n->hiddenbias_pred = calloc_or_throw<new_polyprediction>(n->k);
 
   auto base = as_singleline(setup_base(options, all));
   n->increment = base->increment;  // Indexing of output layer is odd.

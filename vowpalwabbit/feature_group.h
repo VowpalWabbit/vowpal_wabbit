@@ -269,60 +269,10 @@ struct features
     sum_feat_sq = 0.f;
   }
 
-  ~features() { 
-     values.delete_v();
-     indicies.delete_v();
-     space_names.delete_v();
-   }
-   features(const features&) = delete;
-   features & operator=( const features& ) = delete;
-   
-   
-   // custom move operators required since we need to leave the old value in
-   // a null state to prevent freeing of shallow copied v_arrays
-   features(features&& other) :
-   values(std::move(other.values)),
-   indicies(std::move(other.indicies)),
-   space_names(std::move(other.space_names)),
-   sum_feat_sq(other.sum_feat_sq)
-   {
-     // We need to null out all the v_arrays to prevent double freeing during moves
-     auto & v = other.values;
-     v._begin = nullptr;
-     v._end = nullptr;
-     v.end_array = nullptr;
-     auto & i = other.indicies;
-     i._begin = nullptr;
-     i._end = nullptr;
-     i.end_array = nullptr;
-     auto & s = other.space_names;
-     s._begin = nullptr;
-     s._end = nullptr;
-     s.end_array = nullptr;
-     other.sum_feat_sq = 0;
-   }
-   features & operator=(features&& other)
-   {
-     values = std::move(other.values);
-     indicies = std::move(other.indicies);
-     space_names = std::move(other.space_names);
-     sum_feat_sq = other.sum_feat_sq;
-     // We need to null out all the v_arrays to prevent double freeing during moves
-     auto & v = other.values;
-     v._begin = nullptr;
-     v._end = nullptr;
-     v.end_array = nullptr;
-     auto & i = other.indicies;
-     i._begin = nullptr;
-     i._end = nullptr;
-     i.end_array = nullptr;
-     auto & s = other.space_names;
-     s._begin = nullptr;
-     s._end = nullptr;
-     s.end_array = nullptr;
-     other.sum_feat_sq = 0;
-     return *this;
-   }
+  features(const features&) = default;
+  features& operator=(const features&) = default;
+  features(features&& other) = default;
+  features& operator=(features&& other) = default;
 
   inline size_t size() const { return values.size(); }
 

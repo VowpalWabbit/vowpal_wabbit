@@ -67,8 +67,11 @@ struct v_array
 
   v_array(v_array<T>&& other)
   {
-    delete_v_array();
     erase_count = 0;
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+
     std::swap(_begin, other._begin);
     std::swap(_end, other._end);
     std::swap(end_array, other.end_array);
@@ -78,7 +81,6 @@ struct v_array
   v_array<T>& operator=(v_array<T>&& other)
   {
     delete_v_array();
-    erase_count = 0;
     std::swap(_begin, other._begin);
     std::swap(_end, other._end);
     std::swap(end_array, other.end_array);
@@ -88,7 +90,11 @@ struct v_array
 
   v_array(const v_array<T>& other)
   {
-    delete_v_array();
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+    erase_count = 0;
+
     copy_array(*this, other);
   }
 

@@ -71,7 +71,8 @@ struct baseline
 
   ~baseline()
   {
-    ec->~example();
+    if (ec)
+      ec->~example();
     free(ec);
   }
 };

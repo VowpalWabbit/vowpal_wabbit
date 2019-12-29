@@ -606,7 +606,6 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   }
 
   data->app_seed = uniform_hash("vw", 2, 0);
-  data->a_s = v_init<action_score>();
   data->all = &all;
   data->_random_state = all.get_random_state();
   data->use_cs = use_cs;

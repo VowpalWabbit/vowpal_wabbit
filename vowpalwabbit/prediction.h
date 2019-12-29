@@ -71,8 +71,7 @@ struct new_polyprediction
   // These two functions only differ by parameter
   void copy_from(const new_polyprediction& other)
   {
-    reset();
-    switch (_tag)
+    switch (other._tag)
     {
       case (prediction_type_t::unset):
         break;
@@ -103,8 +102,7 @@ struct new_polyprediction
 
   void move_from(const new_polyprediction&& other)
   {
-    reset();
-    switch (_tag)
+    switch (other._tag)
     {
       case (prediction_type_t::unset):
         break;
@@ -140,22 +138,26 @@ struct new_polyprediction
 
   new_polyprediction(new_polyprediction&& other)
   {
+    _tag = prediction_type_t::unset;
     move_from(std::move(other));
     other.reset();
   }
 
   new_polyprediction& operator=(new_polyprediction&& other)
   {
+    reset();
     move_from(std::move(other));
     other.reset();
     return *this;
   }
 
   new_polyprediction(const new_polyprediction& other) {
+    _tag = prediction_type_t::unset;
     copy_from(other);
   }
 
   new_polyprediction& operator=(const new_polyprediction& other) {
+    reset();
     copy_from(other);
     return *this;
   }

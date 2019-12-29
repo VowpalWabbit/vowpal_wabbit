@@ -97,7 +97,8 @@ void finish(Search::search& sch)
   task_data* my_task_data = sch.get_task_data<task_data>();
   if (my_task_data->search_order == 3)
   {
-    for (size_t a = 0; a < 10; a++) VW::dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
+    for (size_t a = 0; a < 10; a++)
+      my_task_data->ldf_entity[a].~example();
     free(my_task_data->ldf_entity);
   }
   delete my_task_data;

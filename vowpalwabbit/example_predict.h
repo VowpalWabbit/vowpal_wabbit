@@ -45,12 +45,6 @@ struct example_predict
 
   iterator begin() { return iterator(feature_space.data(), indices.begin()); }
   iterator end() { return iterator(feature_space.data(), indices.end()); }
-
-  ~example_predict()
-  {
-    for (auto& features : feature_space)
-      features.delete_v();
-  }
 };
 
 // make sure we have an exception safe version of example_predict

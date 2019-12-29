@@ -237,10 +237,10 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
-  auto split_commas = v_init<VW::string_view>();
+  v_array<VW::string_view> split_commas;
   tokenize(',', outcome, split_commas);
 
-  auto split_colons = v_init<VW::string_view>();
+  v_array<VW::string_view> split_colons;
   tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3)
@@ -269,7 +269,7 @@ void parse_explicit_inclusions(CCB::label& ld, v_array<VW::string_view>& split_i
 {
   for (const auto& inclusion : split_inclusions)
   {
-    ld->explicit_included_actions.push_back(int_of_string(inclusion));
+    ld.explicit_included_actions.push_back(int_of_string(inclusion));
   }
 }
 
