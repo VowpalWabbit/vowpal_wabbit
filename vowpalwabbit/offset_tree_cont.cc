@@ -12,7 +12,7 @@ using namespace LEARNER;
 using std::vector;
 using CB::cb_class;
 
-VW_DEBUG_ENABLE(false);
+VW_DEBUG_ENABLE(false)
 
 namespace VW
 {
@@ -135,6 +135,7 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 }
 
 bool compareByid(const node_cost& a, const node_cost& b) { return a.node_id < b.node_id; }
+bool compareByid_1(const node_cost& a, const node_cost& b) { return a.node_id > b.node_id; }
 
 void offset_tree::init_node_sets(v_array<cb_class>& ac)
 {
@@ -143,7 +144,7 @@ void offset_tree::init_node_sets(v_array<cb_class>& ac)
     // Sanity check. actions are 1 based index
     assert(ac[i].action > 0);
     // TODO: Handle negative cost
-    assert(ac[i].cost > 0.f);  
+    assert(ac[i].cost >= 0.f);  
 
     uint32_t node_id = ac[i].action + _binary_tree.internal_node_count() - 1;
     VW_DBG(_dd) << "otree_c: learn() ac[" << i << "].action  = " << ac[i].action << ", node_id  = " << node_id
@@ -160,7 +161,7 @@ void offset_tree::init_node_sets(v_array<cb_class>& ac)
     _nodes_depth_1.clear();
   }
 
-  std::sort(_nodes_depth_1.begin(), _nodes_depth_1.end(), compareByid);
+  std::sort(_nodes_depth_1.begin(), _nodes_depth_1.end(), compareByid_1);
   std::sort(_nodes_depth.begin(), _nodes_depth.end(), compareByid);
 }
 
@@ -170,7 +171,7 @@ void offset_tree::init_node_sets(v_array<cb_class>& ac)
 void offset_tree::reduce_depth() {
   // Completed processing all nodes at current depth
   // Moving on to depth current-1
-  std::sort(_nodes_depth_1.begin(), _nodes_depth_1.end(), compareByid);
+  // std::sort(_nodes_depth_1.begin(), _nodes_depth_1.end(), compareByid); // do not need to sort
   _nodes_depth = _nodes_depth_1;
   _nodes_depth_1.clear();
 }
