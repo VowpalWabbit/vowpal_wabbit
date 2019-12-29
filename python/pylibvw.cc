@@ -149,14 +149,6 @@ size_t my_get_prediction_type(vw_ptr all)
   }
 }
 
-void my_delete_example(void*voidec)
-{ example* ec = (example*) voidec;
-  size_t labelType = ec->example_counter;
-  label_parser* lp = get_label_parser(NULL, labelType);
-  VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
-  free(ec);
-}
-
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 { label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = VW::alloc_examples(lp->label_size, 1);
@@ -172,7 +164,7 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 
 example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 { example* ec = my_empty_example0(vw, labelType);
-  return boost::shared_ptr<example>(ec, my_delete_example);
+  return boost::shared_ptr<example>(ec);
 }
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
@@ -180,7 +172,7 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
-  return boost::shared_ptr<example>(ec, my_delete_example);
+  return boost::shared_ptr<example>(ec);
 }
 
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)

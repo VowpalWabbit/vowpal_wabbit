@@ -23,13 +23,6 @@
 #include "label.h"
 #include "prediction.h"
 
-VW_DEPRECATED("no longer used")
-inline void delete_scalars(void* v)
-{
-  // v_array<float>* preds = (v_array<float>*)v;
-  // preds->delete_v();
-}
-
 struct example : public example_predict  // core example datatype.
 {
   // input fields
