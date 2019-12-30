@@ -304,6 +304,7 @@ void calloc_reserve(v_array<T>& v, size_t length)
 }
 
 template <class T>
+VW_DEPRECATED("This performs a copy return and is no longer possible. Need to work out a better way here.")
 v_array<T> pop(v_array<v_array<T> >& stack)
 {
   if (stack.end() != stack.begin())

@@ -55,10 +55,7 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
 
   er.filled[n] = true;
   VW::copy_example_data(er.all->audit, &er.buf[n], &ec);  // don't copy the label
-  if (lp.copy_label)
-    lp.copy_label(er.buf[n].l, ec.l);
-  else
-    er.buf[n].l = ec.l;
+  er.buf[n].l = ec.l;
 }
 
 template <label_parser& lp>

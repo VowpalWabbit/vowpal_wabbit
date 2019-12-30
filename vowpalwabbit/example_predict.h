@@ -48,7 +48,9 @@ struct example_predict
 };
 
 // make sure we have an exception safe version of example_predict
-class safe_example_predict : public example_predict
+class
+VW_DEPRECATED("example now uses C++ lifecycle functions. Please migrate to that instead for RAII needs.")
+safe_example_predict : public example_predict
 {
  public:
   safe_example_predict();

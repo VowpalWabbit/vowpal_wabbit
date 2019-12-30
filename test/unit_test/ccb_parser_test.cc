@@ -28,7 +28,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().explicit_included_actions.size(), 0);
     BOOST_CHECK(label->conditional_contextual_bandit().outcome == nullptr);
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().type, CCB::example_type::shared);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
@@ -36,7 +35,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().explicit_included_actions.size(), 0);
     BOOST_CHECK(label->conditional_contextual_bandit().outcome == nullptr);
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().type, CCB::example_type::action);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
@@ -44,7 +42,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().explicit_included_actions.size(), 0);
     BOOST_CHECK(label->conditional_contextual_bandit().outcome == nullptr);
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().type, CCB::example_type::slot);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
@@ -55,7 +52,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().explicit_included_actions[2], 4);
     BOOST_CHECK(label->conditional_contextual_bandit().outcome == nullptr);
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().type, CCB::example_type::slot);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
@@ -67,7 +63,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().outcome->probabilities[0].action, 1);
     BOOST_CHECK_CLOSE(label->conditional_contextual_bandit().outcome->probabilities[0].score, .5f, FLOAT_TOL);
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().type, CCB::example_type::slot);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
@@ -84,32 +79,26 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().outcome->probabilities[2].action, 3);
     BOOST_CHECK_CLOSE(label->conditional_contextual_bandit().outcome->probabilities[2].score, .25f, FLOAT_TOL);
     BOOST_CHECK_EQUAL(label->conditional_contextual_bandit().type, CCB::example_type::slot);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "shared", *label.get()), VW::vw_exception);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "other shared", *label.get()), VW::vw_exception);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "other", *label.get()), VW::vw_exception);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "ccb unknown", *label.get()), VW::vw_exception);
-    lp.delete_label(*label.get());
   }
   {
     auto label = scoped_calloc_or_throw<new_polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "ccb slot 1:1.0:0.5,4:0.7", *label.get()), VW::vw_exception);
-    lp.delete_label(*label.get());
   }
 }
 
@@ -142,8 +131,6 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   BOOST_CHECK_EQUAL(uncached_label->conditional_contextual_bandit().outcome->probabilities[2].action, 3);
   BOOST_CHECK_CLOSE(uncached_label->conditional_contextual_bandit().outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(uncached_label->conditional_contextual_bandit().type, CCB::example_type::slot);
-  lp.delete_label(*label.get());
-  lp.delete_label(*uncached_label.get());
 }
 
 BOOST_AUTO_TEST_CASE(ccb_copy_label)
@@ -157,7 +144,7 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   auto copied_to = scoped_calloc_or_throw<new_polylabel>();
   lp.default_label(*copied_to);
 
-  lp.copy_label(*copied_to, *label);
+  *copied_to = *label;
 
   BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().explicit_included_actions[0], 3);
@@ -171,6 +158,4 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().outcome->probabilities[2].action, 3);
   BOOST_CHECK_CLOSE(copied_to->conditional_contextual_bandit().outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().type, CCB::example_type::slot);
-  lp.delete_label(*label.get());
-  lp.delete_label(*copied_to.get());
 }

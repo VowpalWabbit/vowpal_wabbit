@@ -109,8 +109,7 @@ struct action_repr
   {
     if (_repr != nullptr)
     {
-      repr = new features();
-      repr->deep_copy_from(*_repr);
+      repr = new features(*_repr);
     }
     else
       repr = nullptr;
@@ -1249,7 +1248,9 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
          "}" << endl; */
       CS::wclass& wc = ec.l.cs().costs[k];
       // Get query_needed from pred
-      bool query_needed = v_array_contains(ec.pred.multilabels().label_v, wc.class_index);
+      bool query_needed = std::find(
+        ec.pred.multilabels().label_v.cbegin(),
+        ec.pred.multilabels().label_v.cend(), wc.class_index )== ec.pred.multilabels().label_v.cend();
       std::pair<CS::wclass&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);
@@ -1700,12 +1701,9 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         priv.learn_ec_ref = ecs;
       else
       {
-        size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
-        void (*label_copy_fn)(new_polylabel&, new_polylabel&) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
-
         ensure_size(priv.learn_ec_copy, ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, priv.learn_ec_copy.begin() + i, ecs + i, label_size, label_copy_fn);
+          priv.learn_ec_copy[i] = ecs[i];
 
         priv.learn_ec_ref = priv.learn_ec_copy.begin();
       }
@@ -2015,7 +2013,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
     while ((timesteps.size() < (size_t)priv.subsample_timesteps) && (timesteps.size() < priv.T))
     {
       size_t t = (size_t)(priv._random_state->get_and_update_random() * (float)priv.T);
-      if (!v_array_contains(timesteps, t))
+      if (std::find(timesteps.cbegin(), timesteps.cend(), t) == timesteps.cend())
         timesteps.push_back(t);
     }
     std::sort(timesteps.begin(), timesteps.end(), cmp_size_t);
@@ -2316,14 +2314,15 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     cdbg << " ]" << endl;
     cdbg << "gte" << endl;
     generate_training_example(priv, priv.learn_losses, 1., true);  // , min_loss);  // TODO: weight
-    if (!priv.examples_dont_change)
-      for (size_t n = 0; n < priv.learn_ec_copy.size(); n++)
-      {
-        if (sch.priv->is_ldf)
-          CS::cs_label.delete_label(priv.learn_ec_copy[n].l);
-        else
-          MC::mc_label.delete_label(priv.learn_ec_copy[n].l);
-      }
+    // Should not be needed anymore
+    // if (!priv.examples_dont_change)
+    //   for (size_t n = 0; n < priv.learn_ec_copy.size(); n++)
+    //   {
+    //     if (sch.priv->is_ldf)
+    //       CS::cs_label.delete_label(priv.learn_ec_copy[n].l);
+    //     else
+    //       MC::mc_label.delete_label(priv.learn_ec_copy[n].l);
+    //   }
     if (priv.cb_learner)
       priv.learn_losses.cb().costs.clear();
     else
@@ -2607,7 +2606,6 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
     return;
 
   std::vector<VW::string_view> cmd;
-  size_t start_idx = 0;
   size_t end_idx = 0;
   while (!nf_strview.empty())
   {
@@ -3170,9 +3168,9 @@ void predictor::set_input_at(size_t posn, example& ex)
 
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
-
-  VW::copy_example_data(
-      false, ec + posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label);  // TODO: the false is "audit"
+  
+  // Copy given example into ec.
+  ec[posn] = ex;
 }
 
 template <class T>

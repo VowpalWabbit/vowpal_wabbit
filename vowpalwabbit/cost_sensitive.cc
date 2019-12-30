@@ -107,30 +107,6 @@ bool test_label(new_polylabel& v)
   return true;
 }
 
-void delete_label(label& label)
-{
-  //
-}
-
-void delete_label(new_polylabel& v)
-{
-  if (v.get_type() == label_type_t::cs)
-  {
-    // TODO: work out how to do this safely
-    delete_label(v.cs());
-    // if (ld.costs.size() > 0)
-    //   ld.costs.delete_v();
-  }
-}
-
-void copy_label(new_polylabel& dst, new_polylabel& src)
-{
-  dst.reset();
-  auto& dest_label = dst.init_as_cs();
-  auto& src_label = src.cs();
-  copy_array(dest_label.costs, src_label.costs);
-}
-
 void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.cs();
@@ -197,7 +173,7 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::strin
   }
 }
 
-label_parser cs_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
+label_parser cs_label = {default_label, parse_label, cache_label, read_cached_label, weight,
     test_label, sizeof(label)};
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)

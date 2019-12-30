@@ -79,8 +79,7 @@ struct label
     type = other.type;
     // todo copyconstructor of outcome
     outcome = other.outcome;
-    explicit_included_actions.clear();
-    copy_array(explicit_included_actions, other.explicit_included_actions);
+    explicit_included_actions = other.explicit_included_actions;
     weight = other.weight;
   }
 
@@ -89,8 +88,7 @@ struct label
     type = other.type;
     delete outcome;
     outcome = other.outcome;
-    explicit_included_actions.clear();
-    copy_array(explicit_included_actions, other.explicit_included_actions);
+    explicit_included_actions = other.explicit_included_actions;
     weight = other.weight;
     return *this;
   }
@@ -99,19 +97,4 @@ struct label
 };
 
 extern label_parser ccb_label_parser;
-
-// struct v_ccb_label_parser : public v_label_parser
-// {
-//   void default_label(new_polylabel&) override;
-//   void parse_label(parser*, shared_data*, new_polylabel&, v_array<substring>&) override;
-//   void cache_label(new_polylabel&, io_buf& cache) override;
-//   void read_cached_label(shared_data*, new_polylabel&, io_buf& cache) override;
-//   void delete_label(new_polylabel&) override;
-//   float get_weight(new_polylabel&) override;
-//   void copy_label(new_polylabel&, new_polylabel&) override;
-//   bool test_label(new_polylabel&) override;
-//   size_t get_label_size() override;
-
-// };
-
 }  // namespace CCB

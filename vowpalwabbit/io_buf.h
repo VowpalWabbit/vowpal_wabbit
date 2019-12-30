@@ -70,6 +70,24 @@ class io_buf
   static constexpr int READ = 1;
   static constexpr int WRITE = 2;
 
+  io_buf(io_buf& other) = delete;
+  io_buf& operator=(io_buf& other) = delete;
+  io_buf(io_buf&& other) = delete;
+  io_buf& operator=(io_buf&& other) = delete;
+  
+  virtual ~io_buf() 
+  {
+#ifdef _WIN32
+    int f = _fileno(stdin);
+#else
+    int f = fileno(stdin);
+#endif
+
+    while (!files.empty() && files.last() == f)
+      files.pop();
+    close_files();
+  }
+
   void verify_hash(bool verify)
   {
     _verify_hash = verify;

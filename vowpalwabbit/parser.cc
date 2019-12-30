@@ -79,7 +79,6 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 void set_compressed(parser* par)
 {
-  finalize_source(par);
   delete par->input;
   par->input = new comp_io_buf;
   delete par->output;
@@ -203,19 +202,6 @@ void reset_source(vw& all, size_t numbits)
 
 void finalize_source(parser* p)
 {
-#ifdef _WIN32
-  int f = _fileno(stdin);
-#else
-  int f = fileno(stdin);
-#endif
-  while (!p->input->files.empty() && p->input->files.last() == f) p->input->files.pop();
-  p->input->close_files();
-
-  delete p->input;
-  p->input = nullptr;
-  p->output->close_files();
-  delete p->output;
-  p->output = nullptr;
 }
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
@@ -413,7 +399,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       // create children
       size_t num_children = all.num_children;
-      v_array<int> children = v_init<int>();
+      v_array<int> children;
       children.resize(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
@@ -1009,7 +995,9 @@ namespace VW
 {
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
-void free_parser(vw& all)
+
+VW_DEPRECATED("No longer needed. Use destructor.")
+void free_parser(vw& /*all*/)
 {
 }
 

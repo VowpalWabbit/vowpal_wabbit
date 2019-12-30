@@ -52,10 +52,10 @@ static void predict_or_learn(classweights& cweights, LEARNER::single_learner& ba
 {
   switch (pred_type)
   {
-    case prediction_type_t::scalar:
+    case static_cast<int>(prediction_type_t::scalar):
       ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple().label);
       break;
-    case prediction_type_t::multiclass:
+    case static_cast<int>(prediction_type_t::multiclass):
       ec.weight *= cweights.get_class_weight(ec.l.multi().label);
       break;
     default:

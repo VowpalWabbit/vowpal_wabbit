@@ -465,9 +465,6 @@ struct vw
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
-  VW_DEPRECATED("Variable no longer used")
-  void (*delete_prediction)(void*);
-
   bool audit;     // should I print lots of debugging information?
   bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?

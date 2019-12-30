@@ -119,12 +119,17 @@ void check_prediction_state(T& example_obj, prediction_type_t pred_type) = delet
 template <>
 inline void check_prediction_state<example>(example& example_obj, prediction_type_t pred_type)
 {
+  // The compiler sees these as unused as the only place they are used in an assert statement.
+  _UNUSED(pred_type);
+  _UNUSED(example_obj);
   assert(example_obj.pred.get_type() == pred_type);
 }
 
 template <>
 inline void check_prediction_state<multi_ex>(multi_ex& example_obj, prediction_type_t pred_type)
 {
+  _UNUSED(pred_type);
+  _UNUSED(example_obj);
   if (example_obj.size() > 0)
   {
     assert(example_obj[0]->pred.get_type() == pred_type);

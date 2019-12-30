@@ -274,7 +274,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         fs.values.end() = fs.values.begin() + len;
 
         len = fs.indicies.size();
-        fs.indicies;
+        fs.indicies.clear();
         fs.indicies.resize(len);
         brw = model_file.bin_read_fixed((char*)fs.indicies.begin(), len * sizeof(feature_index), "");
         if (!brw)

@@ -112,7 +112,8 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   ec.num_features -= f1.size();
   ec.num_features -= f2.size();
 
-  in.feat_store.deep_copy_from(f1);
+  // Deep copy of features
+  in.feat_store = f1;
 
   multiply(f1, f2, in);
   ec.total_sum_feat_sq += f1.sum_feat_sq;
@@ -144,7 +145,9 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   memmove(&ec.indices[n2_i + 1], &ec.indices[n2_i], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
   ec.indices[n2_i] = in.n2;
 
-  f1.deep_copy_from(in.feat_store);
+  // Deep copy of features
+  f1 = in.feat_store;
+
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
   ec.num_features = in.num_features;
 }

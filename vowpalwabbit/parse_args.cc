@@ -262,8 +262,7 @@ void parse_dictionary_argument(vw& all, std::string str)
     {
       continue;
     }
-    std::unique_ptr<features> arr(new features);
-    arr->deep_copy_from(ec->feature_space[def]);
+    std::unique_ptr<features> arr(new features(ec->feature_space[def]));
     map->emplace(word, std::move(arr));
 
     // clear up ec
@@ -1649,11 +1648,11 @@ vw* initialize(
     options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   vw& all = parse_args(options, trace_listener, trace_context);
-
+  
   try
   {
-    // if user doesn't pass in a model, read from options
     io_buf localModel;
+    // if user doesn't pass in a model, read from options
     if (!model)
     {
       std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
@@ -1887,12 +1886,7 @@ void finish(vw& all, bool delete_all)
   if (all.should_delete_options)
     delete all.options;
 
-  // TODO: migrate all finalization into parser destructor
-  if (all.p != nullptr)
-  {
-    finalize_source(all.p);
-    delete all.p;
-  }
+  delete all.p;
 
   bool seeded;
   if (all.weights.seeded() > 0)

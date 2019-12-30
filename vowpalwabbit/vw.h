@@ -119,6 +119,7 @@ void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
+VW_DEPRECATED("Copy the label object directly.")
 void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(new_polylabel&, new_polylabel&));
 void copy_example_metadata(bool audit, example*, example*);
 void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label

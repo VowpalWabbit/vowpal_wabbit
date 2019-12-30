@@ -40,13 +40,6 @@ struct cb_explore
   float psi;
 
   size_t counter;
-
-  ~cb_explore()
-  {
-    COST_SENSITIVE::delete_label(cbcs.pred_scores);
-    COST_SENSITIVE::delete_label(cs_label);
-    COST_SENSITIVE::delete_label(second_cs_label);
-  }
 };
 
 template <bool is_learn>

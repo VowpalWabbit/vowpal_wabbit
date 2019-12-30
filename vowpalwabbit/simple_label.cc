@@ -77,8 +77,6 @@ bool test_label(new_polylabel& v)
   return ld.label == FLT_MAX;
 }
 
-void delete_simple_label(new_polylabel&) {}
-
 void parse_simple_label(parser*, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.simple();
@@ -108,7 +106,7 @@ void parse_simple_label(parser*, shared_data* sd, new_polylabel& v, v_array<VW::
 }
 
 label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
-    delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
+    get_weight, test_label, sizeof(label_data)};
 
 void print_update(vw& all, example& ec)
 {

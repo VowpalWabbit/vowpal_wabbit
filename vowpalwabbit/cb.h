@@ -29,7 +29,6 @@ struct label
 
 bool test_label(label& ld);
 void default_label(label& ld);
-void delete_label(label& ld);
 
 extern label_parser cb_label;                  // for learning
 bool ec_is_example_header(example const& ec);  // example headers look like "shared"

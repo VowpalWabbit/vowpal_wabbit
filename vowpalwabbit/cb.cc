@@ -99,27 +99,6 @@ bool test_label(CB::label& ld)
 
 bool test_label(new_polylabel& v) { return CB::test_label(v.cb()); }
 
-void delete_label(CB::label& ld) { ld.costs.~v_array(); }
-
-void delete_label(new_polylabel& v)
-{
-  if (v.get_type() == label_type_t::cb)
-    CB::delete_label(v.cb());
-}
-
-void copy_label(CB::label& ldD, CB::label& ldS)
-{
-  copy_array(ldD.costs, ldS.costs);
-  ldD.weight = ldS.weight;
-}
-
-void copy_label(new_polylabel& dst, new_polylabel& src)
-{
-  CB::label& ldD = dst.cb();
-  CB::label& ldS = src.cb();
-  CB::copy_label(ldD, ldS);
-}
-
 void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view>& words)
 {
   ld.costs.clear();
@@ -179,7 +158,7 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::strin
   CB::parse_label(p, sd, v.cb(), words);
 }
 
-label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
+label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, weight,
     test_label, sizeof(label)};
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
@@ -278,20 +257,6 @@ bool test_label(new_polylabel& v)
   return CB::test_label(ld.event);
 }
 
-void delete_label(new_polylabel& v)
-{
-  auto& ld = v.cb_eval();
-  CB::delete_label(ld.event);
-}
-
-void copy_label(new_polylabel& dst, new_polylabel& src)
-{
-  auto ldD = dst.cb_eval();
-  auto ldS = src.cb_eval();
-  CB::copy_label(ldD.event, ldS.event);
-  ldD.action = ldS.action;
-}
-
 void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.cb_eval();
@@ -308,6 +273,6 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::strin
   words.begin()--;
 }
 
-label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
+label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, weight,
     test_label, sizeof(CB_EVAL::label)};
 }  // namespace CB_EVAL

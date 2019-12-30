@@ -35,17 +35,16 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(new_polylabel&, new_polylabel&))
+
+VW_DEPRECATED("Copy the label object directly.")
+void copy_example_label(example* dst, example* src, size_t, void (* /*copy_label*/)(new_polylabel&, new_polylabel&))
 {
-  if (copy_label)
-    copy_label(dst->l, src->l);  // TODO: we really need to delete_label on dst :(
-  else
-    dst->l = src->l;
+  dst->l = src->l;
 }
 
 void copy_example_metadata(bool /* audit */, example* dst, example* src)
 {
-  copy_array(dst->tag, src->tag);
+  dst->tag = src->tag;
   dst->example_counter = src->example_counter;
 
   dst->ft_offset = src->ft_offset;
@@ -55,8 +54,7 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
     dst->passthrough = nullptr;
   else
   {
-    dst->passthrough = new features;
-    dst->passthrough->deep_copy_from(*src->passthrough);
+    dst->passthrough = new features(*src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
@@ -74,7 +72,11 @@ void copy_example_data(bool audit, example* dst, example* src)
 
   // copy feature data
   copy_array(dst->indices, src->indices);
-  for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
+  for (namespace_index c : src->indices)
+  {
+    // Performs deep copy of namespace  
+    dst->feature_space[c] = src->feature_space[c];
+  }
   // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
@@ -82,10 +84,10 @@ void copy_example_data(bool audit, example* dst, example* src)
 }
 
 void copy_example_data(
-    bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(new_polylabel&, new_polylabel&))
+    bool audit, example* dst, example* src, size_t /*label_size*/, void (* /*copy_label*/)(new_polylabel&, new_polylabel&))
 {
   copy_example_data(audit, dst, src);
-  copy_example_label(dst, src, label_size, copy_label);
+  dst->l = src->l;
 }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
@@ -216,7 +218,7 @@ example* alloc_examples(size_t, size_t count = 1)
 }
 
 VW_DEPRECATED("You can just delete the example now")
-void dealloc_example(void (*delete_label)(new_polylabel&), example& ec, void (*delete_prediction)(void*))
+void dealloc_example(void (* /*delete_label*/)(new_polylabel&), example& ec, void (* /*delete_prediction*/)(void*))
 {
   ec.~example();
 }

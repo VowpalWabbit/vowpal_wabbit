@@ -24,8 +24,6 @@ void default_no_label(new_polylabel&) {}
 
 bool test_label(new_polylabel&) { return false; }
 
-void delete_no_label(new_polylabel&) {}
-
 void parse_no_label(parser*, shared_data*, new_polylabel&, v_array<VW::string_view>& words)
 {
   switch (words.size())
@@ -39,8 +37,8 @@ void parse_no_label(parser*, shared_data*, new_polylabel&, v_array<VW::string_vi
   }
 }
 
-label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label, read_cached_no_label, delete_no_label,
-    get_weight, nullptr, test_label, sizeof(nullptr)};
+label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label, read_cached_no_label,
+    get_weight, test_label, sizeof(nullptr)};
 
 void print_no_label_update(vw& all, example& ec)
 {

@@ -369,6 +369,8 @@ struct features
     return true;
   }
 
+
+  VW_DEPRECATED("Use copy constructor")
   void deep_copy_from(const features& src)
   {
     copy_array(values, src.values);

@@ -76,24 +76,6 @@ bool test_label(new_polylabel& v)
   return ld.label_v.size() == 0;
 }
 
-void delete_label(new_polylabel& v)
-{
-  // TODO handle deletion
-  auto& ld = v.multilabels();
-  // if (ld)
-  //   ld.label_v.delete_v();
-}
-
-void copy_label(new_polylabel& dst, new_polylabel& src)
-{
-  // if (dst && src)
-  // {
-    auto ldD = dst.multilabels();
-    auto ldS = src.multilabels();
-    copy_array(ldD.label_v, ldS.label_v);
-  // }
-}
-
 void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.multilabels();
@@ -119,8 +101,7 @@ void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<VW::string_v
   }
 }
 
-label_parser multilabel = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
-    test_label, sizeof(labels)};
+label_parser multilabel = {default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(labels)};
 
 void print_update(vw& all, bool is_test, example& ec)
 {
@@ -143,14 +124,12 @@ void print_update(vw& all, bool is_test, example& ec)
 
 void output_example(vw& all, example& ec)
 {
-  labels& ld = ec.l.multilabels();
-
   float loss = 0.;
   if (!test_label(ec.l))
   {
     // need to compute exact loss
-    labels preds = ec.pred.multilabels();
-    labels given = ec.l.multilabels();
+    labels& preds = ec.pred.multilabels();
+    labels& given = ec.l.multilabels();
 
     uint32_t preds_index = 0;
     uint32_t given_index = 0;

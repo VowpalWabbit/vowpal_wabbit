@@ -316,12 +316,8 @@ void add_to_vali(warm_cb& data, example& ec)
 {
   // TODO: set the first parameter properly
   example* ec_copy = VW::alloc_examples(0 /*unused*/, 1);
-
-  if (use_cs)
-    VW::copy_example_data(false, ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
-  else
-    VW::copy_example_data(false, ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
-
+  // Label copy is automatic now -> hence the nullptr
+  VW::copy_example_data(false, ec_copy, &ec, 0, nullptr);
   data.ws_vali.push_back(ec_copy);
 }
 

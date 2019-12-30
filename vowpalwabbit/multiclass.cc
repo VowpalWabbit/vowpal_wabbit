@@ -68,8 +68,6 @@ bool test_label(new_polylabel& v)
   return ld.label == (uint32_t)-1;
 }
 
-void delete_label(new_polylabel&) {}
-
 void parse_label(parser*, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
 {
  auto& ld = v.multi();
@@ -95,8 +93,7 @@ void parse_label(parser*, shared_data* sd, new_polylabel& v, v_array<VW::string_
         << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
 
-label_parser mc_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, nullptr,
-    test_label, sizeof(label_t)};
+label_parser mc_label = {default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(label_t)};
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {

@@ -121,8 +121,9 @@ void set_done(vw& all);
 
 // source control functions
 void reset_source(vw& all, size_t numbits);
+VW_DEPRECATED("no longer needed")
 void finalize_source(parser* source);
 void set_compressed(parser* par);
 
-VW_DEPRECATED("no longer needed")
+VW_DEPRECATED("no longer needed. Use destructor") 
 void free_parser(vw& all);

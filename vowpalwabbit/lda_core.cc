@@ -68,7 +68,7 @@ struct lda
   v_array<float> Elogtheta;
   v_array<float> decay_levels;
   v_array<float> total_new;
-  v_array<example *> examples;
+  v_array<example*> examples;
   v_array<float> total_lambda;
   v_array<int> doc_lengths;
   v_array<float> digammas;
@@ -92,18 +92,6 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, float *gamma, float *norm);
-
-  ~lda()
-  {
-    Elogtheta.delete_v();
-    decay_levels.delete_v();
-    total_new.delete_v();
-    examples.delete_v();
-    total_lambda.delete_v();
-    doc_lengths.delete_v();
-    digammas.delete_v();
-    v.delete_v();
-  }
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -682,8 +670,9 @@ static inline float find_cw(lda &l, float *u_for_w, float *v)
 namespace
 {
 // Effectively, these are static and not visible outside the compilation unit.
-v_array<float> new_gamma = v_init<float>();
-v_array<float> old_gamma = v_init<float>();
+// TODO: Make these non global as it makes this code non threadsafe
+v_array<float> new_gamma;
+v_array<float> old_gamma;
 }  // namespace
 
 // Returns an estimate of the part of the variational bound that

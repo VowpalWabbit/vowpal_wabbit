@@ -300,7 +300,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
        */
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
       auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
-      ec.feature_space[nn_output_namespace].deep_copy_from(n.output_layer.feature_space[nn_output_namespace]);
+      ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
 
       ec.total_sum_feat_sq += tmp_sum_feat_sq;
       if (is_learn)
