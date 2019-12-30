@@ -43,7 +43,7 @@ struct v_array
      erase_count = 0;
   }
 
- public:
+
   // private:
   T* _begin;
   T* _end;
@@ -229,6 +229,19 @@ struct v_array
 
     return false;
   }
+
+  template <class T>
+  friend void copy_array(v_array<T>& dst, const v_array<T>& src);
+  template <class T>
+  friend void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src);
+  template <class T>
+  friend void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&));
+  template <class T>
+  friend void push_many(v_array<T>& v, const T* _begin, size_t num);
+  template <class T>
+  friend void calloc_reserve(v_array<T>& v, size_t length);
+
+  friend class io_buf;
 };
 
 template <class T>
@@ -284,16 +297,17 @@ void calloc_reserve(v_array<T>& v, size_t length)
 template <class T>
 v_array<T> pop(v_array<v_array<T> >& stack)
 {
-  if (stack._end != stack._begin)
-    return *(--stack._end);
+  if (stack.end() != stack.begin())
+    return *(--stack.end());
   else
     return v_array<T>();
 }
 
 template <class T>
+VW_DEPRECATED("Use std::find")
 bool v_array_contains(v_array<T>& A, T x)
 {
-  for (T* e = A._begin; e != A._end; ++e)
+  for (T* e = A.begin(); e != A.end(); ++e)
     if (*e == x)
       return true;
   return false;
@@ -303,7 +317,7 @@ template <class T>
 std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
 {
   os << '[';
-  for (T* i = v._begin; i != v._end; ++i) os << ' ' << *i;
+  for (const T* i = v.begin(); i != v.end(); ++i) os << ' ' << *i;
   os << " ]";
   return os;
 }
@@ -312,24 +326,7 @@ template <class T, class U>
 std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
 {
   os << '[';
-  for (std::pair<T, U>* i = v._begin; i != v._end; ++i) os << ' ' << i->first << ':' << i->second;
+  for (const std::pair<T, U>* i = v.begin(); i != v.end(); ++i) os << ' ' << i->first << ':' << i->second;
   os << " ]";
   return os;
-}
-
-using v_string = v_array<unsigned char>;
-
-inline v_string string2v_string(const std::string& s)
-{
-  v_string res;
-  if (!s.empty())
-    push_many(res, (unsigned char*)s.data(), s.size());
-  return res;
-}
-
-inline std::string v_string2string(const v_string& v_s)
-{
-  std::string res;
-  for (unsigned char* i = v_s._begin; i != v_s._end; ++i) res.push_back(*i);
-  return res;
 }
