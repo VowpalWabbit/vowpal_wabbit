@@ -38,8 +38,8 @@ struct nn
   float* hidden_units;
   bool* dropped_out;
 
-  new_polyprediction* hidden_units_pred;
-  new_polyprediction* hiddenbias_pred;
+  std::vector<new_polyprediction> hidden_units_pred;
+  std::vector<new_polyprediction> hiddenbias_pred;
 
   vw* all;  // many things
   std::shared_ptr<rand_state> _random_state;
@@ -49,12 +49,6 @@ struct nn
     delete squared_loss;
     free(hidden_units);
     free(dropped_out);
-    if (hidden_units_pred)
-      hidden_units_pred->~new_polyprediction();
-    if (hiddenbias_pred)
-      hiddenbias_pred->~new_polyprediction();
-    free(hidden_units_pred);
-    free(hiddenbias_pred);
   }
 };
 
@@ -64,16 +58,10 @@ class sd_guard
  private:
   vw* saved_all = nullptr;
   shared_data* saved_sd = nullptr;
+
  public:
-   sd_guard(vw* all, shared_data* sd) :
-     saved_all(all), saved_sd(saved_all->sd)
-   {
-     saved_all->sd = sd;
-   }
-   ~sd_guard()
-   {
-     saved_all->sd = saved_sd;
-   }
+  sd_guard(vw* all, shared_data* sd) : saved_all(all), saved_sd(saved_all->sd) { saved_all->sd = sd; }
+  ~sd_guard() { saved_all->sd = saved_sd; }
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -84,8 +72,7 @@ static inline float fastpow2(float p)
   float clipp = (p < -126) ? -126.0f : p;
   int w = (int)clipp;
   float z = clipp - w + offset;
-  union
-  {
+  union {
     uint32_t i;
     float f;
   } v = {cast_uint32_t((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};
@@ -101,9 +88,11 @@ void finish_setup(nn& n, vw& all)
 {
   // TODO: output_layer audit
 
+  // TODO: This memset is very dangerous especially now that example has destructor etc
   memset(&n.output_layer, 0, sizeof(n.output_layer));
   n.output_layer.interactions = &all.interactions;
   n.output_layer.indices.push_back(nn_output_namespace);
+  n.output_layer.pred.init_as_scalar();
   uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
   features& fs = n.output_layer.feature_space[nn_output_namespace];
@@ -139,7 +128,8 @@ void finish_setup(nn& n, vw& all)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
   n.hiddenbias.total_sum_feat_sq++;
-  n.hiddenbias.l.simple().label = FLT_MAX;
+  n.hiddenbias.l.init_as_simple().label = FLT_MAX;
+  n.hiddenbias.pred.init_as_scalar();
   n.hiddenbias.weight = 1;
   n.hiddenbias.in_use = true;
 
@@ -153,7 +143,8 @@ void finish_setup(nn& n, vw& all)
         audit_strings_ptr(new audit_strings("", "OutputWeight")));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.total_sum_feat_sq++;
-  n.outputweight.l.simple().label = FLT_MAX;
+  n.outputweight.l.init_as_simple().label = FLT_MAX;
+  n.outputweight.pred.init_as_scalar();
   n.outputweight.weight = 1;
   n.outputweight.in_use = true;
 
@@ -177,7 +168,6 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   {
     sd_guard(n.all, &sd);
 
-
     label_data& ld = ec.l.simple();
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
     float save_min_label;
@@ -185,8 +175,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float dropscale = n.dropout ? 2.0f : 1.0f;
     loss_function* save_loss = n.all->loss;
 
-    new_polyprediction* hidden_units = n.hidden_units_pred;
-    new_polyprediction* hiddenbias_pred = n.hiddenbias_pred;
+    new_polyprediction* hidden_units = n.hidden_units_pred.data();
+    new_polyprediction* hiddenbias_pred = n.hiddenbias_pred.data();
     bool* dropped_out = n.dropped_out;
 
     std::ostringstream outputStringStream;
@@ -250,7 +240,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_final_prediction = 0;
     float save_ec_loss = 0;
 
-CONVERSE:  // That's right, I'm using goto.  So sue me.
+  CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     n.output_layer.total_sum_feat_sq = 1;
     n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
@@ -307,7 +297,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
        * ec.feature_space[] is reverted to its original value
        * save_nn_output_namespace contains the COPIED value
        * save_nn_output_namespace is destroyed
-       */ 
+       */
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
       auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
       ec.feature_space[nn_output_namespace].deep_copy_from(n.output_layer.feature_space[nn_output_namespace]);
@@ -488,8 +478,17 @@ base_learner* nn_setup(options_i& options, vw& all)
 
   n->hidden_units = calloc_or_throw<float>(n->k);
   n->dropped_out = calloc_or_throw<bool>(n->k);
-  n->hidden_units_pred = calloc_or_throw<new_polyprediction>(n->k);
-  n->hiddenbias_pred = calloc_or_throw<new_polyprediction>(n->k);
+  n->hidden_units_pred.resize(n->k);
+  for (auto& pred : n->hidden_units_pred)
+  {
+    pred.init_as_scalar();
+  }
+  n->hiddenbias_pred.resize(n->k);
+  for (auto& pred : n->hiddenbias_pred)
+  {
+    pred.init_as_scalar();
+  }
+  n->output_layer.pred.init_as_scalar();
 
   auto base = as_singleline(setup_base(options, all));
   n->increment = base->increment;  // Indexing of output layer is odd.
