@@ -116,7 +116,6 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
 template <typename T>
 void check_prediction_state(T& example_obj, prediction_type_t pred_type) = delete;
 
-
 template <>
 inline void check_prediction_state<example>(example& example_obj, prediction_type_t pred_type)
 {
@@ -126,7 +125,10 @@ inline void check_prediction_state<example>(example& example_obj, prediction_typ
 template <>
 inline void check_prediction_state<multi_ex>(multi_ex& example_obj, prediction_type_t pred_type)
 {
-  assert(example_obj[0]->pred.get_type() == pred_type);
+  if (example_obj.size() > 0)
+  {
+    assert(example_obj[0]->pred.get_type() == pred_type);
+  }
 }
 
 template <class T, class E>
