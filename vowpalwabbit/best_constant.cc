@@ -33,7 +33,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   else
     return false;
 
-  if ((label1_cnt + label2_cnt) <= 0.)
+  if ((label1_cnt + label2_cnt) <= 0.f)
     return false;
 
   auto funcName = all.loss->getType();

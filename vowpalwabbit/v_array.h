@@ -239,16 +239,16 @@ struct v_array
     return false;
   }
 
-  template <class T>
-  friend void copy_array(v_array<T>& dst, const v_array<T>& src);
-  template <class T>
-  friend void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src);
-  template <class T>
-  friend void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&));
-  template <class T>
-  friend void push_many(v_array<T>& v, const T* _begin, size_t num);
-  template <class T>
-  friend void calloc_reserve(v_array<T>& v, size_t length);
+  template<typename U>
+  friend void copy_array(v_array<U>& dst, const v_array<U>& src);
+  template<typename U>
+  friend void copy_array_no_memcpy(v_array<U>& dst, const v_array<U>& src);
+  template<typename U>
+  friend void copy_array(v_array<U>& dst, const v_array<U>& src, U (*copy_item)(U&));
+  template<typename U>
+  friend void push_many(v_array<U>& v, const U* _begin, size_t num);
+  template<typename U>
+  friend void calloc_reserve(v_array<U>& v, size_t length);
 
   friend class io_buf;
 };

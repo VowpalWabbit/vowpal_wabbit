@@ -24,11 +24,9 @@ struct bs
   size_t bs_type;
   float lb;
   float ub;
-  std::vector<double>* pred_vec;
+  std::vector<double> pred_vec;
   vw* all;  // for raw prediction and loss
   std::shared_ptr<rand_state> _random_state;
-
-  ~bs() { delete pred_vec; }
 };
 
 void bs_predict_mean(vw& all, example& ec, std::vector<double>& pred_vec)
@@ -158,7 +156,7 @@ void output_example(vw& all, bs& d, example& ec)
   {
     d.lb = FLT_MAX;
     d.ub = -FLT_MAX;
-    for (double v : *d.pred_vec)
+    for (double v : d.pred_vec)
     {
       if (v > d.ub)
         d.ub = (float)v;
@@ -167,7 +165,8 @@ void output_example(vw& all, bs& d, example& ec)
     }
   }
 
-  for (int sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar(), ec.tag, d.lb, d.ub);
+  for (int sink : all.final_prediction_sink)
+    print_result(sink, ec.pred.scalar(), ec.tag, d.lb, d.ub);
 
   print_update(all, ec);
 }
@@ -181,7 +180,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
   float weight_temp = ec.weight;
 
   std::stringstream outputStringStream;
-  d.pred_vec->clear();
+  d.pred_vec.clear();
 
   for (size_t i = 1; i <= d.B; i++)
   {
@@ -192,7 +191,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
     else
       base.predict(ec, i - 1);
 
-    d.pred_vec->push_back(ec.pred.scalar());
+    d.pred_vec.push_back(ec.pred.scalar());
 
     if (shouldOutput)
     {
@@ -207,10 +206,10 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
   switch (d.bs_type)
   {
     case BS_TYPE_MEAN:
-      bs_predict_mean(all, ec, *d.pred_vec);
+      bs_predict_mean(all, ec, d.pred_vec);
       break;
     case BS_TYPE_VOTE:
-      bs_predict_vote(ec, *d.pred_vec);
+      bs_predict_vote(ec, d.pred_vec);
       break;
     default:
       THROW("Unknown bs_type specified: " << d.bs_type);
@@ -256,8 +255,7 @@ base_learner* bs_setup(options_i& options, vw& all)
   else  // by default use mean
     data->bs_type = BS_TYPE_MEAN;
 
-  data->pred_vec = new std::vector<double>();
-  data->pred_vec->reserve(data->B);
+  data->pred_vec.reserve(data->B);
   data->all = &all;
   data->_random_state = all.get_random_state();
 

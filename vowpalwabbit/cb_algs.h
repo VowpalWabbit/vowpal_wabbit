@@ -34,7 +34,10 @@ float get_cost_pred(
   BASELINE::set_baseline_enabled(&ec);
   ec.l.reset();
   ec.l.init_as_simple(simple_temp);
+  // Save what is in the prediction right now, and restore it before we exit the function.
   new_polyprediction p = std::move(ec.pred);
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   if (is_learn && known_cost != nullptr && index == known_cost->action)
   {
     float old_weight = ec.weight;
@@ -42,8 +45,7 @@ float get_cost_pred(
     scorer->learn(ec, index - 1 + base);
     ec.weight = old_weight;
   }
-  else
-    scorer->predict(ec, index - 1 + base);
+  else scorer->predict(ec, index - 1 + base);
 
   if (!baseline_enabled_old)
     BASELINE::reset_baseline_disabled(&ec);

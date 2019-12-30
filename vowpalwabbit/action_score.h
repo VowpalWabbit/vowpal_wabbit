@@ -76,6 +76,4 @@ inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2,
 
 void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&);
 
-VW_DEPRECATED("delete_action_scores no longer used")
-void delete_action_scores(void* v);
 }  // namespace ACTION_SCORE

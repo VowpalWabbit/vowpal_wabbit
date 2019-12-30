@@ -29,12 +29,4 @@ void print_action_score(int f, v_array<action_score>& a_s, v_array<char>& tag)
       std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
-
-VW_DEPRECATED("delete_action_scores no longer used")
-void delete_action_scores(void* v)
-{
-  /*v_array<action_score>* cs = (v_array<action_score>*)v;
-  cs->delete_v();*/
-}
-
 }  // namespace ACTION_SCORE

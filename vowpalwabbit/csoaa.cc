@@ -61,6 +61,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 
   ec.l.reset();
   ec.l.init_as_simple();
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
@@ -107,7 +109,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       add_passthrough_feature(ec, constant * 3, 1.);
   }
 
-  ec.pred.multiclass() = prediction;
+  ec.pred.reset();
+  ec.pred.init_as_multiclass() = prediction;
   ec.l.reset();
   ec.l.init_as_cs(std::move(ld));
 }
