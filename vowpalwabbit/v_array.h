@@ -95,13 +95,14 @@ struct v_array
     end_array = nullptr;
     erase_count = 0;
 
-    copy_array(*this, other);
+    // TODO this should use the other version when T is trivially copyable and this otherwise.
+    copy_array_no_memcpy(*this, other);
   }
 
   v_array<T>& operator=(const v_array<T>& other)
   {
     delete_v_array();
-    copy_array(*this, other);
+    copy_array_no_memcpy(*this, other);
     return *this;
   }
 
@@ -158,7 +159,15 @@ struct v_array
     new (_end++) T(new_ele);
   }
 
+  void push_back(T&& new_ele)
+  {
+    if (_end == end_array)
+      resize(2 * (end_array - _begin) + 3);
+    new (_end++) T(std::move(new_ele));
+  }
+
   void push_back_unchecked(const T& new_ele) { new (_end++) T(new_ele); }
+  void push_back_unchecked(T&& new_ele) { new (_end++) T(std::move(new_ele)); }
 
   template <class... Args>
   void emplace_back(Args&&... args)
