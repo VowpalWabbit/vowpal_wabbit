@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "learner.h"
 #include "options.h"
 
@@ -64,7 +64,6 @@ namespace VW { namespace offset_tree_cont {
     min_depth_binary_tree _binary_tree;
     std::vector<node_cost> _nodes_depth;
     std::vector<node_cost> _nodes_depth_1;
-
     // Depth of reduction stack used to print debug statements with right indent
     uint32_t _dd = 0;   
   };

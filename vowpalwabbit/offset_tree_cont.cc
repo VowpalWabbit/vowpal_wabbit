@@ -1,4 +1,4 @@
-#include "offset_tree_cont.h"
+﻿#include "offset_tree_cont.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
 #include <algorithm>
@@ -121,7 +121,7 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
     base.predict(ec, cur_node.id);
     VW_DBG(_dd) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
                 << ", nodeid = " << cur_node.id << std::endl;
-    if (ec.pred.scalar == -1)  // TODO: check
+    if (ec.pred.scalar < 0)  // TODO: check
     {
       cur_node = nodes[cur_node.left_id];
     }
@@ -240,14 +240,15 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       base.predict(ec, v.parent_id);
       VW_DBG(_dd) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
                   << ", local_action = " << (local_action) << std::endl;
-      if (ec.pred.scalar == local_action)
+      float trained_action = (ec.pred.scalar < 0) ? LEFT: RIGHT;
+      if (trained_action == local_action)
       {
-        cost_parent = (std::min)(cost_v, cost_w);
+        cost_parent = (std::min)(cost_v, cost_w)*fabs(ec.pred.scalar) + (std::max)(cost_v, cost_w)*(1 - fabs(ec.pred.scalar));
         VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
       }
       else
       {
-        cost_parent = (std::max)(cost_v, cost_w);
+        cost_parent = (std::max)(cost_v, cost_w)*fabs(ec.pred.scalar) + (std::min)(cost_v, cost_w)*(1 - fabs(ec.pred.scalar));
         VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
       }
     }
@@ -285,13 +286,21 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
 {
   option_group_definition new_options("Offset tree continuous Options");
   uint32_t num_actions;
-  new_options.add(make_option("otc", num_actions).keep().help("Offset tree continuous with <k> labels"));  // TODO: oct
+  uint32_t scorer_flag;
+  new_options.add(make_option("otc", num_actions).keep().help("Offset tree continuous with <k> labels"))
+    .add(make_option("scorer_option", scorer_flag).default_value(0).keep()
+      .help("Offset tree continuous reduction to scorer [-1, 1] versus binary -1/+1"));  // TODO: oct
+  
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("otc"))  // todo: if num_actions = 0 throw error
     return nullptr;
 
-  if (!options.was_supplied("binary"))  // TODO: instead of above
+  if (scorer_flag) 
+  {
+    options.insert("link", "glf1");
+  }
+  else //if (!options.was_supplied("binary")) 
   {
     options.insert("binary", "");
   }
