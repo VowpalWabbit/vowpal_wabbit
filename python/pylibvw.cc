@@ -240,8 +240,10 @@ py::list my_parse(vw_ptr& all, char* str)
   for (auto *ex : examples)
   {
     VW::setup_example(*all, ex);
+    // Examples created from parsed text should not be deleted normally. Instead they need to be
+    // returned to the pool using finish_example.
     example_collection.append(
-        boost::shared_ptr<example>(ex, [all](example* example) { VW::finish_example(*all.get(), *example); }));
+        boost::shared_ptr<example>(ex, dont_delete_me));
   }
   examples.clear();
   examples.delete_v();
