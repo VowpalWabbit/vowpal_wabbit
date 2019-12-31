@@ -26,6 +26,8 @@ void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
   else
     base.predict(ec);
 
+  // TODO: LDA returns scalars prediction type - what should we do here?
+
   if (ec.weight > 0 && simple_label != FLT_MAX)
     ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar(), simple_label) * ec.weight;
 
