@@ -22,8 +22,7 @@ namespace CSOAA
 struct csoaa
 {
   uint32_t num_classes;
-  new_polyprediction* pred;
-  ~csoaa() { free(pred); }
+  std::vector<new_polyprediction> pred;
 };
 
 template <bool is_learn>
@@ -72,7 +71,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   else if (DO_MULTIPREDICT && !is_learn)
   {
     ec.l.simple() = {FLT_MAX, 0.f, 0.f};
-    base.multipredict(ec, 0, c.num_classes, c.pred, false);
+    base.multipredict(ec, 0, c.num_classes, c.pred.data(), false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
     {
       add_passthrough_feature(ec, i, c.pred[i - 1].scalar());
@@ -127,7 +126,11 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   if (!options.was_supplied("csoaa"))
     return nullptr;
 
-  c->pred = calloc_or_throw<new_polyprediction>(c->num_classes);
+  c->pred.resize(c->num_classes);
+  for (auto& pred : c->pred)
+  {
+    pred.init_as_scalar();
+  }
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
       predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
