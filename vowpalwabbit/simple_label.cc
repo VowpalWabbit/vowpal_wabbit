@@ -39,10 +39,7 @@ size_t read_cached_simple_label(shared_data* sd, new_polylabel& in_ld, io_buf& c
   return total;
 }
 
-float get_weight(new_polylabel& v)
-{
-  return v.simple().weight;
-}
+float get_weight(new_polylabel& v) { return v.simple().weight; }
 
 char* bufcache_simple_label(label_data& ld, char* c)
 {
@@ -65,10 +62,24 @@ void cache_simple_label(new_polylabel& v, io_buf& cache)
 
 void default_simple_label(new_polylabel& v)
 {
-  auto& ld = v.init_as_simple();
-  ld.label = FLT_MAX;
-  ld.weight = 1.;
-  ld.initial = 0.;
+  label_data* ld;
+  if (v.get_type() == label_type_t::unset)
+  {
+    ld = &v.init_as_simple();
+  }
+  else if (v.get_type() == label_type_t::simple)
+  {
+    ld = &v.simple();
+  }
+  else
+  {
+    v.reset();
+    ld = &v.init_as_simple();
+  }
+
+  ld->label = FLT_MAX;
+  ld->weight = 1.;
+  ld->initial = 0.;
 }
 
 bool test_label(new_polylabel& v)
@@ -99,7 +110,7 @@ void parse_simple_label(parser*, shared_data* sd, new_polylabel& v, v_array<VW::
       break;
     default:
       std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (const auto & word : words) std::cout << word;
+      for (const auto& word : words) std::cout << word;
       std::cout << std::endl;
   }
   count_label(sd, ld.label);

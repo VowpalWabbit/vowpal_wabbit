@@ -35,7 +35,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
   ec.pred.reset();
   ec.pred.init_as_scalar();
   ec.l.reset();
-  ec.l.init_as_simple(1., 0.f, 0.f);  // truth
+  ec.l.init_as_simple(1.f, 0.f, 0.f);  // truth
 
   base.learn(ec, ld.label - 1);
 
