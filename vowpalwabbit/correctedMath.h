@@ -8,7 +8,6 @@
 #pragma once
 
 #include <cmath>
-#include <cmath>
 
 #ifdef _WIN32
 // this is a bug in VS2013, fixed in VS2015 runtime
