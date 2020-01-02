@@ -259,7 +259,7 @@ class TC_parser
             if (audit)
               for (const auto& id : feats->indicies)
               {
-		std::stringstream ss;
+                std::stringstream ss;
                 ss << _index << '_';
                 ss << feature_name;
                 ss << '=' << id;

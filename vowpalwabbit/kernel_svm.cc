@@ -78,9 +78,7 @@ void free_svm_model(svm_model* model)
     model->support_vec[i] = 0;
   }
 
-  model->support_vec.~v_array();
-  model->alpha.~v_array();
-  model->delta.~v_array();
+  model->~svm_model();
   free(model);
 }
 

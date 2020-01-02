@@ -12,7 +12,6 @@
 #include "cb_adf.h"
 #include "cb_algs.h"
 #include "constant.h"
-#include "v_array_pool.h"
 
 #include <numeric>
 #include <algorithm>
@@ -22,13 +21,6 @@
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
-
-template <typename T>
-void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
-{
-  array.clear();
-  pool.return_object(array);
-}
 
 struct ccb
 {

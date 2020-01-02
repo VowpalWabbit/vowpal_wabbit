@@ -284,7 +284,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   {
     if (!quiet)
       all.trace_message << "using no cache" << endl;
-    all.p->output->space.~v_array();
+    all.p->output->space.clear();
   }
 }
 
