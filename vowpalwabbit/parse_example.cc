@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <cmath>
-#include <math.h>
+#include <cmath>
 #include <cctype>
 #include "parse_example.h"
 #include "hash.h"

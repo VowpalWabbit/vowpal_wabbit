@@ -8,9 +8,8 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 */
 
 #include <iostream>
-#include <sys/timeb.h>
 #include <cmath>
-#include <stdint.h>
+#include <cstdint>
 #include "global_data.h"
 #include "vw_allreduce.h"
 
