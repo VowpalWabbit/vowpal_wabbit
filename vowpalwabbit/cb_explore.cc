@@ -31,7 +31,7 @@ struct cb_explore
   COST_SENSITIVE::label cs_label;
   COST_SENSITIVE::label second_cs_label;
 
-  learner<cb_explore, example>* cs;
+  learner<cb_explore, example>* cost_sensitive_learner;
 
   size_t tau;
   float epsilon;
@@ -122,15 +122,18 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
   float additive_probability = 1.f / (float)data.cover_size;
   data.preds.clear();
 
+  ec.pred.reset();
+  ec.pred.init_as_multiclass();
+
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
 
   for (size_t i = 0; i < data.cover_size; i++)
   {
     // get predicted cost-sensitive predictions
     if (i == 0)
-      data.cs->predict(ec, i);
+      data.cost_sensitive_learner->predict(ec, i);
     else
-      data.cs->predict(ec, i + 1);
+      data.cost_sensitive_learner->predict(ec, i + 1);
     uint32_t pred = ec.pred.multiclass();
     probs[pred - 1].score += additive_probability;
     data.preds.push_back((uint32_t)pred);
@@ -152,7 +155,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   uint32_t num_actions = data.cbcs.num_actions;
 
-  action_scores probs = ec.pred.action_scores();
+  action_scores probs = std::move(ec.pred.action_scores());
   probs.clear();
   data.cs_label.costs.clear();
 
@@ -167,14 +170,16 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(counter * num_actions));
 
-  data.cb_label = ec.l.cb();
+  data.cb_label = std::move(ec.l.cb());
 
-  ec.l.cs() = data.cs_label;
+  ec.l.reset();
+  ec.l.init_as_cs() = std::move(data.cs_label);
   get_cover_probabilities(data, base, ec, probs);
 
   if (is_learn)
   {
-    ec.l.cb() = data.cb_label;
+    ec.l.reset();
+    ec.l.init_as_cb() = std::move(data.cb_label);
     base.learn(ec);
 
     // Now update oracles
@@ -182,12 +187,17 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     // 1. Compute loss vector
     data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
-    ec.l.cb() = data.cb_label;
+    // This should not be nee2ded as it was done just above.
+    // ec.l.cb() = data.cb_label;
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
-    ec.l.cs() = data.second_cs_label;
+    data.cb_label = std::move(ec.l.cb());
+    ec.l.reset();
+    ec.l.init_as_cs(std::move(data.second_cs_label));
+    auto& second_cs_label_ref = ec.l.cs();
+
     // 2. Update functions
     for (size_t i = 0; i < cover_size; i++)
     {
@@ -196,21 +206,24 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
       {
         float pseudo_cost =
             data.cs_label.costs[j].x - data.psi * min_prob / (std::max(probabilities[j], min_prob) / norm) + 1;
-        data.second_cs_label.costs[j].class_index = j + 1;
-        data.second_cs_label.costs[j].x = pseudo_cost;
+        second_cs_label_ref.costs[j].class_index = j + 1;
+        second_cs_label_ref.costs[j].x = pseudo_cost;
       }
       if (i != 0)
-        data.cs->learn(ec, i + 1);
+        data.cost_sensitive_learner->learn(ec, i + 1);
       if (probabilities[predictions[i] - 1] < min_prob)
         norm += std::max(0.f, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
       else
         norm += additive_probability;
       probabilities[predictions[i] - 1] += additive_probability;
     }
+    data.second_cs_label = std::move(ec.l.cs());
   }
 
-  ec.l.cb() = data.cb_label;
-  ec.pred.action_scores() = probs;
+  ec.l.reset();
+  ec.l.init_as_cb(std::move(data.cb_label));
+  ec.pred.reset();
+  ec.pred.init_as_action_scores(std::move(probs));
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
@@ -302,7 +315,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   learner<cb_explore, example>* l;
   if (options.was_supplied("cover"))
   {
-    data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
+    data->cost_sensitive_learner = reinterpret_cast<learner<cb_explore, example>*>(as_singleline(all.cost_sensitive));
     data->second_cs_label.costs.resize(num_actions);
     data->second_cs_label.costs.end() = data->second_cs_label.costs.begin() + num_actions;
     data->cover_probs.resize(num_actions);
