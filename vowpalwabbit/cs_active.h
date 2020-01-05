@@ -3,4 +3,6 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "reductions_fwd.h"
+
 LEARNER::base_learner* cs_active_setup(VW::config::options_i& options, vw& all);

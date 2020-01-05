@@ -4,6 +4,8 @@
 
 #include "v_array.h"
 #include "action_score.h"
+
+#include "v_array.h"
 #include "io_buf.h"
 #include "global_data.h"
 
