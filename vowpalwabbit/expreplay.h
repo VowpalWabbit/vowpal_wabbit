@@ -8,6 +8,7 @@
 #include "parse_args.h"
 #include "rand48.h"
 #include <memory>
+#include <vector>
 
 namespace ExpReplay
 {
@@ -16,22 +17,13 @@ struct expreplay
 {
   vw* all;
   std::shared_ptr<rand_state> _random_state;
-  size_t N;             // how big is the buffer?
-  example* buf;         // the deep copies of examples (N of them)
-  bool* filled;         // which of buf[] is filled
+  size_t N;                  // how big is the buffer?
+  std::vector<example> buf;  // the deep copies of examples (N of them)
+
+  std::vector<bool> filled;  // which of buf[] is filled
   size_t replay_count;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in which
                         // case we're just permuting)
   LEARNER::single_learner* base;
-
-  ~expreplay()
-  {
-    for (size_t n = 0; n < N; n++)
-    {
-      buf[n].~example();
-    }
-    free(buf);
-    free(filled);
-  }
 };
 
 template <bool is_learn, label_parser& lp>
@@ -55,7 +47,11 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
 
   er.filled[n] = true;
   VW::copy_example_data(er.all->audit, &er.buf[n], &ec);  // don't copy the label
+
+  // By copying these, we don't need to know the type and it can be generic.
   er.buf[n].l = ec.l;
+  // Technically we don't need to copy here, but this allows us to set the type of pred correctly.
+  er.buf[n].pred = ec.pred;
 }
 
 template <label_parser& lp>
@@ -77,6 +73,7 @@ void end_pass(expreplay<lp>& er)
     }
 }
 
+// TODO Only lp dependency is on weight - which should be able to be removed once weight is an example concept.
 template <char er_level, label_parser& lp>
 LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
@@ -102,14 +99,17 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 
   er->all = &all;
   er->_random_state = all.get_random_state();
-  er->buf = VW::alloc_examples(1, er->N);
-  er->buf->interactions = &all.interactions;
+  er->buf.resize(er->N);
+  for (auto& ex : er->buf)
+  {
+    ex.interactions = &all.interactions;
 
-  if (er_level == 'c')
-    for (size_t n = 0; n < er->N; n++)
-      er->buf[n].l.init_as_cs();
+    // TODO: do this in example constructor
+    ex.in_use = true;
+    ex.ft_offset = 0;
+  }
 
-  er->filled = calloc_or_throw<bool>(er->N);
+  er->filled.resize(er->N, false);
 
   if (!all.quiet)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
