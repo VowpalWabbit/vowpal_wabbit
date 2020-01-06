@@ -1143,6 +1143,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
 {
   vw& all = *priv.all;
   auto old_label = std::move(ec.l);
+  ec.l.reset();
   const bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1) || priv.active_csoaa;
   if ((allowed_actions_cnt > 0) || need_partial_predictions)
@@ -1319,6 +1320,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
 
     new_polylabel old_label = std::move(ecs[a].l);
+    ecs[a].l.reset();
     ecs[a].l.init_as_cs() = priv.ldf_test_label;
     if (ecs[a].pred.get_type() == prediction_type_t::unset)
     {
@@ -3109,14 +3111,7 @@ void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation
 predictor::predictor(search& sch, ptag my_tag)
-    : is_ldf(false)
-    , my_tag(my_tag)
-    , ec(nullptr)
-    , ec_cnt(0)
-    , ec_alloced(false)
-    , weight(1.)
-    , learner_id(0)
-    , sch(sch)
+    : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), ec_alloced(false), weight(1.), learner_id(0), sch(sch)
 {
 }
 
@@ -3222,7 +3217,7 @@ predictor& predictor::add_to(v_array<T>& destination, T* source, size_t count, b
     destination.clear();
   }
   // TODO uncomment this
-  //destination.reserve(destination.size() + count);
+  // destination.reserve(destination.size() + count);
   for (auto i = 0; i < count; i++)
   {
     destination.push_back(source[i]);
@@ -3241,20 +3236,14 @@ predictor& predictor::add_oracle(action* a, size_t action_count)
 {
   return add_to(oracle_actions, a, action_count, false);
 }
-predictor& predictor::add_oracle(v_array<action>& a)
-{
-  return add_to(oracle_actions, a.begin(), a.size(), false);
-}
+predictor& predictor::add_oracle(v_array<action>& a) { return add_to(oracle_actions, a.begin(), a.size(), false); }
 
 predictor& predictor::set_oracle(action a) { return add_to(oracle_actions, a, true); }
 predictor& predictor::set_oracle(action* a, size_t action_count)
 {
   return add_to(oracle_actions, a, action_count, true);
 }
-predictor& predictor::set_oracle(v_array<action>& a)
-{
-  return add_to(oracle_actions, a.begin(), a.size(), true);
-}
+predictor& predictor::set_oracle(v_array<action>& a) { return add_to(oracle_actions, a.begin(), a.size(), true); }
 
 predictor& predictor::set_weight(float w)
 {
@@ -3273,20 +3262,14 @@ predictor& predictor::add_allowed(action* a, size_t action_count)
 {
   return add_to(allowed_actions, a, action_count, false);
 }
-predictor& predictor::add_allowed(v_array<action>& a)
-{
-  return add_to(allowed_actions, a.begin(), a.size(), false);
-}
+predictor& predictor::add_allowed(v_array<action>& a) { return add_to(allowed_actions, a.begin(), a.size(), false); }
 
 predictor& predictor::set_allowed(action a) { return add_to(allowed_actions, a, true); }
 predictor& predictor::set_allowed(action* a, size_t action_count)
 {
   return add_to(allowed_actions, a, action_count, true);
 }
-predictor& predictor::set_allowed(v_array<action>& a)
-{
-  return add_to(allowed_actions, a.begin(), a.size(), true);
-}
+predictor& predictor::set_allowed(v_array<action>& a) { return add_to(allowed_actions, a.begin(), a.size(), true); }
 
 predictor& predictor::add_allowed(action a, float cost)
 {

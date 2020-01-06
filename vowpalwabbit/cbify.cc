@@ -450,7 +450,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
       l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
   }
 
-  l->label_type = use_cs ? label_type_t::cs : label_type_t::cb;
+  l->label_type = use_cs ? label_type_t::cs : label_type_t::multi;
 
   return make_base(*l);
 }
@@ -494,6 +494,6 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;
-  l.label_type =label_type_t::cs ;
+  l.label_type =label_type_t::cs;
   return make_base(l);
 }

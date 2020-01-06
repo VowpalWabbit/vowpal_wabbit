@@ -46,7 +46,10 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore tau times, then act according to optimal.
-  action_scores probs = ec.pred.action_scores();
+  auto probs = std::move(ec.pred.action_scores());
+  probs.clear();
+  ec.pred.reset();
+  ec.pred.init_as_multiclass();
 
   if (is_learn && ec.l.cb().costs[0].probability < 1)
     base.learn(ec);
@@ -67,17 +70,18 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
     probs[chosen].score = 1.0;
   }
 
-  ec.pred.action_scores() = probs;
+  ec.pred.reset();
+  ec.pred.init_as_action_scores(std::move(probs));
 }
 
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore uniform random an epsilon fraction of the time.
-  // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
-  // ec.pred.action_scores() = probs; will restore the than free'd memory
-  action_scores probs = ec.pred.action_scores();
+  auto probs = std::move(ec.pred.action_scores());
   probs.clear();
+  ec.pred.reset();
+  ec.pred.init_as_multiclass();
 
   if (is_learn)
     base.learn(ec);
@@ -86,18 +90,22 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   // pre-allocate pdf
   probs.resize(data.cbcs.num_actions);
-  for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
+  for (uint32_t i = 0; i < data.cbcs.num_actions; i++)
+    probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass() - 1, begin_scores(probs), end_scores(probs));
 
-  ec.pred.action_scores() = probs;
+  ec.pred.reset();
+  ec.pred.init_as_action_scores(std::move(probs));
 }
 
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 {
   // Randomize over predictions from a base set of predictors
-  action_scores probs = ec.pred.action_scores();
+  auto probs = std::move(ec.pred.action_scores());
   probs.clear();
+  ec.pred.reset();
+  ec.pred.init_as_multiclass();
 
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0.});
   float prob = 1.f / (float)data.bag_size;
@@ -114,7 +122,8 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
       for (uint32_t j = 1; j < count; j++) base.learn(ec, i);
   }
 
-  ec.pred.action_scores() = probs;
+  ec.pred.reset();
+  ec.pred.init_as_action_scores(std::move(probs));
 }
 
 void get_cover_probabilities(cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs)
