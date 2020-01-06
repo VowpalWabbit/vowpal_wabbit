@@ -2913,11 +2913,11 @@ base_learner* setup(options_i& options, vw& all)
   // supported yet. TODO: improve the handling of tasks specifying label types.
   if(all.p->lp.parse_label == COST_SENSITIVE::cs_label.parse_label)
   {
-    l.label_type = label_type_t::multi;
+    l.label_type = label_type_t::cs;
   }
   else if (all.p->lp.parse_label == MC::mc_label.parse_label)
   {
-    l.label_type = label_type_t::cs;
+    l.label_type = label_type_t::multi;
   }
   else
   {
