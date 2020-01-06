@@ -374,6 +374,11 @@ struct vw
 
   void (*set_minmax)(shared_data* sd, float label);
 
+  label_type_t get_label_type() const
+  {
+    return l->label_type;
+  }
+
   uint64_t current_pass;
 
   uint32_t num_bits;  // log_2 of the number of features.
@@ -529,6 +534,7 @@ struct vw
 
   std::map<std::string, size_t> name_index_map;
 
+  VW_DEPRECATED("You can no longer use label_type directly. Use vw::get_label_type() instead.")
   label_type::label_type_t label_type;
 
   vw();

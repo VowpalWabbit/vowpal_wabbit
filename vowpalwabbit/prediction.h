@@ -56,10 +56,12 @@ struct new_polyprediction
 
   inline void ensure_is_type(prediction_type_t type) const
   {
+#ifndef NDEBUG
     if (_tag != type)
     {
       THROW("Expected type: " << to_string(type) << ", but found: " << to_string(_tag));
     }
+#endif
   }
 
   template <typename T>

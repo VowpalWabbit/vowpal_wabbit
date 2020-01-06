@@ -935,5 +935,6 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   learner<svm_params, example>& l = init_learner(params, learn, predict, 1);
   l.set_save_load(save_load);
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

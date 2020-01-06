@@ -381,6 +381,6 @@ LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   LEARNER::learner<MARGINAL::data, example>& ret =
       init_learner(d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   ret.set_save_load(save_load);
-
+  ret.label_type = label_type_t::simple;
   return make_base(ret);
 }

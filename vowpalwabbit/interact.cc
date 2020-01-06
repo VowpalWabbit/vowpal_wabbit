@@ -177,9 +177,9 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
     std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
   data->all = &all;
 
-  LEARNER::learner<interact, example>* l;
-  l = &LEARNER::init_learner(
-      data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
-
-  return make_base(*l);
+  auto base = as_singleline(setup_base(options, all));
+  auto& l = LEARNER::init_learner(
+      data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  l.label_type = base->label_type;
+  return make_base(l);
 }

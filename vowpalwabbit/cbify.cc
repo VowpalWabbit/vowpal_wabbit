@@ -251,6 +251,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     data.cb_as.resize(ec_seq.size());
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
+    // TODO fix
     auto& ec = *ec_seq[i];
     data.cs_costs[i] = ec.l.cs().costs;
     data.cb_costs[i].clear();
@@ -449,6 +450,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
       l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
   }
 
+  l->label_type = use_cs ? label_type_t::cs : label_type_t::cb;
+
   return make_base(*l);
 }
 
@@ -491,6 +494,6 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;
-
+  l.label_type =label_type_t::cs ;
   return make_base(l);
 }

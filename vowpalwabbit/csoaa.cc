@@ -135,9 +135,9 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
       predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
   all.p->lp = cs_label;
-  all.label_type = label_type::cs;
 
   l.set_finish_example(finish_example);
+  l.label_type = label_type_t::cs;
   all.cost_sensitive = make_base(l);
   return all.cost_sensitive;
 }
@@ -843,7 +843,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
     ldf_arg = ldf_override;
 
   all.p->lp = COST_SENSITIVE::cs_label;
-  all.label_type = label_type::cs;
 
   ld->treat_as_classifier = false;
   if (ldf_arg == "multiline" || ldf_arg == "m")
@@ -888,6 +887,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
       do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
   l.set_end_pass(end_pass);
+  l.label_type = label_type_t::cs;
   all.cost_sensitive = make_base(l);
   return all.cost_sensitive;
 }

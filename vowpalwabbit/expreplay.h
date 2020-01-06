@@ -119,7 +119,7 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
   LEARNER::learner<expreplay<lp>, example>* l =
       &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
   l->set_end_pass(end_pass<lp>);
-
+  l->label_type = er->base->label_type;
   return make_base(*l);
 }
 }  // namespace ExpReplay

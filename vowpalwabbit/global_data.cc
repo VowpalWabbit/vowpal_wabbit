@@ -278,9 +278,7 @@ vw::vw()
   sd->is_more_than_two_labels_observed = false;
   sd->max_label = 0;
   sd->min_label = 0;
-
-  label_type = label_type::simple;
-
+  
   l = nullptr;
   scorer = nullptr;
   cost_sensitive = nullptr;

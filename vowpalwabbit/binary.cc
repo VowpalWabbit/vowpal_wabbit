@@ -43,5 +43,6 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 
   LEARNER::learner<char, example>& ret =
       LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+  ret.label_type = label_type_t::simple;
   return make_base(ret);
 }

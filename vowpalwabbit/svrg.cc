@@ -192,5 +192,6 @@ base_learner* svrg_setup(options_i& options, vw& all)
   all.weights.stride_shift(2);
   learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
   l.set_save_load(save_load);
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

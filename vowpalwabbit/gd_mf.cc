@@ -377,6 +377,6 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

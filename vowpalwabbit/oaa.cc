@@ -313,6 +313,6 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
   }
-
+  l->label_type = label_type_t::multi;  
   return make_base(*l);
 }

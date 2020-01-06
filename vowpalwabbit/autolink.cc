@@ -97,6 +97,9 @@ LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
     return nullptr;
 
   auto autolink_reduction = scoped_calloc_or_throw<VW::autolink>(d, all.weights.stride_shift());
-  return make_base(init_learner(
-      autolink_reduction, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>));
+  auto base = as_singleline(setup_base(options, all));
+  auto learner = make_base(init_learner(
+      autolink_reduction, base, predict_or_learn<true>, predict_or_learn<false>));
+  learner->label_type = base->label_type;
+  return learner;
 }

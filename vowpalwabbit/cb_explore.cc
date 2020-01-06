@@ -334,5 +334,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
         data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_scores);
 
   l->set_finish_example(finish_example);
+  l->label_type = label_type_t::cb;
   return make_base(*l);
 }

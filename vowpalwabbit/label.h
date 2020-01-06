@@ -61,10 +61,12 @@ struct new_polylabel
 
   inline void ensure_is_type(label_type_t type) const
   {
+#ifndef NDEBUG
     if (_tag != type)
     {
       THROW("Expected type: " << to_string(type) << ", but found: " << to_string(_tag));
     }
+#endif
   }
 
   template <typename T>
