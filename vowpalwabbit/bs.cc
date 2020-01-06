@@ -262,6 +262,6 @@ base_learner* bs_setup(options_i& options, vw& all)
   learner<bs, example>& l = init_learner(
       data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->B);
   l.set_finish_example(finish_example);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

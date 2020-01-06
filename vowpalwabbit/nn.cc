@@ -499,6 +499,7 @@ base_learner* nn_setup(options_i& options, vw& all)
     l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
+  l.label_type = label_type_t::simple;
 
   return make_base(l);
 }

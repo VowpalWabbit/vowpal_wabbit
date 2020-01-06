@@ -16,11 +16,15 @@ struct multi_oaa
 template <bool is_learn>
 void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
 {
-  MULTILABEL::labels multilabels = ec.l.multilabels();
-  MULTILABEL::labels preds = ec.pred.multilabels();
+  MULTILABEL::labels multilabels = std::move(ec.l.multilabels());
+  MULTILABEL::labels preds = std::move(ec.pred.multilabels());
   preds.label_v.clear();
 
-  ec.l.simple() = {FLT_MAX, 1.f, 0.f};
+  ec.l.reset();
+  ec.l.init_as_simple(FLT_MAX, 1.f, 0.f);
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
+
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -43,8 +47,10 @@ void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
     std::cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k - 1
               << "} This won't work right." << std::endl;
 
-  ec.pred.multilabels() = preds;
-  ec.l.multilabels() = multilabels;
+  ec.pred.reset();
+  ec.pred.init_as_multilabels() = std::move(preds);
+  ec.l.reset();
+  ec.l.init_as_multilabels() = std::move(multilabels);
 }
 
 void finish_example(vw& all, multi_oaa&, example& ec)
@@ -67,6 +73,6 @@ LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
       predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type_t::multilabels);
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;
-  all.label_type = label_type::multi;
+  l.label_type = label_type_t::multi;
   return make_base(l);
 }

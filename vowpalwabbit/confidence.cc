@@ -130,6 +130,7 @@ base_learner* confidence_setup(options_i& options, vw& all)
       data, as_singleline(setup_base(options, all)), learn_with_confidence_ptr, predict_with_confidence_ptr);
 
   l.set_finish_example(return_confidence_example);
+  l.label_type = label_type_t::simple;
 
   return make_base(l);
 }

@@ -448,6 +448,6 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
     THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
 
   l->set_finish_example(return_example);
-
+  l->label_type = label_type_t::simple;
   return make_base(*l);
 }

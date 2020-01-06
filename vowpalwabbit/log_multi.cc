@@ -296,7 +296,11 @@ void predict(log_multi& b, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi();
 
-  ec.l.simple() = {FLT_MAX, 0.f, 0.f};
+  ec.l.reset();
+  ec.l.init_as_simple(FLT_MAX, 0.f, 0.f);
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
+
   uint32_t cn = 0;
   uint32_t depth = 0;
   while (b.nodes[cn].internal)
@@ -305,8 +309,10 @@ void predict(log_multi& b, single_learner& base, example& ec)
     cn = descend(b.nodes[cn], ec.pred.scalar());
     depth++;
   }
-  ec.pred.multiclass() = b.nodes[cn].max_count_label;
-  ec.l.multi() = mc;
+  ec.pred.reset();
+  ec.pred.init_as_multiclass() = b.nodes[cn].max_count_label;
+  ec.l.reset();
+  ec.l.init_as_multi() = mc;
 }
 
 void learn(log_multi& b, single_learner& base, example& ec)
@@ -321,7 +327,10 @@ void learn(log_multi& b, single_learner& base, example& ec)
     uint32_t start_pred = ec.pred.multiclass();
 
     uint32_t class_index = 0;
-    ec.l.simple() = {FLT_MAX, 0.f, 0.f};
+    ec.l.reset();
+    ec.l.init_as_simple(FLT_MAX, 0.f, 0.f);
+    ec.pred.reset();
+    ec.pred.init_as_scalar();
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))
@@ -333,8 +342,10 @@ void learn(log_multi& b, single_learner& base, example& ec)
 
     b.nodes[cn].min_count++;
     update_min_count(b, cn);
-    ec.pred.multiclass() = start_pred;
-    ec.l.multi() = mc;
+    ec.pred.reset();
+    ec.pred.init_as_multiclass() = start_pred;
+    ec.l.reset();
+    ec.l.init_as_multi() = mc;
   }
 }
 
@@ -512,6 +523,6 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   learner<log_multi, example>& l = init_multiclass_learner(
       data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors);
   l.set_save_load(save_load_tree);
-
+  l.label_type = label_type_t::multi;
   return make_base(l);
 }

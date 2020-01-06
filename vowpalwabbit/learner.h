@@ -136,6 +136,29 @@ inline void check_prediction_state<multi_ex>(multi_ex& example_obj, prediction_t
   }
 }
 
+template <typename T>
+void check_label_state(T& example_obj, label_type_t label_type) = delete;
+
+template <>
+inline void check_label_state<example>(example& example_obj, label_type_t label_type)
+{
+  // The compiler sees these as unused as the only place they are used in an assert statement.
+  _UNUSED(label_type);
+  _UNUSED(example_obj);
+  assert(example_obj.l.get_type() == label_type);
+}
+
+template <>
+inline void check_label_state<multi_ex>(multi_ex& example_obj, label_type_t label_type)
+{
+  _UNUSED(label_type);
+  _UNUSED(example_obj);
+  if (example_obj.size() > 0)
+  {
+    assert(example_obj[0]->l.get_type() == label_type);
+  }
+}
+
 template <class T, class E>
 struct learner
 {
@@ -153,6 +176,7 @@ struct learner
   learner(){};  // Should only be able to construct a learner through init_learner function
  public:
   prediction_type_t pred_type;
+  label_type_t label_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
   bool is_multiline;  // Is this a single-line or multi-line reduction?
@@ -165,22 +189,30 @@ struct learner
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
+
     increment_offset(ec, increment, i);
-    check_prediction_state(ec, pred_type);
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    check_prediction_state(ec, pred_type);
     decrement_offset(ec, increment, i);
+
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
   }
 
   inline void predict(E& ec, size_t i = 0)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
+
     increment_offset(ec, increment, i);
-    check_prediction_state(ec, pred_type);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    check_prediction_state(ec, pred_type);
     decrement_offset(ec, increment, i);
+
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
   }
 
   inline void multipredict(E& ec, size_t lo, size_t count, new_polyprediction* pred, bool finalize_predictions)
@@ -367,6 +399,7 @@ struct learner
     ret.learn_fd.predict_f = (learn_data::fn)predict;
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
+    ret.label_type = label_type_t::unset;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
 
     return ret;

@@ -35,7 +35,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
   ec.pred.reset();
   ec.pred.init_as_scalar();
   ec.l.reset();
-  ec.l.init_as_simple(1., 0.f, 0.f);  // truth
+  ec.l.init_as_simple(1.f, 0.f, 0.f);  // truth
 
   base.learn(ec, ld.label - 1);
 
@@ -313,6 +313,6 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
   }
-
+  l->label_type = label_type_t::multi;  
   return make_base(*l);
 }

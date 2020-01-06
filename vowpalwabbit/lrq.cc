@@ -212,7 +212,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
   learner<LRQstate, example>& l = init_learner(
       lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
-
+  l.label_type = label_type_t::simple;
   // TODO: leaks memory ?
   return make_base(l);
 }

@@ -158,8 +158,7 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::strin
   CB::parse_label(p, sd, v.cb(), words);
 }
 
-label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, weight,
-    test_label, sizeof(label)};
+label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(label)};
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
@@ -181,7 +180,6 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
   {
     size_t num_features = ec.num_features;
 
-    size_t pred = ec.pred.multiclass();
     if (ec_seq != nullptr)
     {
       num_features = 0;
@@ -199,17 +197,21 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     if (action_scores)
     {
       std::ostringstream pred_buf;
+      auto& action_scores = ec.pred.action_scores();
       pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ');
-      if (!ec.pred.action_scores().empty())
-        pred_buf << ec.pred.action_scores()[0].action << ":" << ec.pred.action_scores()[0].score << "...";
+      if (!action_scores.empty())
+        pred_buf << ec.pred.action_scores()[0].action << ":" << action_scores[0].score << "...";
       else
         pred_buf << "no action";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features,
           all.progress_add, all.progress_arg);
     }
     else
+    {
+      size_t pred = ec.pred.multiclass();
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred, num_features,
           all.progress_add, all.progress_arg);
+    }
   }
 }
 }  // namespace CB
@@ -273,6 +275,6 @@ void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::strin
   words.begin()--;
 }
 
-label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, weight,
-    test_label, sizeof(CB_EVAL::label)};
+label_parser cb_eval = {
+    default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(CB_EVAL::label)};
 }  // namespace CB_EVAL

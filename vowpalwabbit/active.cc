@@ -170,5 +170,7 @@ base_learner* active_setup(options_i& options, vw& all)
     l->set_finish_example(return_active_example);
   }
 
+  l->label_type = label_type_t::simple;
+
   return make_base(*l);
 }

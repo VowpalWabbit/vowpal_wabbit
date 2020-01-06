@@ -1218,7 +1218,11 @@ LEARNER::base_learner* setup_base(options_i& options, vw& all)
   if (base == nullptr)
     return setup_base(options, all);
   else
+  {
+    assert(base->label_type != label_type_t::unset);
+    assert(base->pred_type != prediction_type_t::unset);
     return base;
+  }
 }
 
 void parse_reductions(options_i& options, vw& all)

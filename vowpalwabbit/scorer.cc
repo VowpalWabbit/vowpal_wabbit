@@ -101,6 +101,7 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 
   l->set_multipredict(multipredict_f);
   l->set_update(update);
+  l->label_type = base->label_type;
   all.scorer = LEARNER::as_singleline(l);
 
   return make_base(*all.scorer);

@@ -244,7 +244,6 @@ base_learner* mwt_setup(options_i& options, vw& all)
   c->evals.end() = c->evals.begin() + all.length();
 
   all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
 
   if (c->num_classes > 0)
   {
@@ -272,5 +271,6 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
+  l->label_type = label_type_t::cb;
   return make_base(*l);
 }

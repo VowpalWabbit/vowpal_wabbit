@@ -378,6 +378,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
+  l.label_type = label_type_t::cs;
   all.cost_sensitive = b;
   return b;
 }

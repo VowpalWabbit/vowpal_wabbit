@@ -129,14 +129,15 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
   if (use_cs)
-    csl = ec.l.cs();
+    csl = std::move(ec.l.cs());
   else
-    ld = ec.l.multi();
+    ld = std::move(ec.l.multi());
 
   data.cb_label.costs.clear();
   ec.l.reset();
   ec.l.init_as_cb(data.cb_label);
-  ec.pred.action_scores() = data.a_s;
+  ec.pred.reset();
+  ec.pred.init_as_action_scores(std::move(data.a_s));
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -166,7 +167,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
     base.learn(ec);
 
   data.a_s.clear();
-  data.a_s = ec.pred.action_scores();
+  data.a_s = std::move(ec.pred.action_scores());
 
   ec.l.reset();
   if (use_cs)
@@ -174,9 +175,11 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   else
     ec.l.init_as_multi(std::move(ld));
 
-  ec.pred.multiclass() = cl.action;
+  ec.pred.reset();
+  ec.pred.init_as_multiclass() = cl.action;
 }
 
+// will call into cb_explore_adf must use cb labels
 template <bool is_learn, bool use_cs>
 void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 {
@@ -248,6 +251,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     data.cb_as.resize(ec_seq.size());
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
+    // TODO fix
     auto& ec = *ec_seq[i];
     data.cs_costs[i] = ec.l.cs().costs;
     data.cb_costs[i].clear();
@@ -446,6 +450,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
       l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
   }
 
+  l->label_type = use_cs ? label_type_t::cs : label_type_t::cb;
+
   return make_base(*l);
 }
 
@@ -488,6 +494,6 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;
-
+  l.label_type =label_type_t::cs ;
   return make_base(l);
 }
