@@ -4,14 +4,13 @@
 #include <type_traits>
 
 #include "distributionally_robust.h"
-#include "future_compat.h"
 
 namespace VW
 {
 namespace distributionally_robust
 {
 
-VW_STD14_CONSTEXPR double ChiSquared::chisq_onedof_isf(double alpha)
+double ChiSquared::chisq_onedof_isf(double alpha)
 {
   // data = Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.999, 0.0005 }]
   // lm = LinearModelFit[data, { Log[alpha], Log[alpha]^2, Log[alpha]^3, Log[alpha]^4 , Log[alpha]^5, Log[alpha]^6, Log[alpha]^7, Log[alpha]^8, Exp[alpha], Exp[alpha]^2, Exp[alpha]^3, Exp[alpha]^4, Exp[alpha]^5, Exp[alpha]^6, Exp[alpha]^7, Exp[alpha]^8}, alpha]
@@ -38,7 +37,7 @@ VW_STD14_CONSTEXPR double ChiSquared::chisq_onedof_isf(double alpha)
   return rv;
 }
 
-VW_STD14_CONSTEXPR bool isclose(double x, double y, double atol=1e-8)
+static bool isclose(double x, double y, double atol=1e-8)
 {
   double rtol = 1e-5;
 
