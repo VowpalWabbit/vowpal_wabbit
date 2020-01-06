@@ -68,7 +68,7 @@ struct lda
   v_array<float> Elogtheta;
   v_array<float> decay_levels;
   v_array<float> total_new;
-  v_array<example*> examples;
+  v_array<example *> examples;
   v_array<float> total_lambda;
   v_array<int> doc_lengths;
   v_array<float> digammas;
@@ -988,6 +988,18 @@ void learn(lda &l, LEARNER::single_learner &, example &ec)
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
+
+  // The contract of a reduction is that prediction and label must be valid on the way in and out.
+  // In the LDA batch, examples are cleared and so it breaks this contract. Copying them here only
+  // for the final example allows us to support that. This is not great either and should be revisited.
+  new_polylabel pl;
+  new_polyprediction pp;
+  if (num_ex + 1 == l.minibatch)
+  {
+    pl = ec.l;
+    pp = ec.pred;
+  }
+
   for (features &fs : ec)
   {
     for (features::iterator &f : fs)
@@ -997,8 +1009,12 @@ void learn(lda &l, LEARNER::single_learner &, example &ec)
       l.doc_lengths[num_ex] += (int)f.value();
     }
   }
-  if (++num_ex == l.minibatch)
+  if (num_ex + 1 == l.minibatch)
+  {
     learn_batch(l);
+    ec.l = std::move(pl);
+    ec.pred = std::move(pp);
+  }
 }
 
 void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)

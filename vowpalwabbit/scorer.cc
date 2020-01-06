@@ -70,7 +70,9 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
                       .help("Specify the link function: identity, logistic, glf1 or poisson"));
   options.add_and_parse(new_options);
 
-  // This always returns a base_learner.
+  // This always returns a base_learner, except for in the case of LDA which does not use the scorer.
+  if (options.was_supplied("lda"))
+    return nullptr;
 
   s->all = &all;
 

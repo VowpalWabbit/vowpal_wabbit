@@ -20,7 +20,15 @@ float get_weight(new_polylabel&) { return 1.; }
 
 void cache_no_label(new_polylabel&, io_buf&) {}
 
-void default_no_label(new_polylabel&) {}
+// This is wasted work, ideally empty and unset should be the same thing. 
+void default_no_label(new_polylabel& label)
+{
+  if (label.get_type() != label_type_t::empty)
+  {
+    label.reset();
+    label.init_as_empty();
+  }
+}
 
 bool test_label(new_polylabel&) { return false; }
 

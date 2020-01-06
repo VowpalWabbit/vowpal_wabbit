@@ -878,6 +878,7 @@ void empty_example(vw& /*all*/, example& ec)
   for (features& fs : ec)
     fs.clear();
 
+  // TODO - This is inefficient as we are losing allocated buffers. Once tests are passing this should be removed.
   ec.l.reset();
   ec.pred.reset();
 
