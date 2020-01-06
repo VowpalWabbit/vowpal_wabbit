@@ -9,6 +9,8 @@
 
 BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq, *boost::unit_test::tolerance(1e-5))
 {
+  // Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.501, 0.05 }]
+
   std::pair<double, double> testcases[] = {{0.001, 10.8276}, {0.051, 3.80827}, {0.101, 2.68968}, {0.151, 2.06212},
       {0.201, 1.63509}, {0.251, 1.31773}, {0.301, 1.06976}, {0.351, 0.869839}, {0.401, 0.705326}, {0.451, 0.568137},
       {0.501, 0.452817}};
@@ -23,7 +25,9 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq, *boost::unit_test::t
 
 BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test::tolerance(1e-5))
 {
-  // see DistributionallyRobustUnitTest.ipynb
+  // to generate this data:
+  // 
+  // python ./DistributionallyRobustUnitTestData.py
 
   std::pair<double, double> data[] = {{0.4692680899768591, 0.08779271803562538},
       {3.010121430917521, 0.1488852932982503}, {1.3167456935454493, 0.5579699034039329},
@@ -60,7 +64,9 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test:
 
 BOOST_AUTO_TEST_CASE(distributionally_robust_qlb, *boost::unit_test::tolerance(2e-5))
 {
-  // see DistributionallyRobustUnitTest.ipynb
+  // to generate this data:
+  // 
+  // python ./DistributionallyRobustUnitTestData.py
 
   std::pair<double, double> data[] = {{0.4692680899768591, 0.08779271803562538},
       {3.010121430917521, 0.1488852932982503}, {1.3167456935454493, 0.5579699034039329},
