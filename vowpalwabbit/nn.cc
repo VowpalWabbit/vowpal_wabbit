@@ -89,7 +89,7 @@ void finish_setup(nn& n, vw& all)
   // TODO: output_layer audit
 
   // TODO: This memset is very dangerous especially now that example has destructor etc
-  memset(&n.output_layer, 0, sizeof(n.output_layer));
+  memset(&n.output_layer, 0, sizeof(n.output_layer));memset(&n.output_layer, 0, sizeof(n.output_layer));
   n.output_layer.interactions = &all.interactions;
   n.output_layer.indices.push_back(nn_output_namespace);
   n.output_layer.pred.init_as_scalar();
@@ -160,7 +160,7 @@ void end_pass(nn& n)
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
-  bool shouldOutput = n.all->raw_prediction > 0;
+  const bool shouldOutput = n.all->raw_prediction > 0;
   if (!n.finished_setup)
     finish_setup(n, *(n.all));
   shared_data sd;
@@ -168,7 +168,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   {
     sd_guard(n.all, &sd);
 
-    label_data& ld = ec.l.simple();
+    label_data ld = ec.l.simple();
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
