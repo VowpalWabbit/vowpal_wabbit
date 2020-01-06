@@ -4,13 +4,14 @@
 #include <type_traits>
 
 #include "distributionally_robust.h"
+#include "future_compat.h"
 
 namespace VW
 {
 namespace distributionally_robust
 {
 
-double ChiSquared::chisq_onedof_isf(double alpha)
+VW_STD14_CONSTEXPR double ChiSquared::chisq_onedof_isf(double alpha)
 {
   // data = Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.999, 0.0005 }]
   // lm = LinearModelFit[data, { Log[alpha], Log[alpha]^2, Log[alpha]^3, Log[alpha]^4 , Log[alpha]^5, Log[alpha]^6, Log[alpha]^7, Log[alpha]^8, Exp[alpha], Exp[alpha]^2, Exp[alpha]^3, Exp[alpha]^4, Exp[alpha]^5, Exp[alpha]^6, Exp[alpha]^7, Exp[alpha]^8}, alpha]
@@ -18,7 +19,7 @@ double ChiSquared::chisq_onedof_isf(double alpha)
   // lm["BestFitParameters"]
   // Show[Plot[InverseCDF[ChiSquareDistribution[1], 1 - alpha], { alpha, 0 , 1}],  Plot[lm[alpha], { alpha, 0, 1 }], Frame->True]
 
-  double constants[] = {-1.73754,-1.40684,0.0758363,0.00726577,0.000468688,0.0000214395,1.0643e-6,6.43011e-8,2.0475e-9,1.16356,-0.575446,0.329796,-0.136076,0.0396764,-0.00763232,0.00087113,-0.0000445128};
+  constexpr double constants[] = {-1.73754,-1.40684,0.0758363,0.00726577,0.000468688,0.0000214395,1.0643e-6,6.43011e-8,2.0475e-9,1.16356,-0.575446,0.329796,-0.136076,0.0396764,-0.00763232,0.00087113,-0.0000445128};
 
   double logalpha = std::log(alpha);
   double expalpha = std::exp(alpha);
@@ -37,7 +38,7 @@ double ChiSquared::chisq_onedof_isf(double alpha)
   return rv;
 }
 
-bool isclose(double x, double y, double atol=1e-8)
+VW_STD14_CONSTEXPR bool isclose(double x, double y, double atol=1e-8)
 {
   double rtol = 1e-5;
 

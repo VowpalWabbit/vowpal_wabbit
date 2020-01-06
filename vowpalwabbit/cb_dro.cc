@@ -34,29 +34,29 @@ struct cb_dro_data
 
     if (is_learn)
     {
-      auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+      const auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
 
       if (it != examples.end())
       {
-        CB::cb_class logged = (*it)->l.cb.costs[0];
-        uint32_t labelled_action = std::distance(examples.begin(), it);
+        const CB::cb_class logged = (*it)->l.cb.costs[0];
+        const uint32_t labelled_action = std::distance(examples.begin(), it);
 
-        auto action_scores = examples[0]->pred.a_s;
+        const auto action_scores = examples[0]->pred.a_s;
 
         // cb_explore_adf => want maximum probability
         // cb_adf => want minimum cost
 
-        auto maxit = is_explore
+        const auto maxit = is_explore
                      ? std::max_element (action_scores.begin(),
                                          action_scores.end(),
                                          [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; })
                      : std::min_element (action_scores.begin(),
                                          action_scores.end(),
                                          [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; });
-        uint32_t chosen_action = maxit->action;
+        const uint32_t chosen_action = maxit->action;
 
-        float w = logged.probability > 0 ? 1 / logged.probability : 0;
-        float r = -logged.cost;
+        const float w = logged.probability > 0 ? 1 / logged.probability : 0;
+        const float r = -logged.cost;
 
         chisq.update(chosen_action == labelled_action ? w : 0, r);
 
@@ -67,15 +67,16 @@ struct cb_dro_data
 
         // save the original weights and scale the example weights
         std::vector<float> save_weight;
-        std::transform(examples.begin(), examples.end(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
-        std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
+        save_weight.reserve(examples.size());
+        std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
+        std::for_each(examples.begin(), examples.end(), [qlb](example* item) { item->weight *= qlb; });
 
         // TODO: make sure descendants "do the right thing" with example->weight
         multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
 
         // restore the original weights
         auto save_weight_it = save_weight.begin();
-        std::for_each(examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
+        std::for_each(examples.begin(), examples.end(), [&save_weight_it](example* item) { item->weight = *save_weight_it++; });
       }
     }
   }
