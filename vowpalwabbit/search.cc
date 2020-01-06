@@ -317,7 +317,6 @@ search::~search()
   {
     search_private& priv = *this->priv;
 
-
     delete priv.truth_string;
     delete priv.pred_string;
     delete priv.bad_string_stream;
@@ -1120,7 +1119,8 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   {
     v_array<action_cache>* this_cache = new v_array<action_cache>();
     // TODO we don't really need to construct this new_polylabel
-    new_polylabel l = std::move(allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost));
+    new_polylabel l =
+        std::move(allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost));
     size_t K = cs_get_costs_size(priv.cb_learner, l);
     for (size_t k = 0; k < K; k++)
     {
@@ -1248,9 +1248,8 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
          "}" << endl; */
       CS::wclass& wc = ec.l.cs().costs[k];
       // Get query_needed from pred
-      bool query_needed = std::find(
-        ec.pred.multilabels().label_v.cbegin(),
-        ec.pred.multilabels().label_v.cend(), wc.class_index )== ec.pred.multilabels().label_v.cend();
+      bool query_needed = std::find(ec.pred.multilabels().label_v.cbegin(), ec.pred.multilabels().label_v.cend(),
+                              wc.class_index) == ec.pred.multilabels().label_v.cend();
       std::pair<CS::wclass&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);
@@ -1281,7 +1280,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
   {
     priv.allowed_actions_cache = std::move(ec.l);
   }
-  
+
   ec.l = std::move(old_label);
 
   priv.total_predictions_made++;
@@ -1321,6 +1320,10 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
 
     new_polylabel old_label = std::move(ecs[a].l);
     ecs[a].l.init_as_cs() = priv.ldf_test_label;
+    if (ecs[a].pred.get_type() == prediction_type_t::unset)
+    {
+      ecs[a].pred.init_as_multiclass();
+    }
 
     multi_ex tmp;
     uint64_t old_offset = ecs[a].ft_offset;
@@ -1460,7 +1463,8 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   else  // its a find
   {
     auto sa_iter = priv.cache_hash_map.find(item);
-    if(sa_iter == priv.cache_hash_map.end()) return false;
+    if (sa_iter == priv.cache_hash_map.end())
+      return false;
     a = sa_iter->second.a;
     a_cost = sa_iter->second.s;
     return a != (action)-1;
@@ -1702,8 +1706,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       else
       {
         ensure_size(priv.learn_ec_copy, ec_cnt);
-        for (size_t i = 0; i < ec_cnt; i++)
-          priv.learn_ec_copy[i] = ecs[i];
+        for (size_t i = 0; i < ec_cnt; i++) priv.learn_ec_copy[i] = ecs[i];
 
         priv.learn_ec_ref = priv.learn_ec_copy.begin();
       }
@@ -2911,17 +2914,21 @@ base_learner* setup(options_i& options, vw& all)
   // sensitive. So we will check at this point if the label parser is either
   // multiclass or cost sensitive. In any other case throw as it is not
   // supported yet. TODO: improve the handling of tasks specifying label types.
-  if(all.p->lp.parse_label == COST_SENSITIVE::cs_label.parse_label)
+  if (all.p->lp.parse_label == COST_SENSITIVE::cs_label.parse_label)
   {
     l.label_type = label_type_t::cs;
+    l.pred_type = prediction_type_t::multiclass;
   }
   else if (all.p->lp.parse_label == MC::mc_label.parse_label)
   {
     l.label_type = label_type_t::multi;
+    l.pred_type = prediction_type_t::multiclass;
   }
   else
   {
-    THROW("Only multi and cost sensitive are supported in search right now. To support more, please add another check for label types.")
+    THROW(
+        "Only multi and cost sensitive are supported in search right now. To support more, please add another check "
+        "for label types.")
   }
   return make_base(l);
 }
@@ -2965,7 +2972,7 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        //priv->ptag_to_action[mytag].repr->delete_v();
+        // priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
       }
     }
@@ -3009,7 +3016,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        //priv->ptag_to_action[mytag].repr->delete_v();
+        // priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
       }
     }
@@ -3128,10 +3135,7 @@ void predictor::free_ec()
   }
 }
 
-predictor::~predictor()
-{
-  free_ec();
-}
+predictor::~predictor() { free_ec(); }
 predictor& predictor::reset()
 {
   this->erase_oracles();
@@ -3185,7 +3189,7 @@ void predictor::set_input_at(size_t posn, example& ex)
 
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
-  
+
   // Copy given example into ec.
   ec[posn] = ex;
 }
