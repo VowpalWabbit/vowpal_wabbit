@@ -78,25 +78,25 @@ struct new_polyprediction
       case (prediction_type_t::unset):
         break;
       case (prediction_type_t::scalar):
-        init_as_scalar(other.scalar());
+        init_as_scalar(other._scalar);
         break;
       case (prediction_type_t::scalars):
-        init_as_scalars(other.scalars());
+        init_as_scalars(other._scalars);
         break;
       case (prediction_type_t::action_scores):
-        init_as_action_scores(other.action_scores());
+        init_as_action_scores(other._action_scores);
         break;
       case (prediction_type_t::decision_scores):
-        init_as_decision_scores(other.decision_scores());
+        init_as_decision_scores(other._decision_scores);
         break;
       case (prediction_type_t::multiclass):
-        init_as_multiclass(other.multiclass());
+        init_as_multiclass(other._multiclass);
         break;
       case (prediction_type_t::multilabels):
-        init_as_multilabels(other.multilabels());
+        init_as_multilabels(other._multilabels);
         break;
       case (prediction_type_t::prob):
-        init_as_prob(other.prob());
+        init_as_prob(other._prob);
         break;
       default:;
     }
@@ -109,25 +109,25 @@ struct new_polyprediction
       case (prediction_type_t::unset):
         break;
       case (prediction_type_t::scalar):
-        init_as_scalar(other.scalar());
+        init_as_scalar(std::move(other._scalar));
         break;
       case (prediction_type_t::scalars):
-        init_as_scalars(other.scalars());
+        init_as_scalars(std::move(other._scalars));
         break;
       case (prediction_type_t::action_scores):
-        init_as_action_scores(other.action_scores());
+        init_as_action_scores(std::move(other._action_scores));
         break;
       case (prediction_type_t::decision_scores):
-        init_as_decision_scores(other.decision_scores());
+        init_as_decision_scores(std::move(other._decision_scores));
         break;
       case (prediction_type_t::multiclass):
-        init_as_multiclass(other.multiclass());
+        init_as_multiclass(std::move(other._multiclass));
         break;
       case (prediction_type_t::multilabels):
-        init_as_multilabels(other.multilabels());
+        init_as_multilabels(std::move(other._multilabels));
         break;
       case (prediction_type_t::prob):
-        init_as_prob(other.prob());
+        init_as_prob(std::move(other._prob));
         break;
       default:;
     }

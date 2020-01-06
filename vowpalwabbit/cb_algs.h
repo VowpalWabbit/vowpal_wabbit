@@ -21,7 +21,7 @@ template <bool is_learn>
 float get_cost_pred(
     LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 {
-  CB::label ld = std::move(ec.l.cb());
+  auto label = std::move(ec.l);
 
   label_data simple_temp;
   simple_temp.initial = 0.;
@@ -45,16 +45,15 @@ float get_cost_pred(
     scorer->learn(ec, index - 1 + base);
     ec.weight = old_weight;
   }
-  else scorer->predict(ec, index - 1 + base);
+  else
+    scorer->predict(ec, index - 1 + base);
 
   if (!baseline_enabled_old)
     BASELINE::reset_baseline_disabled(&ec);
   float pred = ec.pred.scalar();
   ec.pred = std::move(p);
 
-  ec.l.reset();
-  ec.l.init_as_cb(std::move(ld));
-
+  ec.l = std::move(label);
   return pred;
 }
 

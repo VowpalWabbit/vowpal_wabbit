@@ -83,28 +83,28 @@ struct new_polylabel
       case (label_type_t::unset):
         break;
       case (label_type_t::empty):
-        init_as_empty(other.empty());
+        init_as_empty(other._empty);
         break;
       case (label_type_t::simple):
-        init_as_simple(other.simple());
+        init_as_simple(other._simple);
         break;
       case (label_type_t::multi):
-        init_as_multi(other.multi());
+        init_as_multi(other._multi);
         break;
       case (label_type_t::cs):
-        init_as_cs(other.cs());
+        init_as_cs(other._cs);
         break;
       case (label_type_t::cb):
-        init_as_cb(other.cb());
+        init_as_cb(other._cb);
         break;
       case (label_type_t::conditional_contextual_bandit):
-        init_as_conditional_contextual_bandit(other.conditional_contextual_bandit());
+        init_as_conditional_contextual_bandit(other._conditional_contextual_bandit);
         break;
       case (label_type_t::cb_eval):
-        init_as_cb_eval(other.cb_eval());
+        init_as_cb_eval(other._cb_eval);
         break;
       case (label_type_t::multilabels):
-        init_as_multilabels(other.multilabels());
+        init_as_multilabels(other._multilabels);
         break;
       default:;
     }
@@ -117,28 +117,28 @@ struct new_polylabel
       case (label_type_t::unset):
         break;
       case (label_type_t::empty):
-        init_as_empty(other.empty());
+        init_as_empty(std::move(other._empty));
         break;
       case (label_type_t::simple):
-        init_as_simple(other.simple());
+        init_as_simple(std::move(other._simple));
         break;
       case (label_type_t::multi):
-        init_as_multi(other.multi());
+        init_as_multi(std::move(other._multi));
         break;
       case (label_type_t::cs):
-        init_as_cs(other.cs());
+        init_as_cs(std::move(other._cs));
         break;
       case (label_type_t::cb):
-        init_as_cb(other.cb());
+        init_as_cb(std::move(other._cb));
         break;
       case (label_type_t::conditional_contextual_bandit):
-        init_as_conditional_contextual_bandit(other.conditional_contextual_bandit());
+        init_as_conditional_contextual_bandit(std::move(other._conditional_contextual_bandit));
         break;
       case (label_type_t::cb_eval):
-        init_as_cb_eval(other.cb_eval());
+        init_as_cb_eval(std::move(other._cb_eval));
         break;
       case (label_type_t::multilabels):
-        init_as_multilabels(other.multilabels());
+        init_as_multilabels(std::move(other._multilabels));
         break;
       default:;
     }
@@ -153,14 +153,12 @@ struct new_polylabel
   {
     _tag = label_type_t::unset;
     move_from(std::move(other));
-    other.reset();
   }
 
   new_polylabel& operator=(new_polylabel&& other)
   {
     reset();
     move_from(std::move(other));
-    other.reset();
     return *this;
   }
 
