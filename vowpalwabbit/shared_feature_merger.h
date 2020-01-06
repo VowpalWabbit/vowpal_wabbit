@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "learner.h"
-#include "options.h"
+#pragma once
+#include "reductions_fwd.h"
 
 struct vw;
 

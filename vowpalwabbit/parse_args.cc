@@ -2,11 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <stdio.h>
-#include <float.h>
+#include <cstdio>
+#include <cfloat>
 #include <sstream>
 #include <fstream>
-//#include <boost/filesystem.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>

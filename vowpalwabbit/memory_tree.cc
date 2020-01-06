@@ -75,7 +75,7 @@ void diag_kronecker_prod_fs_test(
   if (f2.indicies.size() == 0)
     return;
 
-  float denominator = pow(norm_sq1 * norm_sq2, 0.5f);
+  float denominator = std::pow(norm_sq1 * norm_sq2, 0.5f);
   size_t idx1 = 0;
   size_t idx2 = 0;
 
@@ -273,7 +273,7 @@ float normalized_linear_prod(memory_tree& b, example* ec1, example* ec2)
 {
   flat_example* fec1 = flatten_sort_example(*b.all, ec1);
   flat_example* fec2 = flatten_sort_example(*b.all, ec2);
-  float norm_sqrt = pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
+  float norm_sqrt = std::pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
   float linear_prod = linear_kernel(fec1, fec2);
   // fec1->fs.delete_v();
   // fec2->fs.delete_v();
