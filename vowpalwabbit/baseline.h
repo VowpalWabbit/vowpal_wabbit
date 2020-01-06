@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "reductions_fwd.h"
+
 LEARNER::base_learner* baseline_setup(VW::config::options_i& options, vw& all);
 
 namespace BASELINE

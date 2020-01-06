@@ -11,15 +11,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#endif
-#include <errno.h>
-#ifndef _WIN32
 #include <netdb.h>
-#include <strings.h>
 #endif
-#include <string.h>
 
-#include <stdlib.h>
+#include <cstring>
+#include <cerrno>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <sstream>
