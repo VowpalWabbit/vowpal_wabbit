@@ -54,7 +54,6 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   {
     ec.l.reset();
     ec.l.init_as_cs(data.cb_cs_ld);
-
     if (is_learn)
       base.learn(ec);
     else
@@ -62,9 +61,9 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
     for (size_t i = 0; i < ld.costs.size(); i++)
       ld.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
-    ec.l.reset();
-    ec.l.init_as_cb(std::move(ld));
   }
+  ec.l.reset();
+  ec.l.init_as_cb(std::move(ld));
 }
 
 void predict_eval(cb&, single_learner&, example&) { THROW("can not use a test label for evaluation"); }
