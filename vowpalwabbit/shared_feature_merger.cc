@@ -42,7 +42,8 @@ void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
 
   multi_ex::value_type shared_example = nullptr;
 
-  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
+  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0])
+    || COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
   if (has_example_header)
   {
     shared_example = ec_seq[0];
@@ -75,7 +76,7 @@ LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, v
 
   auto* base = LEARNER::as_multiline(setup_base(options, all));
   auto& learner = LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
-  learner.label_type = label_type_t::cb;
+  learner.label_type = base->label_type;
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.
 
