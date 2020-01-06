@@ -3223,7 +3223,7 @@ predictor& predictor::add_to(v_array<T>& destination, T* source, size_t count, b
   }
   // TODO uncomment this
   //destination.reserve(destination.size() + count);
-  for (auto i = 0; i < count; i++)
+  for (size_t i = 0; i < count; i++)
   {
     destination.push_back(source[i]);
   }

@@ -66,6 +66,8 @@ struct new_polylabel
     {
       THROW("Expected type: " << to_string(type) << ", but found: " << to_string(_tag));
     }
+#else
+    _UNUSED(type);
 #endif
   }
 
