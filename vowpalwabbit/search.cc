@@ -2645,7 +2645,6 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
     return;
 
   std::vector<VW::string_view> cmd;
-  size_t start_idx = 0;
   size_t end_idx = 0;
   while (!nf_strview.empty())
   {
