@@ -79,6 +79,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   for (size_t i = 1; i < 14; i++) data->ex->indices.push_back((unsigned char)i + 'A');
   data->ex->indices.push_back(constant_namespace);
   data->ex->interactions = &sch.get_vw_pointer_unsafe().interactions;
+  data->ex->pred.init_as_multiclass();
 
   if (data->one_learner)
     sch.set_num_learners(1);

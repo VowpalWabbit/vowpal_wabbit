@@ -217,7 +217,7 @@ example* alloc_examples(size_t, size_t count = 1)
   return ec;
 }
 
-VW_DEPRECATED("You can just delete the example now")
+VW_DEPRECATED("You can just use the example destructor when deallocating now")
 void dealloc_example(void (* /*delete_label*/)(new_polylabel&), example& ec, void (* /*delete_prediction*/)(void*))
 {
   ec.~example();
