@@ -3,16 +3,10 @@
 // license as described in the file LICENSE.
 #include <fstream>
 #include <sstream>
-#include <float.h>
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#else
-#include <netdb.h>
-#endif
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cfloat>
+#include <cstring>
+#include <cstdio>
+#include <cassert>
 #include <memory>
 
 #include "parse_example.h"

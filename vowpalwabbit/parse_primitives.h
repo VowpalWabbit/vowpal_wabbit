@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <stdint.h>
-#include <math.h>
+#include <cstdint>
+#include <cmath>
 #include "v_array.h"
 #include "hashstring.h"
 #include "vw_string_view.h"

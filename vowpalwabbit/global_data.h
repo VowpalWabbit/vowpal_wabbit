@@ -7,7 +7,7 @@
 #include <vector>
 #include <map>
 #include <cfloat>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <string>
 #include <array>
+#include <memory>
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -46,7 +47,6 @@
 
 #include "options.h"
 #include "version.h"
-#include <memory>
 
 typedef float weight;
 

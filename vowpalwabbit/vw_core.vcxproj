@@ -190,7 +190,6 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="parser.h" />
-    <ClInclude Include="primitives.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
@@ -297,7 +296,6 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
-    <ClCompile Include="primitives.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />

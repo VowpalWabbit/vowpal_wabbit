@@ -3,14 +3,14 @@
 // license as described in the file LICENSE.
 
 #include <cmath>
-#include <math.h>
-#include "vw_string_view.h"
+#include <cmath>
 #include <cctype>
 #include "parse_example.h"
 #include "hash.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
+#include "vw_string_view.h"
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {

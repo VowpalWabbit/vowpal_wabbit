@@ -3,14 +3,14 @@
 // license as described in the file LICENSE.
 
 #include <cstring>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-#include "vw_string_view.h"
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 
 #include "cache.h"
 #include "accumulate.h"
 #include "best_constant.h"
+#include "vw_string_view.h"
 
 namespace no_label
 {

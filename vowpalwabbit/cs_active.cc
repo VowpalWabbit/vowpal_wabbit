@@ -6,7 +6,7 @@
 #include <errno.h>
 #include "reductions.h"
 #include "rand48.h"
-#include "float.h"
+#include <cfloat>
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"
