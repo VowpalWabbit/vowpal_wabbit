@@ -332,7 +332,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     if (shouldOutput)
     {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text(n.all->raw_prediction, outputStringStream.str(), ec.tag);
+      n.all->print_text_by_ref(n.all->raw_prediction, outputStringStream.str(), ec.tag);
     }
 
     if (is_learn && n.all->training && ld.label != FLT_MAX)

@@ -366,13 +366,13 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.action_scores()[0].action;
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)action, 0, ec.tag);
+  for (int sink : all.final_prediction_sink) all.print_by_ref(sink, (float)action, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb().costs;
+    v_array<CB::cb_class>& costs = ec.l.cb().costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -380,7 +380,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -389,7 +389,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   label& ld = ec.l.cb();
-  v_array<CB::cb_class> costs = ld.costs;
+  v_array<CB::cb_class>& costs = ld.costs;
 
   if (example_is_newline_not_header(ec))
     return;
@@ -408,7 +408,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -425,7 +425,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
       output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
       if (all.raw_prediction > 0)
-        all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+        all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
     }
   }
 }

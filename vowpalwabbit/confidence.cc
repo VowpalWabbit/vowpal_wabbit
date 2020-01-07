@@ -71,7 +71,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
     all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
+  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
   {
     int f = (int)all.final_prediction_sink[i];

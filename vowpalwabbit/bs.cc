@@ -216,7 +216,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
   }
 
   if (shouldOutput)
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
 }
 
 void finish_example(vw& all, bs& d, example& ec)

@@ -28,7 +28,7 @@ float get_weight(new_polylabel&) { return 1.; }
 
 void cache_no_label(new_polylabel&, io_buf&) {}
 
-// This is wasted work, ideally empty and unset should be the same thing. 
+// This is wasted work, ideally empty and unset should be the same thing.
 void default_no_label(new_polylabel& label)
 {
   if (label.get_type() != label_type_t::empty)
@@ -70,11 +70,11 @@ void output_and_account_no_label_example(vw& all, example& ec)
 {
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.num_features);
 
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
+  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
   {
     int f = (int)all.final_prediction_sink[i];
-    all.print(f, ec.pred.scalar(), 0, ec.tag);
+    all.print_by_ref(f, ec.pred.scalar(), 0, ec.tag);
   }
 
   print_no_label_update(all, ec);

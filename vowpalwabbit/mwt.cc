@@ -110,7 +110,11 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   // modify the predictions to use a vector with a score for each evaluated feature.
-  v_array<float> preds = ec.pred.scalars();
+  v_array<float> preds = std::move(ec.pred.scalars());
+
+  // TODO Confirm that this type is correct
+  ec.pred.reset();
+  ec.pred.init_as_multiclass();
 
   if (learn)
   {
@@ -133,7 +137,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
     preds.push_back((float)ec.pred.multiclass());
   for (uint64_t index : c.policies) preds.push_back((float)c.evals[index].cost / (float)c.total);
 
-  ec.pred.scalars() = preds;
+  ec.pred.reset();
+  ec.pred.init_as_scalars(std::move(preds));
 }
 
 void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
@@ -174,10 +179,12 @@ void finish_example(vw& all, mwt& c, example& ec)
 
   if (c.learn)
   {
-    v_array<float> temp = ec.pred.scalars();
-    ec.pred.multiclass() = (uint32_t)temp[0];
+    v_array<float> temp = std::move(ec.pred.scalars());
+    ec.pred.reset();
+    ec.pred.init_as_multiclass() = (uint32_t)temp[0];
     CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
-    ec.pred.scalars() = temp;
+    ec.pred.reset();
+    ec.pred.init_as_scalars(std::move(temp));
   }
   VW::finish_example(all, ec);
 }

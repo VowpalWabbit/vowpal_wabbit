@@ -164,11 +164,11 @@ void finish_example(vw& all, example& ec, bool update_loss)
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)
-      all.print(sink, (float)ec.pred.multiclass(), 0, ec.tag);
+      all.print_by_ref(sink, (float)ec.pred.multiclass(), 0, ec.tag);
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass());
-      all.print_text(sink, sv_pred.to_string(), ec.tag);
+      all.print_text_by_ref(sink, sv_pred.to_string(), ec.tag);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass());

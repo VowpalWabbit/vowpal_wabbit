@@ -306,7 +306,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
   COST_SENSITIVE::label& ld = ec.l.cs();
-  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  v_array<COST_SENSITIVE::wclass>& costs = ld.costs;
 
   if (example_is_newline(ec))
     return;
@@ -336,7 +336,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass(), 0, ec.tag);
+  for (int sink : all.final_prediction_sink) all.print_by_ref(sink, (float)ec.pred.multiclass(), 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -349,7 +349,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
@@ -368,7 +368,7 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   if (all.raw_prediction > 0)
   {
     v_array<char> empty;
-    all.print_text(all.raw_prediction, "", empty);
+    all.print_text_by_ref(all.raw_prediction, "", empty);
   }
 }
 

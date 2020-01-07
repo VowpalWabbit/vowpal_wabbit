@@ -164,7 +164,7 @@ bool ec_is_example_header(example const& ec)  // example headers just have "shar
 {
   if (ec.l.get_type() == label_type_t::cb)
   {
-    v_array<CB::cb_class> costs = ec.l.cb().costs;
+    const v_array<CB::cb_class>& costs = ec.l.cb().costs;
     if (costs.size() != 1)
       return false;
     if (costs[0].probability == -1.f)
