@@ -198,8 +198,8 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     float norm = min_prob * num_actions;
     // This should not be nee2ded as it was done just above.
     // ec.l.cb() = data.cb_label;
-    data.cbcs.known_cost = get_observed_cost(data.cb_label);
-    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+    data.cbcs.known_cost = get_observed_cost(ec.l.cb());
+    gen_cs_example<false>(data.cbcs, ec, ec.l.cb(), data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
     data.cb_label = std::move(ec.l.cb());
