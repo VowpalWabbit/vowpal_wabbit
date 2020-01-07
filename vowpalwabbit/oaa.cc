@@ -83,6 +83,8 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
 
   ec.l.reset();
   ec.l.init_as_simple(FLT_MAX, 0.f, 0.f);
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   base.multipredict(ec, 0, o.k, o.pred.data(), true);
 
   uint32_t prediction = 1;
@@ -313,6 +315,6 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
   }
-  l->label_type = label_type_t::multi;  
+  l->label_type = label_type_t::multi;
   return make_base(*l);
 }
