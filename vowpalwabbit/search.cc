@@ -1294,7 +1294,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       (*priv.rawOutputStringStream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
                                     << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
-    all.print_text(all.raw_prediction, priv.rawOutputStringStream->str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, priv.rawOutputStringStream->str(), ec.tag);
   }
 
   ec.l = old_label;
@@ -2199,10 +2199,10 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       all.sd->update(ec_seq[0]->test_only, !is_test_ex, priv.test_loss, 1.f, priv.num_features);
 
     // generate output
-    for (int sink : all.final_prediction_sink) all.print_text((int)sink, priv.pred_string->str(), ec_seq[0]->tag);
+    for (int sink : all.final_prediction_sink) all.print_text_by_ref((int)sink, priv.pred_string->str(), ec_seq[0]->tag);
 
     if (all.raw_prediction > 0)
-      all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+      all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
   }
 
   // if we're not training, then we're done!

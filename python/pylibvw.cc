@@ -239,7 +239,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   all->p->text_reader(all.get(), str, strlen(str), examples);
 
@@ -479,7 +479,7 @@ uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multicla
 
 py::list ex_get_scalars(example_ptr ec)
 { py::list values;
-  v_array<float> scalars = ec->pred.scalars;
+  v_array<float>& scalars = ec->pred.scalars;
 
   for (float s : scalars)
   { values.append(s);

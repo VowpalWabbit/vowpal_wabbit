@@ -97,7 +97,8 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (int sink : all.final_prediction_sink)
+    all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -109,7 +110,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
         outputStringStream << ' ';
       outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
