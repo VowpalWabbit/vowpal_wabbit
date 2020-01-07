@@ -47,7 +47,7 @@ struct OjaNewton
   float* vv;
   float* tmp;
 
-  example** buffer;
+  std::vector<example*> buffer;
   float* weight_buffer;
   struct update_data data;
 
@@ -345,7 +345,6 @@ struct OjaNewton
     free(ev);
     free(b);
     free(D);
-    free(buffer);
     free(weight_buffer);
     free(zv);
     free(vv);
@@ -368,8 +367,19 @@ struct OjaNewton
   }
 };
 
-void keep_example(vw& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
+void keep_example_but_delete_after_epoch_processed(vw& all, OjaNewton& ON, example& ec)
+{
+  output_and_account_example(all, ec);
 
+  if (ON.cnt == ON.epoch_size)
+  {
+    ON.cnt = 0;
+    for (auto example_ptr : ON.buffer)
+    {
+      VW::finish_example(*ON.all, *example_ptr);
+    }
+  }
+}
 void make_pred(update_data& data, float x, float& wref)
 {
   int m = data.ON->m;
@@ -495,15 +505,6 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
 
   ON.update_b();
   ON.check();
-
-  if (ON.cnt == ON.epoch_size)
-  {
-    ON.cnt = 0;
-    for (int k = 0; k < ON.epoch_size; k++)
-    {
-      VW::finish_example(*ON.all, *ON.buffer[k]);
-    }
-  }
 }
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
@@ -584,7 +585,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
     ON->D[i] = 1;
   }
 
-  ON->buffer = calloc_or_throw<example*>(ON->epoch_size);
+  ON->buffer.resize(ON->epoch_size, nullptr);
   ON->weight_buffer = calloc_or_throw<float>(ON->epoch_size);
 
   ON->zv = calloc_or_throw<float>(ON->m + 1);
@@ -600,7 +601,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
 
   learner<OjaNewton, example>& l = init_learner(ON, learn, predict, all.weights.stride());
   l.set_save_load(save_load);
-  l.set_finish_example(keep_example);
+  l.set_finish_example(keep_example_but_delete_after_epoch_processed);
   l.label_type = label_type_t::simple;
   return make_base(l);
 }
