@@ -249,7 +249,7 @@ void unsubtract_example(example* ec)
 
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
-  COST_SENSITIVE::label ld = ec.l.cs();
+  COST_SENSITIVE::label ld = std::move(ec.l.cs());
   label_data simple_label;
   simple_label.label = FLT_MAX;
 
@@ -269,7 +269,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
 
   LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
   ec.l.reset();
-  ec.l.init_as_cs(ld);
+  ec.l.init_as_cs(std::move(ld));
 }
 
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
@@ -492,14 +492,39 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
       do_actual_learning_oaa(data, base, ec_seq);
   }
 
+  // Clear the existing prediction
+  for (auto& example : ec_seq)
+  {
+    example->pred.reset();
+  }
+
+  // Set the prediction.
   if (data.rank)
   {
     data.stored_preds[0].clear();
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.reset();
       ec_seq[k]->pred.init_as_action_scores() = std::move(data.stored_preds[k]);
       ec_seq[0]->pred.action_scores().push_back(data.a_s[k]);
+    }
+  }
+  else if (data.is_probabilities)
+  {
+    float sum_prob = 0;
+    for (auto& example : ec_seq)
+    {
+      // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
+      // but partial_prediction is lower for better classes (we are predicting the cost),
+      // so we need to take score = -partial_prediction,
+      // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
+      float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
+      example->pred.init_as_prob() = prob;
+      sum_prob += prob;
+    }
+    // make sure that the probabilities sum up (exactly) to one
+    for (auto& example : ec_seq)
+    {
+      example->pred.prob() /= sum_prob;
     }
   }
   else
@@ -507,29 +532,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.reset();
       ec_seq[k]->pred.init_as_multiclass() = k == predicted_K ? ec_seq[k]->l.cs().costs[0].class_index : 0;
-    }
-  }
-
-  ////////////////////// compute probabilities
-  if (data.is_probabilities)
-  {
-    float sum_prob = 0;
-    for (const auto& example : ec_seq)
-    {
-      // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
-      // but partial_prediction is lower for better classes (we are predicting the cost),
-      // so we need to take score = -partial_prediction,
-      // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-      float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
-      example->pred.prob() = prob;
-      sum_prob += prob;
-    }
-    // make sure that the probabilities sum up (exactly) to one
-    for (const auto& example : ec_seq)
-    {
-      example->pred.prob() /= sum_prob;
     }
   }
 }
@@ -550,7 +553,7 @@ void global_print_newline(vw& all)
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
   label& ld = ec.l.cs();
-  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  v_array<COST_SENSITIVE::wclass>& costs = ld.costs;
 
   if (example_is_newline(ec))
     return;
@@ -874,6 +877,9 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
   prediction_type_t pred_type;
+
+  if (ld->rank && ld->is_probabilities)
+    THROW("Cannot specify both csoaa_rank and probabilities at the same time.");
 
   if (ld->rank)
     pred_type = prediction_type_t::action_scores;
