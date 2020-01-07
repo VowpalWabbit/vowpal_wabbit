@@ -205,7 +205,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
-  ec.l.simple = {0., VW::NA_1, VW::NA_0};
+  ec.l.simple = {0., VW::UNUSED_1, VW::UNUSED_0};
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round

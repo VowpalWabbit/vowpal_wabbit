@@ -235,10 +235,10 @@ std::string simple_label_to_string(const example& ec)
   return strstream.str();
 }
 
-std::string depth_indent_string(uint32_t depth)
+std::string depth_indent_string(const uint32_t depth)
 {
-  const std::string indent_str = "- ";
-  const std::string space_str = "  ";
+  constexpr const char* indent_str = "- ";
+  constexpr const char* space_str = "  ";
 
   if (depth == 0)
     return indent_str;

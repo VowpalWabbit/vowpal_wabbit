@@ -12,8 +12,13 @@
 
 #ifdef HAS_STD17
 #define ATTR(name) [[ name ]]
+// NOTE: c++ 17 detection defined above is not working properly for msvc.
+// Need to rollback the following change.
+// #define VW_STD17_CONSTEXPR constexpr
+#define VW_STD17_CONSTEXPR
 #else
 #define ATTR(name)
+#define VW_STD17_CONSTEXPR
 #endif
 
 #ifdef HAS_STD14

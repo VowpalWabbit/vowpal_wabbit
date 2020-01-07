@@ -27,6 +27,6 @@ void print_update(vw& all, example& ec);
 void output_and_account_example(vw& all, example& ec);
 
 namespace VW {
-  const float NA_0 = 0.f;   // constant to signal intitializing unused member
-  const float NA_1 = 1.f;    // constant to signal intitializing unused member
+  constexpr float UNUSED_0 = 0.f;   // constant to signal initializing unused member
+  constexpr float UNUSED_1 = 1.f;   // constant to signal initializing unused member
 }

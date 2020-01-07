@@ -201,22 +201,22 @@ struct learner
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
-  void print_reduction_name(example& ec, const std::string& msg)
+  void log_entry(example& ec, const std::string& msg)
   {
     VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
     increment_depth(ec);
   }
-  void print_reduction_name(multi_ex& ec, const std::string& msg)
+  void log_entry(multi_ex& ec, const std::string& msg)
   {
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
     increment_depth(ec);
   }
-  void print_reduction_exit(example& ec)
+  void log_exit(example& ec)
   {
     decrement_depth(ec);
     VW_DBG(ec) << std::endl;
   }
-  void print_reduction_exit(multi_ex& ec)
+  void log_exit(multi_ex& ec)
   {
     decrement_depth(ec);
     VW_DBG(*ec[0]) << std::endl;
@@ -228,9 +228,9 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    print_reduction_name(ec, "learn");
+    log_entry(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    print_reduction_exit(ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -239,9 +239,9 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    print_reduction_name(ec, "predict");
+    log_entry(ec, "predict");
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    print_reduction_exit(ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -252,7 +252,7 @@ struct learner
     if (learn_fd.multipredict_f == NULL)
     {
       increment_offset(ec, increment, lo);
-      print_reduction_name(ec, "multipredict");
+      log_entry(ec, "multipredict");
       for (size_t c = 0; c < count; c++)
       {
         learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
@@ -264,15 +264,15 @@ struct learner
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         increment_offset(ec, increment, 1);
       }
-      print_reduction_exit(ec);
+      log_exit(ec);
       decrement_offset(ec, increment, lo + count);
     }
     else
     {
       increment_offset(ec, increment, lo);
-      print_reduction_name(ec, "multipredict");
+      log_entry(ec, "multipredict");
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
-      print_reduction_exit(ec);
+      log_exit(ec);
       decrement_offset(ec, increment, lo);
     }
   }
@@ -298,9 +298,9 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    print_reduction_name(ec, "update");
+    log_entry(ec, "update");
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    print_reduction_exit(ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
   template <class L>
@@ -318,9 +318,9 @@ struct learner
   inline float sensitivity(example& ec, size_t i = 0)
   {
     increment_offset(ec, increment, i);
-    print_reduction_name(ec, "sensitivity");
+    log_entry(ec, "sensitivity");
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
-    print_reduction_exit(ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
     return ret;
   }
@@ -380,9 +380,9 @@ struct learner
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
   {
-    print_reduction_name(ec, "finish_example");
+    log_entry(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
-    print_reduction_exit(ec);
+    log_exit(ec);
   }
   // called after learn example for each example.  Explicitly not recursive.
   void set_finish_example(void (*f)(vw& all, T&, E&))

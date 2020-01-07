@@ -1,28 +1,30 @@
+#include "future_compat.h"
 #pragma once
 
 struct vw_dbg
 {
-  const static bool default_log     = false;
-  const static bool learner         = false;
-  const static bool search          = false;
-  const static bool gd              = false;
-  const static bool gd_predict      = false;
-  const static bool binary          = false;
-  const static bool cb_adf          = false;
-  const static bool csoaa           = false;
-  const static bool cs_active       = false;
+  static constexpr bool default_log     = false;
+  static constexpr bool learner         = false;
+  static constexpr bool search          = false;
+  static constexpr bool gd              = false;
+  static constexpr bool gd_predict      = false;
+  static constexpr bool binary          = false;
+  static constexpr bool cb_adf          = false;
+  static constexpr bool csoaa           = false;
+  static constexpr bool cs_active       = false;
 
-  const static bool track_stack = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa | cs_active;
+  static constexpr bool track_stack =
+      default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa | cs_active;
 };
 
 #define VW_DEBUG_LOG vw_dbg::default_log
 
 #define VW_LOG_SINK std::cout
 
-#define VW_DBG(e)   \
-  if (VW_DEBUG_LOG) \
+#define VW_DBG(e)                       \
+  if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)  \
   VW_LOG_SINK << depth_indent_string(e)
 
-#define VW_DBG_0    \
-  if (VW_DEBUG_LOG) \
+#define VW_DBG_0                        \
+  if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)  \
   VW_LOG_SINK

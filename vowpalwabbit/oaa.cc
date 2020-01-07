@@ -33,7 +33,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
     std::cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
-  ec.l.simple = {1., VW::NA_1, VW::NA_0};  // truth
+  ec.l.simple = {1., VW::UNUSED_1, VW::UNUSED_0};  // truth
   base.learn(ec, ld.label - 1);
 
   size_t prediction = ld.label;
@@ -79,11 +79,11 @@ void learn(oaa& o, LEARNER::single_learner& base, example& ec)
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
     std::cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
 
-  ec.l.simple = {FLT_MAX, VW::NA_1, VW::NA_0};
+  ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
 
   for (uint32_t i = 1; i <= o.k; i++)
   {
-    ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f, VW::NA_1, VW::NA_0};
+    ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f, VW::UNUSED_1, VW::UNUSED_0};
     // The following is an unfortunate loss of abstraction
     // Downstream reduction (gd.update) uses the prediction
     // from here

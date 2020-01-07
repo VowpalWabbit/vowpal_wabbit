@@ -42,8 +42,6 @@ using namespace VW::config;
 // 4. Factor various state out of vw&
 namespace GD
 {
-uint32_t stack_depth;
-uint32_t get_stack_depth() { return stack_depth; }
 
 struct gd
 {
@@ -64,6 +62,7 @@ struct gd
   bool adaptive_input;
   bool normalized_input;
   bool adax;
+  uint32_t stack_depth;
 
   vw* all;  // parallel, features, parameters
 };
@@ -387,7 +386,7 @@ template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
   VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
-  stack_depth = ec.stack_depth;
+  g.stack_depth = ec.stack_depth;
   vw& all = *g.all;
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
@@ -415,7 +414,7 @@ template <bool l1, bool audit>
 void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
-  stack_depth = ec.stack_depth;
+  g.stack_depth = ec.stack_depth;
   vw& all = *g.all;
   for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
   if (g.all->weights.sparse)
@@ -675,7 +674,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 void learn(gd& g, base_learner& base, example& ec)
 {
   // invariant: not a test label, importance weight > 0
-  stack_depth = ec.stack_depth;
+  g.stack_depth = ec.stack_depth;
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);

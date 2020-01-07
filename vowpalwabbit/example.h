@@ -91,12 +91,12 @@ struct example : public example_predict  // core example datatype.
   // input fields
   polylabel l;
 
-  // Notes: TLDR; needed to make predict() indpendent of label (as it should theoretically should be)
+  // Notes: TLDR; needed to make predict() independent of label (as it should theoretically should be)
   // 1) initial used to be in label_data (simple label)
-  // 2) gd.predict() used to use this to load intial value
+  // 2) gd.predict() used to use this to load initial value
   // 3) It also used it as an accumulator and modified it.
   // 4) This cause two breaches of label independence abstraction during predict()
-  //      a) All reductions depending on gd had to initalize example.l to sane values before base.predict()
+  //      a) All reductions depending on gd had to initialize example.l to sane values before base.predict()
   //      b) All reductions had to save label state before calling base.predict()
   // Making it impossible to remove dependence of predict on label
   float initial;
