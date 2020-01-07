@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "learner.h"
 #include "parser.h"
 #include "vw.h"
 #include "parse_regressor.h"

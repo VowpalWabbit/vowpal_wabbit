@@ -8,11 +8,11 @@
  *    ICML-2015.
  */
 
-#include <float.h>
-#include <limits.h>
-#include <math.h>
+#include <cfloat>
+#include <climits>
+#include <cmath>
 #include "correctedMath.h"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <vector>

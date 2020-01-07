@@ -7,12 +7,13 @@
 #include <vector>
 #include <map>
 #include <cfloat>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
 #include <stack>
 #include <array>
+#include <memory>
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -43,7 +44,6 @@
 
 #include "options.h"
 #include "version.h"
-#include <memory>
 
 typedef float weight;
 

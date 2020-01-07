@@ -6,7 +6,7 @@
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
-#include <math.h>
+#include <cmath>
 #include <memory>
 
 using namespace LEARNER;

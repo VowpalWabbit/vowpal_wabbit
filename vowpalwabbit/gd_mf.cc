@@ -2,9 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <fstream>
-#include <float.h>
-#include <string.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cstdio>
 #ifdef _WIN32
 #define NOMINMAX
 #include <winsock2.h>

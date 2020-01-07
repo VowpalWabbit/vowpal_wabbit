@@ -3,9 +3,6 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#ifdef __FreeBSD__
-#include <sys/socket.h>
-#endif
 
 #include "parse_regressor.h"
 #include "constant.h"
