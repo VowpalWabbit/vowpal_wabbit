@@ -3217,7 +3217,7 @@ predictor& predictor::add_to(v_array<T>& destination, T* source, size_t count, b
     destination.clear();
   }
   // TODO uncomment this
-  //destination.reserve(destination.size() + count);
+  // destination.reserve(destination.size() + count);
   for (size_t i = 0; i < count; i++)
   {
     destination.push_back(source[i]);
@@ -3279,8 +3279,17 @@ predictor& predictor::add_allowed(action a, float cost)
 
 predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
 {
-  add_to(allowed_actions_cost, costs, action_count, false);
-  return add_to(allowed_actions, a, action_count, false);
+  // In sequence task this function is used with a being nullptr, but costs is valid.
+  // So we need to check if we can do the adds.
+  if (costs != nullptr)
+  {
+    add_to(allowed_actions_cost, costs, action_count, false);
+  }
+  if (a != nullptr)
+  {
+    add_to(allowed_actions, a, action_count, false);
+  }
+  return *this;
 }
 predictor& predictor::add_allowed(v_array<std::pair<action, float>>& a)
 {
@@ -3309,8 +3318,17 @@ predictor& predictor::set_allowed(action a, float cost)
 
 predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
 {
-  add_to(allowed_actions_cost, costs, action_count, true);
-  return add_to(allowed_actions, a, action_count, true);
+  // In sequence task this function is used with a being nullptr, but costs is valid.
+  // So we need to check if we can do the adds.
+  if (costs != nullptr)
+  {
+    add_to(allowed_actions_cost, costs, action_count, true);
+  }
+  if (a != nullptr)
+  {
+    add_to(allowed_actions, a, action_count, true);
+  }
+  return *this;
 }
 predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
 {
