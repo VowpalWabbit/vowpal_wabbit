@@ -102,10 +102,11 @@ bool sanity_checks(ccb& data)
 
   if (is_learn)
   {
-    for (auto slot : data.slots)
+    auto first_slot_index = 1 /*shared*/ + data.actions.size();
+    for (size_t index = first_slot_index; index < data.stored_labels.size(); index++)
     {
-      if (slot->l.conditional_contextual_bandit().outcome != nullptr &&
-          slot->l.conditional_contextual_bandit().outcome->probabilities.size() == 0)
+      const auto& slot_label = data.stored_labels[index];
+      if (slot_label.outcome != nullptr && slot_label.outcome->probabilities.size() == 0)
       {
         std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
         return false;
@@ -152,9 +153,8 @@ void attach_label_to_example(
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
-  auto& pred = data.shared->pred.action_scores();
-  decision_scores.push_back(pred);
-
+  decision_scores.push_back(std::move(data.shared->pred.action_scores()));
+  auto& pred = decision_scores[decision_scores.size() - 1];
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : pred)
   {
@@ -365,9 +365,12 @@ void build_cb_example(multi_ex& cb_ex, example* slot, CCB::label& slot_label, cc
     }
   }
 
-  data.shared->pred.reset();
-  data.shared->pred.init_as_action_scores();
-
+  for (auto example : cb_ex)
+  {
+    example->pred.reset();
+    example->pred.init_as_action_scores();
+  }
+  
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
   // example.
   std::swap(data.shared->tag, slot->tag);
@@ -573,7 +576,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
 
   // Is it hold out?
   size_t num_labelled = 0;
-  auto preds = ec_seq[0]->pred.decision_scores();
+  auto& preds = ec_seq[0]->pred.decision_scores();
   for (size_t i = 0; i < slots.size(); i++)
   {
     auto outcome = slots[i]->l.conditional_contextual_bandit().outcome;

@@ -48,8 +48,8 @@ struct cbify
   float loss1;
 
   // for ldf inputs
-  std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
-  std::vector<v_array<CB::cb_class>> cb_costs;
+  std::vector<COST_SENSITIVE::label> cs_labels;
+  std::vector<CB::label> cb_labels;
   std::vector<ACTION_SCORE::action_scores> cb_as;
 };
 
@@ -75,14 +75,14 @@ float loss_cs(cbify& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fina
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
+float loss_csldf(cbify& data, std::vector<COST_SENSITIVE::label>& cs_labels, uint32_t final_prediction)
 {
   float cost = 0.;
-  for (auto costs : cs_costs)
+  for (auto& label : cs_labels)
   {
-    if (costs[0].class_index == final_prediction)
+    if (label.costs[0].class_index == final_prediction)
     {
-      cost = costs[0].x;
+      cost = label.costs[0].x;
       break;
     }
   }
@@ -183,14 +183,6 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 template <bool is_learn, bool use_cs>
 void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 {
-  // Store the multiclass or cost-sensitive input label
-  MULTICLASS::label_t ld;
-  COST_SENSITIVE::label csl;
-  if (use_cs)
-    csl = ec.l.cs();
-  else
-    ld = ec.l.multi();
-
   copy_example_to_adf(data, ec);
   base.predict(data.adf_data.ecs);
 
@@ -209,9 +201,9 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
     THROW("No action with non-zero probability found!");
 
   if (use_cs)
-    cl.cost = loss_cs(data, csl.costs, cl.action);
+    cl.cost = loss_cs(data, ec.l.cs().costs, cl.action);
   else
-    cl.cost = loss(data, ld.label, cl.action);
+    cl.cost = loss(data, ec.l.multi().label, cl.action);
 
   // add cb label to chosen action
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb();
@@ -235,6 +227,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
     adf_data.ecs[a] = VW::alloc_examples(0 /*unused*/, 1);
     auto& lab = adf_data.ecs[a]->l.init_as_cb();
     CB::default_label(lab);
+    adf_data.ecs[a]->pred.init_as_action_scores();
     adf_data.ecs[a]->interactions = &data.all->interactions;
   }
 }
@@ -243,63 +236,63 @@ template <bool is_learn>
 void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
   // change label and pred data for cb
-  if (data.cs_costs.size() < ec_seq.size())
-    data.cs_costs.resize(ec_seq.size());
-  if (data.cb_costs.size() < ec_seq.size())
-    data.cb_costs.resize(ec_seq.size());
+  if (data.cs_labels.size() < ec_seq.size())
+    data.cs_labels.resize(ec_seq.size());
+  if (data.cb_labels.size() < ec_seq.size())
+    data.cb_labels.resize(ec_seq.size());
   if (data.cb_as.size() < ec_seq.size())
     data.cb_as.resize(ec_seq.size());
+
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
-    // TODO fix
     auto& ec = *ec_seq[i];
-    data.cs_costs[i] = ec.l.cs().costs;
-    data.cb_costs[i].clear();
-    data.cb_as[i].clear();
-    ec.l.cb().costs = data.cb_costs[i];
-    ec.pred.action_scores() = data.cb_as[i];
+    data.cs_labels[i] = std::move(ec.l.cs());
+
+    ec.l.reset();
+    ec.l.init_as_cb(std::move(data.cb_labels[i]));
+    ec.pred.reset();
+    ec.pred.init_as_action_scores(std::move(data.cb_as[i]));
   }
 
   base.predict(ec_seq);
 
   auto& out_ec = *ec_seq[0];
 
-  uint32_t chosen_action;
+  uint32_t chosen_action_index;
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_scores()),
-          end_scores(out_ec.pred.action_scores()), chosen_action))
+          end_scores(out_ec.pred.action_scores()), chosen_action_index))
     THROW("Failed to sample from pdf");
 
+  const auto chosen_action_zero_based = out_ec.pred.action_scores()[chosen_action_index].action;
+  const auto chosen_action_score = out_ec.pred.action_scores()[chosen_action_index].score;
+  const auto chosen_action_one_based = chosen_action_zero_based + 1;
+
   CB::cb_class cl;
-  cl.action = out_ec.pred.action_scores()[chosen_action].action + 1;
-  cl.probability = out_ec.pred.action_scores()[chosen_action].score;
+  cl.action = chosen_action_one_based;
+  cl.probability = chosen_action_score;
 
   if (!cl.action)
     THROW("No action with non-zero probability found!");
 
-  cl.cost = loss_csldf(data, data.cs_costs, cl.action);
+  cl.cost = loss_csldf(data, data.cs_labels, chosen_action_one_based);
 
-  // add cb label to chosen action
-  data.cb_label.costs.clear();
-  data.cb_label.costs.push_back(cl);
-  data.cb_costs[cl.action - 1] = ec_seq[cl.action - 1]->l.cb().costs;
-  ec_seq[cl.action - 1]->l.cb() = data.cb_label;
-
+  ec_seq[chosen_action_zero_based]->l.cb().costs.push_back(cl);
   base.learn(ec_seq);
+  ec_seq[chosen_action_zero_based]->l.cb().costs.clear();
 
-  // set cs prediction and reset cs costs
+  // Return labels and predictions to be reused and restore initial labels and preds
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    data.cb_as[i] = ec.pred.action_scores();  // store action_score vector for later reuse.
-    if (i == cl.action - 1)
-      data.cb_label = ec.l.cb();
-    else
-      data.cb_costs[i] = ec.l.cb().costs;
-    ec.l.cs().costs = data.cs_costs[i];
-    if (i == cl.action - 1)
-      ec.pred.multiclass() = cl.action;
-    else
-      ec.pred.multiclass() = 0;
+    // Store the cb label back in data to be reused.
+    data.cb_labels[i] = std::move(ec.l.cb());
+    ec.l.reset();
+    ec.l.init_as_cs(std::move(data.cs_labels[i]));
+
+    // store action_score vector for later reuse, then set the output prediction.
+    data.cb_as[i] = std::move(ec.pred.action_scores());
+    ec.pred.reset();
+    ec.pred.init_as_multiclass() = (i == cl.action - 1) ? cl.action : 0;
   }
 }
 
@@ -494,6 +487,6 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;
-  l.label_type =label_type_t::cs;
+  l.label_type = label_type_t::cs;
   return make_base(l);
 }

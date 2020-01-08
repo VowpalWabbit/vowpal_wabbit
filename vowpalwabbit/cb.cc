@@ -85,7 +85,14 @@ void default_label(CB::label& ld)
   ld.weight = 1;
 }
 
-void default_label(new_polylabel& v) { CB::default_label(v.init_as_cb()); }
+void default_label(new_polylabel& v)
+{
+  if (v.get_type() != label_type_t::unset)
+  {
+    v.reset();
+  }
+  CB::default_label(v.init_as_cb());
+}
 
 bool test_label(CB::label& ld)
 {

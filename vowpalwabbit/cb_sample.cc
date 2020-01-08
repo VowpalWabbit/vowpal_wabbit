@@ -26,7 +26,7 @@ struct cb_sample_data
   {
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
-    auto action_scores = examples[0]->pred.action_scores();
+    auto& action_scores = examples[0]->pred.action_scores();
     uint32_t chosen_action = -1;
 
     int labelled_action = -1;

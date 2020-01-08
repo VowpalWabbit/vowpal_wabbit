@@ -168,6 +168,10 @@ void cache_label(new_polylabel& v, io_buf& cache)
 
 void default_label(new_polylabel& v)
 {
+  if (v.get_type() != label_type_t::unset)
+  {
+    v.reset();
+  }
   CCB::label& ld = v.init_as_conditional_contextual_bandit();
 
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
