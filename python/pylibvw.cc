@@ -42,10 +42,12 @@ const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
 const size_t pACTION_SCORES = 2;
+// Deprecated
 const size_t pACTION_PROBS = 3;
 const size_t pMULTICLASS = 4;
 const size_t pMULTILABELS = 5;
 const size_t pPROB = 6;
+// Deprecated
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 
@@ -139,11 +141,11 @@ size_t my_get_prediction_type(vw_ptr all)
   { case prediction_type_t::scalar:          return pSCALAR;
     case prediction_type_t::scalars:         return pSCALARS;
     case prediction_type_t::action_scores:   return pACTION_SCORES;
-    case prediction_type_t::action_probs:    return pACTION_PROBS;
+    case prediction_type_t::action_probs:    return pACTION_SCORES;
     case prediction_type_t::multiclass:      return pMULTICLASS;
     case prediction_type_t::multilabels:     return pMULTILABELS;
     case prediction_type_t::prob:            return pPROB;
-    case prediction_type_t::multiclassprobs: return pMULTICLASSPROBS;
+    case prediction_type_t::multiclassprobs: return pSCALARS;
     case prediction_type_t::decision_scores:  return pDECISION_SCORES;
     default: THROW("unsupported prediction type used");
   }
@@ -151,8 +153,8 @@ size_t my_get_prediction_type(vw_ptr all)
 
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 { label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = VW::alloc_examples(lp->label_size, 1);
-  lp->default_label(&ec->l);
+  example* ec = VW::alloc_examples(0 /*unused*/, 1);
+  lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   if (labelType == lCOST_SENSITIVE)
   { COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
@@ -245,8 +247,6 @@ py::list my_parse(vw_ptr& all, char* str)
     example_collection.append(
         boost::shared_ptr<example>(ex, dont_delete_me));
   }
-  examples.clear();
-  examples.delete_v();
   return example_collection;
 }
 
@@ -405,7 +405,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec)
 }
 
 void unsetup_example(vw_ptr vwP, example_ptr ae)
-{ vw&all = *vwP;
+{ vw& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
@@ -808,11 +808,11 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
   .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
   .def_readonly("pACTION_SCORES", pACTION_SCORES, "Multiple action scores prediction type")
-  .def_readonly("pACTION_PROBS", pACTION_PROBS, "Multiple action probabilities prediction type")
+  .def_readonly("pACTION_PROBS", pACTION_PROBS, "DEPRECATED - use pACTION_SCORES. Multiple action probabilities prediction type")
   .def_readonly("pMULTICLASS", pMULTICLASS, "Multiclass prediction type")
   .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
   .def_readonly("pPROB", pPROB, "Probability prediction type")
-  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
+  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "DEPRECATED - use pSCALARS. Multiclass probabilities prediction type")
   .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
 ;
 
