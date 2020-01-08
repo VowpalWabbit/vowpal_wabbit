@@ -138,24 +138,21 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   parser p{8 /*ring_size*/, false /*strict parse*/};
   auto lp = CCB::ccb_label_parser;
 
-  auto label = scoped_calloc_or_throw<new_polylabel>();
-  parse_label(lp, &p, "ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label.get());
+  new_polylabel label;
+  parse_label(lp, &p, "ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", label);
 
-  auto copied_to = scoped_calloc_or_throw<new_polylabel>();
-  lp.default_label(*copied_to);
+  new_polylabel copied_to = label;
 
-  *copied_to = *label;
-
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().explicit_included_actions.size(), 2);
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().explicit_included_actions[0], 3);
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().explicit_included_actions[1], 4);
-  BOOST_CHECK_CLOSE(copied_to->conditional_contextual_bandit().outcome->cost, -2.0f, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().outcome->probabilities.size(), 3);
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(copied_to->conditional_contextual_bandit().outcome->probabilities[0].score, .5f, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().outcome->probabilities[1].action, 2);
-  BOOST_CHECK_CLOSE(copied_to->conditional_contextual_bandit().outcome->probabilities[1].score, .25f, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().outcome->probabilities[2].action, 3);
-  BOOST_CHECK_CLOSE(copied_to->conditional_contextual_bandit().outcome->probabilities[2].score, .25f, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(copied_to->conditional_contextual_bandit().type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().explicit_included_actions.size(), 2);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().explicit_included_actions[0], 3);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().explicit_included_actions[1], 4);
+  BOOST_CHECK_CLOSE(copied_to.conditional_contextual_bandit().outcome->cost, -2.0f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().outcome->probabilities.size(), 3);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().outcome->probabilities[0].action, 1);
+  BOOST_CHECK_CLOSE(copied_to.conditional_contextual_bandit().outcome->probabilities[0].score, .5f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().outcome->probabilities[1].action, 2);
+  BOOST_CHECK_CLOSE(copied_to.conditional_contextual_bandit().outcome->probabilities[1].score, .25f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().outcome->probabilities[2].action, 3);
+  BOOST_CHECK_CLOSE(copied_to.conditional_contextual_bandit().outcome->probabilities[2].score, .25f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(copied_to.conditional_contextual_bandit().type, CCB::example_type::slot);
 }

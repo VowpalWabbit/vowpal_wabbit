@@ -78,7 +78,7 @@ struct label
   {
     type = other.type;
     // todo copyconstructor of outcome
-    outcome = other.outcome;
+    outcome = new conditional_contextual_bandit_outcome(*other.outcome);
     explicit_included_actions = other.explicit_included_actions;
     weight = other.weight;
   }
@@ -87,7 +87,7 @@ struct label
   {
     type = other.type;
     delete outcome;
-    outcome = other.outcome;
+    outcome = new conditional_contextual_bandit_outcome(*other.outcome);
     explicit_included_actions = other.explicit_included_actions;
     weight = other.weight;
     return *this;
