@@ -258,10 +258,11 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
 float normalized_linear_prod(memory_tree& b, example* ec1, example* ec2)
 {
+  
   auto l1 = std::move(ec1->l);
+  auto l2 = std::move(ec2->l);
   ec1->l.reset();
   ec1->l.init_as_simple();
-  auto l2 = std::move(ec2->l);
   ec2->l.reset();
   ec2->l.init_as_simple();
 
@@ -269,13 +270,15 @@ float normalized_linear_prod(memory_tree& b, example* ec1, example* ec2)
   flat_example* fec2 = flatten_sort_example(*b.all, ec2);
   float norm_sqrt = pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
   float linear_prod = linear_kernel(fec1, fec2);
-  // fec1->fs.delete_v();
-  // fec2->fs.delete_v();
 
+  // This function can be called with ec1 and ec2 pointing to the same thing. In this case, only restore ec1.
   ec1->l.reset();
-  ec2->l.reset();
   ec1->l = std::move(l1);
-  ec2->l = std::move(l2);
+  if (ec1 != ec2)
+  {
+    ec2->l.reset();
+    ec2->l = std::move(l2);
+  }
 
   free_flatten_example(fec1);
   free_flatten_example(fec2);
