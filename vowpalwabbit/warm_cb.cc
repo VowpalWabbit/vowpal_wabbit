@@ -125,20 +125,10 @@ float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fi
 }
 
 template <class T>
-uint32_t find_min(std::vector<T> arr)
+uint32_t find_min(std::vector<T>& arr)
 {
-  T min_val = FLT_MAX;
-  uint32_t argmin = 0;
-
-  for (uint32_t i = 0; i < arr.size(); i++)
-  {
-    if (arr[i] < min_val)
-    {
-      min_val = arr[i];
-      argmin = i;
-    }
-  }
-  return argmin;
+  auto min = std::min_element(arr.begin(), arr.end());
+  return static_cast<uint32_t>(std::distance(arr.begin(), min));
 }
 
 void finish(warm_cb& data)
@@ -164,6 +154,11 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     auto& eca = *data.ecs[a];
     // clear label
     CB::default_label(eca.l.cb());
+    if (eca.pred.get_type() != prediction_type_t::action_scores)
+    {
+      eca.pred.reset();
+      eca.pred.init_as_action_scores();
+    }
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -364,6 +359,7 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
 
   for (size_t a = 0; a < data.num_actions; ++a)
   {
+    csls[a] = std::move(data.ecs[a]->l.cs());
     data.ecs[a]->l.reset();
     data.ecs[a]->l.init_as_cb(std::move(cbls[a]));
   }
@@ -465,7 +461,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs)
-    data.cs_label = ec.l.cs();
+    data.cs_label = std::move(ec.l.cs());
   else
   {
     data.mc_label = ec.l.multi();
@@ -501,7 +497,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 
   // Restore the original labels
   if (use_cs)
-    ec.l.cs() = data.cs_label;
+    ec.l.cs() = std::move(data.cs_label);
   else
     ec.l.multi() = data.mc_label;
 }
@@ -641,7 +637,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   {
     l = &init_multiclass_learner(
         data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
-    l->label_type = label_type_t::cb;
+    l->label_type = label_type_t::multi;
   }
 
   l->set_finish(finish);

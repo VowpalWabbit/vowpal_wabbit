@@ -105,14 +105,15 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   // backup cb example data
   for (const auto& ex : examples)
   {
-    _ex_as.push_back(ex->pred.action_scores());
-    _ex_costs.push_back(ex->l.cb().costs);
+    _ex_as.push_back(std::move(ex->pred.action_scores()));
+    _ex_costs.push_back(std::move(ex->l.cb().costs));
   }
 
   // set regressor predictions
   for (const auto& as : _ex_as[0])
   {
-    examples[as.action]->pred.scalar() = as.score;
+    examples[as.action]->pred.reset();
+    examples[as.action]->pred.init_as_scalar() = as.score;
   }
 
   const float cmin = _min_cb_cost;
@@ -121,7 +122,8 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   for (size_t a = 0; a < num_actions; ++a)
   {
     example* ec = examples[a];
-    ec->l.simple().label = cmin - 1;
+    ec->l.reset();
+    ec->l.init_as_simple().label = cmin - 1;
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
@@ -156,8 +158,11 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   // reset cb example data
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    examples[i]->pred.action_scores() = _ex_as[i];
-    examples[i]->l.cb().costs = _ex_costs[i];
+    examples[i]->pred.reset();
+    examples[i]->pred.init_as_action_scores() = std::move(_ex_as[i]);
+    examples[i]->l.reset();
+    examples[i]->l.init_as_cb();
+    examples[i]->l.cb().costs = std::move(_ex_costs[i]);
   }
 }
 
