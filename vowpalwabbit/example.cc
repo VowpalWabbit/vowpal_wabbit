@@ -190,13 +190,9 @@ flat_example* flatten_sort_example(vw& all, example* ec)
 VW_DEPRECATED("")
 void free_flatten_example(flat_example* fec)
 {
-  // note: The label memory should be freed by by freeing the original example.
   if (fec)
   {
-    fec->fs.~features();
-    if (fec->tag_len > 0)
-      free(fec->tag);
-    free(fec);
+    fec->~flat_example();
   }
 }
 

@@ -46,15 +46,8 @@ void remove_at_index(v_array<T>& array, uint32_t index)
 
 void copy_example_data(example* dst, example* src, bool oas = false)  // copy example data.
 {
-  if (oas == false)
-  {
-    dst->l = src->l;
-    dst->l.multi().label = src->l.multi().label;
-  }
-  else
-  {
-    dst->l.multilabels() = src->l.multilabels();
-  }
+  dst->l = src->l;
+  dst->pred = src->pred;
   VW::copy_example_data(false, dst, src);
 }
 
@@ -71,7 +64,7 @@ void diag_kronecker_prod_fs_test(
     features& f1, features& f2, features& prod_f, float& total_sum_feat_sq, float norm_sq1, float norm_sq2)
 {
   // originally called delete_v, but that doesn't seem right. Clearing instead
-  //prod_f.~features();
+  // prod_f.~features();
   prod_f.clear();
   if (f2.indicies.size() == 0)
     return;
@@ -104,7 +97,7 @@ int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
-  //VW::dealloc_example(nullptr, ec, nullptr);  // clear ec
+  // VW::dealloc_example(nullptr, ec, nullptr);  // clear ec
   copy_example_data(&ec, &ec1, oas);
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
@@ -265,12 +258,25 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
 float normalized_linear_prod(memory_tree& b, example* ec1, example* ec2)
 {
+  auto l1 = std::move(ec1->l);
+  ec1->l.reset();
+  ec1->l.init_as_simple();
+  auto l2 = std::move(ec2->l);
+  ec2->l.reset();
+  ec2->l.init_as_simple();
+
   flat_example* fec1 = flatten_sort_example(*b.all, ec1);
   flat_example* fec2 = flatten_sort_example(*b.all, ec2);
   float norm_sqrt = pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
   float linear_prod = linear_kernel(fec1, fec2);
   // fec1->fs.delete_v();
   // fec2->fs.delete_v();
+
+  ec1->l.reset();
+  ec2->l.reset();
+  ec1->l = std::move(l1);
+  ec2->l = std::move(l2);
+
   free_flatten_example(fec1);
   free_flatten_example(fec2);
   return linear_prod / norm_sqrt;
@@ -300,7 +306,7 @@ void init_tree(memory_tree& b)
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
-  std::cout << "tree initiazliation is done...." << std::endl
+  std::cout << "tree initiazliation is done..." << std::endl
             << "max nodes " << b.max_nodes << std::endl
             << "tree size: " << b.nodes.size() << std::endl
             << "max number of unique labels: " << b.max_num_labels << std::endl
@@ -387,11 +393,14 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   }
   else
   {
-    multilabels = ec.l.multilabels();
-    preds = ec.pred.multilabels();
+    multilabels = std::move(ec.l.multilabels());
+    preds = std::move(ec.pred.multilabels());
   }
 
-  ec.l.simple() = {1.f, 1.f, 0.};
+  ec.l.reset();
+  ec.l.init_as_simple() = {1.f, 1.f, 0.};
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   base.predict(ec, b.nodes[cn].base_router);
   float prediction = ec.pred.scalar();
   // float imp_weight = 1.f; //no importance weight.
@@ -409,15 +418,17 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   base.predict(ec, b.nodes[cn].base_router);
   float save_binary_scalar = ec.pred.scalar();
 
+  ec.l.reset();
+  ec.pred.reset();
   if (b.oas == false)
   {
-    ec.l.multi() = mc;
-    ec.pred.multiclass() = save_multi_pred;
+    ec.l.init_as_multi() = mc;
+    ec.pred.init_as_multiclass() = save_multi_pred;
   }
   else
   {
-    ec.pred.multilabels() = preds;
-    ec.l.multilabels() = multilabels;
+    ec.pred.init_as_multilabels() = std::move(preds);
+    ec.l.init_as_multilabels() = std::move(multilabels);
   }
   ec.weight = ec_input_weight;
 
@@ -459,51 +470,60 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
   for (size_t ec_id = 0; ec_id < b.nodes[cn].examples_index.size(); ec_id++)  // scan all examples stored in the cn
   {
     uint32_t ec_pos = b.nodes[cn].examples_index[ec_id];
+    auto& current_ex = *b.examples[ec_pos];
     MULTICLASS::label_t mc;
     uint32_t save_multi_pred = 0;
     MULTILABEL::labels multilabels;
     MULTILABEL::labels preds;
     if (b.oas == false)
     {
-      mc = b.examples[ec_pos]->l.multi();
-      save_multi_pred = b.examples[ec_pos]->pred.multiclass();
+      mc = current_ex.l.multi();
+      save_multi_pred = current_ex.pred.multiclass();
     }
     else
     {
-      multilabels = b.examples[ec_pos]->l.multilabels();
-      preds = b.examples[ec_pos]->pred.multilabels();
+      multilabels = std::move(current_ex.l.multilabels());
+      preds = std::move(current_ex.pred.multilabels());
     }
 
-    b.examples[ec_pos]->l.simple() = {1.f, 1.f, 0.f};
-    base.predict(*b.examples[ec_pos], b.nodes[cn].base_router);  // re-predict
-    float scalar = b.examples[ec_pos]->pred.scalar();              // this is spliting the leaf.
+    current_ex.l.reset();
+    current_ex.l.init_as_simple() = {1.f, 1.f, 0.f};
+    current_ex.pred.reset();
+    current_ex.pred.init_as_scalar();
+    base.predict(current_ex, b.nodes[cn].base_router);  // re-predict
+    float scalar = current_ex.pred.scalar();            // this is spliting the leaf.
+
+    current_ex.l.reset();
+    current_ex.pred.reset();
+    if (b.oas == false)
+    {
+      current_ex.l.init_as_multi() = mc;
+      current_ex.pred.init_as_multiclass() = save_multi_pred;
+    }
+    else
+    {
+      current_ex.pred.init_as_multilabels() = preds;
+      current_ex.l.init_as_multilabels() = multilabels;
+    }
+
     if (scalar < 0)
     {
       b.nodes[left_child].examples_index.push_back(ec_pos);
-      float leaf_pred = train_node(b, base, *b.examples[ec_pos], left_child);
+      float leaf_pred = train_node(b, base, current_ex, left_child);
       insert_descent(b.nodes[left_child], leaf_pred);  // fake descent, only for update nl and nr
     }
     else
     {
       b.nodes[right_child].examples_index.push_back(ec_pos);
-      float leaf_pred = train_node(b, base, *b.examples[ec_pos], right_child);
+      float leaf_pred = train_node(b, base, current_ex, right_child);
       insert_descent(b.nodes[right_child], leaf_pred);  // fake descent. for update nr and nl
     }
-
-    if (b.oas == false)
-    {
-      b.examples[ec_pos]->l.multi() = mc;
-      b.examples[ec_pos]->pred.multiclass() = save_multi_pred;
-    }
-    else
-    {
-      b.examples[ec_pos]->pred.multilabels() = preds;
-      b.examples[ec_pos]->l.multilabels() = multilabels;
-    }
   }
-  b.nodes[cn].examples_index.clear();                                                 // empty the cn's example list
-  b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001);   // avoid to set nl to zero
-  b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
+  b.nodes[cn].examples_index.clear();  // empty the cn's example list
+  b.nodes[cn].nl =
+      std::max(static_cast<double>(b.nodes[left_child].examples_index.size()), 0.001);  // avoid to set nl to zero
+  b.nodes[cn].nr =
+      std::max(static_cast<double>(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
   {
@@ -623,7 +643,10 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
       {
         float tmp_s = normalized_linear_prod(b, &ec, b.examples[loc]);
         diag_kronecker_product_test(ec, *b.examples[loc], *b.kprod_ec, b.oas);
-        b.kprod_ec->l.simple() = {FLT_MAX, 0., tmp_s};
+        b.kprod_ec->l.reset();
+        b.kprod_ec->l.init_as_simple() = {FLT_MAX, 0., tmp_s};
+        b.kprod_ec->pred.reset();
+        b.kprod_ec->pred.init_as_scalar();
         base.predict(*b.kprod_ec, b.max_routers);
         score = b.kprod_ec->partial_prediction;
       }
@@ -655,7 +678,7 @@ float F1_score_for_two_examples(example& ec1, example& ec2)
   float v1 = (float)(num_overlaps / (1e-7 + ec1.l.multilabels().label_v.size() * 1.));
   float v2 = (float)(num_overlaps / (1e-7 + ec2.l.multilabels().label_v.size() * 1.));
   if (num_overlaps == 0.f)
-    return 0.f; 
+    return 0.f;
   else
     // return v2; //only precision
     return 2.f * (v1 * v2 / (v1 + v2));
@@ -674,28 +697,34 @@ void predict(memory_tree& b, single_learner& base, example& ec)
   }
   else
   {
-    multilabels = ec.l.multilabels();
-    preds = ec.pred.multilabels();
+    multilabels = std::move(ec.l.multilabels());
+    preds = std::move(ec.pred.multilabels());
   }
 
   uint64_t cn = 0;
-  ec.l.simple() = {-1.f, 1.f, 0.};
+  ec.l.reset();
+  ec.l.init_as_simple() = {-1.f, 1.f, 0.};
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   while (b.nodes[cn].internal == 1)
   {  // if it's internal{
     base.predict(ec, b.nodes[cn].base_router);
-    uint64_t newcn = ec.pred.scalar() < 0 ? b.nodes[cn].left : b.nodes[cn].right;  // do not need to increment nl and nr.
+    uint64_t newcn =
+        ec.pred.scalar() < 0 ? b.nodes[cn].left : b.nodes[cn].right;  // do not need to increment nl and nr.
     cn = newcn;
   }
 
+  ec.l.reset();
+  ec.pred.reset();
   if (b.oas == false)
   {
-    ec.l.multi() = mc;
-    ec.pred.multiclass() = save_multi_pred;
+    ec.l.init_as_multi() = mc;
+    ec.pred.init_as_multiclass() = save_multi_pred;
   }
   else
   {
-    ec.pred.multilabels() = preds;
-    ec.l.multilabels() = multilabels;
+    ec.pred.init_as_multilabels() = std::move(preds);
+    ec.l.init_as_multilabels() = std::move(multilabels);
   }
 
   int64_t closest_ec = 0;
@@ -742,26 +771,30 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   }
   else
   {
-    multilabels = ec.l.multilabels();
-    preds = ec.pred.multilabels();
+    multilabels = std::move(ec.l.multilabels());
+    preds = std::move(ec.pred.multilabels());
   }
-  ec.l.simple() = {FLT_MAX, 1., 0.0};
+  ec.l.reset();
+  ec.l.init_as_simple() = {FLT_MAX, 1., 0.0};
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   while (b.nodes[cn].internal != -1)
   {
     base.predict(ec, b.nodes[cn].base_router);
     float prediction = ec.pred.scalar();
     cn = prediction < 0 ? b.nodes[cn].left : b.nodes[cn].right;
   }
-
+  ec.l.reset();
+  ec.pred.reset();
   if (b.oas == false)
   {
-    ec.l.multi() = mc;
-    ec.pred.multiclass() = save_multi_pred;
+    ec.l.init_as_multi() = mc;
+    ec.pred.init_as_multiclass() = save_multi_pred;
   }
   else
   {
-    ec.pred.multilabels() = preds;
-    ec.l.multilabels() = multilabels;
+    ec.pred.init_as_multilabels() = preds;
+    ec.l.init_as_multilabels() = multilabels;
   }
 
   // get to leaf now:
@@ -784,7 +817,10 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   {
     float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
     diag_kronecker_product_test(ec, *b.examples[closest_ec], *b.kprod_ec, b.oas);
-    b.kprod_ec->l.simple() = {reward, 1.f, -score};
+    b.kprod_ec->l.reset();
+    b.kprod_ec->l.init_as_simple() = {reward, 1.f, -score};
+    b.kprod_ec->pred.reset();
+    b.kprod_ec->pred.init_as_scalar();
     b.kprod_ec->weight = weight;
     base.learn(*b.kprod_ec, b.max_routers);
   }
@@ -812,7 +848,10 @@ void learn_at_leaf_random(
       reward = 1.f;
     float score = normalized_linear_prod(b, &ec, b.examples[ec_id]);
     diag_kronecker_product_test(ec, *b.examples[ec_id], *b.kprod_ec, b.oas);
-    b.kprod_ec->l.simple() = {reward, 1.f, -score};
+    b.kprod_ec->l.reset();
+    b.kprod_ec->l.init_as_simple() = {reward, 1.f, -score};
+    b.kprod_ec->pred.reset();
+    b.kprod_ec->pred.init_as_scalar();
     b.kprod_ec->weight = weight;  //* b.nodes[leaf_id].examples_index.size();
     base.learn(*b.kprod_ec, b.max_routers);
   }
@@ -835,12 +874,15 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   }
   else
   {
-    multilabels = ec.l.multilabels();
-    preds = ec.pred.multilabels();
+    multilabels = std::move(ec.l.multilabels());
+    preds = std::move(ec.pred.multilabels());
   }
 
   path.clear();
-  ec.l.simple() = {FLT_MAX, 1.0, 0.0};
+  ec.l.reset();
+  ec.l.init_as_simple() = {FLT_MAX, 1.0, 0.0};
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   while (b.nodes[cn].internal != -1)
   {
     path.push_back(cn);  // path stores node id from the root to the leaf
@@ -853,15 +895,17 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   }
   path.push_back(cn);  // push back the leaf
 
+  ec.l.reset();
+  ec.pred.reset();
   if (b.oas == false)
   {
-    ec.l.multi() = mc;
-    ec.pred.multiclass() = save_multi_pred;
+    ec.l.init_as_multi() = mc;
+    ec.pred.init_as_multiclass() = save_multi_pred;
   }
   else
   {
-    ec.pred.multilabels() = preds;
-    ec.l.multilabels() = multilabels;
+    ec.pred.init_as_multilabels() = std::move(preds);
+    ec.l.init_as_multilabels() = std::move(multilabels);
   }
 
   // std::cout<<"at route to leaf: "<<path.size()<< std::endl;
@@ -907,14 +951,18 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       float ec_input_weight = ec.weight;
 
       MULTICLASS::label_t mc;
+      uint32_t save_multi_pred = 0;
       MULTILABEL::labels multilabels;
       MULTILABEL::labels preds;
       if (b.oas == false)
+      {
         mc = ec.l.multi();
+        save_multi_pred = ec.pred.multiclass();
+      }
       else
       {
-        multilabels = ec.l.multilabels();
-        preds = ec.pred.multilabels();
+        multilabels = std::move(ec.l.multilabels());
+        preds = std::move(ec.pred.multilabels());
       }
 
       ec.weight = fabs(objective);
@@ -922,15 +970,23 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
         ec.weight = 100.f;
       else if (ec.weight < .01f)
         ec.weight = 0.01f;
-      ec.l.simple() = {objective < 0. ? -1.f : 1.f, 1.f, 0.};
+      ec.l.reset();
+      ec.l.init_as_simple() = {objective < 0. ? -1.f : 1.f, 1.f, 0.};
+      ec.pred.reset();
+      ec.pred.init_as_scalar();
       base.learn(ec, b.nodes[cn].base_router);
 
+      ec.l.reset();
+      ec.pred.reset();
       if (b.oas == false)
-        ec.l.multi() = mc;
+      {
+        ec.l.init_as_multi() = mc;
+        ec.pred.init_as_multiclass() = save_multi_pred;
+      }
       else
       {
-        ec.pred.multilabels() = preds;
-        ec.l.multilabels() = multilabels;
+        ec.pred.init_as_multilabels() = std::move(preds);
+        ec.l.init_as_multilabels() = std::move(multilabels);
       }
       ec.weight = ec_input_weight;  // restore the original weight
     }
@@ -1277,6 +1333,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
     l.set_end_pass(end_pass);
+    l.label_type = label_type_t::multi;
 
     return make_base(l);
   }  // multi-label classification
