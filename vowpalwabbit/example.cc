@@ -71,7 +71,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   copy_example_metadata(audit, dst, src);
 
   // copy feature data
-  copy_array(dst->indices, src->indices);
+  dst->indices = src->indices;
   for (namespace_index c : src->indices)
   {
     // Performs deep copy of namespace  
@@ -80,6 +80,8 @@ void copy_example_data(bool audit, example* dst, example* src)
   // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
+
+  // Shallow copy
   dst->interactions = src->interactions;
 }
 

@@ -266,7 +266,7 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
     ec->l.reset();
-    ec->l.init_as_cs(prepped_cs_labels[index++]);
+    ec->l.init_as_cs(std::move(prepped_cs_labels[index++]));
     ec->ft_offset = offset;
   }
 
@@ -282,6 +282,7 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   // and restore offsets
   for (size_t i = 0; i < examples.size(); ++i)
   {
+    prepped_cs_labels[i].costs = std::move(examples[i]->l.cs().costs);
     examples[i]->l.reset();
     examples[i]->l.init_as_cb(std::move(cb_labels[i]));
     examples[i]->ft_offset = saved_offset;

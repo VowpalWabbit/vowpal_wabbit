@@ -461,7 +461,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs)
-    data.cs_label = std::move(ec.l.cs());
+    data.cs_label = ec.l.cs();
   else
   {
     data.mc_label = ec.l.multi();

@@ -162,10 +162,10 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
   else
   {
     // finding max_pred and min_pred by binary search
-    max_pred =
-        std::min(ec.pred.scalar() + sens * binarySearch(cs_a.cost_max - ec.pred.scalar(), delta, sens, tol), cs_a.cost_max);
-    min_pred =
-        std::max(ec.pred.scalar() - sens * binarySearch(ec.pred.scalar() - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+    max_pred = std::min(
+        ec.pred.scalar() + sens * binarySearch(cs_a.cost_max - ec.pred.scalar(), delta, sens, tol), cs_a.cost_max);
+    min_pred = std::max(
+        ec.pred.scalar() - sens * binarySearch(ec.pred.scalar() - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
       cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
@@ -215,6 +215,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   float score = FLT_MAX;
   ec.l.reset();
   ec.l.init_as_simple();
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round
@@ -267,6 +269,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           (query && lqd.is_range_overlapped && lqd.is_range_large));
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl.class_index, lqd.cl.x, prediction, score,
           lqd.cl.partial_prediction, query_label, lqd.query_needed);
+      // FIXME: I am unsure when this code runs? But multilabels seems wrong.
       if (lqd.query_needed)
         ec.pred.multilabels().label_v.push_back(lqd.cl.class_index);
       if (cs_a.print_debug_stuff)
@@ -303,12 +306,13 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     }
   }
 
-  ec.pred.multiclass() = prediction;
+  ec.pred.reset();
+  ec.pred.init_as_multiclass() = prediction;
   ec.l.reset();
   ec.l.init_as_cs(std::move(ld));
 }
 
-void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec); }
+void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, ec); }
 
 base_learner* cs_active_setup(options_i& options, vw& all)
 {
@@ -372,9 +376,9 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels)
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multiclass)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels);
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multiclass);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
