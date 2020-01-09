@@ -104,7 +104,7 @@ struct new_polyprediction
     }
   }
 
-  void move_from(const new_polyprediction&& other)
+  void move_from(new_polyprediction&& other)
   {
     switch (other._tag)
     {

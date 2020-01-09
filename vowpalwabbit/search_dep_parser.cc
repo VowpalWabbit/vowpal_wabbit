@@ -368,7 +368,7 @@ void get_valid_actions(Search::search& sch, v_array<uint32_t>& valid_action, uin
   }
 }
 
-bool is_valid(uint64_t action, v_array<uint32_t> valid_actions)
+bool is_valid(uint64_t action, const v_array<uint32_t>& valid_actions)
 {
   for (size_t i = 0; i < valid_actions.size(); i++)
     if (valid_actions[i] == action)
