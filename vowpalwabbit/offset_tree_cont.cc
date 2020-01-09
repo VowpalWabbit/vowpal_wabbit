@@ -135,6 +135,7 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 }
 
 bool compareByid(const node_cost& a, const node_cost& b) { return a.node_id < b.node_id; }
+bool compareByid_1(const node_cost& a, const node_cost& b) { return a.node_id > b.node_id; }
 
 void offset_tree::init_node_sets(v_array<cb_class>& ac)
 {
@@ -160,12 +161,12 @@ void offset_tree::init_node_sets(v_array<cb_class>& ac)
     _nodes_depth_1.clear();
   }
 
-  std::sort(_nodes_depth_1.begin(), _nodes_depth_1.end(), std::not1(compareByid));
+  std::sort(_nodes_depth_1.begin(), _nodes_depth_1.end(), compareByid_1);
   std::sort(_nodes_depth.begin(), _nodes_depth.end(), compareByid);
 }
 
-#define RIGHT 1
-#define LEFT -1
+constexpr float RIGHT = 1.0f;
+constexpr float LEFT = -1.0f;
 
 void offset_tree::reduce_depth() {
   // Completed processing all nodes at current depth
