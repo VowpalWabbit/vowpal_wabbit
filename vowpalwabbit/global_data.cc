@@ -83,7 +83,7 @@ void binary_print_result_by_ref(int f, float res, float weight, const v_array<ch
   }
 }
 
-int print_tag(std::stringstream& ss, v_array<char> tag)
+int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
 {
   if (tag.begin() != tag.end())
   {
@@ -91,6 +91,11 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
     ss.write(tag.begin(), sizeof(char) * tag.size());
   }
   return tag.begin() != tag.end();
+}
+
+int print_tag(std::stringstream& ss, v_array<char> tag)
+{
+  return print_tag_by_ref(ss, tag);
 }
 
 void print_result(int f, float res, float unused, v_array<char> tag)
@@ -107,7 +112,7 @@ void print_result_by_ref(int f, float res, float, const v_array<char>& tag)
     if (floorf(res) == res)
       ss << std::setprecision(0);
     ss << std::fixed << res << std::setprecision(saved_precision);
-    print_tag(ss, tag);
+    print_tag_by_ref(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
@@ -125,7 +130,7 @@ void print_raw_text(int f, std::string s, v_array<char> tag)
 
   std::stringstream ss;
   ss << s;
-  print_tag(ss, tag);
+  print_tag_by_ref(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
@@ -143,7 +148,7 @@ void print_raw_text_by_ref(int f, std::string s, const v_array<char>& tag)
 
   std::stringstream ss;
   ss << s;
-  print_tag(ss, tag);
+  print_tag_by_ref(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);

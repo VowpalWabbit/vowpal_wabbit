@@ -373,7 +373,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   for (const auto& ec : ec_seq)
   {
     // save original variables
-    label save_cs_label = ec->l.cs();
+    label save_cs_label = std::move(ec->l.cs());
     v_array<COST_SENSITIVE::wclass>& costs = save_cs_label.costs;
 
     // build example for the base learner
@@ -409,9 +409,9 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     ec->weight = old_weight;
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
-    ec->l.reset();
-    ec->l.init_as_cs(save_cs_label);
     ec->partial_prediction = costs[0].partial_prediction;
+    ec->l.reset();
+    ec->l.init_as_cs(std::move(save_cs_label));
   }
 }
 

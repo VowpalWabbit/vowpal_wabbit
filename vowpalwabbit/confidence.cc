@@ -52,7 +52,7 @@ void confidence_print_result(int f, float res, float confidence, v_array<char> t
   {
     std::stringstream ss;
     ss << std::fixed << res << " " << confidence;
-    if (!print_tag(ss, tag))
+    if (!print_tag_by_ref(ss, tag))
       ss << ' ';
     ss << '\n';
     ssize_t len = ss.str().size();

@@ -94,7 +94,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
   {
     std::stringstream ss;
     ss << std::fixed << res;
-    if (!print_tag(ss, tag))
+    if (!print_tag_by_ref(ss, tag))
       ss << ' ';
     if (weight >= 0)
       ss << " " << std::fixed << weight;

@@ -84,7 +84,7 @@ void print_result(int file_descriptor, std::pair<VW::topk::const_iterator_t, VW:
     for (auto it = view.first; it != view.second; it++)
     {
       ss << std::fixed << it->first << " ";
-      print_tag(ss, it->second);
+      print_tag_by_ref(ss, it->second);
       ss << " \n";
     }
     ss << '\n';
