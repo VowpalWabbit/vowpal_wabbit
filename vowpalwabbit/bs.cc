@@ -137,7 +137,7 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
   {
     std::stringstream ss;
     ss << std::fixed << res;
-    print_tag(ss, tag);
+    print_tag_by_ref(ss, tag);
     ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);

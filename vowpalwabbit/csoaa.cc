@@ -364,7 +364,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   {
     // save original variables
     label save_cs_label = ec->l.cs;
-    v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
+    v_array<COST_SENSITIVE::wclass>& costs = save_cs_label.costs;
 
     // build example for the base learner
     label_data simple_label;

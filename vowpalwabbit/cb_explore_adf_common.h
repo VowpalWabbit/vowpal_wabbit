@@ -134,7 +134,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
-  ACTION_SCORE::action_scores preds = ec.pred.a_s;
+  ACTION_SCORE::action_scores& preds = ec.pred.a_s;
 
   for (const auto& example : ec_seq)
   {

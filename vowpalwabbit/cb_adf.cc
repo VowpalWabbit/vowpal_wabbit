@@ -97,8 +97,7 @@ struct cb_adf
 
 CB::cb_class get_observed_cost(multi_ex& examples)
 {
-  CB::label ld;
-  ld.costs = v_init<cb_class>();
+  CB::label* ld;
   int index = -1;
   CB::cb_class known_cost;
 
@@ -107,7 +106,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   {
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
     {
-      ld = ec->l.cb;
+      ld = &ec->l.cb;
       index = (int)i;
     }
     ++i;
@@ -122,7 +121,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
     // throw exception();
   }
 
-  known_cost = ld.costs[0];
+  known_cost = ld->costs[0];
   known_cost.action = index;
   return known_cost;
 }

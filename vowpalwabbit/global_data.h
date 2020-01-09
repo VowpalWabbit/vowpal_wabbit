@@ -576,6 +576,6 @@ void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
 
+VW_DEPRECATED("Use print_tag_by_ref instead")
 int print_tag(std::stringstream& ss, v_array<char> tag);
-VW_DEPRECATED("Use binary_print_result_by_ref instead")
 int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);
