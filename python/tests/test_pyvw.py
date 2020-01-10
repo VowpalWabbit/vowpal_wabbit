@@ -50,71 +50,71 @@ def test_delete():
 
 # Test prediction types
 
-def test_scalar_prediction_type_t():
+def test_scalar_prediction_type():
     model = vw(quiet=True)
     model.learn('1 | a b c')
-    assert model.get_prediction_type_t() == model.pSCALAR
+    assert model.get_prediction_type() == model.pSCALAR
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, float)
     del model
 
 
-def test_scalars_prediction_type_t():
+def test_scalars_prediction_type():
     n = 3
     model = vw(loss_function='logistic', oaa=n, probabilities=True, quiet=True)
     model.learn('1 | a b c')
-    assert model.get_prediction_type_t() == model.pSCALARS
+    assert model.get_prediction_type() == model.pSCALARS
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
     assert len(prediction) == n
     del model
 
 
-def test_multiclass_prediction_type_t():
+def test_multiclass_prediction_type():
     n = 3
     model = vw(loss_function='logistic', oaa=n, quiet=True)
     model.learn('1 | a b c')
-    assert model.get_prediction_type_t() == model.pMULTICLASS
+    assert model.get_prediction_type() == model.pMULTICLASS
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, int)
     del model
 
 
-def test_prob_prediction_type_t():
+def test_prob_prediction_type():
     model = vw(loss_function='logistic', csoaa_ldf='mc', probabilities=True, quiet=True)
     multi_ex = [model.example('1:0.2 | a b c'), model.example('2:0.8  | a b c')]
     model.learn(multi_ex)
-    assert model.get_prediction_type_t() == model.pPROB
+    assert model.get_prediction_type() == model.pPROB
     multi_ex = [model.example('1 | a b c'), model.example('2 | a b c')]
     prediction = model.predict(multi_ex)
     assert isinstance(prediction, float)
     del model
 
 
-def test_action_scores_prediction_type_t():
+def test_action_scores_prediction_type():
     model = vw(loss_function='logistic', csoaa_ldf='m', quiet=True)
     multi_ex = [model.example('1:1 | a b c'), model.example('2:-1  | a b c')]
     model.learn(multi_ex)
-    assert model.get_prediction_type_t() == model.pMULTICLASS
+    assert model.get_prediction_type() == model.pMULTICLASS
     multi_ex = [model.example('1 | a b c'), model.example('2 | a b c')]
     prediction = model.predict(multi_ex)
     assert isinstance(prediction, int)
     del model
 
 
-def test_action_probs_prediction_type_t():
+def test_action_probs_prediction_type():
     model = vw(cb_explore=2, ngram=2, quiet=True)
     model.learn('1 | a b c')
-    assert model.get_prediction_type_t() == model.pACTION_PROBS
+    assert model.get_prediction_type() == model.pACTION_PROBS
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
     del model
 
 
-def test_multilabel_prediction_type_t():
+def test_multilabel_prediction_type():
     model = vw(multilabel_oaa=4, quiet=True)
     model.learn('1 | a b c')
-    assert model.get_prediction_type_t() == model.pMULTILABELS
+    assert model.get_prediction_type() == model.pMULTILABELS
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
     del model

@@ -139,7 +139,7 @@ size_t my_get_label_type(vw*all)
   }
 }
 
-size_t my_get_prediction_type_t(vw_ptr all)
+size_t my_get_prediction_type(vw_ptr all)
 { switch (all->l->pred_type)
   { case prediction_type_t::scalar:          return pSCALAR;
     case prediction_type_t::scalars:         return pSCALARS;
@@ -796,7 +796,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_stride", &VW::get_stride, "return the internal stride")
 
   .def("get_label_type", &my_get_label_type, "return parse label type")
-  .def("get_prediction_type_t", &my_get_prediction_type_t, "return prediction type")
+  .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
