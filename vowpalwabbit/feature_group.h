@@ -8,6 +8,7 @@
 #include <string>
 #include <cstddef>
 #include "v_array.h"
+#include <algorithm>
 
 #ifndef _WIN32
 #include <sys/types.h>
@@ -264,10 +265,7 @@ struct features
     iterator_all end() { return iterator_all(_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()); }
   };
 
-  features()
-  {
-    sum_feat_sq = 0.f;
-  }
+  features() { sum_feat_sq = 0.f; }
 
   features(const features&) = default;
   features& operator=(const features&) = default;
@@ -337,13 +335,18 @@ struct features
 
     if (!space_names.empty())
     {
-      v_array<feature_slice> slice;
+      std::vector<feature_slice> slice;
+      slice.reserve(indicies.size());
       for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature_slice temp = {values[i], indicies[i] & parse_mask, *space_names[i].get()};
-        slice.push_back(temp);
+        slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i].get()});
       }
-      qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features<feature_slice>);
+      // The comparator should return true if the first element is less than the second.
+      std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
+        return (first.weight_index < second.weight_index) ||
+            ((first.weight_index == second.weight_index) && (first.x < second.x));
+      });
+
       for (size_t i = 0; i < slice.size(); i++)
       {
         values[i] = slice[i].x;
@@ -353,13 +356,18 @@ struct features
     }
     else
     {
-      v_array<feature> slice;
+      std::vector<feature> slice;
+      slice.reserve(indicies.size());
+
       for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature temp = {values[i], indicies[i] & parse_mask};
-        slice.push_back(temp);
+        slice.push_back({values[i], indicies[i] & parse_mask});
       }
-      qsort(slice.begin(), slice.size(), sizeof(feature), order_features<feature>);
+      // The comparator should return true if the first element is less than the second.
+      std::sort(slice.begin(), slice.end(), [](const feature& first, const feature& second) {
+        return (first.weight_index < second.weight_index) ||
+            ((first.weight_index == second.weight_index) && (first.x < second.x));
+      });
       for (size_t i = 0; i < slice.size(); i++)
       {
         values[i] = slice[i].x;
@@ -368,7 +376,6 @@ struct features
     }
     return true;
   }
-
 
   VW_DEPRECATED("Use copy constructor")
   void deep_copy_from(const features& src)

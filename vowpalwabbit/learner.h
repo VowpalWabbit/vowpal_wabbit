@@ -523,6 +523,7 @@ template <bool is_learn>
 void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
 {
   std::vector<uint64_t> saved_offsets;
+  saved_offsets.reserve(examples.size());
   for (auto ec : examples)
   {
     saved_offsets.push_back(ec->ft_offset);

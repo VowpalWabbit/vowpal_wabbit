@@ -74,7 +74,7 @@ struct Namespace
 
   void AddFeature(vw* all, const char* str)
   {
-    ftrs->push_back(1., VW::hash_feature(*all, str, namespace_hash));
+    ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
     feature_count++;
 
     if (audit)
@@ -852,7 +852,7 @@ class DefaultState : public BaseState<audit>
   BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     auto& ns = ctx.CurrentNamespace();
-    ns.AddFeature(f, VW::hash_feature(*ctx.all, ctx.key, ns.namespace_hash), ctx.key);
+    ns.AddFeature(f, VW::hash_feature_cstr(*ctx.all, const_cast<char*>(ctx.key), ns.namespace_hash), ctx.key);
 
     return this;
   }
@@ -1241,7 +1241,7 @@ struct Context
   {
     Namespace<audit> n;
     n.feature_group = ns[0];
-    n.namespace_hash = VW::hash_space(*all, ns);
+    n.namespace_hash = VW::hash_space_cstr(*all, const_cast<char*>(ns));
     n.ftrs = ex->feature_space.data() + ns[0];
     n.feature_count = 0;
     n.return_state = return_state;
