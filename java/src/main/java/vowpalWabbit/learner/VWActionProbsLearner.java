@@ -2,6 +2,7 @@ package vowpalWabbit.learner;
 
 import vowpalWabbit.responses.ActionProbs;
 
+@Deprecated
 public final class VWActionProbsLearner extends VWLearnerBase<ActionProbs> {
     VWActionProbsLearner(final long nativePointer) {
         super(nativePointer);

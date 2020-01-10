@@ -8,7 +8,7 @@ package vowpalWabbit.learner;
  */
 final public class VWLearners {
     private enum VWReturnType {
-        Unknown, ActionProbs, ActionScores, Multiclass, Multilabels, Prob, Scalar, Scalars
+        Unknown, ActionScores, Multiclass, Multilabels, Prob, Scalar, Scalars
     }
 
     static {
@@ -16,6 +16,14 @@ final public class VWLearners {
     }
 
     private VWLearners() {}
+
+    private static <T extends VWLearner> T tryCreateActionProbsOrScoresLearner(long nativePointer) {
+        try {
+            return (T)new VWActionScoresLearner(nativePointer);
+        } catch (ClassCastException exception) {
+            return (T)new VWActionProbsLearner(nativePointer);
+        }
+    }
 
     /**
      * This is the only way to construct a VW Predictor.  The goal here is to provide a typesafe way of getting an predictor
@@ -42,8 +50,7 @@ final public class VWLearners {
         VWReturnType returnType = getReturnType(nativePointer);
 
         switch (returnType) {
-            case ActionProbs: return (T)new VWActionProbsLearner(nativePointer);
-            case ActionScores: return (T)new VWActionScoresLearner(nativePointer);
+            case ActionScores: return tryCreateActionProbsOrScoresLearner(nativePointer);
             case Multiclass: return (T)new VWMulticlassLearner(nativePointer);
             case Multilabels: return (T)new VWMultilabelsLearner(nativePointer);
             case Prob: return (T)new VWProbLearner(nativePointer);
