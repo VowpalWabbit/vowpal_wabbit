@@ -4,6 +4,10 @@
 from __future__ import division
 import pylibvw
 
+import warnings
+
+def deprecation(message):
+    warnings.warn(message, DeprecationWarning)
 
 class SearchTask():
     """Search task class"""
@@ -50,9 +54,14 @@ class SearchTask():
         return self._output
 
 
-def get_prediction(ec, prediction_type):
+def get_prediction(ec, prediction_type_t):
     """Get specified type of prediction from example"""
-    switch_prediction_type = {
+    if prediction_type_t == pylibvw.vw.pACTION_PROBS:
+        deprecation("pACTION_PROBS is deprecated, use pACTION_SCORES instead")
+    elif prediction_type_t == pylibvw.vw.pMULTICLASSPROBS:
+        deprecation("pMULTICLASSPROBS is deprecated, use pSCALARS instead")
+
+    switch_prediction_type_t = {
         pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
         pylibvw.vw.pSCALARS: ec.get_scalars,
         pylibvw.vw.pACTION_SCORES: ec.get_action_scores,
@@ -63,7 +72,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores
     }
-    return switch_prediction_type[prediction_type]()
+    return switch_prediction_type_t[prediction_type_t]()
 
 
 class vw(pylibvw.vw):
@@ -174,11 +183,11 @@ class vw(pylibvw.vw):
         if new_example:
             self.finish_example(ec)
 
-    def predict(self, ec, prediction_type=None):
+    def predict(self, ec, prediction_type_t=None):
         """Just make a prediction on this example; ec can either be an example
         object or a string (in which case it is parsed and then predicted on).
 
-        if prediction_type is provided the matching return type is used
+        if prediction_type_t is provided the matching return type is used
         otherwise the the learner's prediction type will determine the output."""
 
         new_example = False
@@ -203,13 +212,13 @@ class vw(pylibvw.vw):
         else:
             pylibvw.vw.predict_multi(self, ec)
 
-        if prediction_type is None:
-            prediction_type = pylibvw.vw.get_prediction_type(self)
+        if prediction_type_t is None:
+            prediction_type_t = pylibvw.vw.get_prediction_type_t(self)
 
         if isinstance(ec, example):
-            prediction = get_prediction(ec, prediction_type)
+            prediction = get_prediction(ec, prediction_type_t)
         else:
-            prediction = get_prediction(ec[0], prediction_type)
+            prediction = get_prediction(ec[0], prediction_type_t)
 
         if new_example:
             self.finish_example(ec)

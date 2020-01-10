@@ -492,7 +492,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   multi_learner* base = as_multiline(setup_base(options, all));
   learner<cbify, multi_ex>& l = init_learner(
-      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass);
+      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type_t::multiclass);
 
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;

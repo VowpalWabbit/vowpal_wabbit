@@ -125,9 +125,9 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, c->num_classes, prediction_type::multiclass);
+      predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
   all.p->lp = cs_label;
-  all.label_type = label_type::cs;
+  all.label_type = label_type_t::cs;
 
   l.set_finish_example(finish_example);
   all.cost_sensitive = make_base(l);
@@ -835,7 +835,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
     all.delete_prediction = delete_action_scores;
 
   all.p->lp = COST_SENSITIVE::cs_label;
-  all.label_type = label_type::cs;
+  all.label_type = label_type_t::cs;
 
   ld->treat_as_classifier = false;
   if (ldf_arg == "multiline" || ldf_arg == "m")
@@ -867,14 +867,14 @@ base_learner* csldf_setup(options_i& options, vw& all)
   features fs;
   ld->label_features.init(256, fs, LabelDict::size_t_eq);
   ld->label_features.get(1, 94717244);  // TODO: figure this out
-  prediction_type::prediction_type_t pred_type;
+  prediction_type_t pred_type;
 
   if (ld->rank)
-    pred_type = prediction_type::action_scores;
+    pred_type = prediction_type_t::action_scores;
   else if (ld->is_probabilities)
-    pred_type = prediction_type::prob;
+    pred_type = prediction_type_t::prob;
   else
-    pred_type = prediction_type::multiclass;
+    pred_type = prediction_type_t::multiclass;
 
   ld->read_example_this_loop = 0;
   learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>,

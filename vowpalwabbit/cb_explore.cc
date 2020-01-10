@@ -320,17 +320,17 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->preds = v_init<uint32_t>();
     data->preds.resize(data->cover_size);
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type::action_probs);
+        prediction_type_t::action_scores);
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type::action_probs);
+        prediction_type_t::action_scores);
   else if (options.was_supplied("first"))
     l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
+        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_scores);
   else  // greedy
     l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);
+        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_scores);
 
   l->set_finish_example(finish_example);
   return make_base(*l);

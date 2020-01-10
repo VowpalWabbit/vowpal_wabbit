@@ -2,16 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "../vowpalwabbit/vw.h"
+#include "vw.h"
 
-#include "../vowpalwabbit/multiclass.h"
-#include "../vowpalwabbit/cost_sensitive.h"
-#include "../vowpalwabbit/cb.h"
-#include "../vowpalwabbit/search.h"
-#include "../vowpalwabbit/search_hooktask.h"
-#include "../vowpalwabbit/parse_example.h"
-#include "../vowpalwabbit/gd.h"
-#include "../vowpalwabbit/options_serializer_boost_po.h"
+#include "multiclass.h"
+#include "cost_sensitive.h"
+#include "cb.h"
+#include "search.h"
+#include "search_hooktask.h"
+#include "parse_example.h"
+#include "gd.h"
+#include "options_serializer_boost_po.h"
+#include "future_compat.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -42,10 +43,14 @@ const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
 const size_t pACTION_SCORES = 2;
+
+VW_DEPRECATED("Use pACTION_SCORES instead")
 const size_t pACTION_PROBS = 3;
 const size_t pMULTICLASS = 4;
 const size_t pMULTILABELS = 5;
 const size_t pPROB = 6;
+
+VW_DEPRECATED("Use pSCALARS instead")
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 
@@ -134,17 +139,17 @@ size_t my_get_label_type(vw*all)
   }
 }
 
-size_t my_get_prediction_type(vw_ptr all)
+size_t my_get_prediction_type_t(vw_ptr all)
 { switch (all->l->pred_type)
-  { case prediction_type::scalar:          return pSCALAR;
-    case prediction_type::scalars:         return pSCALARS;
-    case prediction_type::action_scores:   return pACTION_SCORES;
-    case prediction_type::action_probs:    return pACTION_PROBS;
-    case prediction_type::multiclass:      return pMULTICLASS;
-    case prediction_type::multilabels:     return pMULTILABELS;
-    case prediction_type::prob:            return pPROB;
-    case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
-    case prediction_type::decision_probs:  return pDECISION_SCORES;
+  { case prediction_type_t::scalar:          return pSCALAR;
+    case prediction_type_t::scalars:         return pSCALARS;
+    case prediction_type_t::action_scores:   return pACTION_SCORES;
+    case prediction_type_t::action_probs:    return pACTION_SCORES;
+    case prediction_type_t::multiclass:      return pMULTICLASS;
+    case prediction_type_t::multilabels:     return pMULTILABELS;
+    case prediction_type_t::prob:            return pPROB;
+    case prediction_type_t::multiclassprobs: return pSCALARS;
+    case prediction_type_t::decision_probs:  return pDECISION_SCORES;
     default: THROW("unsupported prediction type used");
   }
 }
@@ -791,7 +796,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_stride", &VW::get_stride, "return the internal stride")
 
   .def("get_label_type", &my_get_label_type, "return parse label type")
-  .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
+  .def("get_prediction_type_t", &my_get_prediction_type_t, "return prediction type")
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
@@ -815,11 +820,11 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
   .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
   .def_readonly("pACTION_SCORES", pACTION_SCORES, "Multiple action scores prediction type")
-  .def_readonly("pACTION_PROBS", pACTION_PROBS, "Multiple action probabilities prediction type")
+  .def_readonly("pACTION_PROBS", pACTION_PROBS, "DEPRECATED - use pACTION_SCORES. Multiple action probabilities prediction type")
   .def_readonly("pMULTICLASS", pMULTICLASS, "Multiclass prediction type")
   .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
   .def_readonly("pPROB", pPROB, "Probability prediction type")
-  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
+  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "DEPRECATED - use pSCALARS. Multiclass probabilities prediction type")
   .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
 ;
 
