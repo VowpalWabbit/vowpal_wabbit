@@ -33,9 +33,10 @@ struct cbify_reg
   float min_value;
   float max_value;
   float bandwidth;
+  int num_actions; 
   int loss_option;
   int loss_report;
-  int num_actions; //todo
+  float loss_01_ratio;
 };
 
 struct cbify
@@ -185,9 +186,18 @@ float get_squared_loss(cbify& data, float chosen_action, float label)
   return (diff * diff) / (range * range);
 }
 
+float get_absolute_loss(cbify& data, float chosen_action, float label)
+{
+  float diff = label - chosen_action;
+  float range = data.regression_data.max_value - data.regression_data.min_value;
+  return abs(diff) / range;
+}
+
 float get_01_loss(cbify& data, float chosen_action, float label)
 {
-  if (abs(chosen_action - label) <= data.regression_data.bandwidth)
+  float diff = label - chosen_action;
+  float range = data.regression_data.max_value - data.regression_data.min_value;
+  if (abs(diff) <= (data.regression_data.loss_01_ratio * range))
     return 0.0f; 
   return 1.0f;
 }
@@ -229,6 +239,9 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
     cb.cost = get_squared_loss(data, converted_action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 1) {
+    cb.cost = get_absolute_loss(data, converted_action, regression_label.label);
+  }
+  else if (data.regression_data.loss_option == 2) {
     cb.cost = get_01_loss(data, converted_action, regression_label.label);
   }
 
@@ -242,7 +255,12 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   if (data.regression_data.loss_report == 1) {
     // for reporintg avergae loss to be in the correct range (reverse normalizing)
     size_t siz = data.cb_label.costs.size();
-    data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
+    if (data.regression_data.loss_option == 0) {
+      data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
+    }
+    else if (data.regression_data.loss_option == 1) {
+      data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range;
+    }
   }
 
   data.a_s = ec.pred.a_s;
@@ -291,6 +309,9 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     cb_cont.cost = get_squared_loss(data, chosen_action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 1) {
+    cb_cont.cost = get_absolute_loss(data, chosen_action, regression_label.label);
+  }
+  else if (data.regression_data.loss_option == 2) {
     cb_cont.cost = get_01_loss(data, chosen_action, regression_label.label);
   }
 
@@ -306,7 +327,12 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     // for reporintg avergae loss to be in the correct range (reverse normalizing)
     float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
     size_t siz = data.regression_data.cb_cont_label.costs.size();
-    data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range * continuous_range;
+    if (data.regression_data.loss_option == 0) {
+      data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range * continuous_range;
+    }
+    else if (data.regression_data.loss_option == 1) {
+      data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range;
+    }
     // or below instead of above
     /*data.regression_data.cb_cont_label.costs.decr();
     cb_cont.cost *= range * range;
@@ -645,8 +671,9 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("cb_discrete", use_discrete).keep().help("Discretizes continuous space and adds cb_explore as option"))
       .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
-      .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:squared, 1:0/1"))
+      .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:squared, 1:absolute, 2:0/1"))
       .add(make_option("loss_report", data->regression_data.loss_report).default_value(0).help("loss report option - 0:normalized, 1:denormalized"))
+      .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio).default_value(0.1f).help("ratio of zero loss for 0/1 loss"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
 
