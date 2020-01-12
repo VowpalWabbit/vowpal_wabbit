@@ -144,7 +144,7 @@ void offset_tree::init_node_sets(v_array<cb_class>& ac)
     // Sanity check. actions are 1 based index
     assert(ac[i].action > 0);
     // TODO: Handle negative cost
-    assert(ac[i].cost >= 0.f);  
+    assert(ac[i].cost >= 0.f);
 
     uint32_t node_id = ac[i].action + _binary_tree.internal_node_count() - 1;
     VW_DBG(_dd) << "otree_c: learn() ac[" << i << "].action  = " << ac[i].action << ", node_id  = " << node_id
@@ -165,8 +165,8 @@ void offset_tree::init_node_sets(v_array<cb_class>& ac)
   std::sort(_nodes_depth.begin(), _nodes_depth.end(), compareByid);
 }
 
-#define RIGHT 1
-#define LEFT -1
+constexpr float RIGHT = 1.0f;
+constexpr float LEFT = -1.0f;
 
 void offset_tree::reduce_depth() {
   // Completed processing all nodes at current depth
@@ -224,7 +224,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       VW_DBG(_dd) << "otree_c: learn() no sibling" << std::endl;
       // If v is right node, right node has non-zero cost so go left
       // TODO: Handle negative cost
-      if (v.id == v_parent.right_id)  
+      if (v.id == v_parent.right_id)
         local_action = LEFT;
     }
 
@@ -290,17 +290,17 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
   new_options.add(make_option("otc", num_actions).keep().help("Offset tree continuous with <k> labels"))
     .add(make_option("scorer_option", scorer_flag).default_value(0).keep()
       .help("Offset tree continuous reduction to scorer [-1, 1] versus binary -1/+1"));  // TODO: oct
-  
+
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("otc"))  // todo: if num_actions = 0 throw error
     return nullptr;
 
-  if (scorer_flag) 
+  if (scorer_flag)
   {
     options.insert("link", "glf1");
   }
-  else //if (!options.was_supplied("binary")) 
+  else //if (!options.was_supplied("binary"))
   {
     options.insert("binary", "");
   }

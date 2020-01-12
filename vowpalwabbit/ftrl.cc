@@ -165,6 +165,15 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
   w[W_G2] += fabs(gradient);
 }
 
+std::string coin_betting_state_to_string(float* w)
+{
+  std::stringstream tmp;
+  tmp << "W_XT:" << w[0] << ", W_ZT:" << w[1]
+      << ", W_G2:" << w[2] << ", W_MX:" << w[3]
+      << ", W_WE:" << w[4] << ", W_MG:" << w[5];
+  return tmp.str();
+}
+
 // Coin betting vectors
 // W_XT 0  current parameter
 // W_ZT 1  sum negative gradients
@@ -172,7 +181,7 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
 // W_MX 3  maximum absolute value
 // W_WE 4  Wealth
 // W_MG 5  Maximum Lipschitz constant
-void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
+void inner_coin_betting_predict(update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float w_mx = w[W_MX];
@@ -186,14 +195,30 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 
   // COCOB update without sigmoid
   if (w[W_MG] * w_mx > 0)
-    w_xt = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]));
+    w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
+
+#ifdef DEBUG
+  float pre_d_predict = d.predict;
+#endif
 
   d.predict += w_xt * x;
   if (w_mx > 0)
     d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
+
+#ifdef DEBUG
+  if (nanpattern(d.predict) || infpattern(w[W_WE]) || __private_debug__)
+    cerr  << "PREDICT: example_counter=" << __private_example_debug__->example_counter
+          << ", ft_offset=" << __private_example_debug__->ft_offset << ", "
+          << ", w_xt=" << w_xt
+          << ", x=" << x
+          << ", pre_d_predict=" << pre_d_predict
+          << ", d.predict=" << d.predict << ", "
+          << coin_betting_state_to_string(w)
+          << ", ftrl_alpha=" << d.ftrl_alpha << endl;
+#endif
 }
 
-void inner_update_cb_post(update_data& d, float x, float& wref)
+void inner_coin_betting_update_after_prediction(update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float fabs_x = fabs(x);
@@ -212,21 +237,29 @@ void inner_update_cb_post(update_data& d, float x, float& wref)
   // If a new Lipschitz constant and/or magnitude of x is found, the w is
   // recalculated and used in the update of the wealth below.
   if (w[W_MG] * w[W_MX] > 0)
-    w[W_XT] = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]));
+    w[W_XT] = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]))) * w[W_ZT];
   else
     w[W_XT] = 0;
 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
+
+#ifdef DEBUG
+  if (infpattern(w[W_WE]))
+  {
+    cerr << "UPDATE: d.update=" << d.update << ", x=" << x << ", gradient=" << gradient << ", "
+          << coin_betting_state_to_string(w) << endl;
+  }
+#endif
 }
 
-void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
+void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
-  GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
+  GD::foreach_feature<update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
@@ -234,6 +267,19 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
   ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+
+#ifdef DEBUG
+  if (nanpattern(ec.partial_prediction))
+  {
+    cerr << "ec.example_counter=" << ec.example_counter << ", ec.ft_offset=" << ec.ft_offset << endl;
+    cerr << "b.all->normalized_sum_norm_x=" << b.all->normalized_sum_norm_x << ", ec.weight=" << ec.weight
+         << ", b.data.normalized_squared_norm_x=" << b.data.normalized_squared_norm_x
+         << ", b.total_weight=" << b.total_weight << ", ec.weight=" << ec.weight
+         << ", ec.partial_prediction=" << ec.partial_prediction << ", b.data.predict=" << b.data.predict
+         << ", (b.all->normalized_sum_norm_x + 1e-6)=" << (b.all->normalized_sum_norm_x + 1e-6)
+         << ", b.total_weight=" << b.total_weight << endl;
+  }
+#endif
 }
 
 void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
@@ -259,11 +305,10 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
-void update_after_prediction_cb(ftrl& b, example& ec)
+void coin_betting_update_after_prediction(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-
-  GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
+  GD::foreach_feature<update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 
 template <bool audit>
@@ -289,15 +334,15 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_pistol(a, ec);
 }
 
-void learn_cb(ftrl& a, single_learner& base, example& ec)
+void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
   // update state based on the example and predict
-  update_state_and_predict_cb(a, base, ec);
+  coin_betting_predict(a, base, ec);
 
   // update state based on the prediction
-  update_after_prediction_cb(a, ec);
+  coin_betting_update_after_prediction(a, ec);
 }
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
@@ -399,7 +444,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   else if (coin)
   {
     algorithm_name = "Coin Betting";
-    learn_ptr = learn_cb;
+    learn_ptr = learn_coin_betting;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
   }
