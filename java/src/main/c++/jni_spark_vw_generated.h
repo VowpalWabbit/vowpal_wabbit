@@ -179,6 +179,13 @@ extern "C"
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
+   * Method:    toString
+   * Signature: ()Ljava/lang/String;
+   */
+  JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toString(JNIEnv *, jobject);
+
+  /*
+   * Class:     org_vowpalwabbit_spark_VowpalWabbitExample
    * Method:    predict
    * Signature: ()Ljava/lang/Object;
    */

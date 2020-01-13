@@ -108,6 +108,9 @@ public class VowpalWabbitExample implements Closeable {
      */
     public native Object predict();
 
+    @Override
+    public native String toString();
+
     /**
      * Pointer to the native VowpalWabbitExampleWrapper data structure.
      */

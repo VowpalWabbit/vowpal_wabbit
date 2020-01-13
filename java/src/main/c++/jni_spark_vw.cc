@@ -81,23 +81,27 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   }
 }
 
-void populateMultiEx(JNIEnv* env, jobjectArray examples, multi_ex& ex_coll)
+void populateMultiEx(JNIEnv* env, jobjectArray examples, vw& all, multi_ex& ex_coll)
 {
   bool fieldIdInitialized = false;
 
   int length = env->GetArrayLength(examples);
   if (length > 0)
   {
-    jobject ex = env->GetObjectArrayElement(examples, 0);
+    jobject jex = env->GetObjectArrayElement(examples, 0);
 
-    jclass cls = env->GetObjectClass(ex);
+    jclass cls = env->GetObjectClass(jex);
     jfieldID fieldId = env->GetFieldID(cls, "nativePointer", "J");
 
     for (int i = 0; i < length; i++)
     {
-      ex = env->GetObjectArrayElement(examples, i);
+      jex = env->GetObjectArrayElement(examples, i);
 
-      ex_coll.push_back((example*)get_native_pointer(env, ex));
+      // JavaObject VowpalWabbitExampleWrapper -> example*
+      auto exWrapper = (VowpalWabbitExampleWrapper*)get_native_pointer(env, jex);
+      VW::setup_example(all, exWrapper->_example);
+
+      ex_coll.push_back(exWrapper->_example);
     }
   }
 }
@@ -110,7 +114,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
   multi_ex ex_coll;
   try
   {
-    populateMultiEx(env, examples, ex_coll);
+    populateMultiEx(env, examples, *all, ex_coll);
 
     all->learn(ex_coll);
 
@@ -131,7 +135,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   multi_ex ex_coll;
   try
   {
-    populateMultiEx(env, examples, ex_coll);
+    populateMultiEx(env, examples, *all, ex_coll);
 
     all->predict(ex_coll);
 
@@ -392,7 +396,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_makeEmpty
     char empty = '\0';
     VW::read_line(*all, ex, &empty);
 
-    VW::setup_example(*all, ex);
+    // VW::setup_example(*all, ex);
   }
   catch (...)
   {
@@ -690,6 +694,75 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
     LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
 
     return Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(env, exampleObj);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toString(JNIEnv* env, jobject exampleObj)
+{
+  INIT_VARS
+
+  try
+  {
+    std::ostringstream ostr;
+
+    ostr << "VowpalWabbitExample(label=";
+    auto lp = all->p->lp;
+
+    if (!memcmp(&lp, &simple_label, sizeof(lp)))
+    {
+      label_data* ld = (label_data*)&ex->l;
+      ostr << "simple " << ld->label << ":" << ld->weight << ":" << ld->initial;
+    }
+    else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
+    {
+      CB::label* ld = (CB::label*)&ex->l;
+      ostr << "CB " << ld->costs.size();
+
+      if (ld->costs.size() > 0)
+      {
+        ostr << " ";
+
+        CB::cb_class& f = ld->costs[0];
+
+        // ignore validation of action which is uniform_hash("shared")
+        if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)
+          ostr << "shared";
+        else
+          ostr << f.action << ":" << f.cost << ":" << f.probability;
+      }
+    }
+    else
+    {
+      ostr << "unsupported label";
+    }
+
+    ostr << ";";
+    for (auto& ns : ex->indices)
+    {
+      if (ns == 0)
+        ostr << "NULL:0,";
+      else
+      {
+        if ((ns >= 'a' && ns <= 'z') || (ns >= 'A' && ns <= 'Z'))
+          ostr << "'" << (char)ns << "':";
+
+        ostr << (int)ns << ",";
+      }
+
+      for (auto& f : ex->feature_space[ns])
+      {
+        auto idx = f.index();
+        ostr << (idx & all->weights.mask()) << "/" << idx << ":" << f.value() << ", ";
+      }
+    }
+
+    ostr << ")";
+
+    return env->NewStringUTF(ostr.str().c_str());
   }
   catch (...)
   {
