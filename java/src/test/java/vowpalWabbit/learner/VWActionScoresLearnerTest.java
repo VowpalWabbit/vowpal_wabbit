@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
 import vowpalWabbit.responses.ActionScores;
-import vowpalWabbit.responses.ActionProbs;
 
 import java.io.IOException;
 
@@ -236,55 +235,6 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
             actionScores(
                 actionScore(0, 0.97499996f),
                 actionScore(1, 0.025f)
-            )
-        };
-
-        vw.close();
-        assertArrayEquals(expectedTestPreds, testPreds);
-    }
-
-    @Test
-    public void testUsageOfDeprecatedActionProbs() throws IOException {
-        String[][] cbADFTrain = new String[][]{
-            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
-            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
-        };
-        String model = temporaryFolder.newFile().getAbsolutePath();
-        VWActionProbsLearner vw = VWLearners.create("--quiet --cb_explore_adf -f " + model);
-        ActionProbs[] trainPreds = new ActionProbs[cbADFTrain.length];
-        for (int i=0; i<cbADFTrain.length; ++i) {
-            trainPreds[i] = vw.learn(cbADFTrain[i]);
-        }
-        ActionProbs[] expectedTrainPreds = new ActionProbs[]{
-                actionProbs(
-                    actionProb(0, 0.5f),
-                    actionProb(1, 0.5f)
-                ),
-                actionProbs(
-                    actionProb(0, 0.5f),
-                    actionProb(1, 0.5f)
-                ),
-                actionProbs(
-                    actionProb(0, 0.97499996f),
-                    actionProb(1, 0.025f)
-                ),
-                actionProbs(
-                    actionProb(0, 0.97499996f),
-                    actionProb(1, 0.025f)
-                )
-        };
-        vw.close();
-        assertArrayEquals(expectedTrainPreds, trainPreds);
-
-        vw = VWLearners.create("--quiet -t -i " + model);
-        ActionProbs[] testPreds = new ActionProbs[]{vw.predict(cbADFTrain[0])};
-
-        ActionProbs[] expectedTestPreds = new ActionProbs[]{
-            actionProbs(
-                actionProb(0, 0.97499996f),
-                actionProb(1, 0.025f)
             )
         };
 

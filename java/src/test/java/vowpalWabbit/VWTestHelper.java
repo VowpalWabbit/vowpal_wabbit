@@ -5,7 +5,6 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.responses.ActionProb;
-import vowpalWabbit.responses.ActionProbs;
 import vowpalWabbit.responses.ActionScore;
 import vowpalWabbit.responses.ActionScores;
 
@@ -40,10 +39,6 @@ public class VWTestHelper {
 
     public ActionScores actionScores(ActionScore... actionScores) {
         return new ActionScores(actionScores);
-    }
-
-    public ActionProbs actionProbs(ActionProb... actionProbs) {
-        return new ActionProbs(actionProbs);
     }
 
     public ActionScore actionScore(int action, float score) {

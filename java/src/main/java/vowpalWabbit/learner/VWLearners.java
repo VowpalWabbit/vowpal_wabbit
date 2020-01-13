@@ -17,14 +17,6 @@ final public class VWLearners {
 
     private VWLearners() {}
 
-    private static <T extends VWLearner> T tryCreateActionProbsOrScoresLearner(long nativePointer) {
-        try {
-            return (T)new VWActionScoresLearner(nativePointer);
-        } catch (ClassCastException exception) {
-            return (T)new VWActionProbsLearner(nativePointer);
-        }
-    }
-
     /**
      * This is the only way to construct a VW Predictor.  The goal here is to provide a typesafe way of getting an predictor
      * which will return the correct output type given the command specified.
@@ -39,7 +31,7 @@ final public class VWLearners {
      * imperative that if the caller of this method is unsure of the type returned that it should specify <code>T</code>
      * as {@link VWBase} and do the casting on it's side so that closing the method can be guaranteed.
      * @param command The VW initialization command.
-     * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
+     * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner. VWActionProbsLearner was deprecated in 9.0, please replace with VWActionScoresLearner.
      * @return A VW Learner
      */
     @SuppressWarnings("unchecked")
@@ -48,9 +40,8 @@ final public class VWLearners {
             command += " --no_stdin";
         long nativePointer = initialize(command);
         VWReturnType returnType = getReturnType(nativePointer);
-
         switch (returnType) {
-            case ActionScores: return tryCreateActionProbsOrScoresLearner(nativePointer);
+            case ActionScores: return (T)new VWActionScoresLearner(nativePointer);
             case Multiclass: return (T)new VWMulticlassLearner(nativePointer);
             case Multilabels: return (T)new VWMultilabelsLearner(nativePointer);
             case Prob: return (T)new VWProbLearner(nativePointer);
