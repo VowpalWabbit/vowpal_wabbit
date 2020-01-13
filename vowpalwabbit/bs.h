@@ -3,6 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <memory>
+#include "reductions_fwd.h"
+
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 

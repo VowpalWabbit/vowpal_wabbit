@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 #include <algorithm>
 
 // Most of these includes are required because templated functions are using the objects defined in them

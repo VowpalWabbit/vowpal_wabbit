@@ -8,6 +8,7 @@
 #else
 #include <netdb.h>
 #endif
+
 #include "reductions.h"
 #include "gd.h"
 
