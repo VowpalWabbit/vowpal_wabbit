@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 
 #include <cstring>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 
 #include "cache.h"
 #include "accumulate.h"
