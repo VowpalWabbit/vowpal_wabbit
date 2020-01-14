@@ -82,12 +82,14 @@ struct flat_example
       free(tag);
   }
 
- /* flat_example(const flat_example& other) {
+  flat_example(const flat_example& other)
+  {
     l = other.l;
-    if (tag_len > 0)
-      free(tag);
-    memcpy(tag, other.tag, other.tag_len);
     tag_len = other.tag_len;
+    if (tag_len > 0)
+    {
+      memcpy(tag, other.tag, tag_len);
+    }
     example_counter = other.example_counter;
     ft_offset = other.ft_offset;
     global_weight = other.global_weight;
@@ -96,11 +98,56 @@ struct flat_example
     fs = other.fs;
   }
 
-  flat_example& operator=(const flat_example& other) {}
+  flat_example& operator=(const flat_example& other)
+  {
+    l = other.l;
+    tag_len = other.tag_len;
+    if(tag != nullptr)
+    {
+      free(tag);
+      tag = nullptr;
+    }
+    if (tag_len > 0)
+    {
+      memcpy(tag, other.tag, tag_len);
+    }
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = other.fs;
+  }
 
-  flat_example(flat_example&& other) {}
+  flat_example(flat_example&& other)
+  {
+    l = std::move(other.l);
+    tag_len = other.tag_len;
+    tag = other.tag;
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = std::move(other.fs);
+  }
 
-  flat_example& operator=(flat_example&& other) {}*/
+  flat_example& operator=(flat_example&& other)
+  {
+    l = std::move(other.l);
+    tag_len = other.tag_len;
+    if(tag != nullptr)
+    {
+      free(tag);
+    }
+    tag = other.tag;
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = std::move(other.fs);
+  }
 };
 
 flat_example* flatten_example(vw& all, example* ec);
