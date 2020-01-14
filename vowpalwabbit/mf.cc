@@ -186,12 +186,6 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = predicted;
 }
 
-void finish(mf& o)
-{
-  // restore global pairs
-  o.all->pairs = o.pairs;
-}
-
 base_learner* mf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<mf>();
@@ -205,13 +199,17 @@ base_learner* mf_setup(options_i& options, vw& all)
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data->pairs = all.pairs;
-  all.pairs.clear();
+  data->pairs = all.interactions;
+  all.interactions.clear();
+  for (std::string& i : data->pairs)
+  {
+    if(i.size() != 2)
+      THROW("can only use pairs with new_mf");
+  }
 
   all.random_positive_weights = true;
 
   learner<mf, example>& l =
       init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
-  l.set_finish(finish);
   return make_base(l);
 }
