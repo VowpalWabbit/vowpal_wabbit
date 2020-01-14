@@ -13,7 +13,7 @@
 //   defined in the cc file (con: can't inline those functions)
 // - templatize all input parameters (con: no type safety)
 #include "v_array.h"         // required by action_score.h
-#include "action_score.h"    // used in sort_action_scores
+#include "action_score.h"    // used in sort_action_probs
 #include "cb.h"              // required for CB::label
 #include "cb_adf.h"          // used for function call in predict/learn
 #include "example.h"         // used in predict
@@ -25,7 +25,7 @@ namespace VW
 namespace cb_explore_adf
 {
 // Free functions
-inline void sort_action_scores(v_array<ACTION_SCORE::action_score>& probs, const std::vector<float>& scores)
+inline void sort_action_probs(v_array<ACTION_SCORE::action_score>& probs, const std::vector<float>& scores)
 {
   // We want to preserve the score order in the returned action_probs if possible.  To do this,
   // sort top_actions and action_probs by the order induced in scores.

@@ -17,18 +17,15 @@ enum class prediction_type_t
   scalar,
   scalars,
   action_scores,
-  action_probs VW_DEPRECATED("Use action_scores instead"),
+  action_probs,
   multiclass,
   multilabels,
   prob,
-  multiclassprobs VW_DEPRECATED("Use scalars instead"),
+  multiclassprobs,
   decision_probs
 };
 
-
 const char* to_string(prediction_type_t prediction_type);
-
-
 
 namespace LEARNER
 {

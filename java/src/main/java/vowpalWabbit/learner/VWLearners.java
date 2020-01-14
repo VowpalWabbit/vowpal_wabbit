@@ -8,7 +8,7 @@ package vowpalWabbit.learner;
  */
 final public class VWLearners {
     private enum VWReturnType {
-        Unknown, ActionScores, Multiclass, Multilabels, Prob, Scalar, Scalars
+        Unknown, ActionProbs, ActionScores, Multiclass, Multilabels, Prob, Scalar, Scalars
     }
 
     static {
@@ -31,7 +31,7 @@ final public class VWLearners {
      * imperative that if the caller of this method is unsure of the type returned that it should specify <code>T</code>
      * as {@link VWBase} and do the casting on it's side so that closing the method can be guaranteed.
      * @param command The VW initialization command.
-     * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner. VWActionProbsLearner was deprecated in 9.0, please replace with VWActionScoresLearner.
+     * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
      * @return A VW Learner
      */
     @SuppressWarnings("unchecked")
@@ -40,7 +40,9 @@ final public class VWLearners {
             command += " --no_stdin";
         long nativePointer = initialize(command);
         VWReturnType returnType = getReturnType(nativePointer);
+
         switch (returnType) {
+            case ActionProbs: return (T)new VWActionProbsLearner(nativePointer);
             case ActionScores: return (T)new VWActionScoresLearner(nativePointer);
             case Multiclass: return (T)new VWMulticlassLearner(nativePointer);
             case Multilabels: return (T)new VWMultilabelsLearner(nativePointer);

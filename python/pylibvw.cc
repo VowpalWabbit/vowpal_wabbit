@@ -43,14 +43,10 @@ const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
 const size_t pACTION_SCORES = 2;
-
-VW_DEPRECATED("Use pACTION_SCORES instead")
 const size_t pACTION_PROBS = 3;
 const size_t pMULTICLASS = 4;
 const size_t pMULTILABELS = 5;
 const size_t pPROB = 6;
-
-VW_DEPRECATED("Use pSCALARS instead")
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 
@@ -144,11 +140,11 @@ size_t my_get_prediction_type(vw_ptr all)
   { case prediction_type_t::scalar:          return pSCALAR;
     case prediction_type_t::scalars:         return pSCALARS;
     case prediction_type_t::action_scores:   return pACTION_SCORES;
-    case prediction_type_t::action_probs:    return pACTION_SCORES;
+    case prediction_type_t::action_probs:    return pACTION_PROBS;
     case prediction_type_t::multiclass:      return pMULTICLASS;
     case prediction_type_t::multilabels:     return pMULTILABELS;
     case prediction_type_t::prob:            return pPROB;
-    case prediction_type_t::multiclassprobs: return pSCALARS;
+    case prediction_type_t::multiclassprobs: return pMULTICLASSPROBS;
     case prediction_type_t::decision_probs:  return pDECISION_SCORES;
     default: THROW("unsupported prediction type used");
   }

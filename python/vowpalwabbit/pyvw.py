@@ -4,10 +4,6 @@
 from __future__ import division
 import pylibvw
 
-import warnings
-
-def deprecation(message):
-    warnings.warn(message, DeprecationWarning)
 
 class SearchTask():
     """Search task class"""
@@ -56,11 +52,6 @@ class SearchTask():
 
 def get_prediction(ec, prediction_type):
     """Get specified type of prediction from example"""
-    if prediction_type == pylibvw.vw.pACTION_PROBS:
-        deprecation("pACTION_PROBS is deprecated, use pACTION_SCORES instead")
-    elif prediction_type == pylibvw.vw.pMULTICLASSPROBS:
-        deprecation("pMULTICLASSPROBS is deprecated, use pSCALARS instead")
-
     switch_prediction_type = {
         pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
         pylibvw.vw.pSCALARS: ec.get_scalars,

@@ -157,7 +157,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
   exploration::enforce_minimum_probability(
       min_prob * num_actions, !_nounif, begin_scores(_action_probs), end_scores(_action_probs));
 
-  sort_action_scores(_action_probs, _scores);
+  sort_action_probs(_action_probs, _scores);
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 
   if (is_learn)
@@ -249,7 +249,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
   LEARNER::learner<explore_type, multi_ex>& l = init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_scores);
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

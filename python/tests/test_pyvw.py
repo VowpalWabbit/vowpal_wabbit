@@ -102,10 +102,10 @@ def test_action_scores_prediction_type():
     del model
 
 
-def test_cb_action_scores_prediction_type():
+def test_action_probs_prediction_type():
     model = vw(cb_explore=2, ngram=2, quiet=True)
     model.learn('1 | a b c')
-    assert model.get_prediction_type() == model.pACTION_SCORES
+    assert model.get_prediction_type() == model.pACTION_PROBS
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
     del model
