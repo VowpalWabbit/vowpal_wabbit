@@ -117,4 +117,7 @@ void version_struct::from_string(const char* str)
   std::sscanf(str, "%d.%d.%d", &major, &minor, &rev);
 #endif
 }
+
+const version_struct version(PACKAGE_VERSION);
+const std::string git_commit(COMMIT_VERSION);
 }  // namespace VW
