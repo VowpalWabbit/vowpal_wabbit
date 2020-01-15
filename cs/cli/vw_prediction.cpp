@@ -20,9 +20,9 @@ void CheckExample(vw* vw, example* ex, prediction_type_t type)
   if (ex_pred_type != type)
   { auto sb = gcnew StringBuilder();
     sb->Append("Prediction type must be ");
-    sb->Append(gcnew String(prediction_type_t::to_string(type)));
+    sb->Append(gcnew String(to_string(type)));
     sb->Append(" but is ");
-    sb->Append(gcnew String(prediction_type_t::to_string(ex_pred_type)));
+    sb->Append(gcnew String(to_string(ex_pred_type)));
 
     throw gcnew ArgumentException(sb->ToString());
   }
@@ -182,7 +182,7 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex
     default:
     { auto sb = gcnew StringBuilder();
       sb->Append("Unsupported prediction type: ");
-      sb->Append(gcnew String(prediction_type_t::to_string(vw->l->pred_type)));
+      sb->Append(gcnew String(to_string(vw->l->pred_type)));
       throw gcnew ArgumentException(sb->ToString());
     }
   }
