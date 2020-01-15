@@ -64,14 +64,15 @@ hash_func_t getHasher(const std::string& s);
 //  - much faster (around 50% but depends on the  string to parse)
 //  - less error control, but utilised inside a very strict parser
 //    in charge of error detection.
-inline float parseFloat(const char* p, size_t* end_idx, const char* endLine = nullptr)
+inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nullptr)
 {
   const char* start = p;
   bool endLine_is_null = endLine == nullptr;
 
+  end_idx = 0;
+
   if (!p || !*p)
   {
-    *end_idx = 0;
     return 0;
   }
   int s = 1;
@@ -115,7 +116,7 @@ inline float parseFloat(const char* p, size_t* end_idx, const char* endLine = nu
   if (*p == ' ' || *p == '\n' || *p == '\t' || p == endLine)  // easy case succeeded.
   {
     acc *= powf(10, (float)(exp_acc - num_dec));
-    *end_idx = p - start;
+    end_idx = p - start;
     return s * acc;
   }
   else
@@ -123,10 +124,9 @@ inline float parseFloat(const char* p, size_t* end_idx, const char* endLine = nu
     // can't use stod because that throws an exception. Use strtod instead.
     char* end = nullptr;
     auto ret = strtod(start, &end);
-    *end_idx = 0;
     if (end >= start)
     {
-      *end_idx = end - start;
+      end_idx = end - start;
     }
     return ret;
   }
@@ -135,7 +135,7 @@ inline float parseFloat(const char* p, size_t* end_idx, const char* endLine = nu
 
 inline float parse_float_string_view(VW::string_view strview, size_t& end_idx)
 {
-  return parseFloat(strview.begin(), &end_idx, strview.end());
+  return parseFloat(strview.begin(), end_idx, strview.end());
 }
 
 inline float float_of_string(VW::string_view s)

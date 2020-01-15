@@ -43,6 +43,7 @@ search_metatask* all_metatasks[] = {
 constexpr bool PRINT_UPDATE_EVERY_EXAMPLE = false;
 constexpr bool PRINT_UPDATE_EVERY_PASS = false;
 constexpr bool PRINT_CLOCK_TIME = false;
+constexpr uint64_t SEARCH_HASH_SEED = 3419;
 
 std::string neighbor_feature_space("neighbor");
 std::string condition_feature_space("search_condition");
@@ -155,7 +156,7 @@ struct search_private
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();
-      return uniform_hash(key.get(), sz, 3419);
+      return uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
     }
   };
 
@@ -2985,7 +2986,6 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        //priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
         priv->ptag_to_action[mytag].repr = nullptr;
       }
@@ -3030,7 +3030,6 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        //priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
         priv->ptag_to_action[mytag].repr = nullptr;
       }

@@ -102,6 +102,7 @@ class namedlabels
 
   VW::string_view get(uint32_t v) const
   {
+    static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is smaller than 32-bits. Potential overflow issues.");
     if ((v == 0) || (v > m_K))
     {
       return VW::string_view();
