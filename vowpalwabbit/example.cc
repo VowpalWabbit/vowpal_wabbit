@@ -230,6 +230,7 @@ void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_pre
   }
 
   ec.indices.delete_v();
+  ec.~example();
 }
 
 void finish_example(vw&, example&);

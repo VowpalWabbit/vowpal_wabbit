@@ -227,8 +227,8 @@ void parse_dictionary_argument(vw& all, std::string str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          free(ec);
           VW::dealloc_example(all.p->lp.delete_label, *ec);
+          free(ec);
           io->close_file();
           delete io;
           THROW("error: memory allocation failed in reading dictionary");
@@ -281,7 +281,7 @@ void parse_dictionary_argument(vw& all, std::string str)
 
   if (!all.quiet)
     all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
-                      << std::endl;
+                      << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = {s.to_string(), fd_hash, map};
@@ -382,7 +382,7 @@ void parse_diagnostics(options_i& options, vw& all)
       if (all.progress_arg < 1)
       {
         all.trace_message << "warning: additive --progress <int>"
-                          << " can't be < 1: forcing to 1" << std::endl;
+                          << " can't be < 1: forcing to 1" << endl;
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
@@ -395,13 +395,13 @@ void parse_diagnostics(options_i& options, vw& all)
       if (all.progress_arg <= 1.0)
       {
         all.trace_message << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
-                          << std::endl;
+                          << endl;
         all.progress_arg += 1.0;
       }
       else if (all.progress_arg > 9.0)
       {
         all.trace_message << "warning: multiplicative --progress <float>"
-                          << " is > 9.0: you probably meant to use an integer" << std::endl;
+                          << " is > 9.0: you probably meant to use an integer" << endl;
       }
       all.sd->dump_interval = 1.0;
     }
@@ -479,7 +479,7 @@ input_options parse_source(vw& all, options_i& options)
           options.was_supplied("output_feature_regularizer_text")))
   {
     all.holdout_set_off = true;
-    all.trace_message << "Making holdout_set_off=true since output regularizer specified" << std::endl;
+    all.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
   return parsed_options;
@@ -723,7 +723,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
                          "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
-                      << std::endl;
+                      << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
     if (!all.pairs.empty())
@@ -750,7 +750,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.quiet)
-      all.trace_message << std::endl;
+      all.trace_message << endl;
   }
 
   if (options.was_supplied("cubic"))
@@ -769,7 +769,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!all.quiet)
-      all.trace_message << std::endl;
+      all.trace_message << endl;
   }
 
   if (options.was_supplied("interactions"))
@@ -787,7 +787,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!all.quiet)
-      all.trace_message << std::endl;
+      all.trace_message << endl;
   }
 
   if (expanded_interactions.size() > 0)
@@ -799,12 +799,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     if (removed_cnt > 0)
       all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
-                        << std::endl
-                        << "You can use --leave_duplicate_interactions to disable this behaviour." << std::endl;
+                        << endl
+                        << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
     if (sorted_cnt > 0)
       all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has "
                            "been changed. Interactions affected: "
-                        << sorted_cnt << '.' << std::endl;
+                        << sorted_cnt << '.' << endl;
 
     if (all.interactions.size() > 0)
     {
@@ -849,7 +849,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto const& ignore : ignores)
         for (auto const character : ignore) all.trace_message << character << " ";
 
-      all.trace_message << std::endl;
+      all.trace_message << endl;
     }
   }
 
@@ -870,7 +870,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto const& ignore : ignore_linears)
         for (auto const character : ignore) all.trace_message << character << " ";
 
-      all.trace_message << std::endl;
+      all.trace_message << endl;
     }
   }
 
@@ -892,7 +892,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto const& keep : keeps)
         for (auto const character : keep) all.trace_message << character << " ";
 
-      all.trace_message << std::endl;
+      all.trace_message << endl;
     }
   }
 
@@ -939,7 +939,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       if (++operator_pos > 3)  // seek operator end
         all.trace_message
             << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('"
-            << new_namespace << "') will be used as target namespace." << std::endl;
+            << new_namespace << "') will be used as target namespace." << endl;
 
       all.redefine_some = true;
 
@@ -1043,7 +1043,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (test_only || all.eta == 0.)
   {
     if (!all.quiet)
-      all.trace_message << "only testing" << std::endl;
+      all.trace_message << "only testing" << endl;
     all.training = false;
     if (all.lda > 0)
       all.eta = 0;
@@ -1064,19 +1064,19 @@ void parse_example_tweaks(options_i& options, vw& all)
     all.sd->ldict = &calloc_or_throw<namedlabels>();
     new (all.sd->ldict) namedlabels(named_labels);
     if (!all.quiet)
-      all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << std::endl;
+      all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   if (all.l1_lambda < 0.)
   {
-    all.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << std::endl;
+    all.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
     all.l1_lambda = 0.;
   }
   if (all.l2_lambda < 0.)
   {
-    all.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << std::endl;
+    all.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
     all.l2_lambda = 0.;
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
@@ -1084,9 +1084,9 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (!all.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-      all.trace_message << "using l1 regularization = " << all.l1_lambda << std::endl;
+      all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
     if (all.reg_mode > 1)
-      all.trace_message << "using l2 regularization = " << all.l2_lambda << std::endl;
+      all.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
   }
 }
 
@@ -1105,7 +1105,7 @@ void parse_output_preds(options_i& options, vw& all)
   if (options.was_supplied("predictions"))
   {
     if (!all.quiet)
-      all.trace_message << "predictions = " << predictions << std::endl;
+      all.trace_message << "predictions = " << predictions << endl;
 
     if (predictions == "stdout")
     {
@@ -1122,7 +1122,7 @@ void parse_output_preds(options_i& options, vw& all)
       f = open(fstr, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
 #endif
       if (f < 0)
-        all.trace_message << "Error opening the predictions file: " << fstr << std::endl;
+        all.trace_message << "Error opening the predictions file: " << fstr << endl;
       all.final_prediction_sink.push_back((size_t)f);
     }
   }
@@ -1131,10 +1131,10 @@ void parse_output_preds(options_i& options, vw& all)
   {
     if (!all.quiet)
     {
-      all.trace_message << "raw predictions = " << raw_predictions << std::endl;
+      all.trace_message << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
         all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
-                          << std::endl;
+                          << endl;
     }
     if (raw_predictions == "stdout")
       all.raw_prediction = 1;  // stdout
@@ -1174,7 +1174,7 @@ void parse_output_model(options_i& options, vw& all)
   options.add_and_parse(output_model_options);
 
   if (all.final_regressor_name.compare("") && !all.quiet)
-    all.trace_message << "final_regressor = " << all.final_regressor_name << std::endl;
+    all.trace_message << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash"))
     all.hash_inv = true;
@@ -1530,12 +1530,12 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
 
   if (!all.quiet)
   {
-    all.trace_message << "Num weight bits = " << all.num_bits << std::endl;
-    all.trace_message << "learning rate = " << all.eta << std::endl;
-    all.trace_message << "initial_t = " << all.sd->t << std::endl;
-    all.trace_message << "power_t = " << all.power_t << std::endl;
+    all.trace_message << "Num weight bits = " << all.num_bits << endl;
+    all.trace_message << "learning rate = " << all.eta << endl;
+    all.trace_message << "initial_t = " << all.sd->t << endl;
+    all.trace_message << "power_t = " << all.power_t << endl;
     if (all.numpasses > 1)
-      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << std::endl;
+      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
 }
 
@@ -1690,7 +1690,7 @@ vw* initialize(
   }
   catch (std::exception& e)
   {
-    all.trace_message << "Error: " << e.what() << std::endl;
+    all.trace_message << "Error: " << e.what() << endl;
     finish(all);
     throw;
   }
@@ -1814,17 +1814,17 @@ void finish(vw& all, bool delete_all)
   {
     all.trace_message.precision(6);
     all.trace_message << std::fixed;
-    all.trace_message << std::endl << "finished run";
+    all.trace_message << endl << "finished run";
     if (all.current_pass == 0 || all.current_pass == 1)
-      all.trace_message << std::endl << "number of examples = " << all.sd->example_number;
+      all.trace_message << endl << "number of examples = " << all.sd->example_number;
     else
     {
-      all.trace_message << std::endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      all.trace_message << std::endl << "passes used = " << all.current_pass;
+      all.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+      all.trace_message << endl << "passes used = " << all.current_pass;
     }
-    all.trace_message << std::endl << "weighted example sum = " << all.sd->weighted_examples();
-    all.trace_message << std::endl << "weighted label sum = " << all.sd->weighted_labels;
-    all.trace_message << std::endl << "average loss = ";
+    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
+    all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
+    all.trace_message << endl << "average loss = ";
     if (all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
         all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
@@ -1837,11 +1837,11 @@ void finish(vw& all, bool delete_all)
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        all.trace_message << std::endl
+        all.trace_message << endl
                           << "average multiclass log loss = "
                           << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << std::endl
+        all.trace_message << endl
                           << "average multiclass log loss = "
                           << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
@@ -1850,15 +1850,15 @@ void finish(vw& all, bool delete_all)
     float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
-      all.trace_message << std::endl << "best constant = " << best_constant;
+      all.trace_message << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
-        all.trace_message << std::endl << "best constant's loss = " << best_constant_loss;
+        all.trace_message << endl << "best constant's loss = " << best_constant_loss;
     }
 
-    all.trace_message << std::endl << "total feature number = " << all.sd->total_features;
+    all.trace_message << endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      all.trace_message << std::endl << "total queries = " << all.sd->queries;
-    all.trace_message << std::endl;
+      all.trace_message << endl << "total queries = " << all.sd->queries;
+    all.trace_message << endl;
   }
 
   // implement finally.

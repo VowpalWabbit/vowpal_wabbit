@@ -976,6 +976,27 @@ namespace VW
 {
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
+
+// a copy of dealloc_example except that this does not call the example destructor
+// Work to remove this is currently in progress
+void cleanup_example(void(*delete_label)(void*), example& ec, void(*delete_prediction)(void*))
+{
+  if (delete_label)
+    delete_label(&ec.l);
+
+  if (delete_prediction)
+    delete_prediction(&ec.pred);
+
+  ec.tag.delete_v();
+
+  if (ec.passthrough)
+  {
+    delete ec.passthrough;
+  }
+
+  ec.indices.delete_v();
+}
+
 void free_parser(vw& all)
 {
   all.p->words.delete_v();
@@ -993,13 +1014,13 @@ void free_parser(vw& all)
   while (!all.p->example_pool.empty())
   {
     example* temp = all.p->example_pool.get_object();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
   }
 
   while (all.p->ready_parsed_examples.size() != 0)
   {
     example* temp = all.p->ready_parsed_examples.pop();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
   }
   all.p->counts.delete_v();
 }
