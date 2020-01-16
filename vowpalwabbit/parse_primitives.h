@@ -133,15 +133,10 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
     
 }
 
-inline float parse_float_string_view(VW::string_view strview, size_t& end_idx)
-{
-  return parseFloat(strview.begin(), end_idx, strview.end());
-}
-
 inline float float_of_string(VW::string_view s)
 {
   size_t end_idx;
-  float f = parse_float_string_view(s, end_idx);
+  float f = parseFloat(s.begin(), end_idx, s.end());
   if ((end_idx == 0 && s.size() > 0) || std::isnan(f))
   {
     std::cout << "warning: " << s << " is not a good float, replacing with 0" << std::endl;
