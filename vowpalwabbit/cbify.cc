@@ -341,7 +341,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   if (data.regression_data.loss_report == 1)
   {
     // for reporting average loss to be in the correct range (reverse normalizing)
-    float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
+    const float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
     const size_t cost_size = data.regression_data.cb_cont_label.costs.size();
     if (data.regression_data.loss_option == 0)
     {
