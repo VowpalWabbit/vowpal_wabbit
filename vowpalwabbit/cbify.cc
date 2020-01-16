@@ -1,6 +1,5 @@
-﻿#include <float.h>
-#include <vector>
 #include <float.h>
+#include <vector>
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw.h"
@@ -8,13 +7,17 @@
 #include "explore.h"
 #include "prob_dist_cont.h"
 #include "debug_log.h"
+#include <filesystem>
 
 using namespace LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
-// using namespace COST_SENSITIVE;
 using namespace std;
 using namespace VW::config;
+
+using VW::cb_continuous::continuous_label;
+using VW::cb_continuous::continuous_label_elm;
+using std::endl;
 
 VW_DEBUG_ENABLE(false);
 
@@ -28,15 +31,15 @@ struct cbify_adf_data
 
 struct cbify_reg
 {
-  VW::cb_continuous::label cb_cont_label;
   VW::actions_pdf::pdf prob_dist;
   float min_value;
   float max_value;
   float bandwidth;
-  int num_actions; 
+  int num_actions;
   int loss_option;
   int loss_report;
   float loss_01_ratio;
+  continuous_label cb_cont_label;
 };
 
 struct cbify
@@ -104,8 +107,7 @@ inline void delete_it(T* p)
 
 void finish_cbify_reg(cbify_reg& data)
 {
-  //VW::cb_continuous::cb_cont_label.delete_label(&data.cb_cont_label); // todo: this line gives error in Linux
-  data.cb_cont_label.costs.delete_v(); // todo: instead of above
+  data.cb_cont_label.costs.delete_v();  // todo: instead of above
   data.prob_dist.delete_v();
 }
 
@@ -167,12 +169,15 @@ float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
 {
   int begin = -1;
   int end = (int)prob_dist.size();
-  while (end - begin > 1) {
+  while (end - begin > 1)
+  {
     int mid = (begin + end) / 2;
-    if (prob_dist[mid].action <= chosen_action) {
+    if (prob_dist[mid].action <= chosen_action)
+    {
       begin = mid;
     }
-    else {
+    else
+    {
       end = mid;
     }
   }
@@ -198,7 +203,7 @@ float get_01_loss(cbify& data, float chosen_action, float label)
   float diff = label - chosen_action;
   float range = data.regression_data.max_value - data.regression_data.min_value;
   if (abs(diff) <= (data.regression_data.loss_01_ratio * range))
-    return 0.0f; 
+    return 0.0f;
   return 1.0f;
 }
 
@@ -207,7 +212,8 @@ float get_01_loss(cbify& data, float chosen_action, float label)
 template <bool is_learn>
 void predict_or_learn_regression_discrete(cbify& data, single_learner& base, example& ec)
 {
-  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
+             << endl;
 
   label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
@@ -221,7 +227,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
 
   uint32_t chosen_action;
   if (sample_after_normalizing(
-    data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
+          data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
   /*cout << "chosen_action = " << chosen_action << endl;*/
@@ -232,16 +238,19 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   if (!cb.action)
     THROW("No action with non-zero probability found!");
   float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
-  float converted_action = data.regression_data.min_value
-    + chosen_action * continuous_range / data.regression_data.num_actions;
+  float converted_action =
+      data.regression_data.min_value + chosen_action * continuous_range / data.regression_data.num_actions;
 
-  if (data.regression_data.loss_option == 0) {
+  if (data.regression_data.loss_option == 0)
+  {
     cb.cost = get_squared_loss(data, converted_action, regression_label.label);
   }
-  else if (data.regression_data.loss_option == 1) {
+  else if (data.regression_data.loss_option == 1)
+  {
     cb.cost = get_absolute_loss(data, converted_action, regression_label.label);
   }
-  else if (data.regression_data.loss_option == 2) {
+  else if (data.regression_data.loss_option == 2)
+  {
     cb.cost = get_01_loss(data, converted_action, regression_label.label);
   }
 
@@ -252,13 +261,16 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   if (is_learn)
     base.learn(ec);
 
-  if (data.regression_data.loss_report == 1) {
+  if (data.regression_data.loss_report == 1)
+  {
     // for reporintg avergae loss to be in the correct range (reverse normalizing)
     size_t siz = data.cb_label.costs.size();
-    if (data.regression_data.loss_option == 0) {
+    if (data.regression_data.loss_option == 0)
+    {
       data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
     }
-    else if (data.regression_data.loss_option == 1) {
+    else if (data.regression_data.loss_option == 1)
+    {
       data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range;
     }
   }
@@ -270,18 +282,18 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   ec.pred.scalar = converted_action;
 }
 
-
 // continuous action space predict_or_learn. Non-afd workflow only
 // Receives Regression example as input, sends cb_continuous example to base learn/predict
 template <bool is_learn>
 void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 {
-  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) <<  features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
+             << endl;
   label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
-  
+
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
@@ -290,8 +302,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   // after having the function that samples the pdf and returns back a continuous action
   if (S_EXPLORATION_OK !=
       sample_after_normalizing(data.app_seed + data.example_counter++, begin_probs(ec.pred.prob_dist),
-        one_to_end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
-        ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
+          one_to_end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
+          ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
     THROW("Failed to sample from pdf");
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
   //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
@@ -300,22 +312,25 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 
   float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
 
-  VW::cb_continuous::cb_cont_class cb_cont;
+  continuous_label_elm cb_cont_lbl;
 
-  cb_cont.action = chosen_action;
-  cb_cont.probability = pdf_value;
+  cb_cont_lbl.action = chosen_action;
+  cb_cont_lbl.probability = pdf_value;
 
-  if (data.regression_data.loss_option == 0) {
-    cb_cont.cost = get_squared_loss(data, chosen_action, regression_label.label);
+  if (data.regression_data.loss_option == 0)
+  {
+    cb_cont_lbl.cost = get_squared_loss(data, chosen_action, regression_label.label);
   }
-  else if (data.regression_data.loss_option == 1) {
-    cb_cont.cost = get_absolute_loss(data, chosen_action, regression_label.label);
+  else if (data.regression_data.loss_option == 1)
+  {
+    cb_cont_lbl.cost = get_absolute_loss(data, chosen_action, regression_label.label);
   }
-  else if (data.regression_data.loss_option == 2) {
-    cb_cont.cost = get_01_loss(data, chosen_action, regression_label.label);
+  else if (data.regression_data.loss_option == 2)
+  {
+    cb_cont_lbl.cost = get_01_loss(data, chosen_action, regression_label.label);
   }
 
-  data.regression_data.cb_cont_label.costs.push_back(cb_cont);
+  data.regression_data.cb_cont_label.costs.push_back(cb_cont_lbl);
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
   VW_DBG(ec) << "cbify-reg: before base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
@@ -323,29 +338,27 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     base.learn(ec);
   VW_DBG(ec) << "cbify-reg: after base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
 
-  if (data.regression_data.loss_report == 1) {
-    // for reporintg avergae loss to be in the correct range (reverse normalizing)
+  if (data.regression_data.loss_report == 1)
+  {
+    // for reporting average loss to be in the correct range (reverse normalizing)
     float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
-    size_t siz = data.regression_data.cb_cont_label.costs.size();
-    if (data.regression_data.loss_option == 0) {
-      data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range * continuous_range;
+    const size_t cost_size = data.regression_data.cb_cont_label.costs.size();
+    if (data.regression_data.loss_option == 0)
+    {
+      data.regression_data.cb_cont_label.costs[cost_size - 1].cost =
+          cb_cont_lbl.cost * continuous_range * continuous_range;
     }
-    else if (data.regression_data.loss_option == 1) {
-      data.regression_data.cb_cont_label.costs[siz - 1].cost = cb_cont.cost * continuous_range;
+    else if (data.regression_data.loss_option == 1)
+    {
+      data.regression_data.cb_cont_label.costs[cost_size - 1].cost = cb_cont_lbl.cost * continuous_range;
     }
-    // or below instead of above
-    /*data.regression_data.cb_cont_label.costs.decr();
-    cb_cont.cost *= range * range;
-    data.regression_data.cb_cont_label.costs.push_back(cb_cont);*/
-    // but below one does not work
-    //((--data.regression_data.cb_cont_label.costs.end()))->cost = cb_cont.cost * continuous_range * continuous_range;
   }
-  
+
   data.regression_data.prob_dist = ec.pred.prob_dist;
   data.regression_data.prob_dist.clear();
 
   ec.l.simple = regression_label;  // recovering regression label
-  ec.pred.scalar = cb_cont.action;
+  ec.pred.scalar = cb_cont_lbl.action;
 }
 
 template <bool is_learn, bool use_cs>
@@ -391,7 +404,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
     base.learn(ec);
 
   data.a_s.clear();
-  data.a_s = ec.pred.a_s; // TODO: the above line needs to be moved to after this line!
+  data.a_s = ec.pred.a_s;  // TODO: the above line needs to be moved to after this line!
 
   if (use_cs)
     ec.l.cs = csl;
@@ -597,7 +610,7 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
   // data contains the cb vector, which store among other things, loss
   // ec contains a simple label type
   label_data& ld = ec.l.simple;
-  const auto& cb_costs= data.cb_label.costs;
+  const auto& cb_costs = data.cb_label.costs;
   if (cb_costs.size() > 0)
     all.sd->update(ec.test_only, cb_costs[0].action != FLT_MAX, cb_costs[0].cost, ec.weight, ec.num_features);
 
@@ -606,7 +619,6 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
 
   print_update(all, ec);
 }
-
 
 void output_example_regression(vw& all, cbify& data, example& ec)
 {
@@ -623,14 +635,42 @@ void output_example_regression(vw& all, cbify& data, example& ec)
   print_update(all, ec);
 }
 
-void finish_example(vw& all, cbify& data, example& ec)
+void output_cb_reg_predictions(
+    v_array<int>& predict_file_descriptors, continuous_label& label)
+{
+  stringstream strm;
+  if (label.costs.size() == 1)
+  {
+    continuous_label_elm cost = label.costs[0];
+    strm << cost.action << ":" << cost.cost << ":" << cost.probability << std::endl;
+  }
+  else if (label.costs.empty())
+  {
+    strm << "ERR No costs found." << std::endl;
+  }
+  else
+  {
+    strm << "ERR Too many costs found. Expecting one." << std::endl;
+  }
+  const std::string str = strm.str();
+  for (const int f : predict_file_descriptors)
+  {
+    if (f > 0)
+    {
+      size_t t = io_buf::write_file_or_socket(f, str.c_str(), str.size());
+    }
+  }
+}
+
+void finish_example_cb_reg_continous(vw& all, cbify& data, example& ec)
 {
   // add output example
   output_example_regression(all, data, ec);
+  output_cb_reg_predictions(all.final_prediction_sink, data.regression_data.cb_cont_label);
   VW::finish_example(all, ec);
 }
 
-void finish_example_discrete(vw& all, cbify& data, example& ec)
+void finish_example_cb_reg_discrete(vw& all, cbify& data, example& ec)
 {
   // add output example
   output_example_regression_discrete(all, data, ec);
@@ -668,12 +708,20 @@ base_learner* cbify_setup(options_i& options, vw& all)
                .default_value(0)
                .keep()
                .help("Convert PMF (discrete) into PDF (continuous)."))
-      .add(make_option("cb_discrete", use_discrete).keep().help("Discretizes continuous space and adds cb_explore as option"))
+      .add(make_option("cb_discrete", use_discrete)
+               .keep()
+               .help("Discretizes continuous space and adds cb_explore as option"))
       .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
-      .add(make_option("loss_option", data->regression_data.loss_option).default_value(0).help("loss options for regression - 0:squared, 1:absolute, 2:0/1"))
-      .add(make_option("loss_report", data->regression_data.loss_report).default_value(0).help("loss report option - 0:normalized, 1:denormalized"))
-      .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio).default_value(0.1f).help("ratio of zero loss for 0/1 loss"))
+      .add(make_option("loss_option", data->regression_data.loss_option)
+               .default_value(0)
+               .help("loss options for regression - 0:squared, 1:absolute, 2:0/1"))
+      .add(make_option("loss_report", data->regression_data.loss_report)
+               .default_value(0)
+               .help("loss report option - 0:normalized, 1:denormalized"))
+      .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio)
+               .default_value(0.1f)
+               .help("ratio of zero loss for 0/1 loss"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
 
@@ -772,15 +820,14 @@ base_learner* cbify_setup(options_i& options, vw& all)
       if (use_discrete)
       {
         l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
-            predict_or_learn_regression_discrete<false>, 1,
-          prediction_type::scalar);
-        l->set_finish_example(finish_example_discrete); // todo: check
+            predict_or_learn_regression_discrete<false>, 1, prediction_type::scalar);
+        l->set_finish_example(finish_example_cb_reg_discrete);  // todo: check
       }
       else
       {
         l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-          prediction_type::scalar);
-        l->set_finish_example(finish_example);
+            prediction_type::scalar);
+        l->set_finish_example(finish_example_cb_reg_continous);
       }
     }
     else if (use_cs)

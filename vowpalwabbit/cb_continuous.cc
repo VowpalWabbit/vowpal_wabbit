@@ -16,12 +16,12 @@ using namespace std;
 
 namespace VW { namespace cb_continuous
 {
-  char* bufread_label(cb_continuous::label* ld, char* c, io_buf& cache)
+  char* bufread_label(cb_continuous::continuous_label* ld, char* c, io_buf& cache)
   {
     size_t num = *(size_t*)c;
     ld->costs.clear();
     c += sizeof(size_t);
-    size_t total = sizeof(cb_cont_class) * num;
+    size_t total = sizeof(continuous_label_elm) * num;
     if (cache.buf_read(c, total) < total)
     {
       cout << "error in demarshal of cost data" << endl;
@@ -29,8 +29,8 @@ namespace VW { namespace cb_continuous
     }
     for (size_t i = 0; i < num; i++)
     {
-      cb_cont_class temp = *(cb_cont_class*)c;
-      c += sizeof(cb_cont_class);
+      continuous_label_elm temp = *(continuous_label_elm*)c;
+      c += sizeof(continuous_label_elm);
       ld->costs.push_back(temp);
     }
 
@@ -39,7 +39,7 @@ namespace VW { namespace cb_continuous
 
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
-    cb_continuous::label* ld = (cb_continuous::label*)v;
+    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
     ld->costs.clear();
     char* c;
     size_t total = sizeof(size_t);
@@ -52,14 +52,14 @@ namespace VW { namespace cb_continuous
 
   float weight(void*) { return 1.; }
 
-  char* bufcache_label(cb_continuous::label* ld, char* c)
+  char* bufcache_label(cb_continuous::continuous_label* ld, char* c)
   {
     *(size_t*)c = ld->costs.size();
     c += sizeof(size_t);
     for (size_t i = 0; i < ld->costs.size(); i++)
     {
-      *(cb_cont_class*)c = ld->costs[i];
-      c += sizeof(cb_cont_class);
+      *(continuous_label_elm*)c = ld->costs[i];
+      c += sizeof(continuous_label_elm);
     }
     return c;
   }
@@ -67,20 +67,20 @@ namespace VW { namespace cb_continuous
   void cache_label(void* v, io_buf& cache)
   {
     char* c;
-    cb_continuous::label* ld = (cb_continuous::label*)v;
-    cache.buf_write(c, sizeof(size_t) + sizeof(cb_cont_class) * ld->costs.size());
+    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
+    cache.buf_write(c, sizeof(size_t) + sizeof(continuous_label_elm) * ld->costs.size());
     bufcache_label(ld, c);
   }
 
   void default_label(void* v)
   {
-    cb_continuous::label* ld = (cb_continuous::label*)v;
+    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
     ld->costs.clear();
   }
 
   bool test_label(void* v)
   {
-    cb_continuous::label* ld = (cb_continuous::label*)v;
+    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
     if (ld->costs.size() == 0)
       return true;
     for (size_t i = 0; i < ld->costs.size(); i++)
@@ -91,24 +91,24 @@ namespace VW { namespace cb_continuous
 
   void delete_label(void* v)
   {
-    cb_continuous::label* ld = (cb_continuous::label*)v;
+    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
     ld->costs.delete_v();
   }
 
   void copy_label(void* dst, void* src)
   {
-    cb_continuous::label* ldD = (cb_continuous::label*)dst;
-    cb_continuous::label* ldS = (cb_continuous::label*)src;
+    cb_continuous::continuous_label* ldD = (cb_continuous::continuous_label*)dst;
+    cb_continuous::continuous_label* ldS = (cb_continuous::continuous_label*)src;
     copy_array(ldD->costs, ldS->costs);
   }
 
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
-    cb_continuous::label* ld = (cb_continuous::label*)v;
+    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
     ld->costs.clear();
     for (size_t i = 0; i < words.size(); i++)
     {
-      cb_cont_class f;
+      continuous_label_elm f;
       tokenize(':', words[i], p->parse_name);
 
       if (p->parse_name.size() < 1 || p->parse_name.size() > 3)
@@ -156,11 +156,11 @@ namespace VW { namespace cb_continuous
   }
 
   label_parser cb_cont_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
-      test_label, sizeof(label)};
+      test_label, sizeof(continuous_label)};
 
   bool ec_is_example_header(example& ec)  // example headers just have "shared"
   {
-    v_array<cb_continuous::cb_cont_class> costs = ec.l.cb_cont.costs;
+    v_array<cb_continuous::continuous_label_elm> costs = ec.l.cb_cont.costs;
     if (costs.size() != 1)
       return false;
     if (costs[0].probability == -1.f)
