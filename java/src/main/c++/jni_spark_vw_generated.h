@@ -26,9 +26,9 @@ extern "C"
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative
    * Method:    learn
-   * Signature: ([)V
+   * Signature: ([)J
    */
-  JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(JNIEnv *, jobject, jobjectArray);
+  JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(JNIEnv *, jobject, jobjectArray);
 
   /*
    * Class:     org_vowpalwabbit_spark_VowpalWabbitNative

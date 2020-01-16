@@ -7,11 +7,6 @@
 #include <algorithm>
 #include <exception>
 
-// Java JNI exception check (if another JNI function is invoked it segfauls)
-#define CHECK_JNI_EXCEPTION(ret) \
-  if (env->ExceptionCheck())     \
-    return ret;
-
 // Guards
 StringGuard::StringGuard(JNIEnv* env, jstring source) : _env(env), _source(source), _cstr(nullptr)
 {
@@ -44,6 +39,7 @@ CriticalArrayGuard::~CriticalArrayGuard()
 
 void* CriticalArrayGuard::data() { return _arr0; }
 
+// Example util
 // VW
 JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initialize(JNIEnv* env, jclass, jstring args)
 {
@@ -106,7 +102,7 @@ void populateMultiEx(JNIEnv* env, jobjectArray examples, vw& all, multi_ex& ex_c
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
     JNIEnv* env, jobject vwObj, jobjectArray examples)
 {
   auto all = (vw*)get_native_pointer(env, vwObj);
@@ -120,6 +116,9 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
 
     // as this is not a ring-based example it is not freed
     as_multiline(all->l)->finish_example(*all, ex_coll);
+
+    // prediction is in the first example
+    return getJavaPrediction(env, all, ex_coll[0]);
   }
   catch (...)
   {
@@ -139,28 +138,16 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
 
     all->predict(ex_coll);
 
-    // TODO: support more than just CB - why not distribution over actions?
-    // auto& a_s = ex->pred.a_s;
-    // auto values = gcnew cli::array<ActionScore>((int)a_s.size());
-
-    // auto index = 0;
-    // for (auto& as : a_s)
-    // { values[index].Action = as.action;
-    //   values[index].Score = as.score;
-    //   index++;
-    // }
-
-    // return values;
-
     // as this is not a ring-based example it is not freed
     as_multiline(all->l)->finish_example(*all, ex_coll);
+
+    // prediction is in the first example
+    return getJavaPrediction(env, all, ex_coll[0]);
   }
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
   }
-
-  return nullptr;
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRemainingPasses(JNIEnv* env, jobject vwObj)
@@ -603,62 +590,11 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCondit
   }
 }
 
-// re-use prediction conversation methods
-jobject multilabel_predictor(example* vec, JNIEnv* env);
-jfloatArray scalars_predictor(example* vec, JNIEnv* env);
-jobject action_scores_prediction(example* vec, JNIEnv* env);
-jobject action_probs_prediction(example* vec, JNIEnv* env);
-
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(JNIEnv* env, jobject exampleObj)
 {
   INIT_VARS
 
-  jclass predClass;
-  jmethodID ctr;
-  switch (all->l->pred_type)
-  {
-    case prediction_type::prediction_type_t::scalar:
-      predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
-      CHECK_JNI_EXCEPTION(nullptr);
-
-      ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
-      CHECK_JNI_EXCEPTION(nullptr);
-
-      return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
-
-    case prediction_type::prediction_type_t::prob:
-      predClass = env->FindClass("java/lang/Float");
-      CHECK_JNI_EXCEPTION(nullptr);
-
-      ctr = env->GetMethodID(predClass, "<init>", "(F)V");
-      CHECK_JNI_EXCEPTION(nullptr);
-
-      return env->NewObject(predClass, ctr, ex->pred.prob);
-
-    case prediction_type::prediction_type_t::multiclass:
-      predClass = env->FindClass("java/lang/Integer");
-      CHECK_JNI_EXCEPTION(nullptr);
-
-      ctr = env->GetMethodID(predClass, "<init>", "(I)V");
-      CHECK_JNI_EXCEPTION(nullptr);
-
-      return env->NewObject(predClass, ctr, ex->pred.multiclass);
-
-    case prediction_type::prediction_type_t::scalars:
-      return scalars_predictor(ex, env);
-
-    case prediction_type::prediction_type_t::action_probs:
-      return action_probs_prediction(ex, env);
-
-    case prediction_type::prediction_type_t::action_scores:
-      return action_scores_prediction(ex, env);
-
-    case prediction_type::prediction_type_t::multilabels:
-      return multilabel_predictor(ex, env);
-
-    default:
-      return nullptr;
-  }
+  return getJavaPrediction(env, all, ex);
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_learn(JNIEnv* env, jobject exampleObj)
@@ -693,7 +629,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
     // as this is not a ring-based example it is not free'd
     LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
 
-    return Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(env, exampleObj);
+    return getJavaPrediction(env, all, ex);
   }
   catch (...)
   {
@@ -767,5 +703,67 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+// re-use prediction conversation methods
+jobject multilabel_predictor(example* vec, JNIEnv* env);
+jfloatArray scalars_predictor(example* vec, JNIEnv* env);
+jobject action_scores_prediction(example* vec, JNIEnv* env);
+jobject action_probs_prediction(example* vec, JNIEnv* env);
+
+jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
+{
+  jclass predClass;
+  jmethodID ctr;
+  switch (all->l->pred_type)
+  {
+    case prediction_type::prediction_type_t::scalar:
+      predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
+
+    case prediction_type::prediction_type_t::prob:
+      predClass = env->FindClass("java/lang/Float");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      ctr = env->GetMethodID(predClass, "<init>", "(F)V");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      return env->NewObject(predClass, ctr, ex->pred.prob);
+
+    case prediction_type::prediction_type_t::multiclass:
+      predClass = env->FindClass("java/lang/Integer");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      ctr = env->GetMethodID(predClass, "<init>", "(I)V");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      return env->NewObject(predClass, ctr, ex->pred.multiclass);
+
+    case prediction_type::prediction_type_t::scalars:
+      return scalars_predictor(ex, env);
+
+    case prediction_type::prediction_type_t::action_probs:
+      return action_probs_prediction(ex, env);
+
+    case prediction_type::prediction_type_t::action_scores:
+      return action_scores_prediction(ex, env);
+
+    case prediction_type::prediction_type_t::multilabels:
+      return multilabel_predictor(ex, env);
+
+    default:
+    {
+      std::ostringstream ostr;
+      ostr << "prediction type '" << all->l->pred_type << "' is not supported";
+
+      env->ThrowNew(env->FindClass("java/lang/UnsupportedOperationException"), ostr.str().c_str());
+      return nullptr;
+    }
   }
 }
