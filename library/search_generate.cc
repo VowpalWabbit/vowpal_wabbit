@@ -242,7 +242,7 @@ public:
 
     Trie* cdict = dict;
 
-    v_array<action> ref;
+    v_array<action> ref = v_init<action>();
     int N = in.in.length();
     out = "^";
    std::vector<nextstr> next;

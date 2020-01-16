@@ -239,7 +239,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples;
+  v_array<example*> examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(all.get()));
   all->p->text_reader(all.get(), str, strlen(str), examples);
 
