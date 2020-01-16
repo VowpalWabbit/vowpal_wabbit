@@ -12,6 +12,11 @@ namespace distributionally_robust
 
 double ChiSquared::chisq_onedof_isf(double alpha)
 {
+  // the following is a polynomial approximation to the
+  // inverse survival function for chi-squared distribution with 1 dof
+  // using log and exp as basis functions
+  // "constants" below found with the following Mathematica code
+  //
   // data = Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.999, 0.0005 }]
   // lm = LinearModelFit[data, { Log[alpha], Log[alpha]^2, Log[alpha]^3, Log[alpha]^4 , Log[alpha]^5, Log[alpha]^6, Log[alpha]^7, Log[alpha]^8, Exp[alpha], Exp[alpha]^2, Exp[alpha]^3, Exp[alpha]^4, Exp[alpha]^5, Exp[alpha]^6, Exp[alpha]^7, Exp[alpha]^8}, alpha]
   // ListPlot[lm["FitResiduals"]]
@@ -157,9 +162,9 @@ ChiSquared::Duals ChiSquared::recompute_duals()
     }
   else
     {
-      auto it = std::min_element(candidates.begin(), 
+      auto it = std::min_element(candidates.begin(),
                                  candidates.end(),
-                                 [](const ScoredDual& x, const ScoredDual& y) 
+                                 [](const ScoredDual& x, const ScoredDual& y)
                                    {
                                      return std::get<0>(x) < std::get<0>(y);
                                    }

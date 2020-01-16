@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 
 #include <algorithm>
 #include <limits>
-#include <stdexcept>
+#include "vw_exception.h"
 
 namespace VW
 {
@@ -75,17 +75,17 @@ class ChiSquared
       {
         if (alpha > 1 || alpha <= 0)
           {
-            throw std::invalid_argument("invalid alpha value");
+            THROW("invalid alpha value");
           }
 
         if (tau > 1 || tau <= 0)
           {
-            throw std::invalid_argument("invalid tau value");
+            THROW("invalid tau value");
           }
 
         if (wmin >= wmax || wmin >= 1 || wmax <= 1)
           {
-            throw std::invalid_argument("invalid limits on w");
+            THROW("invalid limits on w");
           }
 
         if (rmin > rmax)
