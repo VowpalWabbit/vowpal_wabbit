@@ -10,6 +10,7 @@
 #include <cstdint>
 #include "v_array.h"
 #include <algorithm>
+#include <vector>
 
 #ifndef _WIN32
 #include <sys/types.h>
