@@ -170,24 +170,36 @@ void vw::predict(example& ec)
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
+  const auto saved_test_only = ec.test_only;
   ec.test_only = true;
 
   LEARNER::as_singleline(l)->predict(ec);
+  ec.test_only = saved_test_only;
 }
 
 void vw::predict(multi_ex& ec)
 {
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
-
+ 
+  std::vector<bool> saved_test_only;
+  saved_test_only.reserve(ec.size());
+ 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   for (auto& ex : ec)
   {
+    saved_test_only.push_back(ex->test_only);
     ex->test_only = true;
   }
-
+ 
   LEARNER::as_multiline(l)->predict(ec);
+ 
+  size_t index = 0;
+  for (auto& ex : ec)
+  {
+    ex->test_only = saved_test_only[index++];
+  }
 }
 
 void vw::finish_example(example& ec)
