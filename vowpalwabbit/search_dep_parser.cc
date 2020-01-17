@@ -322,9 +322,7 @@ void get_valid_actions(Search::search& sch, v_array<uint32_t>& valid_action, uin
 {
   task_data* data = sch.get_task_data<task_data>();
   uint32_t& sys = data->transition_system;
-  v_array<uint32_t>& stack = data->stack;
-  v_array<uint32_t>& heads = data->heads;
-  v_array<uint32_t>& temp = data->temp;
+  v_array<uint32_t> &stack = data->stack, &heads = data->heads, &temp = data->temp;
   valid_action.clear();
   if (sys == arc_hybrid)
   {
@@ -381,10 +379,8 @@ bool is_valid(uint64_t action, const v_array<uint32_t>& valid_actions)
 void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t>& action_loss = data->action_loss;
-  v_array<uint32_t>& stack = data->stack;
-  v_array<uint32_t>& gold_heads = data->gold_heads;
-  v_array<uint32_t>& heads = data->heads;
+  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads,
+                    heads = data->heads;
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
   for (size_t i = 1; i <= 4; i++) action_loss[i] = 0;
@@ -424,9 +420,7 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
 void get_hybrid_action_cost(Search::search& sch, size_t idx, uint64_t n)
 {
   task_data* data = sch.get_task_data<task_data>();
-  v_array<uint32_t>& action_loss = data->action_loss;
-  v_array<uint32_t>& stack = data->stack;
-  v_array<uint32_t>& gold_heads = data->gold_heads;
+  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads;
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
 
@@ -461,8 +455,7 @@ void get_cost_to_go_losses(Search::search &sch, v_array<std::pair<action, float>
   task_data *data = sch.get_task_data<task_data>();
   bool &one_learner = data->one_learner;
   uint32_t &sys = data->transition_system;
-  v_array<uint32_t>& action_loss = data->action_loss;
-  v_array<uint32_t>& valid_actions = data->valid_actions;
+  v_array<uint32_t> &action_loss = data->action_loss, &valid_actions = data->valid_actions;
   uint32_t &num_label = data->num_label;
   gold_action_losses.clear();
 
@@ -494,10 +487,8 @@ void get_cost_to_go_losses(Search::search &sch, v_array<std::pair<action, float>
 void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t /* n */, v_array<action> &gold_actions)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t>& action_loss = data->action_loss;
-  v_array<uint32_t>& stack = data->stack;
-  v_array<uint32_t>& gold_heads = data->gold_heads;
-  v_array<uint32_t>& valid_actions = data->valid_actions;
+  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads,
+                    &valid_actions = data->valid_actions;
   gold_actions.clear();
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
@@ -563,10 +554,8 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
 void setup(Search::search &sch, multi_ex &ec)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t>& gold_heads = data->gold_heads;
-  v_array<uint32_t>& heads = data->heads;
-  v_array<uint32_t>& gold_tags = data->gold_tags;
-  v_array<uint32_t>& tags = data->tags;
+  v_array<uint32_t> &gold_heads = data->gold_heads, &heads = data->heads, &gold_tags = data->gold_tags,
+                    &tags = data->tags;
   size_t n = ec.size();
   heads.resize(n + 1);
   tags.resize(n + 1);
@@ -576,7 +565,7 @@ void setup(Search::search &sch, multi_ex &ec)
   gold_tags.push_back(0);
   for (size_t i = 0; i < n; i++)
   {
-    v_array<COST_SENSITIVE::wclass>& costs = ec[i]->l.cs.costs;
+    const auto& costs = ec[i]->l.cs.costs;
     uint32_t head, tag;
     if (data->old_style_labels)
     {
@@ -603,16 +592,12 @@ void setup(Search::search &sch, multi_ex &ec)
 void run(Search::search &sch, multi_ex &ec)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t>& stack = data->stack;
-  v_array<uint32_t>& gold_heads = data->gold_heads;
-  v_array<uint32_t>& valid_actions = data->valid_actions;
-  v_array<uint32_t>& heads = data->heads;
-  v_array<uint32_t>& gold_tags = data->gold_tags;
-  v_array<uint32_t>& tags = data->tags;
-  v_array<uint32_t>& valid_action_temp = data->valid_action_temp;
-  v_array<uint32_t>& gold_action_temp = data->gold_action_temp;
-  v_array<std::pair<action, float>>& gold_action_losses = data->gold_action_losses;
-  v_array<action>& gold_actions = data->gold_actions;
+  v_array<uint32_t> &stack = data->stack, &gold_heads = data->gold_heads, &valid_actions = data->valid_actions,
+                    &heads = data->heads, &gold_tags = data->gold_tags, &tags = data->tags,
+                    &valid_action_temp = data->valid_action_temp;
+  v_array<uint32_t> &gold_action_temp = data->gold_action_temp;
+  v_array<std::pair<action, float>> &gold_action_losses = data->gold_action_losses;
+  v_array<action> &gold_actions = data->gold_actions;
   bool& cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
   uint32_t& num_label = data->num_label;
   uint32_t& sys = data->transition_system;
