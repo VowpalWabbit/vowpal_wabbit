@@ -816,11 +816,11 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
   .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
   .def_readonly("pACTION_SCORES", pACTION_SCORES, "Multiple action scores prediction type")
-  .def_readonly("pACTION_PROBS", pACTION_PROBS, "DEPRECATED - use pACTION_SCORES. Multiple action probabilities prediction type")
+  .def_readonly("pACTION_PROBS", pACTION_PROBS, "Multiple action probabilities prediction type")
   .def_readonly("pMULTICLASS", pMULTICLASS, "Multiclass prediction type")
   .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
   .def_readonly("pPROB", pPROB, "Probability prediction type")
-  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "DEPRECATED - use pSCALARS. Multiclass probabilities prediction type")
+  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
   .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
 ;
 
