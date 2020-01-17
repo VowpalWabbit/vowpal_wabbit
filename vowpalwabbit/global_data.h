@@ -520,7 +520,7 @@ struct vw
   void (*print_by_ref)(int, float, float, const v_array<char>&);
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
   void (*print_text)(int, std::string, v_array<char>);
-  void (*print_text_by_ref)(int, std::string, const v_array<char>&);
+  void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
   loss_function* loss;
 
   char* program_name;
