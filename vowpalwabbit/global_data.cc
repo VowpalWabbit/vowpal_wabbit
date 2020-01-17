@@ -149,7 +149,7 @@ void print_raw_text(int f, std::string s, v_array<char> tag)
 }
 
 
-void print_raw_text_by_ref(int f, std::string s, const v_array<char>& tag)
+void print_raw_text_by_ref(int f, const std::string& s, const v_array<char>& tag)
 {
   if (f < 0)
     return;

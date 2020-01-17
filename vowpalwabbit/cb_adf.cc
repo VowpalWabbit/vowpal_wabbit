@@ -97,7 +97,7 @@ struct cb_adf
 
 CB::cb_class get_observed_cost(multi_ex& examples)
 {
-  CB::label* ld;
+  CB::label* ld = nullptr;
   int index = -1;
   CB::cb_class known_cost;
 
