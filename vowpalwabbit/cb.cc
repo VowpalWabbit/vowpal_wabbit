@@ -168,7 +168,7 @@ label_parser cb_label = {default_label, parse_label, cache_label, read_cached_la
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
-  auto& costs = ec.l.cb.costs;
+  const auto& costs = ec.l.cb.costs;
   if (costs.size() != 1)
     return false;
   if (costs[0].probability == -1.f)

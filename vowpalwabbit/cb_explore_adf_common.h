@@ -1,4 +1,4 @@
-// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+  // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
@@ -134,7 +134,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
-  ACTION_SCORE::action_scores& preds = ec.pred.a_s;
+  const auto& preds = ec.pred.a_s;
 
   for (const auto& example : ec_seq)
   {

@@ -405,8 +405,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  label& ld = ec.l.cb;
-  v_array<CB::cb_class>& costs = ld.costs;
+  const auto& costs = ec.l.cb.costs;
 
   if (example_is_newline_not_header(ec))
     return;

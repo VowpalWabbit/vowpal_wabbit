@@ -307,8 +307,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
-  COST_SENSITIVE::label& ld = ec.l.cs;
-  v_array<COST_SENSITIVE::wclass>& costs = ld.costs;
+  const auto& costs = ec.l.cs.costs;
 
   if (example_is_newline(ec))
     return;
