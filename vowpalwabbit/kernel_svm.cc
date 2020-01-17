@@ -439,7 +439,7 @@ float kernel_function(const flat_example* fec1, const flat_example* fec2, void* 
   return 0;
 }
 
-float dense_dot(float* v1, v_array<float>& v2, size_t n)
+float dense_dot(float* v1, const v_array<float>& v2, size_t n)
 {
   float dot_prod = 0.;
   for (size_t i = 0; i < n; i++) dot_prod += v1[i] * v2[i];
