@@ -5,6 +5,10 @@
 #include "reductions.h"
 #include "debug_log.h"
 #include <cassert>
+#include "hash.h"
+#include "explore.h"
+#include "explore_internal.h"
+
 
 using namespace VW::config;
 using namespace LEARNER;
@@ -258,33 +262,48 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
       ec.weight = abs(cost_v - cost_w);
 
       // Prevent trying to learn from really small weights
-      if (ec.weight < .001f)
-        ec.weight = .0f;
-      else
+      bool filter = false;
+      if (ec.weight < .001f) 
+      {
+        // generate a new seed
+        uint64_t new_random_seed = uniform_hash(&app_seed, sizeof(app_seed), app_seed);
+        // pick a uniform random number between 0.0 - .001f
+        float random_draw = exploration::uniform_random_merand48(new_random_seed)*0.001f;
+        if (random_draw < ec.weight) {
+          ec.weight = 0.001f;
+        }
+        else {
+          filter = true;
+        }
+      }  
+      if (!filter)
       {
         VW_DBG(_dd) << "otree_c: learn() #### binary learning the node " << v.parent_id << std::endl;
         base.learn(ec, v.parent_id);
         _binary_tree.nodes[v.parent_id].learn_count++;
-      }
-      base.predict(ec, v.parent_id);
-      VW_DBG(_dd) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
-                  << ", local_action = " << (local_action) << std::endl;
-      float trained_action = (ec.pred.scalar < 0) ? LEFT : RIGHT;
-      if (trained_action == local_action)
-      {
-        cost_parent =
+        base.predict(ec, v.parent_id);
+        VW_DBG(_dd) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
+          << ", local_action = " << (local_action) << std::endl;
+        float trained_action = (ec.pred.scalar < 0) ? LEFT : RIGHT;
+        if (trained_action == local_action)
+        {
+          cost_parent =
             (std::min)(cost_v, cost_w) * fabs(ec.pred.scalar) + (std::max)(cost_v, cost_w) * (1 - fabs(ec.pred.scalar));
-        VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
-      }
-      else
-      {
-        cost_parent =
+          VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
+        }
+        else
+        {
+          cost_parent =
             (std::max)(cost_v, cost_w) * fabs(ec.pred.scalar) + (std::min)(cost_v, cost_w) * (1 - fabs(ec.pred.scalar));
-        VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
+          VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
+        }
       }
     }
-    if (cost_parent > 0.0f)
-      _nodes_depth_1.push_back({v.parent_id, cost_parent});
+
+    _nodes_depth_1.push_back({ v.parent_id, cost_parent });
+
+    // if (cost_parent != 0.0f)
+      // _nodes_depth_1.push_back({v.parent_id, cost_parent});
 
     if (_nodes_depth.empty())
       reduce_depth();
