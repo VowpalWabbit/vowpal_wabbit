@@ -51,7 +51,7 @@ struct reduction_test_harness
   void test_learn(single_learner& base, example& ec)
   {
     ec.l.cb_cont.costs.clear();
-    ec.l.cb_cont.costs.push_back(VW::cb_continuous::cb_cont_class{_action.cost, _action.action, _action.prob, 0.f});
+    ec.l.cb_cont.costs.push_back(VW::cb_continuous::continuous_label_elm{_action.cost, _action.action, _action.prob, 0.f});
     cout << "ec.l.cb_cont.costs before:" << endl;
     cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
          << " , " << ec.l.cb_cont.costs[0].partial_prediction << "), " << endl;

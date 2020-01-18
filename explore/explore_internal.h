@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "hash.h"
 
@@ -300,9 +300,8 @@ int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, float ran
   // Use the random number to pick an action value in the chosen range
   float interval_size = (range_max - range_min) / (pdf_last - pdf_first);
 
-  ////// TODO:  add back random sampling in the chosen interval
+  // Choose a random value within the chosen interval
   chosen_value = interval_size * (random_draw + chosen_index) + range_min;
-  //chosen_value = interval_size * (0.5 + chosen_index) + range_min;
 
   return S_EXPLORATION_OK;
 }
