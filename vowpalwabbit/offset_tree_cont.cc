@@ -263,19 +263,20 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
       // Prevent trying to learn from really small weights
       bool filter = false;
-      if (ec.weight < .001f) 
+      const float weight_th = 0.00001f;
+      if (ec.weight < weight_th)
       {
         // generate a new seed
         uint64_t new_random_seed = uniform_hash(&app_seed, sizeof(app_seed), app_seed);
         // pick a uniform random number between 0.0 - .001f
-        float random_draw = exploration::uniform_random_merand48(new_random_seed)*0.001f;
+        float random_draw = exploration::uniform_random_merand48(new_random_seed)*weight_th;
         if (random_draw < ec.weight) {
-          ec.weight = 0.001f;
+          ec.weight = weight_th;
         }
         else {
           filter = true;
         }
-      }  
+      }
       if (!filter)
       {
         VW_DBG(_dd) << "otree_c: learn() #### binary learning the node " << v.parent_id << std::endl;
