@@ -47,7 +47,7 @@ typedef union {
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
-  VW::cb_continuous::label cb_cont;
+  VW::cb_continuous::continuous_label cb_cont;
   CCB::label conditional_contextual_bandit;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;

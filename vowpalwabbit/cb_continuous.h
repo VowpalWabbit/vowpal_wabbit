@@ -12,19 +12,19 @@ struct example;
 
 namespace VW { namespace cb_continuous
 {
-  struct cb_cont_class
+  struct continuous_label_elm
   {
+    float action;       // the continuous action
     float cost;         // the cost of this class
-    float action;    // the continuous action
     float probability;  // new for bandit setting, specifies the probability the data collection policy chose this class
                         // for importance weighting
     float partial_prediction;  // essentially a return value
-    bool operator==(cb_cont_class j) { return action == j.action; }
+    bool operator==(continuous_label_elm j) { return action == j.action; }
   };
 
-  struct label
+  struct continuous_label
   {
-    v_array<cb_cont_class> costs;
+    v_array<continuous_label_elm> costs;
   };
 
   extern label_parser cb_cont_label;            // for learning
