@@ -512,8 +512,12 @@ struct vw
   v_array<int> final_prediction_sink;  // set to send global predictions to.
   int raw_prediction;                  // file descriptors for text output.
 
+  VW_DEPRECATED("print has been deprecated, use print_by_ref")
   void (*print)(int, float, float, v_array<char>);
+  void (*print_by_ref)(int, float, float, const v_array<char>&);
+  VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
   void (*print_text)(int, std::string, v_array<char>);
+  void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
   loss_function* loss;
 
   char* program_name;
@@ -555,11 +559,20 @@ struct vw
   vw& operator=(const vw&&) = delete;
 };
 
+VW_DEPRECATED("Use print_result_by_ref instead")
 void print_result(int f, float res, float weight, v_array<char> tag);
+void print_result_by_ref(int f, float res, float weight, const v_array<char>& tag);
+
+VW_DEPRECATED("Use binary_print_result_by_ref instead")
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
+void binary_print_result_by_ref(int f, float res, float weight, const v_array<char>& tag);
+
 void noop_mm(shared_data*, float label);
 void get_prediction(int sock, float& res, float& weight);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
+
+VW_DEPRECATED("Use print_tag_by_ref instead")
 int print_tag(std::stringstream& ss, v_array<char> tag);
+int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);

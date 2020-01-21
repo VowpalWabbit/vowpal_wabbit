@@ -269,11 +269,11 @@ void output_example(vw& all, example& ec)
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)
-      all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
       substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      all.print_text_by_ref(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
   if (all.raw_prediction > 0)
@@ -286,7 +286,7 @@ void output_example(vw& all, example& ec)
         outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   print_update(all, test_label(&ec.l.cs), ec, nullptr, false, ec.pred.multiclass);

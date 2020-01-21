@@ -480,7 +480,7 @@ uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multicla
 
 py::list ex_get_scalars(example_ptr ec)
 { py::list values;
-  v_array<float> scalars = ec->pred.scalars;
+  const auto& scalars = ec->pred.scalars;
 
   for (float s : scalars)
   { values.append(s);
