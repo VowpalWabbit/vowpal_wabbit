@@ -334,10 +334,8 @@ enum AllReduceType
 
 class AllReduce;
 
-// avoid name clash
-namespace label_type
-{
-enum label_type_t
+
+enum class label_type_t
 {
   simple,
   cb,       // contextual-bandit
@@ -347,7 +345,6 @@ enum label_type_t
   mc,
   ccb  // conditional contextual-bandit
 };
-}
 
 struct rand_state
 {
@@ -544,7 +541,7 @@ struct vw
 
   std::map<std::string, size_t> name_index_map;
 
-  label_type::label_type_t label_type;
+  label_type_t label_type;
 
   vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }

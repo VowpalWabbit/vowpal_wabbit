@@ -2905,7 +2905,7 @@ base_learner* setup(options_i& options, vw& all)
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.p->lp = MC::mc_label;
-  all.label_type = label_type::mc;
+  all.label_type = label_type_t::mc;
   if (priv.task && priv.task->initialize)
     priv.task->initialize(*sch.get(), priv.A, options);
   if (priv.metatask && priv.metatask->initialize)

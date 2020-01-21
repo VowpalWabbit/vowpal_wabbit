@@ -287,7 +287,7 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
-  label_type = label_type::simple;
+  label_type = label_type_t::simple;
 
   l = nullptr;
   scorer = nullptr;
