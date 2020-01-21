@@ -255,23 +255,23 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
         all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
-          predict_or_learn<false, false, true, true>, all.p, data->k, prediction_type::scalars);
+          predict_or_learn<false, false, true, true>, all.p, data->k, prediction_type_t::scalars);
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
       l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
-          predict_or_learn<false, false, true, false>, all.p, data->k, prediction_type::scalars);
+          predict_or_learn<false, false, true, false>, all.p, data->k, prediction_type_t::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (all.raw_prediction > 0)
     l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
-        predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type::multiclass);
+        predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type_t::multiclass);
   else
     l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
-        predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type::multiclass);
+        predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type_t::multiclass);
 
   if (data_ptr->num_subsample > 0)
   {
