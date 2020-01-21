@@ -90,7 +90,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -98,7 +98,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -110,7 +110,7 @@ void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
     if (all.raw_prediction > 0)
-      all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+      all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
   }
 }
 
@@ -215,10 +215,10 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
 
   multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  all.label_type = label_type_t::cb;
 
   learner<explore_eval, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::action_probs);
+      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
