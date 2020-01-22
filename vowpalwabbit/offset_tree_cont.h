@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "learner.h"
 #include "options.h"
 #include "error_reporting.h"
@@ -65,6 +65,7 @@ struct offset_tree
   ~offset_tree();
 
  private:
+  uint64_t app_seed = uniform_hash("vw", 2, 0);
   std::string tree_stats_to_string();
   min_depth_binary_tree _binary_tree;
   std::vector<node_cost> _nodes_depth;
