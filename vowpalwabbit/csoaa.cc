@@ -172,7 +172,7 @@ bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or jus
     return false;
   if (ec.indices[0] != 'l')
     return false;
-  v_array<COST_SENSITIVE::wclass>& costs = ec.l.cs().costs;
+  const auto& costs = ec.l.cs().costs;
   for (auto const& cost : costs)
     if ((cost.class_index != 0) || (cost.x <= 0.))
       return false;
@@ -374,7 +374,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   {
     // save original variables
     label save_cs_label = std::move(ec->l.cs());
-    v_array<COST_SENSITIVE::wclass>& costs = save_cs_label.costs;
+    const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
     label_data simple_label;
@@ -627,8 +627,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
 void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
 {
-  label& ld = head_ec.l.cs();
-  v_array<COST_SENSITIVE::wclass>& costs = ld.costs;
+  const auto& costs = head_ec.l.cs().costs;
 
   if (example_is_newline(head_ec))
     return;

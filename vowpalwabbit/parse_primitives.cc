@@ -3,11 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <iostream>
-#ifndef WIN32
-#include <strings.h>
-#else
 #include <string>
-#endif
 #include <stdexcept>
 #include <sstream>
 
@@ -43,8 +39,8 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
       // always insert the next character after an escape if it exists
       if(!s.empty())
       {
-	current.append(s.begin(), 1);
-	s.remove_prefix(1);
+        current.append(s.begin(), 1);
+        s.remove_prefix(1);
       }
     }
     else
@@ -54,7 +50,7 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
       s.remove_prefix(end_pos + 1);
       if(!current.empty() || allow_empty)
       {
-	tokens.push_back(current);
+        tokens.push_back(current);
       }
       current.clear();
     }

@@ -120,7 +120,8 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
   {
     std::stringstream outputStringStream;
     outputStringStream << "1:" << o.pred[0].scalar();
-    for (uint32_t i = 2; i <= o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar();
+    for (uint32_t i = 2; i <= o.k; i++)
+      outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar();
     o.all->print_text_by_ref(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
 

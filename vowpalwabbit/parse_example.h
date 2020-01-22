@@ -2,11 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 #include "vw_string_view.h"
 #include "parse_primitives.h"
 #include "example.h"
 #include "vw.h"
+#include "vw_string_view.h"
 
 // example processing
 typedef enum

@@ -58,10 +58,16 @@ class sd_guard
  private:
   vw* saved_all = nullptr;
   shared_data* saved_sd = nullptr;
-
  public:
-  sd_guard(vw* all, shared_data* sd) : saved_all(all), saved_sd(saved_all->sd) { saved_all->sd = sd; }
-  ~sd_guard() { saved_all->sd = saved_sd; }
+   sd_guard(vw* all, shared_data* sd) :
+     saved_all(all), saved_sd(saved_all->sd)
+   {
+     saved_all->sd = sd;
+   }
+   ~sd_guard()
+   {
+     saved_all->sd = saved_sd;
+   }
 };
 
 #define cast_uint32_t static_cast<uint32_t>

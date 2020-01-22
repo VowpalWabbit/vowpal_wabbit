@@ -192,8 +192,6 @@
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="prediction.h" />
-    <ClInclude Include="primitives.h" />
-    <ClInclude Include="print.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="recall_tree.h" />
@@ -219,6 +217,7 @@
     <ClInclude Include="version.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
+    <ClInclude Include="vw_string_view.h" />
     <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="vw.h" />
@@ -299,7 +298,6 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
-    <ClCompile Include="primitives.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />

@@ -9,6 +9,7 @@
 #include "simple_label.h"
 #include "parser.h"
 #include "prediction.h"
+#include "future_compat.h"
 
 #include <memory>
 

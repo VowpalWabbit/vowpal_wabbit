@@ -43,6 +43,7 @@ search_metatask* all_metatasks[] = {
 constexpr bool PRINT_UPDATE_EVERY_EXAMPLE = false;
 constexpr bool PRINT_UPDATE_EVERY_PASS = false;
 constexpr bool PRINT_CLOCK_TIME = false;
+constexpr uint64_t SEARCH_HASH_SEED = 3419;
 
 std::string neighbor_feature_space("neighbor");
 std::string condition_feature_space("search_condition");
@@ -104,15 +105,13 @@ std::ostream& operator<<(std::ostream& os, const scored_action& x)
 struct action_repr
 {
   action a;
-  features* repr;
+  features* repr = nullptr;
   action_repr(action _a, features* _repr) : a(_a)
   {
     if (_repr != nullptr)
     {
       repr = new features(*_repr);
     }
-    else
-      repr = nullptr;
   }
   action_repr(action _a) : a(_a), repr(nullptr) {}
 };
@@ -138,7 +137,8 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
 
 struct search_private
 {
- private:
+  //FIXME: uncomment this private once this struct has a proper destructor
+ //private:
   struct cached_item_equivalent
   {
     bool operator()(const byte_array& A, const byte_array& B) const
@@ -155,7 +155,7 @@ struct search_private
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();
-      return uniform_hash(key.get(), sz, 3419);
+      return uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
     }
   };
 
@@ -684,7 +684,7 @@ void reset_search_structure(search_private& priv)
     if (priv.beta > 1)
       priv.beta = 1;
   }
-  for (Search::action_repr& ar : priv.ptag_to_action)
+  for (auto& ar : priv.ptag_to_action)
   {
     if (ar.repr != nullptr)
     {
@@ -1049,21 +1049,21 @@ template <class T>
 void push_at(v_array<T>& v, T item, size_t pos)
 {
   if (v.size() > pos)
-    v.begin()[pos] = item;
+    v[pos] = item;
   else
   {
     if (v.end_array > v.begin() + pos)
     {
       // there's enough memory, just not enough filler
       memset(v.end(), 0, sizeof(T) * (pos - v.size()));
-      v.begin()[pos] = item;
+      v[pos] = item;
       v.end() = v.begin() + pos + 1;
     }
     else
     {
       // there's not enough memory
       v.resize(2 * pos + 3);
-      v.begin()[pos] = item;
+      v[pos] = item;
       v.end() = v.begin() + pos + 1;
     }
   }
@@ -1438,6 +1438,8 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
 
   byte_array item(new uint8_t[sz]);
   uint8_t* here = item.get();
+  // get rid of a valgrind warning about uninitialized memory
+  memset(here, 0, sz);
   *here = (unsigned char)sz;
   here += sizeof(size_t);
   *here = mytag;
@@ -1465,8 +1467,7 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   else  // its a find
   {
     auto sa_iter = priv.cache_hash_map.find(item);
-    if (sa_iter == priv.cache_hash_map.end())
-      return false;
+    if(sa_iter == priv.cache_hash_map.end()) return false;
     a = sa_iter->second.a;
     a_cost = sa_iter->second.s;
     return a != (action)-1;
@@ -1725,11 +1726,13 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
 
         for (size_t i = 0; i < condition_on_cnt; i++)
+        {
           push_at(priv.learn_condition_on_act,
               action_repr(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
                       ? priv.ptag_to_action[condition_on[i]]
                       : 0),
               i);
+        }
 
         if (condition_on_names == nullptr)
         {
@@ -1821,9 +1824,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
       ensure_size(priv.condition_on_actions, condition_on_cnt);
       for (size_t i = 0; i < condition_on_cnt; i++)
+      {
         priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
             ? priv.ptag_to_action[condition_on[i]]
-            : 0;
+            : action_repr(0);
+      }
 
       bool not_test = priv.all->training && !ecs[0].test_only;
 
@@ -2974,8 +2979,8 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        // priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
+        priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
     if (priv->acset.use_passthrough_repr)
@@ -3018,8 +3023,8 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        // priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
+        priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
     push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs().costs[0].class_index, &(priv->last_action_repr)), mytag);
@@ -3163,6 +3168,7 @@ void predictor::set_input_length(size_t input_length)
   is_ldf = true;
   if (ec_alloced)
   {
+    for (size_t i = ec_cnt; ec_cnt < input_length; ++i) ec[i].~example();
     example* temp = (example*)realloc(ec, input_length * sizeof(example));
     if (temp != nullptr)
       ec = temp;

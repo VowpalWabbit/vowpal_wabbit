@@ -2,18 +2,26 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <stdio.h>
-#include <float.h>
-#include <errno.h>
+#include <cstdio>
+#include <cfloat>
+#include <cerrno>
 #include <iostream>
 #include <sstream>
-#include <math.h>
-#include <assert.h>
+#include <cmath>
+#include <cassert>
 
 #include "global_data.h"
 #include "gd.h"
 #include "vw_exception.h"
 #include "future_compat.h"
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <WinSock2.h>
+#include <Windows.h>
+#else
+#include <sys/socket.h>
+#endif
 
 struct global_prediction
 {
@@ -141,7 +149,7 @@ void print_raw_text(int f, std::string s, v_array<char> tag)
 }
 
 
-void print_raw_text_by_ref(int f, std::string s, const v_array<char>& tag)
+void print_raw_text_by_ref(int f, const std::string& s, const v_array<char>& tag)
 {
   if (f < 0)
     return;

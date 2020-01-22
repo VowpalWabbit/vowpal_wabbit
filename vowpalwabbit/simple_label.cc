@@ -3,14 +3,14 @@
 // license as described in the file LICENSE.
 
 #include <cstring>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include "vw_string_view.h"
-
 #include "cache.h"
 #include "accumulate.h"
 #include "best_constant.h"
+#include "vw_string_view.h"
 
 char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {

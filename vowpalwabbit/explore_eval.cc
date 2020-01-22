@@ -90,7 +90,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class>& costs = ec.l.cb().costs;
+    const auto& costs = ec.l.cb().costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -215,7 +215,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   all.p->lp = CB::cb_label;
 
   learner<explore_eval, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_scores);
+      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

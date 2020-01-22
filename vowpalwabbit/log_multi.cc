@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <sstream>
 
 #include "reductions.h"

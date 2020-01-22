@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <float.h>
-#include <errno.h>
+#include <cfloat>
+#include <cerrno>
 
 #include "reductions.h"
 #include "vw.h"

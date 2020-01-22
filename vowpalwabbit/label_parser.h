@@ -24,16 +24,3 @@ struct label_parser
   bool (*test_label)(new_polylabel&);
   size_t label_size;
 };
-
-// struct v_label_parser
-// {
-//   virtual void default_label(new_polylabel&) = 0;
-//   virtual void parse_label(parser*, shared_data*, new_polylabel&, v_array<VW::string_view>&) = 0;
-//   virtual void cache_label(new_polylabel&, io_buf& cache) = 0;
-//   virtual void read_cached_label(shared_data*, new_polylabel&, io_buf& cache) = 0;
-//   virtual void delete_label(new_polylabel&) = 0;
-//   virtual float get_weight(new_polylabel&) = 0;
-//   virtual void copy_label(new_polylabel&, new_polylabel&) = 0;
-//   virtual bool test_label(new_polylabel&) = 0;
-//   virtual size_t get_label_size() = 0;
-// };

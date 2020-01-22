@@ -3,12 +3,18 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#ifndef _WIN32
-#include <sys/types.h>
+
+#ifdef _WIN32
+#define NOMINMAX
+#define ssize_t int64_t
+#include <io.h>
+#include <sys/stat.h>
+#else
 #include <unistd.h>
 #endif
 
 #include <cstdio>
+#include <cstdint>
 #include <fcntl.h>
 #include "v_array.h"
 #include <iostream>
@@ -21,13 +27,6 @@
 
 #ifndef O_LARGEFILE  // for OSX
 #define O_LARGEFILE 0
-#endif
-
-#ifdef _WIN32
-#define NOMINMAX
-#define ssize_t int64_t
-#include <io.h>
-#include <sys/stat.h>
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:

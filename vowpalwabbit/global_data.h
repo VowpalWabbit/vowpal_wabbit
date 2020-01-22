@@ -7,7 +7,7 @@
 #include <vector>
 #include <map>
 #include <cfloat>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <string>
 #include <array>
+#include <memory>
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -46,7 +47,6 @@
 
 #include "options.h"
 #include "version.h"
-#include <memory>
 
 typedef float weight;
 
@@ -97,11 +97,12 @@ class namedlabels
       std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
       return 0;
     }
-    return static_cast<uint32_t>(iter->second);
+    return iter->second;
   }
 
   VW::string_view get(uint32_t v) const
   {
+    static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is smaller than 32-bits. Potential overflow issues.");
     if ((v == 0) || (v > m_K))
     {
       return VW::string_view();
@@ -318,10 +319,8 @@ enum AllReduceType
 
 class AllReduce;
 
-// avoid name clash
-namespace label_type
-{
-enum label_type_t
+
+enum class label_type_t
 {
   simple,
   cb,       // contextual-bandit
@@ -331,7 +330,6 @@ enum label_type_t
   mc,
   ccb  // conditional contextual-bandit
 };
-}
 
 struct rand_state
 {
@@ -510,7 +508,7 @@ struct vw
   void (*print_by_ref)(int, float, float, const v_array<char>&);
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
   void (*print_text)(int, std::string, v_array<char>);
-  void (*print_text_by_ref)(int, std::string, const v_array<char>&);
+  void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
   loss_function* loss;
 
   char* program_name;
@@ -538,8 +536,7 @@ struct vw
 
   std::map<std::string, size_t> name_index_map;
 
-  VW_DEPRECATED("You can no longer use label_type directly. Use vw::get_label_type() instead.")
-  label_type::label_type_t label_type;
+  label_type_t label_type;
 
   vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }

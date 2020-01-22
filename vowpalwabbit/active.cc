@@ -3,9 +3,10 @@
 // license as described in the file LICENSE.
 
 #include <cerrno>
+#include <cfloat>
+
 #include "reductions.h"
 #include "rand48.h"
-#include <cfloat>
 #include "vw.h"
 #include "active.h"
 #include "vw_exception.h"

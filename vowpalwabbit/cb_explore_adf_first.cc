@@ -104,12 +104,9 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(tau, epsilon);
 
   LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_scores);
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
   l.label_type = label_type_t::cb;
 
-  l.set_finish_example(explore_type::finish_multiline_example);
-  return make_base(l);
-}
 }  // namespace first
 }  // namespace cb_explore_adf
 }  // namespace VW

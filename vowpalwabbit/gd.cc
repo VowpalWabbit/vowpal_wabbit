@@ -3,13 +3,7 @@
 // license as described in the file LICENSE.
 #include "crossplat_compat.h"
 
-#include <float.h>
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#else
-#include <netdb.h>
-#endif
+#include <cfloat>
 
 #if !defined(VW_NO_INLINE_SIMD)
 #if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))

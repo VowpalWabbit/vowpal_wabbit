@@ -330,17 +330,17 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->cover_probs.resize(num_actions);
     data->preds.resize(data->cover_size);
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type_t::action_scores);
+        prediction_type_t::action_probs);
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type_t::action_scores);
+        prediction_type_t::action_probs);
   else if (options.was_supplied("first"))
     l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_scores);
+        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_probs);
   else  // greedy
     l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_scores);
+        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_probs);
 
   l->set_finish_example(finish_example);
   l->label_type = label_type_t::cb;

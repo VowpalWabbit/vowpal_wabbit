@@ -81,7 +81,7 @@ struct cb_adf
 
 CB::cb_class get_observed_cost(multi_ex& examples)
 {
-  CB::label* ld;
+  CB::label* ld = nullptr;
   int index = -1;
   CB::cb_class known_cost;
 
@@ -372,7 +372,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class>& costs = ec.l.cb().costs;
+    const auto& costs = ec.l.cb().costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -388,8 +388,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  label& ld = ec.l.cb();
-  v_array<CB::cb_class>& costs = ld.costs;
+  const auto& costs = ec.l.cb().costs;
 
   if (example_is_newline_not_header(ec))
     return;
@@ -549,6 +548,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
+  all.label_type = label_type_t::cb;
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l =

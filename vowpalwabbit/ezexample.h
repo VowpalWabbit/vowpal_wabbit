@@ -4,8 +4,8 @@
 
 #pragma once
 #include <cstdio>
-#include "../vowpalwabbit/parser.h"
-#include "../vowpalwabbit/vw.h"
+#include "parser.h"
+#include "vw.h"
 
 typedef uint32_t fid;
 

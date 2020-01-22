@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "constant.h"
 #include "feature_group.h"
 #include <vector>

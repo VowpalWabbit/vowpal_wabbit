@@ -118,7 +118,7 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
   auto base = as_multiline(setup_base(options, all));
   auto l = make_base(init_learner(data, base, learn_or_predict<true>,
-      learn_or_predict<false>, 1 /* weights */, prediction_type_t::action_scores));
+      learn_or_predict<false>, 1 /* weights */, prediction_type_t::action_probs));
   l->label_type = label_type_t::cb;
   return l;
 }

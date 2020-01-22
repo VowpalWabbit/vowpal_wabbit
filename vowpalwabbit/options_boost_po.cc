@@ -16,7 +16,7 @@ using namespace VW::config;
 bool is_number(const VW::string_view& s)
 {
   size_t endidx = 0;
-  auto f = parse_float_string_view(s, endidx);
+  auto f = parseFloat(s.begin(), endidx, s.end());
   if ((endidx == 0 && !s.empty()) || std::isnan(f))
   {
     return false;

@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include <cmath>
-#include <math.h>
 #include "vw_string_view.h"
 #include <cctype>
 #include "parse_example.h"
@@ -11,6 +10,7 @@
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
+#include "vw_string_view.h"
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
@@ -103,7 +103,8 @@ class TC_parser
       // featureValue --> ':' 'Float'
       ++_read_idx;
       size_t end_read = 0;
-      _v = parse_float_string_view(_line.substr(_read_idx), end_read);
+      VW::string_view sv = _line.substr(_read_idx);
+      _v = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read == 0)
       {
         parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"");
@@ -283,7 +284,8 @@ class TC_parser
       // nameSpaceInfoValue --> ':' 'Float'
       ++_read_idx;
       size_t end_read = 0;
-      _cur_channel_v = parse_float_string_view(_line.substr(_read_idx), end_read);
+      VW::string_view sv = _line.substr(_read_idx);
+      _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read + _read_idx >= _line.size())
       {
         parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"");

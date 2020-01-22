@@ -182,7 +182,7 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 
   // COCOB update without sigmoid
   if (w[W_MG] * w_mx > 0)
-    w_xt = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]));
+    w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
 
   d.predict += w_xt * x;
   if (w_mx > 0)
@@ -208,7 +208,7 @@ void inner_update_cb_post(update_data& d, float x, float& wref)
   // If a new Lipschitz constant and/or magnitude of x is found, the w is
   // recalculated and used in the update of the wealth below.
   if (w[W_MG] * w[W_MX] > 0)
-    w[W_XT] = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]));
+    w[W_XT] = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]))) * w[W_ZT];
   else
     w[W_XT] = 0;
 

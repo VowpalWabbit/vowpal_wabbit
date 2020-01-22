@@ -47,7 +47,7 @@ struct classweights
   }
 };
 
-template <bool is_learn, int pred_type>
+template <bool is_learn, prediction_type_t pred_type>
 static void predict_or_learn(classweights& cweights, LEARNER::single_learner& base, example& ec)
 {
   switch (pred_type)

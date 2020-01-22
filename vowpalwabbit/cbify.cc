@@ -298,8 +298,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
-  COST_SENSITIVE::label& ld = ec.l.cs();
-  v_array<COST_SENSITIVE::wclass>& costs = ld.costs;
+  const auto& costs = ec.l.cs().costs;
 
   if (example_is_newline(ec))
     return;
@@ -329,7 +328,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (int sink : all.final_prediction_sink) all.print_by_ref(sink, (float)ec.pred.multiclass(), 0, ec.tag);
+  for (int sink : all.final_prediction_sink)
+    all.print_by_ref(sink, (float)ec.pred.multiclass(), 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {

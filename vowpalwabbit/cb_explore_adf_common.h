@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 #include <algorithm>
 
 // Most of these includes are required because templated functions are using the objects defined in them
@@ -135,7 +135,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
-  ACTION_SCORE::action_scores& preds = ec.pred.action_scores();
+  const auto& preds = ec.pred.action_scores();
 
   for (const auto& example : ec_seq)
   {
@@ -165,7 +165,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class>& costs = ec.l.cb().costs;
+    const auto& costs = ec.l.cb().costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {

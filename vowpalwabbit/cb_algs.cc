@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <float.h>
+#include <cfloat>
 
 #include "vw.h"
 #include "reductions.h"
@@ -92,8 +92,8 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, !CB::test_label(ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) all.print_by_ref(sink, (float)ec.pred.multiclass(), 0, ec.tag);
-
+  for (int sink : all.final_prediction_sink)
+    all.print_by_ref(sink, (float)ec.pred.multiclass(), 0, ec.tag);
   if (all.raw_prediction > 0)
   {
     std::stringstream outputStringStream;

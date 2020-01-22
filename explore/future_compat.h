@@ -19,21 +19,20 @@
 #ifdef HAS_STD14
 #define VW_STD14_CONSTEXPR constexpr
 #define VW_DEPRECATED(message) [[deprecated(message)]]
-  #if defined(__clang__)
-    #define IGNORE_DEPRECATED_USAGE_START  \
-      _Pragma("clang diagnostic push") \
-      _Pragma("clang diagnostic ignored \"-Wdeprecated\"")
+#if defined(__clang__)
+    #define IGNORE_DEPRECATED_USAGE_START   \
+        _Pragma("clang diagnostic push")      \
+        _Pragma("clang diagnostic ignored \"-Wdeprecated\"")
     #define IGNORE_DEPRECATED_USAGE_END _Pragma("GCC diagnostic pop")
-  #elif defined(__GNUC__) || defined(__GNUG__)
-    #define IGNORE_DEPRECATED_USAGE_START  \
-      _Pragma("GCC diagnostic push") \
-      _Pragma("GCC diagnostic ignored \"-Wdeprecated\"")
+#elif defined(__GNUC__) || defined(__GNUG__)
+    #define IGNORE_DEPRECATED_USAGE_START   \
+    _Pragma("GCC diagnostic push")        \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated\"")
     #define IGNORE_DEPRECATED_USAGE_END _Pragma("GCC diagnostic pop")
-  #elif defined(_MSC_VER)
+#elif defined(_MSC_VER)
     #define IGNORE_DEPRECATED_USAGE_START __pragma(warning (disable : 4996))
     #define IGNORE_DEPRECATED_USAGE_END __pragma(warning (default : 4996))
-  #pragma
-  #endif
+#endif
 #else
 #define VW_STD14_CONSTEXPR
 #define VW_DEPRECATED(message)
