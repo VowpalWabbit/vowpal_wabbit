@@ -44,7 +44,7 @@ inline const char* to_string(label_type_t label_type)
   }
 }
 
-struct new_polylabel
+struct polylabel
 {
  private:
   union {
@@ -78,7 +78,7 @@ struct new_polylabel
   }
 
   // These two functions only differ by parameter
-  void copy_from(const new_polylabel& other)
+  void copy_from(const polylabel& other)
   {
     switch (other._tag)
     {
@@ -112,7 +112,7 @@ struct new_polylabel
     }
   }
 
-  void move_from(new_polylabel&& other)
+  void move_from(polylabel&& other)
   {
     switch (other._tag)
     {
@@ -147,29 +147,29 @@ struct new_polylabel
   }
 
  public:
-  new_polylabel() { _tag = label_type_t::unset; // Perhaps we should memset here?
+  polylabel() { _tag = label_type_t::unset; // Perhaps we should memset here?
   };
-  ~new_polylabel() { reset(); }
+  ~polylabel() { reset(); }
 
-  new_polylabel(new_polylabel&& other)
+  polylabel(polylabel&& other)
   {
     _tag = label_type_t::unset;
     move_from(std::move(other));
   }
 
-  new_polylabel& operator=(new_polylabel&& other)
+  polylabel& operator=(polylabel&& other)
   {
     reset();
     move_from(std::move(other));
     return *this;
   }
 
-  new_polylabel(const new_polylabel& other) {
+  polylabel(const polylabel& other) {
     _tag = label_type_t::unset;
     copy_from(other);
   }
 
-  new_polylabel& operator=(const new_polylabel& other) {
+  polylabel& operator=(const polylabel& other) {
     reset();
     copy_from(other);
     return *this;

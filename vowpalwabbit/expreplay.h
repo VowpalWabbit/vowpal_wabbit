@@ -56,7 +56,7 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
 
 template <label_parser& lp>
 void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
-    new_polyprediction* pred, bool finalize_predictions)
+    polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }

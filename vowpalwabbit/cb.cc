@@ -47,14 +47,14 @@ size_t read_cached_label(shared_data*, CB::label& ld, io_buf& cache)
   return total;
 }
 
-size_t read_cached_label(shared_data* s, new_polylabel& v, io_buf& cache)
+size_t read_cached_label(shared_data* s, polylabel& v, io_buf& cache)
 {
   return CB::read_cached_label(s, v.init_as_cb(), cache);
 }
 
 float weight(CB::label& ld) { return ld.weight; }
 
-float weight(new_polylabel& v) { return CB::weight(v.cb()); }
+float weight(polylabel& v) { return CB::weight(v.cb()); }
 
 char* bufcache_label(CB::label& ld, char* c)
 {
@@ -77,7 +77,7 @@ void cache_label(CB::label& ld, io_buf& cache)
   bufcache_label(ld, c);
 }
 
-void cache_label(new_polylabel& v, io_buf& cache) { CB::cache_label(v.cb(), cache); }
+void cache_label(polylabel& v, io_buf& cache) { CB::cache_label(v.cb(), cache); }
 
 void default_label(CB::label& ld)
 {
@@ -85,7 +85,7 @@ void default_label(CB::label& ld)
   ld.weight = 1;
 }
 
-void default_label(new_polylabel& v)
+void default_label(polylabel& v)
 {
   if (v.get_type() != label_type_t::unset)
   {
@@ -104,7 +104,7 @@ bool test_label(CB::label& ld)
   return true;
 }
 
-bool test_label(new_polylabel& v) { return CB::test_label(v.cb()); }
+bool test_label(polylabel& v) { return CB::test_label(v.cb()); }
 
 void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view>& words)
 {
@@ -160,7 +160,7 @@ void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view
   }
 }
 
-void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, polylabel& v, v_array<VW::string_view>& words)
 {
   CB::parse_label(p, sd, v.cb(), words);
 }
@@ -225,13 +225,13 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
-float weight(new_polylabel& v)
+float weight(polylabel& v)
 {
   auto& ld = v.cb_eval();
   return ld.event.weight;
 }
 
-size_t read_cached_label(shared_data* sd, new_polylabel& v, io_buf& cache)
+size_t read_cached_label(shared_data* sd, polylabel& v, io_buf& cache)
 {
   auto& ld = v.cb_eval();
   char* c;
@@ -243,7 +243,7 @@ size_t read_cached_label(shared_data* sd, new_polylabel& v, io_buf& cache)
   return total + CB::read_cached_label(sd, ld.event, cache);
 }
 
-void cache_label(new_polylabel& v, io_buf& cache)
+void cache_label(polylabel& v, io_buf& cache)
 {
   char* c;
   auto& ld = v.cb_eval();
@@ -253,20 +253,20 @@ void cache_label(new_polylabel& v, io_buf& cache)
   CB::cache_label(ld.event, cache);
 }
 
-void default_label(new_polylabel& v)
+void default_label(polylabel& v)
 {
   auto& ld = v.init_as_cb_eval();
   CB::default_label(ld.event);
   ld.action = 0;
 }
 
-bool test_label(new_polylabel& v)
+bool test_label(polylabel& v)
 {
   auto& ld = v.cb_eval();
   return CB::test_label(ld.event);
 }
 
-void parse_label(parser* p, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.cb_eval();
 

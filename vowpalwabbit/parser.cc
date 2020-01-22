@@ -998,8 +998,8 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 example* example_initializer::operator()(example* ex)
 {
-  new (&ex->l) new_polylabel();
-  new (&ex->pred) new_polyprediction();
+  new (&ex->l) polylabel();
+  new (&ex->pred) polyprediction();
   ex->in_use = false;
   ex->passthrough = nullptr;
   memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));

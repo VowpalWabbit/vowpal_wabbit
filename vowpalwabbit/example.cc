@@ -37,7 +37,7 @@ namespace VW
 {
 
 VW_DEPRECATED("Copy the label object directly.")
-void copy_example_label(example* dst, example* src, size_t, void (* /*copy_label*/)(new_polylabel&, new_polylabel&))
+void copy_example_label(example* dst, example* src, size_t, void (* /*copy_label*/)(polylabel&, polylabel&))
 {
   dst->l = src->l;
 }
@@ -86,7 +86,7 @@ void copy_example_data(bool audit, example* dst, example* src)
 }
 
 void copy_example_data(
-    bool audit, example* dst, example* src, size_t /*label_size*/, void (* /*copy_label*/)(new_polylabel&, new_polylabel&))
+    bool audit, example* dst, example* src, size_t /*label_size*/, void (* /*copy_label*/)(polylabel&, polylabel&))
 {
   copy_example_data(audit, dst, src);
   dst->l = src->l;
@@ -216,7 +216,7 @@ example* alloc_examples(size_t, size_t count = 1)
 }
 
 VW_DEPRECATED("You can just use the example destructor when deallocating now")
-void dealloc_example(void (* /*delete_label*/)(new_polylabel&), example& ec, void (* /*delete_prediction*/)(void*))
+void dealloc_example(void (* /*delete_label*/)(polylabel&), example& ec, void (* /*delete_prediction*/)(void*))
 {
   ec.~example();
 }

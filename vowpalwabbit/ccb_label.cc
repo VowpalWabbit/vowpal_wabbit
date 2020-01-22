@@ -26,9 +26,9 @@ using namespace VW::config;
 
 namespace CCB
 {
-void default_label(new_polylabel& v);
+void default_label(polylabel& v);
 
-size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
+size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(v);
@@ -111,13 +111,13 @@ size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
   return read_count;
 }
 
-float ccb_weight(new_polylabel& v)
+float ccb_weight(polylabel& v)
 {
   CCB::label& ld = (CCB::label&)v;
   return ld.weight;
 }
 
-void cache_label(new_polylabel& v, io_buf& cache)
+void cache_label(polylabel& v, io_buf& cache)
 {
   char* c;
   CCB::label& ld = v.conditional_contextual_bandit();
@@ -166,7 +166,7 @@ void cache_label(new_polylabel& v, io_buf& cache)
   c += sizeof(ld.weight);
 }
 
-void default_label(new_polylabel& v)
+void default_label(polylabel& v)
 {
   if (v.get_type() != label_type_t::unset)
   {
@@ -186,7 +186,7 @@ void default_label(new_polylabel& v)
   ld.weight = 1.0;
 }
 
-bool test_label(new_polylabel& v)
+bool test_label(polylabel& v)
 {
   CCB::label& ld = v.conditional_contextual_bandit();
   return ld.outcome == nullptr;
@@ -254,7 +254,7 @@ void parse_explicit_inclusions(CCB::label& ld, v_array<VW::string_view>& split_i
   }
 }
 
-void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>& words)
 {
   CCB::label& ld = v.conditional_contextual_bandit();
   ld.weight = 1.0;

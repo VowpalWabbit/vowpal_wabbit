@@ -15,7 +15,7 @@
 
 namespace no_label
 {
-size_t read_cached_no_label(shared_data*, new_polylabel& label, io_buf&)
+size_t read_cached_no_label(shared_data*, polylabel& label, io_buf&)
 {
   if (label.get_type() != label_type_t::empty)
   {
@@ -25,12 +25,12 @@ size_t read_cached_no_label(shared_data*, new_polylabel& label, io_buf&)
   return 1;
 }
 
-float get_weight(new_polylabel&) { return 1.; }
+float get_weight(polylabel&) { return 1.; }
 
-void cache_no_label(new_polylabel&, io_buf&) {}
+void cache_no_label(polylabel&, io_buf&) {}
 
 // This is wasted work, ideally empty and unset should be the same thing.
-void default_no_label(new_polylabel& label)
+void default_no_label(polylabel& label)
 {
   if (label.get_type() != label_type_t::empty)
   {
@@ -39,9 +39,9 @@ void default_no_label(new_polylabel& label)
   }
 }
 
-bool test_label(new_polylabel&) { return false; }
+bool test_label(polylabel&) { return false; }
 
-void parse_no_label(parser*, shared_data*, new_polylabel&, v_array<VW::string_view>& words)
+void parse_no_label(parser*, shared_data*, polylabel&, v_array<VW::string_view>& words)
 {
   switch (words.size())
   {
@@ -81,7 +81,7 @@ void output_and_account_no_label_example(vw& all, example& ec)
   print_no_label_update(all, ec);
 }
 
-void return_no_label_example(vw& all, new_polylabel&, example& ec)
+void return_no_label_example(vw& all, polylabel&, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);

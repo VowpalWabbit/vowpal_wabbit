@@ -26,10 +26,10 @@
 struct example : public example_predict  // core example datatype.
 {
   // input fields
-  new_polylabel l;
+  polylabel l;
 
   // output prediction
-  new_polyprediction pred;
+  polyprediction pred;
 
   float weight;       // a relative importance weight for the example, default = 1
   v_array<char> tag;  // An identifier for the example.
@@ -63,7 +63,7 @@ struct vw;
 
 struct flat_example
 {
-  new_polylabel l;
+  polylabel l;
 
   size_t tag_len;
   char* tag = nullptr;  // An identifier for the example.

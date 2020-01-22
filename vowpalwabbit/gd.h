@@ -27,7 +27,7 @@ struct multipredict_info
 {
   size_t count;
   size_t step;
-  new_polyprediction* pred;
+  polyprediction* pred;
   const T& weights; /* & for l1: */
   float gravity;
 };
@@ -38,7 +38,7 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
   if ((-1e-10 < fx) && (fx < 1e-10))
     return;
   uint64_t mask = mp.weights.mask();
-  new_polyprediction* p = mp.pred;
+  polyprediction* p = mp.pred;
   fi &= mask;
   uint64_t top = fi + (uint64_t)((mp.count - 1) * mp.step);
   uint64_t i = 0;

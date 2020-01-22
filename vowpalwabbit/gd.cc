@@ -47,7 +47,7 @@ struct gd
   void (*learn)(gd&, base_learner&, example&);
   void (*update)(gd&, base_learner&, example&);
   float (*sensitivity)(gd&, base_learner&, example&);
-  void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, new_polyprediction*, bool);
+  void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
   bool adaptive_input;
   bool normalized_input;
   bool adax;
@@ -398,7 +398,7 @@ inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx,
 
 template <bool l1, bool audit>
 void multipredict(
-    gd& g, base_learner&, example& ec, size_t count, size_t step, new_polyprediction* pred, bool finalize_predictions)
+    gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *g.all;
   for (size_t c = 0; c < count; c++) pred[c].scalar() = ec.l.simple().initial;

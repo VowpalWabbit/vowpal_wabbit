@@ -29,7 +29,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
   return c;
 }
 
-size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
+size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
 {
   auto& ld = v.init_as_multilabels();
   ld.label_v.clear();
@@ -42,7 +42,7 @@ size_t read_cached_label(shared_data*, new_polylabel& v, io_buf& cache)
   return total;
 }
 
-float weight(new_polylabel&) { return 1.; }
+float weight(polylabel&) { return 1.; }
 
 char* bufcache_label(labels& ld, char* c)
 {
@@ -56,7 +56,7 @@ char* bufcache_label(labels& ld, char* c)
   return c;
 }
 
-void cache_label(new_polylabel& v, io_buf& cache)
+void cache_label(polylabel& v, io_buf& cache)
 {
   char* c;
   auto& ld = v.multilabels();
@@ -64,19 +64,19 @@ void cache_label(new_polylabel& v, io_buf& cache)
   bufcache_label(ld, c);
 }
 
-void default_label(new_polylabel& v)
+void default_label(polylabel& v)
 {
   auto& ld = v.init_as_multilabels();
   ld.label_v.clear();
 }
 
-bool test_label(new_polylabel& v)
+bool test_label(polylabel& v)
 {
   auto& ld = v.multilabels();
   return ld.label_v.size() == 0;
 }
 
-void parse_label(parser* p, shared_data*, new_polylabel& v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.multilabels();
 

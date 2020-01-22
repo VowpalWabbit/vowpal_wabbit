@@ -17,7 +17,7 @@ struct oaa
 {
   uint64_t k;
   vw* all;                                // for raw
-  std::vector<new_polyprediction> pred;   // for multipredict
+  std::vector<polyprediction> pred;   // for multipredict
   uint64_t num_subsample;                 // for randomized subsampling, how many negatives to draw?
   std::vector<uint32_t> subsample_order;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id;                    // for randomized subsampling, where do we live in the list

@@ -43,7 +43,7 @@ struct learn_data
 {
   using fn = void (*)(void* data, base_learner& base, void* ex);
   using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step,
-      new_polyprediction* pred, bool finalize_predictions);
+      polyprediction* pred, bool finalize_predictions);
 
   void* data;
   base_learner* base;
@@ -216,7 +216,7 @@ struct learner
     check_label_state(ec, label_type);
   }
 
-  inline void multipredict(E& ec, size_t lo, size_t count, new_polyprediction* pred, bool finalize_predictions)
+  inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -255,7 +255,7 @@ struct learner
     learn_fd.learn_f = (learn_data::fn)u;
   }
   template <class L>
-  inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, new_polyprediction*, bool))
+  inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
   {
     learn_fd.multipredict_f = (learn_data::multi_fn)u;
   }

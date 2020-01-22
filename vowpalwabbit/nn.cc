@@ -38,8 +38,8 @@ struct nn
   float* hidden_units;
   bool* dropped_out;
 
-  std::vector<new_polyprediction> hidden_units_pred;
-  std::vector<new_polyprediction> hiddenbias_pred;
+  std::vector<polyprediction> hidden_units_pred;
+  std::vector<polyprediction> hiddenbias_pred;
 
   vw* all;  // many things
   std::shared_ptr<rand_state> _random_state;
@@ -181,8 +181,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float dropscale = n.dropout ? 2.0f : 1.0f;
     loss_function* save_loss = n.all->loss;
 
-    new_polyprediction* hidden_units = n.hidden_units_pred.data();
-    new_polyprediction* hiddenbias_pred = n.hiddenbias_pred.data();
+    polyprediction* hidden_units = n.hidden_units_pred.data();
+    polyprediction* hiddenbias_pred = n.hiddenbias_pred.data();
     bool* dropped_out = n.dropped_out;
 
     std::ostringstream outputStringStream;
@@ -413,7 +413,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   n.all->set_minmax(n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, new_polyprediction* pred,
+void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction* pred,
     bool finalize_predictions)
 {
   for (size_t c = 0; c < count; c++)

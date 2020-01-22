@@ -84,7 +84,7 @@ void predict(ftrl& b, single_learner&, example& ec)
 
 template <bool audit>
 void multipredict(
-    ftrl& b, base_learner&, example& ec, size_t count, size_t step, new_polyprediction* pred, bool finalize_predictions)
+    ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *b.all;
   for (size_t c = 0; c < count; c++) pred[c].scalar() = ec.l.simple().initial;

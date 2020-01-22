@@ -987,8 +987,8 @@ void learn(lda &l, LEARNER::single_learner &, example &ec)
   // The contract of a reduction is that prediction and label must be valid on the way in and out.
   // In the LDA batch, examples are cleared and so it breaks this contract. Copying them here only
   // for the final example allows us to support that. This is not great either and should be revisited.
-  new_polylabel pl;
-  new_polyprediction pp;
+  polylabel pl;
+  polyprediction pp;
   if (num_ex + 1 == l.minibatch)
   {
     pl = ec.l;

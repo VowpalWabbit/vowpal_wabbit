@@ -189,7 +189,7 @@ struct search_private
                              // oracle (0 means "infinite")
   bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
                              // permutation)
-  bool (*label_is_test)(new_polylabel&);  // tell me if the label data from an example is test
+  bool (*label_is_test)(polylabel&);  // tell me if the label data from an example is test
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
@@ -206,7 +206,7 @@ struct search_private
   action learn_oracle_action;                // store an oracle action for debugging purposes
   features last_action_repr;
 
-  new_polylabel allowed_actions_cache;
+  polylabel allowed_actions_cache;
 
   size_t loss_declared_cnt;                 // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
@@ -277,8 +277,8 @@ struct search_private
   CS::label ldf_test_label;
   v_array<action_repr> condition_on_actions;
   v_array<size_t> timesteps;
-  new_polylabel learn_losses;
-  new_polylabel gte_label;
+  polylabel learn_losses;
+  polylabel gte_label;
   v_array<std::pair<float, size_t>> active_uncertainty;
   v_array<v_array<std::pair<CS::wclass&, bool>>> active_known;
   bool force_setup_ec_ref;
@@ -856,22 +856,22 @@ void del_example_conditioning(search_private& priv, example& ec)
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
-inline size_t cs_get_costs_size(bool isCB, new_polylabel& ld)
+inline size_t cs_get_costs_size(bool isCB, polylabel& ld)
 {
   return isCB ? ld.cb().costs.size() : ld.cs().costs.size();
 }
 
-inline uint32_t cs_get_cost_index(bool isCB, new_polylabel& ld, size_t k)
+inline uint32_t cs_get_cost_index(bool isCB, polylabel& ld, size_t k)
 {
   return isCB ? ld.cb().costs[k].action : ld.cs().costs[k].class_index;
 }
 
-inline float cs_get_cost_partial_prediction(bool isCB, new_polylabel& ld, size_t k)
+inline float cs_get_cost_partial_prediction(bool isCB, polylabel& ld, size_t k)
 {
   return isCB ? ld.cb().costs[k].partial_prediction : ld.cs().costs[k].partial_prediction;
 }
 
-inline void cs_set_cost_loss(bool isCB, new_polylabel& ld, size_t k, float val)
+inline void cs_set_cost_loss(bool isCB, polylabel& ld, size_t k, float val)
 {
   if (isCB)
     ld.cb().costs[k].cost = val;
@@ -879,7 +879,7 @@ inline void cs_set_cost_loss(bool isCB, new_polylabel& ld, size_t k, float val)
     ld.cs().costs[k].x = val;
 }
 
-inline void cs_costs_erase(bool isCB, new_polylabel& ld)
+inline void cs_costs_erase(bool isCB, polylabel& ld)
 {
   if (isCB)
     ld.cb().costs.clear();
@@ -887,7 +887,7 @@ inline void cs_costs_erase(bool isCB, new_polylabel& ld)
     ld.cs().costs.clear();
 }
 
-inline void cs_costs_resize(bool isCB, new_polylabel& ld, size_t new_size)
+inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
 {
   if (isCB)
     ld.cb().costs.resize(new_size);
@@ -895,7 +895,7 @@ inline void cs_costs_resize(bool isCB, new_polylabel& ld, size_t new_size)
     ld.cs().costs.resize(new_size);
 }
 
-inline void cs_cost_push_back(bool isCB, new_polylabel& ld, uint32_t index, float value)
+inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
 {
   if (isCB)
   {
@@ -909,11 +909,11 @@ inline void cs_cost_push_back(bool isCB, new_polylabel& ld, uint32_t index, floa
   }
 }
 
-new_polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions,
+polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions,
     size_t allowed_actions_cnt, const float* allowed_actions_cost)
 {
   bool isCB = priv.cb_learner;
-  new_polylabel& ld = priv.allowed_actions_cache;
+  polylabel& ld = priv.allowed_actions_cache;
   uint32_t num_costs = (uint32_t)cs_get_costs_size(isCB, ld);
 
   if (priv.is_ldf)  // LDF version easier
@@ -965,7 +965,7 @@ new_polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const 
 
 void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action* allowed_actions,
     size_t allowed_actions_cnt, const float* allowed_actions_cost, const action* oracle_actions,
-    size_t oracle_actions_cnt, new_polylabel& lab)
+    size_t oracle_actions_cnt, polylabel& lab)
 {
   bool isCB = priv.cb_learner;
   if (priv.is_ldf)  // LDF version easier
@@ -1118,8 +1118,8 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN))
   {
     v_array<action_cache>* this_cache = new v_array<action_cache>();
-    // TODO we don't really need to construct this new_polylabel
-    new_polylabel l =
+    // TODO we don't really need to construct this polylabel
+    polylabel l =
         std::move(allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost));
     size_t K = cs_get_costs_size(priv.cb_learner, l);
     for (size_t k = 0; k < K; k++)
@@ -1319,7 +1319,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     if (start_K > 0)
       LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]);
 
-    new_polylabel old_label = std::move(ecs[a].l);
+    polylabel old_label = std::move(ecs[a].l);
     ecs[a].l.reset();
     ecs[a].l.init_as_cs() = priv.ldf_test_label;
     if (ecs[a].pred.get_type() == prediction_type_t::unset)
@@ -1474,7 +1474,7 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   }
 }
 
-void generate_training_example(search_private& priv, new_polylabel& losses, float weight, bool add_conditioning = true,
+void generate_training_example(search_private& priv, polylabel& losses, float weight, bool add_conditioning = true,
     float min_loss = FLT_MAX)  // min_loss = FLT_MAX means "please compute it for me as the actual min"; any other value
                                // means to use this
 {
@@ -1506,7 +1506,7 @@ void generate_training_example(search_private& priv, new_polylabel& losses, floa
     assert(priv.learn_ec_ref != nullptr);
 
     example& ec = priv.learn_ec_ref[0];
-    new_polylabel old_label = ec.l;
+    polylabel old_label = ec.l;
     ec.l = losses;  // labels;
     if (add_conditioning)
       add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(),
@@ -2469,7 +2469,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(new_polylabel& lab) { return MC::mc_label.test_label(lab); }
+bool mc_label_is_test(polylabel& lab) { return MC::mc_label.test_label(lab); }
 
 void search_initialize(vw* all, search& sch)
 {
@@ -3075,7 +3075,7 @@ void search::set_options(uint32_t opts)
         << endl;
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(new_polylabel&))
+void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;

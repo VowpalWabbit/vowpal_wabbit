@@ -27,7 +27,7 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
   return c;
 }
 
-size_t read_cached_simple_label(shared_data* sd, new_polylabel& in_ld, io_buf& cache)
+size_t read_cached_simple_label(shared_data* sd, polylabel& in_ld, io_buf& cache)
 {
   auto& ld = in_ld.init_as_simple();
   char* c;
@@ -39,7 +39,7 @@ size_t read_cached_simple_label(shared_data* sd, new_polylabel& in_ld, io_buf& c
   return total;
 }
 
-float get_weight(new_polylabel& v) { return v.simple().weight; }
+float get_weight(polylabel& v) { return v.simple().weight; }
 
 char* bufcache_simple_label(label_data& ld, char* c)
 {
@@ -52,7 +52,7 @@ char* bufcache_simple_label(label_data& ld, char* c)
   return c;
 }
 
-void cache_simple_label(new_polylabel& v, io_buf& cache)
+void cache_simple_label(polylabel& v, io_buf& cache)
 {
   char* c;
   auto& ld = v.simple();
@@ -60,7 +60,7 @@ void cache_simple_label(new_polylabel& v, io_buf& cache)
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(new_polylabel& v)
+void default_simple_label(polylabel& v)
 {
   label_data* ld;
   if (v.get_type() == label_type_t::unset)
@@ -82,13 +82,13 @@ void default_simple_label(new_polylabel& v)
   ld->initial = 0.;
 }
 
-bool test_label(new_polylabel& v)
+bool test_label(polylabel& v)
 {
   auto& ld = v.simple();
   return ld.label == FLT_MAX;
 }
 
-void parse_simple_label(parser*, shared_data* sd, new_polylabel& v, v_array<VW::string_view>& words)
+void parse_simple_label(parser*, shared_data* sd, polylabel& v, v_array<VW::string_view>& words)
 {
   auto& ld = v.simple();
 
@@ -153,7 +153,7 @@ void return_simple_example_explicit(vw& all, example& ec)
   VW::finish_example(all, ec);
 }
 
-void return_simple_example(vw& all, new_polylabel&, example& ec)
+void return_simple_example(vw& all, polylabel&, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);

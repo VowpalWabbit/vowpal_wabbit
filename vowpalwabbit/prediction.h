@@ -37,7 +37,7 @@ inline const char* to_string(prediction_type_t prediction_type)
   }
 }
 
-struct new_polyprediction
+struct polyprediction
 {
  private:
   union {
@@ -73,7 +73,7 @@ struct new_polyprediction
   }
 
   // These two functions only differ by parameter
-  void copy_from(const new_polyprediction& other)
+  void copy_from(const polyprediction& other)
   {
     switch (other._tag)
     {
@@ -110,7 +110,7 @@ struct new_polyprediction
     }
   }
 
-  void move_from(new_polyprediction&& other)
+  void move_from(polyprediction&& other)
   {
     switch (other._tag)
     {
@@ -148,18 +148,18 @@ struct new_polyprediction
   }
 
  public:
-  new_polyprediction() { _tag = prediction_type_t::unset; // Perhaps we should memset here?
+  polyprediction() { _tag = prediction_type_t::unset; // Perhaps we should memset here?
   };
-  ~new_polyprediction() { reset(); }
+  ~polyprediction() { reset(); }
 
-  new_polyprediction(new_polyprediction&& other)
+  polyprediction(polyprediction&& other)
   {
     _tag = prediction_type_t::unset;
     move_from(std::move(other));
     other.reset();
   }
 
-  new_polyprediction& operator=(new_polyprediction&& other)
+  polyprediction& operator=(polyprediction&& other)
   {
     reset();
     move_from(std::move(other));
@@ -167,12 +167,12 @@ struct new_polyprediction
     return *this;
   }
 
-  new_polyprediction(const new_polyprediction& other) {
+  polyprediction(const polyprediction& other) {
     _tag = prediction_type_t::unset;
     copy_from(other);
   }
 
-  new_polyprediction& operator=(const new_polyprediction& other) {
+  polyprediction& operator=(const polyprediction& other) {
     reset();
     copy_from(other);
     return *this;

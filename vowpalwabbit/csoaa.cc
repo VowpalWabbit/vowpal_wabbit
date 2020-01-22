@@ -22,7 +22,7 @@ namespace CSOAA
 struct csoaa
 {
   uint32_t num_classes;
-  std::vector<new_polyprediction> pred;
+  std::vector<polyprediction> pred;
 };
 
 template <bool is_learn>
