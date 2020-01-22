@@ -117,6 +117,7 @@ struct flat_example
     num_features = other.num_features;
     total_sum_feat_sq = other.total_sum_feat_sq;
     fs = other.fs;
+    return *this;
   }
 
   flat_example(flat_example&& other)
@@ -147,6 +148,7 @@ struct flat_example
     num_features = other.num_features;
     total_sum_feat_sq = other.total_sum_feat_sq;
     fs = std::move(other.fs);
+    return *this;
   }
 };
 

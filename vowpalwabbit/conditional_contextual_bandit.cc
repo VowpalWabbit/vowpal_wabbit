@@ -153,7 +153,7 @@ void attach_label_to_example(
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
-  decision_scores.push_back(std::move(data.shared->pred.action_scores()));
+  decision_scores.push_back(std::move(data.shared->pred.action_probs()));
   auto& pred = decision_scores[decision_scores.size() - 1];
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : pred)
@@ -368,7 +368,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, CCB::label& slot_label, cc
   for (auto example : cb_ex)
   {
     example->pred.reset();
-    example->pred.init_as_action_scores();
+    example->pred.init_as_action_probs();
   }
   
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared

@@ -46,7 +46,7 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore tau times, then act according to optimal.
-  auto probs = std::move(ec.pred.action_scores());
+  auto probs = std::move(ec.pred.action_probs());
   probs.clear();
   ec.pred.reset();
   ec.pred.init_as_multiclass();
@@ -71,14 +71,14 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
   }
 
   ec.pred.reset();
-  ec.pred.init_as_action_scores(std::move(probs));
+  ec.pred.init_as_action_probs(std::move(probs));
 }
 
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore uniform random an epsilon fraction of the time.
-  auto probs = std::move(ec.pred.action_scores());
+  auto probs = std::move(ec.pred.action_probs());
   probs.clear();
   ec.pred.reset();
   ec.pred.init_as_multiclass();
@@ -95,14 +95,14 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass() - 1, begin_scores(probs), end_scores(probs));
 
   ec.pred.reset();
-  ec.pred.init_as_action_scores(std::move(probs));
+  ec.pred.init_as_action_probs(std::move(probs));
 }
 
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 {
   // Randomize over predictions from a base set of predictors
-  auto probs = std::move(ec.pred.action_scores());
+  auto probs = std::move(ec.pred.action_probs());
   probs.clear();
   ec.pred.reset();
   ec.pred.init_as_multiclass();
@@ -123,7 +123,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   }
 
   ec.pred.reset();
-  ec.pred.init_as_action_scores(std::move(probs));
+  ec.pred.init_as_action_probs(std::move(probs));
 }
 
 void get_cover_probabilities(cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs)
@@ -164,7 +164,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   uint32_t num_actions = data.cbcs.num_actions;
 
-  action_scores probs = std::move(ec.pred.action_scores());
+  auto probs = std::move(ec.pred.action_probs());
   probs.clear();
   data.cs_label.costs.clear();
 
@@ -232,7 +232,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   ec.l.reset();
   ec.l.init_as_cb(std::move(data.cb_label));
   ec.pred.reset();
-  ec.pred.init_as_action_scores(std::move(probs));
+  ec.pred.init_as_action_probs(std::move(probs));
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)

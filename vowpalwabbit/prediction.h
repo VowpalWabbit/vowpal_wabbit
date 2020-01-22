@@ -6,13 +6,11 @@ enum class prediction_type_t : int
   scalar,
   scalars,
   action_scores,
+  multiclassprobs,
   multiclass,
   multilabels,
   prob,
   decision_scores,
-
-  // These are synonyms for action_scores. They should not be used with this union and should never be the tag.
-  multiclassprobs,
   action_probs,
 };
 
@@ -28,12 +26,11 @@ inline const char* to_string(prediction_type_t prediction_type)
     TO_STRING_CASE(prediction_type_t::scalar)
     TO_STRING_CASE(prediction_type_t::scalars)
     TO_STRING_CASE(prediction_type_t::action_scores)
+    TO_STRING_CASE(prediction_type_t::action_probs)
     TO_STRING_CASE(prediction_type_t::decision_scores)
     TO_STRING_CASE(prediction_type_t::multiclass)
     TO_STRING_CASE(prediction_type_t::multilabels)
     TO_STRING_CASE(prediction_type_t::prob)
-
-    TO_STRING_CASE(prediction_type_t::action_probs)
     TO_STRING_CASE(prediction_type_t::multiclassprobs)
     default:
       return "<unsupported>";
@@ -46,11 +43,14 @@ struct new_polyprediction
   union {
     float _scalar;
     v_array<float> _scalars;           // a sequence of scalar predictions
-    ACTION_SCORE::action_scores _action_scores;  // a sequence of classes with scores.  Also used for probabilities.
+    ACTION_SCORE::action_scores _action_scores;  // a sequence of classes with scores.
+    ACTION_SCORE::action_scores _action_probs;  // a sequence of classes with probs.
     CCB::decision_scores_t _decision_scores;
     uint32_t _multiclass;
     MULTILABEL::labels _multilabels;
     float _prob;  // for --probabilities --csoaa_ldf=mc
+    v_array<float> _multiclassprobs;
+
   };
   prediction_type_t _tag;
 
@@ -88,6 +88,9 @@ struct new_polyprediction
       case (prediction_type_t::action_scores):
         init_as_action_scores(other._action_scores);
         break;
+      case (prediction_type_t::action_probs):
+        init_as_action_probs(other._action_probs);
+        break;
       case (prediction_type_t::decision_scores):
         init_as_decision_scores(other._decision_scores);
         break;
@@ -99,6 +102,9 @@ struct new_polyprediction
         break;
       case (prediction_type_t::prob):
         init_as_prob(other._prob);
+        break;
+      case (prediction_type_t::multiclassprobs):
+        init_as_multiclassprobs(other._multiclassprobs);
         break;
       default:;
     }
@@ -119,6 +125,9 @@ struct new_polyprediction
       case (prediction_type_t::action_scores):
         init_as_action_scores(std::move(other._action_scores));
         break;
+      case (prediction_type_t::action_probs):
+        init_as_action_probs(std::move(other._action_probs));
+        break;
       case (prediction_type_t::decision_scores):
         init_as_decision_scores(std::move(other._decision_scores));
         break;
@@ -130,6 +139,9 @@ struct new_polyprediction
         break;
       case (prediction_type_t::prob):
         init_as_prob(std::move(other._prob));
+        break;
+      case (prediction_type_t::multiclassprobs):
+        init_as_multiclassprobs(std::move(other._multiclassprobs));
         break;
       default:;
     }
@@ -184,6 +196,9 @@ struct new_polyprediction
       case (prediction_type_t::action_scores):
         destruct(_action_scores);
         break;
+      case (prediction_type_t::action_probs):
+        destruct(_action_probs);
+        break;
       case (prediction_type_t::decision_scores):
         destruct(_decision_scores);
         break;
@@ -195,6 +210,9 @@ struct new_polyprediction
         break;
       case (prediction_type_t::prob):
         destruct(_prob);
+        break;
+      case (prediction_type_t::multiclassprobs):
+        destruct(_multiclassprobs);
         break;
       default:;
     }
@@ -263,6 +281,27 @@ struct new_polyprediction
   {
     ensure_is_type(prediction_type_t::action_scores);
     return _action_scores;
+  }
+  
+  template <typename... Args>
+  ACTION_SCORE::action_scores& init_as_action_probs(Args&&... args)
+  {
+    ensure_is_type(prediction_type_t::unset);
+    new (&_action_probs) ACTION_SCORE::action_scores(std::forward<Args>(args)...);
+    _tag = prediction_type_t::action_probs;
+    return _action_probs;
+  }
+
+  const ACTION_SCORE::action_scores& action_probs() const
+  {
+    ensure_is_type(prediction_type_t::action_probs);
+    return _action_probs;
+  }
+
+  ACTION_SCORE::action_scores& action_probs()
+  {
+    ensure_is_type(prediction_type_t::action_probs);
+    return _action_probs;
   }
 
   template <typename... Args>
@@ -347,5 +386,26 @@ struct new_polyprediction
   {
     ensure_is_type(prediction_type_t::prob);
     return _prob;
+  }
+  
+  template <typename... Args>
+  v_array<float>& init_as_multiclassprobs(Args&&... args)
+  {
+    ensure_is_type(prediction_type_t::unset);
+    new (&_multiclassprobs) v_array<float>(std::forward<Args>(args)...);
+    _tag = prediction_type_t::multiclassprobs;
+    return _multiclassprobs;
+  }
+
+  const v_array<float>& multiclassprobs() const
+  {
+    ensure_is_type(prediction_type_t::multiclassprobs);
+    return _multiclassprobs;
+  }
+
+  v_array<float>& multiclassprobs()
+  {
+    ensure_is_type(prediction_type_t::multiclassprobs);
+    return _multiclassprobs;
   }
 };

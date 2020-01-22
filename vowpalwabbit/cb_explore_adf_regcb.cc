@@ -95,7 +95,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
 
 void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
 {
-  const size_t num_actions = examples[0]->pred.action_scores().size();
+  const size_t num_actions = examples[0]->pred.action_probs().size();
   _min_costs.resize(num_actions);
   _max_costs.resize(num_actions);
 
@@ -105,7 +105,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   // backup cb example data
   for (const auto& ex : examples)
   {
-    _ex_as.push_back(std::move(ex->pred.action_scores()));
+    _ex_as.push_back(std::move(ex->pred.action_probs()));
     _ex_costs.push_back(std::move(ex->l.cb().costs));
   }
 
@@ -159,7 +159,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   for (size_t i = 0; i < examples.size(); ++i)
   {
     examples[i]->pred.reset();
-    examples[i]->pred.init_as_action_scores() = std::move(_ex_as[i]);
+    examples[i]->pred.init_as_action_probs() = std::move(_ex_as[i]);
     examples[i]->l.reset();
     examples[i]->l.init_as_cb();
     examples[i]->l.cb().costs = std::move(_ex_costs[i]);
@@ -184,7 +184,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, m
   else
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.action_scores();
+  auto& preds = examples[0]->pred.action_probs();
   uint32_t num_actions = (uint32_t)preds.size();
 
   const float max_range = _max_cb_cost - _min_cb_cost;

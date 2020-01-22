@@ -46,7 +46,7 @@ void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base,
 {
   LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.action_scores();
+  auto& preds = examples[0]->pred.action_probs();
   exploration::generate_softmax(
       -_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 

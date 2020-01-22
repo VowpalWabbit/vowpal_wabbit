@@ -85,7 +85,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
     GEN_CS::gen_cs_example_ips(examples, _cs_labels);
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.action_scores();
+  auto& preds = examples[0]->pred.action_probs();
   const uint32_t num_actions = (uint32_t)preds.size();
 
   float additive_probability = 1.f / (float)_cover_size;

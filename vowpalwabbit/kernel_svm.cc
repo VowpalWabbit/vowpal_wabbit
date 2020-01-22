@@ -141,17 +141,6 @@ void svm_example::init_svm_example(flat_example* fec)
   free(fec);
 }
 
-svm_example::~svm_example()
-{
-  krow.delete_v();
-  // free flatten example contents
-  //flat_example* fec = &calloc_or_throw<flat_example>();
-  //*fec = ex;
-  //free_flatten_example(fec);  // free contents of flat example and frees fec.
-  if (ex.tag_len > 0)
-    free(ex.tag);
-}
-
 float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type);
 
 int svm_example::compute_kernels(svm_params& params)

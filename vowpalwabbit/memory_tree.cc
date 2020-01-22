@@ -44,7 +44,7 @@ void remove_at_index(v_array<T>& array, uint32_t index)
   return;
 }
 
-void copy_example_data(example* dst, example* src, bool oas = false)  // copy example data.
+void copy_example_data(example* dst, example* src)  
 {
   dst->l = src->l;
   dst->pred = src->pred;
@@ -94,11 +94,11 @@ void diag_kronecker_prod_fs_test(
 
 int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 
-void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
+void diag_kronecker_product_test(example& ec1, example& ec2, example& ec)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
   // VW::dealloc_example(nullptr, ec, nullptr);  // clear ec
-  copy_example_data(&ec, &ec1, oas);
+  copy_example_data(&ec, &ec1);
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
 
@@ -645,7 +645,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
       if (b.learn_at_leaf == true && b.current_pass >= 1)
       {
         float tmp_s = normalized_linear_prod(b, &ec, b.examples[loc]);
-        diag_kronecker_product_test(ec, *b.examples[loc], *b.kprod_ec, b.oas);
+        diag_kronecker_product_test(ec, *b.examples[loc], *b.kprod_ec);
         b.kprod_ec->l.reset();
         b.kprod_ec->l.init_as_simple() = {FLT_MAX, 0., tmp_s};
         b.kprod_ec->pred.reset();
@@ -819,7 +819,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   if (b.learn_at_leaf == true && closest_ec != -1)
   {
     float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
-    diag_kronecker_product_test(ec, *b.examples[closest_ec], *b.kprod_ec, b.oas);
+    diag_kronecker_product_test(ec, *b.examples[closest_ec], *b.kprod_ec);
     b.kprod_ec->l.reset();
     b.kprod_ec->l.init_as_simple() = {reward, 1.f, -score};
     b.kprod_ec->pred.reset();
@@ -850,7 +850,7 @@ void learn_at_leaf_random(
     if (b.examples[ec_id]->l.multi().label == ec.l.multi().label)
       reward = 1.f;
     float score = normalized_linear_prod(b, &ec, b.examples[ec_id]);
-    diag_kronecker_product_test(ec, *b.examples[ec_id], *b.kprod_ec, b.oas);
+    diag_kronecker_product_test(ec, *b.examples[ec_id], *b.kprod_ec);
     b.kprod_ec->l.reset();
     b.kprod_ec->l.init_as_simple() = {reward, 1.f, -score};
     b.kprod_ec->pred.reset();
@@ -1094,7 +1094,7 @@ void learn(memory_tree& b, single_learner& base, example& ec)
     if (b.current_pass < 1)
     {  // in the first pass, we need to store the memory:
       example* new_ec = &calloc_or_throw<example>();
-      copy_example_data(new_ec, &ec, b.oas);
+      copy_example_data(new_ec, &ec);
       b.examples.push_back(new_ec);
       if (b.online == true)
         update_rew(b, base, (uint32_t)(b.examples.size() - 1), *b.examples[b.examples.size() - 1]);  // query and learn
@@ -1296,7 +1296,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .help("number of dream operations per example (default = 1)"))
       .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
       .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (defualt = True)"))
-      .add(make_option("oas", tree->oas).help("use oas at the leaf"))
+      .add(make_option("oas", tree->oas).help("use oas (one against some) at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
                .help("turn on dream operations at reward based update as well"))

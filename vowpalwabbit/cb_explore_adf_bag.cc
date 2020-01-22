@@ -62,7 +62,7 @@ template <bool is_learn>
 void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.action_scores();
+  auto& preds = examples[0]->pred.action_probs();
   uint32_t num_actions = (uint32_t)examples.size();
   if (num_actions == 0)
   {

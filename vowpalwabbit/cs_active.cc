@@ -312,7 +312,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   ec.l.init_as_cs(std::move(ld));
 }
 
-void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, ec); }
+void finish_example(vw& all, cs_active&, example& ec) { CSOAA::finish_example(all, ec); }
 
 base_learner* cs_active_setup(options_i& options, vw& all)
 {

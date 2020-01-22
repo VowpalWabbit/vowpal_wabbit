@@ -206,7 +206,7 @@ IGNORE_DEPRECATED_USAGE_END
   }
 }
 
-void finalize_source(parser* p)
+void finalize_source(parser*)
 {
 }
 
@@ -763,6 +763,9 @@ void setup_example(vw& all, example* ae)
       case (prediction_type_t::action_scores):
         ae->pred.init_as_action_scores();
         break;
+      case (prediction_type_t::action_probs):
+        ae->pred.init_as_action_probs();
+        break;
       case (prediction_type_t::decision_scores):
         ae->pred.init_as_decision_scores();
         break;
@@ -774,6 +777,9 @@ void setup_example(vw& all, example* ae)
         break;
       case (prediction_type_t::prob):
         ae->pred.init_as_prob();
+        break;
+      case (prediction_type_t::multiclassprobs):
+        ae->pred.multiclassprobs();
         break;
       default:
         THROW(to_string(all.l->pred_type) << " is not supported here");

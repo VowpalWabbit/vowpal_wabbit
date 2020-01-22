@@ -52,7 +52,7 @@ void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, m
   else
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.action_scores();
+  auto& preds = examples[0]->pred.action_probs();
   uint32_t num_actions = (uint32_t)preds.size();
 
   if (_tau)
@@ -106,7 +106,9 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
   l.label_type = label_type_t::cb;
-
+  l.set_finish_example(explore_type::finish_multiline_example);
+  return make_base(l); 
+}
 }  // namespace first
 }  // namespace cb_explore_adf
 }  // namespace VW

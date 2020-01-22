@@ -319,18 +319,6 @@ enum AllReduceType
 
 class AllReduce;
 
-
-enum class label_type_t
-{
-  simple,
-  cb,       // contextual-bandit
-  cb_eval,  // contextual-bandit evaluation
-  cs,       // cost-sensitive
-  multi,
-  mc,
-  ccb  // conditional contextual-bandit
-};
-
 struct rand_state
 {
  private:
