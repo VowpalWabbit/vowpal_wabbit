@@ -181,12 +181,18 @@ void reset_source(vw& all, size_t numbits)
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
+IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
+IGNORE_DEPRECATED_USAGE_END
+        all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
         all.p->reader = read_features_string;
+IGNORE_DEPRECATED_USAGE_START
         all.print = print_result;
+IGNORE_DEPRECATED_USAGE_END
+        all.print_by_ref = print_result_by_ref;
       }
     }
     else
@@ -477,7 +483,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       THROWERRNO("accept");
 
     all.p->label_sock = f;
+IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
+IGNORE_DEPRECATED_USAGE_END
+    all.print_by_ref = print_result_by_ref;
 
     all.final_prediction_sink.push_back((size_t)f);
 
@@ -494,7 +503,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
+IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
+IGNORE_DEPRECATED_USAGE_END
+        all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {

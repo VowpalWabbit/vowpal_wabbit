@@ -1296,10 +1296,10 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
     learner<memory_tree, example>& l = init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type::multilabels);
+        tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type_t::multilabels);
 
     // all.p->lp = MULTILABEL::multilabel;
-    // all.label_type = label_type::multi;
+    // all.label_type = label_type_t::multi;
     // all.delete_prediction = MULTILABEL::multilabel.delete_label;
     // srand(time(0));
     l.set_end_pass(end_pass);
@@ -1307,7 +1307,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     // l.set_end_pass(end_pass);
 
     all.p->lp = MULTILABEL::multilabel;
-    all.label_type = label_type::multi;
+    all.label_type = label_type_t::multi;
     all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
     return make_base(l);

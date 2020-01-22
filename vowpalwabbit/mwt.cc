@@ -252,7 +252,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  all.label_type = label_type_t::cb;
 
   if (c->num_classes > 0)
   {
@@ -270,13 +270,13 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type::scalars);
+          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars);
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type::scalars);
+          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars);
   else
     l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type::scalars);
+        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

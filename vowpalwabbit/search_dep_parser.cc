@@ -317,11 +317,11 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   data->ex->total_sum_feat_sq = (float)count + new_weight;
 }
 
-void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uint64_t idx, uint64_t n,
+void get_valid_actions(Search::search& sch, v_array<uint32_t>& valid_action, uint64_t idx, uint64_t n,
     uint64_t stack_depth, uint64_t state)
 {
-  task_data *data = sch.get_task_data<task_data>();
-  uint32_t &sys = data->transition_system;
+  task_data* data = sch.get_task_data<task_data>();
+  uint32_t& sys = data->transition_system;
   v_array<uint32_t> &stack = data->stack, &heads = data->heads, &temp = data->temp;
   valid_action.clear();
   if (sys == arc_hybrid)
@@ -368,7 +368,7 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uin
   }
 }
 
-bool is_valid(uint64_t action, v_array<uint32_t> valid_actions)
+bool is_valid(uint64_t action, const v_array<uint32_t>& valid_actions)
 {
   for (size_t i = 0; i < valid_actions.size(); i++)
     if (valid_actions[i] == action)
@@ -417,9 +417,9 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
     action_loss[REDUCE_RIGHT] += 1;
 }
 
-void get_hybrid_action_cost(Search::search &sch, size_t idx, uint64_t n)
+void get_hybrid_action_cost(Search::search& sch, size_t idx, uint64_t n)
 {
-  task_data *data = sch.get_task_data<task_data>();
+  task_data* data = sch.get_task_data<task_data>();
   v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads;
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
@@ -565,7 +565,7 @@ void setup(Search::search &sch, multi_ex &ec)
   gold_tags.push_back(0);
   for (size_t i = 0; i < n; i++)
   {
-    v_array<COST_SENSITIVE::wclass> &costs = ec[i]->l.cs.costs;
+    const auto& costs = ec[i]->l.cs.costs;
     uint32_t head, tag;
     if (data->old_style_labels)
     {
@@ -598,9 +598,9 @@ void run(Search::search &sch, multi_ex &ec)
   v_array<uint32_t> &gold_action_temp = data->gold_action_temp;
   v_array<std::pair<action, float>> &gold_action_losses = data->gold_action_losses;
   v_array<action> &gold_actions = data->gold_actions;
-  bool &cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
-  uint32_t &num_label = data->num_label;
-  uint32_t &sys = data->transition_system;
+  bool& cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
+  uint32_t& num_label = data->num_label;
+  uint32_t& sys = data->transition_system;
   uint32_t n = (uint32_t)ec.size();
   uint32_t left_label, right_label;
   stack.clear();

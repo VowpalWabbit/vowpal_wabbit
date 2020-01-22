@@ -141,6 +141,13 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
   return getHasher(hash)(s.data(), s.length(), 0);
 }
+inline uint64_t hash_space_cstr(vw& all, char* fstr)
+{
+  substring ss;
+  ss.begin = fstr;
+  ss.end = ss.begin + strlen(fstr);
+  return all.p->hasher(ss, all.hash_seed);
+}
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {

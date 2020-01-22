@@ -190,7 +190,7 @@ void output_example(vw& all, example& ec)
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text(sink, ss.str(), ec.tag);
+      all.print_text_by_ref(sink, ss.str(), ec.tag);
     }
 
   print_update(all, test_label(&ec.l.multilabels), ec);
