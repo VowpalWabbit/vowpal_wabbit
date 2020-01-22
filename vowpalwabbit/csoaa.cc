@@ -6,7 +6,6 @@
 
 #include "correctedMath.h"
 #include "reductions.h"
-#include "v_hashmap.h"
 #include "label_dictionary.h"
 #include "vw.h"
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
@@ -157,7 +156,6 @@ struct ldf
 
   ~ldf()
   {
-    LabelDict::free_label_features(label_features);
     a_s.delete_v();
     stored_preds.delete_v();
   }
@@ -728,6 +726,7 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
   }
+
   VW::finish_example(all, ec_seq);
 }
 
@@ -737,12 +736,12 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
  */
 void inline process_label(ldf& data, example* ec)
 {
-  auto new_fs = ec->feature_space[ec->indices[0]];
+  //auto new_fs = ec->feature_space[ec->indices[0]];
   auto& costs = ec->l.cs.costs;
   for (auto const& cost : costs)
   {
     const auto lab = (size_t)cost.x;
-    LabelDict::set_label_features(data.label_features, lab, new_fs);
+    LabelDict::set_label_features(data.label_features, lab, ec->feature_space[ec->indices[0]]);
   }
 }
 
@@ -863,9 +862,8 @@ base_learner* csldf_setup(options_i& options, vw& all)
 
   all.p->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
-  features fs;
-  ld->label_features.init(256, fs, LabelDict::size_t_eq);
-  ld->label_features.get(1, 94717244);  // TODO: figure this out
+  ld->label_features.max_load_factor(0.25);
+  ld->label_features.reserve(256);
   prediction_type_t pred_type;
 
   if (ld->rank)

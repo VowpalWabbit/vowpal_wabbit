@@ -173,8 +173,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
       outputStringStream << ' ';
     if (all.sd->ldict)
     {
-      substring ss = all.sd->ldict->get(i + 1);
-      outputStringStream << std::string(ss.begin, ss.end - ss.begin);
+      outputStringStream << all.sd->ldict->get(i + 1);
     }
     else
       outputStringStream << i + 1;

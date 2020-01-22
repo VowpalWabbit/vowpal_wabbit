@@ -172,7 +172,7 @@ flat_example* flatten_example(vw& all, example* ec)
     ffs.mask = (uint64_t)LONG_MAX >> all.weights.stride_shift();
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
-  fec.fs = ffs.fs;
+  std::swap(fec.fs, ffs.fs);
 
   return &fec;
 }
@@ -190,7 +190,7 @@ void free_flatten_example(flat_example* fec)
   // note: The label memory should be freed by by freeing the original example.
   if (fec)
   {
-    fec->fs.delete_v();
+    fec->fs.~features();
     if (fec->tag_len > 0)
       free(fec->tag);
     free(fec);
@@ -226,13 +226,11 @@ void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_pre
 
   if (ec.passthrough)
   {
-    ec.passthrough->delete_v();
     delete ec.passthrough;
   }
 
-  for (auto& j : ec.feature_space) j.delete_v();
-
   ec.indices.delete_v();
+  ec.~example();
 }
 
 void finish_example(vw&, example&);
