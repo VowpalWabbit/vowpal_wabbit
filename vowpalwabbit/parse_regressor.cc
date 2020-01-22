@@ -248,9 +248,11 @@ void save_load_header(
 
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
       {
-        // -q, --cubic and --interactions are not saved in vw::file_options
-        uint32_t pair_len = (uint32_t)all.pairs.size();
+        if (!read)
+          THROW("cannot write legacy format");
 
+        // -q, --cubic and --interactions are not saved in vw::file_options
+        uint32_t pair_len = 0;
         msg << pair_len << " pairs: ";
         bytes_read_write +=
             bin_text_read_write_fixed_validated(model_file, (char*)&pair_len, sizeof(pair_len), "", read, msg, text);
@@ -260,25 +262,16 @@ void save_load_header(
         {
           char pair[3] = {0, 0, 0};
 
-          if (!read)
-          {
-            memcpy(pair, all.pairs[i].c_str(), 2);
-            msg << all.pairs[i] << " ";
-          }
-
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
-          if (read)
-          {
-            std::string temp(pair);
-            if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-              all.pairs.push_back(temp);
-          }
+          std::string temp(pair);
+          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+            all.interactions.push_back(temp);
         }
 
         msg << "\n";
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
-        uint32_t triple_len = (uint32_t)all.triples.size();
+        uint32_t triple_len = 0;
 
         msg << triple_len << " triples: ";
         bytes_read_write += bin_text_read_write_fixed_validated(
@@ -289,18 +282,10 @@ void save_load_header(
         {
           char triple[4] = {0, 0, 0, 0};
 
-          if (!read)
-          {
-            msg << all.triples[i] << " ";
-            memcpy(triple, all.triples[i].c_str(), 3);
-          }
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
-          if (read)
-          {
-            std::string temp(triple);
-            if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-              all.triples.push_back(temp);
-          }
+          std::string temp(triple);
+          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+            all.interactions.push_back(temp);
         }
 
         msg << "\n";
@@ -310,7 +295,7 @@ void save_load_header(
             VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
         {
           // the only version that saves interacions among pairs and triples
-          uint32_t len = (uint32_t)all.interactions.size();
+          uint32_t len = 0;
 
           msg << len << " interactions: ";
           bytes_read_write +=
@@ -319,38 +304,18 @@ void save_load_header(
           for (size_t i = 0; i < len; i++)
           {
             uint32_t inter_len = 0;
-            if (!read)
-            {
-              inter_len = (uint32_t)all.interactions[i].size();
-              msg << "len: " << inter_len << " ";
-            }
             bytes_read_write += bin_text_read_write_fixed_validated(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
-            if (!read)
-            {
-              memcpy(buff2, all.interactions[i].c_str(), inter_len);
-
-              msg << "interaction: ";
-              msg.write(all.interactions[i].c_str(), inter_len);
-            }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
 
-            if (read)
-            {
-              std::string temp(buff2, inter_len);
+            std::string temp(buff2, inter_len);
+            if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
               all.interactions.push_back(temp);
-            }
           }
 
           msg << "\n";
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
-        }
-        else  // < VERSION_FILE_WITH_INTERACTIONS
-        {
-          // pairs and triples may be restored but not reflected in interactions
-          all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
-          all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
         }
       }
 
