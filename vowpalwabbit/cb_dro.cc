@@ -66,7 +66,7 @@ struct cb_dro_data
         qlb = std::max(qlb, 0.01f);
 
         // save the original weights and scale the example weights
-        std::vector<float> save_weight;
+        save_weight.clear();
         save_weight.reserve(examples.size());
         std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
         std::for_each(examples.begin(), examples.end(), [qlb](example* item) { item->weight *= qlb; });
@@ -83,6 +83,7 @@ struct cb_dro_data
 
  private:
   VW::distributionally_robust::ChiSquared chisq;
+  std::vector<float> save_weight;
 };
 }  // namespace VW
 
