@@ -73,25 +73,16 @@ class ChiSquared
         delta(chisq_onedof_isf(alpha)),
         duals_stale(true)
       {
-        if (alpha > 1 || alpha <= 0)
-          {
-            THROW("invalid alpha value");
-          }
+      }
 
-        if (tau > 1 || tau <= 0)
-          {
-            THROW("invalid tau value");
-          }
+    bool isValid()
+      {
+        if (alpha > 1 || alpha <= 0) return false;
+        if (tau > 1 || tau <= 0) return false;
+        if (wmin >= wmax || wmin >= 1 || wmax <= 1) return false;
+        if (rmin > rmax) return false;
 
-        if (wmin >= wmax || wmin >= 1 || wmax <= 1)
-          {
-            THROW("invalid limits on w");
-          }
-
-        if (rmin > rmax)
-          {
-            throw std::invalid_argument("invalid limits on r");
-          }
+        return true;
       }
 
     ChiSquared& update(double w, double r)

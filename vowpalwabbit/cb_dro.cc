@@ -15,6 +15,8 @@ struct cb_dro_data
 {
   explicit cb_dro_data(double alpha, double tau, double wmax) : chisq(alpha, tau, 0, wmax) {}
 
+  bool isValid() { return chisq.isValid(); }
+
   template <bool is_learn, bool is_explore>
   inline void learn_or_predict(multi_learner &base, multi_ex &examples)
   {
@@ -142,12 +144,18 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
   }
 
   auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau, wmax);
+
+  if (!data->isValid())
+  {
+    THROW("invalid cb_dro parameter values supplied");
+  }
+
   if (options.was_supplied("cb_explore_adf"))
-    {
-      return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>, learn_or_predict<false, true>, 1 /* weights */, prediction_type::action_probs));
-    }
+  {
+    return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>, learn_or_predict<false, true>, 1 /* weights */, prediction_type_t::action_probs));
+  }
   else
-    {
-      return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, false>, learn_or_predict<false, false>, 1 /* weights */, prediction_type::action_probs));
-    }
+  {
+    return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, false>, learn_or_predict<false, false>, 1 /* weights */, prediction_type_t::action_probs));
+  }
 }
