@@ -728,7 +728,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   // prepare namespace interactions
   std::vector<std::string> expanded_interactions;
 
-  if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( ((!all.pairs.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
@@ -740,8 +740,6 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     // in case arrays were already filled in with values from old model file - reset them
     if (!all.pairs.empty())
       all.pairs.clear();
-    if (!all.triples.empty())
-      all.triples.clear();
     if (!all.interactions.empty())
       all.interactions.clear();
   }
@@ -832,8 +830,6 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       const size_t len = i.size();
       if (len == 2)
         all.pairs.push_back(i);
-      else if (len == 3)
-        all.triples.push_back(i);
     }
   }
 
