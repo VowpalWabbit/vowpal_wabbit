@@ -1,4 +1,4 @@
-﻿#include "offset_tree_cont.h"
+#include "offset_tree_cont.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
 #include <algorithm>
@@ -206,6 +206,8 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   const vector<tree_node>& nodes = _binary_tree.nodes;
   v_array<cb_class>& ac = ec.l.cb.costs;
 
+  // Store the reduction indent depth for debug logging
+  // without having to carry example around
   _dd = ec.stack_depth;
 
   VW_DBG(_dd) << "otree_c: learn() -- tree_traversal -- " << std::endl;

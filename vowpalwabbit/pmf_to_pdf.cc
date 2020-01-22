@@ -1,4 +1,4 @@
-﻿#include "reductions.h"
+#include "reductions.h"
 #include "pmf_to_pdf.h"
 #include "explore.h"
 #include "vw.h"
@@ -203,6 +203,7 @@ pdf_data::~pdf_data()
         .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
         .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
         .add(make_option("bandwidth", data->bandwidth)
+                 .default_value(0)
                  .keep()
                  .help("Bandwidth (radius) of randomization around discrete actions in number of actions."));
     options.add_and_parse(new_options);
@@ -211,11 +212,15 @@ pdf_data::~pdf_data()
       return nullptr;
     if (!options.was_supplied("cb_continuous"))
       return nullptr;
-    if (!options.was_supplied("cb_explore"))  // TODO: check
+    if (!options.was_supplied("cb_explore"))  
     {
       std::stringstream ss;
       ss << data->num_actions;
       options.insert("cb_explore", ss.str());
+    }
+    if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
+    {
+      THROW("error: min and max values must be supplied with cb_continuous");
     }
 
     learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn,
