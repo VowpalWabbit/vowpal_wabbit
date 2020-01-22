@@ -5,7 +5,6 @@
 #include <cmath>
 #include <errno.h>
 #include "reductions.h"
-#include "v_hashmap.h"
 #include "rand48.h"
 #include <cfloat>
 #include "vw.h"

@@ -7,6 +7,7 @@
 #include "global_data.h"
 #include "vw.h"
 #include "vw_exception.h"
+#include "vw_string_view.h"
 
 namespace MULTICLASS
 {
@@ -69,7 +70,7 @@ bool test_label(void* v)
 
 void delete_label(void*) {}
 
-void parse_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words)
 {
   label_t* ld = (label_t*)v;
 
@@ -78,12 +79,12 @@ void parse_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
     case 0:
       break;
     case 1:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      ld->weight = float_of_string(words[1]);
       break;
     default:
       std::cerr << "malformed example!\n";
@@ -99,11 +100,11 @@ label_parser mc_label = {default_label, parse_label, cache_label, read_cached_la
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
-  substring ss_label = all.sd->ldict->get(ec.l.multi.label);
-  substring ss_pred = all.sd->ldict->get(prediction);
+  VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
+  VW::string_view sv_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(all.holdout_set_off, all.current_pass,
-      !ss_label.begin ? "unknown" : std::string(ss_label.begin, ss_label.end - ss_label.begin),
-      !ss_pred.begin ? "unknown" : std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.num_features,
+      sv_label.empty() ? "unknown" : sv_label.to_string(),
+      sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features,
       all.progress_add, all.progress_arg);
 }
 
@@ -169,8 +170,8 @@ void finish_example(vw& all, example& ec, bool update_loss)
       all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
-      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text_by_ref(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      all.print_text_by_ref(sink, sv_pred.to_string(), ec.tag);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);

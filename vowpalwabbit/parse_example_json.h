@@ -30,6 +30,7 @@
 
 #include "best_constant.h"
 
+#include "vw_string_view.h"
 #include <algorithm>
 #include <vector>
 
@@ -1240,7 +1241,7 @@ struct Context
   {
     Namespace<audit> n;
     n.feature_group = ns[0];
-    n.namespace_hash = VW::hash_space_cstr(*all, const_cast<char*>(ns));
+    n.namespace_hash = VW::hash_space_cstr(*all, ns);
     n.ftrs = ex->feature_space.data() + ns[0];
     n.feature_count = 0;
     n.return_state = return_state;
@@ -1474,8 +1475,8 @@ inline void prepare_for_learner(vw* all, v_array<example*>& examples)
   if (examples.size() > 1)
   {
     example& ae = VW::get_unused_example(all);
-    char empty = '\0';
-    substring example = {&empty, &empty};
+    static const char empty[] = "";
+    VW::string_view example(empty);
     substring_to_example(all, &ae, example);
 
     examples.push_back(&ae);

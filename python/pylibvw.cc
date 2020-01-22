@@ -187,7 +187,8 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
 {
   existing_example->example_counter = labelType;
-  return boost::shared_ptr<example>(existing_example);
+  return existing_example;
+  //return boost::shared_ptr<example>(existing_example);
 }
 
 multi_ex unwrap_example_list(py::list& ec)
@@ -245,7 +246,7 @@ py::list my_parse(vw_ptr& all, char* str)
   all->p->text_reader(all.get(), str, strlen(str), examples);
 
   py::list example_collection;
-  for (auto ex : examples)
+  for (auto *ex : examples)
   {
     VW::setup_example(*all, ex);
     // Examples created from parsed text should not be deleted normally. Instead they need to be
@@ -825,7 +826,7 @@ BOOST_PYTHON_MODULE(pylibvw)
 ;
 
   // define the example class
-  py::class_<example, example_ptr>("example", py::no_init)
+  py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
   .def("__init__", py::make_constructor(my_read_example), "Given a string as an argument parse that into a VW example (and run setup on it) -- default to multiclass label type")
   .def("__init__", py::make_constructor(my_empty_example), "Construct an empty (non setup) example; you must provide a label type (vw.lBinary, vw.lMulticlass, etc.)")
   .def("__init__", py::make_constructor(my_existing_example), "Create a new example object pointing to an existing object.")
