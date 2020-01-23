@@ -11,7 +11,8 @@ elseif(MSVC)
   set(CXX_STANDARD14_FLAG "/std:c++14")
 endif()
 
-if(NOT VW_CXX_STANDARD)
+set(VW_CXX_STANDARD 11)
+if(USE_LATEST_STD)
   message(STATUS "Detecting C++ standard to use. Provide VW_CXX_STANDARD (11, 14, 17) to override automatic detection.")
   # Check for C++ 17
   check_cxx_compiler_flag(${CXX_STANDARD17_FLAG} HAS_CXX17_FLAG)

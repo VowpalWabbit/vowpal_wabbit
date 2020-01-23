@@ -25,7 +25,7 @@ project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
-option(VW_CXX_STANDARD "Set the C++ standard to be used. Options: 11, 14, 17. Default: latest the compiler supports." "")
+option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
 
 # Grab git commitish into variable
