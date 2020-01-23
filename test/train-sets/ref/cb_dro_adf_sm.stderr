@@ -1,0 +1,24 @@
+predictions = cb_dro_adf_sm.predict
+Using DRO for CB learning
+cb_dro_alpha = 0.05
+cb_dro_tau = 0.999
+cb_dro_wmax = inf
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/cb_adf_sm.data
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+6.000000 6.000000            1            1.0    known        0:0...        9
+3.000000 0.000000            2            2.0    known        2:-0.532113...        9
+0.750000 -1.500000            4            4.0    known        1:-0.309362...       12
+
+finished run
+number of examples = 4
+weighted example sum = 4.000000
+weighted label sum = 0.000000
+average loss = 0.750000
+total feature number = 47
