@@ -2,16 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "../vowpalwabbit/vw.h"
+#include "vw.h"
 
-#include "../vowpalwabbit/multiclass.h"
-#include "../vowpalwabbit/cost_sensitive.h"
-#include "../vowpalwabbit/cb.h"
-#include "../vowpalwabbit/search.h"
-#include "../vowpalwabbit/search_hooktask.h"
-#include "../vowpalwabbit/parse_example.h"
-#include "../vowpalwabbit/gd.h"
-#include "../vowpalwabbit/options_serializer_boost_po.h"
+#include "multiclass.h"
+#include "cost_sensitive.h"
+#include "cb.h"
+#include "search.h"
+#include "search_hooktask.h"
+#include "parse_example.h"
+#include "gd.h"
+#include "options_serializer_boost_po.h"
+#include "future_compat.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -136,15 +137,15 @@ size_t my_get_label_type(vw*all)
 
 size_t my_get_prediction_type(vw_ptr all)
 { switch (all->l->pred_type)
-  { case prediction_type::scalar:          return pSCALAR;
-    case prediction_type::scalars:         return pSCALARS;
-    case prediction_type::action_scores:   return pACTION_SCORES;
-    case prediction_type::action_probs:    return pACTION_PROBS;
-    case prediction_type::multiclass:      return pMULTICLASS;
-    case prediction_type::multilabels:     return pMULTILABELS;
-    case prediction_type::prob:            return pPROB;
-    case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
-    case prediction_type::decision_probs:  return pDECISION_SCORES;
+  { case prediction_type_t::scalar:          return pSCALAR;
+    case prediction_type_t::scalars:         return pSCALARS;
+    case prediction_type_t::action_scores:   return pACTION_SCORES;
+    case prediction_type_t::action_probs:    return pACTION_PROBS;
+    case prediction_type_t::multiclass:      return pMULTICLASS;
+    case prediction_type_t::multilabels:     return pMULTILABELS;
+    case prediction_type_t::prob:            return pPROB;
+    case prediction_type_t::multiclassprobs: return pMULTICLASSPROBS;
+    case prediction_type_t::decision_probs:  return pDECISION_SCORES;
     default: THROW("unsupported prediction type used");
   }
 }
@@ -186,7 +187,8 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
 {
   existing_example->example_counter = labelType;
-  return boost::shared_ptr<example>(existing_example);
+  return existing_example;
+  //return boost::shared_ptr<example>(existing_example);
 }
 
 multi_ex unwrap_example_list(py::list& ec)
@@ -244,7 +246,7 @@ py::list my_parse(vw_ptr& all, char* str)
   all->p->text_reader(all.get(), str, strlen(str), examples);
 
   py::list example_collection;
-  for (auto ex : examples)
+  for (auto *ex : examples)
   {
     VW::setup_example(*all, ex);
     // Examples created from parsed text should not be deleted normally. Instead they need to be
@@ -479,7 +481,7 @@ uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multicla
 
 py::list ex_get_scalars(example_ptr ec)
 { py::list values;
-  v_array<float> scalars = ec->pred.scalars;
+  const auto& scalars = ec->pred.scalars;
 
   for (float s : scalars)
   { values.append(s);
@@ -824,7 +826,7 @@ BOOST_PYTHON_MODULE(pylibvw)
 ;
 
   // define the example class
-  py::class_<example, example_ptr>("example", py::no_init)
+  py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
   .def("__init__", py::make_constructor(my_read_example), "Given a string as an argument parse that into a VW example (and run setup on it) -- default to multiclass label type")
   .def("__init__", py::make_constructor(my_empty_example), "Construct an empty (non setup) example; you must provide a label type (vw.lBinary, vw.lMulticlass, etc.)")
   .def("__init__", py::make_constructor(my_existing_example), "Create a new example object pointing to an existing object.")

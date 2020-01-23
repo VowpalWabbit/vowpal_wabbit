@@ -10,6 +10,7 @@
 #include "cache.h"
 #include "accumulate.h"
 #include "best_constant.h"
+#include "vw_string_view.h"
 
 namespace no_label
 {
@@ -29,7 +30,7 @@ bool test_label(void*) { return false; }
 
 void delete_no_label(void*) {}
 
-void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
+void parse_no_label(parser*, shared_data*, void*, v_array<VW::string_view>& words)
 {
   switch (words.size())
   {
@@ -37,7 +38,7 @@ void parse_no_label(parser*, shared_data*, void*, v_array<substring>& words)
       break;
     default:
       std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
+      for (const auto & word : words) std::cout << word;
       std::cout << std::endl;
   }
 }
@@ -59,11 +60,11 @@ void output_and_account_no_label_example(vw& all, example& ec)
 {
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.num_features);
 
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
+  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
   {
     int f = (int)all.final_prediction_sink[i];
-    all.print(f, ec.pred.scalar, 0, ec.tag);
+    all.print_by_ref(f, ec.pred.scalar, 0, ec.tag);
   }
 
   print_no_label_update(all, ec);

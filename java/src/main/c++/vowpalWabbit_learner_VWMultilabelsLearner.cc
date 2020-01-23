@@ -4,7 +4,7 @@
 
 jobject multilabel_predictor(example *vec, JNIEnv *env)
 {
-  v_array<uint32_t> labels = vec->pred.multilabels.label_v;
+  auto& labels = vec->pred.multilabels.label_v;
   size_t num_values = labels.size();
   jintArray j_labels = env->NewIntArray(num_values);
   env->SetIntArrayRegion(j_labels, 0, num_values, (int *)labels.begin());
