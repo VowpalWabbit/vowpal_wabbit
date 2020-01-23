@@ -679,7 +679,6 @@ example& get_unused_example(vw* all)
 {
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
-  ex->in_use = true;
   p->begin_parsed_examples++;
   return *ex;
 }
@@ -888,8 +887,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  assert(ec.in_use);
-  ec.in_use = false;
   all.p->example_pool.return_object(&ec);
 }
 
@@ -972,7 +969,6 @@ float get_confidence(example* ec) { return ec->confidence; }
 example* example_initializer::operator()(example* ex)
 {
   memset(&ex->l, 0, sizeof(polylabel));
-  ex->in_use = false;
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();
   ex->indices = v_init<namespace_index>();

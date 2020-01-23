@@ -74,7 +74,6 @@ struct example : public example_predict  // core example datatype.
   bool test_only;
   bool end_pass;  // special example indicating end of pass.
   bool sorted;    // Are the features sorted or not?
-  bool in_use;    // in use or not (for the parser)
 };
 
 struct vw;

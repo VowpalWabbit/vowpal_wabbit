@@ -127,8 +127,6 @@ void finish_setup(nn& n, vw& all)
     ++n.output_layer.num_features;
   }
 
-  n.output_layer.in_use = true;
-
   // TODO: not correct if --noconstant
   memset(&n.hiddenbias, 0, sizeof(n.hiddenbias));
   n.hiddenbias.interactions = &all.interactions;
@@ -140,8 +138,6 @@ void finish_setup(nn& n, vw& all)
   n.hiddenbias.total_sum_feat_sq++;
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
-  n.hiddenbias.in_use = true;
-
   memset(&n.outputweight, 0, sizeof(n.outputweight));
   n.outputweight.interactions = &all.interactions;
   n.outputweight.indices.push_back(nn_output_namespace);
@@ -154,7 +150,6 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
-  n.outputweight.in_use = true;
 
   n.finished_setup = true;
 }
