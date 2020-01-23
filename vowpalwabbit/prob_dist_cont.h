@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 namespace VW { namespace actions_pdf
 {
 struct pdf_segment
@@ -14,6 +14,8 @@ typedef v_array<pdf_segment> pdf;
 void print_prob_dist(int f, v_array<pdf_segment>& a_s, v_array<char>&);
 
 void delete_prob_dist(void* v);
+
+float get_pdf_value(pdf& prob_dist, float chosen_action);
 
 //TODO: do we need below?
 
@@ -52,7 +54,7 @@ inline prob_iterator begin_probs(pdf& p_d) { return prob_iterator(p_d.begin()); 
 
 inline prob_iterator end_probs(pdf& p_d) { return prob_iterator(p_d.end()); }
 
-inline prob_iterator one_to_end_probs(pdf& p_d) { return prob_iterator(--(p_d.end())); }
+inline prob_iterator one_to_end_probs(pdf& p_d) { return prob_iterator(p_d.end()-1); }
 
 inline int cmp(float a, float b)
 {
@@ -79,5 +81,7 @@ inline int prob_comp(const void* p1, const void* p2)
 }
 
 inline int reverse_order(const void* p1, const void* p2) { return prob_comp(p2, p1); }
+
+std::string to_string(const pdf_segment& seg);
 
 }}  // namespace VW::actions

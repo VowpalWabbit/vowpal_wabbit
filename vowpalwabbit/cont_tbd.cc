@@ -5,6 +5,7 @@
 #include "api_status.h"
 #include "err_constants.h"
 #include "cb_label_parser.h"
+#include "rand48.h"
 
 using std::cerr;
 using std::endl;
@@ -30,11 +31,13 @@ namespace VW { namespace continuous_action {
     int learn(example& ec, const continuous_label& lbl, api_status* status);
     int predict(example& ec, api_status* status);
 
-    void init(single_learner* p_base);
+    void init(single_learner* p_base, uint64_t* p_rand_state);
+
+    ~cont_tbd();
   private:
     single_learner* _base;
-    VW::actions_pdf::pdf _prob_dist;
-    uint64_t _app_seed;
+    VW::actions_pdf::pdf _pred_prob_dist;
+    uint64_t* _p_rand_state;
   };
 
   namespace lbl_parser {
@@ -104,13 +107,13 @@ namespace VW { namespace continuous_action {
     // TODO: if (progressive_validation) predict_and_save_prediction;
 
     // save label now and restore it later
-    const polylabel temp = ec.l;
-    ec.l.cb_cont = lbl;
+    // const polylabel temp = ec.l;
+    // ec.l.cb_cont = lbl;
 
     VW_DBG(ec) << "cont_tbd::learn(), " << cont_label_to_string(ec) << features_to_string(ec) << endl;
     _base->learn(ec);
 
-    ec.l = temp;
+    // ec.l = temp;
 
     return error_code::success;
   }
@@ -120,8 +123,8 @@ namespace VW { namespace continuous_action {
     VW_DBG(ec) << "cont_tbd::predict(), " << features_to_string(ec) << endl;
 
     // Base reduction will populate a probability distribution.
-    // Allocate it here
-    ec.pred.prob_dist = _prob_dist;
+    // It is allocated here
+    ec.pred.prob_dist = _pred_prob_dist;
 
     // This produces a pdf that we need to sample from
     _base->predict(ec);
@@ -129,21 +132,34 @@ namespace VW { namespace continuous_action {
     float chosen_action;
     // after having the function that samples the pdf and returns back a continuous action
     if (S_EXPLORATION_OK !=
-        exploration::sample_after_normalizing(_app_seed, begin_probs(ec.pred.prob_dist),
+        exploration::sample_after_normalizing(*_p_rand_state, begin_probs(ec.pred.prob_dist),
             one_to_end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
             ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
     {
       RETURN_ERROR(status, sample_pdf_failed);
     }
 
-    VW_DBG(ec) << "cont_tbd: predict, chosen_action=" << chosen_action << endl;
+    // Advance the random state
+    merand48(*_p_rand_state);
+
+    // Save prob_dist in case it was re-allocated in base reduction chain
+    _pred_prob_dist = ec.pred.prob_dist;
+
+    ec.pred.action_pdf.action = chosen_action;
+    ec.pred.action_pdf.value = get_pdf_value(_pred_prob_dist, chosen_action);
 
     return error_code::success;
   }
 
-  void cont_tbd::init(single_learner* p_base)
+  void cont_tbd::init(single_learner* p_base, uint64_t* p_rand_state)
   {
     _base = p_base;
+    _p_rand_state = p_rand_state;
+  }
+
+  cont_tbd::~cont_tbd()
+  {
+    _pred_prob_dist.delete_v();
   }
 
   // Continuous action space predict_or_learn. Non-afd workflow only
@@ -169,11 +185,26 @@ namespace VW { namespace continuous_action {
             && ec.l.cb_cont.costs[0].action != FLT_MAX);
   }
 
+  void print_update_cb_cont(vw& all, example& ec)
+  {
+    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+    {
+        all.sd->print_update(
+          all.holdout_set_off,
+          all.current_pass,
+          to_string(ec.l.cb_cont.costs[0]),       // Label
+          to_string(ec.pred.action_pdf),  // Prediction
+          ec.num_features,
+          all.progress_add, all.progress_arg);
+    }
+  }
+
   // "average loss" "since last" "example counter" "example weight"
   // "current label" "current predict" "current features"
   void output_example(vw& all, cont_tbd& data, example& ec)
   {
     const auto& cb_cont_costs = ec.l.cb_cont.costs;
+
 
     all.sd->update(
       ec.test_only,
@@ -184,23 +215,15 @@ namespace VW { namespace continuous_action {
 
     all.sd->weighted_labels += ec.weight;
 
-    print_update(all, ec);
+    print_update_cb_cont(all, ec);
   }
 
-  void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::pdf& prediction)
+  void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::pdf_segment& prediction)
   {
     stringstream strm;
 
-    if (!prediction.empty())
-    {
-      actions_pdf::pdf_segment pdf = prediction[0];
-      strm << pdf.action << ":"
-           << ":" << pdf.value << std::endl;
-    }
-    else
-    {
-      strm << "ERR No predictions found." << std::endl;
-    }
+    strm << prediction.action << ":"
+         << ":" << prediction.value << std::endl;
 
     const std::string str = strm.str();
     for (const int f : predict_file_descriptors)
@@ -216,7 +239,7 @@ namespace VW { namespace continuous_action {
   {
     // add output example
     output_example(all, data, ec);
-    output_predictions(all.final_prediction_sink, ec.pred.prob_dist);
+    output_predictions(all.final_prediction_sink, ec.pred.action_pdf);
     VW::finish_example(all, ec);
   }
 
@@ -255,7 +278,7 @@ namespace VW { namespace continuous_action {
 
     LEARNER::base_learner* p_base = setup_base(options, all);
     auto p_reduction = scoped_calloc_or_throw<cont_tbd>();
-    p_reduction->init(as_singleline(p_base));
+    p_reduction->init(as_singleline(p_base), &all.random_state);
 
     LEARNER::learner<cont_tbd, example>& l = init_learner(
       p_reduction,

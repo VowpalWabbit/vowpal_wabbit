@@ -31,4 +31,7 @@ namespace VW { namespace cb_continuous
   bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 
   void print_update(vw& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool action_scores); // TODO: why it says it has not defined
+
+  std::string to_string(const continuous_label_elm& elm);
+
 }}  // namespace VW::cb_continuous

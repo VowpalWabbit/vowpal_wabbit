@@ -12,13 +12,13 @@ VW_DEBUG_ENABLE(false);
 
 namespace VW { namespace pmf_to_pdf {
 
-pdf_data::~pdf_data()
-{
-    temp_cb.costs.delete_v();
-    temp_probs.delete_v();
+  pdf_data::~pdf_data()
+  {
+    temp_lbl_cb.costs.delete_v();
+    temp_pred_a_s.delete_v();
   }
 
-  void transform(pmf_to_pdf::pdf_data& data, example& ec)
+  void transform_pred_pdf(pmf_to_pdf::pdf_data& data, example& ec)
   {
     auto& continuous_scores = data.scores;
     continuous_scores.clear();
@@ -26,7 +26,7 @@ pdf_data::~pdf_data()
     float continuous_range = data.max_value - data.min_value;
     for (uint32_t i = 0; i < data.num_actions; i++)
     {
-      auto& a_s = data.temp_probs[i];
+      auto& a_s = data.temp_pred_a_s[i];
       uint32_t min_h = (std::max)((int)0, static_cast<int>(i) - static_cast<int>(data.bandwidth));
       uint32_t max_h = (std::min)(data.num_actions, i + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
@@ -48,20 +48,20 @@ pdf_data::~pdf_data()
 
   void predict(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
   {
-    auto temp = ec.pred.prob_dist;
-    ec.pred.a_s = data.temp_probs;
-    auto temp_cb_cont = ec.l.cb_cont; //todo: Do we need to save and recover the label also?
-    ec.l.cb = data.temp_cb;
+    auto temp_pred = ec.pred;
+    auto temp_lbl = ec.l;
+    ec.pred.a_s = data.temp_pred_a_s;
+    ec.l.cb = data.temp_lbl_cb;
 
     base.predict(ec);
 
     VW_DBG(ec) << "pmf_to_pdf::predict base.predict()" << a_s_pred_to_string(ec) << std::endl;
 
-    data.temp_probs = ec.pred.a_s;
-    ec.pred.prob_dist = temp;
-    transform(data, ec);
-    data.temp_cb = ec.l.cb;
-    ec.l.cb_cont = temp_cb_cont;
+    data.temp_pred_a_s = ec.pred.a_s;
+    ec.pred = temp_pred;
+    transform_pred_pdf(data, ec);
+    data.temp_lbl_cb = ec.l.cb;
+    ec.l = temp_lbl;
     VW_DBG(ec) << "pmf_to_pdf::predict transform()" << prob_dist_pred_to_string(ec) << std::endl;
   }
 
@@ -92,8 +92,8 @@ pdf_data::~pdf_data()
     uint32_t min_value = (std::max)(0, ic - (int)data.bandwidth + 1);
     uint32_t max_value = (std::min)(data.num_actions - 1, ic + data.bandwidth);
 
-    auto temp = ec.l.cb_cont;
-    ec.l.cb = data.temp_cb;
+    auto saved_lbl = ec.l;
+    ec.l.cb = data.temp_lbl_cb;
     ec.l.cb.costs.clear();
     for (uint32_t j = min_value; j <= max_value; j++)
     {
@@ -103,16 +103,15 @@ pdf_data::~pdf_data()
       ec.l.cb.costs.push_back({cost, j + 1, prob * bandwidth_range, 0.0f});
     }
 
-    auto temp_pd = ec.pred.prob_dist;
-    ec.pred.a_s = data.temp_probs;
+    auto saved_pred = ec.pred;
+    ec.pred.a_s = data.temp_pred_a_s;
 
     base.learn(ec);
 
-    data.temp_probs = ec.pred.a_s;
-    ec.pred.prob_dist = temp_pd;
-    transform(data, ec);
-    data.temp_cb = ec.l.cb;
-    ec.l.cb_cont = temp;
+    data.temp_pred_a_s = ec.pred.a_s;
+    data.temp_lbl_cb = ec.l.cb;
+    ec.pred = saved_pred;
+    ec.l = saved_lbl;
   }
 
   void finish(pdf_data& data) {
@@ -203,7 +202,7 @@ pdf_data::~pdf_data()
         .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
         .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
         .add(make_option("bandwidth", data->bandwidth)
-                 .default_value(0)
+                 .default_value(1)
                  .keep()
                  .help("Bandwidth (radius) of randomization around discrete actions in number of actions."));
     options.add_and_parse(new_options);
@@ -212,7 +211,7 @@ pdf_data::~pdf_data()
       return nullptr;
     if (!options.was_supplied("cb_continuous"))
       return nullptr;
-    if (!options.was_supplied("cb_explore"))  
+    if (!options.was_supplied("cb_explore"))
     {
       std::stringstream ss;
       ss << data->num_actions;
@@ -221,6 +220,10 @@ pdf_data::~pdf_data()
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     {
       THROW("error: min and max values must be supplied with cb_continuous");
+    }
+    if (data->bandwidth <= 0)
+    {
+      THROW("error: Bandwidth must be >= 1");
     }
 
     learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn,

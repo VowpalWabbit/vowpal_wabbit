@@ -68,6 +68,7 @@ typedef union {
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc
+  VW::actions_pdf::pdf_segment action_pdf;
 } polyprediction;
 
 struct example : public example_predict  // core example datatype.

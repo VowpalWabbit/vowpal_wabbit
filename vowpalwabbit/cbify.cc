@@ -19,9 +19,9 @@ using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
 using std::endl;
 
-VW_DEBUG_ENABLE(false);
-
 struct cbify;
+
+VW_DEBUG_ENABLE(false);
 
 struct cbify_adf_data
 {
@@ -164,24 +164,6 @@ void copy_example_to_adf(cbify& data, example& ec)
       eca.tag.push_back('n');
     }
   }
-}
-float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
-{
-  int begin = -1;
-  int end = (int)prob_dist.size();
-  while (end - begin > 1)
-  {
-    int mid = (begin + end) / 2;
-    if (prob_dist[mid].action <= chosen_action)
-    {
-      begin = mid;
-    }
-    else
-    {
-      end = mid;
-    }
-  }
-  return prob_dist[begin].value;
 }
 
 float get_squared_loss(cbify& data, float chosen_action, float label)
