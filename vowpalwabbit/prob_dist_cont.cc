@@ -33,6 +33,31 @@ void delete_prob_dist(void* v)
   cs->delete_v();
 }
 
+float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
+{
+  int begin = -1;
+  int end = (int)prob_dist.size();
+  while (end - begin > 1)
+  {
+    int mid = (begin + end) / 2;
+    if (prob_dist[mid].action <= chosen_action)
+    {
+      begin = mid;
+    }
+    else
+    {
+      end = mid;
+    }
+  }
+  return prob_dist[begin].value;
+}
+
+std::string to_string(const pdf_segment& seg)
+{
+  std::stringstream strm;
+  strm << "{" << seg.action << "," << seg.value << "}";
+  return strm.str();
+}
 }} // namespace vw::pdf
 
 

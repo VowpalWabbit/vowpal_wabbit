@@ -205,6 +205,13 @@ namespace VW { namespace cb_continuous
             all.progress_add, all.progress_arg);
     }
   }
+
+  std::string to_string(const continuous_label_elm& elm)
+  {
+    std::stringstream strm;
+    strm << "{" << elm.action << "," << elm.cost << "," << elm.probability << "}";
+    return strm.str();
+  }
 }}  // namespace VW::cb_continuous
 
 //namespace VW { namespace cb_continuous_eval

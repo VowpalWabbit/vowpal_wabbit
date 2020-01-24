@@ -106,8 +106,13 @@
     <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="api_status.h" />
+    <ClInclude Include="cb_label_parser.h" />
+    <ClInclude Include="cont_tbd.h" />
     <ClInclude Include="cb_continuous.h" />
     <ClInclude Include="debug_log.h" />
+    <ClInclude Include="errors_data.h" />
+    <ClInclude Include="err_constants.h" />
     <ClInclude Include="pmf_to_pdf.h" />
     <ClInclude Include="offset_tree.h" />
     <ClInclude Include="accumulate.h" />
@@ -222,6 +227,8 @@
     <ClInclude Include="warm_cb.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="api_status.cc" />
+    <ClCompile Include="cont_tbd.cc" />
     <ClCompile Include="cb_continuous.cc" />
     <ClCompile Include="nullstream.cc" />
     <ClCompile Include="pmf_to_pdf.cc" />

@@ -85,6 +85,7 @@ license as described in the file LICENSE.
 #include "offset_tree.h"
 #include "pmf_to_pdf.h"
 #include "offset_tree_cont.h"
+#include "cont_tbd.h"
 using namespace std;
 using namespace VW::config;
 
@@ -1286,6 +1287,7 @@ void parse_reductions(options_i& options, vw& all)
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(VW::pmf_to_pdf::pmf_to_pdf_setup);
+  all.reduction_stack.push(VW::continuous_action::cont_tbd_setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
   all.reduction_stack.push(VW::offset_tree::offset_tree_setup);

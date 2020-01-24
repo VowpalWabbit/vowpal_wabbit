@@ -68,5 +68,8 @@
     <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="offset_tree_cont_tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
