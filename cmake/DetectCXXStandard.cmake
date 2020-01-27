@@ -13,7 +13,6 @@ endif()
 
 set(VW_CXX_STANDARD 11)
 if(USE_LATEST_STD)
-  message(STATUS "Detecting C++ standard to use. Provide VW_CXX_STANDARD (11, 14, 17) to override automatic detection.")
   # Check for C++ 17
   check_cxx_compiler_flag(${CXX_STANDARD17_FLAG} HAS_CXX17_FLAG)
   # CMAKE_CXX_STANDARD only supports 17 as of CMake version 3.8. Even if the compiler supports it we will have to fall back to 14.
