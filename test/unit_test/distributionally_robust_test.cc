@@ -49,6 +49,16 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test:
 
   auto onlinechisq = std::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
 
+  {
+    auto d = onlinechisq->recompute_duals();
+
+    BOOST_TEST(d.unbounded == true);
+    BOOST_TEST(d.kappa == 0);
+    BOOST_TEST(d.gamma == 0);
+    BOOST_TEST(d.beta == 0);
+    BOOST_TEST(d.n == 0);
+  }
+
   for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
     onlinechisq->update(data[i].first, data[i].second);
