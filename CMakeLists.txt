@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
@@ -24,14 +25,8 @@ project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
-option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
-
-# By default we target 11, if you want to use a newer standard use "-DUSE_LATEST_STD=On"
-if(NOT USE_LATEST_STD)
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-set(CMAKE_CXX_EXTENSIONS OFF)
+option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
+include(DetectCXXStandard)
 
 # Grab git commitish into variable
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
