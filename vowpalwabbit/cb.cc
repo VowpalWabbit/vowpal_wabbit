@@ -108,7 +108,7 @@ void copy_label(void* dst, void* src)
   ldD->weight = ldS->weight;
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
@@ -123,18 +123,18 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       THROW("malformed cost specification: " << p->parse_name);
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)hashstring(p->parse_name[0], 0);
+    f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
     f.cost = FLT_MAX;
 
     if (p->parse_name.size() > 1)
-      f.cost = float_of_substring(p->parse_name[1]);
+      f.cost = float_of_string(p->parse_name[1]);
 
     if (std::isnan(f.cost))
       THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
     f.probability = .0;
     if (p->parse_name.size() > 2)
-      f.probability = float_of_substring(p->parse_name[2]);
+      f.probability = float_of_string(p->parse_name[2]);
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
@@ -149,7 +149,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << std::endl;
       f.probability = .0;
     }
-    if (substring_equal(p->parse_name[0], "shared"))
+    if (p->parse_name[0] == "shared")
     {
       if (p->parse_name.size() == 1)
       {
@@ -168,7 +168,7 @@ label_parser cb_label = {default_label, parse_label, cache_label, read_cached_la
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
+  const auto& costs = ec.l.cb.costs;
   if (costs.size() != 1)
     return false;
   if (costs[0].probability == -1.f)
@@ -272,14 +272,14 @@ void copy_label(void* dst, void* src)
   ldD->action = ldS->action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 
   if (words.size() < 2)
     THROW("Evaluation can not happen without an action and an exploration");
 
-  ld->action = (uint32_t)hashstring(words[0], 0);
+  ld->action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
 
   words.begin()++;
 

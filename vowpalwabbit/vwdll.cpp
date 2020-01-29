@@ -80,7 +80,7 @@ VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const
 VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
 { vw * pointer = static_cast<vw*>(handle);
   if (pointer->numpasses > 1)
-  { adjust_used_index(*pointer);
+  {
     pointer->do_reset_source = true;
     VW::start_parser(*pointer);
     LEARNER::generic_driver(*pointer);

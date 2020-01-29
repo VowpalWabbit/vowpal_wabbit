@@ -23,7 +23,7 @@ void print_action_score(int f, v_array<action_score>& a_s, v_array<char>& tag)
         ss << ',';
       ss << a_s[i].action << ':' << a_s[i].score;
     }
-    print_tag(ss, tag);
+    print_tag_by_ref(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);

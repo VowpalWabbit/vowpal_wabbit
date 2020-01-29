@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
@@ -13,25 +14,19 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# VW targets Windows 10.0.10240.0 SDK
+# VW targets Windows 10.0.16299.0 SDK
 # CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
 # https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
-  set(CMAKE_SYSTEM_VERSION "10.0.10240.0" CACHE INTERNAL "Windows SDK version to target.")
+  set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
-option(USE_LATEST_STD "Advanced: Override using C++11 with the latest standard the compiler offers. This can result in less than C++" OFF)
-
-# By default we target 11, if you want to use a newer standard use "-DUSE_LATEST_STD=On"
-if(NOT USE_LATEST_STD)
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-set(CMAKE_CXX_EXTENSIONS OFF)
+option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
+include(DetectCXXStandard)
 
 # Grab git commitish into variable
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
@@ -98,7 +93,7 @@ if((NOT PROFILE) AND (NOT GCOV))
 endif()
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
+set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
 
 if(LTO)
 	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

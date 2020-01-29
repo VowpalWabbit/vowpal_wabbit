@@ -29,7 +29,7 @@
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
@@ -124,6 +124,7 @@
     <ClInclude Include="cache.h" />
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="cb_algs.h" />
+    <ClInclude Include="cb_dro.h" />
     <ClInclude Include="cb_explore_adf_bag.h" />
     <ClInclude Include="cb_explore_adf_common.h" />
     <ClInclude Include="cb_explore_adf_cover.h" />
@@ -144,6 +145,7 @@
     <ClInclude Include="crossplat_compat.h" />
     <ClInclude Include="cs_active.h" />
     <ClInclude Include="csoaa.h" />
+    <ClInclude Include="distributionally_robust.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="explore_eval.h" />
@@ -213,10 +215,10 @@
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="v_array.h" />
-    <ClInclude Include="v_hashmap.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
+    <ClInclude Include="vw_string_view.h" />
     <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="vw.h" />
@@ -240,6 +242,7 @@
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb_adf.cc" />
     <ClCompile Include="cb_algs.cc" />
+    <ClCompile Include="cb_dro.cc" />
     <ClCompile Include="cb_explore_adf_bag.cc" />
     <ClCompile Include="cb_explore_adf_cover.cc" />
     <ClCompile Include="cb_explore_adf_first.cc" />
@@ -258,6 +261,7 @@
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
+    <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />

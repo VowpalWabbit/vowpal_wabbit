@@ -13,6 +13,7 @@
 #include "global_data.h"
 #include "gd.h"
 #include "vw_exception.h"
+#include "future_compat.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -76,7 +77,12 @@ void send_prediction(int sock, global_prediction p)
     THROWERRNO("send_prediction write(" << sock << ")");
 }
 
-void binary_print_result(int f, float res, float weight, v_array<char>)
+void binary_print_result(int f, float res, float weight, v_array<char> array)
+{
+  binary_print_result_by_ref(f, res, weight, array);
+}
+
+void binary_print_result_by_ref(int f, float res, float weight, const v_array<char>&)
 {
   if (f >= 0)
   {
@@ -85,7 +91,7 @@ void binary_print_result(int f, float res, float weight, v_array<char>)
   }
 }
 
-int print_tag(std::stringstream& ss, v_array<char> tag)
+int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
 {
   if (tag.begin() != tag.end())
   {
@@ -95,7 +101,17 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return tag.begin() != tag.end();
 }
 
-void print_result(int f, float res, float, v_array<char> tag)
+int print_tag(std::stringstream& ss, v_array<char> tag)
+{
+  return print_tag_by_ref(ss, tag);
+}
+
+void print_result(int f, float res, float unused, v_array<char> tag)
+{
+  print_result_by_ref(f, res, unused, tag);
+}
+
+void print_result_by_ref(int f, float res, float, const v_array<char>& tag)
 {
   if (f >= 0)
   {
@@ -104,7 +120,7 @@ void print_result(int f, float res, float, v_array<char> tag)
     if (floorf(res) == res)
       ss << std::setprecision(0);
     ss << std::fixed << res << std::setprecision(saved_precision);
-    print_tag(ss, tag);
+    print_tag_by_ref(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
@@ -122,7 +138,7 @@ void print_raw_text(int f, std::string s, v_array<char> tag)
 
   std::stringstream ss;
   ss << s;
-  print_tag(ss, tag);
+  print_tag_by_ref(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
@@ -131,6 +147,25 @@ void print_raw_text(int f, std::string s, v_array<char> tag)
     std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
+
+
+void print_raw_text_by_ref(int f, const std::string& s, const v_array<char>& tag)
+{
+  if (f < 0)
+    return;
+
+  std::stringstream ss;
+  ss << s;
+  print_tag_by_ref(ss, tag);
+  ss << '\n';
+  ssize_t len = ss.str().size();
+  ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << strerror(errno) << std::endl;
+  }
+}
+
 
 void set_mm(shared_data* sd, float label)
 {
@@ -277,6 +312,7 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
+IGNORE_DEPRECATED_USAGE_START
 vw::vw()
 {
   sd = &calloc_or_throw<shared_data>();
@@ -287,7 +323,7 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
-  label_type = label_type::simple;
+  label_type = label_type_t::simple;
 
   l = nullptr;
   scorer = nullptr;
@@ -325,8 +361,11 @@ vw::vw()
 
   final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
   raw_prediction = -1;
+
   print = print_result;
   print_text = print_raw_text;
+  print_by_ref = print_result_by_ref;
+  print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
   random_seed = 0;
   random_weights = false;
@@ -398,3 +437,4 @@ vw::vw()
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
 }
+IGNORE_DEPRECATED_USAGE_END

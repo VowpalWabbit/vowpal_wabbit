@@ -1344,6 +1344,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     bool previous_strict_parse = all.p->strict_parse;
     delete all.p;
     all.p = new parser{minibatch2, previous_strict_parse};
+    all.p->_shared_data = all.sd;
   }
 
   ld->v.resize(all.lda * ld->minibatch);
@@ -1354,7 +1355,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type::scalars);
+      prediction_type_t::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

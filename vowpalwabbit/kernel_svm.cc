@@ -140,7 +140,7 @@ struct svm_params
 
 void svm_example::init_svm_example(flat_example* fec)
 {
-  ex = *fec;
+  ex = std::move(*fec);
   free(fec);
 }
 
@@ -148,9 +148,11 @@ svm_example::~svm_example()
 {
   krow.delete_v();
   // free flatten example contents
-  flat_example* fec = &calloc_or_throw<flat_example>();
-  *fec = ex;
-  free_flatten_example(fec);  // free contents of flat example and frees fec.
+  //flat_example* fec = &calloc_or_throw<flat_example>();
+  //*fec = ex;
+  //free_flatten_example(fec);  // free contents of flat example and frees fec.
+  if (ex.tag_len > 0)
+    free(ex.tag);
 }
 
 float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type);
@@ -439,7 +441,7 @@ float kernel_function(const flat_example* fec1, const flat_example* fec2, void* 
   return 0;
 }
 
-float dense_dot(float* v1, v_array<float> v2, size_t n)
+float dense_dot(float* v1, const v_array<float>& v2, size_t n)
 {
   float dot_prod = 0.;
   for (size_t i = 0; i < n; i++) dot_prod += v1[i] * v2[i];

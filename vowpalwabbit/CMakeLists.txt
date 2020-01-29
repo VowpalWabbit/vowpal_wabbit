@@ -20,11 +20,11 @@ endif()
 set(vw_all_headers
 accumulate.h action_score.h active_cover.h active.h allreduce.h array_parameters_dense.h
 array_parameters.h audit_regressor.h autolink.h baseline.h beam.h best_constant.h bfgs.h binary.h
-boosting.h bs.h cache.h cb_adf.h cb_algs.h cb_explore_adf_bag.h cb_explore_adf_common.h
+boosting.h bs.h cache.h cb_adf.h cb_algs.h cb_dro.h cb_explore_adf_bag.h cb_explore_adf_common.h
 cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h cb_explore_adf_regcb.h
 cb_explore_adf_softmax.h cb_explore.h cb.h cbify.h ccb_label.h classweight.h comp_io.h
 conditional_contextual_bandit.h confidence.h config.h.in constant.h correctedMath.h cost_sensitive.h
-crossplat_compat.h cs_active.h csoaa.h ect.h error_reporting.h example_predict.h example.h
+crossplat_compat.h cs_active.h csoaa.h distributionally_robust.h ect.h error_reporting.h example_predict.h example.h
 explore_eval.h expreplay.h ezexample.h feature_group.h ftrl.h gd_mf.h gd_predict.h gd.h
 gen_cs_example.h global_data.h hashstring.h interact.h interactions_predict.h interactions.h
 io_buf.h kernel_svm.h label_dictionary.h label_parser.h lda_core.h learner.h log_multi.h
@@ -36,17 +36,17 @@ parser.h print.h queue.h rand48.h recall_tree.h reductions.h scorer.h
 search_dep_parser.h search_entityrelationtask.h search_graph.h search_hooktask.h search_meta.h
 search_multiclasstask.h search_sequencetask.h search.h sender.h shared_feature_merger.h
 simple_label.h spanning_tree.h stable_unique.h stagewise_poly.h svrg.h topk.h unique_sort.h
-v_array.h v_hashmap.h version.h vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h
-vwdll.h warm_cb.h
+v_array.h version.h vw_allreduce.h vw_exception.h vw_validate.h vw_versions.h vw.h
+vwdll.h warm_cb.h vw_string_view.h
 )
 
 set(vw_all_sources
   accumulate.cc action_score.cc active_cover.cc active.cc audit_regressor.cc autolink.cc baseline.cc
   best_constant.cc bfgs.cc binary.cc boosting.cc bs.cc cache.cc cb_adf.cc cb_algs.cc
-  cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc
+  cb_dro.cc cb_explore_adf_bag.cc cb_explore_adf_cover.cc cb_explore_adf_first.cc cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc cb_explore_adf_softmax.cc cb_explore.cc cb_sample.cc cb.cc cbify.cc
   ccb_label.cc classweight.cc comp_io.cc conditional_contextual_bandit.cc confidence.cc
-  cost_sensitive.cc cs_active.cc csoaa.cc ect.cc example.cc explore_eval.cc ftrl.cc gd_mf.cc gd.cc
+  cost_sensitive.cc cs_active.cc csoaa.cc distributionally_robust.cc ect.cc example.cc explore_eval.cc ftrl.cc gd_mf.cc gd.cc
   gen_cs_example.cc global_data.cc interact.cc interactions.cc io_buf.cc kernel_svm.cc
   label_dictionary.cc lda_core.cc learner.cc log_multi.cc loss_functions.cc lrq.cc lrqfa.cc
   marginal.cc memory_tree.cc mf.cc multiclass.cc multilabel_oaa.cc multilabel.cc mwt.cc network.cc
@@ -62,7 +62,7 @@ add_library(vw ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} ZLIB::ZLIB
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is

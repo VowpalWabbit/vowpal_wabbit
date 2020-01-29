@@ -14,7 +14,6 @@ safe_example_predict::safe_example_predict()
 safe_example_predict::~safe_example_predict()
 {
   indices.delete_v();
-  for (size_t i = 0; i < UINT8_MAX; i++) feature_space[i].delete_v();
 }
 
 void safe_example_predict::clear()
