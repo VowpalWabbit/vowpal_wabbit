@@ -24,7 +24,7 @@ class PredictDataJoiner:
     for (data_line, predict_line) in zip(data_file, predict_file):
       act = self.get_action(predict_line)
       reg = self.get_regression_val(data_line)
-      acc += abs(reg-act)/range_val
+      acc += abs((reg-act)/range_val)
       N += 1
       if(N%10000 == 0):
         print('.',end='',flush=True)
