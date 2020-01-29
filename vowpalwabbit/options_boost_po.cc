@@ -4,8 +4,22 @@
 
 #include <algorithm>
 #include <iterator>
+#include "label_parser.h"
 
 using namespace VW::config;
+
+bool is_number(const std::string& s)
+{
+  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str()) + s.size()};
+  auto endptr = ss.end;
+  auto f = parseFloat(ss.begin, &endptr);
+  if ((endptr == ss.begin && ss.begin != ss.end) || std::isnan(f))
+  {
+    return false;
+  }
+
+  return true;
+}
 
 template <>
 po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt)
@@ -60,6 +74,13 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
     for (auto const& option : parsed_options.options)
     {
+      // If the supplied option is interpreted as a number, then ignore it. There are no options like this and it is
+      // just a false positive.
+      if (is_number(option.string_key))
+      {
+        m_ignore_supplied.insert(option.string_key);
+      }
+
       m_supplied_options.insert(option.string_key);
 
       // If a string is later determined to be a value the erase it. This happens for negative numbers "-2"
