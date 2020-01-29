@@ -4,12 +4,12 @@ import math
 
 class PredictDataJoiner:
 
-  def __init__(self, data_file_name, predict_file_name, min_val, max_val, loss_fn):
+  def __init__(self, data_file_name, predict_file_name, min_val, max_val, zero_one_width):
     self.data_file_name = data_file_name
     self.predict_file_name = predict_file_name
     self.min_val = min_val
     self.max_val = max_val
-    self.loss_fn = loss_fn
+    self.zero_one_width = zero_one_width
 
   def join(self):
 
@@ -17,16 +17,22 @@ class PredictDataJoiner:
     predict_file = open(self.predict_file_name,"r")
 
     range_val = self.max_val - self.min_val
+    zero_one_h = abs(range_val) * self.zero_one_width
     N = 0
     abs_loss_acc = 0.
     sqr_loss_acc = 0.
+    zero_one_loss_acc = 0.
     max_found = float("-inf")
     min_found = float("inf")
     for (data_line, predict_line) in zip(data_file, predict_file):
+      # Get data
       act = self.get_action(predict_line)
       reg = self.get_regression_val(data_line)
+      # Compute losses
       abs_loss_acc += abs((reg-act)/range_val)
       sqr_loss_acc += ((reg-act)/range_val)**2
+      if(not math.isclose(act,reg,abs_tol=zero_one_h)):
+        zero_one_loss_acc += 1.0
       N += 1
       if(N%10000 == 0):
         print('.',end='',flush=True)
@@ -37,10 +43,13 @@ class PredictDataJoiner:
 
     abs_loss = abs_loss_acc / float(N)
     sqr_loss = sqr_loss_acc / float(N)
+    zero_one_loss = zero_one_loss_acc / float(N)
 
     print('.')
     print("abs_loss=",abs_loss,", abs_loss_acc=",abs_loss_acc,", N=",N,)
     print("sqr_loss=",sqr_loss,", sqr_loss_acc=",sqr_loss_acc,", N=",N,)
+    print("zero_one_loss=",zero_one_loss,", zero_one_loss_acc=",zero_one_loss_acc,", N=",N,)
+    print("zero_one_width=",zero_one_width)
     print("max_param=",self.max_val,",min_param=",self.min_val,"max_found=",max_found,"min_found=",min_found)
     if(not math.isclose(self.max_val,max_found,rel_tol=.001)):
       print("ERR:Please check max param. ", self.max_val, "is not close to ", max_found)
@@ -60,11 +69,11 @@ if __name__ == "__main__":
   data_file = "data.txt"
   max_val = 100.0
   min_val = 0.0
-  loss_fn = 0
+  zero_one_width = 0.1
 
   # Parse options - get predict and data file names
   args = sys.argv[1:]
-  opts, args = getopt.getopt(args, "p:d:m:i:l",["predict_file=", "data_file=", "max=", "min=", "loss_fn="])
+  opts, args = getopt.getopt(args, "p:d:m:i:z",["predict_file=", "data_file=", "max=", "min=", "zero_one="])
   for opt, arg in opts:
     if opt in ('-p', '--predict_file'):
       predict_file = arg
@@ -74,10 +83,10 @@ if __name__ == "__main__":
       max_val = float(arg)
     elif opt in ('-i', '--min'):
       min_val = float(arg)
-    elif opt in ('-l', '--loss'):
-      loss_fn = int(arg)
+    elif opt in ('-z', '--zero_one'):
+      zero_one_width = float(arg)
 
 
   # Print join lines to stdout
-  fileJoiner = PredictDataJoiner(data_file, predict_file, min_val, max_val, loss_fn)
+  fileJoiner = PredictDataJoiner(data_file, predict_file, min_val, max_val, zero_one_width)
   fileJoiner.join()
