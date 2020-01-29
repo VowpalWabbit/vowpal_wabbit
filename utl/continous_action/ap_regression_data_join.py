@@ -18,13 +18,15 @@ class PredictDataJoiner:
 
     range_val = self.max_val - self.min_val
     N = 0
-    acc = 0.
+    abs_loss_acc = 0.
+    sqr_loss_acc = 0.
     max_found = float("-inf")
     min_found = float("inf")
     for (data_line, predict_line) in zip(data_file, predict_file):
       act = self.get_action(predict_line)
       reg = self.get_regression_val(data_line)
-      acc += abs((reg-act)/range_val)
+      abs_loss_acc += abs((reg-act)/range_val)
+      sqr_loss_acc += ((reg-act)/range_val)**2
       N += 1
       if(N%10000 == 0):
         print('.',end='',flush=True)
@@ -32,9 +34,14 @@ class PredictDataJoiner:
         max_found = reg
       if(reg < min_found):
         min_found = reg
-    abs_loss = acc / float(N)
+
+    abs_loss = abs_loss_acc / float(N)
+    sqr_loss = sqr_loss_acc / float(N)
+
     print('.')
-    print("abs_loss=",abs_loss,",max_param=",self.max_val,",min_param=",self.min_val,"acc=",acc,", N=",N,"max_found=",max_found,"min_found=",min_found)
+    print("abs_loss=",abs_loss,", abs_loss_acc=",abs_loss_acc,", N=",N,)
+    print("sqr_loss=",sqr_loss,", sqr_loss_acc=",sqr_loss_acc,", N=",N,)
+    print("max_param=",self.max_val,",min_param=",self.min_val,"max_found=",max_found,"min_found=",min_found)
     if(not math.isclose(self.max_val,max_found,rel_tol=.001)):
       print("ERR:Please check max param. ", self.max_val, "is not close to ", max_found)
     if(not math.isclose(self.min_val,min_found,rel_tol=.001)):
