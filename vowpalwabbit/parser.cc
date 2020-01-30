@@ -972,6 +972,9 @@ example* example_initializer::operator()(example* ex)
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();
   ex->indices = v_init<namespace_index>();
+IGNORE_DEPRECATED_USAGE_START
+  ex->in_use = true;
+IGNORE_DEPRECATED_USAGE_END
   memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
   return ex;
 }
