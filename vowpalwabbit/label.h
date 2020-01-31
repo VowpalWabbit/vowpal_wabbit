@@ -327,13 +327,13 @@ struct polylabel
     return _conditional_contextual_bandit;
   }
 
-  const CCB::label& conditional_contextual_bandit() const
+  const CCB::label& ccb() const
   {
     ensure_is_type(label_type_t::conditional_contextual_bandit);
     return _conditional_contextual_bandit;
   }
 
-  CCB::label& conditional_contextual_bandit()
+  CCB::label& ccb()
   {
     ensure_is_type(label_type_t::conditional_contextual_bandit);
     return _conditional_contextual_bandit;

@@ -32,7 +32,7 @@ size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(v);
-  CCB::label& ld = v.conditional_contextual_bandit();
+  CCB::label& ld = v.ccb();
 
   if (ld.outcome)
   {
@@ -120,7 +120,7 @@ float ccb_weight(polylabel& v)
 void cache_label(polylabel& v, io_buf& cache)
 {
   char* c;
-  CCB::label& ld = v.conditional_contextual_bandit();
+  CCB::label& ld = v.ccb();
   size_t size = sizeof(uint8_t)  // type
       + sizeof(bool)             // outcome exists?
       + (ld.outcome == nullptr ? 0
@@ -188,7 +188,7 @@ void default_label(polylabel& v)
 
 bool test_label(polylabel& v)
 {
-  CCB::label& ld = v.conditional_contextual_bandit();
+  CCB::label& ld = v.ccb();
   return ld.outcome == nullptr;
 }
 
@@ -256,7 +256,7 @@ void parse_explicit_inclusions(CCB::label& ld, v_array<VW::string_view>& split_i
 
 void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>& words)
 {
-  CCB::label& ld = v.conditional_contextual_bandit();
+  CCB::label& ld = v.ccb();
   ld.weight = 1.0;
 
   if (words.size() < 2)

@@ -65,7 +65,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
   for (auto ex : examples)
   {
-    switch (ex->l.conditional_contextual_bandit().type)
+    switch (ex->l.ccb().type)
     {
       case example_type::shared:
         data.shared = ex;
@@ -82,7 +82,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
     }
 
     // Stash the CCB labels before rewriting them.
-    data.stored_labels.push_back(std::move(ex->l.conditional_contextual_bandit()));
+    data.stored_labels.push_back(std::move(ex->l.ccb()));
     // Since we have just moved out of the label we should reset to avoid using garbage memory.
     ex->l.reset();
   }
@@ -501,7 +501,7 @@ void print_update(vw& all, std::vector<example*>& slots, decision_scores_t& deci
     {
       counter++;
 
-      auto outcome = slot->l.conditional_contextual_bandit().outcome;
+      auto outcome = slot->l.ccb().outcome;
       if (outcome == nullptr)
       {
         label_str += delim;
@@ -568,7 +568,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   {
     num_features += ec->num_features;
 
-    if (ec->l.conditional_contextual_bandit().type == CCB::example_type::slot)
+    if (ec->l.ccb().type == CCB::example_type::slot)
     {
       slots.push_back(ec);
     }
@@ -579,7 +579,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   auto& preds = ec_seq[0]->pred.decision_scores();
   for (size_t i = 0; i < slots.size(); i++)
   {
-    auto outcome = slots[i]->l.conditional_contextual_bandit().outcome;
+    auto outcome = slots[i]->l.ccb().outcome;
     if (outcome != nullptr)
     {
       num_labelled++;
@@ -677,6 +677,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 bool ec_is_example_header(example const& ec)
 {
   return ec.l.get_type() == label_type_t::conditional_contextual_bandit &&
-      ec.l.conditional_contextual_bandit().type == example_type::shared;
+      ec.l.ccb().type == example_type::shared;
 }
 }  // namespace CCB
