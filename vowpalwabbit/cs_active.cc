@@ -269,7 +269,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           (query && lqd.is_range_overlapped && lqd.is_range_large));
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl.class_index, lqd.cl.x, prediction, score,
           lqd.cl.partial_prediction, query_label, lqd.query_needed);
-      // FIXME: I am unsure when this code runs? But multilabels seems wrong.
       if (lqd.query_needed)
         ec.pred.multilabels().label_v.push_back(lqd.cl.class_index);
       if (cs_a.print_debug_stuff)

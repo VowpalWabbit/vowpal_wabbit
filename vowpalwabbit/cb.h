@@ -20,7 +20,6 @@ struct cb_class
   bool operator==(cb_class j) { return action == j.action; }
 };
 
-
 struct label
 {
   v_array<cb_class> costs;

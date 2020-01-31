@@ -43,12 +43,10 @@ const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
 const size_t pACTION_SCORES = 2;
-// Deprecated
 const size_t pACTION_PROBS = 3;
 const size_t pMULTICLASS = 4;
 const size_t pMULTILABELS = 5;
 const size_t pPROB = 6;
-// Deprecated
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 
