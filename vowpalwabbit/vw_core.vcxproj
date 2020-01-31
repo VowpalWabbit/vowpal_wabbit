@@ -28,7 +28,7 @@
     <PlatformToolset>v141</PlatformToolset>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -44,7 +44,7 @@
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <LinkIncremental>true</LinkIncremental>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <LinkIncremental>false</LinkIncremental>

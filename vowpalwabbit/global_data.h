@@ -455,7 +455,9 @@ struct vw
   // This array is required to be value initialized so that the std::vectors are constructed.
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
-
+  
+  VW_DEPRECATED("Use the polyprediciton destructor")
+  void (*delete_prediction)(polyprediction&);
   bool audit;     // should I print lots of debugging information?
   bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?

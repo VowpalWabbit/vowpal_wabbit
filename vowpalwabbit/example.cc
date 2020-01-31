@@ -199,18 +199,21 @@ void free_flatten_example(flat_example* fec)
 
 namespace VW
 {
-example* alloc_examples(size_t, size_t count = 1)
+example* alloc_examples(size_t count = 1)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr)
     return nullptr;
   for (size_t i = 0; i < count; i++)
   {
-    ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
-    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+    new (&ec[i]) example();
   }
   return ec;
+}
+
+example* alloc_examples(size_t, size_t count)
+{
+  return alloc_examples(count);
 }
 
 VW_DEPRECATED("You can just use the example destructor when deallocating now")

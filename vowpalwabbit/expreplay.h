@@ -103,10 +103,6 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
   for (auto& ex : er->buf)
   {
     ex.interactions = &all.interactions;
-
-    // TODO: do this in example constructor
-    ex.in_use = true;
-    ex.ft_offset = 0;
   }
 
   er->filled.resize(er->N, false);

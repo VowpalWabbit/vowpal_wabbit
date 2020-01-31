@@ -154,7 +154,7 @@ size_t my_get_prediction_type(vw_ptr all)
 
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 { label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = VW::alloc_examples(0 /*unused*/, 1);
+  example* ec = VW::alloc_examples(1);
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   if (labelType == lCOST_SENSITIVE)

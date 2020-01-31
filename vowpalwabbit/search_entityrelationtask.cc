@@ -75,7 +75,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   }
   else
   {
-    example* ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
+    example* ldf_examples = VW::alloc_examples(10);
     CS::wclass default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < 10; a++)
     {

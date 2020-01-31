@@ -78,6 +78,6 @@ inline int score_comp(const void* p1, const void* p2)
 
 inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2, p1); }
 
-void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&);
+void print_action_score(int f, const v_array<action_score>& a_s, const v_array<char>&);
 
 }  // namespace ACTION_SCORE

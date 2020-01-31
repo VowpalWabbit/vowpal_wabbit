@@ -312,6 +312,11 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
+void delete_polyprediction(polyprediction& pred)
+{
+  pred.reset();
+}
+
 IGNORE_DEPRECATED_USAGE_START
 vw::vw()
 {
@@ -333,6 +338,7 @@ vw::vw()
   current_pass = 0;
 
   data_filename = "";
+  delete_prediction = &delete_polyprediction;
 
   bfgs = false;
   no_bias = false;

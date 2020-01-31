@@ -208,7 +208,7 @@ void parse_dictionary_argument(vw& all, std::string str)
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
+  example* ec = VW::alloc_examples(1);
 
   size_t def = (size_t)' ';
 

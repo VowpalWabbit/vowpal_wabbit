@@ -42,11 +42,12 @@ class ezexample
 
   example* get_new_example()
   {
-    example* new_ec = VW::new_unused_example(*vw_par_ref);
+    auto new_ec = VW::new_unused_example(*vw_par_ref);
     vw_par_ref->p->lp.default_label(new_ec->l);
     new_ec->tag.clear();
     new_ec->indices.clear();
-    for (auto& i : new_ec->feature_space) i.clear();
+    for (auto& i : new_ec->feature_space)
+      i.clear();
 
     new_ec->ft_offset = 0;
     new_ec->num_features = 0;
@@ -73,7 +74,8 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (bool& ns_exist : ns_exists) ns_exist = false;
+    for (bool& ns_exist : ns_exists)
+      ns_exist = false;
 
     example_changed_since_prediction = true;
   }
@@ -97,7 +99,7 @@ class ezexample
   ezexample(vw* this_vw, bool multiline = false, vw* this_vw_parser = nullptr)
   {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    example_copies = v_init<example*>();
+    example_copies.clear();
     ec = get_new_example();
     we_create_ec = true;
 
@@ -115,7 +117,8 @@ class ezexample
     ec = this_ec;
     we_create_ec = false;
 
-    for (auto ns : ec->indices) ns_exists[ns] = true;
+    for (auto ns : ec->indices)
+      ns_exists[ns] = true;
     if (current_ns != 0)
     {
       str[0] = current_ns;
@@ -131,7 +134,6 @@ class ezexample
       if (VW::is_ring_example(*vw_par_ref, ec))
         VW::finish_example(*vw_par_ref, *ecc);
     example_copies.clear();
-    free(example_copies.begin());
   }
 
   bool ensure_ns_exists(char c)  // returns TRUE iff we should ignore it :)
@@ -284,7 +286,7 @@ class ezexample
     else  // is multiline
     {     // we need to make a copy
       example* copy = get_new_example();
-      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
+      *copy = *ec;
       vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }

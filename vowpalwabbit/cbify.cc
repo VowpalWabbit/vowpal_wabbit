@@ -224,7 +224,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
   adf_data.ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
   {
-    adf_data.ecs[a] = VW::alloc_examples(0 /*unused*/, 1);
+    adf_data.ecs[a] = VW::alloc_examples(1);
     auto& lab = adf_data.ecs[a]->l.init_as_cb();
     CB::default_label(lab);
     adf_data.ecs[a]->pred.init_as_action_scores();

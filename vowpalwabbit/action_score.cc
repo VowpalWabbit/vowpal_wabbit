@@ -11,7 +11,7 @@
 
 namespace ACTION_SCORE
 {
-void print_action_score(int f, v_array<action_score>& a_s, v_array<char>& tag)
+void print_action_score(int f, const v_array<action_score>& a_s, const v_array<char>& tag)
 {
   if (f >= 0)
   {

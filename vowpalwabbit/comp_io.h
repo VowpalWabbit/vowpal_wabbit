@@ -20,6 +20,8 @@ class comp_io_buf : public io_buf
  public:
   std::vector<gzFile> gz_files;
 
+  ~comp_io_buf() override;
+
   int open_file(const char* name, bool stdin_off, int flag) override;
 
   void reset_file(int f) override;

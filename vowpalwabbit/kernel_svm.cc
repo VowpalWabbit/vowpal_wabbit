@@ -652,7 +652,6 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
         // for(int j = 0;j < fec->feature_map_len;j++)
         //   params.all->opts_n_args.trace_message<<fec->feature_map[j].weight_index<<":"<<fec->feature_map[j].x<<" ";
         // params.all->opts_n_args.trace_message<< endl;
-        // params.pool[i]->in_use = true;
         // params.current_t += ((label_data*) params.pool[i]->ld)->weight;
         // params.pool[i]->example_t = params.current_t;
       }
