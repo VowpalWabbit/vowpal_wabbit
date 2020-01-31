@@ -201,7 +201,7 @@ class TestVWClassifier:
         # dummy data in vw format
         X = pd.Series(['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat'], name='catdog')
 
-        kfold = KFold(n_splits=3, random_state=314, shuffle=False)
+        kfold = KFold(n_splits=3, random_state=314, shuffle=True)
         for train_idx, valid_idx in kfold.split(X):
             X_train = X[train_idx]
             # Classifier with multiple passes over the data
