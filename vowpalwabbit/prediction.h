@@ -1,5 +1,50 @@
 #pragma once
 
+/*
+When a new prediction type needs to be added the following actions must be taken:
+- PREDICTION_TYPE is the type that will be used
+- PREDICTION_NAME is the name to identify this label type
+Steps:
+  1. Add a new variant to prediction_type_t called PREDICTION_NAME
+  2. Add the corresponding row to to_string:
+    TO_STRING_CASE(prediction_type_t::PREDICTION_NAME)
+  3. Add the new type to the union:
+    PREDICTION_TYPE _PREDICTION_NAME;
+  3. Add the corresponding row to polyprediction::copy_from
+    case (prediction_type_t::PREDICTION_NAME):
+      init_as_PREDICTION_NAME(std::move(other._PREDICTION_NAME));
+      break;
+  4. Add the corresponding row to polyprediction::move_from
+    case (prediction_type_t::PREDICTION_NAME):
+      init_as_PREDICTION_NAME(std::move(other._PREDICTION_NAME));
+      break;
+  5. Add the corresponding row to polyprediction::reset
+    case (prediction_type_t::PREDICTION_NAME):
+        destruct(_PREDICTION_NAME);
+        break;
+  6. Add another three methods that correspond to the new type according to this template
+    template <typename... Args>
+    PREDICTION_TYPE& init_as_PREDICTION_NAME(Args&&... args)
+    {
+      ensure_is_type(prediction_type_t::unset);
+      new (&_PREDICTION_NAME) PREDICTION_TYPE(std::forward<Args>(args)...);
+      _tag = prediction_type_t::PREDICTION_NAME;
+      return _PREDICTION_NAME;
+    }
+
+    const PREDICTION_TYPE& PREDICTION_NAME() const
+    {
+      ensure_is_type(prediction_type_t::PREDICTION_NAME);
+      return _PREDICTION_NAME;
+    }
+
+    PREDICTION_TYPE& PREDICTION_NAME()
+    {
+      ensure_is_type(prediction_type_t::PREDICTION_NAME);
+      return _PREDICTION_NAME;
+    }
+*/
+
 enum class prediction_type_t : int
 {
   unset,

@@ -1,5 +1,50 @@
 #pragma once
 
+/*
+When a new label type needs to be added the following actions must be taken:
+- LABEL_TYPE is the type that will be used
+- LABEL_NAME is the name to identify this label type
+Steps:
+  1. Add a new variant to label_type_t called LABEL_NAME
+  2. Add the corresponding row to to_string:
+    TO_STRING_CASE(label_type_t::LABEL_NAME)
+  3. Add the new type to the union:
+    LABEL_TYPE _LABEL_NAME;
+  3. Add the corresponding row to polylabel::copy_from
+    case (label_type_t::LABEL_NAME):
+      init_as_LABEL_NAME(std::move(other._LABEL_NAME));
+      break;
+  4. Add the corresponding row to polylabel::move_from
+    case (label_type_t::LABEL_NAME):
+      init_as_LABEL_NAME(std::move(other._LABEL_NAME));
+      break;
+  5. Add the corresponding row to polylabel::reset
+    case (label_type_t::LABEL_NAME):
+        destruct(_LABEL_NAME);
+        break;
+  6. Add another three methods that correspond to the new type according to this template
+    template <typename... Args>
+    LABEL_TYPE& init_as_LABEL_NAME(Args&&... args)
+    {
+      ensure_is_type(label_type_t::unset);
+      new (&_LABEL_NAME) LABEL_TYPE(std::forward<Args>(args)...);
+      _tag = label_type_t::LABEL_NAME;
+      return _LABEL_NAME;
+    }
+
+    const LABEL_TYPE& LABEL_NAME() const
+    {
+      ensure_is_type(label_type_t::LABEL_NAME);
+      return _LABEL_NAME;
+    }
+
+    LABEL_TYPE& LABEL_NAME()
+    {
+      ensure_is_type(label_type_t::LABEL_NAME);
+      return _LABEL_NAME;
+    }
+*/
+
 #include "no_label.h"
 #include "simple_label.h"
 #include "multiclass.h"
