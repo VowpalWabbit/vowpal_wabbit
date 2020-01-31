@@ -72,6 +72,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
   const bool is_mtr = _gen_cs.cb_type == CB_TYPE_MTR;
+  swap_to_scores(examples[0]->pred);
   if (is_learn)
   {
     if (is_mtr)  // use DR estimates for non-ERM policies in MTR
@@ -85,6 +86,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
     GEN_CS::gen_cs_example_ips(examples, _cs_labels);
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
+  swap_to_probs(examples[0]->pred);
   auto& preds = examples[0]->pred.action_probs();
   const uint32_t num_actions = (uint32_t)preds.size();
 
