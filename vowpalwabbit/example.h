@@ -49,6 +49,7 @@ typedef union
   float prob;  // for --probabilities --csoaa_ldf=mc
 } polyprediction;
 
+IGNORE_DEPRECATED_USAGE_START
 struct example : public example_predict  // core example datatype.
 {
   // input fields
@@ -74,8 +75,11 @@ struct example : public example_predict  // core example datatype.
   bool test_only;
   bool end_pass;  // special example indicating end of pass.
   bool sorted;    // Are the features sorted or not?
-  bool in_use;    // in use or not (for the parser)
+  
+  VW_DEPRECATED("in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. Standalone examples are by definition always in use.")
+  bool in_use = true;
 };
+IGNORE_DEPRECATED_USAGE_END
 
 struct vw;
 

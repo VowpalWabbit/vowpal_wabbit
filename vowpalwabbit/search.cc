@@ -1534,7 +1534,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t is_local = 0; is_local <= (size_t)priv.xv; is_local++)
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
-      ec.in_use = true;
       cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
       as_singleline(priv.base_learner)->learn(ec, learner);
       cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
@@ -1578,7 +1577,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
           lab.costs.push_back(wc);
         }
         lab.costs[0].x = losses.cs.costs[a - start_K].x;
-        ec.in_use = true;
         // store the offset to restore it later
         ec.ft_offset = priv.offset;
         // create the example collection used to learn

@@ -265,8 +265,6 @@ void update_after_prediction_cb(ftrl& b, example& ec)
 template <bool audit>
 void learn_proximal(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // predict with confidence
   predict<audit>(a, base, ec);
 
@@ -276,8 +274,6 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
 
 void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
 
@@ -287,8 +283,6 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
 
 void learn_cb(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // update state based on the example and predict
   update_state_and_predict_cb(a, base, ec);
 

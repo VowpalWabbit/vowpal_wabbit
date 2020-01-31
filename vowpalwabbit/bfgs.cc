@@ -964,7 +964,6 @@ template <bool audit>
 void learn(bfgs& b, base_learner& base, example& ec)
 {
   vw* all = b.all;
-  assert(ec.in_use);
 
   if (b.current_pass <= b.final_pass)
   {
