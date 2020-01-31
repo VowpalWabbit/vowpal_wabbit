@@ -108,8 +108,6 @@ void update_stable(const svrg& s, example& ec)
 
 void learn(svrg& s, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   predict(s, base, ec);
 
   const int pass = (int)s.all->passes_complete;

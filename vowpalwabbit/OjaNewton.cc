@@ -460,8 +460,6 @@ void update_normalization(update_data& data, float x, float& wref)
 
 void learn(OjaNewton& ON, base_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // predict
   predict(ON, base, ec);
 

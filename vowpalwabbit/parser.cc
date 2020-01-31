@@ -665,7 +665,6 @@ example& get_unused_example(vw* all)
 {
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
-  ex->in_use = true;
   p->begin_parsed_examples++;
   return *ex;
 }
@@ -915,8 +914,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  assert(ec.in_use);
-  ec.in_use = false;
   all.p->example_pool.return_object(&ec);
 }
 
@@ -1000,7 +997,9 @@ example* example_initializer::operator()(example* ex)
 {
   new (&ex->l) polylabel();
   new (&ex->pred) polyprediction();
-  ex->in_use = false;
+IGNORE_DEPRECATED_USAGE_START
+  ex->in_use = true;
+IGNORE_DEPRECATED_USAGE_END
   ex->passthrough = nullptr;
   memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
   return ex;

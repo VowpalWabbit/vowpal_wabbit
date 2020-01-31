@@ -62,7 +62,6 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;
-  dst->in_use = src->in_use;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)
@@ -207,7 +206,6 @@ example* alloc_examples(size_t, size_t count = 1)
     return nullptr;
   for (size_t i = 0; i < count; i++)
   {
-    ec[i].in_use = true;
     ec[i].ft_offset = 0;
     //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
     //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
@@ -226,10 +224,8 @@ void clean_example(vw&, example&, bool rewind);
 
 void finish_example(vw& all, multi_ex& ec_seq)
 {
-  if (!ec_seq.empty())
-    for (example* ecc : ec_seq)
-      if (ecc->in_use)
-        VW::finish_example(all, *ecc);
+  for (example* ecc : ec_seq)
+    VW::finish_example(all, *ecc);
 }
 
 void return_multiple_example(vw& all, v_array<example*>& examples)
