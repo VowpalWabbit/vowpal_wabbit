@@ -117,7 +117,7 @@ void parse_simple_label(parser*, shared_data* sd, polylabel& v, v_array<VW::stri
 }
 
 label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
-    get_weight, test_label, sizeof(label_data)};
+    polylabel_delete_label, get_weight, polylabel_copy_label, test_label, sizeof(label_data)};
 
 void print_update(vw& all, example& ec)
 {

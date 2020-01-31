@@ -165,7 +165,8 @@ void parse_label(parser* p, shared_data* sd, polylabel& v, v_array<VW::string_vi
   CB::parse_label(p, sd, v.cb(), words);
 }
 
-label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(label)};
+label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label,polylabel_delete_label,
+  weight, polylabel_copy_label, test_label, sizeof(label)};
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
@@ -282,6 +283,5 @@ void parse_label(parser* p, shared_data* sd, polylabel& v, v_array<VW::string_vi
   words.begin()--;
 }
 
-label_parser cb_eval = {
-    default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(CB_EVAL::label)};
-}  // namespace CB_EVAL
+label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, polylabel_delete_label, weight, polylabel_copy_label,
+    test_label, sizeof(CB_EVAL::label)};}  // namespace CB_EVAL

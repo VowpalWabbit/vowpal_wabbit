@@ -276,6 +276,7 @@
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="label_dictionary.cc" />
+    <ClCompile Include="label_parser.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
     <ClCompile Include="log_multi.cc" />

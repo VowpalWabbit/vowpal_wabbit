@@ -101,7 +101,7 @@ void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>
   }
 }
 
-label_parser multilabel = {default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(labels)};
+label_parser multilabel = {default_label, parse_label, cache_label, read_cached_label, polylabel_delete_label, weight, polylabel_copy_label, test_label, sizeof(labels)};
 
 void print_update(vw& all, bool is_test, example& ec)
 {

@@ -54,8 +54,8 @@ void parse_no_label(parser*, shared_data*, polylabel&, v_array<VW::string_view>&
   }
 }
 
-label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label, read_cached_no_label,
-    get_weight, test_label, sizeof(nullptr)};
+label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label, read_cached_no_label, polylabel_delete_label,
+    get_weight, polylabel_copy_label, test_label, sizeof(nullptr)};
 
 void print_no_label_update(vw& all, example& ec)
 {

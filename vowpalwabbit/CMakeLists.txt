@@ -48,7 +48,7 @@ set(vw_all_sources
   ccb_label.cc classweight.cc comp_io.cc conditional_contextual_bandit.cc confidence.cc
   cost_sensitive.cc cs_active.cc csoaa.cc distributionally_robust.cc ect.cc example.cc explore_eval.cc ftrl.cc gd_mf.cc gd.cc
   gen_cs_example.cc global_data.cc interact.cc interactions.cc io_buf.cc kernel_svm.cc
-  label_dictionary.cc lda_core.cc learner.cc log_multi.cc loss_functions.cc lrq.cc lrqfa.cc
+  label_dictionary.cc label_parser.cc lda_core.cc learner.cc log_multi.cc loss_functions.cc lrq.cc lrqfa.cc
   marginal.cc memory_tree.cc mf.cc multiclass.cc multilabel_oaa.cc multilabel.cc mwt.cc network.cc
   nn.cc no_label.cc noop.cc oaa.cc OjaNewton.cc options_boost_po.cc options_serializer_boost_po.cc
   parse_args.cc parse_example.cc parse_primitives.cc parse_regressor.cc parser.cc print.cc rand48.cc

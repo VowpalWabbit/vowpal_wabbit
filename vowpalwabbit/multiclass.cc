@@ -93,7 +93,7 @@ void parse_label(parser*, shared_data* sd, polylabel& v, v_array<VW::string_view
         << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
 
-label_parser mc_label = {default_label, parse_label, cache_label, read_cached_label, weight, test_label, sizeof(label_t)};
+label_parser mc_label = {default_label, parse_label, cache_label, read_cached_label, polylabel_delete_label, weight, polylabel_copy_label, test_label, sizeof(label_t)};
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
