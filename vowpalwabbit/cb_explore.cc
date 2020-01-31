@@ -256,20 +256,20 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
 
   if ((c.known_cost = get_observed_cost(ld)) != nullptr)
-    for (uint32_t i = 0; i < ec.pred.action_scores().size(); i++)
-      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.action_scores()[i].score;
+    for (uint32_t i = 0; i < ec.pred.action_probs().size(); i++)
+      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.action_probs()[i].score;
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
   std::stringstream ss;
   float maxprob = 0.;
   uint32_t maxid = 0;
-  for (uint32_t i = 0; i < ec.pred.action_scores().size(); i++)
+  for (uint32_t i = 0; i < ec.pred.action_probs().size(); i++)
   {
-    ss << std::fixed << ec.pred.action_scores()[i].score << " ";
-    if (ec.pred.action_scores()[i].score > maxprob)
+    ss << std::fixed << ec.pred.action_probs()[i].score << " ";
+    if (ec.pred.action_probs()[i].score > maxprob)
     {
-      maxprob = ec.pred.action_scores()[i].score;
+      maxprob = ec.pred.action_probs()[i].score;
       maxid = i + 1;
     }
   }

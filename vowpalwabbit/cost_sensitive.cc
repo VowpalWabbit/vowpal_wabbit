@@ -92,6 +92,10 @@ void default_label(label& label) { label.costs.clear(); }
 
 void default_label(polylabel& v)
 {
+  if (v.get_type() != label_type_t::unset)
+  {
+    v.reset();
+  }
   auto& ld = v.init_as_cs();
   default_label(ld);
 }

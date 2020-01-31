@@ -97,7 +97,7 @@ void VowpalWabbitExample::Label::set(ILabel^ label)
 	label->UpdateExample(m_owner->Native->m_vw, m_example);
 
 	// we need to update the example weight as setup_example() can be called prior to this call.
-	m_example->weight = m_owner->Native->m_vw->p->lp.get_weight(&m_example->l);
+	m_example->weight = m_owner->Native->m_vw->p->lp.get_weight(m_example->l);
 }
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)
@@ -280,8 +280,8 @@ System::String^ VowpalWabbitExample::Diff(VowpalWabbit^ vw, VowpalWabbitExample^
 }
 
 String^ VowpalWabbitSimpleLabelComparator::Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2)
-{ auto s1 = ex1->m_example->l.simple;
-  auto s2 = ex2->m_example->l.simple;
+{ auto& s1 = ex1->m_example->l.simple();
+  auto& s2 = ex2->m_example->l.simple();
 
   if (!(FloatEqual(s1.initial, s2.initial) &&
         FloatEqual(s1.label, s2.label) &&
@@ -296,8 +296,8 @@ String^ VowpalWabbitSimpleLabelComparator::Diff(VowpalWabbitExample^ ex1, Vowpal
 }
 
 String^ VowpalWabbitContextualBanditLabelComparator::Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2)
-{ auto s1 = ex1->m_example->l.cb;
-  auto s2 = ex2->m_example->l.cb;
+{ auto& s1 = ex1->m_example->l.cb();
+  auto& s2 = ex2->m_example->l.cb();
 
   if (s1.costs.size() != s2.costs.size())
   { return System::String::Format("Cost size differ: {0} vs {1}", s1.costs.size(), s2.costs.size());

@@ -57,6 +57,10 @@ void cache_label(polylabel& v, io_buf& cache)
 
 void default_label(polylabel& v)
 {
+  if (v.get_type() != label_type_t::unset)
+  {
+    v.reset();
+  }
   auto& ld = v.init_as_multi();
   ld.label = (uint32_t)-1;
   ld.weight = 1.;
