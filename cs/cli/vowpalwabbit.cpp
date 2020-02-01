@@ -62,7 +62,7 @@ void VowpalWabbit::Driver()
 void VowpalWabbit::RunMultiPass()
 { if (m_vw->numpasses > 1)
   { try
-    { adjust_used_index(*m_vw);
+    {
       m_vw->do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
@@ -74,7 +74,7 @@ void VowpalWabbit::RunMultiPass()
 
 VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 { // see parse_args.cc:finish(...)
-  auto stats = gcnew VowpalWabbitPerformanceStatistics();
+   auto stats = gcnew VowpalWabbitPerformanceStatistics();
 
   if (m_vw->current_pass == 0)
   { stats->NumberOfExamplesPerPass = m_vw->sd->example_number;
@@ -307,7 +307,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			auto ex = GetOrCreateNativeExample();
 			state->examples->Add(ex);
 
-			v_array<example*> examples = v_init<example*>();
+			v_array<example*> examples;
 			example* native_example = ex->m_example;
 			examples.push_back(native_example);
 
@@ -325,9 +325,6 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 
 			// finalize example
 			VW::setup_examples(*m_vw, examples);
-
-			// delete native array of pointers, keep examples
-			examples.delete_v();
 
 			header->EventId = gcnew String(interaction.eventId.c_str());
 			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());

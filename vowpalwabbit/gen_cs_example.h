@@ -8,6 +8,7 @@
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw_exception.h"
+#include "util.h"
 
 namespace GEN_CS
 {
@@ -270,12 +271,14 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
     ec->ft_offset = offset;
   }
 
+  swap_to_scores(examples);
   // 2nd: predict for each ex
   // // call base.predict for all examples
   if (is_learn)
     base.learn(examples, (int32_t)id);
   else
     base.predict(examples, (int32_t)id);
+  swap_to_probs(examples);
 
   // 3rd: restore cb_label for each example
   // (**ec).l.cb() = array.element.

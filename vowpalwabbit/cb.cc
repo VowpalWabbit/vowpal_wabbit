@@ -205,10 +205,10 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     if (action_scores)
     {
       std::ostringstream pred_buf;
-      auto& action_scores = ec.pred.action_scores();
+      auto& action_scores = ec.pred.action_probs();
       pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ');
       if (!action_scores.empty())
-        pred_buf << ec.pred.action_scores()[0].action << ":" << action_scores[0].score << "...";
+        pred_buf << ec.pred.action_probs()[0].action << ":" << action_scores[0].score << "...";
       else
         pred_buf << "no action";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features,
@@ -256,6 +256,10 @@ void cache_label(polylabel& v, io_buf& cache)
 
 void default_label(polylabel& v)
 {
+  if (v.get_type() != label_type_t::unset)
+  {
+    v.reset();
+  }
   auto& ld = v.init_as_cb_eval();
   CB::default_label(ld.event);
   ld.action = 0;

@@ -137,20 +137,20 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   ec.l.reset();
   ec.l.init_as_cb(data.cb_label);
   ec.pred.reset();
-  ec.pred.init_as_action_scores(std::move(data.a_s));
+  ec.pred.init_as_action_probs(std::move(data.a_s));
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
   // data.probs = ec.pred.scalars();
 
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(ec.pred.action_scores()),
-          end_scores(ec.pred.action_scores()), chosen_action))
+  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(ec.pred.action_probs()),
+          end_scores(ec.pred.action_probs()), chosen_action))
     THROW("Failed to sample from pdf");
 
   CB::cb_class cl;
   cl.action = chosen_action + 1;
-  cl.probability = ec.pred.action_scores()[chosen_action].score;
+  cl.probability = ec.pred.action_probs()[chosen_action].score;
 
   if (!cl.action)
     THROW("No action with non-zero probability found!");
@@ -167,7 +167,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
     base.learn(ec);
 
   data.a_s.clear();
-  data.a_s = std::move(ec.pred.action_scores());
+  data.a_s = std::move(ec.pred.action_probs());
 
   ec.l.reset();
   if (use_cs)
@@ -189,13 +189,13 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   auto& out_ec = *data.adf_data.ecs[0];
 
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_scores()),
-          end_scores(out_ec.pred.action_scores()), chosen_action))
+  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_probs()),
+          end_scores(out_ec.pred.action_probs()), chosen_action))
     THROW("Failed to sample from pdf");
 
   CB::cb_class cl;
-  cl.action = out_ec.pred.action_scores()[chosen_action].action + 1;
-  cl.probability = out_ec.pred.action_scores()[chosen_action].score;
+  cl.action = out_ec.pred.action_probs()[chosen_action].action + 1;
+  cl.probability = out_ec.pred.action_probs()[chosen_action].score;
 
   if (!cl.action)
     THROW("No action with non-zero probability found!");
@@ -227,7 +227,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
     adf_data.ecs[a] = VW::alloc_examples(1);
     auto& lab = adf_data.ecs[a]->l.init_as_cb();
     CB::default_label(lab);
-    adf_data.ecs[a]->pred.init_as_action_scores();
+    adf_data.ecs[a]->pred.init_as_action_probs();
     adf_data.ecs[a]->interactions = &data.all->interactions;
   }
 }
@@ -251,7 +251,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     ec.l.reset();
     ec.l.init_as_cb(std::move(data.cb_labels[i]));
     ec.pred.reset();
-    ec.pred.init_as_action_scores(std::move(data.cb_as[i]));
+    ec.pred.init_as_action_probs(std::move(data.cb_as[i]));
   }
 
   base.predict(ec_seq);
@@ -259,12 +259,12 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   auto& out_ec = *ec_seq[0];
 
   uint32_t chosen_action_index;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_scores()),
-          end_scores(out_ec.pred.action_scores()), chosen_action_index))
+  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_probs()),
+          end_scores(out_ec.pred.action_probs()), chosen_action_index))
     THROW("Failed to sample from pdf");
 
-  const auto chosen_action_zero_based = out_ec.pred.action_scores()[chosen_action_index].action;
-  const auto chosen_action_score = out_ec.pred.action_scores()[chosen_action_index].score;
+  const auto chosen_action_zero_based = out_ec.pred.action_probs()[chosen_action_index].action;
+  const auto chosen_action_score = out_ec.pred.action_probs()[chosen_action_index].score;
   const auto chosen_action_one_based = chosen_action_zero_based + 1;
 
   CB::cb_class cl;
@@ -290,7 +290,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     ec.l.init_as_cs(std::move(data.cs_labels[i]));
 
     // store action_score vector for later reuse, then set the output prediction.
-    data.cb_as[i] = std::move(ec.pred.action_scores());
+    data.cb_as[i] = std::move(ec.pred.action_probs());
     ec.pred.reset();
     ec.pred.init_as_multiclass() = (i == cl.action - 1) ? cl.action : 0;
   }

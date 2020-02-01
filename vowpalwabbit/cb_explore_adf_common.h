@@ -20,20 +20,25 @@
 #include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "reductions_fwd.h"
 
-inline void swap_to_scores(polyprediction& prediction)
-{
-  auto probs = std::move(prediction.action_probs());
-  prediction.reset();
-  prediction.init_as_action_scores(std::move(probs));
-}
+// inline void // swap_to_scores(multi_ex& examples)
+// {
+//   for(auto& ex : examples)
+//   {
+//     auto probs = std::move(ex->pred.action_probs());
+//     ex->pred.reset();
+//     ex->pred.init_as_action_scores(std::move(probs));
+//   }
+// }
 
-inline void swap_to_probs(polyprediction& prediction)
-{
-  auto scores = std::move(prediction.action_scores());
-  prediction.reset();
-  prediction.init_as_action_probs(std::move(scores));
-}
-
+// inline void // swap_to_probs(multi_ex& examples)
+// {
+//   for(auto& ex : examples)
+//   {
+//     auto scores = std::move(ex->pred.action_scores());
+//     ex->pred.reset();
+//     ex->pred.init_as_action_probs(std::move(scores));
+//   }
+// }
 
 namespace VW
 {

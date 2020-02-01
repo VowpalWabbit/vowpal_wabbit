@@ -79,13 +79,11 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
     // for greedify, always update first policy once
     uint32_t count = is_learn ? ((_greedify && i == 0) ? 1 : BS::weight_gen(_random_state)) : 0;
 
-    swap_to_scores(examples[0]->pred);
     if (is_learn && count > 0)
       LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
     else
       LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
-    swap_to_probs(examples[0]->pred);
-    preds = examples[0]->pred.action_probs();
+    auto& preds = examples[0]->pred.action_probs();
     assert(preds.size() == num_actions);
     for (auto e : preds) _scores[e.action] += e.score;
 

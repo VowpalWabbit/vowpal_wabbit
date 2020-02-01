@@ -131,10 +131,10 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   _a_s.clear();
   _prob_s.clear();
   // TODO: Check that predicted scores are always stored with the first example
-  for (uint32_t i = 0; i < examples[0]->pred.action_scores().size(); i++)
+  for (uint32_t i = 0; i < examples[0]->pred.action_probs().size(); i++)
   {
-    _a_s.push_back({examples[0]->pred.action_scores()[i].action, examples[0]->pred.action_scores()[i].score});
-    _prob_s.push_back({examples[0]->pred.action_scores()[i].action, 0.0});
+    _a_s.push_back({examples[0]->pred.action_probs()[i].action, examples[0]->pred.action_probs()[i].score});
+    _prob_s.push_back({examples[0]->pred.action_probs()[i].action, 0.0});
   }
 
   float sign_offset = 1.0;  // To account for negative rewards/costs
@@ -226,7 +226,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   {
     gen_cs_example_ips(examples, _cs_labels);
     call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
-    std::swap(examples[0]->pred.action_scores(), _a_s);
+    std::swap(examples[0]->pred.action_probs(), _a_s);
   }
   // second train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
@@ -237,13 +237,13 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb().costs[0].probability, _clip_p);
   examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
 
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.action_scores(), _a_s_mtr_cs);
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.action_probs(), _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
   GEN_CS::call_cs_ldf<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.action_scores(), _a_s_mtr_cs);
-  std::swap(examples[0]->pred.action_scores(), _a_s);
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.action_probs(), _a_s_mtr_cs);
+  std::swap(examples[0]->pred.action_probs(), _a_s);
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
@@ -340,7 +340,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
 {
   size_t num_features = 0;
 
-  uint32_t action = ec.pred.action_scores()[0].action;
+  uint32_t action = ec.pred.action_probs()[0].action;
   for (const auto& example : *ec_seq) num_features += example->num_features;
 
   float loss = 0.;
@@ -365,7 +365,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  uint32_t action = ec.pred.action_scores()[0].action;
+  uint32_t action = ec.pred.action_probs()[0].action;
   for (int sink : all.final_prediction_sink) all.print_by_ref(sink, (float)action, 0, ec.tag);
 
   if (all.raw_prediction > 0)
@@ -395,7 +395,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.action_scores(), ec.tag);
+  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.action_probs(), ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -552,7 +552,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l =
-      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores);
+      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_probs);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

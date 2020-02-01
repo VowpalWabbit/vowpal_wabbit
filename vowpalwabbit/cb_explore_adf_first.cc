@@ -46,13 +46,13 @@ cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon) : _tau(tau
 template <bool is_learn>
 void cb_explore_adf_first::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
-  swap_to_scores(examples[0]->pred);
+  // swap_to_scores(examples);
   // Explore tau times, then act according to optimal.
   if (is_learn)
     LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
   else
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
-  swap_to_probs(examples[0]->pred);
+  // swap_to_probs(examples);
   auto& preds = examples[0]->pred.action_probs();
   uint32_t num_actions = (uint32_t)preds.size();
 

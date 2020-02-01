@@ -48,10 +48,10 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 template <bool is_learn>
 void cb_explore_adf_greedy::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
-  swap_to_scores(examples[0]->pred);
+  // swap_to_scores(examples);
   // Explore uniform random an epsilon fraction of the time.
   LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
-  swap_to_probs(examples[0]->pred);
+  // swap_to_probs(examples);
   auto& preds = examples[0]->pred.action_probs();
 
   uint32_t num_actions = (uint32_t)preds.size();

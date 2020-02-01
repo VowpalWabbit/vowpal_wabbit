@@ -11,6 +11,7 @@
 #include "hash.h"
 #include "explore.h"
 #include "vw_exception.h"
+#include "util.h"
 
 #include <vector>
 #include <memory>
@@ -154,10 +155,10 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     auto& eca = *data.ecs[a];
     // clear label
     CB::default_label(eca.l.cb());
-    if (eca.pred.get_type() != prediction_type_t::action_scores)
+    if (eca.pred.get_type() != prediction_type_t::action_probs)
     {
       eca.pred.reset();
-      eca.pred.init_as_action_scores();
+      eca.pred.init_as_action_probs();
     }
 
     // copy data
@@ -290,7 +291,7 @@ uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, example& ec,
 {
   copy_example_to_adf(data, ec);
   base.predict(data.ecs, i);
-  return data.ecs[0]->pred.action_scores()[0].action + 1;
+  return data.ecs[0]->pred.action_probs()[0].action + 1;
 }
 
 void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
@@ -347,6 +348,8 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
   std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
+  swap_to_scores(data.ecs);
+
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
@@ -354,6 +357,8 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
     multi_learner* cs_learner = as_multiline(data.all->cost_sensitive);
     cs_learner->learn(data.ecs, i);
   }
+
+  swap_to_probs(data.ecs);
 
   for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 
@@ -385,12 +390,12 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
 
   auto& out_ec = *data.ecs[0];
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_scores()),
-          end_scores(out_ec.pred.action_scores()), chosen_action))
+  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.action_probs()),
+          end_scores(out_ec.pred.action_probs()), chosen_action))
     THROW("Failed to sample from pdf");
 
   auto& a_s = data.a_s_adf;
-  copy_array<action_score>(a_s, out_ec.pred.action_scores());
+  copy_array<action_score>(a_s, out_ec.pred.action_probs());
 
   return chosen_action;
 }
