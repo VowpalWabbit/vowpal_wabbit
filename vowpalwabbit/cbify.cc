@@ -40,6 +40,7 @@ struct cbify_reg
   int loss_report;
   float loss_01_ratio;
   continuous_label cb_cont_label;
+  float max_cost = std::numeric_limits<float>::lowest();
 };
 
 struct cbify
@@ -105,8 +106,11 @@ inline void delete_it(T* p)
     delete p;
 }
 
-void finish_cbify_reg(cbify_reg& data)
+void finish_cbify_reg(cbify_reg& data, ostream* trace_stream)
 {
+  if (trace_stream != nullptr)
+    (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
+
   data.cb_cont_label.costs.delete_v();  // todo: instead of above
   data.prob_dist.delete_v();
 }
@@ -115,7 +119,7 @@ void finish(cbify& data)
 {
   CB::cb_label.delete_label(&data.cb_label);
   data.a_s.delete_v();
-  finish_cbify_reg(data.regression_data);
+  finish_cbify_reg(data.regression_data, &data.all->trace_message);
 
   if (data.use_adf)
   {
@@ -608,6 +612,11 @@ void output_example_regression(vw& all, cbify& data, example& ec)
   // ec contains a simple label type
   label_data& ld = ec.l.simple;
   const auto& cb_cont_costs = data.regression_data.cb_cont_label.costs;
+
+  // Track the max cost and report it at the end
+  if (cb_cont_costs[0].cost > data.regression_data.max_cost)
+    data.regression_data.max_cost = cb_cont_costs[0].cost;
+
   if (cb_cont_costs.size() > 0)
     all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
 

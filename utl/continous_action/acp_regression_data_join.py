@@ -1,7 +1,7 @@
 import sys
 import getopt
 
-class PredictDataJoiner:
+class PredictDataJoiner_acp:
 
   def join(self, data_file_name, predict_file_name):
 
@@ -30,5 +30,5 @@ if __name__ == "__main__":
       data_file = arg
 
   # Print join lines to stdout
-  fileJoiner = PredictDataJoiner()
+  fileJoiner = PredictDataJoiner_acp()
   fileJoiner.join(data_file, predict_file)
