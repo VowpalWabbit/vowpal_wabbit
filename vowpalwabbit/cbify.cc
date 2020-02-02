@@ -1,4 +1,4 @@
-#include <float.h>
+﻿#include <float.h>
 #include <vector>
 #include "reductions.h"
 #include "cb_algs.h"
@@ -597,6 +597,11 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
   // ec contains a simple label type
   label_data& ld = ec.l.simple;
   const auto& cb_costs = data.cb_label.costs;
+
+  // Track the max cost and report it at the end
+  if (cb_costs[0].cost > data.regression_data.max_cost)
+    data.regression_data.max_cost = cb_costs[0].cost;
+
   if (cb_costs.size() > 0)
     all.sd->update(ec.test_only, cb_costs[0].action != FLT_MAX, cb_costs[0].cost, ec.weight, ec.num_features);
 
