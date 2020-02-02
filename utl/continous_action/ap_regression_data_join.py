@@ -2,7 +2,7 @@ import sys
 import getopt
 import math
 
-class PredictDataJoiner:
+class PredictDataJoiner_ap:
 
   def __init__(self, data_file_name, predict_file_name, min_val, max_val, zero_one_width):
     self.data_file_name = data_file_name
@@ -88,5 +88,5 @@ if __name__ == "__main__":
 
 
   # Print join lines to stdout
-  fileJoiner = PredictDataJoiner(data_file, predict_file, min_val, max_val, zero_one_width)
+  fileJoiner = PredictDataJoiner_ap(data_file, predict_file, min_val, max_val, zero_one_width)
   fileJoiner.join()
