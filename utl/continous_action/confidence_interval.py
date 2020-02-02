@@ -36,15 +36,14 @@ if __name__ == "__main__":
   print("Returns: ", ConfidenceInterval.calculate(N,avg_loss,max_weighted_cost,alpha))
 
 """
-var success_count = num / max_weighted_cost;
-var n = N / max_weighted_cost;
-return {l: jStat.beta.inv(alpha/2, success_count, n - success_count + 1),
- u: jStat.beta.inv(1 - alpha/2, success_count + 1, n - success_count)};
+  Example:  python confidence_interval.py -N 999999 -l 0.044278 --max_weighted_cost=0.796388 --alpha=0.05
 
-where:
-
-N = total number of data
-num =  (avg. loss)*N = summation of all loss
-max_weighted_cost  =  max abs of loss
-alpha = 0.05
+  VW Output:
+  number of examples = 999999
+  weighted example sum = 999999.000000
+  weighted label sum = 12765158078.839020
+  average loss = 0.044278
+  best constant = 12765.170898
+  total feature number = 15999984
+  Max Cost=0.796388
 """
