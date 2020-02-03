@@ -58,11 +58,12 @@ class PredictDataJoiner_ap:
 
   def get_regression_val(self, data_line):
     separator_position = data_line.find('|')
-    return float(data_line[:separator_position - 1])
+    return float(data_line[:separator_position])
 
   def get_action(self, pred_line):
     separator_position = pred_line.find(':')
-    return float(pred_line[:separator_position - 1 ])
+    #print(pred_line[:separator_position - 1 ])
+    return float(pred_line[:separator_position])
 
 if __name__ == "__main__":
   predict_file = "predict.txt"
