@@ -74,7 +74,7 @@ void VowpalWabbit::RunMultiPass()
 
 VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 { // see parse_args.cc:finish(...)
-   auto stats = gcnew VowpalWabbitPerformanceStatistics();
+  auto stats = gcnew VowpalWabbitPerformanceStatistics();
 
   if (m_vw->current_pass == 0)
   { stats->NumberOfExamplesPerPass = m_vw->sd->example_number;

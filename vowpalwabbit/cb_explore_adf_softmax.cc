@@ -44,9 +44,7 @@ cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda) : _e
 template <bool is_learn>
 void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
-  // swap_to_scores(examples);
   LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
-  // swap_to_probs(examples);
   auto& preds = examples[0]->pred.action_probs();
   exploration::generate_softmax(
       -_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));

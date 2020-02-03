@@ -169,7 +169,6 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
 template <bool is_learn>
 void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
 {
-  // swap_to_scores(examples);
   if (is_learn)
   {
     for (size_t i = 0; i < examples.size() - 1; ++i)
@@ -184,7 +183,6 @@ void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, m
   }
   else
     LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
-  // swap_to_probs(examples);
   auto& preds = examples[0]->pred.action_probs();
   uint32_t num_actions = (uint32_t)preds.size();
 

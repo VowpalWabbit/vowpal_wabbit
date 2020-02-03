@@ -453,4 +453,20 @@ struct polyprediction
     ensure_is_type(prediction_type_t::multiclassprobs);
     return _multiclassprobs;
   }
+
+  // TODO: make this more generic through traits and type comparisons.
+  void reinterpret(prediction_type_t type)
+  {
+    // Currently the only valid reinterpret is between action scores and probs, or itself.
+    if((type == prediction_type_t::action_probs && _tag == prediction_type_t::action_scores)
+      || (type == prediction_type_t::action_scores && _tag == prediction_type_t::action_probs)
+      || type == _tag) 
+    {
+      _tag = type;
+    }
+    else
+    {
+      THROW("Illegal reinterpret. Tried to reinterpret as " << to_string(type) << ", but contains: " << to_string(_tag));
+    }
+  }
 };
