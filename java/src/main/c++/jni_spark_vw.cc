@@ -265,7 +265,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
       VW::read_line(*all, ex, &empty);
     }
     else
-      all->p->lp.default_label(&ex->l);
+      all->p->lp.default_label(ex->l);
 
     return (jlong) new VowpalWabbitExampleWrapper(all, ex);
   }
@@ -297,7 +297,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   try
   {
     VW::empty_example(*all, *ex);
-    all->p->lp.default_label(&ex->l);
+    all->p->lp.default_label(ex->l);
   }
   catch (...)
   {
