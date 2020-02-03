@@ -22,11 +22,11 @@ public class VWScalarsLearnerTest extends VWTestHelper {
     @Test
     public void probs() throws IOException {
         String[] data = new String[]{
-                "1 | a",
-                "2 | a b",
-                "3 | c d e",
-                "2 | b a",
-                "1 | f g"
+                "| a",
+                "| a b",
+                "| c d e",
+                "| b a",
+                "| f g"
         };
 
         VWScalarsLearner vw = VWLearners.create("--quiet --oaa 3 --loss_function=logistic --probabilities");
@@ -50,8 +50,8 @@ public class VWScalarsLearnerTest extends VWTestHelper {
 
     @Before
     public void setupFiles() throws IOException {
-        model = temporaryFolder.newFile().getAbsolutePath();
-        readableModel = temporaryFolder.newFile().getAbsolutePath();
+        model = "test_java.model";
+        readableModel = "test_java.readablemodel";
     }
 
     private static Map<String, Integer> createDictionaryFromDocuments(String[] documents) {
@@ -107,14 +107,18 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         return sb.toString().trim();
     }
 
-    @Test
-    public void testLDALearnerPredict() throws IOException {
-        writeVwModelToDisk();
-        VWScalarsLearner v = rehydrateModel();
-        float[] vector = v.predict(convertQuery("| wondering we look since"));
-        assertNotNull(vector);
-        assertEquals(3, vector.length);
-    }
+    // LDA is unsafe to use from library mode right now due to the fact that it returns examples in its learn/predict function.
+    // As a part of issue #2245, (https://github.com/VowpalWabbit/vowpal_wabbit/issues/2245), this test should be turned back on.
+    // @Test
+    // public void testLDALearnerPredict() throws IOException {
+    //     writeVwModelToDisk();
+    //     VWScalarsLearner v = rehydrateModel();
+    //     String q = convertQuery("| wondering we look since");
+    //     assertEquals(q, "dfdf");
+    //     float[] vector = v.predict(q);
+    //     assertNotNull(vector);
+    //     assertEquals(3, vector.length);
+    // }
 
     private void writeVwModelToDisk() throws IOException {
         final VWScalarsLearner vwModel =  VWLearners.create(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
