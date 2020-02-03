@@ -84,9 +84,9 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
-VW_DEPRECATED("Do not need to specify label size")
+VW_DEPRECATED("Do not need to specify label size, use new instead")
 example* alloc_examples(size_t, size_t);
-
+VW_DEPRECATED("Use new instead")
 example* alloc_examples(size_t);
 
 VW_DEPRECATED("Examples can simply be deleted now.")
