@@ -9,7 +9,7 @@
 // Comp io needs to override this as the default destructor checks for stdin by file descriptor and the file descriptor that is used by zlib collides.
 comp_io_buf::~comp_io_buf() 
 {
-  close_files();
+   while (comp_io_buf::close_file());
 }
 
 int comp_io_buf::open_file(const char* name, bool stdin_off, int flag)

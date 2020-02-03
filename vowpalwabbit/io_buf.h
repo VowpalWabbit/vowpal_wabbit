@@ -84,7 +84,10 @@ class io_buf
 
     while (!files.empty() && files.last() == f)
       files.pop();
-    close_files();
+
+    // Calling a virtual function in a constructor or destructor will actually result
+    // in calling this classes implementation. Make it explicit so it is less confusing.
+    while (io_buf::close_file());
   }
 
   void verify_hash(bool verify)
@@ -220,12 +223,6 @@ class io_buf
   virtual bool compressed() { return false; }
 
   static void close_file_or_socket(int f);
-
-  void close_files()
-  {
-    while (close_file())
-      ;
-  }
 
   static bool is_socket(int f);
 

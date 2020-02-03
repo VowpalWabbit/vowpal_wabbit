@@ -205,10 +205,10 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     if (action_scores)
     {
       std::ostringstream pred_buf;
-      auto& action_scores = ec.pred.action_probs();
+      const auto& a_s = ec.pred.action_probs();
       pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ');
-      if (!action_scores.empty())
-        pred_buf << ec.pred.action_probs()[0].action << ":" << action_scores[0].score << "...";
+      if (!a_s.empty())
+        pred_buf << ec.pred.action_probs()[0].action << ":" << a_s[0].score << "...";
       else
         pred_buf << "no action";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features,
