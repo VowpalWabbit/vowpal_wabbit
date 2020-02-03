@@ -22,11 +22,11 @@ public class VWScalarsLearnerTest extends VWTestHelper {
     @Test
     public void probs() throws IOException {
         String[] data = new String[]{
-                "| a",
-                "| a b",
-                "| c d e",
-                "| b a",
-                "| f g"
+                "1 | a",
+                "2 | a b",
+                "3 | c d e",
+                "2 | b a",
+                "1 | f g"
         };
 
         VWScalarsLearner vw = VWLearners.create("--quiet --oaa 3 --loss_function=logistic --probabilities");
@@ -50,8 +50,8 @@ public class VWScalarsLearnerTest extends VWTestHelper {
 
     @Before
     public void setupFiles() throws IOException {
-        model = "test_java.model";
-        readableModel = "test_java.readablemodel";
+        model = temporaryFolder.newFile().getAbsolutePath();
+        readableModel = temporaryFolder.newFile().getAbsolutePath();
     }
 
     private static Map<String, Integer> createDictionaryFromDocuments(String[] documents) {
