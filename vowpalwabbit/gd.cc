@@ -710,7 +710,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   {
     std::stringstream msg;
 
-    for (auto& it = weights.begin(); it != weights.end(); ++it)
+    for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
       if (*it != 0.f)
