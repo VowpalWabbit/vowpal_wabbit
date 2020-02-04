@@ -1,4 +1,4 @@
-#include "vw.h"
+﻿#include "vw.h"
 #include "v_array.h"
 #include "prob_dist_cont.h"
 #include "io_buf.h"
@@ -49,6 +49,9 @@ float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
       end = mid;
     }
   }
+  // temporary fix for now
+  if (begin == (int)prob_dist.size() - 1 && prob_dist[begin].value == 0)
+    return prob_dist[begin - 1].value;
   return prob_dist[begin].value;
 }
 
