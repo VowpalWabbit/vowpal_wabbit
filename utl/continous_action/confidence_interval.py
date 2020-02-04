@@ -14,9 +14,10 @@ class ConfidenceInterval:
     sum_loss = avg_loss * N
     success_count = sum_loss / max_weighted_cost
     n = N / max_weighted_cost
-    lower = beta.ppf(alpha/2, success_count, n - success_count + 1)
-    upper = beta.ppf(1 - alpha/2, success_count + 1, n - success_count)
-    return lower,upper
+#     lower = beta.ppf(alpha/2, success_count, n - success_count + 1)
+#     upper = beta.ppf(1 - alpha/2, success_count + 1, n - success_count)
+#     return lower,upper
+    return beta(success_count + 1, n - success_count + 1).interval(1-alpha) #simpler than above
 
 if __name__ == "__main__":
   # Parse options - get predict and data file names
