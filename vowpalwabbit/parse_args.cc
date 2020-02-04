@@ -2,11 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <stdio.h>
-#include <float.h>
+#include <cstdio>
+#include <cfloat>
 #include <sstream>
 #include <fstream>
-//#include <boost/filesystem.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
@@ -31,6 +30,7 @@
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "cb_dro.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_bag.h"
 #include "cb_explore_adf_cover.h"
@@ -90,7 +90,6 @@
 using std::cerr;
 using std::cout;
 using std::endl;
-
 using namespace VW::config;
 
 //
@@ -162,11 +161,11 @@ void parse_dictionary_argument(vw& all, std::string str)
   // in the case of just 'foo.txt' it's applied to the default namespace
 
   char ns = ' ';
-  const char* s = str.c_str();
+  VW::string_view s(str);
   if ((str.length() > 2) && (str[1] == ':'))
   {
     ns = str[0];
-    s += 2;
+    s.remove_prefix(2);
   }
 
   std::string fname = find_in_path(all.dictionary_path, std::string(s));
@@ -205,8 +204,10 @@ void parse_dictionary_argument(vw& all, std::string str)
                                                          << ", opening failed");
   }
 
-  feature_dict* map = &calloc_or_throw<feature_dict>();
-  map->init(1023, nullptr, substring_equal);
+  std::shared_ptr<feature_dict> map = std::make_shared<feature_dict>();
+  // mimicing old v_hashmap behavior for load factor.
+  // A smaller factor will generally use more memory but have faster access
+  map->max_load_factor(0.25);
   example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
@@ -229,9 +230,8 @@ void parse_dictionary_argument(vw& all, std::string str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          free(ec);
           VW::dealloc_example(all.p->lp.delete_label, *ec);
-          delete map;
+          free(ec);
           io->close_file();
           delete io;
           THROW("error: memory allocation failed in reading dictionary");
@@ -251,13 +251,9 @@ void parse_dictionary_argument(vw& all, std::string str)
       continue;  // no word
     if (*d != ' ' && *d != '\t')
       continue;  // reached end of line
-    char* word = calloc_or_throw<char>(d - c);
-    memcpy(word, c, d - c);
-    substring ss = {word, word + (d - c)};
-    uint64_t hash = uniform_hash(ss.begin, ss.end - ss.begin, quadratic_constant);
-    if (map->get(ss, hash) != nullptr)  // don't overwrite old values!
+    std::string word(c, d - c);
+    if (map->find(word) != map->end())  // don't overwrite old values!
     {
-      free(word);
       continue;
     }
     d--;
@@ -266,12 +262,11 @@ void parse_dictionary_argument(vw& all, std::string str)
     // now we just need to grab stuff from the default namespace of ec!
     if (ec->feature_space[def].size() == 0)
     {
-      free(word);
       continue;
     }
-    features* arr = new features;
+    std::unique_ptr<features> arr(new features);
     arr->deep_copy_from(ec->feature_space[def]);
-    map->put(ss, hash, arr);
+    map->emplace(word, std::move(arr));
 
     // clear up ec
     ec->tag.clear();
@@ -292,8 +287,7 @@ void parse_dictionary_argument(vw& all, std::string str)
                       << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = {calloc_or_throw<char>(strlen(s) + 1), fd_hash, map};
-  strcpy(info.name, s);
+  dictionary_info info = {s.to_string(), fd_hash, map};
   all.loaded_dictionaries.push_back(info);
 }
 
@@ -376,7 +370,7 @@ void parse_diagnostics(options_i& options, vw& all)
   // Upon direct query for version -- spit it out to stdout
   if (version_arg)
   {
-    cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
+    std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
     exit(0);
   }
 
@@ -502,6 +496,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.p->hasher != vw2.p->hasher)
     return "hasher";
 
+
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
     return "spelling_features";
 
@@ -582,7 +577,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
       else
       {
-        cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+        std::cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
         res.push_back(arg[pos++]);
       }
     }
@@ -747,11 +742,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (!all.quiet)
       all.trace_message << "creating quadratic features for pairs: ";
 
-    for (std::vector<std::string>::iterator i = quadratics.begin(); i != quadratics.end(); ++i)
+    for (auto& i : quadratics)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
+      i = spoof_hex_encoded_namespaces(i);
       if (!all.quiet)
-        all.trace_message << *i << " ";
+        all.trace_message << i << " ";
     }
 
     expanded_interactions =
@@ -765,7 +760,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     if (!all.quiet)
       all.trace_message << "creating cubic features for triples: ";
-    for (std::vector<std::string>::iterator i = cubics.begin(); i != cubics.end(); ++i)
+    for (auto i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
@@ -784,7 +779,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     if (!all.quiet)
       all.trace_message << "creating features for following interactions: ";
-    for (std::vector<std::string>::iterator i = interactions.begin(); i != interactions.end(); ++i)
+    for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
@@ -823,7 +818,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     all.interactions = expanded_interactions;
 
     // copy interactions of size 2 and 3 to old vectors for backward compatibility
-    for (auto& i : expanded_interactions)
+    for (const auto& i : expanded_interactions)
     {
       const size_t len = i.size();
       if (len == 2)
@@ -845,10 +840,10 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some = true;
 
-    for (std::vector<std::string>::iterator i = ignores.begin(); i != ignores.end(); i++)
+    for (auto & i : ignores)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      for (std::string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = true;
+      i = spoof_hex_encoded_namespaces(i);
+      for (auto j : i) all.ignore[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.quiet)
@@ -865,11 +860,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some_linear = true;
 
-    for (std::vector<std::string>::iterator i = ignore_linears.begin(); i != ignore_linears.end(); i++)
+    for (auto & i : ignore_linears)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      for (std::string::const_iterator j = i->begin(); j != i->end(); j++)
-        all.ignore_linear[(size_t)(unsigned char)*j] = true;
+      i = spoof_hex_encoded_namespaces(i);
+      for (auto j : i)
+        all.ignore_linear[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.quiet)
@@ -888,11 +883,10 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     all.ignore_some = true;
 
-    for (std::vector<std::string>::iterator i = keeps.begin(); i != keeps.end(); i++)
+    for (auto & i : keeps)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      for (std::string::const_iterator j = i->begin(); j != i->end(); j++)
-        all.ignore[(size_t)(unsigned char)*j] = false;
+      i = spoof_hex_encoded_namespaces(i);
+      for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
     }
 
     if (!all.quiet)
@@ -916,9 +910,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
 
-    for (std::vector<std::string>::iterator arg_iter = redefines.begin(); arg_iter != redefines.end(); arg_iter++)
+    for (const auto & arg : redefines)
     {
-      std::string argument = spoof_hex_encoded_namespaces(*arg_iter);
+      const std::string & argument = spoof_hex_encoded_namespaces(arg);
       size_t arg_len = argument.length();
 
       size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
@@ -976,7 +970,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   if (options.was_supplied("dictionary"))
   {
     if (options.was_supplied("dictionary_path"))
-      for (std::string path : dictionary_path)
+      for (const std::string & path : dictionary_path)
         if (directory_exists(path))
           all.dictionary_path.push_back(path);
     if (directory_exists("."))
@@ -1289,6 +1283,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(VW::cb_explore_adf::first::setup);
   all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
   all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
+  all.reduction_stack.push(cb_dro_setup);
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
@@ -1327,6 +1322,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     options.add_and_parse(vw_args);
 
     all.p = new parser{ring_size, strict_parse};
+    all.p->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1573,7 +1569,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
   std::string cmd = ss->str();
   size_t pos = cmd.find(flag_to_replace);
   if (pos == std::string::npos)
-    // flag currently not present in command std::string, so just append it to command std::string
+    // flag currently not present in command string, so just append it to command string
     *ss << " " << flag_to_replace << new_value;
   else
   {
@@ -1602,8 +1598,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
 
 char** to_argv_escaped(std::string const& s, int& argc)
 {
-  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str() + s.length())};
-  std::vector<substring> tokens = escaped_tokenize(' ', ss);
+  std::vector<std::string> tokens = escaped_tokenize(' ', s);
   char** argv = calloc_or_throw<char*>(tokens.size() + 1);
   argv[0] = calloc_or_throw<char>(2);
   argv[0][0] = 'b';
@@ -1611,8 +1606,8 @@ char** to_argv_escaped(std::string const& s, int& argc)
 
   for (size_t i = 0; i < tokens.size(); i++)
   {
-    argv[i + 1] = calloc_or_throw<char>(tokens[i].end - tokens[i].begin + 1);
-    sprintf(argv[i + 1], "%s", tokens[i].begin);
+    argv[i + 1] = calloc_or_throw<char>(tokens[i].length() + 1);
+    sprintf(argv[i + 1], "%s", tokens[i].data());
   }
 
   argc = static_cast<int>(tokens.size() + 1);
@@ -1621,24 +1616,27 @@ char** to_argv_escaped(std::string const& s, int& argc)
 
 char** to_argv(std::string const& s, int& argc)
 {
-  char* c = calloc_or_throw<char>(s.length() + 3);
-  c[0] = 'b';
-  c[1] = ' ';
-  strcpy(c + 2, s.c_str());
-  substring ss = {c, c + s.length() + 2};
-  std::vector<substring> foo;
-  tokenize(' ', ss, foo);
+  VW::string_view strview(s);
+  std::vector<VW::string_view> foo;
+  tokenize(' ', strview, foo);
 
-  char** argv = calloc_or_throw<char*>(foo.size());
+  char** argv = calloc_or_throw<char*>(foo.size() + 1);
+  // small optimization to avoid a string copy before tokenizing
+  argv[0] = calloc_or_throw<char>(2);
+  argv[0][0] = 'b';
+  argv[0][1] = '\0';
   for (size_t i = 0; i < foo.size(); i++)
   {
-    *(foo[i].end) = '\0';
-    argv[i] = calloc_or_throw<char>(foo[i].end - foo[i].begin + 1);
-    sprintf(argv[i], "%s", foo[i].begin);
+    size_t len = foo[i].length();
+    argv[i+1] = calloc_or_throw<char>(len + 1);
+    memcpy(argv[i+1], foo[i].data(), len);
+    // copy() is supported with boost::string_view, not with string_ref
+    //foo[i].copy(argv[i], len);
+    // unnecessary because of the calloc, but needed if we change stuff in the future
+    // argv[i][len] = '\0';
   }
 
-  argc = (int)foo.size();
-  free(c);
+  argc = (int)foo.size() + 1;
   return argv;
 }
 
@@ -1789,15 +1787,9 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
+  new_model->p->_shared_data = new_model->sd;
 
   return new_model;
-}
-
-void delete_dictionary_entry(substring ss, features* A)
-{
-  free(ss.begin);
-  A->delete_v();
-  delete A;
 }
 
 void sync_stats(vw& all)
@@ -1926,22 +1918,14 @@ void finish(vw& all, bool delete_all)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
   all.final_prediction_sink.delete_v();
-  for (size_t i = 0; i < all.loaded_dictionaries.size(); i++)
-  {
-    // Warning C6001 is triggered by the following:
-    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using
-    // 'free(all.loaded_dictionaries[i].name)'
-    //
-    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the
-    // warning goes away. Disable SDL warning.
-    //    #pragma warning(disable:6001)
-    free_it(all.loaded_dictionaries[i].name);
-    //#pragma warning(default:6001)
 
-    all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
-    all.loaded_dictionaries[i].dict->delete_v();
-    free_it(all.loaded_dictionaries[i].dict);
+  all.loaded_dictionaries.clear();
+  // TODO: should we be clearing the namespace dictionaries?
+  for (auto & ns_dict : all.namespace_dictionaries)
+  {
+    ns_dict.clear();
   }
+
   delete all.loss;
 
   delete all.all_reduce;

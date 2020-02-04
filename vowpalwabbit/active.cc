@@ -3,9 +3,10 @@
 // license as described in the file LICENSE.
 
 #include <cerrno>
+#include <cfloat>
+
 #include "reductions.h"
 #include "rand48.h"
-#include <cfloat>
 #include "vw.h"
 #include "active.h"
 #include "vw_exception.h"
@@ -94,7 +95,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
   {
     std::stringstream ss;
     ss << std::fixed << res;
-    if (!print_tag(ss, tag))
+    if (!print_tag_by_ref(ss, tag))
       ss << ' ';
     if (weight >= 0)
       ss << " " << std::fixed << weight;
@@ -119,7 +120,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
   if (ld.label == FLT_MAX)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
+  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (auto i : all.final_prediction_sink)
   {
     active_print_result(i, ec.pred.scalar, ai, ec.tag);

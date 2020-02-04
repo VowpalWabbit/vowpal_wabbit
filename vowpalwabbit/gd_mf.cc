@@ -2,9 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <fstream>
-#include <float.h>
-#include <string.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cstdio>
 #ifdef _WIN32
 #define NOMINMAX
 #include <winsock2.h>
@@ -78,7 +77,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
+  print_result_by_ref(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 

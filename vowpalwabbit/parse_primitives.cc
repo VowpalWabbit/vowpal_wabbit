@@ -3,34 +3,13 @@
 // license as described in the file LICENSE.
 
 #include <iostream>
-#ifndef WIN32
-#include <strings.h>
-#else
 #include <string>
-#endif
 #include <stdexcept>
 #include <sstream>
 
 #include "parse_primitives.h"
 #include "hash.h"
 #include "vw_exception.h"
-
-bool substring_equal(const substring& a, const substring& b)
-{
-  return (a.end - a.begin == b.end - b.begin)  // same length
-      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
-}
-
-bool substring_equal(const substring& ss, const char* str)
-{
-  size_t len_ss = ss.end - ss.begin;
-  size_t len_str = strlen(str);
-  if (len_ss != len_str)
-    return false;
-  return (strncmp(ss.begin, str, len_ss) == 0);
-}
-
-size_t substring_len(substring& s) { return s.end - s.begin; }
 
 hash_func_t getHasher(const std::string& s)
 {
@@ -42,81 +21,52 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
-bool operator==(const substring& ss, const char* str) { return substring_equal(ss, str); }
-
-bool operator==(const char* str, const substring& ss) { return substring_equal(ss, str); }
-
-bool operator==(const substring& ss1, const substring& ss2) { return substring_equal(ss1, ss2); }
-
-bool operator!=(const substring& ss, const char* str) { return !(ss == str); }
-
-bool operator!=(const char* str, const substring& ss) { return !(ss == str); }
-
-bool operator!=(const substring& ss1, const substring& ss2) { return !(ss1 == ss2); }
-
-std::vector<substring> escaped_tokenize(char delim, substring s, bool allow_empty)
+std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
-  std::vector<substring> tokens;
-  substring current;
-  current.begin = s.begin;
-  bool in_escape = false;
-  char* reading_head = s.begin;
-  char* writing_head = s.begin;
+  std::vector<std::string> tokens;
+  std::string current;
+  size_t end_pos = 0;
+  const char delims[3] = {'\\', delim, '\0'};
+  bool last_space = false;
 
-  while (reading_head < s.end)
+  while (!s.empty() && ((end_pos = s.find_first_of(delims)) != VW::string_view::npos))
   {
-    char current_character = *reading_head++;
-
-    if (in_escape)
+    if(s[end_pos] == '\\')
     {
-      *writing_head++ = current_character;
-      in_escape = false;
+      current.append(s.begin(), end_pos);
+      s.remove_prefix(end_pos + 1);
+
+      // always insert the next character after an escape if it exists
+      if(!s.empty())
+      {
+        current.append(s.begin(), 1);
+        s.remove_prefix(1);
+      }
     }
     else
     {
-      if (current_character == delim)
+      last_space = end_pos == 0;
+      current.append(s.begin(), end_pos);
+      s.remove_prefix(end_pos + 1);
+      if(!current.empty() || allow_empty)
       {
-        current.end = writing_head++;
-        *current.end = '\0';
-        if (current.begin != current.end || allow_empty)
-        {
-          tokens.push_back(current);
-        }
-
-        // Regardless of whether the token was saved, we need to reset the current token.
-        current.begin = writing_head;
-        current.end = writing_head;
+        tokens.push_back(current);
       }
-      else if (current_character == '\\')
-      {
-        in_escape = !in_escape;
-      }
-      else
-      {
-        *writing_head++ = current_character;
-      }
+      current.clear();
     }
   }
-
-  current.end = writing_head;
-  *current.end = '\0';
-  if (current.begin != current.end || allow_empty)
+  // write whatever's left into the vector
+  if (!s.empty() || !current.empty() || (last_space && allow_empty))
   {
+    current.append(s.begin(), s.length());
     tokens.push_back(current);
   }
-
   return tokens;
 }
 
-std::ostream& operator<<(std::ostream& os, const substring& ss)
+std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss)
 {
-  std::string s(ss.begin, ss.end - ss.begin);
-  return os << s;
-}
-
-std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
-{
-  substring* it = ss.cbegin();
+  VW::string_view* it = ss.cbegin();
 
   if (it == ss.cend())
   {

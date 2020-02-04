@@ -181,12 +181,18 @@ void reset_source(vw& all, size_t numbits)
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
+IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
+IGNORE_DEPRECATED_USAGE_END
+        all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
         all.p->reader = read_features_string;
+IGNORE_DEPRECATED_USAGE_START
         all.print = print_result;
+IGNORE_DEPRECATED_USAGE_END
+        all.print_by_ref = print_result_by_ref;
       }
     }
     else
@@ -312,6 +318,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   all.p->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
+  // default text reader
+  all.p->text_reader = VW::read_lines;
+
   if (all.daemon || all.active)
   {
 #ifdef _WIN32
@@ -406,6 +415,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;
+      all.p->_shared_data = sd;
 
       // create children
       size_t num_children = all.num_children;
@@ -473,7 +483,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       THROWERRNO("accept");
 
     all.p->label_sock = f;
+IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
+IGNORE_DEPRECATED_USAGE_END
+    all.print_by_ref = print_result_by_ref;
 
     all.final_prediction_sink.push_back((size_t)f);
 
@@ -490,7 +503,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
+IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
+IGNORE_DEPRECATED_USAGE_END
+        all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
@@ -663,7 +679,6 @@ example& get_unused_example(vw* all)
 {
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
-  ex->in_use = true;
   p->begin_parsed_examples++;
   return *ex;
 }
@@ -689,7 +704,7 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
 
-  ae->example_counter = (size_t)(all.p->end_parsed_examples);
+  ae->example_counter = (size_t)(all.p->end_parsed_examples.load());
   if (!all.p->emptylines_separate_examples)
     all.p->in_pass_counter++;
 
@@ -731,7 +746,7 @@ void setup_example(vw& all, example* ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (features& fs : *ae)
+  for (const features& fs : *ae)
   {
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
@@ -755,7 +770,7 @@ example* new_unused_example(vw& all)
   example* ec = &get_unused_example(&all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
-  ec->example_counter = (size_t)all.p->begin_parsed_examples;
+  ec->example_counter = (size_t)all.p->begin_parsed_examples.load();
   return ec;
 }
 example* read_example(vw& all, char* example_line)
@@ -845,11 +860,10 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<substring> words = v_init<substring>();
-  char* cstr = (char*)label.c_str();
-  substring str = {cstr, cstr + label.length()};
-  tokenize(' ', str, words);
-  all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
+  v_array<VW::string_view> words = v_init<VW::string_view>();
+
+  tokenize(' ', label, words);
+  all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
   words.clear();
   words.delete_v();
 }
@@ -868,13 +882,11 @@ void clean_example(vw& all, example& ec, bool rewind)
 {
   if (rewind)
   {
-    assert(all.p->begin_parsed_examples > 0);
+    assert(all.p->begin_parsed_examples.load() > 0);
     all.p->begin_parsed_examples--;
   }
 
   empty_example(all, ec);
-  assert(ec.in_use);
-  ec.in_use = false;
   all.p->example_pool.return_object(&ec);
 }
 
@@ -893,7 +905,7 @@ void finish_example(vw& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(vw& all, v_array<example*> examples)
+void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
   all.p->end_parsed_examples += examples.size();
   for (auto example : examples)
@@ -957,11 +969,13 @@ float get_confidence(example* ec) { return ec->confidence; }
 example* example_initializer::operator()(example* ex)
 {
   memset(&ex->l, 0, sizeof(polylabel));
-  ex->in_use = false;
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();
   ex->indices = v_init<namespace_index>();
-  memset(&ex->feature_space, 0, sizeof(ex->feature_space));
+IGNORE_DEPRECATED_USAGE_START
+  ex->in_use = true;
+IGNORE_DEPRECATED_USAGE_END
+  memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
   return ex;
 }
 
@@ -973,10 +987,30 @@ namespace VW
 {
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
+
+// a copy of dealloc_example except that this does not call the example destructor
+// Work to remove this is currently in progress
+void cleanup_example(void(*delete_label)(void*), example& ec, void(*delete_prediction)(void*))
+{
+  if (delete_label)
+    delete_label(&ec.l);
+
+  if (delete_prediction)
+    delete_prediction(&ec.pred);
+
+  ec.tag.delete_v();
+
+  if (ec.passthrough)
+  {
+    delete ec.passthrough;
+  }
+
+  ec.indices.delete_v();
+}
+
 void free_parser(vw& all)
 {
   all.p->words.delete_v();
-  all.p->name.delete_v();
 
   if (!all.ngram_strings.empty())
     all.p->gram_mask.delete_v();
@@ -991,13 +1025,13 @@ void free_parser(vw& all)
   while (!all.p->example_pool.empty())
   {
     example* temp = all.p->example_pool.get_object();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
   }
 
   while (all.p->ready_parsed_examples.size() != 0)
   {
     example* temp = all.p->ready_parsed_examples.pop();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
   }
   all.p->counts.delete_v();
 }

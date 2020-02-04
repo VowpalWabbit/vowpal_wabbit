@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <float.h>
+#include <cfloat>
 #include <cassert>
 
 #include "gd.h"
@@ -75,7 +75,7 @@ struct stagewise_poly
     cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
-    synth_ec.feature_space[tree_atomics].delete_v();
+    //synth_ec.feature_space[tree_atomics].delete_v();
     synth_ec.indices.delete_v();
     free(sd);
     free(depthsbits);
@@ -396,7 +396,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.test_only = ec.test_only;
   poly.synth_ec.end_pass = ec.end_pass;
   poly.synth_ec.sorted = ec.sorted;
-  poly.synth_ec.in_use = ec.in_use;
 
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;

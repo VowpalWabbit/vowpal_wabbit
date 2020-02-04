@@ -1773,7 +1773,12 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} --classweight -1:0.5 --no_stdin
     test-sets/ref/negative-num-option.stderr
 
-# Test 205: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
+# Test 205: test cb_dro with softmax
+{VW} --cb_dro --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_dro_adf_sm.stderr
+    pred-sets/ref/cb_dro_adf_sm.predict
+
+# Test 206: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
 {VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
     && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.invert.txt

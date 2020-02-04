@@ -3,13 +3,7 @@
 // license as described in the file LICENSE.
 #include "crossplat_compat.h"
 
-#include <float.h>
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#else
-#include <netdb.h>
-#endif
+#include <cfloat>
 
 #if !defined(VW_NO_INLINE_SIMD)
 #if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
@@ -329,7 +323,7 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    print_result(all.stdout_fileno, ec.pred.scalar, -1, ec.tag);
+    print_result_by_ref(all.stdout_fileno, ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -659,7 +653,6 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 void learn(gd& g, base_learner& base, example& ec)
 {
   // invariant: not a test label, importance weight > 0
-  assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, base, ec);

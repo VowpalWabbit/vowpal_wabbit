@@ -7,14 +7,17 @@
 #include <memory>
 #include <string>
 #include <cstddef>
+#include <cstdint>
 #include "v_array.h"
+#include <algorithm>
+#include <vector>
 
 #ifndef _WIN32
 #include <sys/types.h>
 #else
 #define ssize_t int64_t
 #endif
-
+ 
 typedef float feature_value;
 typedef uint64_t feature_index;
 typedef std::pair<std::string, std::string> audit_strings;
@@ -272,8 +275,60 @@ struct features
     sum_feat_sq = 0.f;
   }
 
-  // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
-  // ~features() { ... }
+  ~features() { 
+     values.delete_v();
+     indicies.delete_v();
+     space_names.delete_v();
+   }
+   features(const features&) = delete;
+   features & operator=( const features& ) = delete;
+   
+   
+   // custom move operators required since we need to leave the old value in
+   // a null state to prevent freeing of shallow copied v_arrays
+   features(features&& other) :
+   values(std::move(other.values)),
+   indicies(std::move(other.indicies)),
+   space_names(std::move(other.space_names)),
+   sum_feat_sq(other.sum_feat_sq)
+   {
+     // We need to null out all the v_arrays to prevent double freeing during moves
+     auto & v = other.values;
+     v._begin = nullptr;
+     v._end = nullptr;
+     v.end_array = nullptr;
+     auto & i = other.indicies;
+     i._begin = nullptr;
+     i._end = nullptr;
+     i.end_array = nullptr;
+     auto & s = other.space_names;
+     s._begin = nullptr;
+     s._end = nullptr;
+     s.end_array = nullptr;
+     other.sum_feat_sq = 0;
+   }
+   features & operator=(features&& other)
+   {
+     values = std::move(other.values);
+     indicies = std::move(other.indicies);
+     space_names = std::move(other.space_names);
+     sum_feat_sq = other.sum_feat_sq;
+     // We need to null out all the v_arrays to prevent double freeing during moves
+     auto & v = other.values;
+     v._begin = nullptr;
+     v._end = nullptr;
+     v.end_array = nullptr;
+     auto & i = other.indicies;
+     i._begin = nullptr;
+     i._end = nullptr;
+     i.end_array = nullptr;
+     auto & s = other.space_names;
+     s._begin = nullptr;
+     s._end = nullptr;
+     s.end_array = nullptr;
+     other.sum_feat_sq = 0;
+     return *this;
+   }
 
   inline size_t size() const { return values.size(); }
 
@@ -324,13 +379,6 @@ struct features
     }
   }
 
-  void delete_v()
-  {
-    values.delete_v();
-    indicies.delete_v();
-    space_names.delete_v();
-  }
-
   void push_back(feature_value v, feature_index i)
   {
     values.push_back(v);
@@ -345,36 +393,44 @@ struct features
 
     if (!space_names.empty())
     {
-      v_array<feature_slice> slice = v_init<feature_slice>();
+      std::vector<feature_slice> slice;
+      slice.reserve(indicies.size());
       for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature_slice temp = {values[i], indicies[i] & parse_mask, *space_names[i].get()};
-        slice.push_back(temp);
+        slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i].get()});
       }
-      qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features<feature_slice>);
+      // The comparator should return true if the first element is less than the second.
+      std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
+        return (first.weight_index < second.weight_index) ||
+            ((first.weight_index == second.weight_index) && (first.x < second.x));
+      });
+
       for (size_t i = 0; i < slice.size(); i++)
       {
         values[i] = slice[i].x;
         indicies[i] = slice[i].weight_index;
         *space_names[i].get() = slice[i].space_name;
       }
-      slice.delete_v();
     }
     else
     {
-      v_array<feature> slice = v_init<feature>();
+      std::vector<feature> slice;
+      slice.reserve(indicies.size());
+
       for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature temp = {values[i], indicies[i] & parse_mask};
-        slice.push_back(temp);
+        slice.push_back({values[i], indicies[i] & parse_mask});
       }
-      qsort(slice.begin(), slice.size(), sizeof(feature), order_features<feature>);
+      // The comparator should return true if the first element is less than the second.
+      std::sort(slice.begin(), slice.end(), [](const feature& first, const feature& second) {
+        return (first.weight_index < second.weight_index) ||
+            ((first.weight_index == second.weight_index) && (first.x < second.x));
+      });
       for (size_t i = 0; i < slice.size(); i++)
       {
         values[i] = slice[i].x;
         indicies[i] = slice[i].weight_index;
       }
-      slice.delete_v();
     }
     return true;
   }

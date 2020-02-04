@@ -108,7 +108,16 @@ struct v_array
       resize(2 * (end_array - _begin) + 3);
     new (_end++) T(new_ele);
   }
+
   void push_back_unchecked(const T& new_ele) { new (_end++) T(new_ele); }
+
+  template <class... Args>
+  void emplace_back(Args&&... args)
+  {
+    if (_end == end_array)
+      resize(2 * (end_array - _begin) + 3);
+    new (_end++) T(std::forward<Args>(args)...);
+  }
 
   size_t find_sorted(const T& ele) const  // index of the smallest element >= ele, return true if element is in the
                                           // array

@@ -47,6 +47,6 @@ struct version_struct
   void from_string(const char* str);
 };
 
-const version_struct version(PACKAGE_VERSION);
-const std::string git_commit(COMMIT_VERSION);
+extern const version_struct version;
+extern const std::string git_commit;
 }  // namespace VW

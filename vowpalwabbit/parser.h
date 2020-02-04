@@ -21,7 +21,9 @@
 #include <condition_variable>
 #endif
 
+#include <atomic>
 #include <memory>
+#include "vw_string_view.h"
 #include "queue.h"
 #include "object_pool.h"
 
@@ -36,16 +38,20 @@ struct example_initializer
 struct parser
 {
   parser(size_t ring_size, bool strict_parse_)
-      : example_pool{ring_size}, ready_parsed_examples{ring_size}, ring_size{ring_size}, strict_parse{strict_parse_}
+      : example_pool{ring_size}
+      , ready_parsed_examples{ring_size}
+      , ring_size{ring_size}
+      , begin_parsed_examples(0)
+      , end_parsed_examples(0)
+      , strict_parse{strict_parse_}
   {
     this->input = new io_buf{};
     this->output = new io_buf{};
     this->lp = simple_label;
 
     // Free parser must still be used for the following fields.
-    this->words = v_init<substring>();
-    this->name = v_init<substring>();
-    this->parse_name = v_init<substring>();
+    this->words = v_init<VW::string_view>();
+    this->parse_name = v_init<VW::string_view>();
     this->gram_mask = v_init<size_t>();
     this->ids = v_init<size_t>();
     this->counts = v_init<size_t>();
@@ -57,9 +63,12 @@ struct parser
     delete output;
   }
 
+  //delete copy constructor
+  parser(const parser&) = delete;
+  parser& operator=(const parser&) = delete;
+
   // helper(s) for text parsing
-  v_array<substring> words;
-  v_array<substring> name;
+  v_array<VW::string_view> words;
 
   VW::object_pool<example, example_initializer> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
@@ -67,6 +76,8 @@ struct parser
   io_buf* input = nullptr;  // Input source(s)
   int (*reader)(vw*, v_array<example*>& examples);
   void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
+
+  shared_data* _shared_data = nullptr;
 
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
@@ -76,8 +87,8 @@ struct parser
   bool sorted_cache = false;
 
   const size_t ring_size;
-  uint64_t begin_parsed_examples = 0;  // The index of the beginning parsed example.
-  uint64_t end_parsed_examples = 0;    // The index of the fully parsed example.
+  std::atomic<uint64_t> begin_parsed_examples;  // The index of the beginning parsed example.
+  std::atomic<uint64_t> end_parsed_examples;      // The index of the fully parsed example.
   uint32_t in_pass_counter = 0;
   bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather
                                               // than a per-line basis
@@ -95,7 +106,7 @@ struct parser
   int bound_sock = 0;
   int max_fd = 0;
 
-  v_array<substring> parse_name;
+  v_array<VW::string_view> parse_name;
 
   label_parser lp;  // moved from vw
 

@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 #include <algorithm>
 
 // Most of these includes are required because templated functions are using the objects defined in them
@@ -134,7 +134,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
-  ACTION_SCORE::action_scores preds = ec.pred.a_s;
+  const auto& preds = ec.pred.a_s;
 
   for (const auto& example : ec_seq)
   {
@@ -164,7 +164,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -172,7 +172,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, &ec_seq, true);
@@ -185,7 +185,7 @@ void cb_explore_adf_base<ExploreType>::output_example_seq(vw& all, multi_ex& ec_
   {
     output_example(all, ec_seq);
     if (all.raw_prediction > 0)
-      all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+      all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
   }
 }
 

@@ -54,6 +54,9 @@
     <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="distributionally_robust_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -65,5 +68,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="DistributionallyRobustUnitTestData.py">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="crminustwo.py">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

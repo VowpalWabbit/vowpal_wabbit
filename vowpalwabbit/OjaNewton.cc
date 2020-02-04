@@ -6,7 +6,7 @@
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
-#include <math.h>
+#include <cmath>
 #include <memory>
 
 using namespace LEARNER;
@@ -450,8 +450,6 @@ void update_normalization(update_data& data, float x, float& wref)
 
 void learn(OjaNewton& ON, base_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // predict
   predict(ON, base, ec);
 

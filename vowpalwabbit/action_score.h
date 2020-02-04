@@ -3,6 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
+
+#include <iterator>
+#include "v_array.h"
+
 namespace ACTION_SCORE
 {
 struct action_score

@@ -96,7 +96,7 @@ namespace exploration
     InputIt s = scores_first;
     for (OutputIt d = pdf_first; d != pdf_last && s != scores_last; ++d, ++s)
     {
-      float prob = exp(lambda*(*s - max_score));
+      float prob = std::exp(lambda*(*s - max_score));
       norm += prob;
 
       *d = prob;

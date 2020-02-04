@@ -8,12 +8,11 @@
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
-
+#include "future_compat.h"
 #include <memory>
 
-namespace prediction_type
-{
-enum prediction_type_t
+
+enum class prediction_type_t
 {
   scalar,
   scalars,
@@ -27,7 +26,6 @@ enum prediction_type_t
 };
 
 const char* to_string(prediction_type_t prediction_type);
-}  // namespace prediction_type
 
 namespace LEARNER
 {
@@ -146,7 +144,7 @@ struct learner
   std::shared_ptr<void> learner_data;
   learner(){};  // Should only be able to construct a learner through init_learner function
  public:
-  prediction_type::prediction_type_t pred_type;
+  prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
   bool is_multiline;  // Is this a single-line or multi-line reduction?
@@ -310,7 +308,7 @@ struct learner
 
   template <class L>
   static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type::prediction_type_t pred_type)
+      prediction_type_t pred_type)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
@@ -365,7 +363,7 @@ struct learner
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type::prediction_type_t pred_type)
+    size_t ws, prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
@@ -379,7 +377,7 @@ learner<T, E>& init_learner(
     free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t params_per_weight)
 {
   auto ret =
-      &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type::scalar);
+      &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar);
 
   dat.release();
   return *ret;
@@ -390,12 +388,12 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight)
 {
   return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type::scalar);
+      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar);
 }
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type::prediction_type_t pred_type)
+    size_t params_per_weight, prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type);
   dat.release();
@@ -434,7 +432,7 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+    prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
@@ -447,7 +445,7 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+    prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
   dat.release();
@@ -482,6 +480,7 @@ template <bool is_learn>
 void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
 {
   std::vector<uint64_t> saved_offsets;
+  saved_offsets.reserve(examples.size());
   for (auto ec : examples)
   {
     saved_offsets.push_back(ec->ft_offset);

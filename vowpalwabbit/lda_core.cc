@@ -14,15 +14,6 @@
 #include "vw_versions.h"
 #include "vw.h"
 #include "mwt.h"
-#include <boost/math/special_functions/digamma.hpp>
-#include <boost/math/special_functions/gamma.hpp>
-
-#ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
-#else
-#include <netdb.h>
-#endif
 
 #include <cstring>
 #include <cstdio>
@@ -32,7 +23,11 @@
 #include "rand48.h"
 #include "reductions.h"
 #include "array_parameters.h"
+#include "vw_exception.h"
+
 #include <boost/version.hpp>
+#include <boost/math/special_functions/digamma.hpp>
+#include <boost/math/special_functions/gamma.hpp>
 
 #if BOOST_VERSION >= 105600
 #include <boost/align/is_aligned.hpp>
@@ -1279,8 +1274,6 @@ void finish_example(vw &, lda &, example &) {}
 
 std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 {
-  using namespace boost::program_options;
-
   std::string token;
   in >> token;
   if (token == "simd")
@@ -1290,7 +1283,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   else if (token == "fast-approx" || token == "approx")
     mmode = USE_FAST_APPROX;
   else
-    throw boost::program_options::invalid_option_value(token);
+    THROW_EX(VW::vw_unrecognised_option_exception, token);
   return in;
 }
 
@@ -1351,6 +1344,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     bool previous_strict_parse = all.p->strict_parse;
     delete all.p;
     all.p = new parser{minibatch2, previous_strict_parse};
+    all.p->_shared_data = all.sd;
   }
 
   ld->v.resize(all.lda * ld->minibatch);
@@ -1361,7 +1355,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type::scalars);
+      prediction_type_t::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

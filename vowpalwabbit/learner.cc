@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "learner.h"
 #include "parser.h"
 #include "vw.h"
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-namespace prediction_type
-{
+
 #define CASE(type) \
   case type:       \
     return #type;
@@ -17,19 +17,18 @@ const char* to_string(prediction_type_t prediction_type)
 {
   switch (prediction_type)
   {
-    CASE(scalar)
-    CASE(scalars)
-    CASE(action_scores)
-    CASE(action_probs)
-    CASE(multiclass)
-    CASE(multilabels)
-    CASE(prob)
-    CASE(multiclassprobs)
+    CASE(prediction_type_t::scalar)
+    CASE(prediction_type_t::scalars)
+    CASE(prediction_type_t::action_scores)
+    CASE(prediction_type_t::action_probs)
+    CASE(prediction_type_t::multiclass)
+    CASE(prediction_type_t::multilabels)
+    CASE(prediction_type_t::prob)
+    CASE(prediction_type_t::multiclassprobs)
     default:
       return "<unsupported>";
   }
 }
-}  // namespace prediction_type
 
 namespace LEARNER
 {
@@ -73,7 +72,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
   bool is_header = false;
-  if (all.label_type == label_type::ccb)
+  if (all.label_type == label_type_t::ccb)
   {
     is_header = CCB::ec_is_example_header(ec);
   }

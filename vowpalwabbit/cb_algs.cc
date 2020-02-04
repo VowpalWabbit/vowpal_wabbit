@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <float.h>
+#include <cfloat>
 
 #include "vw.h"
 #include "reductions.h"
@@ -97,7 +97,8 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (int sink : all.final_prediction_sink)
+    all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -109,7 +110,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
         outputStringStream << ' ';
       outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
@@ -185,24 +186,24 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   if (eval)
   {
     all.p->lp = CB_EVAL::cb_eval;
-    all.label_type = label_type::cb_eval;
+    all.label_type = label_type_t::cb_eval;
   }
   else
   {
     all.p->lp = CB::cb_label;
-    all.label_type = label_type::cb;
+    all.label_type = label_type_t::cb;
   }
 
   learner<cb, example>* l;
   if (eval)
   {
-    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
+    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
     l = &init_learner(
-        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type::multiclass);
+        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;
