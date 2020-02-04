@@ -25,7 +25,7 @@ cb_explore_adf_cover.h cb_explore_adf_first.h cb_explore_adf_greedy.h cb_explore
 cb_explore_adf_softmax.h cb_explore.h cb.h cbify.h ccb_label.h classweight.h comp_io.h
 conditional_contextual_bandit.h confidence.h config.h.in constant.h correctedMath.h cost_sensitive.h
 crossplat_compat.h cs_active.h csoaa.h distributionally_robust.h ect.h error_reporting.h example_predict.h example.h
-explore_eval.h expreplay.h ezexample.h feature_group.h ftrl.h gd_mf.h gd_predict.h gd.h
+explore_eval.h expreplay.h ezexample.h feature_group.h ftrl.h features_data.h gd_mf.h gd_predict.h gd.h
 gen_cs_example.h global_data.h hashstring.h interact.h interactions_predict.h interactions.h
 io_buf.h kernel_svm.h label_dictionary.h label_parser.h lda_core.h learner.h log_multi.h
 loss_functions.h lrq.h lrqfa.h marginal.h memory_tree.h memory.h mf.h multiclass.h multilabel_oaa.h
