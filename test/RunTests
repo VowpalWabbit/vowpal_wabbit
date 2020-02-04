@@ -1773,4 +1773,10 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} --classweight -1:0.5 --no_stdin
     test-sets/ref/negative-num-option.stderr
 
+# Test 205: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
+{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
+    && -d train-sets/inv_hash_load_model_data1.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.readable.txt
+
 # Do not delete this line or the empty line above it

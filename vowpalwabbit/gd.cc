@@ -269,9 +269,9 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
       tempstream << '[' << (dat.offset >> stride_shift) << ']';
       ns_pre += tempstream.str();
     }
-
-    if (!dat.all.name_index_map.count(ns_pre))
-      dat.all.name_index_map.insert(std::map<std::string, size_t>::value_type(ns_pre, index >> stride_shift));
+    const auto strided_index = index >> stride_shift;
+    if (!dat.all.index_name_map.count(strided_index))
+      dat.all.index_name_map.insert(std::make_pair(strided_index, ns_pre));
   }
 }
 
@@ -709,18 +709,23 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   if (all.print_invert)  // write readable model with feature names
   {
     std::stringstream msg;
-    typedef std::map<std::string, size_t> str_int_map;
 
-    for (str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
+    for (auto& it = weights.begin(); it != weights.end(); ++it)
     {
-      weight* v = &weights.strided_index(it->second);
-      if (*v != 0.)
+      const auto weight_value = *it;
+      if (*it != 0.f)
       {
-        msg << it->first;
-        brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()), msg, true);
+        const auto weight_index = it.index() >> weights.stride_shift();
+        
+        const auto map_it = all.index_name_map.find(weight_index);
+        if (map_it != all.index_name_map.end())
+        {
+          msg << map_it->second;
+          bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+        }
 
-        msg << ":" << it->second << ":" << *v << "\n";
-        bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, true);
+        msg << ":" << weight_index << ":" << weight_value << "\n";
+        bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
       }
     }
     return;
