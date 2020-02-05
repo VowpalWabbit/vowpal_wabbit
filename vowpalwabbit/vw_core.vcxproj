@@ -157,6 +157,7 @@
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="interactions.h" />
+    <ClInclude Include="io_adapter.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="label.h" />
     <ClInclude Include="label_dictionary.h" />
@@ -271,6 +272,7 @@
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interactions.cc" />
+    <ClCompile Include="io_adapter.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="label_dictionary.cc" />

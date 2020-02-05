@@ -11,7 +11,7 @@ license as described in the file LICENSE.
 #include "vw_example.h"
 
 #include "clr_io.h"
-#include "clr_io_memory.h"
+#include "io_buf.h"
 #include "vw_exception.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
@@ -176,7 +176,8 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
   { throw gcnew NotSupportedException("Cannot reload model if AllReduce is enabled.");
   }
 
-  clr_io_memory_buf mem_buf;
+  io_buf mem_buf;
+  mem_buf.add_file(VW::io::create_vector_buffer().release());
 
   if (args == nullptr)
     args = String::Empty;
@@ -249,8 +250,9 @@ void VowpalWabbitBase::SaveModel(Stream^ stream)
     throw gcnew ArgumentException("stream");
 
   try
-  { VW::clr_io_buf buf(stream);
-
+  {
+    io_buf buf;
+    buf.add_file(new clr_stream_adapter(stream));
     VW::save_predictor(*m_vw, buf);
   }
   CATCHRETHROW

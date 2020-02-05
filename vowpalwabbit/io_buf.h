@@ -50,25 +50,6 @@
 ** This is done to avoid reallocating arrays as much as possible.
 */
 
-namespace VW {
-  namespace io {
-    inline std::unique_ptr<io_adapter> open_file(std::string& file_path)
-    {
-      return std::unique_ptr<io_adapter>(new file_adapter(file_path));
-    }
-
-    inline std::unique_ptr<io_adapter> open_file(const char* file_path)
-    {
-      return std::unique_ptr<io_adapter>(new file_adapter(file_path));
-    }
-
-    inline std::unique_ptr<io_adapter> open_stdio()
-    {
-      return std::unique_ptr<io_adapter>(new stdio_adapter());
-    }
-  }
-}
-
 class io_buf
 {
   // used to check-sum i/o files for corruption detection
@@ -96,18 +77,10 @@ class io_buf
   
   virtual ~io_buf() 
   {
-#ifdef _WIN32
-    int f = _fileno(stdin);
-#else
-    int f = fileno(stdin);
-#endif
-
-    while (!files.empty() && files.last() == f)
-      files.pop();
-
-    // Calling a virtual function in a constructor or destructor will actually result
-    // in calling this classes implementation. Make it explicit so it is less confusing.
-    while (io_buf::close_file());
+    for(auto adapter : files)
+    {
+      delete adapter;
+    }
   }
 
   void verify_hash(bool verify)
@@ -178,6 +151,7 @@ class io_buf
       if (write_file(files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
         std::cerr << "error, failed to write example\n";
       head = space.begin();
+      files[0]->flush();
     }
   }
 
@@ -185,13 +159,12 @@ class io_buf
   {
     if (!files.empty())
     {
-      delete files.pop();
+      auto adapter = files.pop();
+      delete adapter;
       return true;
     }
     return false;
   }
-
-  bool compressed() { return false; }
 
   void close_files()
   {
