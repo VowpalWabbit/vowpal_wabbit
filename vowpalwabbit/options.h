@@ -1,6 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <typeinfo>
 #include <memory>
@@ -11,7 +16,7 @@ namespace config
 {
 struct base_option
 {
-  base_option(std::string name, size_t type_hash) : m_name(name), m_type_hash(type_hash) {}
+  base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
 
   std::string m_name;
   size_t m_type_hash;
@@ -19,7 +24,7 @@ struct base_option
   std::string m_short_name = "";
   bool m_keep = false;
 
-  virtual ~base_option() {}
+  virtual ~base_option() = default;
 };
 
 template <typename T>
@@ -83,7 +88,7 @@ typed_option<T> make_option(std::string name, T& location)
 
 struct option_group_definition
 {
-  option_group_definition(std::string name) : m_name(name) {}
+  option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>
   option_group_definition& add(T&& op)
@@ -130,7 +135,7 @@ struct options_i
   // Will throw if any options were supplied that do not having a matching argument specification.
   virtual void check_unregistered() = 0;
 
-  virtual ~options_i() {}
+  virtual ~options_i() = default;
 };
 
 struct options_serializer_i

@@ -1,9 +1,12 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 // On Windows, exp(-infinity) incorrectly returns -infinity instead of 0.
 // So we replace it with our own version that checks for this condition.
 
 #pragma once
 
-#include <math.h>
 #include <cmath>
 
 #ifdef _WIN32

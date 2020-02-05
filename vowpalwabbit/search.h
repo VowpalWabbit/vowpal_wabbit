@@ -1,19 +1,17 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
 
-#define cdbg clog
+#define cdbg std::clog
 #undef cdbg
 #define cdbg \
   if (1)     \
   {          \
   }          \
   else       \
-    clog
+    std::clog
 // comment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t action;
@@ -132,7 +130,7 @@ struct search
   //                           AUTO_CONDITION_FEATURES is on, then we will automatically
   //                           add features to ec based on what you're conditioning on.
   //                           nullptr => independent prediction
-  //   condition_on_names    a string containing the list of names of features you're
+  //   condition_on_names    a std::string containing the list of names of features you're
   //                           conditioning on. used explicitly for auditing, implicitly
   //                           for keeping tags separated. also, strlen(condition_on_names)
   //                           tells us how long condition_on is
@@ -337,22 +335,19 @@ class predictor
   bool ec_alloced;
   float weight;
   v_array<action> oracle_actions;
-  bool oracle_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<ptag> condition_on_tags;
   v_array<char> condition_on_names;
   v_array<action> allowed_actions;
-  bool allowed_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<float> allowed_actions_cost;
-  bool allowed_cost_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   size_t learner_id;
   search& sch;
 
   template <class T>
   void make_new_pointer(v_array<T>& A, size_t new_size);
   template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first);
+  predictor& add_to(v_array<T>& A, T a, bool clear_first);
   template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, bool clear_first);
+  predictor& add_to(v_array<T>& A, T* a, size_t count, bool clear_first);
   void free_ec();
 
   // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(

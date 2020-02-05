@@ -1,0 +1,26 @@
+pr:
+- master
+
+pool:
+  vmImage: 'ubuntu-16.04'
+
+container:
+  image: vowpalwabbit/centos7_6_1810-build:0.2.0
+  endpoint: DockerHub
+
+steps:
+- bash: ./.scripts/linux/build-static-java.sh
+  displayName: Build C++
+- bash: ./.scripts/linux/java.sh
+  displayName: Build + test Java
+  env:
+    # these are credentials used to publish to oss.sonatype.org
+    # credentials are stored as secrets in the build definition
+    ossrh_gpg: $(ossrh_gpg)
+    ossrh_username: $(ossrh_username)
+    ossrh_password: $(ossrh_password)
+- task: PublishBuildArtifacts@1
+  inputs: 
+    pathtoPublish: build/java/libvw_jni.so
+    artifactName: 'vw-static-linux-64'
+  displayName: 'java artifact linux 64'

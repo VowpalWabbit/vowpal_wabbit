@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 /*
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
@@ -21,8 +20,8 @@ Implementation by Miro Dudik.
 #include "reductions.h"
 #include "gd.h"
 #include "vw_exception.h"
+#include <exception>
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -42,7 +41,7 @@ using namespace VW::config;
 #define LEARN_CURV 1
 #define LEARN_CONV 2
 
-class curv_exception : public exception
+class curv_exception : public std::exception
 {
 } curv_ex;
 
@@ -103,9 +102,16 @@ struct bfgs
   bool first_pass;
   bool gradient_pass;
   bool preconditioner_pass;
+
+  ~bfgs()
+  {
+    free(mem);
+    free(rho);
+    free(alpha);
+  }
 };
 
-constexpr char* curv_message =
+constexpr const char* curv_message =
     "Zero or negative curvature detected.\n"
     "To increase curvature you can increase regularization or rescale features.\n"
     "It is also possible that you have reached numerical accuracy\n"
@@ -136,7 +142,7 @@ void reset_state(vw& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-constexpr bool test_example(example& ec) noexcept { return ec.l.simple.label == FLT_MAX; }
+bool test_example(example& ec) noexcept { return ec.l.simple().label == FLT_MAX; }
 
 float bfgs_predict(vw& all, example& ec)
 {
@@ -149,7 +155,7 @@ inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
 float predict_and_gradient(vw& all, example& ec)
 {
   float fp = bfgs_predict(all, ec);
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
@@ -162,7 +168,7 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 
 void update_preconditioner(vw& all, example& ec)
 {
-  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
   GD::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
@@ -170,7 +176,7 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(vw& all, example& ec)
 {
-  float temp = ec.l.simple.initial;
+  float temp = ec.l.simple().initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
 }
@@ -852,7 +858,7 @@ int process_pass(vw& all, bfgs& b)
 
 void process_example(vw& all, bfgs& b, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   if (b.first_pass)
     b.importance_weight_sum += ec.weight;
 
@@ -861,10 +867,10 @@ void process_example(vw& all, bfgs& b, example& ec)
   /********************************************************************/
   if (b.gradient_pass)
   {
-    ec.pred.scalar = predict_and_gradient(all, ec);  // w[0] & w[1]
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+    ec.pred.scalar() = predict_and_gradient(all, ec);  // w[0] & w[1]
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar(), ld.label) * ec.weight;
     b.loss_sum += ec.loss;
-    b.predictions.push_back(ec.pred.scalar);
+    b.predictions.push_back(ec.pred.scalar());
   }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/
@@ -874,13 +880,13 @@ void process_example(vw& all, bfgs& b, example& ec)
     float d_dot_x = dot_with_direction(all, ec);   // w[2]
     if (b.example_number >= b.predictions.size())  // Make things safe in case example source is strange.
       b.example_number = b.predictions.size() - 1;
-    ec.pred.scalar = b.predictions[b.example_number];
+    ec.pred.scalar() = b.predictions[b.example_number];
     ec.partial_prediction = b.predictions[b.example_number];
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar(), ld.label) * ec.weight;
     float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++], ld.label);
     b.curvature += ((double)d_dot_x) * d_dot_x * sd * ec.weight;
   }
-  ec.updated_prediction = ec.pred.scalar;
+  ec.updated_prediction = ec.pred.scalar();
 
   if (b.preconditioner_pass)
     update_preconditioner(all, ec);  // w[3]
@@ -948,7 +954,7 @@ template <bool audit>
 void predict(bfgs& b, base_learner&, example& ec)
 {
   vw* all = b.all;
-  ec.pred.scalar = bfgs_predict(*all, ec);
+  ec.pred.scalar() = bfgs_predict(*all, ec);
   if (audit)
     GD::print_audit_features(*(b.all), ec);
 }
@@ -957,7 +963,6 @@ template <bool audit>
 void learn(bfgs& b, base_learner& base, example& ec)
 {
   vw* all = b.all;
-  assert(ec.in_use);
 
   if (b.current_pass <= b.final_pass)
   {
@@ -966,14 +971,6 @@ void learn(bfgs& b, base_learner& base, example& ec)
     else
       process_example(*all, b, ec);
   }
-}
-
-void finish(bfgs& b)
-{
-  b.predictions.delete_v();
-  free(b.mem);
-  free(b.rho);
-  free(b.alpha);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -1007,7 +1004,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
       if (*v != 0.)
       {
         c++;
-        stringstream msg;
+        std::stringstream msg;
         msg << i;
         brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
 
@@ -1048,11 +1045,12 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     uint32_t stride_shift = all->weights.stride_shift();
 
     if (!all->quiet)
-      cerr << "m = " << m << endl
-           << "Allocated "
-           << ((long unsigned int)all->length() * (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
-                  20)
-           << "M for weights and mem" << endl;
+      std::cerr << "m = " << m << std::endl
+                << "Allocated "
+                << ((long unsigned int)all->length() *
+                           (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
+                       20)
+                << "M for weights and mem" << std::endl;
 
     b.net_time = 0.0;
     ftime(&b.t_start_global);
@@ -1062,7 +1060,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       const char* header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-s\n";
       fprintf(stderr, header_fmt, "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction",
           "curvature", "dir. magnitude", "step size");
-      cerr.precision(5);
+      std::cerr.precision(5);
     }
 
     if (b.regularizers != nullptr)
@@ -1076,7 +1074,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
   if (model_file.files.size() > 0)
   {
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << reg_vector << "\n";
     bin_text_read_write_fixed(model_file, (char*)&reg_vector, sizeof(reg_vector), "", read, msg, text);
 
@@ -1141,9 +1139,9 @@ base_learner* bfgs_setup(options_i& options, vw& all)
     else
       b->all->trace_message << "enabling conjugate gradient optimization via BFGS ";
     if (all.hessian_on)
-      b->all->trace_message << "with curvature calculation" << endl;
+      b->all->trace_message << "with curvature calculation" << std::endl;
     else
-      b->all->trace_message << "**without** curvature calculation" << endl;
+      b->all->trace_message << "**without** curvature calculation" << std::endl;
   }
 
   if (all.numpasses < 2 && all.training)
@@ -1167,7 +1165,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
   l->set_end_pass(end_pass);
-  l->set_finish(finish);
+  l->label_type = label_type_t::simple;
 
   return make_base(*l);
 }

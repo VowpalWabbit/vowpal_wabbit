@@ -1,18 +1,16 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved. Released under a BSD (revised)
-license as described in the file LICENSE.node
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <float.h>
 #include <sstream>
+#include <memory>
 
 #include "reductions.h"
 #include "rand48.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -54,7 +52,6 @@ struct node
       , n(0)
       , entropy(0)
       , passes(1)
-      , preds(v_init<node_pred>())
   {
   }
 };
@@ -62,6 +59,7 @@ struct node
 struct recall_tree
 {
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   uint32_t k;
   bool node_only;
 
@@ -79,7 +77,7 @@ float to_prob(float x)
 {
   static const float alpha = 2.0f;
   // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
-  return (std::max)(0.f, (std::min)(1.f, 0.5f * (1.0f + alpha * x)));
+  return std::max(0.f, std::min(1.f, 0.5f * (1.0f + alpha * x)));
 }
 
 void init_tree(recall_tree& b, uint32_t root, uint32_t depth, uint32_t& routers_used)
@@ -116,11 +114,12 @@ void init_tree(recall_tree& b)
   b.max_routers = routers_used;
 }
 
+// TODO replace with std::find
 node_pred* find(recall_tree& b, uint32_t cn, example& ec)
 {
   node_pred* ls;
 
-  for (ls = b.nodes[cn].preds.begin(); ls != b.nodes[cn].preds.end() && ls->label != ec.l.multi.label; ++ls)
+  for (ls = b.nodes[cn].preds.begin(); ls != b.nodes[cn].preds.end() && ls->label != ec.l.multi().label; ++ls)
     ;
 
   return ls;
@@ -132,7 +131,7 @@ node_pred* find_or_create(recall_tree& b, uint32_t cn, example& ec)
 
   if (ls == b.nodes[cn].preds.end())
   {
-    node_pred newls(ec.l.multi.label);
+    node_pred newls(ec.l.multi().label);
     b.nodes[cn].preds.push_back(newls);
     ls = b.nodes[cn].preds.end() - 1;
   }
@@ -153,11 +152,10 @@ void compute_recall_lbest(recall_tree& b, node* n)
   }
 
   float f = (float)mass_at_k / (float)n->n;
-  float stdf = sqrt(f * (1.f - f) / (float)n->n);
-  float diamf = 15.f / (sqrtf(18.f) * (float)n->n);
+  float stdf = std::sqrt(f * (1.f - f) / (float)n->n);
+  float diamf = 15.f / (std::sqrt(18.f) * (float)n->n);
 
-  // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
-  n->recall_lbest = (std::max)(0.f, f - sqrt(b.bern_hyper) * stdf - b.bern_hyper * diamf);
+  n->recall_lbest = std::max(0.f, f - std::sqrt(b.bern_hyper) * stdf - b.bern_hyper * diamf);
 }
 
 double plogp(double c, double n) { return (c == 0) ? 0 : (c / n) * log(c / n); }
@@ -247,13 +245,16 @@ void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec
 
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
-  uint32_t save_pred = ec.pred.multiclass;
+  MULTICLASS::label_t mc = ec.l.multi();
+  uint32_t save_pred = ec.pred.multiclass();
 
   uint32_t amaxscore = 0;
 
   add_node_id_feature(b, cn, ec);
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.reset();
+  ec.l.init_as_simple() = {FLT_MAX, 0.f, 0.f};
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
 
   float maxscore = std::numeric_limits<float>::lowest();
   for (node_pred* ls = b.nodes[cn].preds.begin();
@@ -269,8 +270,10 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example&
 
   remove_node_id_feature(b, cn, ec);
 
-  ec.l.multi = mc;
-  ec.pred.multiclass = save_pred;
+  ec.l.reset();
+  ec.l.init_as_multi() = mc;
+  ec.pred.reset();
+  ec.pred.init_as_multiclass() = save_pred;
 
   return amaxscore;
 }
@@ -280,7 +283,7 @@ bool is_candidate(recall_tree& b, uint32_t cn, example& ec)
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
   {
-    if (ls->label == ec.l.multi.label)
+    if (ls->label == ec.l.multi().label)
       return true;
   }
 
@@ -304,10 +307,12 @@ bool stop_recurse_check(recall_tree& b, uint32_t parent, uint32_t child)
 
 predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
-  uint32_t save_pred = ec.pred.multiclass;
-
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  MULTICLASS::label_t mc = ec.l.multi();
+  uint32_t save_pred = ec.pred.multiclass();
+  ec.l.reset();
+  ec.l.init_as_simple() = {FLT_MAX, 0.f, 0.f};
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -320,8 +325,10 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
     cn = newcn;
   }
 
-  ec.l.multi = mc;
-  ec.pred.multiclass = save_pred;
+  ec.l.reset();
+  ec.l.init_as_multi() = mc;
+  ec.pred.reset();
+  ec.pred.init_as_multiclass() = save_pred;
 
   return predict_type(cn, oas_predict(b, base, cn, ec));
 }
@@ -330,13 +337,13 @@ void predict(recall_tree& b, single_learner& base, example& ec)
 {
   predict_type pred = predict_from(b, base, ec, 0);
 
-  ec.pred.multiclass = pred.class_prediction;
+  ec.pred.multiclass() = pred.class_prediction;
 }
 
 float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
-  uint32_t save_pred = ec.pred.multiclass;
+  MULTICLASS::label_t mc = ec.l.multi();
+  uint32_t save_pred = ec.pred.multiclass();
 
   // minimize entropy
   // better than maximize expected likelihood, and the proofs go through :)
@@ -351,7 +358,10 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   float route_label = delta_left < delta_right ? -1.f : 1.f;
   float imp_weight = fabs((float)(delta_left - delta_right));
 
-  ec.l.simple = {route_label, imp_weight, 0.};
+  ec.l.reset();
+  ec.l.init_as_simple() = {route_label, imp_weight, 0.};
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   base.learn(ec, b.nodes[cn].base_router);
 
   // TODO: using the updated routing seems to help
@@ -359,10 +369,12 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
   // TODO: (doesn't play well with link function)
   base.predict(ec, b.nodes[cn].base_router);
 
-  float save_scalar = ec.pred.scalar;
+  float save_scalar = ec.pred.scalar();
 
-  ec.l.multi = mc;
-  ec.pred.multiclass = save_pred;
+  ec.l.reset();
+  ec.l.init_as_multi() = mc;
+  ec.pred.reset();
+  ec.pred.init_as_multiclass() = save_pred;
 
   return save_scalar;
 }
@@ -371,7 +383,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 {
   predict(b, base, ec);
 
-  if (b.all->training && ec.l.multi.label != (uint32_t)-1)  // if training the tree
+  if (b.all->training && ec.l.multi().label != (uint32_t)-1)  // if training the tree
   {
     uint32_t cn = 0;
 
@@ -380,7 +392,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       float which = train_node(b, base, ec, cn);
 
       if (b.randomized_routing)
-        which = (merand48(b.all->random_state) > to_prob(which) ? -1.f : 1.f);
+        which = (b._random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f);
 
       uint32_t newcn = descend(b.nodes[cn], which);
       bool cond = stop_recurse_check(b, cn, newcn);
@@ -400,14 +412,17 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
     if (is_candidate(b, cn, ec))
     {
-      MULTICLASS::label_t mc = ec.l.multi;
-      uint32_t save_pred = ec.pred.multiclass;
+      MULTICLASS::label_t mc = ec.l.multi();
+      uint32_t save_pred = ec.pred.multiclass();
 
       add_node_id_feature(b, cn, ec);
 
-      ec.l.simple = {1.f, 1.f, 0.f};
+      ec.l.reset();
+      ec.l.init_as_simple() = {1.f, 1.f, 0.f};
+      ec.pred.reset();
+      ec.pred.init_as_scalar();
       base.learn(ec, b.max_routers + mc.label - 1);
-      ec.l.simple = {-1.f, 1.f, 0.f};
+      ec.l.simple() = {-1.f, 1.f, 0.f};
 
       for (node_pred* ls = b.nodes[cn].preds.begin();
            ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -418,23 +433,19 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
       remove_node_id_feature(b, cn, ec);
 
-      ec.l.multi = mc;
-      ec.pred.multiclass = save_pred;
+      ec.l.reset();
+      ec.l.init_as_multi() = mc;
+      ec.pred.reset();
+      ec.pred.init_as_multiclass() = save_pred;
     }
   }
-}
-
-void finish(recall_tree& b)
-{
-  for (size_t i = 0; i < b.nodes.size(); ++i) b.nodes[i].preds.delete_v();
-  b.nodes.delete_v();
 }
 
 void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)
   {
-    stringstream msg;
+    std::stringstream msg;
 
     writeit(b.k, "k");
     writeit(b.node_only, "node_only");
@@ -517,9 +528,10 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
     return nullptr;
 
   tree->all = &all;
+  tree->_random_state = all.get_random_state();
   tree->max_candidates = options.was_supplied("max_candidates")
       ? tree->max_candidates
-      : (std::min)(tree->k, 4 * (uint32_t)(ceil(log(tree->k) / log(2.0))));
+      : std::min(tree->k, 4 * (uint32_t)(ceil(log(tree->k) / log(2.0))));
   tree->max_depth =
       options.was_supplied("max_depth") ? tree->max_depth : (uint32_t)std::ceil(std::log(tree->k) / std::log(2.0));
 
@@ -535,7 +547,6 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
   learner<recall_tree, example>& l = init_multiclass_learner(
       tree, as_singleline(setup_base(options, all)), learn, predict, all.p, tree->max_routers + tree->k);
   l.set_save_load(save_load_tree);
-  l.set_finish(finish);
-
+  l.label_type = label_type_t::multi;
   return make_base(l);
 }

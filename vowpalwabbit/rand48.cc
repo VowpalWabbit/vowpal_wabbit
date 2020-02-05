@@ -1,5 +1,9 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 // A quick implementation similar to drand48 for cross-platform compatibility
-#include <stdint.h>
+#include <cstdint>
 //
 // NB: the 'ULL' suffix is not part of the constant it is there to
 // prevent truncation of constant to (32-bit long) when compiling

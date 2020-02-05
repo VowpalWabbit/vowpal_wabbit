@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
 // indirect the Win32 so non win32 Microsoft C programs can work
@@ -63,9 +61,13 @@ extern "C"
 
 #ifdef USE_CODECVT
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t* pstrArgs);
+  VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeEscaped(const char16_t* pstrArgs);
 #endif
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char* pstrArgs);
+  VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs);
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(
+      const char* pstrArgs, const char* modelData, size_t modelDataSize);
+  VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(
       const char* pstrArgs, const char* modelData, size_t modelDataSize);
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char* extraArgs);
 
@@ -117,10 +119,12 @@ extern "C"
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char* s, const char* h);
 #ifdef USE_CODECVT
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t* s, size_t u);
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t* s, size_t u, const char16_t* h, unsigned int num_bits);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(
+      const char16_t* s, size_t u, const char16_t* h, unsigned int num_bits);
 #endif
   VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char* s, size_t u);
-  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(const char* s, size_t u, const char* h, unsigned int num_bits);
+  VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStaticA(
+      const char* s, size_t u, const char* h, unsigned int num_bits);
 
   VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e);
   VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e);

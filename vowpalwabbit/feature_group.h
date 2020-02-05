@@ -1,22 +1,23 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
 
 #include <memory>
 #include <string>
 #include <cstddef>
+#include <cstdint>
 #include "v_array.h"
+#include <algorithm>
+#include <vector>
 
 #ifndef _WIN32
 #include <sys/types.h>
 #else
 #define ssize_t int64_t
 #endif
-
+ 
 typedef float feature_value;
 typedef uint64_t feature_index;
 typedef std::pair<std::string, std::string> audit_strings;
@@ -233,7 +234,7 @@ class features_value_index_audit_iterator : public features_value_index_iterator
   friend void swap(features_value_index_audit_iterator& lhs, features_value_index_audit_iterator& rhs)
   {
     swap(static_cast<features_value_index_iterator&>(lhs), static_cast<features_value_index_iterator&>(rhs));
-    swap(lhs._begin_audit, rhs._begin_audit);
+    std::swap(lhs._begin_audit, rhs._begin_audit);
   }
 };
 
@@ -266,16 +267,12 @@ struct features
     iterator_all end() { return iterator_all(_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()); }
   };
 
-  features()
-  {
-    values = v_init<feature_value>();
-    indicies = v_init<feature_index>();
-    space_names = v_init<audit_strings_ptr>();
-    sum_feat_sq = 0.f;
-  }
+  features() { sum_feat_sq = 0.f; }
 
-  // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
-  // ~features() { ... }
+  features(const features&) = default;
+  features& operator=(const features&) = default;
+  features(features&& other) = default;
+  features& operator=(features&& other) = default;
 
   inline size_t size() const { return values.size(); }
 
@@ -286,7 +283,7 @@ struct features
     for (; i < space_names.size(); i++) space_names[i].~audit_strings_ptr();
   }
 
-  features_value_index_audit_range values_indices_audit() { return features_value_index_audit_range(this); }
+  features_value_index_audit_range values_indices_audit() { return {this}; }
 
   // default iterator for values & features
   iterator begin() { return iterator(values.begin(), indicies.begin()); }
@@ -309,7 +306,7 @@ struct features
       indicies.end() = indicies.begin() + i;
     if (space_names.begin() != space_names.end())
     {
-      free_space_names(i);
+      free_space_names((size_t)i);
       space_names.end() = space_names.begin() + i;
     }
   }
@@ -326,13 +323,6 @@ struct features
     }
   }
 
-  void delete_v()
-  {
-    values.delete_v();
-    indicies.delete_v();
-    space_names.delete_v();
-  }
-
   void push_back(feature_value v, feature_index i)
   {
     values.push_back(v);
@@ -342,45 +332,54 @@ struct features
 
   bool sort(uint64_t parse_mask)
   {
-    if (indicies.size() == 0)
+    if (indicies.empty())
       return false;
 
-    if (space_names.size() != 0)
+    if (!space_names.empty())
     {
-      v_array<feature_slice> slice = v_init<feature_slice>();
+      std::vector<feature_slice> slice;
+      slice.reserve(indicies.size());
       for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature_slice temp = {values[i], indicies[i] & parse_mask, *space_names[i].get()};
-        slice.push_back(temp);
+        slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i].get()});
       }
-      qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features<feature_slice>);
+      // The comparator should return true if the first element is less than the second.
+      std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
+        return (first.weight_index < second.weight_index) ||
+            ((first.weight_index == second.weight_index) && (first.x < second.x));
+      });
+
       for (size_t i = 0; i < slice.size(); i++)
       {
         values[i] = slice[i].x;
         indicies[i] = slice[i].weight_index;
         *space_names[i].get() = slice[i].space_name;
       }
-      slice.delete_v();
     }
     else
     {
-      v_array<feature> slice = v_init<feature>();
+      std::vector<feature> slice;
+      slice.reserve(indicies.size());
+
       for (size_t i = 0; i < indicies.size(); i++)
       {
-        feature temp = {values[i], indicies[i] & parse_mask};
-        slice.push_back(temp);
+        slice.push_back({values[i], indicies[i] & parse_mask});
       }
-      qsort(slice.begin(), slice.size(), sizeof(feature), order_features<feature>);
+      // The comparator should return true if the first element is less than the second.
+      std::sort(slice.begin(), slice.end(), [](const feature& first, const feature& second) {
+        return (first.weight_index < second.weight_index) ||
+            ((first.weight_index == second.weight_index) && (first.x < second.x));
+      });
       for (size_t i = 0; i < slice.size(); i++)
       {
         values[i] = slice[i].x;
         indicies[i] = slice[i].weight_index;
       }
-      slice.delete_v();
     }
     return true;
   }
 
+  VW_DEPRECATED("Use copy constructor")
   void deep_copy_from(const features& src)
   {
     copy_array(values, src.values);

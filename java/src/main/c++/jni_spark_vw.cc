@@ -5,6 +5,12 @@
 #include "util.h"
 #include "options_serializer_boost_po.h"
 #include <algorithm>
+#include <exception>
+
+// Java JNI exception check (if another JNI function is invoked it segfauls)
+#define CHECK_JNI_EXCEPTION(ret) \
+  if (env->ExceptionCheck())     \
+    return ret;
 
 // Guards
 StringGuard::StringGuard(JNIEnv* env, jstring source) : _env(env), _source(source), _cstr(nullptr)
@@ -106,7 +112,10 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
 
     // copy to Java
     jbyteArray ret = env->NewByteArray(buffer._buffer.size());
+    CHECK_JNI_EXCEPTION(nullptr);
+
     env->SetByteArrayRegion(ret, 0, buffer._buffer.size(), (const jbyte*)&buffer._buffer[0]);
+    CHECK_JNI_EXCEPTION(nullptr);
 
     return ret;
   }
@@ -130,15 +139,62 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
     }
   }
 
-  auto serialized_keep_options = serializer.str().c_str();
-
   // move it to Java
-  jstring args = env->NewStringUTF(serialized_keep_options);
+  // Note: don't keep serializer.str().c_str() around in some variable. it get's deleted after str() is de-allocated
+  jstring args = env->NewStringUTF(serializer.str().c_str());
+  CHECK_JNI_EXCEPTION(nullptr);
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitArguments");
-  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;)V");
+  CHECK_JNI_EXCEPTION(nullptr);
 
-  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args);
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;DD)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->eta, all->power_t);
+}
+
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistics(
+    JNIEnv* env, jobject vwObj)
+{
+  auto all = (vw*)get_native_pointer(env, vwObj);
+
+  long numberOfExamplesPerPass;
+  double weightedExampleSum;
+  double weightedLabelSum;
+  double averageLoss;
+  float bestConstant;
+  float bestConstantLoss;
+  long totalNumberOfFeatures;
+
+  if (all->current_pass == 0)
+    numberOfExamplesPerPass = all->sd->example_number;
+  else
+    numberOfExamplesPerPass = all->sd->example_number / all->current_pass;
+
+  weightedExampleSum = all->sd->weighted_examples();
+  weightedLabelSum = all->sd->weighted_labels;
+
+  if (all->holdout_set_off)
+    if (all->sd->weighted_labeled_examples > 0)
+      averageLoss = all->sd->sum_loss / all->sd->weighted_labeled_examples;
+    else
+      averageLoss = 0;  // TODO should report NaN, but not clear how to do in platform independent manner
+  else if ((all->sd->holdout_best_loss == FLT_MAX) || (all->sd->holdout_best_loss == FLT_MAX * 0.5))
+    averageLoss = 0;  // TODO should report NaN, but not clear how to do in platform independent manner
+  else
+    averageLoss = all->sd->holdout_best_loss;
+
+  get_best_constant(*all, bestConstant, bestConstantLoss);
+  totalNumberOfFeatures = all->sd->total_features;
+
+  jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(JDDDFFJ)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(clazz, ctor, numberOfExamplesPerPass, weightedExampleSum, weightedLabelSum, averageLoss,
+      bestConstant, bestConstantLoss, totalNumberOfFeatures);
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JNIEnv* env, jobject vwObj)
@@ -200,7 +256,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
 
   try
   {
-    example* ex = VW::alloc_examples(0, 1);
+    example* ex = VW::alloc_examples(1);
     ex->interactions = &all->interactions;
 
     if (isEmpty)
@@ -209,7 +265,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
       VW::read_line(*all, ex, &empty);
     }
     else
-      all->p->lp.default_label(&ex->l);
+      all->p->lp.default_label(ex->l);
 
     return (jlong) new VowpalWabbitExampleWrapper(all, ex);
   }
@@ -219,7 +275,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
   }
 }
 
-JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JNIEnv* env, jobject exampleObj)
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JNIEnv* env, jobject exampleObj)
 {
   INIT_VARS
 
@@ -241,7 +297,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   try
   {
     VW::empty_example(*all, *ex);
-    all->p->lp.default_label(&ex->l);
+    all->p->lp.default_label(ex->l);
   }
   catch (...)
   {
@@ -266,7 +322,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
   {
     addNamespaceIfNotExists(all, ex, ns);
 
-    auto features = ex->feature_space + ns;
+    auto features = ex->feature_space.data() + ns;
 
     CriticalArrayGuard valuesGuard(env, values);
     double* values0 = (double*)valuesGuard.data();
@@ -305,7 +361,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
   {
     addNamespaceIfNotExists(all, ex, ns);
 
-    auto features = ex->feature_space + ns;
+    auto features = ex->feature_space.data() + ns;
 
     CriticalArrayGuard indicesGuard(env, indices);
     int* indices0 = (int*)indicesGuard.data();
@@ -358,6 +414,12 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   }
 }
 
+// re-use prediction conversation methods
+jobject multilabel_predictor(example* vec, JNIEnv* env);
+jfloatArray scalars_predictor(example* vec, JNIEnv* env);
+jobject action_scores_prediction(example* vec, JNIEnv* env);
+jobject action_probs_prediction(example* vec, JNIEnv* env);
+
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(JNIEnv* env, jobject exampleObj)
 {
   INIT_VARS
@@ -366,24 +428,45 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPre
   jmethodID ctr;
   switch (all->l->pred_type)
   {
-    case prediction_type::prediction_type_t::scalar:
+    case prediction_type_t::scalar:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
+      CHECK_JNI_EXCEPTION(nullptr);
+
       ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
+      CHECK_JNI_EXCEPTION(nullptr);
 
       return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
 
-    case prediction_type::prediction_type_t::prob:
+    case prediction_type_t::prob:
       predClass = env->FindClass("java/lang/Float");
+      CHECK_JNI_EXCEPTION(nullptr);
+
       ctr = env->GetMethodID(predClass, "<init>", "(F)V");
+      CHECK_JNI_EXCEPTION(nullptr);
 
-      return env->NewObject(predClass, ctr, ex->pred.prob);
+      return env->NewObject(predClass, ctr, ex->pred.prob());
 
-      /*
-         case prediction_type::prediction_type_t::action_probs:
-         case prediction_type::prediction_type_t::action_scores:
-         case prediction_type::prediction_type_t::multiclass:
-         case prediction_type::prediction_type_t::multilabels:
-         case prediction_type::prediction_type_t::scalars:*/
+    case prediction_type_t::multiclass:
+      predClass = env->FindClass("java/lang/Integer");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      ctr = env->GetMethodID(predClass, "<init>", "(I)V");
+      CHECK_JNI_EXCEPTION(nullptr);
+
+      return env->NewObject(predClass, ctr, ex->pred.multiclass());
+
+    case prediction_type_t::scalars:
+      return scalars_predictor(ex, env);
+
+    case prediction_type_t::action_probs:
+      return action_probs_prediction(ex, env);
+
+    case prediction_type_t::action_scores:
+      return action_scores_prediction(ex, env);
+
+    case prediction_type_t::multilabels:
+      return multilabel_predictor(ex, env);
+
     default:
       return nullptr;
   }

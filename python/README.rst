@@ -9,10 +9,10 @@ Vowpal Wabbit Python Wrapper
     :target: https://travis-ci.org/VowpalWabbit/vowpal_wabbit
 .. image:: https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true
     :alt: Windows Build Status
-    :target: https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit
-.. image:: https://coveralls.io/repos/github/JohnLangford/vowpal_wabbit/badge.svg
+    :target: https://ci.appveyor.com/project/VowpalWabbit/vowpal-wabbit
+.. image:: https://coveralls.io/repos/github/VowpalWabbit/vowpal_wabbit/badge.svg
     :alt: Coverage
-    :target: https://coveralls.io/r/JohnLangford/vowpal_wabbit
+    :target: https://coveralls.io/r/VowpalWabbit/vowpal_wabbit
 
 Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
 
@@ -140,7 +140,7 @@ Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be 
     $ source activate vowpalwabbit
     # install necessary boost dependencies
     $ conda install -y -c anaconda boost
-    $ pip install -e vowpal_wabbit/python
+    $ pip install -e vowpal_wabbit
     
 **For python3 on Ubuntu 16.04 LTS**: Ubuntu 16.04 defaults to an old, custom-built version of boost. As such, the boost_python library names do not follow the standard naming convention adopted by offical boost releases for the boost_python libraries.
 You may need to manually create the relevant symlinks in this case. Example commands for python 3.5 follows: 

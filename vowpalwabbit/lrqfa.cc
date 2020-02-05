@@ -1,16 +1,19 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <string>
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
-using namespace std;
 using namespace VW::config;
 
 struct LRQFAstate
 {
   vw* all;
-  string field_name;
+  std::string field_name;
   int k;
   int field_id[256];
   size_t orig_size[256];
@@ -23,7 +26,7 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
+inline bool example_is_test(example& ec) { return ec.l.simple().label == FLT_MAX; }
 
 template <bool is_learn>
 void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
@@ -38,7 +41,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   float first_loss = 0;
   unsigned int maxiter = (is_learn && !example_is_test(ec)) ? 2 : 1;
   unsigned int k = lrq.k;
-  float sqrtk = (float)sqrt(k);
+  float sqrtk = (float)std::sqrt(k);
 
   uint32_t stride_shift = lrq.all->weights.stride_shift();
   uint64_t weight_mask = lrq.all->weights.mask();
@@ -47,9 +50,9 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
 
-    for (string::const_iterator i1 = lrq.field_name.begin(); i1 != lrq.field_name.end(); ++i1)
+    for (std::string::const_iterator i1 = lrq.field_name.begin(); i1 != lrq.field_name.end(); ++i1)
     {
-      for (string::const_iterator i2 = i1 + 1; i2 != lrq.field_name.end(); ++i2)
+      for (std::string::const_iterator i2 = i1 + 1; i2 != lrq.field_name.end(); ++i2)
       {
         unsigned char left = (which % 2) ? *i1 : *i2;
         unsigned char right = ((which + 1) % 2) ? *i1 : *i2;
@@ -106,12 +109,12 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     // Restore example
     if (iter == 0)
     {
-      first_prediction = ec.pred.scalar;
+      first_prediction = ec.pred.scalar();
       first_loss = ec.loss;
     }
     else
     {
-      ec.pred.scalar = first_prediction;
+      ec.pred.scalar() = first_prediction;
       ec.loss = first_loss;
     }
 
@@ -144,9 +147,9 @@ LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   auto lrq = scoped_calloc_or_throw<LRQFAstate>();
   lrq->all = &all;
 
-  string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
+  std::string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
-  new (&lrq->field_name) string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
+  new (&lrq->field_name) std::string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());
 
   int fd_id = 0;
@@ -155,6 +158,6 @@ LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
   learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
       predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

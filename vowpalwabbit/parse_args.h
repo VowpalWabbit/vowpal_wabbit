@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
 #include "options.h"
@@ -32,5 +30,4 @@ void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool 
 LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
 
 std::string spoof_hex_encoded_namespaces(const std::string& arg);
-// char** get_argv_from_string(string s, int& argc);
 bool ends_with(std::string const& fullString, std::string const& ending);

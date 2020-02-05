@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "spanning_tree.h"
 #include "vw_exception.h"
@@ -17,8 +15,6 @@ license as described in the file LICENSE.
 #include <cmath>
 #include <map>
 #include <future>
-
-using namespace std;
 
 struct client
 {
@@ -129,7 +125,7 @@ void SpanningTree::Start()
   // launch async
   if (m_future == nullptr)
   {
-    m_future = new future<void>;
+    m_future = new std::future<void>;
   }
 
   *m_future = std::async(std::launch::async, &SpanningTree::Run, this);
@@ -153,7 +149,7 @@ void SpanningTree::Stop()
 
 void SpanningTree::Run()
 {
-  map<size_t, partial> partial_nodesets;
+  std::map<size_t, partial> partial_nodesets;
   while (!m_stop)
   {
     if (listen(sock, 1024) < 0)
@@ -182,8 +178,8 @@ void SpanningTree::Run()
       THROWERRNO("getnameinfo: ");
 
     if (!m_quiet)
-      cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
-           << ") serv=" << servInfo << endl;
+      std::cerr << "inbound connection from " << dotted_quad << "(" << hostname << ':' << ntohs(m_port)
+                << ") serv=" << servInfo << std::endl;
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
@@ -193,7 +189,7 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-        cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << endl;
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): nonce=" << nonce << std::endl;
     }
     size_t total = 0;
     if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total))
@@ -203,7 +199,7 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-        cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << endl;
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): total=" << total << std::endl;
     }
     size_t id = 0;
     if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id))
@@ -213,15 +209,15 @@ void SpanningTree::Run()
     else
     {
       if (!m_quiet)
-        cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << endl;
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): node id=" << id << std::endl;
     }
 
     int ok = true;
     if (id >= total)
     {
       if (!m_quiet)
-        cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id << " >=  " << total
-             << " !" << endl;
+        std::cout << dotted_quad << "(" << hostname << ':' << ntohs(m_port) << "): invalid id=" << id
+                  << " >=  " << total << " !" << std::endl;
       ok = false;
     }
     partial partial_nodeset;
@@ -256,8 +252,8 @@ void SpanningTree::Run()
         if (partial_nodeset.nodes[i].client_ip == (uint32_t)-1)
         {
           if (!m_quiet)
-            cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled) << " nodes out of "
-                 << total << " for example node " << i << endl;
+            std::cout << "nonce " << nonce << " still waiting for " << (total - partial_nodeset.filled)
+                      << " nodes out of " << total << " for example node " << i << std::endl;
           break;
         }
       }
@@ -287,7 +283,7 @@ void SpanningTree::Run()
             (int)sizeof(client_ports[i]))
 
           if (!m_quiet)
-            cerr << " Port read failed for node " << i << " read " << done << endl;
+            std::cerr << " Port read failed for node " << i << " read " << done << std::endl;
       }  // all clients have bound to their ports.
 
       for (size_t i = 0; i < total; i++)

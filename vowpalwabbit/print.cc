@@ -1,9 +1,13 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "gd.h"
-#include "float.h"
+#include <cfloat>
 #include "reductions.h"
 
-using namespace std;
 using namespace VW::config;
+
+using std::cout;
 
 struct print
 {
@@ -20,7 +24,7 @@ void print_feature(vw& /* all */, float value, uint64_t index)
 
 void learn(print& p, LEARNER::base_learner&, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
   if (ld.label != FLT_MAX)
   {
     cout << ld.label << " ";
@@ -31,14 +35,14 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
         cout << ld.initial << " ";
     }
   }
-  if (ec.tag.size() > 0)
+  if (!ec.tag.empty())
   {
     cout << '\'';
     cout.write(ec.tag.begin(), ec.tag.size());
   }
   cout << "| ";
   GD::foreach_feature<vw, uint64_t, print_feature>(*(p.all), ec, *p.all);
-  cout << endl;
+  cout << std::endl;
 }
 
 LEARNER::base_learner* print_setup(options_i& options, vw& all)
@@ -57,5 +61,6 @@ LEARNER::base_learner* print_setup(options_i& options, vw& all)
   all.weights.stride_shift(0);
 
   LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1);
+  ret.label_type = label_type_t::simple;
   return make_base(ret);
 }

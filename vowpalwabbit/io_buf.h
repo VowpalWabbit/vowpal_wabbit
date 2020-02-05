@@ -1,22 +1,34 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
-#include <stdio.h>
+#ifdef _WIN32
+#define NOMINMAX
+#define ssize_t int64_t
+#include <io.h>
+#include <sys/stat.h>
+#else
+#include <unistd.h>
+#endif
+
+#include <cstdio>
+#include <cstdint>
 #include <fcntl.h>
 #include "v_array.h"
 #include <iostream>
 #include <sstream>
-#include <errno.h>
+#include <cerrno>
 #include <stdexcept>
 #include "hash.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 
 #include "io_adapter.h"
+#ifndef O_LARGEFILE  // for OSX
+#define O_LARGEFILE 0
+#endif
 
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
@@ -62,6 +74,7 @@ class io_buf
   // used to check-sum i/o files for corruption detection
   bool _verify_hash;
   uint32_t _hash;
+  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
 
  public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
@@ -76,19 +89,25 @@ class io_buf
   static constexpr int READ = 1;
   static constexpr int WRITE = 2;
 
-  void init()
+  io_buf(io_buf& other) = delete;
+  io_buf& operator=(io_buf& other) = delete;
+  io_buf(io_buf&& other) = delete;
+  io_buf& operator=(io_buf&& other) = delete;
+  
+  virtual ~io_buf() 
   {
-    space = v_init<char>();
-    currentname = v_init<char>();
-    finalname = v_init<char>();
-    files = v_init<io_adapter*>();
-    size_t s = 1 << 16;
-    space.resize(s);
-    current = 0;
-    count = 0;
-    head = space.begin();
-    _verify_hash = false;
-    _hash = 0;
+#ifdef _WIN32
+    int f = _fileno(stdin);
+#else
+    int f = fileno(stdin);
+#endif
+
+    while (!files.empty() && files.last() == f)
+      files.pop();
+
+    // Calling a virtual function in a constructor or destructor will actually result
+    // in calling this classes implementation. Make it explicit so it is less confusing.
+    while (io_buf::close_file());
   }
 
   void verify_hash(bool verify)
@@ -118,12 +137,10 @@ class io_buf
     head = space.begin();
   }
 
-  io_buf() { init(); }
-
-  ~io_buf()
+  io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
   {
-    files.delete_v();
-    space.delete_v();
+    space.resize(INITIAL_BUFF_SIZE);
+    head = space.begin();
   }
 
   void set(char* p) { head = p; }
@@ -156,7 +173,7 @@ class io_buf
 
   void flush()
   {
-    if (files.size() > 0)
+    if (!files.empty())
     {
       if (write_file(files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
         std::cerr << "error, failed to write example\n";
@@ -166,7 +183,7 @@ class io_buf
 
   bool close_file()
   {
-    if (files.size() > 0)
+    if (!files.empty())
     {
       delete files.pop();
       return true;
@@ -257,7 +274,6 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
   }
   else
     return bin_write(io, data, (uint32_t)len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
@@ -280,7 +296,6 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stri
   }
   else
     return io.bin_write_fixed(data, len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)

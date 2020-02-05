@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include "baseline.h"
@@ -22,7 +21,7 @@ template <bool is_learn>
 float get_cost_pred(
     LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 {
-  CB::label ld = ec.l.cb;
+  auto label = std::move(ec.l);
 
   label_data simple_temp;
   simple_temp.initial = 0.;
@@ -33,8 +32,12 @@ float get_cost_pred(
 
   const bool baseline_enabled_old = BASELINE::baseline_enabled(&ec);
   BASELINE::set_baseline_enabled(&ec);
-  ec.l.simple = simple_temp;
-  polyprediction p = ec.pred;
+  ec.l.reset();
+  ec.l.init_as_simple(simple_temp);
+  // Save what is in the prediction right now, and restore it before we exit the function.
+  polyprediction p = std::move(ec.pred);
+  ec.pred.reset();
+  ec.pred.init_as_scalar();
   if (is_learn && known_cost != nullptr && index == known_cost->action)
   {
     float old_weight = ec.weight;
@@ -47,11 +50,10 @@ float get_cost_pred(
 
   if (!baseline_enabled_old)
     BASELINE::reset_baseline_disabled(&ec);
-  float pred = ec.pred.scalar;
-  ec.pred = p;
+  float pred = ec.pred.scalar();
+  ec.pred = std::move(p);
 
-  ec.l.cb = ld;
-
+  ec.l = std::move(label);
   return pred;
 }
 
@@ -77,7 +79,7 @@ inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint
   return 0.;
 }
 
-inline bool example_is_newline_not_header(example& ec)
+inline bool example_is_newline_not_header(example const& ec)
 {
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }

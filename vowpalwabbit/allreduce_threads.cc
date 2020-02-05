@@ -1,20 +1,17 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 /*
 This implements the allreduce function using threads.
 */
 #include "allreduce.h"
 #include <future>
 
-using namespace std;
-
 AllReduceSync::AllReduceSync(const size_t total) : m_total(total), m_count(0), m_run(true)
 {
-  m_mutex = new mutex;
-  m_cv = new condition_variable;
+  m_mutex = new std::mutex;
+  m_cv = new std::condition_variable;
   buffers = new void*[total];
 }
 
@@ -27,7 +24,7 @@ AllReduceSync::~AllReduceSync()
 
 void AllReduceSync::waitForSynchronization()
 {
-  unique_lock<mutex> l(*m_mutex);
+  std::unique_lock<std::mutex> l(*m_mutex);
   m_count++;
 
   if (m_count >= m_total)

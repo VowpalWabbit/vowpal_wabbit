@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
 
@@ -11,7 +9,6 @@ license as described in the file LICENSE.
 #include "options_serializer_boost_po.h"
 #include <algorithm>
 
-using namespace std;
 using namespace System;
 using namespace System::Text;
 using namespace System::Collections::Generic;

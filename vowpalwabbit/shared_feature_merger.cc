@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "shared_feature_merger.h"
 #include "cb.h"
 #include "example.h"
@@ -8,7 +12,6 @@
 #include "vw.h"
 
 #include <iterator>
-using namespace std;
 
 namespace VW
 {
@@ -39,14 +42,15 @@ void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
 
   multi_ex::value_type shared_example = nullptr;
 
-  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
+  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0])
+    || COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
   if (has_example_header)
   {
     shared_example = ec_seq[0];
     ec_seq.erase(ec_seq.begin());
     // merge sequences
     for (auto& example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
-    swap(ec_seq[0]->pred, shared_example->pred);
+    std::swap(ec_seq[0]->pred, shared_example->pred);
   }
   if (ec_seq.size() == 0)
     return;
@@ -58,7 +62,7 @@ void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
   if (has_example_header)
   {
     for (auto& example : ec_seq) LabelDict::del_example_namespaces_from_example(*example, *shared_example);
-    swap(shared_example->pred, ec_seq[0]->pred);
+    std::swap(shared_example->pred, ec_seq[0]->pred);
     ec_seq.insert(ec_seq.begin(), shared_example);
   }
 }
@@ -72,7 +76,7 @@ LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, v
 
   auto* base = LEARNER::as_multiline(setup_base(options, all));
   auto& learner = LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
-
+  learner.label_type = base->label_type;
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.
 

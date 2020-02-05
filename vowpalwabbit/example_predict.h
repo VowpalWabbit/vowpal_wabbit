@@ -1,14 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
 typedef unsigned char namespace_index;
 
 #include "v_array.h"
 #include "feature_group.h"
+#include "constant.h"
+#include <vector>
+#include <array>
 
 struct example_predict
 {
@@ -35,20 +36,25 @@ struct example_predict
   };
 
   v_array<namespace_index> indices;
-  features feature_space[256];  // Groups of feature values.
-  uint64_t ft_offset;           // An offset for all feature values.
+  std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
+  uint64_t ft_offset = 0;                              // An offset for all feature values.
 
-  // Interactions are specified by this vector of strings, where each string is an interaction and each char is a namespace.
+  // Interactions are specified by this vector of strings, where each string is an interaction and each char is a
+  // namespace.
   std::vector<std::string>* interactions;
 
-  iterator begin() { return iterator(feature_space, indices.begin()); }
-  iterator end() { return iterator(feature_space, indices.end()); }
+  iterator begin() { return iterator(feature_space.data(), indices.begin()); }
+  iterator end() { return iterator(feature_space.data(), indices.end()); }
 };
 
 // make sure we have an exception safe version of example_predict
-class safe_example_predict : public example_predict
+class
+VW_DEPRECATED("example now uses C++ lifecycle functions. Please migrate to that instead for RAII needs.")
+safe_example_predict : public example_predict
 {
  public:
   safe_example_predict();
   ~safe_example_predict();
+
+  void clear();
 };

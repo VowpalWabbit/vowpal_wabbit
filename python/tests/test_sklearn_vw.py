@@ -201,7 +201,7 @@ class TestVWClassifier:
         # dummy data in vw format
         X = pd.Series(['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat'], name='catdog')
 
-        kfold = KFold(n_splits=3, random_state=314, shuffle=False)
+        kfold = KFold(n_splits=3, random_state=314, shuffle=True)
         for train_idx, valid_idx in kfold.split(X):
             X_train = X[train_idx]
             # Classifier with multiple passes over the data
@@ -244,3 +244,21 @@ def test_tovw():
     assert tovw(x=x, y=y, sample_weight=w) == expected
 
     assert tovw(x=csr_matrix(x), y=y, sample_weight=w) == expected
+
+def test_save_load(tmp_path):
+    train_file = str(tmp_path / "train.model")
+
+    X = [[1, 2], [3, 4], [5, 6], [7, 8]]
+    y = [1, 2, 3, 4]
+
+    model_before = VWRegressor(l=100)
+    model_before.fit(X, y)
+    before_saving = model_before.predict(X)
+
+    model_before.save(train_file)
+
+    model_after = VWRegressor(l=100)
+    model_after.load(train_file)
+    after_loading = model_after.predict(X)
+
+    assert all([a == b for a, b in zip(before_saving, after_loading)])

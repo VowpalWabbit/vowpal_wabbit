@@ -13,7 +13,7 @@ class SearchTask():
         self.bogus_example = [self.vw.example("1 | x")]
 
     def __del__(self):
-        self.vw.finish_examples(bogus_example)
+        self.vw.finish_example(self.bogus_example)
 
     def _run(self, your_own_input_example):
         pass
@@ -60,7 +60,8 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pMULTICLASS: ec.get_multiclass_prediction,
         pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
         pylibvw.vw.pPROB: ec.get_prob,
-        pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars
+        pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
+        pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores
     }
     return switch_prediction_type[prediction_type]()
 
@@ -601,9 +602,6 @@ class example(pylibvw.example):
         self.stride = vw.get_stride()
         self.finished = False
         self.labelType = labelType
-
-    def __enter__(self):
-        return self
 
     def get_ns(self, id):
         """Construct a namespace_id from either an integer or string

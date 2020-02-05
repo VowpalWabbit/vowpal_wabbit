@@ -1,15 +1,13 @@
-/*
-  Copyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
-#include <float.h>
-#include <errno.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
+#include <cerrno>
 
 #include "reductions.h"
 #include "vw.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -70,6 +68,13 @@ struct baseline
   bool global_only;  // only use a global constant for the baseline
   bool global_initialized;
   bool check_enabled;  // only use baseline when the example contains enabled flag
+
+  ~baseline()
+  {
+    if (ec)
+      ec->~example();
+    free(ec);
+  }
 };
 
 void init_global(baseline& data)
@@ -108,7 +113,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
     }
     VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
     base.predict(*data.ec);
-    ec.l.simple.initial = data.ec->pred.scalar;
+    ec.l.simple().initial = data.ec->pred.scalar();
     base.predict(ec);
   }
   else
@@ -116,10 +121,10 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
 
   if (is_learn)
   {
-    const float pred = ec.pred.scalar;  // save 'safe' prediction
+    const float pred = ec.pred.scalar();  // save 'safe' prediction
 
     // now learn
-    data.ec->l.simple = ec.l.simple;
+    data.ec->l.simple() = ec.l.simple();
     if (!data.global_only)
     {
       // move label & constant features data over to baseline example
@@ -133,7 +138,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       float multiplier = data.lr_multiplier;
       if (multiplier == 0)
       {
-        multiplier = max<float>(0.0001f, max<float>(abs(data.all->sd->min_label), abs(data.all->sd->max_label)));
+        multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
         if (multiplier > max_multiplier)
           multiplier = max_multiplier;
       }
@@ -145,7 +150,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       base.learn(*data.ec);
 
     // regress residual
-    ec.l.simple.initial = data.ec->pred.scalar;
+    ec.l.simple().initial = data.ec->pred.scalar();
     base.learn(ec);
 
     if (!data.global_only)
@@ -155,7 +160,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
     }
 
     // return the safe prediction
-    ec.pred.scalar = pred;
+    ec.pred.scalar() = pred;
   }
 }
 
@@ -170,24 +175,18 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
 
   // sensitivity of baseline term
   VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
-  data.ec->l.simple.label = ec.l.simple.label;
-  data.ec->pred.scalar = ec.pred.scalar;
-  // cout << "before base" << endl;
+  data.ec->l.simple().label = ec.l.simple().label;
+  data.ec->pred.scalar() = ec.pred.scalar();
+  // std::cout << "before base" << std::endl;
   const float baseline_sens = base.sensitivity(*data.ec);
-  // cout << "base sens: " << baseline_sens << endl;
+  // std::cout << "base sens: " << baseline_sens << std::endl;
 
   // sensitivity of residual
   as_singleline(&base)->predict(*data.ec);
-  ec.l.simple.initial = data.ec->pred.scalar;
+  ec.l.simple().initial = data.ec->pred.scalar();
   const float sens = base.sensitivity(ec);
-  // cout << " residual sens: " << sens << endl;
+  // std::cout << " residual sens: " << sens << std::endl;
   return baseline_sens + sens;
-}
-
-void finish(baseline& data)
-{
-  VW::dealloc_example(simple_label.delete_label, *data.ec);
-  free(data.ec);
 }
 
 base_learner* baseline_setup(options_i& options, vw& all)
@@ -214,10 +213,9 @@ base_learner* baseline_setup(options_i& options, vw& all)
     return nullptr;
 
   // initialize baseline example
-  data->ec = VW::alloc_examples(simple_label.label_size, 1);
+  data->ec = VW::alloc_examples(1);
   data->ec->interactions = &all.interactions;
 
-  data->ec->in_use = true;
   data->all = &all;
 
   auto loss_function_type = all.loss->getType();
@@ -229,7 +227,6 @@ base_learner* baseline_setup(options_i& options, vw& all)
   learner<baseline, example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
 
   l.set_sensitivity(sensitivity);
-  l.set_finish(finish);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

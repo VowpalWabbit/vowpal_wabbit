@@ -1,7 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
-#include <stdio.h>
-#include "../vowpalwabbit/parser.h"
-#include "../vowpalwabbit/vw.h"
+#include <cstdio>
+#include "parser.h"
+#include "vw.h"
 
 typedef uint32_t fid;
 
@@ -33,16 +37,17 @@ class ezexample
 
   v_array<example*> example_copies;
 
-  ezexample(const ezexample& ex);
-  ezexample& operator=(const ezexample& ex);
+  ezexample(const ezexample& ex) = delete;
+  ezexample& operator=(const ezexample& ex) = delete;
 
   example* get_new_example()
   {
-    example* new_ec = VW::new_unused_example(*vw_par_ref);
-    vw_par_ref->p->lp.default_label(&new_ec->l);
+    auto new_ec = VW::new_unused_example(*vw_par_ref);
+    vw_par_ref->p->lp.default_label(new_ec->l);
     new_ec->tag.clear();
     new_ec->indices.clear();
-    for (size_t i = 0; i < 256; i++) new_ec->feature_space[i].clear();
+    for (auto& i : new_ec->feature_space)
+      i.clear();
 
     new_ec->ft_offset = 0;
     new_ec->num_features = 0;
@@ -69,7 +74,8 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (size_t i = 0; i < 256; i++) ns_exists[i] = false;
+    for (bool& ns_exist : ns_exists)
+      ns_exist = false;
 
     example_changed_since_prediction = true;
   }
@@ -93,7 +99,7 @@ class ezexample
   ezexample(vw* this_vw, bool multiline = false, vw* this_vw_parser = nullptr)
   {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    example_copies = v_init<example*>();
+    example_copies.clear();
     ec = get_new_example();
     we_create_ec = true;
 
@@ -111,7 +117,8 @@ class ezexample
     ec = this_ec;
     we_create_ec = false;
 
-    for (auto ns : ec->indices) ns_exists[ns] = true;
+    for (auto ns : ec->indices)
+      ns_exists[ns] = true;
     if (current_ns != 0)
     {
       str[0] = current_ns;
@@ -121,13 +128,12 @@ class ezexample
 
   ~ezexample()  // calls finish_example *only* if we created our own example!
   {
-    if (ec->in_use && VW::is_ring_example(*vw_par_ref, ec))
+    if (VW::is_ring_example(*vw_par_ref, ec))
       VW::finish_example(*vw_par_ref, *ec);
     for (auto ecc : example_copies)
-      if (ecc->in_use && VW::is_ring_example(*vw_par_ref, ec))
+      if (VW::is_ring_example(*vw_par_ref, ec))
         VW::finish_example(*vw_par_ref, *ecc);
     example_copies.clear();
-    free(example_copies.begin());
   }
 
   bool ensure_ns_exists(char c)  // returns TRUE iff we should ignore it :)
@@ -155,7 +161,7 @@ class ezexample
 
   void remns()
   {
-    if (ec->indices.size() == 0)
+    if (ec->indices.empty())
     {
       current_seed = 0;
       current_ns = 0;
@@ -226,7 +232,7 @@ class ezexample
   void mini_setup_example()
   {
     ec->partial_prediction = 0.;
-    ec->weight = vw_par_ref->p->lp.get_weight(&ec->l);
+    ec->weight = vw_par_ref->p->lp.get_weight(ec->l);
 
     ec->num_features -= quadratic_features_num;
     ec->total_sum_feat_sq -= quadratic_features_sqr;
@@ -234,11 +240,11 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (std::vector<std::string>::iterator i = vw_ref->pairs.begin(); i != vw_ref->pairs.end(); i++)
+    for (auto const& pair : vw_ref->pairs)
     {
-      quadratic_features_num += ec->feature_space[(int)(*i)[0]].size() * ec->feature_space[(int)(*i)[1]].size();
+      quadratic_features_num += ec->feature_space[(int)pair[0]].size() * ec->feature_space[(int)pair[1]].size();
       quadratic_features_sqr +=
-          ec->feature_space[(int)(*i)[0]].sum_feat_sq * ec->feature_space[(int)(*i)[1]].sum_feat_sq;
+          ec->feature_space[(int)pair[0]].sum_feat_sq * ec->feature_space[(int)pair[1]].sum_feat_sq;
     }
     ec->num_features += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
@@ -256,7 +262,7 @@ class ezexample
   float predict()
   {
     setup_for_predict();
-    return ec->pred.scalar;
+    return ec->pred.scalar();
   }
 
   float predict_partial()
@@ -280,9 +286,7 @@ class ezexample
     else  // is multiline
     {     // we need to make a copy
       example* copy = get_new_example();
-      assert(ec->in_use);
-      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
-      assert(copy->in_use);
+      *copy = *ec;
       vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }
@@ -305,8 +309,7 @@ class ezexample
     {
       vw_ref->learn(*empty_example);
       for (auto ecc : example_copies)
-        if (ecc->in_use)
-          VW::finish_example(*vw_par_ref, *ecc);
+        VW::finish_example(*vw_par_ref, *ecc);
       example_copies.clear();
     }
   }

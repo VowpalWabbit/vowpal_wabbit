@@ -7,12 +7,11 @@ import re
 import io
 
 from scipy.sparse import csr_matrix
+from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
-from sklearn.datasets.svmlight_format import dump_svmlight_file
-from sklearn.utils.validation import check_is_fitted
+from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import shuffle
-from sklearn.externals import joblib
 from vowpalwabbit import pyvw
 
 
@@ -348,7 +347,11 @@ class VW(BaseEstimator):
             Output vector relative to X.
         """
 
-        check_is_fitted(self, 'fit_')
+        # check_is_fitted
+        if not hasattr(self, 'fit_'):
+            msg = ("This %(name)s instance is not fitted yet. Call 'fit' with "
+                   "appropriate arguments before using this method.")
+            raise NotFittedError(msg % {'name': self.__class__.__name__})
 
         try:
             num_samples = X.shape[0] if X.ndim > 1 else len(X)
@@ -448,14 +451,18 @@ class VW(BaseEstimator):
 
     def save(self, filename):
         """Save model to file"""
-        joblib.dump(dict(params=self.get_params(), coefs=self.get_coefs(), fit=self.fit_), filename=filename)
+        model = self.get_vw()
+        model.save(filename)
 
     def load(self, filename):
         """Load model from file"""
-        obj = joblib.load(filename=filename)
-        self.set_params(**obj['params'])
-        self.set_coefs(obj['coefs'])
-        self.fit_ = obj['fit']
+        params = {}
+        params.update(self.params)
+        params["initial_regressor"] = filename
+        self.set_params(**params)
+
+        # Assume that the model is already fitted when loaded from file.
+        self.fit_ = True
 
 
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
@@ -569,6 +576,17 @@ def tovw(x, y=None, sample_weight=None):
     -------
     out : {array-like}, shape (n_samples, 1)
           Training vectors in VW string format
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from sklearn.feature_extraction.text import HashingVectorizer
+    >>> from vowpalwabbit.sklearn_vw import tovw
+    >>> X = pd.Series(['cat', 'dog', 'cat', 'cat'], name='catdog')
+    >>> y = pd.Series([-1, 1, -1, -1], name='label')
+    >>> hv = HashingVectorizer()
+    >>> hashed = hv.fit_transform(X)
+    >>> tovw(x=hashed, y=y)
     """
 
     use_truth = y is not None

@@ -1,12 +1,10 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
@@ -21,51 +19,11 @@ license as described in the file LICENSE.
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
 #include <vector>
+#include "vw_exception.h"
+#include "label.h"
+#include "prediction.h"
 
-constexpr unsigned char default_namespace = 32;
-constexpr unsigned char wap_ldf_namespace = 126;
-constexpr unsigned char history_namespace = 127;
-constexpr unsigned char constant_namespace = 128;
-constexpr unsigned char nn_output_namespace = 129;
-constexpr unsigned char autolink_namespace = 130;
-constexpr unsigned char neighbor_namespace =
-    131;  // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
-constexpr unsigned char affix_namespace = 132;         // this is \x84
-constexpr unsigned char spelling_namespace = 133;      // this is \x85
-constexpr unsigned char conditioning_namespace = 134;  // this is \x86
-constexpr unsigned char dictionary_namespace = 135;    // this is \x87
-constexpr unsigned char node_id_namespace = 136;       // this is \x88
-constexpr unsigned char message_namespace = 137;       // this is \x89
-constexpr unsigned char ccb_slot_namespace = 139;
-constexpr unsigned char ccb_id_namespace = 140;
-
-typedef union {
-  no_label::no_label empty;
-  label_data simple;
-  MULTICLASS::label_t multi;
-  COST_SENSITIVE::label cs;
-  CB::label cb;
-  CCB::label conditional_contextual_bandit;
-  CB_EVAL::label cb_eval;
-  MULTILABEL::labels multilabels;
-} polylabel;
-
-inline void delete_scalars(void* v)
-{
-  v_array<float>* preds = (v_array<float>*)v;
-  preds->delete_v();
-}
-
-typedef union {
-  float scalar;
-  v_array<float> scalars;           // a sequence of scalar predictions
-  ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  CCB::decision_scores_t decision_scores;
-  uint32_t multiclass;
-  MULTILABEL::labels multilabels;
-  float prob;  // for --probabilities --csoaa_ldf=mc
-} polyprediction;
-
+IGNORE_DEPRECATED_USAGE_START
 struct example : public example_predict  // core example datatype.
 {
   // input fields
@@ -90,9 +48,19 @@ struct example : public example_predict  // core example datatype.
 
   bool test_only;
   bool end_pass;  // special example indicating end of pass.
-  bool sorted;    // Are the features sorted or not?
-  bool in_use;    // in use or not (for the parser)
+  bool sorted;    // Are the features sorted or not? 
+  VW_DEPRECATED("in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. Standalone examples are by definition always in use.")
+  bool in_use = true;
+
+  ~example()
+  {
+    if (passthrough)
+    {
+      delete passthrough;
+    }
+  }
 };
+IGNORE_DEPRECATED_USAGE_END
 
 struct vw;
 
@@ -101,7 +69,7 @@ struct flat_example
   polylabel l;
 
   size_t tag_len;
-  char* tag;  // An identifier for the example.
+  char* tag = nullptr;  // An identifier for the example.
 
   size_t example_counter;
   uint64_t ft_offset;
@@ -110,17 +78,92 @@ struct flat_example
   size_t num_features;      // precomputed, cause it's fast&easy.
   float total_sum_feat_sq;  // precomputed, cause it's kind of fast & easy.
   features fs;              // all the features
+
+  ~flat_example()
+  {
+    if (tag_len > 0)
+      free(tag);
+  }
+
+  flat_example(const flat_example& other)
+  {
+    l = other.l;
+    tag_len = other.tag_len;
+    if (tag_len > 0)
+    {
+      memcpy(tag, other.tag, tag_len);
+    }
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = other.fs;
+  }
+
+  flat_example& operator=(const flat_example& other)
+  {
+    l = other.l;
+    tag_len = other.tag_len;
+    if(tag != nullptr)
+    {
+      free(tag);
+      tag = nullptr;
+    }
+    if (tag_len > 0)
+    {
+      memcpy(tag, other.tag, tag_len);
+    }
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = other.fs;
+    return *this;
+  }
+
+  flat_example(flat_example&& other)
+  {
+    l = std::move(other.l);
+    tag_len = other.tag_len;
+    tag = other.tag;
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = std::move(other.fs);
+  }
+
+  flat_example& operator=(flat_example&& other)
+  {
+    l = std::move(other.l);
+    tag_len = other.tag_len;
+    if(tag != nullptr)
+    {
+      free(tag);
+    }
+    tag = other.tag;
+    example_counter = other.example_counter;
+    ft_offset = other.ft_offset;
+    global_weight = other.global_weight;
+    num_features = other.num_features;
+    total_sum_feat_sq = other.total_sum_feat_sq;
+    fs = std::move(other.fs);
+    return *this;
+  }
 };
 
 flat_example* flatten_example(vw& all, example* ec);
 flat_example* flatten_sort_example(vw& all, example* ec);
 void free_flatten_example(flat_example* fec);
 
-inline int example_is_newline(example& ec)
+inline int example_is_newline(example const& ec)
 {  // if only index is constant namespace or no index
-  if (ec.tag.size() > 0)
+  if (!ec.tag.empty())
     return false;
-  return ((ec.indices.size() == 0) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
+  return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
 }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
@@ -138,7 +181,5 @@ typedef std::vector<example*> multi_ex;
 
 namespace VW
 {
-void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);
-
 void return_multiple_example(vw& all, v_array<example*>& examples);
 }  // namespace VW

@@ -1,8 +1,6 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 /*
  * Implementation of online boosting algorithms from
@@ -10,22 +8,25 @@
  *    ICML-2015.
  */
 
-#include <float.h>
-#include <limits.h>
-#include <math.h>
+#include <cfloat>
+#include <climits>
+#include <cmath>
 #include "correctedMath.h"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <vector>
+#include <memory>
 
 #include "reductions.h"
 #include "vw.h"
 #include "rand48.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
+
+using std::cerr;
+using std::endl;
 
 inline float sign(float w)
 {
@@ -58,8 +59,9 @@ struct boosting
 {
   int N;
   float gamma;
-  string alg;
+  std::string alg;
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;
@@ -72,7 +74,7 @@ struct boosting
 template <bool is_learn>
 void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   float final_prediction = 0;
 
@@ -110,25 +112,25 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 
       base.predict(ec, i);
 
-      // ec.pred.scalar is now the i-th learner prediction on this example
-      s += ld.label * ec.pred.scalar;
+      // ec.pred.scalar() is now the i-th learner prediction on this example
+      s += ld.label * ec.pred.scalar();
 
-      final_prediction += ec.pred.scalar;
+      final_prediction += ec.pred.scalar();
 
       base.learn(ec, i);
     }
     else
     {
       base.predict(ec, i);
-      final_prediction += ec.pred.scalar;
+      final_prediction += ec.pred.scalar();
     }
   }
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar() = sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
+  if (ld.label == ec.pred.scalar())
     ec.loss = 0.;
   else
     ec.loss = ec.weight;
@@ -140,7 +142,7 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   float final_prediction = 0;
 
@@ -161,13 +163,13 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
 
       base.predict(ec, i);
       float z;
-      z = ld.label * ec.pred.scalar;
+      z = ld.label * ec.pred.scalar();
 
       s += z * o.alpha[i];
 
-      // if ld.label * ec.pred.scalar < 0, learner i made a mistake
+      // if ld.label * ec.pred.scalar() < 0, learner i made a mistake
 
-      final_prediction += ec.pred.scalar * o.alpha[i];
+      final_prediction += ec.pred.scalar() * o.alpha[i];
 
       // update alpha
       o.alpha[i] += eta * z / (1 + correctedExp(s));
@@ -181,15 +183,15 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
     else
     {
       base.predict(ec, i);
-      final_prediction += ec.pred.scalar * o.alpha[i];
+      final_prediction += ec.pred.scalar() * o.alpha[i];
     }
   }
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar() = sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
+  if (ld.label == ec.pred.scalar())
     ec.loss = 0.;
   else
     ec.loss = ec.weight;
@@ -198,7 +200,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
 template <bool is_learn>
 void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple();
 
   float final_prediction = 0, partial_prediction = 0;
 
@@ -210,7 +212,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
     o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
-  float stopping_point = merand48(o.all->random_state);
+  float stopping_point = o._random_state->get_and_update_random();
 
   for (int i = 0; i < o.N; i++)
   {
@@ -223,16 +225,16 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
       base.predict(ec, i);
       float z;
 
-      z = ld.label * ec.pred.scalar;
+      z = ld.label * ec.pred.scalar();
 
       s += z * o.alpha[i];
 
       if (v_partial_sum <= stopping_point)
       {
-        final_prediction += ec.pred.scalar * o.alpha[i];
+        final_prediction += ec.pred.scalar() * o.alpha[i];
       }
 
-      partial_prediction += ec.pred.scalar * o.alpha[i];
+      partial_prediction += ec.pred.scalar() * o.alpha[i];
 
       v_partial_sum += o.v[i];
 
@@ -257,7 +259,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
       base.predict(ec, i);
       if (v_partial_sum <= stopping_point)
       {
-        final_prediction += ec.pred.scalar * o.alpha[i];
+        final_prediction += ec.pred.scalar() * o.alpha[i];
       }
       else
       {
@@ -280,9 +282,9 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar() = sign(final_prediction);
 
-  if (ld.label == ec.pred.scalar)
+  if (ld.label == ec.pred.scalar())
     ec.loss = 0.;
   else
     ec.loss = ec.weight;
@@ -292,7 +294,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
-  stringstream os;
+  std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
@@ -311,7 +313,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
@@ -325,7 +327,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "v " << o.v[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
@@ -346,12 +348,6 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   cerr << endl;
 }
 
-void finish(boosting& o)
-{
-  o.C.~vector();
-  o.alpha.~vector();
-}
-
 void return_example(vw& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
@@ -362,7 +358,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
-  stringstream os;
+  std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
@@ -378,7 +374,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
@@ -428,6 +424,7 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
+  data->_random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 
@@ -450,8 +447,7 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   else
     THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
 
-  l->set_finish(finish);
   l->set_finish_example(return_example);
-
+  l->label_type = label_type_t::simple;
   return make_base(*l);
 }

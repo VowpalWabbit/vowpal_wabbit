@@ -1,10 +1,7 @@
-/*
-  CoPyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "search_multiclasstask.h"
-using namespace std;
 
 namespace MulticlassTask
 {
@@ -35,14 +32,13 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
 void finish(Search::search& sch)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
-  my_task_data->y_allowed.delete_v();
   delete my_task_data;
 }
 
 void run(Search::search& sch, multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
-  size_t gold_label = ec[0]->l.multi.label;
+  size_t gold_label = ec[0]->l.multi().label;
   size_t label = 0;
   size_t learner_id = 0;
 

@@ -1,10 +1,14 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
-#include <string.h>
 #include <unordered_map>
 #include <cstddef>
 
 #ifndef _WIN32
+#define NOMINMAX
 #include <sys/mman.h>
 #endif
 
@@ -15,6 +19,7 @@
 #endif
 
 #include "array_parameters_dense.h"
+#include "vw_exception.h"
 
 class sparse_parameters;
 typedef std::unordered_map<uint64_t, weight*> weight_map;
@@ -97,7 +102,7 @@ class sparse_parameters
   sparse_parameters(const sparse_parameters& other) { shallow_copy(other); }
   sparse_parameters(sparse_parameters&&) = delete;
 
-  weight* first() { throw 1; }  // TODO: Throw better exceptions. Allreduce currently not supported in sparse.
+  weight* first() { THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr); }
 
   // iterator with stride
   iterator begin()
@@ -204,10 +209,7 @@ class sparse_parameters
   }
 
 #ifndef _WIN32
-  void share(size_t /* length */)
-  {
-    throw 1;  // TODO: add better exceptions
-  }
+  void share(size_t /* length */) { THROW_OR_RETURN("Operation not supported on Windows"); }
 #endif
 
   ~sparse_parameters()
@@ -227,6 +229,9 @@ class sparse_parameters
 class parameters
 {
  public:
+  bool adaptive;
+  bool normalized;
+
   bool sparse;
   dense_parameters dense_weights;
   sparse_parameters sparse_weights;
@@ -287,6 +292,7 @@ class parameters
       dense_weights.set_zero(offset);
   }
 #ifndef _WIN32
+#ifndef DISABLE_SHARED_WEIGHTS
   inline void share(size_t length)
   {
     if (sparse)
@@ -294,6 +300,7 @@ class parameters
     else
       dense_weights.share(length);
   }
+#endif
 #endif
 
   inline void stride_shift(uint32_t stride_shift)

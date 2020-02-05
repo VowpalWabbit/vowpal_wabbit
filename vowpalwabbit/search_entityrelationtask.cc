@@ -1,12 +1,9 @@
-/*
-  CoPyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "search_entityrelationtask.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
 #define R_NONE 10      // label for NONE relation
@@ -78,11 +75,11 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   }
   else
   {
-    example* ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
+    example* ldf_examples = VW::alloc_examples(10);
     CS::wclass default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < 10; a++)
     {
-      ldf_examples[a].l.cs.costs.push_back(default_wclass);
+      ldf_examples[a].l.cs().costs.push_back(default_wclass);
       ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
     }
     my_task_data->ldf_entity = ldf_examples;
@@ -98,11 +95,10 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 void finish(Search::search& sch)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
-  my_task_data->y_allowed_entity.delete_v();
-  my_task_data->y_allowed_relation.delete_v();
   if (my_task_data->search_order == 3)
   {
-    for (size_t a = 0; a < 10; a++) VW::dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
+    for (size_t a = 0; a < 10; a++)
+      my_task_data->ldf_entity[a].~example();
     free(my_task_data->ldf_entity);
   }
   delete my_task_data;
@@ -121,8 +117,8 @@ bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
 
 void decode_tag(v_array<char> tag, char& type, int& id1, int& id2)
 {
-  string s1;
-  string s2;
+  std::string s1;
+  std::string s2;
   type = tag[0];
   size_t idx = 2;
   while (idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0')
@@ -148,8 +144,8 @@ size_t predict_entity(
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels = v_init<uint32_t>();
-    star_labels.push_back(ex->l.multi.label);
+    v_array<uint32_t> star_labels;
+    star_labels.push_back(ex->l.multi().label);
     star_labels.push_back(LABEL_SKIP);
     my_task_data->y_allowed_entity.push_back(LABEL_SKIP);
     prediction = Search::predictor(sch, my_tag)
@@ -168,7 +164,7 @@ size_t predict_entity(
       {
         VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
         update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a + 1));
-        CS::label& lab = my_task_data->ldf_entity[a].l.cs;
+        CS::label& lab = my_task_data->ldf_entity[a].l.cs();
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = a;
         lab.costs[0].partial_prediction = 0.f;
@@ -176,7 +172,7 @@ size_t predict_entity(
       }
       prediction = Search::predictor(sch, my_tag)
                        .set_input(my_task_data->ldf_entity, 4)
-                       .set_oracle(ex->l.multi.label - 1)
+                       .set_oracle(ex->l.multi().label - 1)
                        .set_learner_id(1)
                        .predict() +
           1;
@@ -185,7 +181,7 @@ size_t predict_entity(
     {
       prediction = Search::predictor(sch, my_tag)
                        .set_input(*ex)
-                       .set_oracle(ex->l.multi.label)
+                       .set_oracle(ex->l.multi().label)
                        .set_allowed(my_task_data->y_allowed_entity)
                        .set_learner_id(0)
                        .predict();
@@ -198,7 +194,7 @@ size_t predict_entity(
   {
     loss = my_task_data->skip_cost;
   }
-  else if (prediction != ex->l.multi.label)
+  else if (prediction != ex->l.multi().label)
     loss = my_task_data->entity_cost;
   sch.loss(loss);
   return prediction;
@@ -210,7 +206,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   task_data* my_task_data = sch.get_task_data<task_data>();
   size_t hist[2];
   decode_tag(ex->tag, type, id1, id2);
-  v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
+  v_array<uint32_t> constrained_relation_labels;
   if (my_task_data->constraints && predictions[id1] != 0 && predictions[id2] != 0)
   {
     hist[0] = predictions[id1];
@@ -231,8 +227,8 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels = v_init<uint32_t>();
-    star_labels.push_back(ex->l.multi.label);
+    v_array<uint32_t> star_labels;
+    star_labels.push_back(ex->l.multi().label);
     star_labels.push_back(LABEL_SKIP);
     constrained_relation_labels.push_back(LABEL_SKIP);
     prediction = Search::predictor(sch, my_tag)
@@ -255,12 +251,12 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
         VW::copy_example_data(false, &my_task_data->ldf_relation[a], ex);
         update_example_indicies(
             true, &my_task_data->ldf_relation[a], 28904713, 4832917 * (uint64_t)(constrained_relation_labels[a]));
-        CS::label& lab = my_task_data->ldf_relation[a].l.cs;
+        CS::label& lab = my_task_data->ldf_relation[a].l.cs();
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = constrained_relation_labels[a];
         lab.costs[0].partial_prediction = 0.f;
         lab.costs[0].wap_value = 0.f;
-        if (constrained_relation_labels[a] == ex->l.multi.label)
+        if (constrained_relation_labels[a] == ex->l.multi().label)
         {
           correct_label = (int)a;
         }
@@ -276,7 +272,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
     {
       prediction = Search::predictor(sch, my_tag)
                        .set_input(*ex)
-                       .set_oracle(ex->l.multi.label)
+                       .set_oracle(ex->l.multi().label)
                        .set_allowed(constrained_relation_labels)
                        .set_learner_id(1)
                        .predict();
@@ -288,9 +284,9 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   {
     loss = my_task_data->skip_cost;
   }
-  else if (prediction != ex->l.multi.label)
+  else if (prediction != ex->l.multi().label)
   {
-    if (ex->l.multi.label == R_NONE)
+    if (ex->l.multi().label == R_NONE)
     {
       loss = my_task_data->relation_none_cost;
     }
@@ -300,14 +296,13 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
     }
   }
   sch.loss(loss);
-  constrained_relation_labels.delete_v();
   return prediction;
 }
 
 void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions, bool isLdf = false)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
-  size_t n_ent = (size_t)(sqrt(ec.size() * 8 + 1) - 1) / 2;
+  size_t n_ent = (size_t)(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
   // Do entity recognition first
   for (size_t i = 0; i < ec.size(); i++)
   {
@@ -321,7 +316,7 @@ void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& p
 void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
-  uint32_t n_ent = (uint32_t)((sqrt(ec.size() * 8 + 1) - 1) / 2);
+  uint32_t n_ent = (uint32_t)((std::sqrt(ec.size() * 8 + 1) - 1) / 2);
   for (uint32_t t = 0; t < ec.size(); t++)
   {
     // Do entity recognition first
@@ -352,7 +347,7 @@ void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& 
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   // ec.size = #entity + #entity*(#entity-1)/2
-  size_t n_ent = (size_t)(sqrt(ec.size() * 8 + 1) - 1) / 2;
+  size_t n_ent = (size_t)(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
 
   bool must_predict = false;
   size_t n_predicts = 0;
@@ -410,7 +405,7 @@ void run(Search::search& sch, multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
 
-  v_array<size_t> predictions = v_init<size_t>();
+  v_array<size_t> predictions;
   for (size_t i = 0; i < ec.size(); i++)
   {
     predictions.push_back(0);
@@ -431,7 +426,7 @@ void run(Search::search& sch, multi_ex& ec)
       entity_first_decoding(sch, ec, predictions, true);  // LDF = true
       break;
     default:
-      cerr << "search order " << my_task_data->search_order << "is undefined." << endl;
+      std::cerr << "search order " << my_task_data->search_order << "is undefined." << std::endl;
   }
 
   for (size_t i = 0; i < ec.size(); i++)
@@ -439,7 +434,6 @@ void run(Search::search& sch, multi_ex& ec)
     if (sch.output().good())
       sch.output() << predictions[i] << ' ';
   }
-  predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)

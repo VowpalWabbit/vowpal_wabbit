@@ -1,14 +1,11 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "vw.h"
-
-using namespace std;
 
 constexpr size_t int_size = 11;
 constexpr size_t char_size = 2;
@@ -70,7 +67,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
-  size_t total = all->p->lp.read_cached_label(all->sd, &ae->l, *input);
+  size_t total = all->p->lp.read_cached_label(all->p->_shared_data, ae->l, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input, ae) == 0)
@@ -89,7 +86,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     unsigned char index = 0;
     if ((temp = input->buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
     {
-      all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
+      all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << std::endl;
       return 0;
     }
 
@@ -103,7 +100,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     total += storage;
     if (input->buf_read(c, storage) < storage)
     {
-      all->trace_message << "truncated example! wanted: " << storage << " bytes" << endl;
+      all->trace_message << "truncated example! wanted: " << storage << " bytes" << std::endl;
       return 0;
     }
 
@@ -191,7 +188,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
 }
 
-void cache_tag(io_buf& cache, v_array<char> tag)
+void cache_tag(io_buf& cache, const v_array<char>& tag)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + tag.size());

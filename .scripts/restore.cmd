@@ -9,16 +9,28 @@ CALL %~dp0init.cmd
 PUSHD %~dp0
 
 REM TODO: This really should be out-of-source
+ECHO Restoring "%vwRoot%\cs\common\packages.config"
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\common\packages.config"
+ECHO.
+
 ECHO Restoring "%vwRoot%\cs\cs\packages.config"
 "%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\cs\packages.config"
 ECHO.
 
-ECHO Restoring "%vwRoot%\cs\azure\packages.config"
-"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\azure\packages.config"
+ECHO Restoring "%vwRoot%\cs\cs_console\packages.config"
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\cs_console\packages.config"
 ECHO.
 
-ECHO Restoring "%vwRoot%\cs\azure_worker\packages.config"
-"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\azure_worker\packages.config"
+ECHO Restoring "%vwRoot%\cs\cs_json\packages.config"
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\cs_json\packages.config"
+ECHO.
+
+ECHO Restoring "%vwRoot%\cs\cs_parallel\packages.config"
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\cs_parallel\packages.config"
+ECHO.
+
+ECHO Restoring "%vwRoot%\cs\examples\simulator\packages.config"
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\examples\simulator\packages.config"
 ECHO.
 
 ECHO Restoring "%vwRoot%\cs\setup_bundle\packages.config"
@@ -37,8 +49,8 @@ ECHO Restoring "%vwRoot%\vowpalwabbit\packages.config"
 "%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\vowpalwabbit\packages.config"
 ECHO.
 
-ECHO Restoring "%vwRoot%\cs\examples\simulator\packages.config"
-"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\examples\simulator\packages.config"
+ECHO Restoring "%vwRoot%\vowpalwabbit\slim\test\packages.config"
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\vowpalwabbit\slim\test\packages.config"
 ECHO.
 
 POPD

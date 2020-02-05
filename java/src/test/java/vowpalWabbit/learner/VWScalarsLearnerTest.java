@@ -107,14 +107,18 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         return sb.toString().trim();
     }
 
-    @Test
-    public void testLDALearnerPredict() throws IOException {
-        writeVwModelToDisk();
-        VWScalarsLearner v = rehydrateModel();
-        float[] vector = v.predict(convertQuery("| wondering we look since"));
-        assertNotNull(vector);
-        assertEquals(3, vector.length);
-    }
+    // LDA is unsafe to use from library mode right now due to the fact that it returns examples in its learn/predict function.
+    // As a part of issue #2245, (https://github.com/VowpalWabbit/vowpal_wabbit/issues/2245), this test should be turned back on.
+    // @Test
+    // public void testLDALearnerPredict() throws IOException {
+    //     writeVwModelToDisk();
+    //     VWScalarsLearner v = rehydrateModel();
+    //     String q = convertQuery("| wondering we look since");
+    //     assertEquals(q, "dfdf");
+    //     float[] vector = v.predict(q);
+    //     assertNotNull(vector);
+    //     assertEquals(3, vector.length);
+    // }
 
     private void writeVwModelToDisk() throws IOException {
         final VWScalarsLearner vwModel =  VWLearners.create(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",

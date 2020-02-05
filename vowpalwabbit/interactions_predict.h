@@ -1,11 +1,9 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "constant.h"
 #include "feature_group.h"
 #include <vector>
@@ -99,14 +97,14 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
     R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
-  features* features_data = ec.feature_space;
+  features* features_data = ec.feature_space.data();
 
   // often used values
   const uint64_t offset = ec.ft_offset;
   //    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
 
   // statedata for generic non-recursive iteration
-  v_array<feature_gen_data> state_data = v_init<feature_gen_data>();
+  v_array<feature_gen_data> state_data;
 
   feature_gen_data empty_ns_data;  // micro-optimization. don't want to call its constructor each time in loop.
   empty_ns_data.loop_idx = 0;
@@ -261,7 +259,8 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
             if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr).values[loop_end - margin]))
             {
               ++margin;  // otherwise margin can't be increased
-              if ((must_skip_interaction = (loop_end < margin)))
+              must_skip_interaction = loop_end < margin;
+              if (must_skip_interaction)
                 break;
             }
 
@@ -364,7 +363,5 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
       }    // while do_it
     }
   }  // foreach interaction in all.interactions
-
-  state_data.delete_v();
 }
 }  // namespace INTERACTIONS

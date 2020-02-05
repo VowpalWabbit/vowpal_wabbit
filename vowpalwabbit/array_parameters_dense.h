@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <cstdint>
@@ -62,9 +66,11 @@ class dense_parameters
   dense_parameters(const dense_parameters& other) { shallow_copy(other); }
   dense_parameters(dense_parameters&&) = delete;
 
-  weight* first() { return _begin; }  // TODO: Temporary fix for allreduce.
-
-  // iterator with stride
+  weight* first()
+  {
+    return _begin;
+  }  // TODO: Temporary fix for allreduce.
+     // iterator with stride
   iterator begin() { return iterator(_begin, _begin, stride()); }
   iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride()); }
 

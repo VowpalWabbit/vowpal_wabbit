@@ -1,12 +1,15 @@
 
-#include <assert.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cassert>
 #include <iostream>
 
 #include "gd.h"
 #include "vw.h"
 #include "reductions.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -41,7 +44,7 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(vw& all, example& ec)
 {
-  float acc = ec.l.simple.initial;
+  float acc = ec.l.simple().initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
@@ -56,12 +59,12 @@ float predict_stable(const svrg& s, example& ec)
 void predict(svrg& s, single_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
 }
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
 {
-  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label) * ec.weight;
+  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple().label) * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --
@@ -90,7 +93,7 @@ void update_inner(const svrg& s, example& ec)
 {
   update u;
   // |ec| already has prediction according to inner weights.
-  u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar);
+  u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar());
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
   u.eta = s.all->eta;
   u.norm = (float)s.stable_grad_count;
@@ -105,8 +108,6 @@ void update_stable(const svrg& s, example& ec)
 
 void learn(svrg& s, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   predict(s, base, ec);
 
   const int pass = (int)s.all->passes_complete;
@@ -115,7 +116,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->quiet)
     {
-      cout << "svrg pass " << pass << ": committing stable point" << endl;
+      std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -123,7 +124,7 @@ void learn(svrg& s, single_learner& base, example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      cout << "svrg pass " << pass << ": computing exact gradient" << endl;
+      std::cout << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
@@ -132,7 +133,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->quiet)
     {
-      cout << "svrg pass " << pass << ": taking steps" << endl;
+      std::cout << "svrg pass " << pass << ": taking steps" << std::endl;
     }
     update_inner(s, ec);
   }
@@ -147,10 +148,10 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     initialize_regressor(*s.all);
   }
 
-  if (model_file.files.size() > 0)
+  if (!model_file.files.empty())
   {
     bool resume = s.all->save_resume;
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
@@ -189,5 +190,6 @@ base_learner* svrg_setup(options_i& options, vw& all)
   all.weights.stride_shift(2);
   learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
   l.set_save_load(save_load);
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

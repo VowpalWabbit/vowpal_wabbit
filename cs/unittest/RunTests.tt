@@ -21,10 +21,12 @@ var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
 	176, 177, //depend on shell scripts for input/output
 	14, 16, 17, 31, 33, 34,53, 101, 102, 103, 105, 106, 111, 112, // float delta
 	71, // --examples to test parser
-	143, 144, 146, 158, 189, // native json parsing
+	143, 144, 146, 158, 189, 202, // native json parsing
 	149, 152, 156, 193, 194, // bash script
 	188, // possibly float delta
-	195 //--onethread is a shell option, not available via library
+	195, //--onethread is a shell option, not available via library
+	203, // Cluster mode test
+	204 // Testing option usage
 	};
 
 var outputModels = new Dictionary<string, TestCase>();

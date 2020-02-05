@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
 import vowpalWabbit.responses.ActionScores;
+import vowpalWabbit.responses.ActionProbs;
 
 import java.io.IOException;
 
@@ -85,40 +86,40 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
         String cli = "--quiet --cb_adf -f " + model;
         if (withRank)
             cli += " --rank_all";
-        VWActionScoresLearner vw = VWLearners.create(cli);
-        ActionScores[] trainPreds = new ActionScores[cbADFTrain.length];
+        VWActionProbsLearner vw = VWLearners.create(cli);
+        ActionProbs[] trainPreds = new ActionProbs[cbADFTrain.length];
         for (int i=0; i<cbADFTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbADFTrain[i]);
         }
 
-        ActionScores[] expectedTrainPreds = new ActionScores[]{
-            actionScores(
-                actionScore(0, 0),
-                actionScore(1, 0)
+        ActionProbs[] expectedTrainPreds = new ActionProbs[]{
+            actionProbs(
+                actionProb(0, 0),
+                actionProb(1, 0)
             ),
-            actionScores(
-                actionScore(0, 0.11246802f),
-                actionScore(1, 0.11246802f)
+            actionProbs(
+                actionProb(0, 0.11246802f),
+                actionProb(1, 0.11246802f)
             ),
-            actionScores(
-                actionScore(0, 0.3682006f),
-                actionScore(1, 0.5136312f)
+            actionProbs(
+                actionProb(0, 0.3682006f),
+                actionProb(1, 0.5136312f)
             ),
-            actionScores(
-                actionScore(0, 0.58848584f),
-                actionScore(1, 0.6244352f)
+            actionProbs(
+                actionProb(0, 0.58848584f),
+                actionProb(1, 0.6244352f)
             )
         };
         vw.close();
         assertArrayEquals(expectedTrainPreds, trainPreds);
 
         vw = VWLearners.create("--quiet -t -i " + model);
-        ActionScores[] testPreds = new ActionScores[]{vw.predict(cbADFTrain[0])};
+        ActionProbs[] testPreds = new ActionProbs[]{vw.predict(cbADFTrain[0])};
 
-        ActionScores[] expectedTestPreds = new ActionScores[]{
-            actionScores(
-                actionScore(0, 0.39904374f),
-                actionScore(1, 0.49083984f)
+        ActionProbs[] expectedTestPreds = new ActionProbs[]{
+            actionProbs(
+                actionProb(0, 0.39904374f),
+                actionProb(1, 0.49083984f)
             )
         };
 

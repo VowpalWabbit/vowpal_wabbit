@@ -45,9 +45,9 @@ source deactivate
 rm -rf build
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On
-make vw-bin -j ${NUM_PROCESSORS}
-cd ..
-cd test
-export PATH=../build/vowpalwabbit/:$PATH && ./RunTests -d -fe -E 0.001
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DDO_NOT_BUILD_VW_C_WRAPPER=On
+make vw-bin vw-unit-test.out spanning_tree -j ${NUM_PROCESSORS}
+./test/unit_test/vw-unit-test.out
+cd ../test
+./RunTests -d -fe -E 0.001
 cd ..

@@ -1,20 +1,13 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
+#ifndef VW_NOEXCEPT
 #include <stdexcept>
 #include <sstream>
 
-#ifndef _NOEXCEPT
-// _NOEXCEPT is required on Mac OS
-// making sure other platforms don't barf
-#define _NOEXCEPT throw()
-#endif
-
-#include <string.h>
+#include <cstring>
 
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -36,13 +29,13 @@ class vw_exception : public std::exception
   int lineNumber;
 
  public:
-  vw_exception(const char* file, int lineNumber, std::string message);
-  vw_exception(const vw_exception& ex);
-  vw_exception& operator=(const vw_exception& other);
+  vw_exception(const char* file, int lineNumber, std::string const& message) noexcept;
+  vw_exception(const vw_exception& ex) noexcept;
+  vw_exception& operator=(const vw_exception& other) noexcept;
 
-  ~vw_exception() _NOEXCEPT;
+  ~vw_exception() noexcept override;
 
-  virtual const char* what() const _NOEXCEPT;
+  const char* what() const noexcept override;
   const char* Filename() const;
   int LineNumber() const;
 };
@@ -50,7 +43,7 @@ class vw_exception : public std::exception
 class vw_argument_disagreement_exception : public vw_exception
 {
  public:
-  vw_argument_disagreement_exception(const char* file, int lineNumber, std::string message)
+  vw_argument_disagreement_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
   }
@@ -59,20 +52,20 @@ class vw_argument_disagreement_exception : public vw_exception
 
   vw_argument_disagreement_exception& operator=(const vw_argument_disagreement_exception& other)
   {
-    // check for self-assignment
+    // check for self-assignmentW
     if (&other == this)
       return *this;
     vw_exception::operator=(other);
     return *this;
   }
 
-  ~vw_argument_disagreement_exception() _NOEXCEPT {}
+  ~vw_argument_disagreement_exception() noexcept override = default;
 };
 
 class vw_argument_invalid_value_exception : public vw_exception
 {
  public:
-  vw_argument_invalid_value_exception(const char* file, int lineNumber, std::string message)
+  vw_argument_invalid_value_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
   }
@@ -88,13 +81,13 @@ class vw_argument_invalid_value_exception : public vw_exception
     return *this;
   }
 
-  ~vw_argument_invalid_value_exception() _NOEXCEPT {}
+  ~vw_argument_invalid_value_exception() noexcept override = default;
 };
 
 class vw_unrecognised_option_exception : public vw_exception
 {
  public:
-  vw_unrecognised_option_exception(const char* file, int lineNumber, std::string message)
+  vw_unrecognised_option_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
   }
@@ -110,13 +103,13 @@ class vw_unrecognised_option_exception : public vw_exception
     return *this;
   }
 
-  ~vw_unrecognised_option_exception() _NOEXCEPT {}
+  ~vw_unrecognised_option_exception() noexcept override = default;
 };
 
 class strict_parse_exception : public vw_exception
 {
  public:
-  strict_parse_exception(const char* file, int lineNumber, std::string message)
+  strict_parse_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
   }
@@ -132,7 +125,7 @@ class strict_parse_exception : public vw_exception
     return *this;
   }
 
-  ~strict_parse_exception() _NOEXCEPT {}
+  ~strict_parse_exception() noexcept override = default;
 };
 
 #ifdef _WIN32
@@ -196,7 +189,6 @@ bool launchDebugger();
     __msg << args;                                 \
     throw ex(__FILENAME__, __LINE__, __msg.str()); \
   }
-
 }  // namespace VW
 
 #define VW_ASSERT(condition, args) \
@@ -205,4 +197,52 @@ bool launchDebugger();
     THROW(args);                   \
   }
 
+#endif
+
+#define EXPAND(x) x
+#define GET_MACRO(_1, _2, NAME, ...) NAME
+// UNUSED is used to silence the warning: warning: ISO C++11 requires at least one argument for the "..." in a variadic
+// macro
+#define THROW_OR_RETURN(...) \
+  EXPAND(GET_MACRO(__VA_ARGS__, THROW_OR_RETURN_NORMAL, THROW_OR_RETURN_VOID, UNUSED)(__VA_ARGS__))
+
+#ifdef VW_NOEXCEPT
+
+#define THROW_OR_RETURN_NORMAL(args, retval) \
+  do                                         \
+  {                                          \
+    return retval;                           \
+  } while (0)
+
+#define THROW_OR_RETURN_VOID(args) \
+  do                               \
+  {                                \
+    return;                        \
+  } while (0)
+
+#else  // VW_NOEXCEPT defined
+
+#define THROW_OR_RETURN_NORMAL(args, retval)                  \
+  do                                                          \
+  {                                                           \
+    std::stringstream __msgA;                                 \
+    __msgA << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
+  } while (0)
+
+#define THROW_OR_RETURN_VOID(args)                            \
+  do                                                          \
+  {                                                           \
+    std::stringstream __msgB;                                 \
+    __msgB << args;                                           \
+    throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \
+  } while (0)
+
+#endif
 #define _UNUSED(x) ((void)(x))
+
+#define DBG(x)                                                                                                      \
+  do                                                                                                                \
+  {                                                                                                                 \
+    std::cerr << "(" << __FILENAME__ << ":" << __LINE__ << "," << __func__ << ") " << #x << ": " << x << std::endl; \
+  } while (0)

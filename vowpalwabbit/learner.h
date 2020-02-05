@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 // This is the interface for a learning algorithm
 #include <iostream>
@@ -10,24 +8,10 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
+#include "prediction.h"
+#include "future_compat.h"
 
-namespace prediction_type
-{
-enum prediction_type_t
-{
-  scalar,
-  scalars,
-  action_scores,
-  action_probs,
-  multiclass,
-  multilabels,
-  prob,
-  multiclassprobs,
-  decision_probs
-};
-
-const char* to_string(prediction_type_t prediction_type);
-}  // namespace prediction_type
+#include <memory>
 
 namespace LEARNER
 {
@@ -58,8 +42,8 @@ inline func_data tuple_dbf(void* data, base_learner* base, void (*func)(void*))
 struct learn_data
 {
   using fn = void (*)(void* data, base_learner& base, void* ex);
-  using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
-      bool finalize_predictions);
+  using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step,
+      polyprediction* pred, bool finalize_predictions);
 
   void* data;
   base_learner* base;
@@ -93,7 +77,7 @@ struct finish_example_data
 };
 
 void generic_driver(vw& all);
-void generic_driver(std::vector<vw*> alls);
+void generic_driver(const std::vector<vw*>& alls);
 void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
@@ -130,6 +114,52 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   }
 }
 
+template <typename T>
+void check_prediction_state(T& example_obj, prediction_type_t pred_type) = delete;
+
+template <>
+inline void check_prediction_state<example>(example& example_obj, prediction_type_t pred_type)
+{
+  // The compiler sees these as unused as the only place they are used in an assert statement.
+  _UNUSED(pred_type);
+  _UNUSED(example_obj);
+  assert(example_obj.pred.get_type() == pred_type);
+}
+
+template <>
+inline void check_prediction_state<multi_ex>(multi_ex& example_obj, prediction_type_t pred_type)
+{
+  _UNUSED(pred_type);
+  _UNUSED(example_obj);
+  if (example_obj.size() > 0)
+  {
+    assert(example_obj[0]->pred.get_type() == pred_type);
+  }
+}
+
+template <typename T>
+void check_label_state(T& example_obj, label_type_t label_type) = delete;
+
+template <>
+inline void check_label_state<example>(example& example_obj, label_type_t label_type)
+{
+  // The compiler sees these as unused as the only place they are used in an assert statement.
+  _UNUSED(label_type);
+  _UNUSED(example_obj);
+  assert(example_obj.l.get_type() == label_type);
+}
+
+template <>
+inline void check_label_state<multi_ex>(multi_ex& example_obj, label_type_t label_type)
+{
+  _UNUSED(label_type);
+  _UNUSED(example_obj);
+  if (example_obj.size() > 0)
+  {
+    assert(example_obj[0]->l.get_type() == label_type);
+  }
+}
+
 template <class T, class E>
 struct learner
 {
@@ -142,10 +172,12 @@ struct learner
   func_data end_pass_fd;
   func_data end_examples_fd;
   func_data finisher_fd;
-  learner(){};  // Should only be able to construct a learner through init_learner function
 
+  std::shared_ptr<void> learner_data;
+  learner(){};  // Should only be able to construct a learner through init_learner function
  public:
-  prediction_type::prediction_type_t pred_type;
+  prediction_type_t pred_type;
+  label_type_t label_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
   bool is_multiline;  // Is this a single-line or multi-line reduction?
@@ -158,18 +190,30 @@ struct learner
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
+
     increment_offset(ec, increment, i);
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
+
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
   }
 
   inline void predict(E& ec, size_t i = 0)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
+
     increment_offset(ec, increment, i);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
+
+    check_prediction_state(ec, pred_type);
+    check_label_state(ec, label_type);
   }
 
   inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
@@ -185,7 +229,7 @@ struct learner
         if (finalize_predictions)
           pred[c] = ec.pred;  // TODO: this breaks for complex labels because = doesn't do deep copy!
         else
-          pred[c].scalar = ec.partial_prediction;
+          pred[c].scalar() = ec.partial_prediction;
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         increment_offset(ec, increment, 1);
@@ -265,8 +309,8 @@ struct learner
     if (finisher_fd.data)
     {
       finisher_fd.func(finisher_fd.data);
-      free(finisher_fd.data);
     }
+    learner_data.~shared_ptr<void>();
     if (finisher_fd.base)
     {
       finisher_fd.base->finish();
@@ -308,14 +352,20 @@ struct learner
   }
 
   template <class L>
-  static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type::prediction_type_t pred_type)
+  static learner<T, E>& init_learner(
+      T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws, prediction_type_t pred_type)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
     if (base != nullptr)
     {  // a reduction
+
+      // This is a copy assignment into the current object. The purpose is to copy all of the
+      // function data objects so that if this reduction does not define a function such as
+      // save_load then calling save_load on this object will essentially result in forwarding the
+      // call the next reduction that actually implements it.
       ret = *(learner<T, E>*)(base);
+
       ret.learn_fd.base = make_base(*base);
       ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)recur_sensitivity;
       ret.finisher_fd.data = dat;
@@ -339,12 +389,18 @@ struct learner
       ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
     }
 
+    ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
+      ptr->~T();
+      free(ptr);
+    });
+
     ret.learn_fd.data = dat;
     ret.learn_fd.learn_f = (learn_data::fn)learn;
     ret.learn_fd.update_f = (learn_data::fn)learn;
     ret.learn_fd.predict_f = (learn_data::fn)predict;
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
+    ret.label_type = label_type_t::unset;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
 
     return ret;
@@ -353,7 +409,7 @@ struct learner
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type::prediction_type_t pred_type)
+    size_t ws, prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
@@ -366,8 +422,8 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(
     free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t params_per_weight)
 {
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type::scalar);
+  auto ret = &learner<T, E>::init_learner(
+      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar);
 
   dat.release();
   return *ret;
@@ -378,12 +434,12 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight)
 {
   return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type::scalar);
+      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar);
 }
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type::prediction_type_t pred_type)
+    size_t params_per_weight, prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type);
   dat.release();
@@ -421,8 +477,7 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
 // multiclass reduction
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
@@ -434,8 +489,7 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
   dat.release();
@@ -470,6 +524,7 @@ template <bool is_learn>
 void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
 {
   std::vector<uint64_t> saved_offsets;
+  saved_offsets.reserve(examples.size());
   for (auto ec : examples)
   {
     saved_offsets.push_back(ec->ft_offset);

@@ -1,4 +1,8 @@
-#include <float.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
 #include <cassert>
 
 #include "gd.h"
@@ -9,7 +13,6 @@
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
@@ -65,6 +68,16 @@ struct stagewise_poly
 #ifdef MAGIC_ARGUMENT
   float magic_argument;
 #endif  // MAGIC_ARGUMENT
+
+  ~stagewise_poly()
+  {
+#ifdef DEBUG
+    cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
+#endif  // DEBUG
+
+    free(sd);
+    free(depthsbits);
+  }
 };
 
 inline uint64_t stride_shift(const stagewise_poly &poly, uint64_t idx)
@@ -79,7 +92,7 @@ inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 {
-  // cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << endl;
+  // std::cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << std::endl;
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   return idx + poly.synth_ec.ft_offset;
 }
@@ -121,8 +134,6 @@ void depthsbits_create(stagewise_poly &poly)
     poly.depthsbits[i + 1] = indicator_bit;
   }
 }
-
-void depthsbits_destroy(stagewise_poly &poly) { free(poly.depthsbits); }
 
 inline bool parent_get(const stagewise_poly &poly, uint64_t wid)
 {
@@ -228,19 +239,17 @@ void sort_data_ensure_sz(stagewise_poly &poly, size_t len)
   {
     size_t len_candidate = 2 * len;
 #ifdef DEBUG
-    cout << "resizing sort buffer; current size " << poly.sd_len;
+    std::cout << "resizing sort buffer; current size " << poly.sd_len;
 #endif  // DEBUG
     poly.sd_len = (len_candidate > poly.all->length()) ? poly.all->length() : len_candidate;
 #ifdef DEBUG
-    cout << ", new size " << poly.sd_len << endl;
+    std::cout << ", new size " << poly.sd_len << std::endl;
 #endif              // DEBUG
     free(poly.sd);  // okay for null.
     poly.sd = calloc_or_throw<sort_data>(poly.sd_len);
   }
   assert(len <= poly.sd_len);
 }
-
-void sort_data_destroy(stagewise_poly &poly) { free(poly.sd); }
 
 #ifdef DEBUG
 int sort_data_compar(const void *a_v, const void *b_v)
@@ -279,7 +288,7 @@ void sort_data_update_support(stagewise_poly &poly)
   sort_data_ensure_sz(poly, num_new_features);
 
   sort_data *heap_end = poly.sd;
-  make_heap(poly.sd, heap_end, sort_data_compar_heap);  // redundant
+  std::make_heap(poly.sd, heap_end, sort_data_compar_heap);  // redundant
   for (uint64_t i = 0; i != poly.all->length(); ++i)
   {
     uint64_t wid = stride_shift(poly, i);
@@ -302,7 +311,7 @@ void sort_data_update_support(stagewise_poly &poly)
 
         if (heap_end - poly.sd == (int)num_new_features && poly.sd->weightsal < weightsal)
         {
-          pop_heap(poly.sd, heap_end, sort_data_compar_heap);
+          std::pop_heap(poly.sd, heap_end, sort_data_compar_heap);
           --heap_end;
         }
 
@@ -314,7 +323,7 @@ void sort_data_update_support(stagewise_poly &poly)
           heap_end->weightsal = weightsal;
           heap_end->wid = wid;
           ++heap_end;
-          push_heap(poly.sd, heap_end, sort_data_compar_heap);
+          std::push_heap(poly.sd, heap_end, sort_data_compar_heap);
         }
       }
     }
@@ -332,20 +341,20 @@ void sort_data_update_support(stagewise_poly &poly)
         poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
-    cout << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid << " || sort value "
-         << poly.sd[pos].weightsal << endl;
+    std::cout << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid
+              << " || sort value " << poly.sd[pos].weightsal << std::endl;
 #endif  // DEBUG
   }
 
 #ifdef DEBUG
-  cout << "depths:";
+  std::cout << "depths:";
   for (uint64_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
-    cout << "  [" << depth << "] = " << poly.depths[depth];
-  cout << endl;
+    std::cout << "  [" << depth << "] = " << poly.depths[depth];
+  std::cout << std::endl;
 
-  cout << "Sanity check after sort... " << flush;
+  std::cout << "Sanity check after sort... " << flush;
   sanity_check_state(poly);
-  cout << "done" << endl;
+  std::cout << "done" << std::endl;
 #endif  // DEBUG
 
   // it's okay that these may have been initially unequal; synth_ec value irrelevant so far.
@@ -385,7 +394,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.test_only = ec.test_only;
   poly.synth_ec.end_pass = ec.end_pass;
   poly.synth_ec.sorted = ec.sorted;
-  poly.synth_ec.in_use = ec.in_use;
 
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
@@ -421,8 +429,8 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
     if (parent_get(poly, wid_cur))
     {
 #ifdef DEBUG
-      cout << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth " << (uint64_t)min_depths_get(poly, wid_cur)
-           << " to depth " << poly.cur_depth << endl;
+      std::cout << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth "
+                << (uint64_t)min_depths_get(poly, wid_cur) << " to depth " << poly.cur_depth << std::endl;
 #endif  // DEBUG
       // XXX arguably, should also fear transplants that occured with
       // a different ft_offset ; e.g., need to look out for cross-reduction
@@ -493,12 +501,12 @@ void predict(stagewise_poly &poly, single_learner &base, example &ec)
   base.predict(poly.synth_ec);
   ec.partial_prediction = poly.synth_ec.partial_prediction;
   ec.updated_prediction = poly.synth_ec.updated_prediction;
-  ec.pred.scalar = poly.synth_ec.pred.scalar;
+  ec.pred.scalar() = poly.synth_ec.pred.scalar();
 }
 
 void learn(stagewise_poly &poly, single_learner &base, example &ec)
 {
-  bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
+  bool training = poly.all->training && ec.l.simple().label != FLT_MAX;
   poly.original_ec = &ec;
 
   if (training)
@@ -513,7 +521,7 @@ void learn(stagewise_poly &poly, single_learner &base, example &ec)
     base.learn(poly.synth_ec);
     ec.partial_prediction = poly.synth_ec.partial_prediction;
     ec.updated_prediction = poly.synth_ec.updated_prediction;
-    ec.pred.scalar = poly.synth_ec.pred.scalar;
+    ec.pred.scalar() = poly.synth_ec.pred.scalar();
 
     if (ec.example_counter
         // following line is to avoid repeats when multiple reductions on same example.
@@ -555,7 +563,7 @@ void reduce_min_max(uint8_t &v1, const uint8_t &v2)
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
-    cout << "Reducing parent with depth!!!!!";
+    std::cout << "Reducing parent with depth!!!!!";
 #endif  // DEBUG
     return;
   }
@@ -581,7 +589,7 @@ void end_pass(stagewise_poly &poly)
   uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
 #ifdef DEBUG
-  cout << "Sanity before allreduce\n";
+  std::cout << "Sanity before allreduce\n";
   sanity_check_state(poly);
 #endif  // DEBUG
 
@@ -609,7 +617,7 @@ void end_pass(stagewise_poly &poly)
   poly.num_examples = poly.num_examples_sync;
 
 #ifdef DEBUG
-  cout << "Sanity after allreduce\n";
+  std::cout << "Sanity after allreduce\n";
   sanity_check_state(poly);
 #endif  // DEBUG
 
@@ -629,36 +637,24 @@ void finish_example(vw &all, stagewise_poly &poly, example &ec)
   VW::finish_example(all, ec);
 }
 
-void finish(stagewise_poly &poly)
-{
-#ifdef DEBUG
-  cout << "total feature number (after poly expansion!) = " << poly.sum_sparsity << endl;
-#endif  // DEBUG
-
-  poly.synth_ec.feature_space[tree_atomics].delete_v();
-  poly.synth_ec.indices.delete_v();
-  sort_data_destroy(poly);
-  depthsbits_destroy(poly);
-}
-
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)
   {
-    stringstream msg;
+    std::stringstream msg;
     bin_text_read_write_fixed(
         model_file, (char *)poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
   //#ifdef DEBUG
-  //      cout << "Sanity check after save_load... " << flush;
+  //      std::cout << "Sanity check after save_load... " << flush;
   //      sanity_check_state(poly);
-  //      cout << "done" << endl;
+  //      std::cout << "done" << std::endl;
   //#endif //DEBUG
 }
 
-base_learner *stagewise_poly_setup(options_i &options, vw &all)
+base_learner* stagewise_poly_setup(options_i &options, vw &all)
 {
   auto poly = scoped_calloc_or_throw<stagewise_poly>();
   bool stage_poly = false;
@@ -698,11 +694,12 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
+  poly->synth_ec.pred.init_as_scalar();
+
   learner<stagewise_poly, example> &l = init_learner(poly, as_singleline(setup_base(options, all)), learn, predict);
-  l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

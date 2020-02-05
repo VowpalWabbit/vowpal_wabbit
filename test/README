@@ -1,17 +1,22 @@
 Test suite for vw:
 ------------------
 
+The perl script 'RunTests' drives the regression test.
+
+It includes both the testing code and many vw test commands.
+    
 You may add arbitrary (train/test/varying-options) tests
 by adding:
     1) Data (train, test, predict) files
-    2) vw command to run using the above data files
+    2) vw command to run (which may use the data files)
     3) Expected (reference) STDOUT, STDERR, and predictions-file
        for the command.
 
 Additional tests can be added below the __DATA__ section in RunTests.
 
 See the comment above __DATA__ in 'RunTests' for full details on
-how to add more tests or simply refer to the examples therein.
+how to add more tests. You can also use the examples under __DATA__
+as a tutorial/reference of working commands for each option.
 
 --ariel
 

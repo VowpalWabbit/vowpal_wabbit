@@ -1,15 +1,14 @@
-/*
-  Copyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
-#include <float.h>
+#include <cfloat>
 
 #include "vw.h"
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw_exception.h"
+#include "util.h"
 
 namespace GEN_CS
 {
@@ -47,12 +46,12 @@ CB::cb_class* get_observed_cost(CB::label& ld);
 
 float safe_probability(float prob);
 
-void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p=0.f);
+void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p = 0.f);
 
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
-  CB::label ld = ec.l.cb;
+  CB::label& ld = ec.l.cb();
 
   float min = FLT_MAX;
   uint32_t argmin = 1;
@@ -117,11 +116,11 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
     }
   }
 
-  ec.pred.multiclass = argmin;
+  ec.pred.multiclass() = argmin;
 }
 
 template <bool is_learn>
-void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action, float clip_p=0.f)
+void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action, float clip_p = 0.f)
 {
   COST_SENSITIVE::wclass wc = {0., action, 0., 0.};
 
@@ -137,14 +136,14 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
         ((c.known_cost->cost - wc.x) * (c.known_cost->cost - wc.x) - c.avg_loss_regressors);
     c.last_pred_reg = wc.x;
     c.last_correct_cost = c.known_cost->cost;
-    wc.x += (c.known_cost->cost - wc.x) / (std::max)(c.known_cost->probability, clip_p);
+    wc.x += (c.known_cost->cost - wc.x) / std::max(c.known_cost->probability, clip_p);
   }
 
   cs_ld.costs.push_back(wc);
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ =0.f)
+void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ = 0.f)
 {  // this implements the doubly robust method
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
@@ -184,7 +183,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 
 void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p=0.f);
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f);
 
 void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
@@ -223,7 +222,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
 
     // add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action == i)
-      wc.x += (c.known_cost.cost - wc.x) / (std::max)(c.known_cost.probability, clip_p);
+      wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p);
     cs_labels.costs.push_back(wc);
   }
 }
@@ -264,26 +263,31 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   size_t index = 0;
   for (auto ec : examples)
   {
-    cb_labels.push_back(ec->l.cb);
+    cb_labels.push_back(std::move(ec->l.cb()));
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.cs = prepped_cs_labels[index++];
+    ec->l.reset();
+    ec->l.init_as_cs(std::move(prepped_cs_labels[index++]));
     ec->ft_offset = offset;
   }
 
+  swap_to_scores(examples);
   // 2nd: predict for each ex
   // // call base.predict for all examples
   if (is_learn)
     base.learn(examples, (int32_t)id);
   else
     base.predict(examples, (int32_t)id);
+  swap_to_probs(examples);
 
   // 3rd: restore cb_label for each example
-  // (**ec).l.cb = array.element.
+  // (**ec).l.cb() = array.element.
   // and restore offsets
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    examples[i]->l.cb = cb_labels[i];
+    prepped_cs_labels[i].costs = std::move(examples[i]->l.cs().costs);
+    examples[i]->l.reset();
+    examples[i]->l.init_as_cb(std::move(cb_labels[i]));
     examples[i]->ft_offset = saved_offset;
   }
 }

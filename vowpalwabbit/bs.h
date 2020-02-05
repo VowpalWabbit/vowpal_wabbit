@@ -1,19 +1,22 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
+#include <memory>
+#include "reductions_fwd.h"
+
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
+
+struct rand_state;
 
 LEARNER::base_learner* bs_setup(VW::config::options_i& options, vw& all);
 
 namespace BS
 {
-inline uint32_t weight_gen(vw& all)  // sampling from Poisson with rate 1
+inline uint32_t weight_gen(std::shared_ptr<rand_state>& state)  // sampling from Poisson with rate 1
 {
-  float temp = merand48(all.random_state);
+  float temp = state->get_and_update_random();
   if (temp <= 0.3678794411714423215955)
     return 0;
   if (temp <= 0.735758882342884643191)

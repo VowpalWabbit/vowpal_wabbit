@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <set>
@@ -23,7 +27,7 @@ namespace VW
 template <typename T>
 struct default_cleanup
 {
-  void operator()(T*){}
+  void operator()(T*) {}
 };
 
 template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
@@ -114,13 +118,14 @@ struct no_lock_object_pool
     }
   }
 
-  std::queue<T*> m_pool;
-  std::vector<std::pair<T*, T*>> m_chunk_bounds;
-  std::vector<std::unique_ptr<T[]>> m_chunks;
   TInitializer m_initializer;
   TCleanup m_cleanup;
   size_t m_initial_chunk_size = 0;
   size_t m_chunk_size = 8;
+
+  std::vector<std::unique_ptr<T[]>> m_chunks;
+  std::vector<std::pair<T*, T*>> m_chunk_bounds;
+  std::queue<T*> m_pool;
 };
 
 template <typename T, typename TAllocator, typename TDeleter>
@@ -138,10 +143,7 @@ struct value_object_pool
     }
   }
 
-  void return_object(T obj)
-  {
-    m_pool.push(obj);
-  }
+  void return_object(T obj) { m_pool.push(obj); }
 
   T get_object()
   {
@@ -157,10 +159,7 @@ struct value_object_pool
 
   bool empty() const { return m_pool.empty(); }
 
-  size_t size() const
-  {
-    return m_pool.size();
-  }
+  size_t size() const { return m_pool.size(); }
 
  private:
   std::stack<T> m_pool;
@@ -174,7 +173,8 @@ struct object_pool
   object_pool() = default;
   object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
       : inner_pool(initial_chunk_size, initializer, chunk_size)
-  {}
+  {
+  }
 
   void return_object(T* obj)
   {
@@ -185,22 +185,29 @@ struct object_pool
   T* get_object()
   {
     std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.get_object( );
+    return inner_pool.get_object();
   }
 
-  bool empty() const { return inner_pool.empty(); }
+  bool empty() const
+  {
+    std::unique_lock<std::mutex> lock(m_lock);
+    return inner_pool.empty();
+  }
 
   size_t size() const
   {
+    std::unique_lock<std::mutex> lock(m_lock);
     return inner_pool.size();
   }
 
   bool is_from_pool(T* obj) const
   {
+    std::unique_lock<std::mutex> lock(m_lock);
     return inner_pool.is_from_pool(obj);
   }
 
-  std::mutex m_lock;
+  private:
+  mutable std::mutex m_lock;
   no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
 };
 }  // namespace VW

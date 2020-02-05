@@ -1,23 +1,23 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>
 #endif
+
 #include "reductions.h"
 #include "gd.h"
 
-using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
 struct mf
 {
-  vector<string> pairs;
+  std::vector<std::string> pairs;
 
   size_t rank;
 
@@ -62,7 +62,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (string& i : data.pairs)
+  for (std::string& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -98,18 +98,18 @@ void predict(mf& data, single_learner& base, example& ec)
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.pred.scalar() = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
 void learn(mf& data, single_learner& base, example& ec)
 {
   // predict with current weights
   predict<true>(data, base, ec);
-  float predicted = ec.pred.scalar;
+  float predicted = ec.pred.scalar();
 
   // update linear weights
   base.update(ec);
-  ec.pred.scalar = ec.updated_prediction;
+  ec.pred.scalar() = ec.updated_prediction;
 
   // store namespace indices
   copy_array(data.indices, ec.indices);
@@ -120,7 +120,7 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (string& i : data.pairs)
+  for (std::string& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -131,7 +131,7 @@ void learn(mf& data, single_learner& base, example& ec)
       ec.indices[0] = left_ns;
 
       // store feature values in left namespace
-      data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
+      data.temp_features = ec.feature_space[left_ns];
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -143,19 +143,19 @@ void learn(mf& data, single_learner& base, example& ec)
         base.update(ec, k);
 
         // restore left namespace features (undoing multiply)
-        fs.deep_copy_from(data.temp_features);
+        fs = data.temp_features;
 
         // compute new l_k * x_l scaling factors
         // base.predict(ec, k);
         // data.sub_predictions[2*k-1] = ec.partial_prediction;
-        // ec.pred.scalar = ec.updated_prediction;
+        // ec.pred.scalar() = ec.updated_prediction;
       }
 
       // set example to right namespace only
       ec.indices[0] = right_ns;
 
       // store feature values for right namespace
-      data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
+      data.temp_features = ec.feature_space[right_ns];
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -165,28 +165,24 @@ void learn(mf& data, single_learner& base, example& ec)
 
         // update r^k using base learner
         base.update(ec, k + data.rank);
-        ec.pred.scalar = ec.updated_prediction;
+        ec.pred.scalar() = ec.updated_prediction;
 
         // restore right namespace features
-        fs.deep_copy_from(data.temp_features);
+        fs = data.temp_features;
       }
     }
   }
   // restore namespace indices
-  copy_array(ec.indices, data.indices);
+  ec.indices = data.indices;
 
   // restore original prediction
-  ec.pred.scalar = predicted;
+  ec.pred.scalar() = predicted;
 }
 
 void finish(mf& o)
 {
   // restore global pairs
   o.all->pairs = o.pairs;
-
-  // clean up local v_arrays
-  o.indices.delete_v();
-  o.sub_predictions.delete_v();
 }
 
 base_learner* mf_setup(options_i& options, vw& all)
@@ -207,8 +203,11 @@ base_learner* mf_setup(options_i& options, vw& all)
 
   all.random_positive_weights = true;
 
+  auto base = as_singleline(setup_base(options, all));
   learner<mf, example>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
+      init_learner(data, base, learn, predict<false>, 2 * data->rank + 1);
   l.set_finish(finish);
+  l.label_type = base->label_type;
+
   return make_base(l);
 }

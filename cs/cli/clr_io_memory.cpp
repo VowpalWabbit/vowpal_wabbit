@@ -1,10 +1,9 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "clr_io_memory.h"
+#include <algorithm>
 
 namespace VW
 {
@@ -24,7 +23,7 @@ void clr_io_memory_buf::reset_file(int f)
 }
 
 ssize_t clr_io_memory_buf::read_file(int f, void* buf, size_t nbytes)
-{ size_t left_over = min(nbytes, m_data.end() - m_iterator);
+{ size_t left_over = std::min(nbytes, static_cast<size_t>(m_data.end() - m_iterator));
 
   if (left_over == 0)
     return 0;

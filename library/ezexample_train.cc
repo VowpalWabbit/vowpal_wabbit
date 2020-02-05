@@ -3,8 +3,6 @@
 #include "../vowpalwabbit/vw.h"
 #include "../vowpalwabbit/ezexample.h"
 
-using namespace std;
-
 void run(vw*vw)
 { ezexample ex(vw, true);   // we're doing csoaa_ldf so we need multiline examples
 
@@ -66,6 +64,6 @@ int main(int argc, char *argv[])
   run(vw);
 
   // AND FINISH UP
-  cerr << "ezexample_train finish"<<endl;
+  std::cerr << "ezexample_train finish"<< std::endl;
   VW::finish(*vw);
 }

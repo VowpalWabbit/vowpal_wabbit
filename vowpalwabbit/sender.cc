@@ -1,5 +1,10 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <vector>
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #ifndef SHUT_RD
 #define SHUT_RD SD_RECEIVE
@@ -20,7 +25,6 @@
 #include "network.h"
 #include "reductions.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct sender
@@ -31,9 +35,15 @@ struct sender
   example** delay_ring;
   size_t sent_index;
   size_t received_index;
+
+  ~sender()
+  {
+    free(delay_ring);
+    delete buf;
+  }
 };
 
-void open_sockets(sender& s, string host)
+void open_sockets(sender& s, std::string host)
 {
   s.socket = new socket_adapter(open_socket(host.c_str()));
   s.buf = new io_buf();
@@ -74,21 +84,22 @@ void receive_result(sender& s)
 
   get_prediction_from_socket(s.socket, res, weight);
   example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
-  ec.pred.scalar = res;
+  ec.pred.scalar() = res;
 
-  label_data& ld = ec.l.simple;
-  ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
+  label_data& ld = ec.l.simple();
+  ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar(), ld.label) * ec.weight;
 
-  return_simple_example(*(s.all), nullptr, ec);
+  return_simple_example_explicit(*(s.all), ec);
 }
 
 void learn(sender& s, LEARNER::single_learner&, example& ec)
 {
+  assert(ec.pred.get_type() == prediction_type_t::scalar);
   if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
     receive_result(s);
 
-  s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  s.all->p->lp.cache_label(&ec.l, *s.buf);  // send label information.
+  s.all->set_minmax(s.all->sd, ec.l.simple().label);
+  s.all->p->lp.cache_label(ec.l, *s.buf);  // send label information.
   cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, (uint32_t)s.all->parse_mask);
   s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
@@ -103,17 +114,9 @@ void end_examples(sender& s)
   s.buf->close_files();
 }
 
-void finish(sender& s)
-{
-  s.buf->files.delete_v();
-  s.buf->space.delete_v();
-  free(s.delay_ring);
-  delete s.buf;
-}
-
 LEARNER::base_learner* sender_setup(options_i& options, vw& all)
 {
-  string host;
+  std::string host;
 
   option_group_definition sender_options("Network sending");
   sender_options.add(make_option("sendto", host).keep().help("send examples to <host>"));
@@ -131,8 +134,8 @@ LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   s->delay_ring = calloc_or_throw<example*>(all.p->ring_size);
 
   LEARNER::learner<sender, example>& l = init_learner(s, learn, learn, 1);
-  l.set_finish(finish);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

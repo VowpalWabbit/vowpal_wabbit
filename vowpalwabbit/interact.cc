@@ -1,14 +1,11 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <sstream>
-#include <float.h>
+#include <cfloat>
 #include "reductions.h"
 #include "v_array.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct interact
@@ -65,13 +62,15 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features." << endl;
+      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features."
+                << std::endl;
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features." << endl;
+      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features."
+                << std::endl;
       return;
     }
 
@@ -113,15 +112,16 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   ec.num_features -= f1.size();
   ec.num_features -= f2.size();
 
-  in.feat_store.deep_copy_from(f1);
+  // Deep copy of features
+  in.feat_store = f1;
 
   multiply(f1, f2, in);
   ec.total_sum_feat_sq += f1.sum_feat_sq;
   ec.num_features += f1.size();
 
   /*for(uint64_t i = 0;i < f1.size();i++)
-    cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
-    cout<<endl;*/
+    std::cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
+    std::cout<< std::endl;*/
 
   // remove 2nd namespace
   int n2_i = -1;
@@ -145,16 +145,16 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   memmove(&ec.indices[n2_i + 1], &ec.indices[n2_i], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
   ec.indices[n2_i] = in.n2;
 
-  f1.deep_copy_from(in.feat_store);
+  // Deep copy of features
+  f1 = in.feat_store;
+
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
   ec.num_features = in.num_features;
 }
 
-void finish(interact& in) { in.feat_store.delete_v(); }
-
 LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
-  string s;
+  std::string s;
   option_group_definition new_options("Interact via elementwise multiplication");
   new_options.add(
       make_option("interact", s).keep().help("Put weights on feature products from namespaces <n1> and <n2>"));
@@ -165,7 +165,7 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   if (s.length() != 2)
   {
-    cerr << "Need two namespace arguments to interact: " << s << " won't do EXITING\n";
+    std::cerr << "Need two namespace arguments to interact: " << s << " won't do EXITING\n";
     return nullptr;
   }
 
@@ -174,13 +174,12 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
   if (!all.quiet)
-    cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << endl;
+    std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
   data->all = &all;
 
-  LEARNER::learner<interact, example>* l;
-  l = &LEARNER::init_learner(
-      data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
-
-  l->set_finish(finish);
-  return make_base(*l);
+  auto base = as_singleline(setup_base(options, all));
+  auto& l = LEARNER::init_learner(
+      data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  l.label_type = base->label_type;
+  return make_base(l);
 }
