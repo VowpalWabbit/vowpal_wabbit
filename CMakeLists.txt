@@ -172,43 +172,46 @@ find_package(ZLIB REQUIRED)
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
 
-# Ensure rapidjson submodule is ready
-find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  # Update submodules as needed
-  option(GIT_SUBMODULE "Check submodules during build" ON)
-  if(GIT_SUBMODULE)
-    message(STATUS "Submodule update")
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                    RESULT_VARIABLE GIT_SUBMOD_RESULT)
-    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+# It is much better to find RapidJSON as a dependency, however, due to legacy we need to support the submodule for the time being.
+find_package(RapidJSON)
+if(NOT RapidJSON_FOUND)
+  message(DEPRECATION "RapidJSON dependency not found, falling back to submodule. This method is deprecated and may be removed at some point. Please install RapidJSON to fix this deprecation warning.")
+  # Ensure rapidjson submodule is ready
+  find_package(Git QUIET)
+  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    # Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+      message(STATUS "Submodule update")
+      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                      RESULT_VARIABLE GIT_SUBMOD_RESULT)
+      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+      endif()
     endif()
   endif()
-endif()
 
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
-  message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-endif()
-
-add_library(rapidjson INTERFACE)
-target_include_directories(rapidjson INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
-
-if(VW_INSTALL)
-  install(
-    TARGETS rapidjson
-    EXPORT VowpalWabbitConfig)
-
-  install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/rapidjson/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+  endif()
+  add_library(RapidJSON INTERFACE)
+  target_include_directories(RapidJSON INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
-endif()
 
+  if(VW_INSTALL)
+    install(
+      TARGETS RapidJSON
+      EXPORT VowpalWabbitConfig)
+
+    install(
+      DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/rapidjson/
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
+    )
+  endif()
+endif()
 
 add_subdirectory(explore)
 add_subdirectory(cluster)
