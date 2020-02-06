@@ -1778,4 +1778,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cb_dro_adf_sm.stderr
     pred-sets/ref/cb_dro_adf_sm.predict
 
+# Test 206: Combine cache and interactions. There was a segfault for this in the past
+{VW} -c -k --passes 2 -d train-sets/library_train -q st --audit
+    train-sets/ref/cache_interaction.stderr
+
 # Do not delete this line or the empty line above it
