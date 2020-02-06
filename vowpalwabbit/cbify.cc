@@ -1,4 +1,4 @@
-﻿#include <float.h>
+#include <float.h>
 #include <vector>
 #include "reductions.h"
 #include "cb_algs.h"

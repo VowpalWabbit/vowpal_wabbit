@@ -197,25 +197,25 @@ void inner_coin_betting_predict(update_data& d, float x, float& wref)
   if (w[W_MG] * w_mx > 0)
     w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
 
-#ifdef DEBUG
-  float pre_d_predict = d.predict;
-#endif
+// #ifdef _DEBUG
+//   float pre_d_predict = d.predict;
+// #endif
 
   d.predict += w_xt * x;
   if (w_mx > 0)
     d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
 
-#ifdef DEBUG
-  if (nanpattern(d.predict) || infpattern(w[W_WE]) || __private_debug__)
-    cerr  << "PREDICT: example_counter=" << __private_example_debug__->example_counter
-          << ", ft_offset=" << __private_example_debug__->ft_offset << ", "
-          << ", w_xt=" << w_xt
-          << ", x=" << x
-          << ", pre_d_predict=" << pre_d_predict
-          << ", d.predict=" << d.predict << ", "
-          << coin_betting_state_to_string(w)
-          << ", ftrl_alpha=" << d.ftrl_alpha << endl;
-#endif
+// #ifdef _DEBUG
+//   if (nanpattern(d.predict) || infpattern(w[W_WE]) )
+//     cerr << "PREDICT: example_counter=" << __debug_current_example__->example_counter
+//          << ", ft_offset=" << __debug_current_example__->ft_offset << ", "
+//           << ", w_xt=" << w_xt
+//           << ", x=" << x
+//           << ", pre_d_predict=" << pre_d_predict
+//           << ", d.predict=" << d.predict << ", "
+//           << coin_betting_state_to_string(w)
+//           << ", ftrl_alpha=" << d.ftrl_alpha << endl;
+// #endif
 }
 
 void inner_coin_betting_update_after_prediction(update_data& d, float x, float& wref)

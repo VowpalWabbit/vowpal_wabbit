@@ -25,12 +25,18 @@ union int_float {
 };
 
 // uniform random between 0 and 1
-inline float uniform_random_merand48(uint64_t initial)
+inline float uniform_random_merand48_advance(uint64_t& initial)
 {
   initial = a * initial + c;
   int_float temp;
   temp.i = ((initial >> 25) & 0x7FFFFF) | bias;
   return temp.f - 1;
+}
+
+// uniform random between 0 and 1
+inline float uniform_random_merand48(uint64_t initial)
+{
+  return uniform_random_merand48_advance(initial);
 }
 
 template <typename It>
@@ -279,6 +285,32 @@ int sample_after_normalizing(
   return S_EXPLORATION_OK;
 }
 
+// Draw a random number between [range_min, range_max * edge_avoid_factor]
+// and advance pseudo-random state
+inline float internal_interval_draw(float range_min, float range_max, uint64_t* p_random_seed, float edge_avoid_factor)
+{
+  // Draw a float and then advance the pseudo-random state
+  const float random_draw = edge_avoid_factor * uniform_random_merand48_advance(*p_random_seed);
+  const float interval_size = (range_max - range_min);
+  const float chosen_value = interval_size * random_draw + range_min;
+  return chosen_value;
+}
+
+// Draw a random number between [range_min, range_max)
+// and advance pseudo-random state
+float inline uniform_draw(float range_min, float range_max, uint64_t* p_random_seed)
+{
+  float chosen_value;
+
+  do
+  {
+    const float edge_avoid_factor = 1.0001f;
+    chosen_value = internal_interval_draw(range_min, range_max, p_random_seed, edge_avoid_factor);
+  } while (chosen_value >= range_max);
+
+  return chosen_value;
+}
+
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
 // be used to inplace mutate it.
@@ -292,16 +324,17 @@ int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, float ran
   if (err_code != S_EXPLORATION_OK)
     return err_code;
 
-  // generate a new seed
+  // generate a new seed, since we used the last one in sample_after_normalizing
+  // to pick the interval
   uint64_t new_random_seed = uniform_hash(&seed, sizeof(seed), seed);
-  // pick a uniform random number between 0.0 - 1.0
-  float random_draw = uniform_random_merand48(new_random_seed);
 
-  // Use the random number to pick an action value in the chosen range
+  // Use the new seed to pick an action value in the chosen range
   float interval_size = (range_max - range_min) / (pdf_last - pdf_first);
+  const float interval_start = range_min + interval_size * chosen_index;
+  const float interval_end = (std::min)(range_max, interval_start + interval_size);
 
   // Choose a random value within the chosen interval
-  chosen_value = interval_size * (random_draw + chosen_index) + range_min;
+  chosen_value = uniform_draw(interval_start, interval_end, &new_random_seed);
 
   return S_EXPLORATION_OK;
 }

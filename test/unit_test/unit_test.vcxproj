@@ -32,6 +32,7 @@
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
+    <ClCompile Include="random_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="vwdll_test.cc" />
   </ItemGroup>
