@@ -611,7 +611,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   if (ec_seq.size() > 0)
   {
     output_example(all, data, ec_seq);
-    CB_ADF::global_print_newline(all.final_prediction_sink);
+    VW::io::global_print_newline(all.final_prediction_sink);
   }
 
   VW::finish_example(all, ec_seq);

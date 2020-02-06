@@ -321,11 +321,11 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(const v_array<int>& final_prediction_sink)
+void global_print_newline(std::vector<io_adapter*>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
-  for (auto sink : all.final_prediction_sink)
+  for (auto sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
     if (t != 1)

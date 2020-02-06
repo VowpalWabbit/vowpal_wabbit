@@ -129,7 +129,7 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
   ec.loss = ((ec.pred.scalar() == ec.l.simple().label) ? 0.f : 1.f) * ec.weight;
 }
 
-void print_result(io_adapter* f, float res, v_array<char> tag, float lb, float ub)
+void print_result(io_adapter* f, float res, const v_array<char>& tag, float lb, float ub)
 {
   if (f >= 0)
   {
@@ -166,7 +166,7 @@ void output_example(vw& all, bs& d, example& ec)
   }
 
   for (auto sink : all.final_prediction_sink)
-    print_result_by_ref(sink, ec.pred.scalar(), ec.tag, d.lb, d.ub);
+    print_result(sink, ec.pred.scalar(), ec.tag, d.lb, d.ub);
 
   print_update(all, ec);
 }

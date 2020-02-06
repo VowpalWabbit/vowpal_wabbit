@@ -80,10 +80,6 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 void set_compressed(parser* par)
 {
-  delete par->input;
-  par->input = new comp_io_buf;
-  delete par->output;
-  par->output = new comp_io_buf;
 }
 
 uint32_t cache_numbits(io_buf* buf, io_adapter* filepointer)
@@ -164,8 +160,8 @@ void reset_source(vw& all, size_t numbits)
 
       // note: breaking cluster parallel online learning by dropping support for id
 
-      all.final_prediction_sink.push_back(new socket_adapter(f));
-      all.p->input->files.push_back(new socket_adapter(f));
+      all.final_prediction_sink.push_back(VW::io::take_ownership_of_socket(f).release());
+      all.p->input->files.push_back(VW::io::take_ownership_of_socket(f).release());
 
       if (isbinary(*(all.p->input)))
       {
@@ -459,7 +455,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     auto f_a = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f_a < 0)
       THROWERRNO("accept");
-    io_adapter* f = new socket_adapter(f_a);
+    io_adapter* f = VW::io::take_ownership_of_socket(f_a).release();
 IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
 IGNORE_DEPRECATED_USAGE_END
@@ -511,24 +507,20 @@ IGNORE_DEPRECATED_USAGE_END
         io_adapter* adapter = nullptr;
         if(temp != "")
         {
-          adapter = should_use_compressed
-            ? static_cast<io_adapter*>(new gzip_file_adapter(temp.c_str(), file_mode::read))
-            : static_cast<io_adapter*>(new file_adapter(temp));
+          adapter = should_use_compressed ? VW::io::open_compressed_file(temp, gzip_file_mode::read).release()
+                                          : VW::io::open_file(temp).release();
         }
         else if(!all.stdin_off)
         {
           // Should try and use stdin
           if(should_use_compressed)
           {
-#ifdef _WIN32
-            adapter = new gzip_file_adapter(_fileno(stdin), file_mode::read);
-#else
-            adapter = new gzip_file_adapter(fileno(stdin), file_mode::read);
-#endif
+            adapter = VW::io::open_compressed_stdio().release();
+
           }
           else
           {
-            adapter = new stdio_adapter();
+            adapter = VW::io::open_stdio().release();
           }
         }
 

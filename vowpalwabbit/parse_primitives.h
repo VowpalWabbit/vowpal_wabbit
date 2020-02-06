@@ -123,7 +123,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
   {
     // can't use stod because that throws an exception. Use strtod instead.
     char* end = nullptr;
-    auto ret = std::strtod(start, &end);
+    auto ret = std::strtof(start, &end);
     if (end >= start)
     {
       end_idx = end - start;

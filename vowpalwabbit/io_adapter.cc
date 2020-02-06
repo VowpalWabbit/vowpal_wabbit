@@ -1,6 +1,7 @@
 #include "io_adapter.h"
 
 #ifdef _WIN32
+#define NOMINMAX
 #define ssize_t int64_t
 #include <winsock2.h>
 #include <io.h>
@@ -11,6 +12,8 @@
 #endif
 
 #include <cstdio>
+#include <cassert>
+#include <iostream>
 #include <fstream>
 #include <vector>
 #include <algorithm>
@@ -35,7 +38,7 @@ struct socket_adapter : public io_adapter
 
 struct stdio_adapter : public io_adapter
 {
-  stdio_adapter(int fd) : io_adapter(false/* is_resettable*/) {}
+  stdio_adapter() : io_adapter(false/* is_resettable*/) {}
   size_t read(char* buffer, size_t num_bytes) override;
   size_t write(const char* buffer, size_t num_bytes) override;
 };
@@ -78,6 +81,19 @@ struct gzip_file_adapter : public io_adapter
   gzip_file_mode mode;
 };
 
+struct gzip_stdio_adapter : public io_adapter
+{
+  gzip_stdio_adapter();
+  ~gzip_stdio_adapter();
+  size_t read(char* buffer, size_t num_bytes) override;
+  size_t write(const char* buffer, size_t num_bytes) override;
+
+ private:
+  gzFile _gz_stdin;
+  gzFile _gz_stdout;
+};
+
+
 struct vector_adapter : public io_adapter
 {
   vector_adapter(const char* data, size_t len);
@@ -105,7 +121,7 @@ namespace VW {
 
     std::unique_ptr<io_adapter> open_compressed_file(std::string& file_path, gzip_file_mode mode)
     {
-      return std::unique_ptr<io_adapter>(new gzip_file_adapter(file_path, mode));
+      return std::unique_ptr<io_adapter>(new gzip_file_adapter(file_path.c_str(), mode));
     }
 
     std::unique_ptr<io_adapter> open_compressed_file(const char* file_path, gzip_file_mode mode)
@@ -113,9 +129,14 @@ namespace VW {
       return std::unique_ptr<io_adapter>(new gzip_file_adapter(file_path, mode));
     }
 
+    std::unique_ptr<io_adapter> open_compressed_stdio()
+    {
+      return std::unique_ptr<io_adapter>(new gzip_stdio_adapter());
+    }
+
     std::unique_ptr<io_adapter> open_stdio()
     {
-      return std::unique_ptr<io_adapter>(new stdio_adapter());
+      return std::unique_ptr<io_adapter>(new stdio_adapter);
     }
 
     std::unique_ptr<io_adapter> take_ownership_of_socket(int fd)
@@ -211,7 +232,7 @@ void file_adapter::reset()
 //
 
 gzip_file_adapter::gzip_file_adapter(const char* filename, gzip_file_mode mode) 
-  : io_adapter(trie/* is_resettable*/)
+  : io_adapter(true/* is_resettable*/)
 {
   auto file_mode_arg = mode == gzip_file_mode::read ? "rb" : "wb";
   gz_file = gzopen(filename, file_mode_arg);
@@ -245,6 +266,40 @@ size_t gzip_file_adapter::write(const char* buffer, size_t num_bytes)
 
 void gzip_file_adapter::reset() { gzseek(gz_file, 0, SEEK_SET); }
 
+
+//
+// gzip_stdio_adapter
+//
+
+gzip_stdio_adapter::gzip_stdio_adapter() : io_adapter(false /* is_resettable*/)
+{
+#ifdef _WIN32
+  _gz_stdin = gzdopen(_fileno(stdin), "rb");
+  _gz_stdout = gzdopen(_fileno(stdout), "wb");
+#else
+  _gz_stdin = gzdopen(fileno(stdin), "rb");
+  _gz_stdout = gzdopen(fileno(stdout), "wb");
+#endif
+}
+
+gzip_stdio_adapter::~gzip_stdio_adapter()
+{
+  gzclose(_gz_stdin);
+  gzclose(_gz_stdout);
+}
+
+size_t gzip_stdio_adapter::read(char* buffer, size_t num_bytes)
+{
+  auto num_read = gzread(_gz_stdin, buffer, (unsigned int)num_bytes);
+  return (num_read > 0) ? (size_t)num_read : 0;
+}
+
+size_t gzip_stdio_adapter::write(const char* buffer, size_t num_bytes)
+{
+  auto num_written = gzwrite(_gz_stdout, buffer, (unsigned int)num_bytes);
+  return (num_written > 0) ? (size_t)num_written : 0;
+}
+
 //
 // vector_adapter
 //
@@ -262,7 +317,7 @@ vector_adapter::vector_adapter() :
 
 size_t vector_adapter::read(char* buffer, size_t num_bytes)
 {
-  num_bytes = std::min(m_buffer.end() - m_iterator, num_bytes);
+  num_bytes = std::min(m_buffer.end() - m_iterator, static_cast<std::ptrdiff_t>(num_bytes));
   if(num_bytes == 0)
     return 0;
 

@@ -45,7 +45,7 @@ struct sender
 
 void open_sockets(sender& s, std::string host)
 {
-  s.socket = new socket_adapter(open_socket(host.c_str()));
+  s.socket = VW::io::take_ownership_of_socket(open_socket(host.c_str())).release();
   s.buf = new io_buf();
   s.buf->add_file(s.socket);
 }

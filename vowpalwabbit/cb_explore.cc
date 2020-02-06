@@ -274,7 +274,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
     }
   }
   for (auto sink : all.final_prediction_sink)
-    all.print_text(sink, ss.str(), ec.tag);
+    all.print_text_by_ref(sink, ss.str(), ec.tag);
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
   print_update_cb_explore(all, CB::test_label(ld), ec, sso);

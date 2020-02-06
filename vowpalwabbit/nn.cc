@@ -430,7 +430,7 @@ void finish_example(vw& all, nn&, example& ec)
 {
   auto save_raw_prediction = all.raw_prediction;
   all.raw_prediction = nullptr;
-  return_simple_example_explicit(all, nullptr, ec);
+  return_simple_example_explicit(all, ec);
   all.raw_prediction = save_raw_prediction;
 }
 

@@ -96,7 +96,7 @@ class namedlabels
       std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
       return 0;
     }
-    return iter->second;
+    return static_cast<uint32_t>(iter->second);
   }
 
   VW::string_view get(uint32_t v) const

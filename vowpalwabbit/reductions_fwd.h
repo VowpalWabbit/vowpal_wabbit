@@ -15,6 +15,7 @@ struct v_array;
 struct random_state;
 struct vw;
 
+
 namespace LEARNER
 {
 template <class T, class E>
@@ -30,4 +31,8 @@ namespace config
 {
 struct options_i;
 }  // namespace config
+namespace io
+{
+struct io_adapter;
+}
 }  // namespace VW
