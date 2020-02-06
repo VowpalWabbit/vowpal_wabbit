@@ -173,8 +173,8 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
-  auto f_adapter =
-      is_gzip ? VW::io::open_compressed_file(fname, VW::io::gzip_file_mode::read) : VW::io::open_file(fname);
+  auto f_adapter = is_gzip ? VW::io::open_compressed_file(fname, VW::io::file_mode::read)
+                           : VW::io::open_file(fname, file_mode::read);
 
   uint64_t fd_hash = hash_file_contents(f_adapter.get());
 
@@ -192,14 +192,16 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     }
   }
 
-  auto fd = VW::io::open_file(fname);
-  // if (fd < 0)
-  // {
-  //   delete io;
-  //   THROW("error: cannot re-read dictionary from file '" << fname << "'"
-  //                                                        << ", opening failed");
-  // }
-
+  std::unique_ptr<io_adapter> fd;
+  try
+  {
+    fd = VW::io::open_file(fname, file_mode::read);
+  }
+  catch(...)
+  {
+    THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");
+  }
+  
   auto map = std::make_shared<feature_dict>();
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
@@ -1099,7 +1101,7 @@ void parse_output_preds(options_i& options, vw& all)
     }
     else
     {
-      auto f = VW::io::open_file(predictions).release();
+      auto f = VW::io::open_file(predictions, file_mode::write).release();
       // if (f < 0)
       //   all.trace_message << "Error opening the predictions file: " << fstr << endl;
       all.final_prediction_sink.push_back(f);
@@ -1119,7 +1121,7 @@ void parse_output_preds(options_i& options, vw& all)
       all.raw_prediction = VW::io::open_stdio().release();  // stdout
     else
     {
-        all.raw_prediction = VW::io::open_file(raw_predictions).release();
+        all.raw_prediction = VW::io::open_file(raw_predictions, file_mode::write).release();
     }
   }
 }

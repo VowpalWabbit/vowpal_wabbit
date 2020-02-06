@@ -267,7 +267,7 @@ LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->all = &all;
   dat->ns_pre = new std::vector<std::string>();  // explicitly invoking std::vector's constructor
   dat->out_file = new io_buf();
-  dat->out_file->add_file(VW::io::open_file(out_file).release());
+  dat->out_file->add_file(VW::io::open_file(out_file, file_mode::write).release());
 
   auto base = as_singleline(setup_base(options, all));
   LEARNER::learner<audit_regressor_data, example>& ret =

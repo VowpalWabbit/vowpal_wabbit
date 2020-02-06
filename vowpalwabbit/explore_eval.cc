@@ -84,7 +84,8 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto sink : all.final_prediction_sink) print_action_score(sink, ec.pred.action_probs(), ec.tag);
+  for (auto sink : all.final_prediction_sink)
+    print_action_score(sink, ec.pred.action_probs(), ec.tag);
 
   if (all.raw_prediction)
   {

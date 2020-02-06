@@ -321,7 +321,7 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(std::vector<io_adapter*>& final_prediction_sink)
+void global_print_newline(const v_array<io_adapter*>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
@@ -394,7 +394,8 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (auto sink : all.final_prediction_sink) print_action_score(sink, ec.pred.action_probs(), ec.tag);
+  for (auto sink : all.final_prediction_sink)
+    print_action_score(sink, ec.pred.action_probs(), ec.tag);
 
   if (all.raw_prediction)
   {

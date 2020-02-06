@@ -26,6 +26,7 @@
 #include "vw_validate.h"
 
 #include "io_adapter.h"
+
 #ifndef O_LARGEFILE  // for OSX
 #define O_LARGEFILE 0
 #endif

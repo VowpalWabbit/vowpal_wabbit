@@ -78,9 +78,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-void set_compressed(parser* par)
-{
-}
+void set_compressed(parser* par) {}
 
 uint32_t cache_numbits(io_buf* buf, io_adapter* filepointer)
 {
@@ -133,8 +131,16 @@ void reset_source(vw& all, size_t numbits)
     if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
       THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
                                                                           << all.p->output->finalname);
-    input->close_files();
-    input->add_file(VW::io::open_file(all.p->output->finalname.cbegin()).release());
+    while (input->num_files() > 0)
+    {
+      auto fd = input->files.pop();
+      const auto& fps = all.final_prediction_sink;
+
+      // If the current popped file is not in the list of final predictions sinks, close it.
+      if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
+        delete fd;
+    }
+    input->add_file(VW::io::open_file(all.p->output->finalname.cbegin(), file_mode::read).release());
     all.p->reader = read_cached_features;
   }
   if (all.p->resettable == true)
@@ -166,17 +172,17 @@ void reset_source(vw& all, size_t numbits)
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
-IGNORE_DEPRECATED_USAGE_START
+        IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
-IGNORE_DEPRECATED_USAGE_END
+        IGNORE_DEPRECATED_USAGE_END
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
         all.p->reader = read_features_string;
-IGNORE_DEPRECATED_USAGE_START
+        IGNORE_DEPRECATED_USAGE_START
         all.print = print_result;
-IGNORE_DEPRECATED_USAGE_END
+        IGNORE_DEPRECATED_USAGE_END
         all.print_by_ref = print_result_by_ref;
       }
     }
@@ -192,9 +198,7 @@ IGNORE_DEPRECATED_USAGE_END
   }
 }
 
-void finalize_source(parser*)
-{
-}
+void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
@@ -208,14 +212,17 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   std::string temp = newname + std::string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
-  // todo handle failure
-  auto f = VW::io::open_file(temp).release();
+  io_adapter* f;
+  try
+  {
+    f = VW::io::open_file(temp, file_mode::write).release();
+  }
+  catch (const std::exception&)
+  {
+    all.trace_message << "can't create cache file !" << temp << endl;
+    return;
+  }
   output->add_file(f);
-  // if (f == -1)
-  // {
-  //   all.trace_message << "can't create cache file !" << endl;
-  //   return;
-  // }
 
   size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
@@ -240,7 +247,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     if (!kill_cache)
       try
       {
-        f = VW::io::open_file(file).release();
+        f = VW::io::open_file(file, file_mode::read).release();
         all.p->input->add_file(f);
       }
       catch (const std::exception&)
@@ -456,9 +463,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (f_a < 0)
       THROWERRNO("accept");
     io_adapter* f = VW::io::take_ownership_of_socket(f_a).release();
-IGNORE_DEPRECATED_USAGE_START
+    IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
-IGNORE_DEPRECATED_USAGE_END
+    IGNORE_DEPRECATED_USAGE_END
     all.print_by_ref = print_result_by_ref;
 
     all.final_prediction_sink.push_back(f);
@@ -474,9 +481,9 @@ IGNORE_DEPRECATED_USAGE_END
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
-IGNORE_DEPRECATED_USAGE_START
+        IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
-IGNORE_DEPRECATED_USAGE_END
+        IGNORE_DEPRECATED_USAGE_END
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
@@ -505,18 +512,17 @@ IGNORE_DEPRECATED_USAGE_END
       try
       {
         io_adapter* adapter = nullptr;
-        if(temp != "")
+        if (temp != "")
         {
-          adapter = should_use_compressed ? VW::io::open_compressed_file(temp, gzip_file_mode::read).release()
-                                          : VW::io::open_file(temp).release();
+          adapter = should_use_compressed ? VW::io::open_compressed_file(temp, file_mode::read).release()
+                                          : VW::io::open_file(temp, file_mode::read).release();
         }
-        else if(!all.stdin_off)
+        else if (!all.stdin_off)
         {
           // Should try and use stdin
-          if(should_use_compressed)
+          if (should_use_compressed)
           {
             adapter = VW::io::open_compressed_stdio().release();
-
           }
           else
           {
@@ -524,7 +530,7 @@ IGNORE_DEPRECATED_USAGE_END
           }
         }
 
-        if(adapter)
+        if (adapter)
         {
           all.p->input->files.push_back(adapter);
         }
@@ -682,8 +688,7 @@ example& get_unused_example(vw* all)
 
 void setup_examples(vw& all, v_array<example*>& examples)
 {
-  for (example* ae : examples)
-    setup_example(all, ae);
+  for (example* ae : examples) setup_example(all, ae);
 }
 
 void setup_example(vw& all, example* ae)
@@ -760,7 +765,7 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
 
   // Prediction type should be preinitialized for the given reductions expected type.
-  if(ae->pred.get_type() == prediction_type_t::unset)
+  if (ae->pred.get_type() == prediction_type_t::unset)
   {
     switch (all.l->pred_type)
     {
@@ -903,8 +908,7 @@ void parse_example_label(vw& all, example& ec, std::string label)
 
 void empty_example(vw& /*all*/, example& ec)
 {
-  for (features& fs : ec)
-    fs.clear();
+  for (features& fs : ec) fs.clear();
 
   // TODO - This is inefficient as we are losing allocated buffers. Once tests are passing this should be removed.
   ec.l.reset();
@@ -1008,9 +1012,9 @@ example* example_initializer::operator()(example* ex)
 {
   new (&ex->l) polylabel();
   new (&ex->pred) polyprediction();
-IGNORE_DEPRECATED_USAGE_START
+  IGNORE_DEPRECATED_USAGE_START
   ex->in_use = true;
-IGNORE_DEPRECATED_USAGE_END
+  IGNORE_DEPRECATED_USAGE_END
   ex->passthrough = nullptr;
   memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
   return ex;
@@ -1026,9 +1030,7 @@ void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &al
 }  // namespace VW
 
 VW_DEPRECATED("No longer needed. Use destructor.")
-void free_parser(vw& /*all*/)
-{
-}
+void free_parser(vw& /*all*/) {}
 
 namespace VW
 {

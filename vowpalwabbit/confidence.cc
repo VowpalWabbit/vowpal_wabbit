@@ -76,6 +76,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
   {
     confidence_print_result(f, ec.pred.scalar(), ec.confidence, ec.tag);
   }
+  
   print_update(all, ec);
 }
 
