@@ -29,21 +29,17 @@ struct global_prediction
   float weight;
 };
 
-size_t really_read(int sock, void* in, size_t count)
+size_t really_read(io_adapter* sock, void* in, size_t count)
 {
   char* buf = (char*)in;
   size_t done = 0;
-  int r = 0;
+  ssize_t r = 0;
   while (done < count)
   {
-    if ((r =
-#ifdef _WIN32
-                recv(sock, buf, (unsigned int)(count - done), 0)
-#else
-                read(sock, buf, (unsigned int)(count - done))
-#endif
-                ) == 0)
+    if ((r = sock->read(buf, static_cast<unsigned int>(count - done))) == 0)
+    {
       return 0;
+    }
     else if (r < 0)
     {
       THROWERRNO("read(" << sock << "," << count << "-" << done << ")");
@@ -57,10 +53,10 @@ size_t really_read(int sock, void* in, size_t count)
   return done;
 }
 
-void get_prediction(int sock, float& res, float& weight)
+void get_prediction(io_adapter* f, float& res, float& weight)
 {
   global_prediction p;
-  really_read(sock, &p, sizeof(p));
+  really_read(f, &p, sizeof(p));
   res = p.p;
   weight = p.weight;
 }

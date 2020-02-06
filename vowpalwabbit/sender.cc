@@ -64,25 +64,11 @@ void send_features(io_buf* b, example& ec, uint32_t mask)
   b->flush();
 }
 
-struct global_prediction
-{
-  float p;
-  float weight;
-};
-
-void get_prediction_from_socket(io_adapter* sock, float& res, float& weight)
-{
-  global_prediction p;
-  sock->read((char*)&p, sizeof(p));
-  res = p.p;
-  weight = p.weight;
-}
-
 void receive_result(sender& s)
 {
   float res, weight;
 
-  get_prediction_from_socket(s.socket, res, weight);
+  get_prediction(s.socket, res, weight);
   example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
   ec.pred.scalar() = res;
 
