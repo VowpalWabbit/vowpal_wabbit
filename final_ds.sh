@@ -23,9 +23,9 @@ filename=results/$sdata\_$i.txt
 
 printf "." > $filename
 
-for n in 4 8 #16 32 64 128 256 512 1024 2048 4096 8192 
+for n in 4 8 16 32 64 128 256 512 1024 2048 4096 8192 
 do
-for h in 1 #2 4 8 16 32 64 128
+for h in 1 2 4 8 16 32 64 128
 do
 if (( $n > 2*$h ));
 then
@@ -34,7 +34,7 @@ then
 # time -p timeout $timee build/vowpalwabbit/vw --cont_tbd $n --min_value=$min --max_value=$max --bandwidth $h \
 # -d results/$sdata\_$ll.acpx --passes $pass -b $bb --coin --loss_option $ll -f results/$sdata.m -p results/$sdata\_$ll\_$n\_$h.ap
 printf "\n($n, $h)\n" >> $filename
-python utl/continous_action/srm.py --p results/$sdata\_$ll\_$n\_$h.ap --d results/$sdata\_$ll.acp -m $max -i $min -k $n --bandwidth $h >> $filename
+python3 utl/continous_action/srm.py --p results/$sdata\_$ll\_$n\_$h.ap --d results/$sdata\_$ll.acp -m $max -i $min -k $n --bandwidth $h >> $filename
 
 fi;
 done
