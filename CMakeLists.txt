@@ -65,6 +65,7 @@ option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
+option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -172,10 +173,11 @@ find_package(ZLIB REQUIRED)
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
 
-# It is much better to find RapidJSON as a dependency, however, due to legacy we need to support the submodule for the time being.
-find_package(RapidJSON)
-if(NOT RapidJSON_FOUND)
-  message(DEPRECATION "RapidJSON dependency not found, falling back to submodule. This method is deprecated and may be removed at some point. Please install RapidJSON to fix this deprecation warning.")
+if(RAPIDJSON_SYS_DEP)
+  find_package(RapidJSON 1.1.0 CONFIG REQUIRED)
+  add_library(RapidJSON INTERFACE)
+  target_include_directories(RapidJSON INTERFACE ${RAPIDJSON_INCLUDE_DIRS})
+else()
   # Ensure rapidjson submodule is ready
   find_package(Git QUIET)
   if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
