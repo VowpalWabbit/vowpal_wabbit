@@ -45,7 +45,7 @@ my $ErrorCount = 0;
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
-$WordSplit = "[ \t:]+";
+$WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
 # The intent is to make them easier to parse (and compare values) by a human
@@ -370,6 +370,10 @@ sub lenient_array_compare($$) {
         my ($word1, $word2) = ($w1[$i], $w2[$i]);
         # print STDERR "\t$word1 == $word2 ?\n";
         next if ($word1 eq $word2);
+
+        # Some output contains '...', remove this for comparison.
+        $word1 =~ s/\.\.\.//; 
+        $word2 =~ s/\.\.\.//; 
 
         # There's some difference, is it significant?
         unless (looks_like_number($word1)) {
