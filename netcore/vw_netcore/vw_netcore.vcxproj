@@ -49,7 +49,7 @@
     <LinkIncremental>true</LinkIncremental>
     <TargetName>VowpalWabbit.Core</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-<!--    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>-->
+    <!--    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>-->
     <RuntimeLibrary>
     </RuntimeLibrary>
   </PropertyGroup>
@@ -58,7 +58,7 @@
     <TargetName>VowpalWabbit.Core</TargetName>
     <WindowsMetadataLinkKeyFile>
     </WindowsMetadataLinkKeyFile>
-<!--    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>-->
+    <!--    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>-->
     <RuntimeLibrary>
     </RuntimeLibrary>
   </PropertyGroup>
@@ -81,7 +81,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <EnablePREfast>false</EnablePREfast>
       <Profile>true</Profile>
-<!--      <AdditionalLibraryDirectories>..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\lib\native;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>-->
+      <!--      <AdditionalLibraryDirectories>..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\lib\native;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>-->
       <AdditionalOptions>/VERBOSE</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -99,7 +99,7 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <Profile>true</Profile>
-<!--      <AdditionalLibraryDirectories>..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\lib\native;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>-->
+      <!--      <AdditionalLibraryDirectories>..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\lib\native;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>-->
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </Link>
   </ItemDefinitionGroup>
@@ -157,6 +157,8 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets')" />
     <Import Project="..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -164,5 +166,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets'))" />
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
   </Target>
 </Project>
