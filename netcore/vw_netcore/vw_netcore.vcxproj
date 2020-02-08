@@ -81,7 +81,6 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <EnablePREfast>false</EnablePREfast>
       <Profile>true</Profile>
-      <!--      <AdditionalLibraryDirectories>..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\lib\native;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>-->
       <AdditionalOptions>/VERBOSE</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -99,7 +98,6 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <Profile>true</Profile>
-      <!--      <AdditionalLibraryDirectories>..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\lib\native;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>-->
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </Link>
   </ItemDefinitionGroup>
