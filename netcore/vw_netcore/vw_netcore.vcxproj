@@ -158,7 +158,6 @@
     <Import Project="..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets')" />
     <Import Project="..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets')" />
     <Import Project="..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
-    <Import Project="..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -167,6 +166,5 @@
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost.1.71.0.0\build\boost.targets'))" />
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_program_options-vc142.1.71.0.0\build\boost_program_options-vc142.targets'))" />
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
-    <Error Condition="!Exists('..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
   </Target>
 </Project>

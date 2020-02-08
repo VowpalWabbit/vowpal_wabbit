@@ -1,0 +1,417 @@
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitInterfaceVisitorExt.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Contracts;
+using System.Linq;
+using System.Globalization;
+using System.Text;
+using VW.Serializer.Intermediate;
+
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ output extension=".cs" #>
+
+namespace VW.Serializer
+{
+    public partial class VowpalWabbitDefaultMarshaller
+    {
+        <# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, <#=t#> value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            <# if(new[]{ typeof(Int64), typeof(UInt64), typeof(double) }.Contains(t)) {#>
+            #if DEBUG
+            if (value > float.MaxValue || value < float.MinValue)
+            {
+                Trace.TraceWarning("Precision lost for feature value: " + value);
+            }
+            #endif
+            <# } #>
+
+            context.NamespaceBuilder.AddFeature(feature.FeatureHash, (float)value);
+
+            context.AppendStringExample(
+                feature.Dictify,
+                " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}"),
+                feature.Name,
+                value);
+        }
+
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value)
+        {
+            if (value == null)
+                return;
+
+            this.MarshalFeature(context, ns, feature, value, 0, value.Length);
+        }
+
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature values.</param>
+        /// <param name="offset">Start offset for feature values.</param>
+        /// <param name="length">Length of feature values.</param>
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value, int offset, int length)
+        {
+            if (value == null)
+                return;
+
+            ulong i = 0;
+
+            // support anchor feature
+            if (feature.AddAnchor)
+            {
+                context.NamespaceBuilder.PreAllocate(value.Length + 1);
+
+                context.NamespaceBuilder.AddFeature(ns.NamespaceHash, 1);
+                i++;
+            }
+            else
+                context.NamespaceBuilder.PreAllocate(value.Length);
+
+            <# if (t == typeof(float)) { #>
+
+            fixed (float* begin = value)
+            {
+                var temp = begin + offset;
+                context.NamespaceBuilder.AddFeaturesUnchecked((ulong)(ns.NamespaceHash + i), temp, temp + length);
+            }
+
+            <# } else { #>
+
+            for (var j = offset;j<length;j++)
+            {
+                var v = value[j];
+
+                <# if(new[]{ typeof(Int64), typeof(UInt64), typeof(double) }.Contains(t)) {#>
+                #if DEBUG
+                if (v > float.MaxValue || v < float.MinValue)
+                {
+                    Trace.TraceWarning("Precision lost for feature value: " + v);
+                }
+                #endif
+                <# } #>
+
+                context.NamespaceBuilder.AddFeature((ulong)(ns.NamespaceHash + i), (float)v);
+                i++;
+            }
+            <# } #>
+
+            if (context.StringExample == null)
+                return;
+
+            string featureString;
+            if (feature.Dictify && context.FastDictionary != null)
+            {
+                if (context.FastDictionary.TryGetValue(value, out featureString))
+                {
+                    context.AppendStringExample(feature.Dictify, featureString);
+                    return;
+                }
+            }
+
+            var featureBuilder = new StringBuilder();
+
+            // support anchor feature
+            i = 0;
+            if (feature.AddAnchor)
+            {
+                featureBuilder.Append(" 0:1");
+                i++;
+            }
+
+            var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
+            for (var j = offset;j<length;j++)
+            {
+                featureBuilder.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    format,
+                    i,
+                    value[j]);
+                i++;
+            }
+
+            featureString = featureBuilder.ToString();
+
+            if (feature.Dictify && context.FastDictionary != null)
+                context.FastDictionary.Add(value, featureString);
+
+            context.AppendStringExample(feature.Dictify, featureString);
+        }
+
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IEnumerable<<#=t#>> value)
+        {
+            if (value == null)
+            {
+                return;
+            }
+
+            ulong i = 0;
+
+            // support anchor feature
+            if (feature.AddAnchor)
+            {
+                context.NamespaceBuilder.AddFeature(ns.NamespaceHash, 1);
+                i++;
+            }
+
+            foreach (var v in value)
+            {
+                <# if(new[]{ typeof(Int64), typeof(UInt64), typeof(double) }.Contains(t)) {#>
+                #if DEBUG
+                if (v > float.MaxValue || v < float.MinValue)
+                {
+                    Trace.TraceWarning("Precision lost for feature value: " + v);
+                }
+                #endif
+                <# } #>
+
+                context.NamespaceBuilder.AddFeature((ulong)(ns.NamespaceHash + i), (float)v);
+                i++;
+            }
+
+            if (context.StringExample == null)
+                return;
+
+            string featureString;
+            if (feature.Dictify && context.FastDictionary != null)
+            {
+                if (context.FastDictionary.TryGetValue(value, out featureString))
+                {
+                    context.AppendStringExample(feature.Dictify, featureString);
+                    return;
+                }
+            }
+
+            var featureBuilder = new StringBuilder();
+
+            // support anchor feature
+            i = 0;
+            if (feature.AddAnchor)
+            {
+                featureBuilder.Append(" 0:1");
+                i++;
+            }
+
+            var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
+            foreach (var v in value)
+            {
+                featureBuilder.AppendFormat(
+                    CultureInfo.InvariantCulture,
+                    format,
+                    i,
+                    v);
+                i++;
+            }
+
+            featureString = featureBuilder.ToString();
+
+            if (feature.Dictify && context.FastDictionary != null)
+                context.FastDictionary.Add(value, featureString);
+
+            context.AppendStringExample(feature.Dictify, featureString);
+        }
+
+        <# } #>
+
+        <# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16) }) { #>
+
+        <# foreach(var s in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        [ContractVerification(false)]
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary<<#=t#>, <#=s#>> value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (value == null)
+                return;
+
+            foreach (var kvp in value)
+            {
+                <# if(new[]{ typeof(Int64), typeof(UInt64), typeof(double) }.Contains(s)) {#>
+                #if DEBUG
+                if (kvp.Value > float.MaxValue || kvp.Value < float.MinValue)
+                {
+                    Trace.TraceWarning("Precision lost for feature value: " + kvp.Value);
+                }
+                #endif
+                <# } #>
+
+                context.NamespaceBuilder.AddFeature(ns.NamespaceHash + (ulong)kvp.Key, (float)kvp.Value);
+            }
+
+            if (context.StringExample == null)
+                return;
+
+            var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
+            foreach (var kvp in value)
+            {
+                // TODO: not sure if negative numbers will work
+                context.AppendStringExample(
+                    feature.Dictify,
+                    format,
+                    kvp.Key,
+                    kvp.Value);
+            }
+        }
+        <# } #>
+
+        <# } #>
+
+        <# foreach(var s in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
+
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        [ContractVerification(false)]
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary<string, <#=s#>> value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (value == null)
+                return;
+
+            foreach (var kvp in value)
+            {
+                <# if(new[]{ typeof(Int64), typeof(UInt64), typeof(double) }.Contains(s)) {#>
+                #if DEBUG
+                if (kvp.Value > float.MaxValue || kvp.Value < float.MinValue)
+                {
+                    Trace.TraceWarning("Precision lost for feature value: " + kvp.Value);
+                }
+                #endif
+                <# } #>
+
+                context.NamespaceBuilder.AddFeature(
+					context.VW.HashFeature(kvp.Key, ns.NamespaceHash),
+					(float)kvp.Value);
+            }
+
+            if (context.StringExample == null)
+                return;
+
+            var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
+            foreach (var kvp in value)
+            {
+                // TODO: not sure if negative numbers will work
+                context.AppendStringExample(
+                    feature.Dictify,
+                    format,
+                    kvp.Key,
+                    kvp.Value);
+            }
+        }
+
+		/// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        [ContractVerification(false)]
+        public int MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary<string, <#=s#>[]> value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+			if (value == null)
+                return 0;
+
+			int featureCount = 0;
+            foreach (var kvp in value)
+			{
+				var perKeyNs = kvp.Key == null ? ns : new Namespace(context.VW, kvp.Key);
+
+				try
+				{
+					// the namespace is only added on dispose, to be able to check if at least a single feature has been added
+					context.NamespaceBuilder = context.ExampleBuilder.AddNamespace(perKeyNs.FeatureGroup);
+
+					var position = 0;
+					var stringExample = context.StringExample;
+					if (context.StringExample != null)
+					{
+						position = stringExample.Append(perKeyNs.NamespaceString).Length;
+					}
+
+					this.MarshalFeature(context, perKeyNs, feature, kvp.Value);
+
+					if (context.StringExample != null)
+					{
+						if (position == stringExample.Length)
+						{
+							// no features added, remove namespace
+							stringExample.Length = position - ns.NamespaceString.Length;
+						}
+					}
+
+					featureCount += (int)context.NamespaceBuilder.FeatureCount;
+				}
+				finally
+				{
+					if (context.NamespaceBuilder != null)
+					{
+						context.NamespaceBuilder.Dispose();
+						context.NamespaceBuilder = null;
+					}
+				}
+            }
+
+			return featureCount;
+        }
+        <# } #>
+    }
+}
