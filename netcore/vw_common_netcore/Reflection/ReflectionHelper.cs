@@ -31,12 +31,6 @@ namespace VW.Reflection
         /// <remarks>Can't constraint on Func (or would have to have 11 overloads) nor is it possible to constaint on delegate.</remarks>
         public static System.Delegate CompileToFunc<T, TR>(this Expression<Func<T, TR>> sourceExpression)
         {
-            // inspect T to be Func<...>
-            var funcType = typeof(T);
-
-            if (!funcType.Name.StartsWith("Func`"))
-                throw new ArgumentException("T must be one of the System.Func<...> type.");
-
             return sourceExpression.Compile();
         }
 
