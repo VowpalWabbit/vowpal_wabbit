@@ -205,7 +205,6 @@ namespace VW { namespace continuous_action {
   {
     const auto& cb_cont_costs = ec.l.cb_cont.costs;
 
-
     all.sd->update(
       ec.test_only,
       does_example_have_label(ec),
