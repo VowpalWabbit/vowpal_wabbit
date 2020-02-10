@@ -337,8 +337,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_with_nan)
   BOOST_CHECK_EQUAL(examples[2]->l.cb.costs.size(), 1);
   BOOST_CHECK_EQUAL(examples[3]->l.cb.costs.size(), 0);
 
-  BOOST_TEST(std::isnan(examples[2]->l.cb.costs[0].probability));
-  BOOST_TEST(std::isnan(examples[2]->l.cb.costs[0].cost));
+  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb.costs[0].probability), true);
+  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb.costs[0].cost), true);
   BOOST_CHECK_EQUAL(examples[2]->l.cb.costs[0].action, 2);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
