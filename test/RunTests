@@ -45,7 +45,7 @@ my $ErrorCount = 0;
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
-$WordSplit = "[ \t:]+";
+$WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
 # The intent is to make them easier to parse (and compare values) by a human
@@ -370,6 +370,10 @@ sub lenient_array_compare($$) {
         my ($word1, $word2) = ($w1[$i], $w2[$i]);
         # print STDERR "\t$word1 == $word2 ?\n";
         next if ($word1 eq $word2);
+
+        # Some output contains '...', remove this for comparison.
+        $word1 =~ s/\.\.\.//; 
+        $word2 =~ s/\.\.\.//; 
 
         # There's some difference, is it significant?
         unless (looks_like_number($word1)) {
@@ -1783,5 +1787,11 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.readable.txt
+
+# Test 207: Tests segfault that used to happen when audit, cache and interactions were combined.
+{VW} -c -k --passes 2 -d train-sets/cache_interaction_audit.txt -q st --audit
+    train-sets/ref/cache_interaction_audit.stdout
+    train-sets/ref/cache_interaction_audit.stderr
+    
 
 # Do not delete this line or the empty line above it
