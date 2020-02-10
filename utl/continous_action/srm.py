@@ -19,9 +19,9 @@ class SRM:
     N = 0
     _loss_acc = 0.
     _loss_max = float("-inf")
-    
+
     count = 0
-    
+
     for (data_line, predict_line) in zip(data_file, predict_file):
       # Get data
       pred = self.get_predict_action(predict_line)
@@ -30,14 +30,14 @@ class SRM:
       # Compute losses
       if(math.isclose(pred,logd,abs_tol=self.hh)):
         count = count + 1
-        H_new = min(self.max_val, logd + self.hh) - max(self.min_val, logd - self.hh)  
+        H_new = min(self.max_val, logd + self.hh) - max(self.min_val, logd - self.hh)
         _loss_acc += (L_s * (self.max_val - self.min_val) / (P_s * 4 * H_new))
       N += 1
       if(N%10000 == 0):
         print('.',end='',flush=True)
-      
+
     _loss = _loss_acc / float(N)
-    
+
     print('.')
     print("_loss=",_loss,", _loss_acc=",_loss_acc,", N=",N,)
     print("count = ", count)
@@ -52,10 +52,13 @@ class SRM:
 
   def get_predict_action(self, pred_line):
     separator_position = pred_line.find(':')
-    #print(pred_line[:separator_position - 1 ])
     return float(pred_line[:separator_position])
 
 if __name__ == "__main__":
+  # Example:
+  usage = "\nUsage: python3 srm.py --p <prediction_file> --d <action_cost_probability_file> -m <max_action> -i <min_action> -k <partitions> --bandwidth <bandwidth>"
+  usage += "\nExample: python3 srm.py --p results/friday_2_2048_4.ap --d results/friday_2.acp -m 23959 -i 185 -k 2048 --bandwidth 4"
+
   predict_file = "predict.txt"
   data_file = "data.txt"
   max_val = 100.0
@@ -65,7 +68,12 @@ if __name__ == "__main__":
 
   # Parse options - get predict and data file names
   args = sys.argv[1:]
-  opts, args = getopt.getopt(args, "p:d:m:i:k:h",["predict_file=", "data_file=", "max=", "min=", "number_actions=", "bandwidth="])
+  try:
+    opts, args = getopt.getopt(args, "p:d:m:i:k:h:?",["predict_file=", "data_file=", "max=", "min=", "number_actions=", "bandwidth=", "help"])
+  except getopt.GetoptError:
+      print(usage)
+      sys.exit()
+
   for opt, arg in opts:
     if opt in ('-p', '--predict_file'):
       predict_file = arg
@@ -79,7 +87,14 @@ if __name__ == "__main__":
       k = float(arg)
     elif opt in ('-h', '--bandwidth'):
       h = float(arg)
+    elif opt in ('-?', '--help'):
+      print(usage)
+      sys.exit()
 
-  # Print join lines to stdout
   srm_ = SRM(data_file, predict_file, min_val, max_val, k, h)
-  srm_.calc()
+  try:
+    srm_.calc()
+  except Exception as err:
+    print(usage)
+    print()
+    print(type(err).__name__, err,"\n")
