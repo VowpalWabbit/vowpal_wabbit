@@ -80,8 +80,8 @@ constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
 template <typename T>
 struct has_clear {
 private:
-  typedef char YesType[1];
-  typedef char NoType[2];
+  using YesType = char[1];
+  using NoType = char[2];
 
   template <typename C> static YesType& test( decltype(&C::clear) );
   template <typename C> static NoType& test(...);
@@ -127,7 +127,8 @@ public:
    }
    else
    {
-     ret = (T*)(_data[type_traits<T>::index] = std::make_shared<T>(std::forward<Args>(args)...)).get();
+     _data[type_traits<T>::index] = std::make_shared<T>(std::forward<Args>(args)...);
+     ret = get<T>();
    }
    return ret;
  }
