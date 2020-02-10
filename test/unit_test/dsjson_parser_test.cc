@@ -343,12 +343,3 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_with_nan)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
-
-
-
-
-
-
-
-
-
