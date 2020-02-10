@@ -1793,5 +1793,4 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cache_interaction_audit.stdout
     train-sets/ref/cache_interaction_audit.stderr
     
-
 # Do not delete this line or the empty line above it
