@@ -22,6 +22,8 @@ class PredictDataJoiner_ap:
     abs_loss_acc = 0.
     sqr_loss_acc = 0.
     zero_one_loss_acc = 0.
+    abs_loss_max = float("-inf")
+    sqr_loss_max = float("-inf")
     max_found = float("-inf")
     min_found = float("inf")
     for (data_line, predict_line) in zip(data_file, predict_file):
@@ -29,8 +31,14 @@ class PredictDataJoiner_ap:
       act = self.get_action(predict_line)
       reg = self.get_regression_val(data_line)
       # Compute losses
-      abs_loss_acc += abs((reg-act)/range_val)
-      sqr_loss_acc += ((reg-act)/range_val)**2
+      abss = abs((reg-act)/range_val)
+      if (abss > abs_loss_max):
+        abs_loss_max = abss
+      abs_loss_acc += abss
+      sqrr = ((reg-act)/range_val)**2
+      if (sqrr > sqr_loss_max):
+        sqr_loss_max = sqrr
+      sqr_loss_acc += sqrr
       if(not math.isclose(act,reg,abs_tol=zero_one_h)):
         zero_one_loss_acc += 1.0
       N += 1
@@ -49,6 +57,7 @@ class PredictDataJoiner_ap:
     print("abs_loss=",abs_loss,", abs_loss_acc=",abs_loss_acc,", N=",N,)
     print("sqr_loss=",sqr_loss,", sqr_loss_acc=",sqr_loss_acc,", N=",N,)
     print("zero_one_loss=",zero_one_loss,", zero_one_loss_acc=",zero_one_loss_acc,", N=",N,)
+    print("abs_loss_MAX=",abs_loss_max,", sqr_loss_MAX=",sqr_loss_max,", N=",N,)
     print("zero_one_width=",zero_one_width)
     print("max_param=",self.max_val,",min_param=",self.min_val,"max_found=",max_found,"min_found=",min_found)
     if(not math.isclose(self.max_val,max_found,rel_tol=.001)):
