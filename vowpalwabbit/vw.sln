@@ -135,9 +135,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_testcommon", "..\ne
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_unittest", "..\netcore\netcore_unittest\netcore_unittest.csproj", "{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "netcore_test", "..\netcore\netcore_test\netcore_test.csproj", "{797072AF-C2EC-4BC8-B046-D4D3537EBD52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
@@ -249,6 +253,10 @@ Global
 		{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}.Debug|x64.Build.0 = Debug|x64
 		{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}.Release|x64.ActiveCfg = Release|x64
 		{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}.Release|x64.Build.0 = Release|x64
+		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Debug|x64.ActiveCfg = Debug|x64
+		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Debug|x64.Build.0 = Debug|x64
+		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Release|x64.ActiveCfg = Release|x64
+		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
