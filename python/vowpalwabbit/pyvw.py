@@ -114,6 +114,8 @@ class vw(pylibvw.vw):
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or a single
         example for a single example learner."""
+        str_ex = "".join(str_ex)
+        str_ex = str_ex.replace('\n', '')
         str_ex = str_ex.replace('\r', '')
         ec = self._parse(str_ex)
         ec = [example(self, x, labelType) for x in ec]
