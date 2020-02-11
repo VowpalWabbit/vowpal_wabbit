@@ -28,31 +28,7 @@ using the local repo installation instructions below.
 Installation
 ------------
 
-From PyPI:
-
-Linux/Mac OSX:
-
-.. code-block:: bash
-
-    $ pip install vowpalwabbit
-
-Windows:
-
-.. code-block:: bat
-
-    > pip install --global-option="--vcpkg-root=path\to\vcpkg" vowpalwabbit
-    
-
-
-From local repo (useful when making modifications):
-
-.. code-block:: bash
-
-    # Dependencies
-    $ sudo apt install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
-    
-    # Build and install package
-    $ python setup.py install
+See the `installation instructions`_
 
 
 Usage
@@ -98,58 +74,7 @@ Or you can use the included scikit-learn interface like this:
 Troubleshooting
 ---------------
 
-Some common causes of failure for installation are due to missing or mis-matched dependencies when Vowpal Wabbit builds.
-Make sure you have boost and boost-python installed on your system.
-
-For Ubuntu/Debian/Mint
-
-.. code-block:: bash
-
-    $ apt install libboost-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libboost-math-dev libboost-test-dev libboost-python-dev zlib1g-dev cmake 
-
-For Mac OSX
-
-.. code-block:: bash
-
-    $ brew install cmake
-    $ brew install boost
-    #If you want to build with python 2 support
-    brew install boost-python
-    #If you want to build with python 3 support
-    brew install boost-python3
-    
-For Windows
-
-    1. Install vcpkg_
-
-    2. Run
-
-.. code-block:: bat
-
-    > vcpkg --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-python boost-math boost-thread python3 boost-python
-
-.. _vcpkg: https://github.com/microsoft/vcpkg
-
-Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be done using the following steps:
-
-.. code-block:: bash
-
-    $ git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
-    # create conda environment if necessary
-    $ conda create -n vowpalwabbit
-    $ source activate vowpalwabbit
-    # install necessary boost dependencies
-    $ conda install -y -c anaconda boost
-    $ pip install -e vowpal_wabbit
-    
-**For python3 on Ubuntu 16.04 LTS**: Ubuntu 16.04 defaults to an old, custom-built version of boost. As such, the boost_python library names do not follow the standard naming convention adopted by offical boost releases for the boost_python libraries.
-You may need to manually create the relevant symlinks in this case. Example commands for python 3.5 follows: 
-
-.. code-block:: bash
-
-    $ cd /usr/lib/x86_64-linux-gnu/
-    $ sudo ln -s libboost_python-py35.so libboost_python3.so
-    $ sudo ln -s libboost_python-py35.a libboost_python3.a
+See the `troubleshooting guide`_
 
 Development
 -----------
@@ -182,49 +107,5 @@ Directory Structure:
 .. _repo: https://github.com/VowpalWabbit/vowpal_wabbit
 .. _pytest: http://pytest.org/latest/getting-started.html
 .. _tox: https://tox.readthedocs.io/en/latest/index.html
-
-Experimental build for Windows
-------------------------------
-
-An extension on the `experimental Windows CMake build`_ for the main project.
-
-**Note:** attempting to install boost-python in vcpkg while multiple python versions are installed in vcpkg will cause errors. Ensure only the relevant python version is installed in the environment before proceeding.
-
-Python3
-~~~~~~~
-
-1. install required vcpkgs
-
-.. code-block:: bat
-
-    > vcpkg install python3:x64-windows
-    > vcpkg install boost-python:x64-windows
-    
-2. Run
-
-.. code-block:: bat
-
-    > python setup.py --vcpkg-root=path\to\vcpkg install
-
-Python2
-~~~~~~~
-
-Due to limitations in the current version of boost-python, some manual changes must be made to the vcpkg tools
-
-1. Edit [vcpkg-root]\\ports\\boost-python
-2. Edit the file CONTROL
-    a. Change the Build-Depends entry for **python3** to **python2**
-3. install required vcpkgs
-
-.. code-block:: bat
-
-    > vcpkg install python2:x64-windows
-    > vcpkg install boost-python:x64-windows
-
-4. Run
-
-.. code-block:: bat
-
-    > python setup.py --vcpkg-root=path\to\vcpkg install
-    
-.. _experimental Windows CMake build: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building#experimental-using-cmake-on-windows
+.. _installation instructions: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Python#installing
+.. _troubleshooting guide: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Python#troubleshooting
