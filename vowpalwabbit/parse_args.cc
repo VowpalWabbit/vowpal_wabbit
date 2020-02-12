@@ -659,7 +659,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
       // TODO this option is unused - remove?
-      .add(make_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
+      .add(make_option("q:", q_colon).help("DEPRECATED ':' corresponds to a wildcard for all printable characters"))
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
   options.add_and_parse(feature_options);
 
@@ -676,6 +676,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       else
         all.spelling_features[(size_t)spelling_ns[id][0]] = true;
     }
+  }
+
+  if (options.was_supplied("q:"))
+  {
+    all.trace_message << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions."
+                      << endl;
   }
 
   if (options.was_supplied("affix"))
