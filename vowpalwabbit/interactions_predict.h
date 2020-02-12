@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 
+const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make_pair("", "");
+
 namespace INTERACTIONS
 {
 /*
@@ -76,7 +78,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   {
     for (; begin != end; ++begin)
     {
-      audit_func(dat, begin.audit().get());
+      audit_func(dat, begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit()->get());
       call_T<R, T>(dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
     }
@@ -138,7 +140,9 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
           {
             feature_index halfhash = FNV_prime * (uint64_t)first.indicies[i];
             if (audit)
-              audit_func(dat, first.space_names[i].get());
+            {
+              audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+            }
             // next index differs for permutations and simple combinations
             feature_value ft_value = first.values[i];
             features::features_value_index_audit_range range = second.values_indices_audit();
@@ -172,7 +176,9 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
             for (size_t i = 0; i < first.indicies.size(); ++i)
             {
               if (audit)
-                audit_func(dat, first.space_names[i].get());
+              {
+                audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+              }
               const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
               const float& first_ft_value = first.values[i];
               size_t j = 0;
@@ -182,7 +188,9 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
               for (; j < second.indicies.size(); ++j)
               {  // f3 x k*(f2 x k*f1)
                 if (audit)
-                  audit_func(dat, second.space_names[j].get());
+                {
+                  audit_func(dat, i < second.space_names.size() ? second.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+                }
                 feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
 
