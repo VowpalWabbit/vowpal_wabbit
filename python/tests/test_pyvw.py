@@ -166,7 +166,7 @@ def test_keys_with_list_of_values():
     del model
 
 def test_parse():
-    model = vm(quiet=True, cb_adf=True)
+    model = vw(quiet=True, cb_adf=True)
     ex = model.parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
     assert len(ex) == 2
 

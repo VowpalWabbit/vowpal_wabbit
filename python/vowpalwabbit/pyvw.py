@@ -119,6 +119,7 @@ class vw(pylibvw.vw):
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
         str_ex = str_ex.replace('\r', '')
+        str_ex = str_ex.strip()
         ec = self._parse(str_ex)
         ec = [example(self, x, labelType) for x in ec]
         for ex in ec:
