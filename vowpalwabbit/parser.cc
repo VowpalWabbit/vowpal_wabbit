@@ -749,8 +749,9 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
 
   // Prediction type should be preinitialized for the given reductions expected type.
-  if(ae->pred.get_type() == prediction_type_t::unset)
+  if(ae->pred.get_type() != all.l->pred_type)
   {
+    ae->pred.reset();
     switch (all.l->pred_type)
     {
       case (prediction_type_t::scalar):
@@ -894,10 +895,6 @@ void empty_example(vw& /*all*/, example& ec)
 {
   for (features& fs : ec)
     fs.clear();
-
-  // TODO - This is inefficient as we are losing allocated buffers. Once tests are passing this should be removed.
-  ec.l.reset();
-  ec.pred.reset();
 
   ec.indices.clear();
   ec.tag.clear();

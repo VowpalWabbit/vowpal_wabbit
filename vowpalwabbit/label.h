@@ -145,7 +145,7 @@ struct polylabel
         init_as_cb(other._cb);
         break;
       case (label_type_t::conditional_contextual_bandit):
-        init_as_conditional_contextual_bandit(other._conditional_contextual_bandit);
+        init_as_ccb(other._conditional_contextual_bandit);
         break;
       case (label_type_t::cb_eval):
         init_as_cb_eval(other._cb_eval);
@@ -179,7 +179,7 @@ struct polylabel
         init_as_cb(std::move(other._cb));
         break;
       case (label_type_t::conditional_contextual_bandit):
-        init_as_conditional_contextual_bandit(std::move(other._conditional_contextual_bandit));
+        init_as_ccb(std::move(other._conditional_contextual_bandit));
         break;
       case (label_type_t::cb_eval):
         init_as_cb_eval(std::move(other._cb_eval));
@@ -228,7 +228,7 @@ struct polylabel
     {
       case (label_type_t::unset):
         // Nothing to do! Whatever was in here has already been destroyed.
-        break;
+        return;
       case (label_type_t::empty):
         destruct(_empty);
         break;
@@ -364,7 +364,7 @@ struct polylabel
   }
 
   template <typename... Args>
-  CCB::label& init_as_conditional_contextual_bandit(Args&&... args)
+  CCB::label& init_as_ccb(Args&&... args)
   {
     ensure_is_type(label_type_t::unset);
     new (&_conditional_contextual_bandit) CCB::label(std::forward<Args>(args)...);

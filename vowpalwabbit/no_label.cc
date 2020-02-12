@@ -32,7 +32,7 @@ void cache_no_label(polylabel&, io_buf&) {}
 // This is wasted work, ideally empty and unset should be the same thing.
 void default_no_label(polylabel& label)
 {
-  if (label.get_type() != label_type_t::empty)
+  if (label.get_type() != label_type_t::empty && label.get_type() != label_type_t::empty)
   {
     label.reset();
     label.init_as_empty();

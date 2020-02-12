@@ -31,7 +31,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
 
 size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
 {
-  auto& ld = v.init_as_multilabels();
+  auto& ld = v.multilabels();
   ld.label_v.clear();
   char* c;
   size_t total = sizeof(size_t);
@@ -66,11 +66,12 @@ void cache_label(polylabel& v, io_buf& cache)
 
 void default_label(polylabel& v)
 {
-  if (v.get_type() != label_type_t::unset)
+  if (v.get_type() != label_type_t::multilabels)
   {
     v.reset();
+    v.init_as_multilabels();
   }
-  auto& ld = v.init_as_multilabels();
+  auto& ld = v.multilabels();
   ld.label_v.clear();
 }
 

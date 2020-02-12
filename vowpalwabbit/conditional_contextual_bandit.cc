@@ -459,7 +459,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Restore ccb labels to the example objects.
   for (size_t i = 0; i < examples.size(); i++)
   {
-    examples[i]->l.init_as_conditional_contextual_bandit(std::move(data.stored_labels[i]));
+    examples[i]->l.init_as_ccb(std::move(data.stored_labels[i]));
   }
   data.stored_labels.clear();
 

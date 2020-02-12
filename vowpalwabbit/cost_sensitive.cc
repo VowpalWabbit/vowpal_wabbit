@@ -54,7 +54,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
 
 size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
 {
-  auto& ld = v.init_as_cs();
+  auto& ld = v.cs();
 
   ld.costs.clear();
   char* c;
@@ -92,11 +92,13 @@ void default_label(label& label) { label.costs.clear(); }
 
 void default_label(polylabel& v)
 {
-  if (v.get_type() != label_type_t::unset)
+  if (v.get_type() != label_type_t::cs)
   {
     v.reset();
+    v.init_as_cs();
   }
-  auto& ld = v.init_as_cs();
+
+  auto& ld = v.cs();
   default_label(ld);
 }
 

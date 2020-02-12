@@ -49,7 +49,7 @@ size_t read_cached_label(shared_data*, CB::label& ld, io_buf& cache)
 
 size_t read_cached_label(shared_data* s, polylabel& v, io_buf& cache)
 {
-  return CB::read_cached_label(s, v.init_as_cb(), cache);
+  return CB::read_cached_label(s, v.cb(), cache);
 }
 
 float weight(CB::label& ld) { return ld.weight; }
@@ -87,11 +87,12 @@ void default_label(CB::label& ld)
 
 void default_label(polylabel& v)
 {
-  if (v.get_type() != label_type_t::unset)
+  if (v.get_type() != label_type_t::cb)
   {
     v.reset();
+    v.init_as_cb();
   }
-  CB::default_label(v.init_as_cb());
+  CB::default_label(v.cb());
 }
 
 bool test_label(CB::label& ld)
@@ -256,11 +257,13 @@ void cache_label(polylabel& v, io_buf& cache)
 
 void default_label(polylabel& v)
 {
-  if (v.get_type() != label_type_t::unset)
+  if (v.get_type() != label_type_t::cb_eval)
   {
     v.reset();
+    v.init_as_cb_eval();
+
   }
-  auto& ld = v.init_as_cb_eval();
+  auto& ld = v.cb_eval();
   CB::default_label(ld.event);
   ld.action = 0;
 }

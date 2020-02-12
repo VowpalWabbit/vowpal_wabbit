@@ -231,7 +231,7 @@ struct polyprediction
     {
       case (prediction_type_t::unset):
         // Nothing to do! Whatever was in here has already been destroyed.
-        break;
+        return;
       case (prediction_type_t::scalar):
         destruct(_scalar);
         break;

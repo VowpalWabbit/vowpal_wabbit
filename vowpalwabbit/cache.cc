@@ -67,6 +67,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
+  all->p->lp.default_label(ae->l);
   size_t total = all->p->lp.read_cached_label(all->p->_shared_data, ae->l, *input);
   if (total == 0)
     return 0;

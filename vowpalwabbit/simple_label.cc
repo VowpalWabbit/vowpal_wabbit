@@ -29,7 +29,7 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 
 size_t read_cached_simple_label(shared_data* sd, polylabel& in_ld, io_buf& cache)
 {
-  auto& ld = in_ld.init_as_simple();
+  auto& ld = in_ld.simple();
   char* c;
   size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
   if (cache.buf_read(c, total) < total)
