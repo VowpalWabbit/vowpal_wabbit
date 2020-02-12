@@ -114,6 +114,8 @@ class vw(pylibvw.vw):
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or a single
         example for a single example learner."""
+        if not (isinstance(str_ex, list) or isinstance(str_ex, str)):
+            raise TypeError('Unsupported type. List or string object must be passed.')
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
         str_ex = str_ex.replace('\r', '')
