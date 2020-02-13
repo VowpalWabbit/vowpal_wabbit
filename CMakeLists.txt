@@ -176,6 +176,7 @@ find_package(ZLIB REQUIRED)
 include(GNUInstallDirs)
 
 if(RAPIDJSON_SYS_DEP)
+  # Since EXACT is not specified, any version compatible with 1.1.0 is accepted (>= 1.1.0)
   find_package(RapidJSON 1.1.0 CONFIG REQUIRED)
   add_library(RapidJSON INTERFACE)
   target_include_directories(RapidJSON INTERFACE ${RAPIDJSON_INCLUDE_DIRS})
