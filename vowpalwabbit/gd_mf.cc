@@ -42,7 +42,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     {
       std::cout << '\t';
       if (audit)
-        std::cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
+        std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
@@ -56,12 +56,12 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
           for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           {
-            std::cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':'
+            std::cout << '\t' << f1.audit()->get()->first << k << '^' << f1.audit()->get()->second << ':'
                       << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
                       << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':'
+            std::cout << ':' << f2.audit()->get()->first << k << '^' << f2.audit()->get()->second << ':'
                       << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
                       << ':' << f2.value();
             std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];

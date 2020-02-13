@@ -21,7 +21,7 @@ void unique_features(features& fs, int max)
         last_index.value() = i.value();
         last_index.index() = i.index();
         if (!fs.space_names.empty())
-          last_index.audit() = i.audit();
+          *last_index.audit() = *i.audit();
       }
 
   ++last_index;
