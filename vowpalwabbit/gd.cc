@@ -279,7 +279,7 @@ void print_lda_features(vw& all, example& ec)
   {
     for (features::iterator_all& f : fs.values_indices_audit())
     {
-      std::cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
+      std::cout << '\t' << f.audit()->get()->first << '^' << f.audit()->get()->second << ':'
                 << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
@@ -300,7 +300,7 @@ void print_features(vw& all, example& ec)
       if (fs.space_names.size() > 0)
         for (features::iterator_all& f : fs.values_indices_audit())
         {
-          audit_interaction(dat, f.audit().get());
+          audit_interaction(dat, f.audit()->get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
           audit_interaction(dat, NULL);
         }
@@ -313,7 +313,7 @@ void print_features(vw& all, example& ec)
 
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
-    {
+    { 
       for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
       std::cout << std::endl;
     }
