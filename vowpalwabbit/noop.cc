@@ -20,5 +20,8 @@ LEARNER::base_learner* noop_setup(options_i& options, vw&)
   if (!noop)
     return nullptr;
 
-  return make_base(LEARNER::init_learner(learn, 1));
+  auto& l = LEARNER::init_learner(learn, 1);
+  l.label_type = label_type_t::simple;
+  l.pred_type = prediction_type_t::scalar;
+  return make_base(l);
 }

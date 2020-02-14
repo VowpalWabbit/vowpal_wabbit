@@ -6,7 +6,7 @@
 
 #include <functional>
 
-using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
+using dispatch_fptr = std::function<void(vw&, v_array<example*>&&)>;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
@@ -23,7 +23,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       {
         VW::setup_examples(all, examples);
         example_number += examples.size();
-        dispatch(all, examples);
+        dispatch(all, std::move(examples));
       }
       else
       {
@@ -42,7 +42,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           all.passes_complete = 0;
           all.pass_length = all.pass_length * 2 + 1;
         }
-        dispatch(all, examples);  // must be called before lock_done or race condition exists.
+        dispatch(all, std::move(examples));  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
           lock_done(*all.p);
         example_number = 0;

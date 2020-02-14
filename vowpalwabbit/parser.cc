@@ -929,7 +929,7 @@ void finish_example(vw& all, example& ec)
 }
 }  // namespace VW
 
-void thread_dispatch(vw& all, const v_array<example*>& examples)
+void thread_dispatch(vw& all, v_array<example*>&& examples)
 {
   all.p->end_parsed_examples += examples.size();
   for (auto example : examples)
