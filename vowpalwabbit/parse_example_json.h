@@ -33,6 +33,7 @@
 #include "vw_string_view.h"
 #include <algorithm>
 #include <vector>
+#include <limits>
 
 // portability fun
 #ifndef _WIN32
@@ -197,6 +198,50 @@ class LabelObjectState : public BaseState<audit>
     return this;
   }
 
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool) override
+  {
+    if (_stricmp(str, "NaN") != 0)
+    {
+      ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length << ". The only string value supported in this context is NaN.";
+      return nullptr;
+    }
+
+    // simple
+    if (!_stricmp(ctx.key, "Label"))
+    {
+      ctx.ex->l.simple.label = std::numeric_limits<float>::quiet_NaN();
+      found = true;
+    }
+    else if (!_stricmp(ctx.key, "Initial"))
+    {
+      ctx.ex->l.simple.initial = std::numeric_limits<float>::quiet_NaN();
+      found = true;
+    }
+    else if (!_stricmp(ctx.key, "Weight"))
+    {
+      ctx.ex->l.simple.weight = std::numeric_limits<float>::quiet_NaN();
+      found = true;
+    }
+    // CB
+    else if (!_stricmp(ctx.key, "Cost"))
+    {
+      cb_label.cost = std::numeric_limits<float>::quiet_NaN();
+      found_cb = true;
+    }
+    else if (!_stricmp(ctx.key, "Probability"))
+    {
+      cb_label.probability = std::numeric_limits<float>::quiet_NaN();
+      found_cb = true;
+    }
+    else
+    {
+      ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
+      return nullptr;
+    }
+
+    return this;
+  }
+
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     // simple
@@ -307,6 +352,18 @@ struct LabelSinglePropertyState : BaseState<audit>
     ctx.key_length -= 7;
 
     if (ctx.label_object_state.Float(ctx, v) == nullptr)
+      return nullptr;
+
+    return ctx.previous_state;
+  }
+
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool copy) override
+  {
+    // skip "_label_"
+    ctx.key += 7;
+    ctx.key_length -= 7;
+
+    if (ctx.label_object_state.String(ctx, str, len, copy) == nullptr)
       return nullptr;
 
     return ctx.previous_state;
@@ -883,6 +940,26 @@ class ArrayToVectorState : public BaseState<audit>
     }
 
     has_seen_array_start = true;
+
+    return this;
+  }
+
+  BaseState<audit>* String(
+      Context<audit>& ctx, const char* str, rapidjson::SizeType /*length*/, bool /* copy */) override
+  {
+    if (_stricmp(str, "NaN") != 0)
+    {
+      ctx.error() << "The only supported string in the array is 'NaN'";
+      return nullptr;
+    }
+
+    output_array->push_back(std::numeric_limits<T>::quiet_NaN());
+
+    if (!has_seen_array_start)
+    {
+      has_seen_array_start = false;
+      return return_state;
+    }
 
     return this;
   }
