@@ -209,17 +209,17 @@ class LabelObjectState : public BaseState<audit>
     // simple
     if (!_stricmp(ctx.key, "Label"))
     {
-      ctx.ex->l.simple.label = std::numeric_limits<float>::quiet_NaN();
+      ctx.ex->l.simple().label = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      ctx.ex->l.simple.initial = std::numeric_limits<float>::quiet_NaN();
+      ctx.ex->l.simple().initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->l.simple.weight = std::numeric_limits<float>::quiet_NaN();
+      ctx.ex->l.simple().weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     // CB
