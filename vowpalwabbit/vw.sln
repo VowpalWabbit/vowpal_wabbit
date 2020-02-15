@@ -117,8 +117,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_slim_test", "slim\test\v
 		{B68B36AA-F5AC-4A1A-8E52-D1B071B39483} = {B68B36AA-F5AC-4A1A-8E52-D1B071B39483}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "vw_common_netcore", "..\netcore\vw_common_netcore\vw_common_netcore.csproj", "{90515FC0-F314-4043-8B71-4D11C48E3BAD}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_netcore", "..\netcore\vw_netcore\vw_netcore.vcxproj", "{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore", "..\netcore\netcore\netcore.csproj", "{73455B79-D1CF-421B-AF68-892E2A362D0C}"
@@ -215,10 +213,6 @@ Global
 		{AA39948B-C78F-4347-8A37-DD27B843E69E}.Debug|x64.Build.0 = Debug|x64
 		{AA39948B-C78F-4347-8A37-DD27B843E69E}.Release|x64.ActiveCfg = Release|x64
 		{AA39948B-C78F-4347-8A37-DD27B843E69E}.Release|x64.Build.0 = Release|x64
-		{90515FC0-F314-4043-8B71-4D11C48E3BAD}.Debug|x64.ActiveCfg = Debug|x64
-		{90515FC0-F314-4043-8B71-4D11C48E3BAD}.Debug|x64.Build.0 = Debug|x64
-		{90515FC0-F314-4043-8B71-4D11C48E3BAD}.Release|x64.ActiveCfg = Release|x64
-		{90515FC0-F314-4043-8B71-4D11C48E3BAD}.Release|x64.Build.0 = Release|x64
 		{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}.Debug|x64.ActiveCfg = Debug|x64
 		{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}.Debug|x64.Build.0 = Debug|x64
 		{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}.Release|x64.ActiveCfg = Release|x64

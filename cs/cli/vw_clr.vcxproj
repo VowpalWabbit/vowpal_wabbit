@@ -83,8 +83,8 @@
     </RuntimeLibrary>
   </PropertyGroup>
   <PropertyGroup>
-    <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\</OutDir>
-    <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\net452\</OutDir>
+    <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(MSBuildProjectName)\net452\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>

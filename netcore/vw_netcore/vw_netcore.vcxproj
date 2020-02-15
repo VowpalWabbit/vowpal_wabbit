@@ -63,8 +63,8 @@
     </RuntimeLibrary>
   </PropertyGroup>
   <PropertyGroup>
-    <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\</OutDir>
-    <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\netcoreapp3.1\</OutDir>
+    <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(MSBuildProjectName)\netcoreapp3.1\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -105,8 +105,8 @@
     <ProjectReference Include="..\..\vowpalwabbit\vw_core.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\vw_common_netcore\vw_common_netcore.csproj">
-      <Project>{90515fc0-f314-4043-8b71-4d11c48e3bad}</Project>
+    <ProjectReference Include="..\..\cs\common\vw_common.csproj">
+      <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ProjectReference>
   </ItemGroup>

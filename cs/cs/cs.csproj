@@ -6,13 +6,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>VW</RootNamespace>
     <AssemblyName>VowpalWabbit</AssemblyName>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <RestorePackages>true</RestorePackages>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <CodeContractsAssemblyMode>0</CodeContractsAssemblyMode>
     <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
-    <IntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(ProjectName)\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\vw_key.snk</AssemblyOriginatorKeyFile>
@@ -86,12 +86,13 @@
     </None>
     <None Include="..\vw_key.snk" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-    <ProjectReference Include="..\cli\vw_clr.vcxproj" />
+  <ItemGroup>
     <ProjectReference Include="..\common\vw_common.csproj" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
+    <ProjectReference Include="..\cli\vw_clr.vcxproj" />
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <ProjectReference Include="..\..\netcore\vw_common_netcore\vw_common_netcore.csproj" />
     <ProjectReference Include="..\..\netcore\vw_netcore\vw_netcore.vcxproj" />
   </ItemGroup>
   <ItemGroup>
