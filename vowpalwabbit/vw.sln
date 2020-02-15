@@ -121,8 +121,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_netcore", "..\netcore\vw
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "simulator_netcore", "..\netcore\examples\simulator_netcore\simulator_netcore.csproj", "{ADC52C18-88A3-45C2-87E0-E56052F47841}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_json", "..\netcore\netcore_json\netcore_json.csproj", "{3E77ED59-CB1F-4675-8517-1DF3E7B23E11}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_parallel", "..\netcore\netcore_parallel\netcore_parallel.csproj", "{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_console", "..\netcore\netcore_console\netcore_console.csproj", "{78B5D51C-20D2-4F27-8D7E-BEC883D47167}"
@@ -219,10 +217,6 @@ Global
 		{ADC52C18-88A3-45C2-87E0-E56052F47841}.Debug|x64.Build.0 = Debug|x64
 		{ADC52C18-88A3-45C2-87E0-E56052F47841}.Release|x64.ActiveCfg = Release|x64
 		{ADC52C18-88A3-45C2-87E0-E56052F47841}.Release|x64.Build.0 = Release|x64
-		{3E77ED59-CB1F-4675-8517-1DF3E7B23E11}.Debug|x64.ActiveCfg = Debug|x64
-		{3E77ED59-CB1F-4675-8517-1DF3E7B23E11}.Debug|x64.Build.0 = Debug|x64
-		{3E77ED59-CB1F-4675-8517-1DF3E7B23E11}.Release|x64.ActiveCfg = Release|x64
-		{3E77ED59-CB1F-4675-8517-1DF3E7B23E11}.Release|x64.Build.0 = Release|x64
 		{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}.Debug|x64.ActiveCfg = Debug|x64
 		{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}.Debug|x64.Build.0 = Debug|x64
 		{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}.Release|x64.ActiveCfg = Release|x64
