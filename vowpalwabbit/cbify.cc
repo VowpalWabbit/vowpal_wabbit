@@ -21,7 +21,7 @@ using std::endl;
 
 struct cbify;
 
-VW_DEBUG_ENABLE(false);
+VW_DEBUG_ENABLE(true);
 
 struct cbify_adf_data
 {
@@ -279,9 +279,47 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
-
+   
   base.predict(ec);
-
+    
+  // for debugging
+    
+  if (ec.pred.prob_dist.size() > 0)
+      VW_DBG(ec) << "ec.pred.prob_dist[0].value= " << ec.pred.prob_dist[0].value << endl;
+    
+  
+  VW_DBG(ec) << "ec.pred.prob_dist.size() = " << ec.pred.prob_dist.size() << endl;
+    
+  VW::actions_pdf::pdf prob_dist_copy;
+    
+  VW_DBG(ec) << "prob_dist_copy.size() = " << prob_dist_copy.size() << endl;
+  
+  prob_dist_copy.clear();  
+    
+  VW_DBG(ec) << "after clear: prob_dist_copy.size() = " << prob_dist_copy.size() << endl;
+    
+  VW::actions_pdf::pdf_segment pdf_s = {0.f, 1.f};
+    
+  VW_DBG(ec) << "pdf_s.action = " << pdf_s.action << endl;
+    
+  VW_DBG(ec) << "pdf_s.value = " << pdf_s.value << endl;
+    
+  prob_dist_copy.push_back(pdf_s); // segmentation fault happens!
+  
+  VW_DBG(ec) << "prob_dist_copy.size() = " << prob_dist_copy.size() << endl;
+  /////////
+  
+  for (uint32_t i = 0; i <= data.regression_data.num_actions; i++) {
+    VW_DBG(ec) << "i = " << i << endl;
+    VW_DBG(ec) << "ec.pred.prob_dist[i].value = " << ec.pred.prob_dist[i].value << endl;
+    
+    prob_dist_copy.push_back({ ec.pred.prob_dist[i].action, ec.pred.prob_dist[i].value }); // segmentation fault happens!
+      
+    
+    VW_DBG(ec) << "ec.pred.prob_dist[i].action = " << ec.pred.prob_dist[i].action << endl;
+    
+  }    
+ 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
 
   float chosen_action;
@@ -296,7 +334,20 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   //       If the function fails to find the index, it will actually return the second-to-last index
   VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
 
-  float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
+  if (ec.pred.prob_dist.size() > 0)
+      VW_DBG(ec) << "ec.pred.prob_dist[0].value = " << ec.pred.prob_dist[0].value << endl;
+    
+  
+  
+  if (ec.pred.prob_dist.size() > 0)
+      VW_DBG(ec) << "prob_dist_copy[0].value = " << prob_dist_copy[0].value << endl;
+    
+    
+  float pdf_value = get_pdf_value(prob_dist_copy, chosen_action);
+    
+  VW_DBG(ec) << "pdf_value = " << pdf_value << endl;
+    
+  exit(0);
 
   continuous_label_elm cb_cont_lbl;
 
