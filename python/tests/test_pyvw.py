@@ -153,7 +153,7 @@ def test_regressor_args():
     del new_model
 
     # clean up
-    os.remove('{}.cache'.format(data_file))
+    os.remove('{}'.format(data_file))
     os.remove('tmp.model')
 
 
