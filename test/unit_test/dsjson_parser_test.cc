@@ -327,18 +327,18 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_with_nan)
   BOOST_CHECK_EQUAL(examples.size(), 4);
 
   // Shared example
-  BOOST_CHECK_EQUAL(examples[0]->l.cb.costs.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].probability, -1.f, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].cost, FLT_MAX, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(examples[0]->l.cb().costs.size(), 1);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb().costs[0].probability, -1.f, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb().costs[0].cost, FLT_MAX, FLOAT_TOL);
 
   // Action examples
-  BOOST_CHECK_EQUAL(examples[1]->l.cb.costs.size(), 0);
-  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs.size(), 1);
-  BOOST_CHECK_EQUAL(examples[3]->l.cb.costs.size(), 0);
+  BOOST_CHECK_EQUAL(examples[1]->l.cb().costs.size(), 0);
+  BOOST_CHECK_EQUAL(examples[2]->l.cb().costs.size(), 1);
+  BOOST_CHECK_EQUAL(examples[3]->l.cb().costs.size(), 0);
 
-  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb.costs[0].probability), true);
-  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb.costs[0].cost), true);
-  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs[0].action, 2);
+  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb().costs[0].probability), true);
+  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb().costs[0].cost), true);
+  BOOST_CHECK_EQUAL(examples[2]->l.cb().costs[0].action, 2);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
