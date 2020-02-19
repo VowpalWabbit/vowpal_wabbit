@@ -17,6 +17,7 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <winsock2.h>
+#include <Ws2tcpip.h>
 #include <Windows.h>
 #include <io.h>
 typedef int socklen_t;
