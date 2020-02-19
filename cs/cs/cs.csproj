@@ -93,7 +93,7 @@
     <ProjectReference Include="..\cli\vw_clr.vcxproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <ProjectReference Include="..\..\netcore\vw_netcore\vw_netcore.vcxproj" />
+    <ProjectReference Include="..\cli\vw_netcore.vcxproj" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />

@@ -44,7 +44,7 @@
     <ProjectReference Include="..\cli\vw_clr.vcxproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <ProjectReference Include="..\..\netcore\vw_netcore\vw_netcore.vcxproj" />
+    <ProjectReference Include="..\cli\vw_netcore.vcxproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="gitlink">
