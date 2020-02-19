@@ -55,7 +55,7 @@ set(vw_all_sources
   recall_tree.cc scorer.cc search_dep_parser.cc search_entityrelationtask.cc search_graph.cc
   search_hooktask.cc search_meta.cc search_multiclasstask.cc search_sequencetask.cc search.cc
   sender.cc shared_feature_merger.cc simple_label.cc stagewise_poly.cc svrg.cc topk.cc unique_sort.cc
-  version.cc vw_exception.cc vw_validate.cc warm_cb.cc
+  version.cc vw_exception.cc vw_validate.cc warm_cb.cc label.cc prediction.cc
 )
 
 add_library(vw ${vw_all_sources} ${vw_all_headers})

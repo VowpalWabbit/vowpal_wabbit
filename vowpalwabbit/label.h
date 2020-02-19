@@ -58,17 +58,17 @@ Steps:
   case enum_type:                 \
     return #enum_type;
 
-enum class label_type_t
+enum class label_type_t : size_t
 {
-  unset,
-  empty,
-  simple,
-  multi,
-  cs,
-  cb,
-  conditional_contextual_bandit,
-  cb_eval,
-  multilabels
+  unset = 0,
+  empty = 1,
+  simple = 2,
+  multi = 3,
+  cs = 4,
+  cb = 5,
+  conditional_contextual_bandit = 6,
+  cb_eval = 7,
+  multilabels = 8
 };
 
 inline const char* to_string(label_type_t label_type)
@@ -89,7 +89,7 @@ inline const char* to_string(label_type_t label_type)
   }
 }
 
-struct polylabel
+struct polylabel final
 {
  private:
   union {
@@ -117,78 +117,57 @@ struct polylabel
   }
 
   template <typename T>
-  void destruct(T& item)
+  inline void destruct(T& item)
   {
     item.~T();
   }
 
+  void destroy_unset(){}
+  void destroy_empty(){ destruct(_empty); }
+  void destroy_simple(){ destruct(_simple); }
+  void destroy_multi(){ destruct(_multi); }
+  void destroy_cs(){ destruct(_cs); }
+  void destroy_cb(){ destruct(_cb); }
+  void destroy_conditional_contextual_bandit(){ destruct(_conditional_contextual_bandit); }
+  void destroy_cb_eval(){ destruct(_cb_eval); }
+  void destroy_multilabels(){ destruct(_multilabels); }
+
+  void copy_unset(const polylabel&){}
+  void copy_empty(const polylabel& other){ init_as_empty(other._empty); }
+  void copy_simple(const polylabel& other){ init_as_simple(other._simple); }
+  void copy_multi(const polylabel& other){ init_as_multi(other._multi); }
+  void copy_cs(const polylabel& other){ init_as_cs(other._cs); }
+  void copy_cb(const polylabel& other){ init_as_cb(other._cb); }
+  void copy_conditional_contextual_bandit(const polylabel& other){ init_as_ccb(other._conditional_contextual_bandit); }
+  void copy_cb_eval(const polylabel& other){ init_as_cb_eval(other._cb_eval); }
+  void copy_multilabels(const polylabel& other){ init_as_multilabels(other._multilabels); }
+
+  void move_unset(polylabel&&){}
+  void move_empty(polylabel&& other){ init_as_empty(std::move(other._empty)); }
+  void move_simple(polylabel&& other){ init_as_simple(std::move(other._simple)); }
+  void move_multi(polylabel&& other){ init_as_multi(std::move(other._multi)); }
+  void move_cs(polylabel&& other){ init_as_cs(std::move(other._cs)); }
+  void move_cb(polylabel&& other){ init_as_cb(std::move(other._cb)); }
+  void move_conditional_contextual_bandit(polylabel&& other){ init_as_ccb(std::move(other._conditional_contextual_bandit)); }
+  void move_cb_eval(polylabel&& other){ init_as_cb_eval(std::move(other._cb_eval)); }
+  void move_multilabels(polylabel&& other){ init_as_multilabels(std::move(other._multilabels)); }
+
+  using destroy_fn = void (polylabel::*)();
+  using copy_fn = void (polylabel::*)(const polylabel&);
+  using move_fn = void (polylabel::*)(polylabel&&);
+  static std::array<destroy_fn, 9> _destroy_functions;
+  static std::array<copy_fn, 9> _copy_functions;
+  static std::array<move_fn, 9> _move_functions;
+
   // These two functions only differ by parameter
   void copy_from(const polylabel& other)
   {
-    switch (other._tag)
-    {
-      case (label_type_t::unset):
-        break;
-      case (label_type_t::empty):
-        init_as_empty(other._empty);
-        break;
-      case (label_type_t::simple):
-        init_as_simple(other._simple);
-        break;
-      case (label_type_t::multi):
-        init_as_multi(other._multi);
-        break;
-      case (label_type_t::cs):
-        init_as_cs(other._cs);
-        break;
-      case (label_type_t::cb):
-        init_as_cb(other._cb);
-        break;
-      case (label_type_t::conditional_contextual_bandit):
-        init_as_ccb(other._conditional_contextual_bandit);
-        break;
-      case (label_type_t::cb_eval):
-        init_as_cb_eval(other._cb_eval);
-        break;
-      case (label_type_t::multilabels):
-        init_as_multilabels(other._multilabels);
-        break;
-      default:;
-    }
+    (this->*_copy_functions[static_cast<size_t>(other._tag)])(other);
   }
 
   void move_from(polylabel&& other)
   {
-    switch (other._tag)
-    {
-      case (label_type_t::unset):
-        break;
-      case (label_type_t::empty):
-        init_as_empty(std::move(other._empty));
-        break;
-      case (label_type_t::simple):
-        init_as_simple(std::move(other._simple));
-        break;
-      case (label_type_t::multi):
-        init_as_multi(std::move(other._multi));
-        break;
-      case (label_type_t::cs):
-        init_as_cs(std::move(other._cs));
-        break;
-      case (label_type_t::cb):
-        init_as_cb(std::move(other._cb));
-        break;
-      case (label_type_t::conditional_contextual_bandit):
-        init_as_ccb(std::move(other._conditional_contextual_bandit));
-        break;
-      case (label_type_t::cb_eval):
-        init_as_cb_eval(std::move(other._cb_eval));
-        break;
-      case (label_type_t::multilabels):
-        init_as_multilabels(std::move(other._multilabels));
-        break;
-      default:;
-    }
+     (this->*_move_functions[static_cast<size_t>(other._tag)])(std::move(other));
   }
 
  public:
@@ -224,38 +203,7 @@ struct polylabel
 
   void reset()
   {
-    switch (_tag)
-    {
-      case (label_type_t::unset):
-        // Nothing to do! Whatever was in here has already been destroyed.
-        return;
-      case (label_type_t::empty):
-        destruct(_empty);
-        break;
-      case (label_type_t::simple):
-        destruct(_simple);
-        break;
-      case (label_type_t::multi):
-        destruct(_multi);
-        break;
-      case (label_type_t::cs):
-        destruct(_cs);
-        break;
-      case (label_type_t::cb):
-        destruct(_cb);
-        break;
-      case (label_type_t::conditional_contextual_bandit):
-        destruct(_conditional_contextual_bandit);
-        break;
-      case (label_type_t::cb_eval):
-        destruct(_cb_eval);
-        break;
-      case (label_type_t::multilabels):
-        destruct(_multilabels);
-        break;
-      default:;
-    }
-
+    (this->*_destroy_functions[static_cast<size_t>(_tag)])();
     _tag = label_type_t::unset;
   }
 

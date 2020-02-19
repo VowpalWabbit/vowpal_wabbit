@@ -1,5 +1,12 @@
 #pragma once
 
+#include <array>
+#include "v_array.h"
+#include "action_score.h"
+#include "conditional_contextual_bandit.h"
+#include "multilabel.h"
+#include "multiclass.h"
+
 /*
 When a new prediction type needs to be added the following actions must be taken:
 - PREDICTION_TYPE is the type that will be used
@@ -82,7 +89,7 @@ inline const char* to_string(prediction_type_t prediction_type)
   }
 }
 
-struct polyprediction
+struct polyprediction final
 {
  private:
   union {
@@ -117,79 +124,56 @@ struct polyprediction
     item.~T();
   }
 
+  void destroy_unset(){ }
+  void destroy_scalar(){ destruct(_scalar); }
+  void destroy_scalars(){ destruct(_scalars); }
+  void destroy_action_scores(){ destruct(_action_scores); }
+  void destroy_multiclassprobs(){ destruct(_multiclassprobs); }
+  void destroy_multiclass(){ destruct(_multiclass); }
+  void destroy_multilabels(){ destruct(_multilabels); }
+  void destroy_prob(){ destruct(_prob); }
+  void destroy_decision_scores(){ destruct(_decision_scores); }
+  void destroy_action_probs(){ destruct(_action_probs); }
+
+  void copy_unset(const polyprediction&){}
+  void copy_scalar(const polyprediction& other){ init_as_scalar(other._scalar); }
+  void copy_scalars(const polyprediction& other){ init_as_scalars(other._scalars); }
+  void copy_action_scores(const polyprediction& other){ init_as_action_scores(other._action_scores); }
+  void copy_multiclassprobs(const polyprediction& other){ init_as_multiclassprobs(other._multiclassprobs); }
+  void copy_multiclass(const polyprediction& other){ init_as_multiclass(other._multiclass); }
+  void copy_multilabels(const polyprediction& other){ init_as_multilabels(other._multilabels); }
+  void copy_prob(const polyprediction& other){ init_as_prob(other._prob); }
+  void copy_decision_scores(const polyprediction& other){ init_as_decision_scores(other._decision_scores); }
+  void copy_action_probs(const polyprediction& other){ init_as_action_probs(other._action_probs); }
+
+  void move_unset(polyprediction&&){}
+  void move_scalar(polyprediction&& other){ init_as_scalar(std::move(other._scalar)); }
+  void move_scalars(polyprediction&& other){ init_as_scalars(std::move(other._scalars)); }
+  void move_action_scores(polyprediction&& other){ init_as_action_scores(std::move(other._action_scores)); }
+  void move_multiclassprobs(polyprediction&& other){ init_as_multiclassprobs(std::move(other._multiclassprobs)); }
+  void move_multiclass(polyprediction&& other){ init_as_multiclass(std::move(other._multiclass)); }
+  void move_multilabels(polyprediction&& other){ init_as_multilabels(std::move(other._multilabels)); }
+  void move_prob(polyprediction&& other){ init_as_prob(std::move(other._prob)); }
+  void move_decision_scores(polyprediction&& other){ init_as_decision_scores(std::move(other._decision_scores)); }
+  void move_action_probs(polyprediction&& other){ init_as_action_probs(std::move(other._action_probs)); }
+
+  using destroy_fn = void (polyprediction::*)();
+  using copy_fn = void (polyprediction::*)(const polyprediction&);
+  using move_fn = void (polyprediction::*)(polyprediction&&);
+  static std::array<destroy_fn, 10> _destroy_functions;
+  static std::array<copy_fn, 10> _copy_functions;
+  static std::array<move_fn, 10> _move_functions;
+
+
   // These two functions only differ by parameter
   void copy_from(const polyprediction& other)
   {
-    switch (other._tag)
-    {
-      case (prediction_type_t::unset):
-        break;
-      case (prediction_type_t::scalar):
-        init_as_scalar(other._scalar);
-        break;
-      case (prediction_type_t::scalars):
-        init_as_scalars(other._scalars);
-        break;
-      case (prediction_type_t::action_scores):
-        init_as_action_scores(other._action_scores);
-        break;
-      case (prediction_type_t::action_probs):
-        init_as_action_probs(other._action_probs);
-        break;
-      case (prediction_type_t::decision_scores):
-        init_as_decision_scores(other._decision_scores);
-        break;
-      case (prediction_type_t::multiclass):
-        init_as_multiclass(other._multiclass);
-        break;
-      case (prediction_type_t::multilabels):
-        init_as_multilabels(other._multilabels);
-        break;
-      case (prediction_type_t::prob):
-        init_as_prob(other._prob);
-        break;
-      case (prediction_type_t::multiclassprobs):
-        init_as_multiclassprobs(other._multiclassprobs);
-        break;
-      default:;
-    }
+    (this->*_copy_functions[static_cast<size_t>(other._tag)])(other);
   }
 
   void move_from(polyprediction&& other)
   {
-    switch (other._tag)
-    {
-      case (prediction_type_t::unset):
-        break;
-      case (prediction_type_t::scalar):
-        init_as_scalar(std::move(other._scalar));
-        break;
-      case (prediction_type_t::scalars):
-        init_as_scalars(std::move(other._scalars));
-        break;
-      case (prediction_type_t::action_scores):
-        init_as_action_scores(std::move(other._action_scores));
-        break;
-      case (prediction_type_t::action_probs):
-        init_as_action_probs(std::move(other._action_probs));
-        break;
-      case (prediction_type_t::decision_scores):
-        init_as_decision_scores(std::move(other._decision_scores));
-        break;
-      case (prediction_type_t::multiclass):
-        init_as_multiclass(std::move(other._multiclass));
-        break;
-      case (prediction_type_t::multilabels):
-        init_as_multilabels(std::move(other._multilabels));
-        break;
-      case (prediction_type_t::prob):
-        init_as_prob(std::move(other._prob));
-        break;
-      case (prediction_type_t::multiclassprobs):
-        init_as_multiclassprobs(std::move(other._multiclassprobs));
-        break;
-      default:;
-    }
+    (this->*_move_functions[static_cast<size_t>(other._tag)])(std::move(other));
   }
 
  public:
@@ -227,41 +211,7 @@ struct polyprediction
 
   void reset()
   {
-    switch (_tag)
-    {
-      case (prediction_type_t::unset):
-        // Nothing to do! Whatever was in here has already been destroyed.
-        return;
-      case (prediction_type_t::scalar):
-        destruct(_scalar);
-        break;
-      case (prediction_type_t::scalars):
-        destruct(_scalars);
-        break;
-      case (prediction_type_t::action_scores):
-        destruct(_action_scores);
-        break;
-      case (prediction_type_t::action_probs):
-        destruct(_action_probs);
-        break;
-      case (prediction_type_t::decision_scores):
-        destruct(_decision_scores);
-        break;
-      case (prediction_type_t::multiclass):
-        destruct(_multiclass);
-        break;
-      case (prediction_type_t::multilabels):
-        destruct(_multilabels);
-        break;
-      case (prediction_type_t::prob):
-        destruct(_prob);
-        break;
-      case (prediction_type_t::multiclassprobs):
-        destruct(_multiclassprobs);
-        break;
-      default:;
-    }
-
+    (this->*_destroy_functions[static_cast<size_t>(_tag)])();
     _tag = prediction_type_t::unset;
   }
 
@@ -457,6 +407,7 @@ struct polyprediction
   // TODO: make this more generic through traits and type comparisons.
   void reinterpret(prediction_type_t type)
   {
+#ifndef NDEBUG
     // Currently the only valid reinterpret is between action scores and probs, or itself.
     if((type == prediction_type_t::action_probs && _tag == prediction_type_t::action_scores)
       || (type == prediction_type_t::action_scores && _tag == prediction_type_t::action_probs)
@@ -468,5 +419,8 @@ struct polyprediction
     {
       THROW("Illegal reinterpret. Tried to reinterpret as " << to_string(type) << ", but contains: " << to_string(_tag));
     }
+#else
+    _tag = type;
+#endif
   }
 };

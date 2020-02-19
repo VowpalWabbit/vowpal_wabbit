@@ -11,6 +11,8 @@ namespace ACTION_SCORE
 {
 struct action_score
 {
+  action_score() = default;
+  action_score(uint32_t action, float score) : action(action), score(score) {}
   uint32_t action;
   float score;
 };
@@ -59,6 +61,14 @@ inline int cmp(size_t a, size_t b)
   if (a > b)
     return 1;
   return -1;
+}
+
+inline bool action_score_comparator(const action_score& s1, const action_score& s2)
+{
+  if (s1.score == s2.score)
+    return s1.action < s2.action;
+  else
+    return s1.score < s2.score;
 }
 
 inline int score_comp(const void* p1, const void* p2)

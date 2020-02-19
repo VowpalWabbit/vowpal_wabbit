@@ -435,7 +435,14 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   data.ft_offset = ec_seq_all[0]->ft_offset;
 
   // handle label definitions
-  auto ec_seq = process_labels(data, ec_seq_all);
+  multi_ex temp;
+  bool should_process_labels = ec_is_label_definition(*ec_seq_all[0]);
+  if (should_process_labels)
+  {
+    temp = process_labels(data, ec_seq_all);
+  }
+  auto& ec_seq = should_process_labels ? temp : ec_seq_all;
+
   if (ec_seq.empty())
     return;  // nothing more to do
 
@@ -462,13 +469,10 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
       example* ec = ec_seq[k];
       data.stored_preds.push_back(std::move(ec->pred.action_scores()));
       make_single_prediction(data, base, *ec);
-      action_score s;
-      s.score = ec->partial_prediction;
-      s.action = k;
-      data.a_s.push_back(s);
+      data.a_s.emplace_back(k, ec->partial_prediction);
     }
 
-    qsort((void*)data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
+    std::sort(data.a_s.begin(), data.a_s.end(), action_score_comparator);
   }
   else
   {

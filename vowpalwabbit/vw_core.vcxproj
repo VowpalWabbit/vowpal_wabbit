@@ -275,6 +275,7 @@
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
+    <ClCompile Include="label.cc" />
     <ClCompile Include="label_dictionary.cc" />
     <ClCompile Include="label_parser.cc" />
     <ClCompile Include="lda_core.cc" />
@@ -303,6 +304,7 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
+    <ClCompile Include="prediction.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
