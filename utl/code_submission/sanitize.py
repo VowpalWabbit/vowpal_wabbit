@@ -7,44 +7,23 @@ class Sanitize:
 
   S_CODE = 0
   S_COMMENT = 1
+  SANITIZE_WORDS = ["Copyright","Microsoft","Yahoo"
+                    "Maryam","Majzoubi",
+                    "Chicheng","Zhang",
+                    "Rajan","Chari",
+                    "Akshay","Krishnamurthy",
+                    "Alex","Slivkins",
+                    "John","Langford"
+                    ]
 
+  # Constructor
   def __init__(self, source_file):
     self.source_file_name = source_file
     self.S_CURR = Sanitize.S_CODE
     self.file_line_queue = queue.Queue()
     self.comment_has_copyright = False
 
-  def process_input_S_CODE(self, source_line):
-
-    if "/*" in source_line:
-      file_line_queue.put(source_line)
-      self.S_CURR = Sanitize.S_COMMENT
-      if "Copyright" in source_line:
-        self.comment_has_copyright = True
-    else:
-        print(file_line_queue.get(),end='')
-
-  def clear_queue(self):
-    self.file_line_queue = queue.Queue()
-
-  def print_queue(self):
-    while file_line_queue.qsize() > 0:
-      print(file_line_queue.get(),end='')
-
-  def process_input_S_COMMENT(self, source_line):
-
-    if "Copyright" in source_line:
-      self.comment_has_copyright = True
-
-    if "*/" in source_line:
-      file_line_queue.put(source_line)
-      if(self.comment_has_copyright):
-        self.clear_queue()
-      else:
-        self.print_queue()
-      self.comment_has_copyright = False
-      self.S_CURR = Sanitize.S_CODE
-
+  # Main class method
   def process(self):
     source_file = open(self.source_file_name,"r")
     self.S_CURR = Sanitize.S_CODE
@@ -56,9 +35,44 @@ class Sanitize:
       elif(self.S_CURR == Sanitize.S_COMMENT):
         self.process_input_S_COMMENT(source_line)
 
-    while file_line_queue.qsize() > 0:
-      print(file_line_queue.get(),end='')
+    while self.file_line_queue.qsize() >= 1:
+      print(self.file_line_queue.get(),end='')
 
+  # State machine is in CODE state.  i.e. in the middle of code segment
+  def process_input_S_CODE(self, source_line):
+    if "/*" in source_line:
+      self.file_line_queue.put(source_line)
+      self.S_CURR = Sanitize.S_COMMENT
+      if any (x in source_line for x in Sanitize.SANITIZE_WORDS):
+        self.comment_has_copyright = True
+    else:
+        print(source_line,end='')
+
+  # State machine is in COMMENT state.  i.e. in the middle of comment segment
+  def process_input_S_COMMENT(self, source_line):
+    self.file_line_queue.put(source_line)
+
+    if any (x in source_line for x in Sanitize.SANITIZE_WORDS):
+      self.comment_has_copyright = True
+
+    if "*/" in source_line:
+      if(self.comment_has_copyright):
+        self.clear_queue()
+      else:
+        self.print_queue()
+      self.comment_has_copyright = False
+      self.S_CURR = Sanitize.S_CODE
+
+  # Remove all items from the queue
+  def clear_queue(self):
+    self.file_line_queue = queue.Queue()
+
+  #  Print and drain all items from the queue
+  def print_queue(self):
+    while self.file_line_queue.qsize() >= 1:
+      print(self.file_line_queue.get(),end='')
+
+# Main()
 if __name__ == "__main__":
   source_file = "source.cc"
 
