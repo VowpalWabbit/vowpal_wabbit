@@ -16,12 +16,15 @@ class Sanitize:
     comment_line_count = 0
 
     for (source_line) in source_file:
+
       file_line_queue.put(source_line)
+
       if file_line_queue.qsize() < 1:
         continue
+
       if "Copyright" in source_line:
-        print("-------------------------")
         comment_line_count = 5
+
       if comment_line_count <= 0:
         print(file_line_queue.get(),end='')
       else:
