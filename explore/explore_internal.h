@@ -285,6 +285,54 @@ int sample_after_normalizing(
   return S_EXPLORATION_OK;
 }
 
+// Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
+// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can be
+// used to inplace mutate it.
+template <typename It>
+int sample_without_normalizing(
+    uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index, std::input_iterator_tag /* pdf_category */)
+{
+  if (pdf_first == pdf_last || pdf_last < pdf_first)
+    return E_EXPLORATION_BAD_RANGE;
+  // Create a discrete_distribution based on the returned weights. This class handles the
+  // case where the sum of the weights is < or > 1, by normalizing agains the sum.
+  float total = 0.f;
+  for (It pdf = pdf_first; pdf != pdf_last; ++pdf)
+  {
+    if (*pdf < 0)
+      *pdf = 0;
+
+    total += *pdf;
+  }
+
+  // assume the first is the best
+  if (total == 0)
+  {
+    chosen_index = 0;
+    *pdf_first = 1;
+    return S_EXPLORATION_OK;
+  }
+
+  float draw = total * uniform_random_merand48(seed);
+  if (draw > total)  // make very sure that draw can not be greater than total.
+    draw = total;
+
+  float sum = 0.f;
+  uint32_t i = 0;
+  for (It pdf = pdf_first; pdf != pdf_last; ++pdf, ++i)
+  {
+    sum += *pdf;
+    if (sum > draw)
+    {
+      chosen_index = i;
+      return S_EXPLORATION_OK;
+    }
+  }
+
+  chosen_index = i - 1;
+  return S_EXPLORATION_OK;
+}
+
 // Draw a random number between [range_min, range_max * edge_avoid_factor]
 // and advance pseudo-random state
 inline float internal_interval_draw(float range_min, float range_max, uint64_t* p_random_seed, float edge_avoid_factor)
@@ -315,12 +363,12 @@ float inline uniform_draw(float range_min, float range_max, uint64_t* p_random_s
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
 // be used to inplace mutate it.
 template <typename It>
-int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max,
+int sample_without_normalizing(uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max,
     float& chosen_value, std::input_iterator_tag pdf_category)
 {
-  // Pick an interval from the
+  // Pick the index of chosen pdf segment index
   uint32_t chosen_index;
-  auto err_code = sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category);
+  auto err_code = sample_without_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category);
   if (err_code != S_EXPLORATION_OK)
     return err_code;
 
@@ -353,11 +401,11 @@ int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t&
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
 // be used to inplace mutate it.
 template <typename It>
-int sample_after_normalizing(
+int sample_without_normalizing(
     uint64_t seed, It pdf_first, It pdf_last, float min_value, float max_value, float& chosen_value)
 {
   typedef typename std::iterator_traits<It>::iterator_category pdf_category;
-  return sample_after_normalizing(seed, pdf_first, pdf_last, min_value, max_value, chosen_value, pdf_category());
+  return sample_without_normalizing(seed, pdf_first, pdf_last, min_value, max_value, chosen_value, pdf_category());
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
