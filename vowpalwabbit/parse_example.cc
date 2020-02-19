@@ -175,22 +175,16 @@ class TC_parser
       float float_feature_value = 0.f;
       bool is_feature_float = isFeatureValueFloat(float_feature_value);
 
-      if (_chain_hash)
+      if (_chain_hash && !is_feature_float)
       {
-        if (is_feature_float)
-        {
-          _v = _cur_channel_v * float_feature_value;
-        }
-        else
-        {
-          string_feature_value = stringFeatureValue(_line.substr(_read_idx));
-          _v = 1;
-        }
+        string_feature_value = stringFeatureValue(_line.substr(_read_idx));
+        _v = 1;
       }
       else
       {
         _v = _cur_channel_v * float_feature_value;
       }
+
 
       uint64_t word_hash;
 
