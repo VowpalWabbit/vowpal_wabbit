@@ -10,7 +10,7 @@ class Sanitize:
 
   def __init__(self, source_file):
     self.source_file_name = source_file
-    self.S_CURR = S_CODE
+    self.S_CURR = Sanitize.S_CODE
     self.file_line_queue = queue.Queue()
     self.comment_has_copyright = False
 
@@ -18,7 +18,7 @@ class Sanitize:
 
     if "/*" in source_line:
       file_line_queue.put(source_line)
-      self.S_CURR = S_COMMENT
+      self.S_CURR = Sanitize.S_COMMENT
       if "Copyright" in source_line:
         self.comment_has_copyright = True
     else:
@@ -43,17 +43,17 @@ class Sanitize:
       else:
         self.print_queue()
       self.comment_has_copyright = False
-      self.S_CURR = S_CODE
+      self.S_CURR = Sanitize.S_CODE
 
   def process(self):
     source_file = open(self.source_file_name,"r")
-    self.S_CURR = S_CODE
+    self.S_CURR = Sanitize.S_CODE
     source_line = ""
 
     for (source_line) in source_file:
-      if(self.S_CURR == S_CODE):
+      if(self.S_CURR == Sanitize.S_CODE):
         self.process_input_S_CODE(source_line)
-      elif(self.S_CURR == S_COMMENT):
+      elif(self.S_CURR == Sanitize.S_COMMENT):
         self.process_input_S_COMMENT(source_line)
 
     while file_line_queue.qsize() > 0:
