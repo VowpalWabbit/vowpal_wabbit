@@ -102,9 +102,8 @@ void default_label(polylabel& v)
   default_label(ld);
 }
 
-bool test_label(polylabel& v)
+bool test_label(const label& ld)
 {
-  auto& ld = v.cs();
   if (ld.costs.size() == 0)
     return true;
   for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -112,6 +111,8 @@ bool test_label(polylabel& v)
       return false;
   return true;
 }
+
+bool test_label(polylabel& v) { return test_label(v.cs()); }
 
 void parse_label(parser* p, shared_data* sd, polylabel& v, v_array<VW::string_view>& words)
 {
