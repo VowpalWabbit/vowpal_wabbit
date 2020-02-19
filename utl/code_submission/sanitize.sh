@@ -1,4 +1,8 @@
 #! /bin/bash
+
+# NOTES:  This script should be copied outside the repo root
+#         Check sanitize.py for keywords to look for in comments to remove
+
 rm -rf cats
 git clone https://github.com/SoftwareBuildingBlocks/vowpal_wabbit.git cats
 cd cats
