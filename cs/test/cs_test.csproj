@@ -10,6 +10,8 @@
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
     <BaseIntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\cs\cs.csproj" />
