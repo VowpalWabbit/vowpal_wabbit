@@ -1,5 +1,6 @@
 <!--
-This will cause project.assets.json to be written to $(ProjectDir)\obj\ProjectFileWithNoExtension\project.assets.json.
+This will cause project.assets.json to be written to $(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)\project.assets.json.
+Due to this issue: https://github.com/NuGet/Home/issues/4463
 -->
 <Project>
   <PropertyGroup>
