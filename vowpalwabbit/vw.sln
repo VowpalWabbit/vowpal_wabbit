@@ -117,19 +117,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_slim_test", "slim\test\v
 		{B68B36AA-F5AC-4A1A-8E52-D1B071B39483} = {B68B36AA-F5AC-4A1A-8E52-D1B071B39483}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_netcore", "..\netcore\vw_netcore\vw_netcore.vcxproj", "{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "simulator_netcore", "..\netcore\examples\simulator_netcore\simulator_netcore.csproj", "{ADC52C18-88A3-45C2-87E0-E56052F47841}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_parallel", "..\netcore\netcore_parallel\netcore_parallel.csproj", "{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_console", "..\netcore\netcore_console\netcore_console.csproj", "{78B5D51C-20D2-4F27-8D7E-BEC883D47167}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_testcommon", "..\netcore\netcore_testcommon\netcore_testcommon.csproj", "{D6E631D6-0853-4D9A-913B-DFE33C64E561}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "netcore_unittest", "..\netcore\netcore_unittest\netcore_unittest.csproj", "{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "netcore_test", "..\netcore\netcore_test\netcore_test.csproj", "{797072AF-C2EC-4BC8-B046-D4D3537EBD52}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_netcore", "..\cs\cli\vw_netcore.vcxproj", "{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -213,30 +201,6 @@ Global
 		{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}.Debug|x64.Build.0 = Debug|x64
 		{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}.Release|x64.ActiveCfg = Release|x64
 		{CD3BC6EF-AE95-4681-B10B-0357FEEE511A}.Release|x64.Build.0 = Release|x64
-		{ADC52C18-88A3-45C2-87E0-E56052F47841}.Debug|x64.ActiveCfg = Debug|x64
-		{ADC52C18-88A3-45C2-87E0-E56052F47841}.Debug|x64.Build.0 = Debug|x64
-		{ADC52C18-88A3-45C2-87E0-E56052F47841}.Release|x64.ActiveCfg = Release|x64
-		{ADC52C18-88A3-45C2-87E0-E56052F47841}.Release|x64.Build.0 = Release|x64
-		{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}.Debug|x64.ActiveCfg = Debug|x64
-		{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}.Debug|x64.Build.0 = Debug|x64
-		{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}.Release|x64.ActiveCfg = Release|x64
-		{898A80F9-C692-49B9-BAE8-0FA7E9411B5A}.Release|x64.Build.0 = Release|x64
-		{78B5D51C-20D2-4F27-8D7E-BEC883D47167}.Debug|x64.ActiveCfg = Debug|x64
-		{78B5D51C-20D2-4F27-8D7E-BEC883D47167}.Debug|x64.Build.0 = Debug|x64
-		{78B5D51C-20D2-4F27-8D7E-BEC883D47167}.Release|x64.ActiveCfg = Release|x64
-		{78B5D51C-20D2-4F27-8D7E-BEC883D47167}.Release|x64.Build.0 = Release|x64
-		{D6E631D6-0853-4D9A-913B-DFE33C64E561}.Debug|x64.ActiveCfg = Debug|x64
-		{D6E631D6-0853-4D9A-913B-DFE33C64E561}.Debug|x64.Build.0 = Debug|x64
-		{D6E631D6-0853-4D9A-913B-DFE33C64E561}.Release|x64.ActiveCfg = Release|x64
-		{D6E631D6-0853-4D9A-913B-DFE33C64E561}.Release|x64.Build.0 = Release|x64
-		{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}.Debug|x64.ActiveCfg = Debug|x64
-		{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}.Debug|x64.Build.0 = Debug|x64
-		{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}.Release|x64.ActiveCfg = Release|x64
-		{F5DA7F4C-4AB3-4288-BFB4-6E0E52F01C27}.Release|x64.Build.0 = Release|x64
-		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Debug|x64.ActiveCfg = Debug|x64
-		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Debug|x64.Build.0 = Debug|x64
-		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Release|x64.ActiveCfg = Release|x64
-		{797072AF-C2EC-4BC8-B046-D4D3537EBD52}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
