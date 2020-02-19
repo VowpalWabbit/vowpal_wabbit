@@ -31,7 +31,7 @@ class SRM:
       if(math.isclose(pred,logd,abs_tol=self.hh)):
         count = count + 1
         H_new = min(self.max_val, logd + self.hh) - max(self.min_val, logd - self.hh)  
-        _loss_acc += (L_s * (self.max_val - self.min_val) / (P_s * 4 * H_new))
+        _loss_acc += (L_s / (P_s * H_new))
       N += 1
       if(N%10000 == 0):
         print('.',end='',flush=True)

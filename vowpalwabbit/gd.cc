@@ -39,7 +39,7 @@ using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(false);
+VW_DEBUG_ENABLE(false)
 
 namespace GD
 {

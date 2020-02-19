@@ -5,7 +5,7 @@
 using namespace std;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(false);
+VW_DEBUG_ENABLE(false)
 
 namespace VW { namespace binary {
 template <bool is_learn>
