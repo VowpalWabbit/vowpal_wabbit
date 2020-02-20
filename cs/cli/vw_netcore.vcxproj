@@ -62,6 +62,7 @@
     <RuntimeLibrary>
     </RuntimeLibrary>
   </PropertyGroup>
+  <Import Project="$(ProjectDir)\..\..\vowpalwabbit\Build.props" />
   <PropertyGroup>
     <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\netcoreapp3.1\</OutDir>
     <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(MSBuildProjectName)\netcoreapp3.1\</IntDir>

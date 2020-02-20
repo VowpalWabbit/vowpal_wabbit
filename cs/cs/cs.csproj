@@ -19,6 +19,17 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Configurations>Debug;Release</Configurations>
     <Platforms>x64</Platforms>
+<!--    <PackageVersion>$(VowpalWabbitAssemblyVersion)</PackageVersion>-->
+<!--    <Title>Vowpal Wabbit</Title>-->
+<!--    <Authors>John Langford et al</Authors>-->
+<!--    <PackageProjectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</PackageProjectUrl>-->
+<!--    <License>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</License>-->
+<!--    <RepositoryUrl>https://github.com/JohnLangford/vowpal_wabbit</RepositoryUrl>-->
+<!--    <PackageTags>vw vowpal wabbit langford ml machine learning</PackageTags>-->
+<!--    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>-->
+<!--    <IncludeContentInPack>true</IncludeContentInPack>-->
+<!--    <IncludeBuildOutput>true</IncludeBuildOutput>-->
+<!--    <IncludeSource>true</IncludeSource>-->
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -116,29 +127,16 @@
     </PackageReference>
   </ItemGroup>
 
-  <!--PORTED FROM VERSION.TARGETS-->
-  <ItemGroup>
-    <VersionFile Include="$(MSBuildThisFileDirectory)..\..\version.txt" />
-  </ItemGroup>
-  <Target Name="ReadVersion" BeforeTargets="PreBuildEvent">
-    <ReadLinesFromFile File="@(VersionFile)">
-      <Output TaskParameter="Lines" ItemName="VWVersionFileItems" />
-    </ReadLinesFromFile>
-    <PropertyGroup>
-      <VowpalWabbitAssemblyVersion>@(VWVersionFileItems, ' ')</VowpalWabbitAssemblyVersion>
-      <VowpalWabbitAssemblyVersion>$(VowpalWabbitAssemblyVersion.Trim())</VowpalWabbitAssemblyVersion>
-    </PropertyGroup>
-  </Target>
   <PropertyGroup>
     <AssemblyTitle>Vowpal Wabbit</AssemblyTitle>
-    <Description>Vowpal Wabbit</Description>
+    <Description>Official Vowpal Wabbit library including C# interface.</Description>
     <Company>Microsoft Corp</Company>
     <Product>Vowpal Wabbit</Product>
     <CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</CurrentYear>
-    <Copyright>Copyright (C) Microsoft Corp 2012-$(CurrentYear), Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved</Copyright>
-    <InformationalVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</InformationalVersion>
-    <ProductVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</ProductVersion>
-    <AssemblyVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</AssemblyVersion>
-    <FileVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</FileVersion>
+    <Copyright>Copyright (C) Microsoft Corp 2012-$(CurrentYear), Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</Copyright>
+    <InformationalVersion>$(VowpalWabbitAssemblyVersion)</InformationalVersion>
+    <ProductVersion>$(VowpalWabbitAssemblyVersion)</ProductVersion>
+    <AssemblyVersion>$(VowpalWabbitAssemblyVersion)</AssemblyVersion>
+    <FileVersion>$(VowpalWabbitAssemblyVersion)</FileVersion>
   </PropertyGroup>
 </Project>

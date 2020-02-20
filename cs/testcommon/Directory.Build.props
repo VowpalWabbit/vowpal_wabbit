@@ -1,9 +1,0 @@
-<!--
-This will cause project.assets.json to be written to $(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)\project.assets.json.
-Due to this issue: https://github.com/NuGet/Home/issues/4463
--->
-<Project>
-  <PropertyGroup>
-    <MSBuildProjectExtensionsPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)</MSBuildProjectExtensionsPath>
-  </PropertyGroup>
-</Project>

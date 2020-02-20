@@ -4,6 +4,7 @@ Due to this issue: https://github.com/NuGet/Home/issues/4463
 -->
 <Project>
   <PropertyGroup>
+    <VowpalWabbitAssemblyVersion>8.8.0</VowpalWabbitAssemblyVersion>
     <MSBuildProjectExtensionsPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)</MSBuildProjectExtensionsPath>
   </PropertyGroup>
 </Project>

@@ -63,19 +63,6 @@
     <PackageReference Include="System.Runtime.Caching" Version="4.7.0" />
   </ItemGroup>
 
-  <!--PORTED FROM VERSION.TARGETS-->
-  <ItemGroup>
-    <VersionFile Include="$(MSBuildThisFileDirectory)..\..\version.txt" />
-  </ItemGroup>
-  <Target Name="ReadVersion" BeforeTargets="PreBuildEvent">
-    <ReadLinesFromFile File="@(VersionFile)">
-      <Output TaskParameter="Lines" ItemName="VWVersionFileItems" />
-    </ReadLinesFromFile>
-    <PropertyGroup>
-      <VowpalWabbitAssemblyVersion>@(VWVersionFileItems, ' ')</VowpalWabbitAssemblyVersion>
-      <VowpalWabbitAssemblyVersion>$(VowpalWabbitAssemblyVersion.Trim())</VowpalWabbitAssemblyVersion>
-    </PropertyGroup>
-  </Target>
   <PropertyGroup>
     <AssemblyTitle>Vowpal Wabbit JSON</AssemblyTitle>
     <Description>Vowpal Wabbit JSON</Description>
@@ -83,9 +70,9 @@
     <Product>Vowpal Wabbit JSON</Product>
     <CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</CurrentYear>
     <Copyright>Copyright (C) Microsoft Corp 2012-$(CurrentYear), Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved</Copyright>
-    <InformationalVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</InformationalVersion>
-    <ProductVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</ProductVersion>
-    <AssemblyVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</AssemblyVersion>
-    <FileVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</FileVersion>
+    <InformationalVersion>$(VowpalWabbitAssemblyVersion)</InformationalVersion>
+    <ProductVersion>$(VowpalWabbitAssemblyVersion)</ProductVersion>
+    <AssemblyVersion>$(VowpalWabbitAssemblyVersion)</AssemblyVersion>
+    <FileVersion>$(VowpalWabbitAssemblyVersion)</FileVersion>
   </PropertyGroup>
 </Project>

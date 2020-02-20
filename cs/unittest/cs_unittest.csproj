@@ -46,7 +46,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <ProjectReference Include="..\cli\vw_netcore.vcxproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Antlr4" Version="4.6.6">
       <PrivateAssets>all</PrivateAssets>
@@ -67,7 +67,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <PackageReference Include="System.Runtime.Caching" Version="4.7.0" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Include="json\test_array.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -106,9 +106,9 @@
     <Product>cs_unittest</Product>
     <CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</CurrentYear>
     <Copyright>Copyright (C) Microsoft Corp 2012-$(CurrentYear), Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved</Copyright>
-    <InformationalVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</InformationalVersion>
-    <ProductVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</ProductVersion>
-    <AssemblyVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</AssemblyVersion>
-    <FileVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</FileVersion>
+    <InformationalVersion>$(VowpalWabbitAssemblyVersion)</InformationalVersion>
+    <ProductVersion>$(VowpalWabbitAssemblyVersion)</ProductVersion>
+    <AssemblyVersion>$(VowpalWabbitAssemblyVersion)</AssemblyVersion>
+    <FileVersion>$(VowpalWabbitAssemblyVersion)</FileVersion>
   </PropertyGroup>
 </Project>

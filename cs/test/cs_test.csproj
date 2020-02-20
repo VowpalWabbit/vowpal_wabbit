@@ -36,9 +36,9 @@
     <Product>cs_test</Product>
     <CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</CurrentYear>
     <Copyright>Copyright (C) Microsoft Corp 2012-$(CurrentYear), Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved</Copyright>
-    <InformationalVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</InformationalVersion>
-    <ProductVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</ProductVersion>
-    <AssemblyVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</AssemblyVersion>
-    <FileVersion><!--$(VowpalWabbitAssemblyVersion)-->8.8.0</FileVersion>
+    <InformationalVersion>$(VowpalWabbitAssemblyVersion)</InformationalVersion>
+    <ProductVersion>$(VowpalWabbitAssemblyVersion)</ProductVersion>
+    <AssemblyVersion>$(VowpalWabbitAssemblyVersion)</AssemblyVersion>
+    <FileVersion>$(VowpalWabbitAssemblyVersion)</FileVersion>
   </PropertyGroup>
 </Project>

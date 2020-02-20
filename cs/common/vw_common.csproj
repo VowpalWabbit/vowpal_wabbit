@@ -87,19 +87,6 @@
     </PreBuildEvent>
   </PropertyGroup>
 
-  <!--PORTED FROM VERSION.TARGETS-->
-  <ItemGroup>
-    <VersionFile Include="$(MSBuildThisFileDirectory)..\..\version.txt" />
-  </ItemGroup>
-  <Target Name="ReadVersion" BeforeTargets="PreBuildEvent">
-    <ReadLinesFromFile File="@(VersionFile)">
-      <Output TaskParameter="Lines" ItemName="VWVersionFileItems" />
-    </ReadLinesFromFile>
-    <PropertyGroup>
-      <VowpalWabbitAssemblyVersion>@(VWVersionFileItems, ' ')</VowpalWabbitAssemblyVersion>
-      <VowpalWabbitAssemblyVersion>$(VowpalWabbitAssemblyVersion.Trim())</VowpalWabbitAssemblyVersion>
-    </PropertyGroup>
-  </Target>
   <PropertyGroup>
     <AssemblyTitle>Vowpal Wabbit Common</AssemblyTitle>
     <Description>Vowpal Wabbit Common</Description>
