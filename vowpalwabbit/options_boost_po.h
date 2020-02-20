@@ -219,20 +219,27 @@ po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
     std::shared_ptr<typed_option<T>>& opt, po::typed_value<std::vector<T>>* po_value)
 {
   return po_value->notifier([opt](std::vector<T> final_arguments) {
-    T first = final_arguments[0];
-    for (auto const& item : final_arguments)
+    T result = final_arguments[0];
+    
+    // Due to the way options get added to the vector, the model options are at the end, and the
+    // command-line options are at the front. To allow override from command-line over model file,
+    // simply keep the first item, and suppress the error.
+    if (!opt->m_allow_override)
     {
-      if (item != first)
+      for (auto const& item : final_arguments)
       {
-        std::stringstream ss;
-        ss << "Disagreeing option values for '" << opt->m_name << "': '" << first << "' vs '" << item << "'";
-        THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+        if(item != result)
+        {
+          std::stringstream ss;
+          ss << "Disagreeing option values for '" << opt->m_name << "': '" << result << "' vs '" << item << "'";
+          THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+        }
       }
     }
 
     // Set the value for the listening location.
-    opt->m_location = first;
-    opt->value(first);
+    opt->m_location = result;
+    opt->value(result);
   });
 }
 

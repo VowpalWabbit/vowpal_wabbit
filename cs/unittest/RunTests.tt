@@ -54,10 +54,22 @@ for (var i = 0; i < lines.Count; i++)
         if (!string.IsNullOrEmpty(testcase.InitialRegressor))
         {
 			TestCase dep;
+            bool foundInitialRegressor = false;
 			if (outputModels.TryGetValue(testcase.InitialRegressor, out dep))
+            {
 				testcase.Dependency = dep;
-			else
+                foundInitialRegressor = true;
+            }
+            else if (testcase.InitialRegressor.StartsWith("model-sets/"))
+            {
+                string fullPath = Path.Combine(testRoot, testcase.InitialRegressor);
+                foundInitialRegressor = File.Exists(fullPath);
+            }
+
+			if (!foundInitialRegressor)
+            {
 				throw new Exception("Missing dependency: '" + testcase.InitialRegressor + "' for test case " + testcase.Id);
+            }
         }
 
 		// if (testcase.Id == 31)
