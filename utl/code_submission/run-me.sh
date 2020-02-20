@@ -49,11 +49,15 @@ python3 utl/continous_action/create_synthetic_data.py &
 # Wait for all background jobs to finish
 wait
 
-# Run experiments
-echo "Run experiments"
-
-# should be repeated for all data sets
+ds_min=$(./test/train-sets/regression/ds_1000000.min)
+ds_max=$(./test/train-sets/regression/ds_1000000.max)
 
 # Run experiments
 mkdir results
+
 run_experiment "black_friday" 185 23959
+run_experiment "BNG_auto_price" 379.36 43392.42
+run_experiment "BNG_cpu_act" -64.9 187.54
+run_experiment "BNG_wisconsin" -10.87 168.12
+run_experiment "zurich" -121830 7190
+run_experiment "ds_1000000" $ds_min $ds_max

@@ -25,9 +25,13 @@ class SyntheticData:
     X = np.random.randn(self.n, self.d) + self.d
     Y = X.dot(w) + self.sig * np.random.randn(self.n)
 
+    min_file = open(save_to_path + self.name + '.min',"w")
+    min_file.write(Y.min())
     print('min_value = ', Y.min(), flush=True)
+
+    max_file = open(save_to_path + self.name + '.max',"w")
+    max_file.write(Y.max())
     print('max_value = ', Y.max(), flush=True)
-    print('Please update these values in the run files.', flush=True)
 
     self.save_vw_reg_dataset(X, Y, save_to_path)
     percent = 0.80

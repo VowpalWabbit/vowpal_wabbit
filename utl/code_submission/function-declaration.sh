@@ -15,31 +15,6 @@ run_experiment(){
   min=$2
   max=$3
 
-  # parametrs for each data set
-  # name=black_friday
-  # min=185
-  # max=23959
-
-  # name=BNG_auto_price
-  # min=379.36
-  # max=43392.42
-
-  # name=BNG_cpu_act
-  # min=-64.9
-  # max=187.54
-
-  # name=BNG_wisconsin
-  # min=-10.87
-  # max=168.12
-
-  # name=ds_5
-  # min=0.61
-  # max=9.96
-
-  # name=zurich
-  # min=-121830
-  # max=7190
-
   datatrain=$name\_train.dat
   datatest=$name\_test.dat
   data=$name.dat
