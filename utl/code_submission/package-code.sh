@@ -34,5 +34,6 @@ git submodule update --init --recursive
 rm -rf .git
 cd ..
 cp cats/utl/code_submission/run-me.sh .
+rm -rf cats/utl/code_submission
 tar -cvf cats.source.tar cats
 zip source.zip cats.source.tar run-me.sh
