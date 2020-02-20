@@ -99,7 +99,8 @@ public:
   }
 
   virtual void ReadFromExample(example* ex)
-  { CB::label* ld = (CB::label*)&ex->l;
+  {
+    CB::label* ld = &ex->l.cb;
     if (ld->costs.size() > 0)
     { cb_class& f = ld->costs[0];
 
@@ -110,7 +111,8 @@ public:
   }
 
   virtual void UpdateExample(vw* vw, example* ex)
-  { CB::label* ld = (CB::label*)&ex->l;
+  {
+    CB::label* ld = &ex->l.cb;
     cb_class f;
 
     f.partial_prediction = 0.;
@@ -150,7 +152,8 @@ public:
   static SharedLabel^ Instance = gcnew SharedLabel;
 
   virtual void UpdateExample(vw* vw, example* ex)
-  { CB::label* ld = (CB::label*)&ex->l;
+  {
+    CB::label* ld = &ex->l.cb;
     cb_class f;
 
     f.partial_prediction = 0.;
