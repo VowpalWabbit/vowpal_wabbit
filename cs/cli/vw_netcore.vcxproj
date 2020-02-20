@@ -49,7 +49,7 @@
     <LinkIncremental>true</LinkIncremental>
     <TargetName>VowpalWabbit.Core</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <!--    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>-->
+    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
     <RuntimeLibrary>
     </RuntimeLibrary>
   </PropertyGroup>
@@ -58,7 +58,7 @@
     <TargetName>VowpalWabbit.Core</TargetName>
     <WindowsMetadataLinkKeyFile>
     </WindowsMetadataLinkKeyFile>
-    <!--    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>-->
+    <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
     <RuntimeLibrary>
     </RuntimeLibrary>
   </PropertyGroup>
@@ -70,7 +70,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -88,7 +88,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
