@@ -6,7 +6,7 @@
 
 using namespace std;
 
-VW_DEBUG_ENABLE(true);
+VW_DEBUG_ENABLE(false)
 
 void dispatch_example(vw& all, example& ec)
 {
