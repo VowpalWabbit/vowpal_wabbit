@@ -35,6 +35,13 @@ rm -rf .git
 cd ..
 cp cats/utl/code_submission/run-me.sh .
 cp cats/utl/code_submission/function-declaration.sh .
+cp cats/utl/code_submission/README.txt .
 rm -rf cats/utl/code_submission
 tar -cvf cats.source.tar cats
-zip source.zip cats.source.tar run-me.sh function-declaration.sh
+zip source.zip cats.source.tar run-me.sh function-declaration.sh README.txt
+
+# Clean up temporaries
+rm run-me.sh
+rm function-declaration.sh
+rm cats.source.tar
+rm README.txt
