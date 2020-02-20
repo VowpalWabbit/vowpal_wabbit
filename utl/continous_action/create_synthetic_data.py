@@ -31,7 +31,7 @@ class SyntheticData:
 
     self.save_vw_reg_dataset(X, Y, save_to_path)
     percent = 0.80
-    ds = pd.read_csv(self.fname, header=None)
+    ds = pd.read_csv(save_to_path + self.fname, header=None)
     ds_train = ds[0:math.floor(ds.size*percent)]
     ds_test = ds[math.floor(ds.size*percent):]
 
