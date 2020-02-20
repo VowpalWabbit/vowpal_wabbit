@@ -27,19 +27,12 @@ find . -name "*.cc" -exec sh -c 'python3 utl/code_submission/sanitize.py -s "$1"
 find . -name "*.h" -exec sh -c 'python3 utl/code_submission/sanitize.py -s "$1" > "$1.clean"; mv "$1" "$1.old"; mv "$1.clean" "$1"' == {} \;
 find . -name "*.old" -exec sh -c 'rm "$1"' == {} \;
 
-## Create zip file
-### Remove this script and sanitizing py script
-## rm -rf utl
-## rm -rf .git
-## cd ..
-## tar -cvf cats.source.tar cats
-## zip cats.source.tar.zip cats.source.tar
-
-# Build vw
+# Get all dependencies
 git submodule update --init --recursive
-mkdir build
-cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=/home/ranaras/s/vcpkg/scripts/buildsystems/vcpkg.cmake
-make -j vw-bin
 
-
+# Create zip file
+rm -rf .git
+cd ..
+cp utl
+tar -cvf cats.source.tar cats
+zip source.zip cats.source.tar
