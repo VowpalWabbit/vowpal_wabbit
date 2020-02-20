@@ -402,7 +402,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
 
   try
   {
-    label_data* ld = (label_data*)&ex->l;
+    label_data* ld = &ex->l.simple;
     ld->label = label;
     ld->weight = weight;
 
