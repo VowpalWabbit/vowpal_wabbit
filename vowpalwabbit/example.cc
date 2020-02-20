@@ -235,7 +235,7 @@ std::string cont_label_to_string(const example& ec)
   auto& costs = ec.l.cb_cont.costs;
   for (auto c = costs.cbegin(); c != costs.cend(); ++c)
   {
-    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability 
+    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability
               << ",pp=" << c->partial_prediction << "}";
   }
   strstream << "}]";
@@ -257,11 +257,14 @@ std::string depth_indent_string(const example& ec)
 std::string depth_indent_string(int32_t stack_depth)
 {
   std::stringstream strstream;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
   for (uint32_t i = 0; i < stack_depth - 1; i++)
   {
     strstream << "| ";
   }
   strstream << "+ ";
+#pragma GCC diagnostic pop
   return strstream.str();
 }
 

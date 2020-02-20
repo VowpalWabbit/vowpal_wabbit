@@ -279,15 +279,15 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
-   
+
   base.predict(ec);
-     
+
   VW::actions_pdf::pdf prob_dist_copy = v_init<VW::actions_pdf::pdf_segment>();
-         
-  for (uint32_t i = 0; i <= data.regression_data.num_actions; i++) {    
+
+  for (uint32_t i = 0; i <= data.regression_data.num_actions; i++) {
     prob_dist_copy.push_back({ ec.pred.prob_dist[i].action, ec.pred.prob_dist[i].value }); // segmentation fault happens!
-  }    
- 
+  }
+
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
 
   float chosen_action;
@@ -301,9 +301,9 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
   //       If the function fails to find the index, it will actually return the second-to-last index
   VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
-   
+
   float pdf_value = get_pdf_value(prob_dist_copy, chosen_action);
-    
+
   continuous_label_elm cb_cont_lbl;
 
   cb_cont_lbl.action = chosen_action;
@@ -351,7 +351,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 
   ec.l.simple = regression_label;  // recovering regression label
   ec.pred.scalar = cb_cont_lbl.action;
-    
+
   prob_dist_copy.delete_v();
 }
 
@@ -661,7 +661,7 @@ void output_cb_reg_predictions(
   {
     if (f > 0)
     {
-      size_t t = io_buf::write_file_or_socket(f, str.c_str(), str.size());
+      /*size_t t = */io_buf::write_file_or_socket(f, str.c_str(), str.size());
     }
   }
 }

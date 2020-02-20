@@ -110,6 +110,8 @@ inline uint64_t uniform_hash(const void * key, size_t len, uint64_t seed)
 
   uint32_t k1 = 0;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
   switch (len & 3)
   {
   case 3: k1 ^= tail[2] << 16;
@@ -117,6 +119,7 @@ inline uint64_t uniform_hash(const void * key, size_t len, uint64_t seed)
   case 1: k1 ^= tail[0];
     k1 *= c1; k1 = ROTL32(k1, 15); k1 *= c2; h1 ^= k1;
   }
+#pragma GCC diagnostic pop
 
   // --- finalization
   h1 ^= len;
