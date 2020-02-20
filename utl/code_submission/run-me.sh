@@ -49,8 +49,8 @@ python3 utl/continous_action/create_synthetic_data.py &
 # Wait for all background jobs to finish
 wait
 
-ds_min=$(./test/train-sets/regression/ds_1000000.min)
-ds_max=$(./test/train-sets/regression/ds_1000000.max)
+ds_min=$(cat ./test/train-sets/regression/ds_1000000.min)
+ds_max=$(cat ./test/train-sets/regression/ds_1000000.max)
 
 # Run experiments
 mkdir results

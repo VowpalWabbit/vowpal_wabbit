@@ -37,9 +37,9 @@ run_experiment(){
   printf "." > $filename1
   printf "." > $filename2
 
-  for n in 4 #8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 4 8 16 32 64 128 256 512 1024 2048 4096 8192
   do
-  for h in 1 #2 4 8 16 32 64 128
+  for h in 1 2 4 8 16 32 64 128
   do
   if (( $n > 2*$h ));
   then
@@ -65,9 +65,9 @@ run_experiment(){
 
   echo "CATS online:" > $filename3
 
-  for n in 4 #8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 4 8 16 32 64 128 256 512 1024 2048 4096 8192
   do
-  for h in 1 #2 4 8 16 32 64 128
+  for h in 1 2 4 8 16 32 64 128
   do
   if (( $n > 2*$h ));
   then
@@ -81,7 +81,7 @@ run_experiment(){
 
 
   printf "\n\nDiscretized Tree online:-----------------------------------------------------------------------------" >> $filename3
-  for n in 2 #4 8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192
   do
   printf "\n\ntime -p timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --cb_discrete --otc $n --min_value=$min --max_value=$max \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll \n\n" >> $filename3
@@ -91,7 +91,7 @@ run_experiment(){
 
 
   printf "\n\nDiscretized Linear online:----------------------------------------------------------------------------" >> $filename3
-  for n in 2 #4 8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192
   do
   printf "\n\ntime -p timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --cb_discrete --min_value=$min --max_value=$max \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll \n\n" >> $filename3
