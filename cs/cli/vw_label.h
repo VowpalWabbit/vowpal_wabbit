@@ -220,7 +220,7 @@ public:
   }
 
   virtual void ReadFromExample(example* ex)
-  { label_data* ld = (label_data*)&ex->l;
+  { label_data* ld = &ex->l.simple;
 
     m_label = ld->label;
     m_weight = ld->weight;
@@ -228,7 +228,7 @@ public:
   }
 
   virtual void UpdateExample(vw* vw, example* ex)
-  { label_data* ld = (label_data*)&ex->l;
+  { label_data* ld = &ex->l.simple;
     ld->label = m_label;
 
     if (m_weight.HasValue)
