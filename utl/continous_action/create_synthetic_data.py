@@ -26,11 +26,11 @@ class SyntheticData:
     Y = X.dot(w) + self.sig * np.random.randn(self.n)
 
     min_file = open(save_to_path + self.name + '.min',"w")
-    min_file.write(Y.min())
+    min_file.write(str(Y.min()))
     print('min_value = ', Y.min(), flush=True)
 
     max_file = open(save_to_path + self.name + '.max',"w")
-    max_file.write(Y.max())
+    max_file.write(str(Y.max()))
     print('max_value = ', Y.max(), flush=True)
 
     self.save_vw_reg_dataset(X, Y, save_to_path)
