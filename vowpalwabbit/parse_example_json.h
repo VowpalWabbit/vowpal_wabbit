@@ -291,11 +291,11 @@ class LabelObjectState : public BaseState<audit>
   {
     if (ctx.all->label_type == label_type_t::ccb)
     {
-      auto ld = (CCB::label*)&ctx.ex->l;
+      auto& ld = ctx.ex->l.conditional_contextual_bandit;
 
       for (auto id : inc)
       {
-        ld->explicit_included_actions.push_back(id);
+        ld.explicit_included_actions.push_back(id);
       }
       inc.clear();
 
@@ -315,14 +315,14 @@ class LabelObjectState : public BaseState<audit>
         actions.clear();
         probs.clear();
 
-        ld->outcome = outcome;
+        ld.outcome = outcome;
         cb_label = {0., 0, 0., 0.};
       }
     }
     else if (found_cb)
     {
-      CB::label* ld = (CB::label*)&ctx.ex->l;
-      ld->costs.push_back(cb_label);
+      auto& ld = ctx.ex->l.cb;
+      ld.costs.push_back(cb_label);
 
       found_cb = false;
       cb_label = {0., 0, 0., 0.};

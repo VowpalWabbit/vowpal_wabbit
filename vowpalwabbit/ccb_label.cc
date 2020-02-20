@@ -379,8 +379,7 @@ void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& w
 
 void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
 {
-  auto& ld = v->conditional_contextual_bandit;
-  parse_label(p, sd, v, words);
+  parse_label(p, sd, v->conditional_contextual_bandit, words);
 }
 
 // Export the definition of this label parser.
