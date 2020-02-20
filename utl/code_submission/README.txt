@@ -1,8 +1,8 @@
 Platform: Ubuntu
 
-There are two ways to verify the results in the paper.
+There are two ways to run experiments described in the paper.
 
-A) Use scripts to run experiments:
+A) Use scripts:
 
 1) Ensure that you have all dependencies to build vw.
   https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Dependencies#ubuntu
@@ -14,7 +14,7 @@ A) Use scripts to run experiments:
   d) run experiments and save results in a results folder
 
 
-B) Manually run experiments
+B) Manually go through all the steps:
 
 1) First, in order to create the data sets please download them from the following URL's and save them with the suggested names:
 
