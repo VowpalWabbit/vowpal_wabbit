@@ -20,6 +20,7 @@ struct input_options
   bool dsjson;
   bool kill_cache;
   bool compressed;
+  bool chain_hash;
 };
 
 // trace listener + context need to be passed at initialization to capture all messages.
