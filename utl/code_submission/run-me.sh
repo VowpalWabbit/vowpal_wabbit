@@ -22,6 +22,6 @@ curl -o test/train-sets/regression/black_friday.csv https://www.openml.org/data/
 curl -o test/train-sets/regression/zurich.csv https://www.openml.org/data/get_csv/5698591/file62a9329beed2.arff
 
 # Transform data files
-
+ python3 utl/continous_action/preprocess_data.py -c ./test/train-sets/regression/zurich.csv
 
 # Run experiments
