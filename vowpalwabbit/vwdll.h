@@ -4,13 +4,13 @@
 #pragma once
 
 // indirect the Win32 so non win32 Microsoft C programs can work
-#ifdef WIN32
+#ifdef _WIN32
 #define MS_CONV  // use Microsoft library calling conventions
 #endif
 
 // enable wide character (32 bit) versions of functions
 // these are optional  since other compilers may not have wide to narrow char libarray facilities built in.
-#ifdef WIN32
+#ifdef _WIN32
 #define USE_CODECVT
 #endif
 

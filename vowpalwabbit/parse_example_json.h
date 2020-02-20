@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <vector>
 #include <limits>
+#include <sstream>
 
 // portability fun
 #ifndef _WIN32
@@ -80,6 +81,17 @@ struct Namespace
 
     if (audit)
       ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));
+  }
+
+  void AddFeature(vw* all, const char* key, const char* value)
+  {
+    ftrs->push_back(1., VW::hash_feature(*all, value, VW::hash_feature(*all, key, namespace_hash)));
+    feature_count++;
+
+    std::stringstream ss;
+    ss << key << "^" << value;
+    if (audit)
+      ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, ss.str())));
   }
 };
 
@@ -829,10 +841,17 @@ class DefaultState : public BaseState<audit>
       }
     }
 
-    char* prepend = (char*)str - ctx.key_length;
-    memmove(prepend, ctx.key, ctx.key_length);
+    if (ctx.all->chain_hash)
+    {
+      ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key, str);
+    }
+    else
+    {
+      char* prepend = (char*)str - ctx.key_length;
+      memmove(prepend, ctx.key, ctx.key_length);
 
-    ctx.CurrentNamespace().AddFeature(ctx.all, prepend);
+      ctx.CurrentNamespace().AddFeature(ctx.all, prepend);
+    }
 
     return this;
   }
