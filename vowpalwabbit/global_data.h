@@ -359,6 +359,8 @@ struct vw
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
+  bool chain_hash = false;
+
   LEARNER::base_learner* l;               // the top level learner
   LEARNER::single_learner* scorer;        // a scoring function
   LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
