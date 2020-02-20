@@ -407,8 +407,17 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
+#ifdef _WIN32
+#pragma warning(push)          // This next line is inappropriately triggering the Windows-side warning about getpid()
+#pragma warning(disable: 4996) // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
+#endif
+
       pid_file << getpid() << endl;
       pid_file.close();
+
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
     }
 
     if (all.daemon && !all.active)
