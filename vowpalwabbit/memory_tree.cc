@@ -1308,7 +1308,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
 
     all.p->lp = MULTILABEL::multilabel;
     all.label_type = label_type_t::multi;
-    all.delete_prediction = MULTILABEL::multilabel.delete_label;
+    all.delete_prediction = MULTILABEL::delete_label;
 
     return make_base(l);
   }

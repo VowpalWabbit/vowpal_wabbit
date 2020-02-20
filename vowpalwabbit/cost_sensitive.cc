@@ -8,6 +8,7 @@
 #include "vw_exception.h"
 #include <cmath>
 #include "vw_string_view.h"
+#include "example.h"
 
 namespace COST_SENSITIVE
 {
@@ -31,10 +32,10 @@ void name_value(VW::string_view& s, v_array<VW::string_view>& name, float& v)
   }
 }
 
-char* bufread_label(label* ld, char* c, io_buf& cache)
+char* bufread_label(label& ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t*)c;
-  ld->costs.clear();
+  ld.costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass) * num;
   if (cache.buf_read(c, (int)total) < total)
@@ -46,16 +47,16 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
   {
     wclass temp = *(wclass*)c;
     c += sizeof(wclass);
-    ld->costs.push_back(temp);
+    ld.costs.push_back(temp);
   }
 
   return c;
 }
 
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
+size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
 {
-  label* ld = (label*)v;
-  ld->costs.clear();
+  auto& ld = v->cs;
+  ld.costs.clear();
   char* c;
   size_t total = sizeof(size_t);
   if (cache.buf_read(c, (int)total) < total)
@@ -65,66 +66,72 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void*) { return 1.; }
+float weight(polylabel*) { return 1.; }
 
-char* bufcache_label(label* ld, char* c)
+char* bufcache_label(label& ld, char* c)
 {
-  *(size_t*)c = ld->costs.size();
+  *(size_t*)c = ld.costs.size();
   c += sizeof(size_t);
-  for (unsigned int i = 0; i < ld->costs.size(); i++)
+  for (unsigned int i = 0; i < ld.costs.size(); i++)
   {
-    *(wclass*)c = ld->costs[i];
+    *(wclass*)c = ld.costs[i];
     c += sizeof(wclass);
   }
   return c;
 }
 
-void cache_label(void* v, io_buf& cache)
+void cache_label(polylabel* v, io_buf& cache)
 {
   char* c;
-  label* ld = (label*)v;
-  cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld->costs.size());
+  auto& ld = v->cs;
+  cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld.costs.size());
   bufcache_label(ld, c);
 }
 
-void default_label(void* v)
+void default_label(label& ld)
 {
-  label* ld = (label*)v;
-  ld->costs.clear();
+  ld.costs.clear();
 }
 
-bool test_label(void* v)
+void default_label(polylabel* v)
 {
-  label* ld = (label*)v;
-  if (ld->costs.size() == 0)
+  default_label(v->cs);
+}
+
+bool test_label(polylabel* v)
+{
+  auto& ld = v->cs;
+  if (ld.costs.size() == 0)
     return true;
-  for (unsigned int i = 0; i < ld->costs.size(); i++)
-    if (FLT_MAX != ld->costs[i].x)
+  for (unsigned int i = 0; i < ld.costs.size(); i++)
+    if (FLT_MAX != ld.costs[i].x)
       return false;
   return true;
 }
 
-void delete_label(void* v)
+void delete_label(label& ld)
 {
-  label* ld = (label*)v;
-  if (ld)
-    ld->costs.delete_v();
+  ld.costs.delete_v();
 }
 
-void copy_label(void* dst, void* src)
+void delete_label(polylabel* v)
+{
+  if (v)
+    v->cs.costs.delete_v();
+}
+
+void copy_label(polylabel* dst, polylabel* src)
 {
   if (dst && src)
   {
-    label* ldD = (label*)dst;
-    label* ldS = (label*)src;
-    copy_array(ldD->costs, ldS->costs);
+    copy_array(dst->cs.costs, src->cs.costs);
   }
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
 {
-  label* ld = (label*)v;
-  ld->costs.clear();
+  auto& ld = v->cs;
+  ld.costs.clear();
 
   // handle shared and label first
   if (words.size() == 1)
@@ -147,7 +154,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
-          ld->costs.push_back(f);
+          ld.costs.push_back(f);
         }
       }
       if (eq_label)
@@ -157,7 +164,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
         else
         {
           wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
-          ld->costs.push_back(f);
+          ld.costs.push_back(f);
         }
       }
       return;
@@ -183,7 +190,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
     else
       THROW("malformed cost specification on '" << (p->parse_name[0]) << "'");
 
-    ld->costs.push_back(f);
+    ld.costs.push_back(f);
   }
 }
 
@@ -241,7 +248,7 @@ void output_example(vw& all, example& ec)
   label& ld = ec.l.cs;
 
   float loss = 0.;
-  if (!test_label(&ld))
+  if (!test_label(&ec.l))
   {
     // need to compute exact loss
     size_t pred = (size_t)ec.pred.multiclass;
@@ -264,7 +271,7 @@ void output_example(vw& all, example& ec)
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(&ld), loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(&ec.l), loss, ec.weight, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (!all.sd->ldict)
@@ -288,7 +295,7 @@ void output_example(vw& all, example& ec)
     all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, test_label(&ec.l.cs), ec, nullptr, false, ec.pred.multiclass);
+  print_update(all, test_label(&ec.l), ec, nullptr, false, ec.pred.multiclass);
 }
 
 void finish_example(vw& all, example& ec)

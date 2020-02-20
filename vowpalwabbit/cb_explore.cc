@@ -45,9 +45,9 @@ struct cb_explore
   {
     preds.delete_v();
     cover_probs.delete_v();
-    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
-    COST_SENSITIVE::cs_label.delete_label(&cs_label);
-    COST_SENSITIVE::cs_label.delete_label(&second_cs_label);
+    COST_SENSITIVE::delete_label(cbcs.pred_scores);
+    COST_SENSITIVE::delete_label(cs_label);
+    COST_SENSITIVE::delete_label(second_cs_label);
   }
 };
 
@@ -264,7 +264,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
+  print_update_cb_explore(all, CB::test_label(ld), ec, sso);
 }
 
 void finish_example(vw& all, cb_explore& c, example& ec)

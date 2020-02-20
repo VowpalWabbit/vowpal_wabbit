@@ -8,23 +8,24 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
+#include "example.h"
 
 namespace MULTICLASS
 {
-char* bufread_label(label_t* ld, char* c)
+char* bufread_label(label_t& ld, char* c)
 {
-  memcpy(&ld->label, c, sizeof(ld->label));
-  c += sizeof(ld->label);
-  memcpy(&ld->weight, c, sizeof(ld->weight));
-  c += sizeof(ld->weight);
+  memcpy(&ld.label, c, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(&ld.weight, c, sizeof(ld.weight));
+  c += sizeof(ld.weight);
   return c;
 }
 
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
+size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
 {
-  label_t* ld = (label_t*)v;
+  auto& ld = v->multi;
   char* c;
-  size_t total = sizeof(ld->label) + sizeof(ld->weight);
+  size_t total = sizeof(ld.label) + sizeof(ld.weight);
   if (cache.buf_read(c, total) < total)
     return 0;
   bufread_label(ld, c);
@@ -32,65 +33,70 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void* v)
+float weight(polylabel* v)
 {
-  label_t* ld = (label_t*)v;
-  return (ld->weight > 0) ? ld->weight : 0.f;
+  auto& ld = v->multi;
+  return (ld.weight > 0) ? ld.weight : 0.f;
 }
 
-char* bufcache_label(label_t* ld, char* c)
+char* bufcache_label(label_t& ld, char* c)
 {
-  memcpy(c, &ld->label, sizeof(ld->label));
-  c += sizeof(ld->label);
-  memcpy(c, &ld->weight, sizeof(ld->weight));
-  c += sizeof(ld->weight);
+  memcpy(c, &ld.label, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(c, &ld.weight, sizeof(ld.weight));
+  c += sizeof(ld.weight);
   return c;
 }
 
-void cache_label(void* v, io_buf& cache)
+void cache_label(polylabel* v, io_buf& cache)
 {
   char* c;
-  label_t* ld = (label_t*)v;
-  cache.buf_write(c, sizeof(ld->label) + sizeof(ld->weight));
+  auto& ld = v->multi;
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
   bufcache_label(ld, c);
 }
 
-void default_label(void* v)
+void default_label(polylabel* v)
 {
-  label_t* ld = (label_t*)v;
-  ld->label = (uint32_t)-1;
-  ld->weight = 1.;
+  auto& ld = v->multi;
+  ld.label = (uint32_t)-1;
+  ld.weight = 1.;
 }
 
-bool test_label(void* v)
-{
-  label_t* ld = (label_t*)v;
-  return ld->label == (uint32_t)-1;
+bool test_label(label_t& ld)
+{ 
+  return ld.label == (uint32_t)-1;
 }
 
-void delete_label(void*) {}
-
-void parse_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words)
+bool test_label(polylabel* v)
 {
-  label_t* ld = (label_t*)v;
+  return test_label(v->multi);
+}
+
+void delete_label(label_t&) {}
+void delete_label(polylabel*) {}
+
+void parse_label(parser*, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
+{
+  auto& ld = v->multi;
 
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
-      ld->weight = 1.0;
+      ld.label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      ld.weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
-      ld->weight = float_of_string(words[1]);
+      ld.label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      ld.weight = float_of_string(words[1]);
       break;
     default:
       std::cerr << "malformed example!\n";
       std::cerr << "words.size() = " << words.size() << std::endl;
   }
-  if (ld->label == 0)
+  if (ld.label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
         << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }

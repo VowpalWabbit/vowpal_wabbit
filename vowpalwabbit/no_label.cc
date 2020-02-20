@@ -11,26 +11,27 @@
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_string_view.h"
+#include "example.h"
 
 namespace no_label
 {
 char* bufread_no_label(shared_data*, label_data*, char* c) { return c; }
 
-size_t read_cached_no_label(shared_data*, void*, io_buf&) { return 1; }
+size_t read_cached_no_label(shared_data*, polylabel*, io_buf&) { return 1; }
 
-float get_weight(void*) { return 1.; }
+float get_weight(polylabel*) { return 1.; }
 
 char* bufcache_no_label(label_data*, char* c) { return c; }
 
-void cache_no_label(void*, io_buf&) {}
+void cache_no_label(polylabel*, io_buf&) {}
 
-void default_no_label(void*) {}
+void default_no_label(polylabel*) {}
 
-bool test_label(void*) { return false; }
+bool test_label(polylabel*) { return false; }
 
-void delete_no_label(void*) {}
+void delete_no_label(polylabel*) {}
 
-void parse_no_label(parser*, shared_data*, void*, v_array<VW::string_view>& words)
+void parse_no_label(parser*, shared_data*, polylabel*, v_array<VW::string_view>& words)
 {
   switch (words.size())
   {

@@ -35,7 +35,7 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(void*, void*))
+void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(polylabel*, polylabel*))
 {
   if (copy_label)
     copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
@@ -80,7 +80,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->interactions = src->interactions;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
@@ -212,7 +212,7 @@ example* alloc_examples(size_t, size_t count = 1)
   return ec;
 }
 
-void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
+void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*))
 {
   if (delete_label)
     delete_label(&ec.l);

@@ -20,7 +20,7 @@
 #include "ccb_label.h"
 #include <vector>
 
-typedef union
+struct polylabel
 {
   no_label::no_label empty;
   label_data simple;
@@ -30,7 +30,7 @@ typedef union
   CCB::label conditional_contextual_bandit;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
-} polylabel;
+};
 
 inline void delete_scalars(void* v)
 {

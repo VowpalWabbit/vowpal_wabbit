@@ -990,7 +990,7 @@ void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &al
 
 // a copy of dealloc_example except that this does not call the example destructor
 // Work to remove this is currently in progress
-void cleanup_example(void(*delete_label)(void*), example& ec, void(*delete_prediction)(void*))
+void cleanup_example(void(*delete_label)(polylabel*), example& ec, void(*delete_prediction)(void*))
 {
   if (delete_label)
     delete_label(&ec.l);

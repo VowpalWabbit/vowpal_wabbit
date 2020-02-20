@@ -45,7 +45,7 @@ struct cbify
 
   ~cbify()
   {
-    CB::cb_label.delete_label(&cb_label);
+    CB::delete_label(cb_label);
     a_s.delete_v();
 
     if (use_adf)
@@ -108,7 +108,7 @@ void copy_example_to_adf(cbify& data, example& ec)
     auto& eca = *adf_data.ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -237,7 +237,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
   {
     adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
     auto& lab = adf_data.ecs[a]->l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
     adf_data.ecs[a]->interactions = &data.all->interactions;
   }
 }

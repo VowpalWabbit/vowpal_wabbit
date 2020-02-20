@@ -11,27 +11,28 @@
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_string_view.h"
+#include "example.h"
 
-char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
+char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {
-  memcpy(&ld->label, c, sizeof(ld->label));
-  //  std::cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<
+  memcpy(&ld.label, c, sizeof(ld.label));
+  //  std::cout << ld.label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<
   //  std::endl;
-  c += sizeof(ld->label);
-  memcpy(&ld->weight, c, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  memcpy(&ld->initial, c, sizeof(ld->initial));
-  c += sizeof(ld->initial);
+  c += sizeof(ld.label);
+  memcpy(&ld.weight, c, sizeof(ld.weight));
+  c += sizeof(ld.weight);
+  memcpy(&ld.initial, c, sizeof(ld.initial));
+  c += sizeof(ld.initial);
 
-  count_label(sd, ld->label);
+  count_label(sd, ld.label);
   return c;
 }
 
-size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
+size_t read_cached_simple_label(shared_data* sd, polylabel* v, io_buf& cache)
 {
-  label_data* ld = (label_data*)v;
+  label_data& ld = v->simple;
   char* c;
-  size_t total = sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial);
+  size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
   if (cache.buf_read(c, total) < total)
     return 0;
   bufread_simple_label(sd, ld, c);
@@ -39,73 +40,73 @@ size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
   return total;
 }
 
-float get_weight(void* v)
+float get_weight(polylabel* v)
 {
-  label_data* ld = (label_data*)v;
-  return ld->weight;
+  label_data& ld = v->simple;
+  return ld.weight;
 }
 
-char* bufcache_simple_label(label_data* ld, char* c)
+char* bufcache_simple_label(label_data& ld, char* c)
 {
-  memcpy(c, &ld->label, sizeof(ld->label));
-  c += sizeof(ld->label);
-  memcpy(c, &ld->weight, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  memcpy(c, &ld->initial, sizeof(ld->initial));
-  c += sizeof(ld->initial);
+  memcpy(c, &ld.label, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(c, &ld.weight, sizeof(ld.weight));
+  c += sizeof(ld.weight);
+  memcpy(c, &ld.initial, sizeof(ld.initial));
+  c += sizeof(ld.initial);
   return c;
 }
 
-void cache_simple_label(void* v, io_buf& cache)
+void cache_simple_label(polylabel* v, io_buf& cache)
 {
   char* c;
-  label_data* ld = (label_data*)v;
-  cache.buf_write(c, sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial));
+  label_data& ld = v->simple;
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial));
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(void* v)
+void default_simple_label(polylabel* v)
 {
-  label_data* ld = (label_data*)v;
-  ld->label = FLT_MAX;
-  ld->weight = 1.;
-  ld->initial = 0.;
+  label_data& ld = v->simple;
+  ld.label = FLT_MAX;
+  ld.weight = 1.;
+  ld.initial = 0.;
 }
 
-bool test_label(void* v)
+bool test_label(polylabel* v)
 {
-  label_data* ld = (label_data*)v;
-  return ld->label == FLT_MAX;
+  label_data& ld = v->simple;
+  return ld.label == FLT_MAX;
 }
 
-void delete_simple_label(void*) {}
+void delete_simple_label(polylabel*) {}
 
-void parse_simple_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words)
+void parse_simple_label(parser*, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
 {
-  label_data* ld = (label_data*)v;
+  label_data& ld = v->simple;
 
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      ld->label = float_of_string(words[0]);
+      ld.label = float_of_string(words[0]);
       break;
     case 2:
-      ld->label = float_of_string(words[0]);
-      ld->weight = float_of_string(words[1]);
+      ld.label = float_of_string(words[0]);
+      ld.weight = float_of_string(words[1]);
       break;
     case 3:
-      ld->label = float_of_string(words[0]);
-      ld->weight = float_of_string(words[1]);
-      ld->initial = float_of_string(words[2]);
+      ld.label = float_of_string(words[0]);
+      ld.weight = float_of_string(words[1]);
+      ld.initial = float_of_string(words[2]);
       break;
     default:
       std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
       for (const auto & word : words) std::cout << word;
       std::cout << std::endl;
   }
-  count_label(sd, ld->label);
+  count_label(sd, ld.label);
 }
 
 label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,

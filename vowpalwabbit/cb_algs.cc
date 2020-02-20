@@ -25,7 +25,7 @@ struct cb
   ~cb()
   {
     cb_cs_ld.costs.delete_v();
-    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
+    COST_SENSITIVE::delete_label(cbcs.pred_scores);
   }
 };
 
@@ -92,10 +92,10 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::cb_label.test_label(&ld))
+  if (!CB::test_label(ld))
     loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !CB::test_label(ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
@@ -113,7 +113,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
     all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
+  print_update(all, CB::test_label(ld), ec, nullptr, false);
 }
 
 void finish_example(vw& all, cb& c, example& ec)

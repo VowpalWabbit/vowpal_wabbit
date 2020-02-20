@@ -39,6 +39,11 @@ struct label
   v_array<uint32_t> explicit_included_actions;
   float weight;
 };
-
+void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& words);
+void cache_label(label& ld, io_buf& cache);
+size_t read_cached_label(shared_data* sd, label& v, io_buf& cache);
+void copy_label(label& ldDst, label& ldSrc);
+void default_label(label& ld);
+void delete_label(label& ld);
 extern label_parser ccb_label_parser;
 }  // namespace CCB
