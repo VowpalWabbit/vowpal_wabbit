@@ -10,7 +10,7 @@ tar -xvf cats.source.tar cats
 cd cats
 mkdir build
 cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=/home/ranaras/s/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake ..
 make -j vw-bin
 
 # Download data files
