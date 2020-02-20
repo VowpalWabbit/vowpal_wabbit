@@ -1805,4 +1805,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     test-sets/ref/chain_hash_text_result.stdout
     test-sets/ref/chain_hash_text_result.cmp
 
+# Test 209: Test override epsilon value saved in a model
+{VW} -i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds
+    pred-sets/ref/override_epsilon.stderr
+    pred-sets/ref/override_epsilon.preds
+
 # Do not delete this line or the empty line above it
