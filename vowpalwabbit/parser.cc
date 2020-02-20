@@ -17,10 +17,11 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <winsock2.h>
-#include <Ws2tcpip.h>
 #include <Windows.h>
 #include <io.h>
 typedef int socklen_t;
+//windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
+#define SOL_TCP IPPROTO_TCP
 
 int daemon(int /*a*/, int /*b*/)
 {
@@ -181,7 +182,7 @@ void reset_source(vw& all, size_t numbits)
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
       int one = 1;
-      setsockopt(f, SOL_TCP, TCP_NODELAY, &one, sizeof(one));
+      setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
       // note: breaking cluster parallel online learning by dropping support for id
 
@@ -494,7 +495,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
     // Disable Nagle delay algorithm due to daemon mode's interactive workload
     int one = 1;
-    setsockopt(f, SOL_TCP, TCP_NODELAY, &one, sizeof(one));
+    setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
     all.p->label_sock = f;
 IGNORE_DEPRECATED_USAGE_START
