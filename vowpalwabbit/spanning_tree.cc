@@ -86,6 +86,10 @@ SpanningTree::SpanningTree(uint16_t port, bool quiet) : m_stop(false), m_port(po
     THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
 
+  // TODO: This only supports IPV4 (AF_INET) addresses. To support IPV6 (AF_INET6), a number of changes needs
+  // to be made here.
+  char addr_buf[INET_ADDRSTRLEN]; 
+
   sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
     THROWERRNO("socket: ");
@@ -100,13 +104,13 @@ SpanningTree::SpanningTree(uint16_t port, bool quiet) : m_stop(false), m_port(po
 
   address.sin_port = htons(port);
   if (::bind(sock, (sockaddr*)&address, sizeof(address)) < 0)
-    THROWERRNO("bind failed for " << inet_ntoa(address.sin_addr));
+    THROWERRNO("bind failed for " << inet_ntop(AF_INET, &address.sin_addr, addr_buf, INET_ADDRSTRLEN));
 
   sockaddr_in bound_addr;
   memset(&bound_addr, 0, sizeof(bound_addr));
   socklen_t len = sizeof(bound_addr);
   if (::getsockname(sock, (sockaddr*)&bound_addr, &len) < 0)
-    THROWERRNO("getsockname: " << inet_ntoa(bound_addr.sin_addr));
+    THROWERRNO("getsockname: " << inet_ntop(AF_INET, &bound_addr.sin_addr, addr_buf, INET_ADDRSTRLEN));
 
   // which port did we bind too (if m_port is 0 this will give us the actual port)
   m_port = ntohs(bound_addr.sin_port);
