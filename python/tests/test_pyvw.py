@@ -183,3 +183,15 @@ def test_parse():
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
     assert len(ex) == 2
     del model
+
+def test_numspace_id():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    nm1 = pyvw.namespace_id(ex, 2)
+    assert nm1.id == 2
+    assert nm1.ord_ns == 128
+    assert nm1.ns == '\x80'
+    nm2 = pyvw.namespace_id(ex, '')
+    assert nm2.id is None
+    assert nm2.ord_ns == 32
+    assert nm2.ns == ' '
