@@ -33,6 +33,6 @@ git submodule update --init --recursive
 # Create zip file
 rm -rf .git
 cd ..
-cp utl
+cp cats/utl/code_submission/run-me.sh .
 tar -cvf cats.source.tar cats
-zip source.zip cats.source.tar
+zip source.zip cats.source.tar run-me.sh
