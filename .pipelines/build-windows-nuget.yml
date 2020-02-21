@@ -16,16 +16,16 @@ steps:
 #    #password: # Optional
 #    #netShare: # Required when packageFeedSelector == NetShare
 
- - task: NuGetToolInstaller@1
-   displayName: Nuget 5.4.0
-   inputs:
-     versionSpec: '5.4.0'
+- task: NuGetToolInstaller@1
+  displayName: Nuget 5.4.0
+  inputs:
+    versionSpec: '5.4.0'
 
- - task: NuGetCommand@2
-   displayName: Nuget Restore
-   inputs:
-     command: 'restore'
-     restoreSolution: './vowpalwabbit/vw.sln'
+- task: NuGetCommand@2
+  displayName: Nuget Restore
+  inputs:
+    command: 'restore'
+    restoreSolution: './vowpalwabbit/vw.sln'
 
 # - task: DotNetCoreCLI@2
 #   inputs:
