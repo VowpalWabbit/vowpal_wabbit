@@ -6,7 +6,6 @@
     <RootNamespace>VW</RootNamespace>
     <AssemblyName>VowpalWabbit.Common</AssemblyName>
     <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
-    <RestorePackages>true</RestorePackages>
     <FileAlignment>512</FileAlignment>
     <CodeContractsAssemblyMode>0</CodeContractsAssemblyMode>
     <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>

@@ -8,7 +8,6 @@
     <AssemblyName>VowpalWabbit</AssemblyName>
     <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
-    <RestorePackages>true</RestorePackages>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <CodeContractsAssemblyMode>0</CodeContractsAssemblyMode>
     <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
