@@ -13,10 +13,10 @@
 BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
-  auto shared_ex = VW::read_example(vw, "ccb shared |User f");
+  auto shared_ex = VW::read_example(vw, std::string("ccb shared |User f"));
   multi_ex actions;
-  actions.push_back(VW::read_example(vw, "ccb action |Action f"));
-  actions.push_back(VW::read_example(vw, "ccb action |Other f |Action f"));
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Action f")));
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
 
   std::vector<std::string> interactions;
   std::vector<std::string> compare_set = {{'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
@@ -45,14 +45,14 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, "ccb shared |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 1 |"));
+  examples.push_back(VW::read_example(vw, std::string("ccb shared |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 1 |")));
 
   vw.predict(examples);
 
