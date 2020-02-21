@@ -15,6 +15,10 @@ steps:
 #    #username: # Optional
 #    #password: # Optional
 #    #netShare: # Required when packageFeedSelector == NetShare
+- task: NuGetToolInstaller@1
+  displayName: Nuget 5.4.0
+  inputs:
+    versionSpec: '5.4.0'
 - task: NuGetCommand@2
   inputs:
     command: 'restore'
