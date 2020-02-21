@@ -1782,14 +1782,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cb_dro_adf_sm.stderr
     pred-sets/ref/cb_dro_adf_sm.predict
 
-# Test 206: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
-# SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)
-{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
-    && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
-    train-sets/ref/inv_hash_load_model.invert.txt
-    train-sets/ref/inv_hash_load_model.readable.txt
-
-# Test 207: Tests segfault that used to happen when audit, cache and interactions were combined.
+# Test 206: Tests segfault that used to happen when audit, cache and interactions were combined.
 {VW} -c -k --passes 2 -d train-sets/cache_interaction_audit.txt -q st --audit
     train-sets/ref/cache_interaction_audit.stdout
     train-sets/ref/cache_interaction_audit.stderr
@@ -1816,5 +1809,12 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds
     pred-sets/ref/override_epsilon.stderr
     pred-sets/ref/override_epsilon.preds
+
+# Test 210: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
+# SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)
+{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
+    && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.readable.txt
 
 # Do not delete this line or the empty line above it
