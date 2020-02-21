@@ -141,6 +141,7 @@ set(vw_all_headers
   parser.h
   pmf_to_pdf.h
   plt.h
+  predict_data.h
   print.h
   prob_dist_cont.h
   queue.h
