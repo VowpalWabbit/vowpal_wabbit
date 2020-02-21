@@ -26,9 +26,6 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <ProjectReference Include="..\cli\vw_netcore.vcxproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-  </ItemGroup>
   <PropertyGroup>
     <AssemblyTitle>cs_test</AssemblyTitle>
     <Description>cs_test</Description>

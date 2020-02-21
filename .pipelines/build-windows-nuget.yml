@@ -20,16 +20,26 @@ steps:
   inputs:
     versionSpec: '5.4.0'
 - task: NuGetCommand@2
+  displayName: Nuget Restore
   inputs:
     command: 'restore'
     restoreSolution: './vowpalwabbit/vw.sln'
+- task: VSBuild@1
+  displayName: Build vw.sln
+  inputs:
+    solution: './vowpalwabbit/vw.sln'
+    vsVersion: '16.0'
+    msbuildArgs: '/nr:false'
+    platform: 'x64'
+    configuration: 'Release'
+
 #- script: CALL .scripts/restore.cmd
 #  displayName: 'Restore dependencies'
 #  env:
 #    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
 #  failOnStderr: true
-- script: CALL .scripts/build.cmd
-  displayName: 'Build vw.sln'
+# - script: CALL .scripts/build.cmd
+#   displayName: 'Build vw.sln'
 #  env:
 #    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
   failOnStderr: true
