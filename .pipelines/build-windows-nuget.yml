@@ -37,10 +37,9 @@ steps:
   inputs:
     solution: './vowpalwabbit/vw.sln'
     vsVersion: '16.0'
-    msbuildArgs: '/nr:false'
+    msbuildArgs: '/nr:false /restore'
     platform: 'x64'
     configuration: 'Release'
-    restoreNugetPackages: true
 
 #- script: CALL .scripts/restore.cmd
 #  displayName: 'Restore dependencies'
