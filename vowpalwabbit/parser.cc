@@ -166,7 +166,7 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.p->output_lock);
-        all.p->output_done.wait(lock, [&] { return all.p->ready_parsed_examples.size() == 0; });
+        all.p->output_done.wait(lock, [&] { return all.p->finished_examples == all.p->end_parsed_examples && all.p->ready_parsed_examples.size() == 0; });
       }
 
       // close socket, erase final prediction sink and socket
@@ -925,6 +925,7 @@ void finish_example(vw& all, example& ec)
 
   {
     std::lock_guard<std::mutex> lock(all.p->output_lock);
+    ++all.p->finished_examples;
     all.p->output_done.notify_one();
   }
 }
