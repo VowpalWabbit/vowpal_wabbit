@@ -19,6 +19,9 @@
     <Configurations>Debug;Release</Configurations>
     <Platforms>x64</Platforms>
   </PropertyGroup>
+  <PropertyGroup>
+    <TextTransformPath>$(VsInstallRoot)\Common7\IDE\TextTransform.exe</TextTransformPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <DefineConstants>TRACE;DEBUG</DefineConstants>

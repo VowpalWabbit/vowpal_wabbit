@@ -1810,4 +1810,11 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/override_epsilon.stderr
     pred-sets/ref/override_epsilon.preds
 
+# Test 210: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
+# SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)
+{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
+    && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.readable.txt
+
 # Do not delete this line or the empty line above it

@@ -18,6 +18,9 @@
     <Platforms>x64</Platforms>
     <TestProjectType>UnitTest</TestProjectType>
   </PropertyGroup>
+  <PropertyGroup>
+    <TextTransformPath>$(VsInstallRoot)\Common7\IDE\TextTransform.exe</TextTransformPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
     <DefineConstants>DEBUG;TRACE</DefineConstants>

@@ -532,13 +532,13 @@ struct vw
   bool progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;  // next update progress dump multiplier
 
-  std::map<std::string, size_t> name_index_map;
+  std::map<uint64_t, std::string> index_name_map;
 
   label_type_t label_type;
 
   vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
-
+  
   vw(const vw&) = delete;
   vw& operator=(const vw&) = delete;
 
