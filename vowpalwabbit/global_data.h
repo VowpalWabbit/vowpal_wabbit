@@ -65,7 +65,7 @@ class namedlabels
   // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
   std::string m_label_list;
   std::vector<VW::string_view> m_id2name;
-  std::unordered_map<VW::string_view, uint64_t> m_name2id;
+  std::unordered_map<VW::string_view, uint32_t> m_name2id;
   uint32_t m_K;
 
  public:
@@ -73,13 +73,13 @@ class namedlabels
   {
     tokenize(',', m_label_list, m_id2name);
 
-    m_K = (uint32_t)m_id2name.size();
+    m_K = static_cast<uint32_t>(m_id2name.size());
     m_name2id.max_load_factor(0.25);
     m_name2id.reserve(m_K);
 
-    for (size_t k = 0; k < m_K; k++)
+    for (uint32_t k = 0; k < m_K; k++)
     {
-      const VW::string_view& l = m_id2name[k];
+      const VW::string_view& l = m_id2name[static_cast<size_t>(k)];
       auto iter = m_name2id.find(l);
       if (iter != m_name2id.end())
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
@@ -108,7 +108,7 @@ class namedlabels
       return VW::string_view();
     }
     else
-      return m_id2name[(size_t)(v - 1)];
+      return m_id2name[static_cast<size_t>(v - 1)];
   }
 };
 
@@ -358,6 +358,8 @@ struct vw
 
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
+
+  bool chain_hash = false;
 
   LEARNER::base_learner* l;               // the top level learner
   LEARNER::single_learner* scorer;        // a scoring function

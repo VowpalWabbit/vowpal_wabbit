@@ -1,0 +1,6 @@
++1 | happiness
++1 | happiness:1
++1 | happiness:true
++1 | happiness:    true sadness:false
++1 |emotion happiness:1
++1 |emotion happiness:true

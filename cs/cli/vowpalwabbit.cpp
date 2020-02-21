@@ -62,8 +62,7 @@ void VowpalWabbit::Driver()
 void VowpalWabbit::RunMultiPass()
 { if (m_vw->numpasses > 1)
   { try
-    { adjust_used_index(*m_vw);
-      m_vw->do_reset_source = true;
+    { m_vw->do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
       VW::end_parser(*m_vw);
