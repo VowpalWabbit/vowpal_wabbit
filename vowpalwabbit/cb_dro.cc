@@ -41,7 +41,7 @@ struct cb_dro_data
       if (it != examples.end())
       {
         const CB::cb_class logged = (*it)->l.cb.costs[0];
-        const uint32_t labelled_action = std::distance(examples.begin(), it);
+        const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
         const auto action_scores = examples[0]->pred.a_s;
 
@@ -60,7 +60,7 @@ struct cb_dro_data
 
         chisq.update(chosen_action == labelled_action ? w : 0, r);
 
-        float qlb = w > 0 ? chisq.effn() * chisq.qlb(w, r) / w : 1;
+        float qlb = static_cast<float>(w > 0 ? chisq.effn() * chisq.qlb(w, r) / w : 1);
 
         // avoid pathological cases
         qlb = std::max(qlb, 0.01f);
