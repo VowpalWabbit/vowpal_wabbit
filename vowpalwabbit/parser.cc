@@ -20,6 +20,8 @@
 #include <Windows.h>
 #include <io.h>
 typedef int socklen_t;
+//windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
+#define SOL_TCP IPPROTO_TCP
 
 int daemon(int /*a*/, int /*b*/)
 {
@@ -39,7 +41,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <netdb.h>
 #endif
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <netinet/in.h>
 #endif
 
@@ -57,6 +59,11 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
+
+// OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
+#if !defined(SOL_TCP) && defined(IPPROTO_TCP)
+#define SOL_TCP IPPROTO_TCP
+#endif
 
 using std::endl;
 
@@ -172,6 +179,10 @@ void reset_source(vw& all, size_t numbits)
       int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
       if (f < 0)
         THROW("accept: " << strerror(errno));
+
+      // Disable Nagle delay algorithm due to daemon mode's interactive workload
+      int one = 1;
+      setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
       // note: breaking cluster parallel online learning by dropping support for id
 
@@ -490,6 +501,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f < 0)
       THROWERRNO("accept");
+
+    // Disable Nagle delay algorithm due to daemon mode's interactive workload
+    int one = 1;
+    setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
     all.p->label_sock = f;
 IGNORE_DEPRECATED_USAGE_START
