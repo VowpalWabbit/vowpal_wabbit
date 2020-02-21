@@ -9,8 +9,6 @@
     <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
-    <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
-    <BaseIntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\vw_key.snk</AssemblyOriginatorKeyFile>

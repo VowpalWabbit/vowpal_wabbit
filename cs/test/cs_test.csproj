@@ -8,8 +8,6 @@
     <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
-    <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
-    <BaseIntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <Configurations>Debug;Release</Configurations>
     <Platforms>x64</Platforms>
   </PropertyGroup>
