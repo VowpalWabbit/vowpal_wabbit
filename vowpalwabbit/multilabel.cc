@@ -147,10 +147,10 @@ void print_update(vw& all, bool is_test, example& ec)
 
 void output_example(vw& all, example& ec)
 {
-  labels& ld = ec.l.multilabels;
+  auto& ld = ec.l;
 
   float loss = 0.;
-  if (!test_label(&ec.l))
+  if (!test_label(&ld))
   {
     // need to compute exact loss
     labels preds = ec.pred.multilabels;
@@ -181,7 +181,7 @@ void output_example(vw& all, example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, !test_label(&ec.l), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (sink >= 0)
@@ -198,6 +198,6 @@ void output_example(vw& all, example& ec)
       all.print_text_by_ref(sink, ss.str(), ec.tag);
     }
 
-  print_update(all, test_label(&ec.l), ec);
+  print_update(all, test_label(&ld), ec);
 }
 }  // namespace MULTILABEL
