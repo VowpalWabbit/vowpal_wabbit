@@ -195,3 +195,18 @@ def test_numspace_id():
     assert nm2.id is None
     assert nm2.ord_ns == 32
     assert nm2.ns == ' '
+
+def test_example_namespace():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    nmid = pyvw.namespace_id(ex, 1)
+    exm = pyvw.example_namespace(ex, nmid)
+    assert isinstance(exm.ex, pyvw.example)
+    assert isinstance(exm.ns, pyvw.namespace_id)
+    assert exm.ns_hash is None
+    assert exm.num_features_in() == 3
+    assert exm[2] == (11617, 1.0)
+    assert exm.iter_features()
+    assert exm.pop_feature()
+    exm.push_features(nmid, ['c', 'd'])
+    assert exm.num_features_in() == 4
