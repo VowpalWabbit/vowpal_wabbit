@@ -6,6 +6,7 @@
     <RootNamespace>cs_test</RootNamespace>
     <AssemblyName>cs_test</AssemblyName>
     <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <Configurations>Debug;Release</Configurations>
