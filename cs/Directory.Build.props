@@ -1,12 +1,6 @@
 <Project>
   <PropertyGroup>
     <VowpalWabbitAssemblyVersion>8.8.0</VowpalWabbitAssemblyVersion>
-    <!--
-    This will cause project.assets.json to be written to $(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)\project.assets.json.
-    Due to this issue: https://github.com/NuGet/Home/issues/4463
-    -->
-    <MSBuildProjectExtensionsPath>obj\$(MSBuildProjectName)</MSBuildProjectExtensionsPath>
-
     <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
     <BaseIntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>
