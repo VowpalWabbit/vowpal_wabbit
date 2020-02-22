@@ -239,4 +239,4 @@ def test_multiclass_label():
     assert ml2.label == ex.get_multiclass_label()
     assert ml2.weight == ex.get_multiclass_weight()
     assert ml2.prediction == ex.get_multiclass_prediction()
-    assert str(ml2) == '1.0'
+    assert str(ml2) == '1065353216'
