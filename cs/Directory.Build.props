@@ -2,6 +2,6 @@
   <PropertyGroup>
     <VowpalWabbitAssemblyVersion>8.8.0</VowpalWabbitAssemblyVersion>
     <OutputPath>$(SolutionDir)out\target\$(Configuration)\x64\</OutputPath>
-    <BaseIntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)out\int\managed\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>
 </Project>
