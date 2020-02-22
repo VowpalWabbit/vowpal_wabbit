@@ -210,3 +210,33 @@ def test_example_namespace():
     assert exm.pop_feature()
     exm.push_features(nmid, ['c', 'd'])
     assert exm.num_features_in() == 4
+
+def test_simple_label():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    sl = pyvw.simple_label('c', weight=0.5)
+    assert sl.label == 'c'
+    assert sl.weight == 0.5
+    assert sl.prediction == 0.0
+    assert sl.initial == 0.0
+    assert str(sl) == 'c:0.5'
+    sl2 = pyvw.simple_label(ex)
+    assert sl2.label == ex.get_simplelabel_label()
+    assert sl2.weight == ex.get_simplelabel_weight()
+    assert sl2.prediction == ex.get_simplelabel_prediction()
+    assert sl2.initial == ex.get_simplelabel_initial()
+    assert str(sl2) == '1.0'
+
+def test_multiclass_label():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    ml = pyvw.multiclass_label('m', weight=0.2)
+    assert ml.label == 'm'
+    assert ml.weight == 0.2
+    assert ml.prediction == 1
+    assert str(ml) == 'm:0.2'
+    ml2 = pyvw.multiclass_label(ex)
+    assert ml2.label == ex.get_multiclass_label()
+    assert ml2.weight == ex.get_multiclass_weight()
+    assert ml2.prediction == ex.get_multiclass_prediction()
+    assert str(ml2) == '1.0'

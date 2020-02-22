@@ -459,7 +459,7 @@ class simple_label(abstract_label):
     def __str__(self):
         s = str(self.label)
         if self.weight != 1.:
-            s += ':' + self.weight
+            s += ':' + str(self.weight)
         return s
 
 
@@ -482,7 +482,7 @@ class multiclass_label(abstract_label):
     def __str__(self):
         s = str(self.label)
         if self.weight != 1.:
-            s += ':' + self.weight
+            s += ':' + str(self.weight)
         return s
 
 
