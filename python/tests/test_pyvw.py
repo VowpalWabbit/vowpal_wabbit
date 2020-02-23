@@ -20,6 +20,7 @@ class TestVW:
         assert init == 0
         self.model.learn(ex)
         assert self.model.predict(ex) > init
+        assert self.model.predict({'x': "| a:1 b:0.5"}) == 0
 
     def test_get_tag(self):
         ex = self.model.example("1 foo| a b c")
@@ -188,6 +189,10 @@ def test_parse():
 
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
     assert len(ex) == 2
+
+    # To test the prediction on multiline examples
+    finish = model.finish_example(ex)
+    assert model.predict(ex) == [0.0, 0.0]
     del model
 
 def test_numspace_id():
