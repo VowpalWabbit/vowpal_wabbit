@@ -122,13 +122,19 @@ def test_multilabel_prediction_type():
 
 def test_cbandits_label():
     model = vw(cb=4, quiet=True)
-    assert pyvw.cbandits_label(model.example('1 |')).costs[0].label == 1
+    cbl = pyvw.cbandits_label(model.example('1 |'))
+    assert cbl.costs[0].label == 1
+    assert cbl.prediction == 0
+    assert str(cbl) == '1:3.4028234663852886e+38'
     del model
 
 
 def test_cost_sensitive_label():
     model = vw(csoaa=4, quiet=True)
-    assert pyvw.cost_sensitive_label(model.example('1 |')).costs[0].label == 1
+    csl = pyvw.cost_sensitive_label(model.example('1 |'))
+    assert csl.costs[0].label == 1
+    assert csl.prediction == 0
+    assert str(csl) == '1:3.4028234663852886e+38'
     del model
 
 
@@ -214,29 +220,29 @@ def test_example_namespace():
 def test_simple_label():
     vw_ex = vw(quiet=True)
     ex = vw_ex.example('1 |a two features |b more features here')
-    sl = pyvw.simple_label('c', weight=0.5)
-    assert sl.label == 'c'
+    sl = pyvw.simple_label(2.0, weight=0.5)
+    assert sl.label == 2.0
     assert sl.weight == 0.5
     assert sl.prediction == 0.0
     assert sl.initial == 0.0
-    assert str(sl) == 'c:0.5'
+    assert str(sl) == '2.0:0.5'
     sl2 = pyvw.simple_label(ex)
-    assert sl2.label == ex.get_simplelabel_label()
-    assert sl2.weight == ex.get_simplelabel_weight()
-    assert sl2.prediction == ex.get_simplelabel_prediction()
-    assert sl2.initial == ex.get_simplelabel_initial()
+    assert sl2.label == 1.0
+    assert sl2.weight == 1.0
+    assert sl2.prediction == 0.0
+    assert sl2.initial == 0.0
     assert str(sl2) == '1.0'
 
 def test_multiclass_label():
     vw_ex = vw(quiet=True)
     ex = vw_ex.example('1 |a two features |b more features here')
-    ml = pyvw.multiclass_label('m', weight=0.2)
-    assert ml.label == 'm'
+    ml = pyvw.multiclass_label(2, weight=0.2)
+    assert ml.label == 2
     assert ml.weight == 0.2
     assert ml.prediction == 1
-    assert str(ml) == 'm:0.2'
+    assert str(ml) == '2:0.2'
     ml2 = pyvw.multiclass_label(ex)
-    assert ml2.label == ex.get_multiclass_label()
-    assert ml2.weight == ex.get_multiclass_weight()
-    assert ml2.prediction == ex.get_multiclass_prediction()
+    assert ml2.label == 1065353216
+    assert ml2.weight == 1.0
+    assert ml2.prediction == 0
     assert str(ml2) == '1065353216'

@@ -441,6 +441,8 @@ class abstract_label:
 class simple_label(abstract_label):
     """Class for simple VW label"""
     def __init__(self, label=0., weight=1., initial=0., prediction=0.):
+        if not (isinstance(label, float) or isinstance(label, example)):
+            raise TypeError('Label should be float or an example.')
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
@@ -466,6 +468,8 @@ class simple_label(abstract_label):
 class multiclass_label(abstract_label):
     """Class for multiclass VW label with prediction"""
     def __init__(self, label=1, weight=1., prediction=1):
+        if not (isinstance(label, int) or isinstance(label, example)):
+            raise TypeError('Label should be integer or an example.')
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
