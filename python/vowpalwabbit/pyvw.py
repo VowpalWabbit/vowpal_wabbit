@@ -388,7 +388,7 @@ class example_namespace():
             raise TypeError
         self.ex = ex
         self.ns = ns
-        self.ns_hash = None
+        self.ns_hash = ns_hash
 
     def num_features_in(self):
         """Return the total number of features in this namespace."""
