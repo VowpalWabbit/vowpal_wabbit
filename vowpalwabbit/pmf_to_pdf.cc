@@ -8,7 +8,7 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-VW_DEBUG_ENABLE(false);
+VW_DEBUG_ENABLE(false)
 
 namespace VW { namespace pmf_to_pdf {
 
@@ -100,7 +100,7 @@ namespace VW { namespace pmf_to_pdf {
       uint32_t min_h = (std::max)(0, (int)j - (int)data.bandwidth);
       uint32_t max_h = (std::min)(data.num_actions, j + data.bandwidth);
       uint32_t bandwidth_range = max_h - min_h;
-      ec.l.cb.costs.push_back({cost, j + 1, prob * bandwidth_range, 0.0f});
+      ec.l.cb.costs.push_back({cost, j + 1, prob * bandwidth_range * continuous_range / data.num_actions, 0.0f});
     }
 
     auto saved_pred = ec.pred;

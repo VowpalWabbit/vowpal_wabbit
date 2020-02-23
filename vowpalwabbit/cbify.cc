@@ -21,7 +21,7 @@ using std::endl;
 
 struct cbify;
 
-VW_DEBUG_ENABLE(false);
+VW_DEBUG_ENABLE(false)
 
 struct cbify_adf_data
 {
@@ -282,6 +282,12 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 
   base.predict(ec);
 
+  VW::actions_pdf::pdf prob_dist_copy = v_init<VW::actions_pdf::pdf_segment>();
+
+  for (uint32_t i = 0; i <= data.regression_data.num_actions; i++) {
+    prob_dist_copy.push_back({ ec.pred.prob_dist[i].action, ec.pred.prob_dist[i].value }); // segmentation fault happens!
+  }
+
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
 
   float chosen_action;
@@ -296,7 +302,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   //       If the function fails to find the index, it will actually return the second-to-last index
   VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
 
-  float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
+  float pdf_value = get_pdf_value(prob_dist_copy, chosen_action);
 
   continuous_label_elm cb_cont_lbl;
 
@@ -345,6 +351,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 
   ec.l.simple = regression_label;  // recovering regression label
   ec.pred.scalar = cb_cont_lbl.action;
+
+  prob_dist_copy.delete_v();
 }
 
 template <bool is_learn, bool use_cs>
@@ -653,7 +661,7 @@ void output_cb_reg_predictions(
   {
     if (f > 0)
     {
-      size_t t = io_buf::write_file_or_socket(f, str.c_str(), str.size());
+      /*size_t t = */io_buf::write_file_or_socket(f, str.c_str(), str.size());
     }
   }
 }
