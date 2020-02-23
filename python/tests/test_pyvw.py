@@ -125,6 +125,8 @@ def test_cbandits_label():
     model = vw(cb=4, quiet=True)
     cbl = pyvw.cbandits_label(model.example('1 |'))
     assert cbl.costs[0].label == 1
+    assert cbl.costs[0].probability == 0.0
+    assert cbl.costs[0].partial_prediction == 0.0
     assert cbl.prediction == 0
     assert str(cbl) == '1:3.4028234663852886e+38'
     del model
@@ -134,6 +136,8 @@ def test_cost_sensitive_label():
     model = vw(csoaa=4, quiet=True)
     csl = pyvw.cost_sensitive_label(model.example('1 |'))
     assert csl.costs[0].label == 1
+    assert csl.costs[0].partial_prediction == 0.0
+    assert csl.costs[0].wap_value == 0.0
     assert csl.prediction == 0
     assert str(csl) == '1:3.4028234663852886e+38'
     del model
@@ -216,21 +220,23 @@ def test_example_namespace():
     assert isinstance(exm.ns, pyvw.namespace_id)
     assert exm.ns_hash is None
     assert exm.num_features_in() == 3
-    assert exm[2] == (11617, 1.0)
+    assert exm[2] == (11617, 1.0) # represents (feature, value)
     assert exm.iter_features()
     assert exm.pop_feature()
     exm.push_features(nmid, ['c', 'd'])
     assert exm.num_features_in() == 4
 
 def test_simple_label():
-    vw_ex = vw(quiet=True)
-    ex = vw_ex.example('1 |a two features |b more features here')
     sl = pyvw.simple_label(2.0, weight=0.5)
     assert sl.label == 2.0
     assert sl.weight == 0.5
     assert sl.prediction == 0.0
     assert sl.initial == 0.0
     assert str(sl) == '2.0:0.5'
+
+def test_simple_label_example():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
     sl2 = pyvw.simple_label(ex)
     assert sl2.label == 1.0
     assert sl2.weight == 1.0
@@ -239,15 +245,43 @@ def test_simple_label():
     assert str(sl2) == '1.0'
 
 def test_multiclass_label():
-    vw_ex = vw(quiet=True)
-    ex = vw_ex.example('1 |a two features |b more features here')
     ml = pyvw.multiclass_label(2, weight=0.2)
     assert ml.label == 2
     assert ml.weight == 0.2
     assert ml.prediction == 1
     assert str(ml) == '2:0.2'
+
+def test_multiclass_label_example():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
     ml2 = pyvw.multiclass_label(ex)
     assert ml2.label == 1065353216
     assert ml2.weight == 1.0
     assert ml2.prediction == 0
     assert str(ml2) == '1065353216'
+
+def test_example():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    ns = pyvw.namespace_id(ex, 1)
+    ns2 = pyvw.namespace_id(ex, 2)
+    assert isinstance(ex.get_ns(1), pyvw.namespace_id)
+    assert isinstance(ex[2],pyvw.example_namespace)
+    assert ex.setup_done is True
+    assert ex.num_features_in(ns) == 3
+    ex.unsetup_example() # unsetup an example as it is already setup
+    assert ex.setup_done is False
+    ex.learn() # to check if it again sets up an example is it is not set
+    assert ex.setup_done is True
+    ex.set_label_string('new_label')
+    ex.learn()
+    assert ex.iter_features()
+    assert isinstance(ex.get_label(), pyvw.simple_label)
+    assert ex.get_feature_id(ns, 123) == 123
+    assert ex.get_feature_id(ns, 'x') == 143313
+    ex.push_hashed_feature(ns, 11222)
+    ex.push_feature(ns, 11000)
+    assert ex.num_features_in(ns) == 5
+    assert ex.sum_feat_sq(ns) == 5.0
+    ex.push_namespace(ns2)
+    assert ex.pop_namespace()
