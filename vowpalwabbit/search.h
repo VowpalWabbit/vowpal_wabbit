@@ -372,10 +372,6 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
 
 // void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
 // char* mismatch_error_string);
-bool string_equal(std::string a, std::string b);
-bool float_equal(float a, float b);
-bool uint32_equal(uint32_t a, uint32_t b);
-bool size_equal(size_t a, size_t b);
 
 // our interface within VW
 LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
