@@ -20,7 +20,7 @@ T correctedExp(T exponent)
   }
   else
   {
-    return exp(exponent);
+    return std::exp(exponent);
   }
 }
 #else

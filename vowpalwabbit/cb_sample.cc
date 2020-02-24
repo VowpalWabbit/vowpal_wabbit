@@ -27,26 +27,27 @@ struct cb_sample_data
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
     auto action_scores = examples[0]->pred.a_s;
-    uint32_t chosen_action = -1;
 
-    int labelled_action = -1;
+    uint32_t chosen_action = 0;
+    int64_t maybe_labelled_action = -1;
+
     // Find that chosen action in the learning case, skip the shared example.
     auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
     if (it != examples.end())
     {
-      labelled_action = std::distance(examples.begin(), it);
+      maybe_labelled_action = static_cast<int64_t>(std::distance(examples.begin(), it));
     }
 
     // If we are learning and have a label, then take that action as the chosen action. Otherwise sample the
     // distribution.
-    if (is_learn && labelled_action != -1)
+    if (is_learn && maybe_labelled_action >= 0)
     {
       // Find where the labelled action is in the final prediction to determine if swapping needs to occur.
       // This only matters if the prediction decided to explore, but the same output should happen for the learn case.
       for (size_t i = 0; i < action_scores.size(); i++)
       {
         auto &a_s = action_scores[i];
-        if (a_s.action == static_cast<uint32_t>(labelled_action))
+        if (a_s.action == static_cast<uint32_t>(maybe_labelled_action))
         {
           chosen_action = static_cast<uint32_t>(i);
           break;

@@ -66,7 +66,7 @@ struct ect
 
 bool exists(v_array<size_t> db)
 {
-  for (unsigned long i : db)
+  for (size_t i : db)
     if (i != 0)
       return true;
   return false;
