@@ -140,8 +140,7 @@ void clear_memo_foreach_action(search_private& priv);
 
 struct search_private
 {
-  //FIXME: uncomment this private once this struct has a proper destructor
- //private:
+ private:
   struct cached_item_equivalent
   {
     bool operator()(const byte_array& A, const byte_array& B) const
@@ -165,7 +164,6 @@ struct search_private
  public:
   using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
- public:
   vw* all;
   std::shared_ptr<rand_state> _random_state;
 
