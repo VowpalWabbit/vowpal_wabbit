@@ -99,7 +99,7 @@ namespace exploration {
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
    */
   template<typename It>
-  int sample_after_normalizing(
+  int sample(
       uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value);
 
   /**
@@ -113,7 +113,7 @@ namespace exploration {
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
    */
   template<typename It>
-  int sample_after_normalizing(
+  int sample(
       const char* seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value);
 
   /**

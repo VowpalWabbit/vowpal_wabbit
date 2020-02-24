@@ -293,7 +293,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   float chosen_action;
   // after having the function that samples the pdf and returns back a continuous action
   if (S_EXPLORATION_OK !=
-      sample_without_normalizing(data.app_seed + ec.example_counter++, begin_probs(ec.pred.prob_dist),
+      sample(data.app_seed + ec.example_counter++, begin_probs(ec.pred.prob_dist),
           one_to_end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
           ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
     THROW("Failed to sample from pdf");

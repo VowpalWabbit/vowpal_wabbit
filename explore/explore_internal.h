@@ -289,7 +289,7 @@ int sample_after_normalizing(
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can be
 // used to inplace mutate it.
 template <typename It>
-int sample_without_normalizing(
+int sample(
     uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index, std::input_iterator_tag /* pdf_category */)
 {
   if (pdf_first == pdf_last || pdf_last < pdf_first)
@@ -363,12 +363,12 @@ float inline uniform_draw(float range_min, float range_max, uint64_t* p_random_s
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
 // be used to inplace mutate it.
 template <typename It>
-int sample_without_normalizing(uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max,
+int sample(uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max,
     float& chosen_value, std::input_iterator_tag pdf_category)
 {
   // Pick the index of chosen pdf segment index
   uint32_t chosen_index;
-  auto err_code = sample_without_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category);
+  auto err_code = sample(seed, pdf_first, pdf_last, chosen_index, pdf_category);
   if (err_code != S_EXPLORATION_OK)
     return err_code;
 
@@ -401,11 +401,11 @@ int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t&
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
 // be used to inplace mutate it.
 template <typename It>
-int sample_without_normalizing(
+int sample(
     uint64_t seed, It pdf_first, It pdf_last, float min_value, float max_value, float& chosen_value)
 {
   typedef typename std::iterator_traits<It>::iterator_category pdf_category;
-  return sample_without_normalizing(seed, pdf_first, pdf_last, min_value, max_value, chosen_value, pdf_category());
+  return sample(seed, pdf_first, pdf_last, min_value, max_value, chosen_value, pdf_category());
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
