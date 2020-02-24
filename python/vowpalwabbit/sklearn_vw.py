@@ -258,7 +258,6 @@ class VW(BaseEstimator):
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
 
-        self.vw_ = None
         super(VW, self).__init__()
 
     def get_vw(self):
@@ -297,7 +296,8 @@ class VW(BaseEstimator):
         if self.convert_to_vw_:
             X = tovw(x=X, y=y, sample_weight=sample_weight)
 
-        model = self.get_vw()
+        # model = self.get_vw()
+        model = self.vw_
 
         # add examples to model
         for n in range(self.passes_):
@@ -508,13 +508,30 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     note - don't try to apply link='logistic' on top of the existing functionality
     """
 
-    def __init__(self, **params):
+    def __init__(self, X=None, y=None, sample_weight=None, **params):
 
         # assume logistic loss functions
         if 'loss_function' not in params:
             params['loss_function'] = 'logistic'
 
         super(VWClassifier, self).__init__(**params)
+
+        self.vw_ = None
+        model = self.get_vw()
+
+        if X is not None:
+            if self.convert_to_vw_:
+                X = tovw(x=X, y=y, sample_weight=sample_weight)
+                
+            for n in range(self.passes_):
+                if n >= 1:
+                    X_ = shuffle(X)
+                else:
+                    X_ = X
+                for idx, x in enumerate(X_):
+                    model.learn(x)
+
+            self.fit_ = True
 
     def predict(self, X):
         """Predict class labels for samples in X.
