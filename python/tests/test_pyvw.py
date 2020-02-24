@@ -205,11 +205,11 @@ def test_numspace_id():
     nm1 = pyvw.namespace_id(ex, 2)
     assert nm1.id == 2
     assert nm1.ord_ns == 128
-    assert nm1.ns == '\x80'
-    nm2 = pyvw.namespace_id(ex, '')
-    assert nm2.id is None
-    assert nm2.ord_ns == 32
-    assert nm2.ns == ' '
+    assert nm1.ns == '\x80' # Represents string of ord_ns
+    nm2 = pyvw.namespace_id(ex, 'my_example')
+    assert nm2.id is None # It is kept None as because we don't want to do linear search required to find it
+    assert nm2.ord_ns == 109
+    assert nm2.ns == 'm' # First character is considered as namespace id in case of string
 
 def test_example_namespace():
     vw_ex = vw(quiet=True)
@@ -274,7 +274,6 @@ def test_example():
     ex.learn() # to check if it again sets up an example is it is not set
     assert ex.setup_done is True
     ex.set_label_string('new_label')
-    ex.learn()
     assert ex.iter_features()
     assert isinstance(ex.get_label(), pyvw.simple_label)
     assert ex.get_feature_id(ns, 123) == 123
