@@ -338,7 +338,7 @@ struct search_private
       // destroy copied examples if we needed them
       if (!examples_dont_change)
       {
-        void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
+        void (*delete_label)(polylabel*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
         for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
         learn_ec_copy.delete_v();
       }
