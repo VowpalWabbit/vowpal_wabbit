@@ -258,8 +258,7 @@ class VW(BaseEstimator):
 
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
-        self.vw_ = None
-        model = self.get_vw()
+        self.vw_ = pyvw.vw(**self.params)
 
         super(VW, self).__init__()
 
@@ -270,8 +269,6 @@ class VW(BaseEstimator):
         -------
         pyvw.vw instance
         """
-        if self.vw_ is None:
-            self.vw_ = pyvw.vw(**self.params)
 
         return self.vw_
 
