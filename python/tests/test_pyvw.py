@@ -20,7 +20,7 @@ class TestVW:
         assert init == 0
         self.model.learn(ex)
         assert self.model.predict(ex) > init
-        assert self.model.predict({'x': "| a:1 b:0.5"}) == 0
+        assert self.model.predict({"| a:1 b:0.5":'a'}) == 0
 
     def test_get_tag(self):
         ex = self.model.example("1 foo| a b c")
@@ -199,17 +199,13 @@ def test_parse():
     assert model.predict(ex) == [0.0, 0.0]
     del model
 
-def test_numspace_id():
+def test_namespace_id():
     vw_ex = vw(quiet=True)
     ex = vw_ex.example('1 |a two features |b more features here')
     nm1 = pyvw.namespace_id(ex, 2)
     assert nm1.id == 2
     assert nm1.ord_ns == 128
     assert nm1.ns == '\x80' # Represents string of ord_ns
-    nm2 = pyvw.namespace_id(ex, 'my_example')
-    assert nm2.id is None # It is kept None as because we don't want to do linear search required to find it
-    assert nm2.ord_ns == 109
-    assert nm2.ns == 'm' # First character is considered as namespace id in case of string
 
 def test_example_namespace():
     vw_ex = vw(quiet=True)
@@ -266,13 +262,13 @@ def test_example():
     ns = pyvw.namespace_id(ex, 1)
     ns2 = pyvw.namespace_id(ex, 2)
     assert isinstance(ex.get_ns(1), pyvw.namespace_id)
-    assert isinstance(ex[2],pyvw.example_namespace)
+    assert isinstance(ex[2], pyvw.example_namespace)
     assert ex.setup_done is True
     assert ex.num_features_in(ns) == 3
+    ex.learn()
+    assert ex.setup_done is True
     ex.unsetup_example() # unsetup an example as it is already setup
     assert ex.setup_done is False
-    ex.learn() # to check if it again sets up an example is it is not set
-    assert ex.setup_done is True
     ex.set_label_string('new_label')
     assert ex.iter_features()
     assert isinstance(ex.get_label(), pyvw.simple_label)
