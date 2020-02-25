@@ -56,8 +56,7 @@ size_t read_cached_label(shared_data* sd, polylabel* v, io_buf& cache)
 
 float weight(polylabel* v)
 {
-  auto& ld = v->cb;
-  return ld.weight;
+  return v->cb.weight;
 }
 
 char* bufcache_label(CB::label& ld, char* c)
