@@ -157,7 +157,7 @@ void finish(warm_cb& data)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->quiet)
+  if (!data.all->logger.quiet)
   {
     std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
     std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;

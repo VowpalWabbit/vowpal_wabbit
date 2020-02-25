@@ -496,7 +496,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     all.p->max_fd = 0;
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "calling accept" << endl;
     int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f < 0)
@@ -516,7 +516,7 @@ IGNORE_DEPRECATED_USAGE_END
 
     all.p->input->files.push_back(f);
     all.p->max_fd = std::max(f, all.p->max_fd);
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
     all.p->max_fd++;

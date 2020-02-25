@@ -142,7 +142,7 @@ void direct_print_update(vw& all, example& ec, uint32_t prediction)
 template <void (*T)(vw&, example&, uint32_t)>
 void print_update(vw& all, example& ec, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     if (!all.sd->ldict)
       T(all, ec, prediction);
