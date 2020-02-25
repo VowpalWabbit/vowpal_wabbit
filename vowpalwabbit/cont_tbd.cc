@@ -125,15 +125,12 @@ namespace VW { namespace continuous_action {
     float chosen_action;
     // after having the function that samples the pdf and returns back a continuous action
     if (S_EXPLORATION_OK !=
-        exploration::sample_pdf(*_p_rand_state, begin_probs(ec.pred.prob_dist),
+        exploration::sample_pdf(_p_rand_state, begin_probs(ec.pred.prob_dist),
             end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
             ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
     {
       RETURN_ERROR(status, sample_pdf_failed);
     }
-
-    // Advance the random state
-    merand48(*_p_rand_state);
 
     // Save prob_dist in case it was re-allocated in base reduction chain
     _pred_prob_dist = ec.pred.prob_dist;

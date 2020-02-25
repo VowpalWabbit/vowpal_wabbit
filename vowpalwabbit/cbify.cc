@@ -275,7 +275,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 {
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
              << endl;
-  label_data regression_label = ec.l.simple;
+
+  const label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
   ec.pred.prob_dist = data.regression_data.prob_dist;
@@ -285,10 +286,15 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
 
   float chosen_action;
-  // after having the function that samples the pdf and returns back a continuous action
+
+  // Seed should be same for multiple passes through the data
+  // but different for each example
+  uint64_t random_seed = data.app_seed + ec.example_counter;
+
+  // Sample the pdf and get back a value for continuous action
   if (S_EXPLORATION_OK !=
       sample_pdf(
-        data.app_seed + ec.example_counter++,
+        &random_seed,
         begin_probs(ec.pred.prob_dist),
         end_probs(ec.pred.prob_dist),
         ec.pred.prob_dist[0].action,
@@ -296,9 +302,6 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
         chosen_action))
     THROW("Failed to sample from pdf");
 
-  // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
-  //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
-  //       If the function fails to find the index, it will actually return the second-to-last index
   VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
 
   const float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);

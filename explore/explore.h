@@ -89,36 +89,10 @@ namespace exploration {
   int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index);
 
   /**
-   * @brief Sample an index from the provided pmf. If the pmf is not normalized it will be updated in-place.
-   *
-   * @tparam InputIt Iterator type of the pmf. Must be a RandomAccessIterator.
-   * @param seed The seed for the pseudo-random generator.
-   * @param pmf_first Iterator pointing to the beginning of the pmf.
-   * @param pmf_last Iterator pointing to the end of the pmf.
-   * @param chosen_index returns the chosen index.
-   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
-   */
-  template <typename It>
-  int sample_without_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t& chosen_index);
-
-  /**
-   * @brief Sample an index from the provided pmf.  If the pmf is not normalized it will be updated in-place.
-   *
-   * @tparam It Iterator type of the pmf. Must be a RandomAccessIterator.
-   * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
-   * @param pmf_first Iterator pointing to the beginning of the pmf.
-   * @param pmf_last Iterator pointing to the end of the pmf.
-   * @param chosen_index returns the chosen index.
-   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
-   */
-  template <typename It>
-  int sample_without_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index);
-  
-  /**
    * @brief Sample an index from the provided pdf. If the pdf is not normalized it will be updated in-place.
    *
    * @tparam InputIt Iterator type of the pdf. Must be a RandomAccessIterator.
-   * @param seed The seed for the pseudo-random generator.
+   * @param p_seed The seed for the pseudo-random generator.  Seed is advanced after usage
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
    * @param chosen_index returns the chosen index.
@@ -126,7 +100,7 @@ namespace exploration {
    */
   template<typename It>
   int sample_pdf(
-      uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value);
+      uint64_t* p_seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value);
 
   /**
    * @brief Sample an index from the provided pdf.  If the pdf is not normalized it will be updated in-place.

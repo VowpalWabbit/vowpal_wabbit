@@ -346,9 +346,13 @@ int swap_chosen(ActionsIt action_first, ActionsIt action_last, uint32_t chosen_i
   return swap_chosen(action_first, action_last, actionit_category(), chosen_index);
 }
 
-// Scores don't have to sum to 1
+// Pick a discrete action in proportion to the scores.
+// Notes:
+// 1) Random seed is advanced
+// 2) Does not normalize the scores (unlike sample_after_normalization)
+// 3) Scores need not add up to one.
 template <typename It>
-int sample_scores(uint64_t seed, It scores_first, It scores_last, uint32_t& chosen_index,
+int sample_scores(uint64_t* p_seed, It scores_first, It scores_last, uint32_t& chosen_index,
     std::random_access_iterator_tag scores_category)
 {
   if (scores_first == scores_last || scores_last < scores_first)
@@ -372,7 +376,7 @@ int sample_scores(uint64_t seed, It scores_first, It scores_last, uint32_t& chos
     return S_EXPLORATION_OK;
   }
 
-  float draw = total * uniform_random_merand48(seed);
+  float draw = total * uniform_random_merand48_advance(*p_seed);
   if (draw > total)  // make very sure that draw can not be greater than total.
     draw = total;
 
@@ -394,10 +398,10 @@ int sample_scores(uint64_t seed, It scores_first, It scores_last, uint32_t& chos
 
 // Draw a random number between [range_min, range_max * edge_avoid_factor]
 // and advance pseudo-random state
-inline float internal_interval_draw(float range_min, float range_max, uint64_t* p_random_seed, float edge_avoid_factor)
+inline float internal_interval_draw(uint64_t* p_seed, float range_min, float range_max, float edge_avoid_factor)
 {
   // Draw a float and then advance the pseudo-random state
-  const float random_draw = edge_avoid_factor * uniform_random_merand48_advance(*p_random_seed);
+  const float random_draw = edge_avoid_factor * uniform_random_merand48_advance(*p_seed);
   const float interval_size = (range_max - range_min);
   const float chosen_value = interval_size * random_draw + range_min;
   return chosen_value;
@@ -405,33 +409,32 @@ inline float internal_interval_draw(float range_min, float range_max, uint64_t* 
 
 // Draw a random number between [range_min, range_max)
 // and advance pseudo-random state
-float inline uniform_draw(float range_min, float range_max, uint64_t* p_random_seed)
+float inline uniform_draw(uint64_t* p_seed, float range_min, float range_max)
 {
   float chosen_value;
 
   do
   {
     const float edge_avoid_factor = 1.0001f;
-    chosen_value = internal_interval_draw(range_min, range_max, p_random_seed, edge_avoid_factor);
+    chosen_value = internal_interval_draw(p_seed, range_min, range_max, edge_avoid_factor);
   } while (chosen_value >= range_max);
 
   return chosen_value;
 }
 
-// Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
-// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
-// be used to inplace mutate it.
+// Sample one action from the given probability density function.
 template <typename It>
-int sample_pdf(uint64_t seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value,
+int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value,
     std::random_access_iterator_tag pdf_category)
 {
   // Pick the index of chosen segment index treating the pdf as a collection of scores
+  // Random seed is advanced.
   uint32_t chosen_index;
   auto err_code = sample_scores(seed, pdf_first, pdf_last, chosen_index, pdf_category);
   if (err_code != S_EXPLORATION_OK)
     return err_code;
 
-  // Use the new seed to pick an action value in the chosen range
+  // Pick an action value in the chosen range
   size_t num_intervals = pdf_last - pdf_first;
 
   // By convention pdf contains 0.f and the value for end of the interval
@@ -445,12 +448,8 @@ int sample_pdf(uint64_t seed, It pdf_first, It pdf_last, float range_min, float 
   const float interval_start = range_min + interval_size * chosen_index;
   const float interval_end = (std::min)(range_max, interval_start + interval_size);
 
-  // generate a new seed, since we used the last one in sample_after_normalizing
-  // to pick the interval
-  uint64_t new_random_seed = uniform_hash(&seed, sizeof(seed), seed);
-
   // Choose a random value within the chosen interval
-  chosen_value = uniform_draw(interval_start, interval_end, &new_random_seed);
+  chosen_value = uniform_draw(p_seed, interval_start, interval_end);
 
   return S_EXPLORATION_OK;
 }
@@ -459,10 +458,10 @@ int sample_pdf(uint64_t seed, It pdf_first, It pdf_last, float range_min, float 
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
 // be used to inplace mutate it.
 template <typename It>
-int sample_pdf(uint64_t seed, It pdf_first, It pdf_last, float min_value, float max_value, float& chosen_value)
+int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float min_value, float max_value, float& chosen_value)
 {
   typedef typename std::iterator_traits<It>::iterator_category pdf_category;
-  return sample_pdf(seed, pdf_first, pdf_last, min_value, max_value, chosen_value, pdf_category());
+  return sample_pdf(p_seed, pdf_first, pdf_last, min_value, max_value, chosen_value, pdf_category());
 }
 
 }  // namespace exploration
