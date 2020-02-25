@@ -348,7 +348,9 @@ struct vw_logger
 {
   bool quiet;
 
-  vw_logger() = default;
+  vw_logger()
+    : quiet(false) {
+  }
 
   vw_logger(const vw_logger& other) = delete;
   vw_logger& operator=(const vw_logger& other) = delete;
