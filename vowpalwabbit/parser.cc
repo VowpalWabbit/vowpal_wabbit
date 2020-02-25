@@ -447,7 +447,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         // store fork value and run child process if child
         if ((children[i] = fork()) == 0)
         {
-          all.quiet |= (i > 0);
+          all.logger.quiet |= (i > 0);
           goto child;
         }
       }
@@ -480,7 +480,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           {
             if ((children[i] = fork()) == 0)
             {
-              all.quiet |= (i > 0);
+              all.logger.quiet |= (i > 0);
               goto child;
             }
             break;

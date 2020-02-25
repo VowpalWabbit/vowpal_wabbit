@@ -363,7 +363,7 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
-  // pass all.quiet around
+  // pass all.logger.quiet around
   if (all.all_reduce)
     all.all_reduce->quiet = all.logger.quiet;
 
