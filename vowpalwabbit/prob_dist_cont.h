@@ -54,8 +54,6 @@ inline prob_iterator begin_probs(pdf& p_d) { return prob_iterator(p_d.begin()); 
 
 inline prob_iterator end_probs(pdf& p_d) { return prob_iterator(p_d.end()); }
 
-inline prob_iterator one_to_end_probs(pdf& p_d) { return prob_iterator(p_d.end()-1); }
-
 inline int cmp(float a, float b)
 {
   if (a == b)

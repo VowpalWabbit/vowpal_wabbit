@@ -282,27 +282,26 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 
   base.predict(ec);
 
-  VW::actions_pdf::pdf prob_dist_copy = v_init<VW::actions_pdf::pdf_segment>();
-
-  for (uint32_t i = 0; i <= data.regression_data.num_actions; i++) {
-    prob_dist_copy.push_back({ ec.pred.prob_dist[i].action, ec.pred.prob_dist[i].value }); // segmentation fault happens!
-  }
-
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
 
   float chosen_action;
   // after having the function that samples the pdf and returns back a continuous action
   if (S_EXPLORATION_OK !=
-      sample(data.app_seed + ec.example_counter++, begin_probs(ec.pred.prob_dist),
-          one_to_end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
-          ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
+      sample_pdf(
+        data.app_seed + ec.example_counter++,
+        begin_probs(ec.pred.prob_dist),
+        end_probs(ec.pred.prob_dist),
+        ec.pred.prob_dist[0].action,
+        ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action,
+        chosen_action))
     THROW("Failed to sample from pdf");
+
   // TODO: checking cb_continuous.action == 0 like in predict_or_learn is kind of meaningless
   //       in sample_after_normalizing. It will only trigger if the input pdf vector is empty.
   //       If the function fails to find the index, it will actually return the second-to-last index
   VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
 
-  float pdf_value = get_pdf_value(prob_dist_copy, chosen_action);
+  const float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
 
   continuous_label_elm cb_cont_lbl;
 
@@ -351,8 +350,6 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
 
   ec.l.simple = regression_label;  // recovering regression label
   ec.pred.scalar = cb_cont_lbl.action;
-
-  prob_dist_copy.delete_v();
 }
 
 template <bool is_learn, bool use_cs>

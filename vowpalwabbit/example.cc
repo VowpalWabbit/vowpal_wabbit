@@ -257,14 +257,11 @@ std::string depth_indent_string(const example& ec)
 std::string depth_indent_string(int32_t stack_depth)
 {
   std::stringstream strstream;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-compare"
-  for (uint32_t i = 0; i < stack_depth - 1; i++)
+  for (auto i = 0; i < stack_depth - 1; i++)
   {
     strstream << "| ";
   }
   strstream << "+ ";
-#pragma GCC diagnostic pop
   return strstream.str();
 }
 
