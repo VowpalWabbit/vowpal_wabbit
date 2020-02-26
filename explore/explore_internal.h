@@ -353,7 +353,7 @@ int swap_chosen(ActionsIt action_first, ActionsIt action_last, uint32_t chosen_i
 // 3) Scores need not add up to one.
 template <typename It>
 int sample_scores(uint64_t* p_seed, It scores_first, It scores_last, uint32_t& chosen_index,
-    std::random_access_iterator_tag scores_category)
+    std::random_access_iterator_tag)
 {
   if (scores_first == scores_last || scores_last < scores_first)
     return E_EXPLORATION_BAD_RANGE;

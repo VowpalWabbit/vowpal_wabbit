@@ -7,12 +7,12 @@
 namespace VW { namespace pmf_to_pdf
 {
   LEARNER::base_learner* pmf_to_pdf_setup(VW::config::options_i& options, vw& all);
-  struct learner
+  struct reduction
   {
     void predict(example& ec);
     void learn(example& ec);
 
-    ~learner();
+    ~reduction();
     std::vector<float> scores;
     uint32_t num_actions;
     uint32_t bandwidth;  // radius
