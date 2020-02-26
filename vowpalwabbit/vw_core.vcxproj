@@ -60,6 +60,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <!--TODO: remove line below when this bug is fixed: https://developercommunity.visualstudio.com/content/problem/831275/dynamic-library-project-native-lib-dependency-link.html -->
+      <AdditionalDependencies>"$(SolutionDir)packages\boost_program_options-vc142.1.71.0.0\lib\native\libboost_program_options-vc142-mt-gd-x64-1_71.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
@@ -77,6 +79,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <!--TODO: remove line below when this bug is fixed: https://developercommunity.visualstudio.com/content/problem/831275/dynamic-library-project-native-lib-dependency-link.html -->
+      <AdditionalDependencies>"$(SolutionDir)packages\boost_program_options-vc142.1.71.0.0\lib\native\libboost_program_options-vc142-mt-x64-1_71.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -96,7 +100,7 @@
       <MinimalRebuild Condition="'$(Configuration)'=='Debug'">false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"$(SolutionDir)packages\boost_program_options-vc142.1.71.0.0\lib\native\libboost_program_options-vc142-mt-gd-x64-1_71.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>win32\make_config_h.exe</Command>
