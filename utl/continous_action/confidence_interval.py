@@ -22,11 +22,11 @@ class ConfidenceInterval:
 if __name__ == "__main__":
   # Parse options - get predict and data file names
   args = sys.argv[1:]
-  opts, args = getopt.getopt(args, "N:l:m,a",["num_samples=", "loss_avg=", "max_weighted_cost=", "alpha="])
+  opts, args = getopt.getopt(args, "N:l:m:a:",["num_samples=", "avg_loss=", "max_weighted_cost=", "alpha="])
   for opt, arg in opts:
     if opt in ('-N', '--num_samples'):
       N = float(arg)
-    elif opt in ('-l', '--loss_avg'):
+    elif opt in ('-l', '--avg_loss'):
       avg_loss = float(arg)
     elif opt in ('-m', '--max_weighted_cost'):
       max_weighted_cost = float(arg)

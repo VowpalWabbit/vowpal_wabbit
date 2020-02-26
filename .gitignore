@@ -63,6 +63,8 @@ test/RunTests.last.times
 *.pc
 *.pyc
 .DS_Store
+test/train-sets/regression/**
+results/**
 
 # build folders
 **/x64
@@ -114,6 +116,7 @@ python/src/**
 python/vowpalwabbit.egg-info/**
 python/.coverage
 python/docs/build
+env/**
 
 /COPYING
 /README

@@ -98,7 +98,6 @@ namespace VW { namespace continuous_action {
 
   int cont_tbd::learn(example& ec, const continuous_label&, api_status* status = nullptr)
   {
-    assert(lbl.costs.size() == 1);
     assert(!ec.test_only);
 
     // only needed for reporting progress
@@ -106,14 +105,8 @@ namespace VW { namespace continuous_action {
 
     // TODO: if (progressive_validation) predict_and_save_prediction;
 
-    // save label now and restore it later
-    // const polylabel temp = ec.l;
-    // ec.l.cb_cont = lbl;
-
     VW_DBG(ec) << "cont_tbd::learn(), " << cont_label_to_string(ec) << features_to_string(ec) << endl;
     _base->learn(ec);
-
-    // ec.l = temp;
 
     return error_code::success;
   }
@@ -132,15 +125,12 @@ namespace VW { namespace continuous_action {
     float chosen_action;
     // after having the function that samples the pdf and returns back a continuous action
     if (S_EXPLORATION_OK !=
-        exploration::sample_after_normalizing(*_p_rand_state, begin_probs(ec.pred.prob_dist),
-            one_to_end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
+        exploration::sample_pdf(_p_rand_state, begin_probs(ec.pred.prob_dist),
+            end_probs(ec.pred.prob_dist), ec.pred.prob_dist[0].action,
             ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action, chosen_action))
     {
       RETURN_ERROR(status, sample_pdf_failed);
     }
-
-    // Advance the random state
-    merand48(*_p_rand_state);
 
     // Save prob_dist in case it was re-allocated in base reduction chain
     _pred_prob_dist = ec.pred.prob_dist;
@@ -204,7 +194,6 @@ namespace VW { namespace continuous_action {
   void output_example(vw& all, cont_tbd&, example& ec)
   {
     const auto& cb_cont_costs = ec.l.cb_cont.costs;
-
 
     all.sd->update(
       ec.test_only,

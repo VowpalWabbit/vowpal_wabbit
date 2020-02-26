@@ -257,14 +257,11 @@ std::string depth_indent_string(const example& ec)
 std::string depth_indent_string(int32_t stack_depth)
 {
   std::stringstream strstream;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-compare"
-  for (uint32_t i = 0; i < stack_depth - 1; i++)
+  for (auto i = 0; i < stack_depth - 1; i++)
   {
     strstream << "| ";
   }
   strstream << "+ ";
-#pragma GCC diagnostic pop
   return strstream.str();
 }
 
@@ -363,5 +360,31 @@ void return_multiple_example(vw& all, v_array<example*>& examples)
     clean_example(all, *ec, true);
   }
   examples.clear();
+}
+
+swap_restore_action_scores_prediction::swap_restore_action_scores_prediction(example& ec, ACTION_SCORE::action_scores& base_prediction)
+  : _prediction(ec.pred)
+, _ec(ec)
+, _base_prediction(base_prediction)
+{
+  _ec.pred.a_s = _base_prediction;
+}
+
+swap_restore_action_scores_prediction::~swap_restore_action_scores_prediction()
+{
+  _base_prediction = _ec.pred.a_s;
+  _ec.pred = _prediction;
+}
+
+swap_restore_cb_label::swap_restore_cb_label(example& ec, CB::label& base_label)
+    : _label(ec.l), _ec(ec), _base_label(base_label)
+{
+  ec.l.cb = base_label;
+}
+
+swap_restore_cb_label::~swap_restore_cb_label()
+{
+  _base_label = _ec.l.cb;
+  _ec.l = _label;
 }
 }  // namespace VW
