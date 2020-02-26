@@ -13,7 +13,7 @@ VW_DEBUG_ENABLE(false)
 namespace VW { namespace pmf_to_pdf
 {
 
-  void learner::transform_prediction(example& ec)
+  void reduction::transform_prediction(example& ec)
   {
     scores.clear();
     scores.resize(num_actions, 0.f);
@@ -40,13 +40,13 @@ namespace VW { namespace pmf_to_pdf
     p_dist.push_back({max_value, 0.f});
   }
 
-  learner::~learner()
+  reduction::~reduction()
   {
     temp_lbl_cb.costs.delete_v();
     temp_pred_a_s.delete_v();
   }
 
-  void learner::predict(example& ec)
+  void reduction::predict(example& ec)
   {
     swap_restore_cb_label swap_label(ec, temp_lbl_cb);
     {  // scope for saving / restoring prediction
@@ -56,7 +56,7 @@ namespace VW { namespace pmf_to_pdf
     transform_prediction(ec);
   }
 
-  void learner::learn(example& ec)
+  void reduction::learn(example& ec)
   {
     const float cost = ec.l.cb_cont.costs[0].cost;
     const float prob = ec.l.cb_cont.costs[0].probability;
@@ -94,19 +94,19 @@ namespace VW { namespace pmf_to_pdf
     _p_base->learn(ec);
   }
 
-  void predict(pmf_to_pdf::learner& data, single_learner&, example& ec)
+  void predict(pmf_to_pdf::reduction& data, single_learner&, example& ec)
   {
     data.predict(ec);
   }
 
-  void learn(pmf_to_pdf::learner& data, single_learner& base, example& ec)
+  void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec)
   {
     data.learn(ec);
   }
 
-  void finish(learner& data)
+  void finish(reduction& data)
   {
-    data.~learner();
+    data.~reduction();
   }
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
@@ -140,7 +140,7 @@ namespace VW { namespace pmf_to_pdf
     return nullptr;
   }
 
-  void output_example(vw& all, learner&, example& ec, CB::label& ld)
+  void output_example(vw& all, reduction&, example& ec, CB::label& ld)
   {
     float loss = 0.;
 
@@ -174,7 +174,7 @@ namespace VW { namespace pmf_to_pdf
     print_update(all, CB::cb_label.test_label(&ld), ec, sso);
   }
 
-  void finish_example(vw& all, learner& c, example& ec)
+  void finish_example(vw& all, reduction& c, example& ec)
   {
     output_example(all, c, ec, ec.l.cb);
     VW::finish_example(all, ec);
@@ -182,7 +182,7 @@ namespace VW { namespace pmf_to_pdf
 
   base_learner* pmf_to_pdf_setup(options_i& options, vw& all)
   {
-    auto data = scoped_calloc_or_throw<pmf_to_pdf::learner>();
+    auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
     option_group_definition new_options("CB Continuous");
     new_options
@@ -220,7 +220,7 @@ namespace VW { namespace pmf_to_pdf
     auto p_base = as_singleline(setup_base(options, all));
     data->_p_base = p_base;
 
-    learner<pmf_to_pdf::learner, example>& l =
+    learner<pmf_to_pdf::reduction, example>& l =
         init_learner(data, p_base, learn, predict, 1, prediction_type::prob_dist);
 
     l.set_finish(finish);
