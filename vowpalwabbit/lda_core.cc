@@ -223,7 +223,7 @@ inline v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 
 inline v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 inline __m128 operator+(const __m128 a, const __m128 b) { return _mm_add_ps(a, b); }
 
