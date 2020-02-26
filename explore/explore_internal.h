@@ -430,7 +430,7 @@ int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float range_min, flo
   // Pick the index of chosen segment index treating the pdf as a collection of scores
   // Random seed is advanced.
   uint32_t chosen_index;
-  auto err_code = sample_scores(seed, pdf_first, pdf_last, chosen_index, pdf_category);
+  auto err_code = sample_scores(p_seed, pdf_first, pdf_last, chosen_index, pdf_category);
   if (err_code != S_EXPLORATION_OK)
     return err_code;
 

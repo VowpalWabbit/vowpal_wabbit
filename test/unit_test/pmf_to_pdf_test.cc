@@ -23,8 +23,8 @@ struct cb_triple
 
 namespace VW { namespace pmf_to_pdf {
 
-void learn(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
-void predict(VW::pmf_to_pdf::pdf_data& data, single_learner& base, example& ec);
+void learn(VW::pmf_to_pdf::learner& data, single_learner& base, example& ec);
+void predict(VW::pmf_to_pdf::learner& data, single_learner& base, example& ec);
 
 struct reduction_test_harness
 {
@@ -94,7 +94,7 @@ float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
 }  // namespace pmf_to_pdf
 }  // namespace VW
 
-BOOST_AUTO_TEST_CASE(continuous_action_basic)
+BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 {
   uint32_t k = 4;
   uint32_t h = 1;
@@ -110,15 +110,16 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
 
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-  ec.l.cb.costs = v_init<CB::cb_class>();
+  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
 
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::pdf_data>();
-  data->set_num_actions(k);
-  data->set_bandwidth(h);
-  data->set_min_value(min_val);
-  data->set_max_value(max_val);
+  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::learner>();
+  data->num_actions = k;
+  data->bandwidth = h;
+  data->min_value = min_val;
+  data->max_value = max_val;
+  data->_p_base = as_singleline(test_harness);
 
-  VW::pmf_to_pdf::predict(*data, *as_singleline(test_harness), ec);
+  predict(*data, *data->_p_base, ec);
 
   float sum = 0;
   cout << "ec.pred.p_d (PDF): " << endl;
@@ -129,7 +130,8 @@ BOOST_AUTO_TEST_CASE(continuous_action_basic)
   }
   cout << "sum = " << sum << endl;
 
-  VW::pmf_to_pdf::learn(*data, *as_singleline(test_harness), ec);
+  ec.l.cb_cont.costs.push_back({1010.0f, .5f, .05f, 0.f});
+  learn(*data, *as_singleline(test_harness), ec);
 
   cout << "ec.l.cb.costs after:" << endl;
   for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)

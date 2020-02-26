@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(fix_max_boundary_issue)
   const float interval_start = range_min + (range_max - range_min) * 31.0f / 32.0f;
   const float interval_end = range_max;
 
-  const float chosen_value = exploration::uniform_draw(interval_start, interval_end, &random_state);
+  const float chosen_value = exploration::uniform_draw(&random_state, interval_start, interval_end);
   BOOST_TEST(chosen_value != range_max, test::tolerance(0.000000001f));
 }
 

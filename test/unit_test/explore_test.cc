@@ -12,7 +12,8 @@
 bool continuous_action_range_check(std::vector<float> scores, float range_min, float range_max)
 {
   float chosen_value;
-  const auto scode = exploration::sample_pdf(7791, begin(scores), end(scores), range_min, range_max, chosen_value);
+  uint64_t seed = 7791;
+  auto scode = exploration::sample_pdf(&seed, begin(scores), end(scores), range_min, range_max, chosen_value);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
   return ((range_min <= chosen_value) && (chosen_value <= range_max));
 }
@@ -70,7 +71,7 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical)
   for (auto idx = 0; idx < iterate_count; idx++)
   {
     const auto scode =
-        exploration::sample_pdf(random_seed, begin(scores), end(scores), range_min, range_max, chosen_value);
+        exploration::sample_pdf(&random_seed, begin(scores), end(scores), range_min, range_max, chosen_value);
     BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
     BOOST_CHECK((range_min <= chosen_value) && (chosen_value <= range_max));
 

@@ -10,112 +10,103 @@ using namespace VW::config;
 
 VW_DEBUG_ENABLE(false)
 
-namespace VW { namespace pmf_to_pdf {
+namespace VW { namespace pmf_to_pdf
+{
 
-  pdf_data::~pdf_data()
+  void learner::transform_prediction(example& ec)
+  {
+    scores.clear();
+    scores.resize(num_actions, 0.f);
+    const float continuous_range = max_value - min_value;
+    for (uint32_t i = 0; i < num_actions; i++)
+    {
+      auto& a_s = temp_pred_a_s[i];
+      const uint32_t min_h = (std::max)((int)0, static_cast<int>(i) - static_cast<int>(bandwidth));
+      const uint32_t max_h = (std::min)(num_actions, i + bandwidth);
+      const uint32_t bandwidth_range = max_h - min_h;
+      const float continuous_mass = a_s.score * num_actions / ((float)bandwidth_range * continuous_range);
+      for (uint32_t j = min_h; j < max_h; j++)
+      {
+        scores[j] += continuous_mass;
+      }
+    }
+    auto& p_dist = ec.pred.prob_dist;
+    p_dist.clear();
+    for (uint32_t i = 0; i < num_actions; i++)
+    {
+      const float action = min_value + i * continuous_range / num_actions;
+      p_dist.push_back({action, scores[i]});
+    }
+    p_dist.push_back({max_value, 0.f});
+  }
+
+  learner::~learner()
   {
     temp_lbl_cb.costs.delete_v();
     temp_pred_a_s.delete_v();
   }
 
-  void transform_pred_pdf(pmf_to_pdf::pdf_data& data, example& ec)
+  void learner::predict(example& ec)
   {
-    auto& continuous_scores = data.scores;
-    continuous_scores.clear();
-    continuous_scores.resize(data.num_actions, 0.f);
-    float continuous_range = data.max_value - data.min_value;
-    for (uint32_t i = 0; i < data.num_actions; i++)
-    {
-      auto& a_s = data.temp_pred_a_s[i];
-      uint32_t min_h = (std::max)((int)0, static_cast<int>(i) - static_cast<int>(data.bandwidth));
-      uint32_t max_h = (std::min)(data.num_actions, i + data.bandwidth);
-      uint32_t bandwidth_range = max_h - min_h;
-      float continuous_mass = a_s.score * data.num_actions / ((float)bandwidth_range * continuous_range);
-      for (uint32_t j = min_h; j < max_h; j++)
-      {
-        continuous_scores[j] += continuous_mass;
-      }
+    swap_restore_cb_label swap_label(ec, temp_lbl_cb);
+    {  // scope for saving / restoring prediction
+      swap_restore_action_scores_prediction save_prediction(ec, temp_pred_a_s);
+      _p_base->predict(ec);
     }
-    auto& p_dist = ec.pred.prob_dist;
-    p_dist.clear();
-    for (uint32_t i = 0; i < data.num_actions; i++)
-    {
-      float action = data.min_value + i * continuous_range / data.num_actions;
-      p_dist.push_back({action, continuous_scores[i]});
-    }
-    p_dist.push_back({data.max_value, 0.f});
+    transform_prediction(ec);
   }
 
-  void predict(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
+  void learner::learn(example& ec)
   {
-    auto temp_pred = ec.pred;
-    auto temp_lbl = ec.l;
-    ec.pred.a_s = data.temp_pred_a_s;
-    ec.l.cb = data.temp_lbl_cb;
-
-    base.predict(ec);
-
-    VW_DBG(ec) << "pmf_to_pdf::predict base.predict()" << a_s_pred_to_string(ec) << std::endl;
-
-    data.temp_pred_a_s = ec.pred.a_s;
-    ec.pred = temp_pred;
-    transform_pred_pdf(data, ec);
-    data.temp_lbl_cb = ec.l.cb;
-    ec.l = temp_lbl;
-    VW_DBG(ec) << "pmf_to_pdf::predict transform()" << prob_dist_pred_to_string(ec) << std::endl;
-  }
-
-  void learn(pmf_to_pdf::pdf_data& data, single_learner& base, example& ec)
-  {
-    float cost = ec.l.cb_cont.costs[0].cost;
-    float prob = ec.l.cb_cont.costs[0].probability;
-    float continuous_range = data.max_value - data.min_value;
-    float action_cont = ec.l.cb_cont.costs[0].action;
-    float ac = (action_cont - data.min_value) * data.num_actions / continuous_range;
+    const float cost = ec.l.cb_cont.costs[0].cost;
+    const float prob = ec.l.cb_cont.costs[0].probability;
+    const float action_cont = ec.l.cb_cont.costs[0].action;
+    const float continuous_range = max_value - min_value;
+    const float ac = (action_cont - min_value) * num_actions / continuous_range;
     int ic = (int)floor(ac);
-    bool cond1 = data.min_value + ic * continuous_range / data.num_actions <= action_cont;
-    bool cond2 = action_cont < data.min_value + (ic + 1) * continuous_range / data.num_actions;
+    const bool cond1 = min_value + ic * continuous_range / num_actions <= action_cont;
+    const bool cond2 = action_cont < min_value + (ic + 1) * continuous_range / num_actions;
 
     if (!cond1 || !cond2)
     {
       if (!cond1)
-      {
         ic--;
-      }
 
       if (!cond2)
-      {
         ic++;
-      }
     }
 
-    uint32_t min_value = (std::max)(0, ic - (int)data.bandwidth + 1);
-    uint32_t max_value = (std::min)(data.num_actions - 1, ic + data.bandwidth);
+    const uint32_t min_value = (std::max)(0, ic - (int)bandwidth + 1);
+    const uint32_t max_value = (std::min)(num_actions - 1, ic + bandwidth);
+    swap_restore_cb_label swap_label(ec, temp_lbl_cb);
 
-    auto saved_lbl = ec.l;
-    ec.l.cb = data.temp_lbl_cb;
     ec.l.cb.costs.clear();
     for (uint32_t j = min_value; j <= max_value; j++)
     {
-      uint32_t min_h = (std::max)(0, (int)j - (int)data.bandwidth);
-      uint32_t max_h = (std::min)(data.num_actions, j + data.bandwidth);
-      uint32_t bandwidth_range = max_h - min_h;
-      ec.l.cb.costs.push_back({cost, j + 1, prob * bandwidth_range * continuous_range / data.num_actions, 0.0f});
+      const uint32_t min_h = (std::max)(0, (int)j - (int)bandwidth);
+      const uint32_t max_h = (std::min)(num_actions, j + bandwidth);
+      const uint32_t bandwidth_range = max_h - min_h;
+      ec.l.cb.costs.push_back({cost, j + 1, prob * bandwidth_range * continuous_range / num_actions, 0.0f});
     }
 
-    auto saved_pred = ec.pred;
-    ec.pred.a_s = data.temp_pred_a_s;
+    swap_restore_action_scores_prediction swap_prediction(ec, temp_pred_a_s);
 
-    base.learn(ec);
-
-    data.temp_pred_a_s = ec.pred.a_s;
-    data.temp_lbl_cb = ec.l.cb;
-    ec.pred = saved_pred;
-    ec.l = saved_lbl;
+    _p_base->learn(ec);
   }
 
-  void finish(pdf_data& data) {
-    data.~pdf_data();
+  void predict(pmf_to_pdf::learner& data, single_learner&, example& ec)
+  {
+    data.predict(ec);
+  }
+
+  void learn(pmf_to_pdf::learner& data, single_learner& base, example& ec)
+  {
+    data.learn(ec);
+  }
+
+  void finish(learner& data)
+  {
+    data.~learner();
   }
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
@@ -149,12 +140,12 @@ namespace VW { namespace pmf_to_pdf {
     return nullptr;
   }
 
-  void output_example(vw& all, pdf_data& , example& ec, CB::label& ld)
+  void output_example(vw& all, learner&, example& ec, CB::label& ld)
   {
     float loss = 0.;
 
     if (get_observed_cost(ec.l.cb) != nullptr)
-      for (auto& cbc: ec.l.cb.costs)
+      for (auto& cbc : ec.l.cb.costs)
         for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
           loss += (cbc.cost / cbc.probability) * ec.pred.prob_dist[i].value;
 
@@ -183,7 +174,7 @@ namespace VW { namespace pmf_to_pdf {
     print_update(all, CB::cb_label.test_label(&ld), ec, sso);
   }
 
-  void finish_example(vw& all, pdf_data& c, example& ec)
+  void finish_example(vw& all, learner& c, example& ec)
   {
     output_example(all, c, ec, ec.l.cb);
     VW::finish_example(all, ec);
@@ -191,7 +182,7 @@ namespace VW { namespace pmf_to_pdf {
 
   base_learner* pmf_to_pdf_setup(options_i& options, vw& all)
   {
-    auto data = scoped_calloc_or_throw<pmf_to_pdf::pdf_data>();
+    auto data = scoped_calloc_or_throw<pmf_to_pdf::learner>();
 
     option_group_definition new_options("CB Continuous");
     new_options
@@ -226,12 +217,16 @@ namespace VW { namespace pmf_to_pdf {
       THROW("error: Bandwidth must be >= 1");
     }
 
-    learner<pmf_to_pdf::pdf_data, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn,
-        predict, 1, prediction_type::prob_dist);
+    auto p_base = as_singleline(setup_base(options, all));
+    data->_p_base = p_base;
+
+    learner<pmf_to_pdf::learner, example>& l =
+        init_learner(data, p_base, learn, predict, 1, prediction_type::prob_dist);
 
     l.set_finish(finish);
 
     return make_base(l);
   }
 
-}}  // namespace VW::pmf_to_pdf
+}  // namespace pmf_to_pdf
+}  // namespace VW
