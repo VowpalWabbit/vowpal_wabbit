@@ -15,6 +15,7 @@
     <Configurations>Debug;Release</Configurations>
     <Platforms>x64</Platforms>
     <TestProjectType>UnitTest</TestProjectType>
+    <RunSettingsFilePath>$(SolutionDir)\.runsettings</RunSettingsFilePath>
   </PropertyGroup>
   <PropertyGroup>
     <TextTransformPath>$(VsInstallRoot)\Common7\IDE\TextTransform.exe</TextTransformPath>

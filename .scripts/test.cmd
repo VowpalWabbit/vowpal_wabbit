@@ -26,7 +26,8 @@ IF "%ERRORLEVEL%" NEQ "0" (
 
 ECHO Running VW Unit Tests in C#
 REM TODO: Add explicit logging configuration so it can be uploaded to pipeline results.
-"%vstestPath%" /Platform:x64 /inIsolation "%vwRoot%\vowpalwabbit\AnyCPU\Release\cs_unittest.dll" /TestCaseFilter:"TestCategory!=NotOnVSO" --logger:trx "--ResultsDirectory:%vwRoot%\vowpalwabbit\out\test\Release\x64"
+"%vstestPath%" /Platform:x64 /inIsolation /Framework:".NETFramework,Version=4.5.2" /Parallel "%vwRoot%\vowpalwabbit\out\target\Release\x64\net452\cs_unittest.dll" /TestCaseFilter:"TestCategory!=NotOnVSO" --logger:trx "--ResultsDirectory:%vwRoot%\vowpalwabbit\out\test\Release\x64\net452"
+"%vstestPath%" /Platform:x64 /inIsolation /Framework:".NETCoreApp,Version=3.1" /Parallel "%vwRoot%\vowpalwabbit\out\target\Release\x64\netcoreapp3.1\cs_unittest.dll" /TestCaseFilter:"TestCategory!=NotOnVSO" --logger:trx "--ResultsDirectory:%vwRoot%\vowpalwabbit\out\test\Release\x64\netcoreapp3.1"
 
 IF "%ERRORLEVEL%" NEQ "0" (
     ENDLOCAL
