@@ -385,7 +385,8 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
   auto& action_loss = data->action_loss;
   auto& stack = data->stack;
   auto& gold_heads = data->gold_heads;
-  auto& heads = data->heads;  size_t size = stack.size();
+  auto& heads = data->heads;
+  size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
   for (size_t i = 1; i <= 4; i++) action_loss[i] = 0;
   if (!stack.empty())
@@ -495,7 +496,8 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t /* n */, v_arr
   auto& action_loss = data->action_loss;
   auto& stack = data->stack;
   auto& gold_heads = data->gold_heads;
-  auto& valid_actions = data->valid_actions;  gold_actions.clear();
+  auto& valid_actions = data->valid_actions;
+  gold_actions.clear();
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
   uint32_t &sys = data->transition_system;
