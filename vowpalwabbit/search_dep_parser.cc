@@ -93,16 +93,19 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
-  std::vector<uint8_t> temp_var(pair[0], pair[0]+1);
-  std::vector<std::vector<uint8_t>> newpairs_t;
-  std::vector<std::vector<uint8_t>> newtriples_t;
+  // std::vector<uint8_t> temp_var(pair[0], pair[0]+1);
+  std::vector<std::vector<uint8_t>> newpairs_t(20);// = new std::vector<std::vector<uint8_t>>(20);
+  std::vector<std::vector<uint8_t>> newtriples_t(12);// = new std::vector<std::vector<uint8_t>>(12);
   for (int i=0;i<20;i++){
-    std::vector<uint8_t> s(pair[0], pair[0]+1);
-    newpairs_t.push_back(s);
+    // std::vector<uint8_t> s(pair[0], pair[0]+1);
+    newpairs_t[i].push_back(pair[i][0]);
+    newpairs_t[i].push_back(pair[i][1]);
   }
   for (int i=0;i<12;i++){
-    std::vector<uint8_t> s(triple[0], triple[0]+2);
-    newtriples_t.push_back(s);
+    // std::vector<uint8_t> s(triple[0], triple[0]+2);
+    newtriples_t[i].push_back(triple[i][0]);
+    newtriples_t[i].push_back(triple[i][1]);
+    newtriples_t[i].push_back(triple[i][2]);
   }
 
   all.interactions.clear();
