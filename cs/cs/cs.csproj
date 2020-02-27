@@ -16,9 +16,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Configurations>Debug;Release</Configurations>
     <Platforms>x64</Platforms>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TextTransformPath>$(VsInstallRoot)\Common7\IDE\TextTransform.exe</TextTransformPath>
+    <TransformOnBuild>true</TransformOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -84,11 +82,6 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>VowpalWabbitDefaultMarshallerExt.cs</LastGenOutput>
     </None>
-    <Compile Update="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
-    </Compile>
     <None Include="..\vw_key.snk" />
   </ItemGroup>
   <ItemGroup>
@@ -104,17 +97,17 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-    <PackageReference Include="Clarius.TransformOnBuild">
-      <Version>1.22.0</Version>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="GitLink">
       <Version>3.1.0</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" />
+  <!-- Workaround to make T4 transformations work on build in .NET Core projects. -->
+  <Target Name="T4DotNetCoreWorkaround" BeforeTargets="BeforeBuild" >
+    <CallTarget Targets="TransformDuringBuild" />
+  </Target>
 
   <PropertyGroup>
     <AssemblyTitle>Vowpal Wabbit</AssemblyTitle>
