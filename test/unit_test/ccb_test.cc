@@ -19,17 +19,17 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
 
   std::vector<std::vector<uint8_t>> interactions;
-  std::vector<std::string> compare_set = {{'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
-      {'O', (char)ccb_id_namespace}};
+  std::vector<std::vector<uint8_t>> compare_set = {{'U', ccb_id_namespace}, {'A', ccb_id_namespace},
+      {'O', ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
   check_vectors(interactions, compare_set);
 
-  interactions = {"UA", "UO", "UOA"};
-  compare_set = {"UA", "UO", "UOA", {'U', 'A', (char)ccb_id_namespace}, {'U', 'O', (char)ccb_id_namespace},
-      {'U', 'O', 'A', (char)ccb_id_namespace}, {'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
-      {'O', (char)ccb_id_namespace}};
+  interactions = {{'U','A'}, {'U','O'}, {'U','O','A'}};
+  compare_set = {{'U','A'}, {'U','O'}, {'U','O','A'}, {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace},
+      {'U', 'O', 'A', ccb_id_namespace}, {'U', ccb_id_namespace}, {'A', ccb_id_namespace},
+      {'O', ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
