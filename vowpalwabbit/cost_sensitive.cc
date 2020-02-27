@@ -192,7 +192,7 @@ label_parser cs_label = {default_label, parse_label, cache_label, read_cached_la
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     size_t num_current_features = ec.num_features;
     // for csoaa_ldf we want features from the whole (multiline example),
