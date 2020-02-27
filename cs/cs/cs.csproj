@@ -84,6 +84,11 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>VowpalWabbitDefaultMarshallerExt.cs</LastGenOutput>
     </None>
+    <Compile Update="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
+    </Compile>
     <None Include="..\vw_key.snk" />
   </ItemGroup>
   <ItemGroup>
