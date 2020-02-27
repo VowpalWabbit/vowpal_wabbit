@@ -533,7 +533,7 @@ class cost_sensitive_label(abstract_label):
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join([str(c.action) + ':' + str(c.cost) + ':' + str(c.wap_value) for c in self.costs])
+        return ' '.join(["{}:{}:{}".format(c.action, c.cost, c.wap_value) for c in self.costs])
 
 
 class cbandits_label(abstract_label):
@@ -564,7 +564,7 @@ class cbandits_label(abstract_label):
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join([str(c.action) + ':' + str(c.cost) + ':' + str(c.probability) for c in self.costs])
+        return ' '.join(["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs])
 
 
 class example(pylibvw.example):
