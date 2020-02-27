@@ -43,7 +43,7 @@ steps:
 #  failOnStderr: true
 - script: CALL .scripts/build.cmd
   displayName: 'Build vw.sln'
- failOnStderr: true
+  failOnStderr: true
 - script: CALL .scripts/test.cmd
   displayName: 'Run tests'
   failOnStderr: false
