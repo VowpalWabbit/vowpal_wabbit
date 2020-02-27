@@ -18,3 +18,10 @@ template <typename T>
 void check_vectors(const std::vector<T>& lhs, const std::vector<T>& rhs) {
   BOOST_CHECK_EQUAL_COLLECTIONS(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
+
+template <typename T>
+void check_vectors(const std::vector<std::vector<T>>& lhs, const std::vector<std::vector<T>>& rhs) {
+  for (int i=0; i<lhs.size();i++){
+    BOOST_CHECK_EQUAL_COLLECTIONS(lhs[i].begin(), lhs[i].end(), rhs[i].begin(), rhs[i].end());
+  }
+}
