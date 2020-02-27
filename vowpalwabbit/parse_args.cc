@@ -601,7 +601,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   std::vector<std::string> spelling_ns;
   std::vector<std::string> quadratics;
   std::vector<std::string> cubics;
-  std::vector<std::vector<uint8_t>> interactions;
+  std::vector<std::string> interactions;
   std::vector<std::string> ignores;
   std::vector<std::string> ignore_linears;
   std::vector<std::string> keeps;
@@ -789,19 +789,14 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (!all.quiet)
       all.trace_message << "creating features for following interactions: ";
     
-    std::vector<std::string> temp_interactions;
-    for (std::vector<std::vector<uint8_t>>::iterator t=interactions.begin(); t!=interactions.end(); t++){
-      std::string s(t->begin(),t->end());
-      temp_interactions.push_back(s);
-    }
-    for (auto i = temp_interactions.begin(); i != temp_interactions.end(); ++i)
+    for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.quiet)
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(temp_interactions, 0, "");
+    std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!all.quiet)
