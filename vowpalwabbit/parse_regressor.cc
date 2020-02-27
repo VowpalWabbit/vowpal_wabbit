@@ -327,11 +327,12 @@ void save_load_header(
             bytes_read_write += bin_text_read_write_fixed_validated(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
-            {
-              memcpy(buff2, all.interactions[i].c_str(), inter_len);
+            { 
+              std::string s(all.interactions[i].begin(),all.interactions[i].end());
+              memcpy(buff2, s.c_str(), inter_len);
 
               msg << "interaction: ";
-              msg.write(all.interactions[i].c_str(), inter_len);
+              msg.write(s.c_str(), inter_len);
             }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
@@ -339,7 +340,8 @@ void save_load_header(
             if (read)
             {
               std::string temp(buff2, inter_len);
-              all.interactions.push_back(temp);
+              std::vector<uint8_t> temp2(temp.begin(), temp.end());
+              all.interactions.push_back(temp2);
             }
           }
 
@@ -349,8 +351,20 @@ void save_load_header(
         else  // < VERSION_FILE_WITH_INTERACTIONS
         {
           // pairs and triples may be restored but not reflected in interactions
-          all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
-          all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
+          std::vector<std::vector<uint8_t>> newpairs_t;
+          std::vector<std::vector<uint8_t>> newtriples_t;
+
+          for (std::vector<std::string>::iterator t = all.pairs.begin(); t != all.pairs.end(); t++){
+            std::vector<uint8_t> s(t->begin(), t->end());
+            newpairs_t.push_back(s);
+          }
+
+          for (std::vector<std::string>::iterator t = all.triples.begin(); t != all.triples.end(); t++){
+            std::vector<uint8_t> s(t->begin(), t->end());
+            newtriples_t.push_back(s);
+          }
+          all.interactions.insert(std::end(all.interactions), std::begin(newpairs_t), std::end(newpairs_t));
+          all.interactions.insert(std::end(all.interactions), std::begin(newtriples_t), std::end(newtriples_t));
         }
       }
 

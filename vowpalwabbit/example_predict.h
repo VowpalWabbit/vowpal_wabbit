@@ -41,7 +41,7 @@ struct example_predict
 
   // Interactions are specified by this vector of strings, where each string is an interaction and each char is a
   // namespace.
-  std::vector<std::string>* interactions;
+  std::vector<std::vector<uint8_t>>* interactions;
 
   iterator begin() { return iterator(feature_space.data(), indices.begin()); }
   iterator end() { return iterator(feature_space.data(), indices.end()); }

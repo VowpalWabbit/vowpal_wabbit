@@ -25,7 +25,7 @@ struct example;
 namespace CCB
 {
 void calculate_and_insert_interactions(
-    example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions);
+    example* shared, std::vector<example*> actions, std::vector<std::vector<uint8_t>>& generated_interactions);
 
 // Each position in outer array is implicitly the decision corresponding to that index. Each inner array is the result
 // of CB for that call.

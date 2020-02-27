@@ -95,7 +95,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(std::vector<std::string>& interactions, bool permutations, example_predict& ec,
+inline void generate_interactions(std::vector<std::vector<uint8_t>>& interactions, bool permutations, example_predict& ec,
     R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
@@ -128,10 +128,10 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
 
     if (len == 2)  // special case of pairs
     {
-      features& first = features_data[(uint8_t)ns[0]];
+      features& first = features_data[ns[0]];
       if (first.nonempty())
       {
-        features& second = features_data[(uint8_t)ns[1]];
+        features& second = features_data[ns[1]];
         if (second.nonempty())
         {
           const bool same_namespace = (!permutations && (ns[0] == ns[1]));
@@ -161,13 +161,13 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
     }
     else if (len == 3)  // special case for triples
     {
-      features& first = features_data[(uint8_t)ns[0]];
+      features& first = features_data[ns[0]];
       if (first.nonempty())
       {
-        features& second = features_data[(uint8_t)ns[1]];
+        features& second = features_data[ns[1]];
         if (second.nonempty())
         {
-          features& third = features_data[(uint8_t)ns[2]];
+          features& third = features_data[ns[2]];
           if (third.nonempty())
           {  // don't compare 1 and 3 as interaction is sorted
             const bool same_namespace1 = (!permutations && (ns[0] == ns[1]));
@@ -220,7 +220,7 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
       // preparing state data
       feature_gen_data* fgd = state_data.begin();
       feature_gen_data* fgd2;  // for further use
-      for (namespace_index n : ns)
+      for (auto n : ns)
       {
         features& ft = features_data[(int32_t)n];
         const size_t ft_cnt = ft.indicies.size();
