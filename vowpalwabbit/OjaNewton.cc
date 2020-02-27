@@ -392,7 +392,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec)
   ON.data.prediction = 0;
   GD::foreach_feature<update_data, make_pred>(*ON.all, ec, ON.data);
   ec.partial_prediction = (float)ON.data.prediction;
-  ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ON.all->logger, ec.partial_prediction);
 }
 
 void update_Z_and_wbar(update_data& data, float x, float& wref)

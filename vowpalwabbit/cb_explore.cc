@@ -224,7 +224,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)

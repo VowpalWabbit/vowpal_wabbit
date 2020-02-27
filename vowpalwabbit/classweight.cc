@@ -85,7 +85,7 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 
   for (auto& s : classweight_array) cweights->load_string(s);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "parsed " << cweights->weights.size() << " class weights" << std::endl;
 
   LEARNER::single_learner* base = as_singleline(setup_base(options, all));
