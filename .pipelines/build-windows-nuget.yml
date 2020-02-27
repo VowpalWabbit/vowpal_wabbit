@@ -44,6 +44,8 @@ steps:
 - script: CALL .scripts/build.cmd
   displayName: 'Build vw.sln'
   failOnStderr: true
+  env:
+    ForceLinearBuild: true
 - script: CALL .scripts/test.cmd
   displayName: 'Run tests'
   failOnStderr: false
