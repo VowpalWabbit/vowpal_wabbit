@@ -122,13 +122,25 @@ def test_multilabel_prediction_type():
 
 def test_cbandits_label():
     model = vw(cb=4, quiet=True)
-    assert pyvw.cbandits_label(model.example('1 |')).costs[0].label == 1
+    cbl = pyvw.cbandits_label(model.example('1 |'))
+    assert cbl.costs[0].action == 1
+    assert cbl.costs[0].probability == 0.0
+    assert cbl.costs[0].partial_prediction == 0.0
+    assert cbl.costs[0].cost # == 3.4028234663852886e+38 (actual value) This fails due to precision variation on different environments
+    # test issue 2295
+    assert str(cbl) # == '1:3.4028234663852886e+38:0.0' (actual value) This fails due to precision variation on different environments
     del model
 
 
 def test_cost_sensitive_label():
     model = vw(csoaa=4, quiet=True)
-    assert pyvw.cost_sensitive_label(model.example('1 |')).costs[0].label == 1
+    csl = pyvw.cost_sensitive_label(model.example('1 |'))
+    assert csl.costs[0].action == 1
+    assert csl.costs[0].wap_value == 0.0
+    assert csl.costs[0].partial_prediction == 0.0
+    assert csl.costs[0].cost # == 3.4028234663852886e+38 (actual value) This fails due to precision variation on different environments
+    # test issue 2295
+    assert str(csl) # == '1:3.4028234663852886e+38:0.0' (actual value) This fails due to precision variation on different environments
     del model
 
 

@@ -517,8 +517,8 @@ class cost_sensitive_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self, label, cost=0., partial_prediction=0., wap_value=0.):
-                self.label = label
+            def __init__(self, action, cost=0., partial_prediction=0., wap_value=0.):
+                self.action = action
                 self.cost = cost
                 self.partial_prediction = partial_prediction
                 self.wap_value = wap_value
@@ -533,7 +533,7 @@ class cost_sensitive_label(abstract_label):
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join([str(c.label) + ':' + str(c.cost) for c in self.costs])
+        return ' '.join([str(c.action) + ':' + str(c.cost) + ':' + str(c.wap_value) for c in self.costs])
 
 
 class cbandits_label(abstract_label):
@@ -548,8 +548,8 @@ class cbandits_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self, label, cost=0., partial_prediction=0., probability=0.):
-                self.label = label
+            def __init__(self, action, cost=0., partial_prediction=0., probability=0.):
+                self.action = action
                 self.cost = cost
                 self.partial_prediction = partial_prediction
                 self.probability = probability
@@ -564,7 +564,7 @@ class cbandits_label(abstract_label):
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join([str(c.label) + ':' + str(c.cost) for c in self.costs])
+        return ' '.join([str(c.action) + ':' + str(c.cost) + ':' + str(c.probability) for c in self.costs])
 
 
 class example(pylibvw.example):
