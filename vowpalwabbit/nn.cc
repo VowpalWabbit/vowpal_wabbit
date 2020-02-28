@@ -330,7 +330,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
       ec.l = n.output_layer.l;
     }
 
-    n.prediction = GD::finalize_prediction(n.all->sd, n.output_layer.partial_prediction);
+    n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
 
     if (shouldOutput)
     {
@@ -367,7 +367,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
             float nu = n.outputweight.pred.scalar;
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ec.l.simple.label = GD::finalize_prediction(n.all->sd, hidden_units[i].scalar - gradhw);
+            ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
             ec.pred.scalar = hidden_units[i].scalar;
             if (ec.l.simple.label != hidden_units[i].scalar)
               base.update(ec, i);
@@ -456,20 +456,20 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->all = &all;
   n->_random_state = all.get_random_state();
 
-  if (n->multitask && !all.quiet)
+  if (n->multitask && !all.logger.quiet)
     std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    if (!all.quiet)
+    if (!all.logger.quiet)
       std::cerr << "using mean field for neural network " << (all.training ? "training" : "testing") << std::endl;
   }
 
-  if (n->dropout && !all.quiet)
+  if (n->dropout && !all.logger.quiet)
     std::cerr << "using dropout for neural network " << (all.training ? "training" : "testing") << std::endl;
 
-  if (n->inpass && !all.quiet)
+  if (n->inpass && !all.logger.quiet)
     std::cerr << "using input passthrough for neural network " << (all.training ? "training" : "testing") << std::endl;
 
   n->finished_setup = false;
