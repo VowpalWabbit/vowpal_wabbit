@@ -576,5 +576,6 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   bare->set_scorer(all.scorer);
 
   l.set_save_load(CB_ADF::save_load);
+  l.label_type = label_type_t::cb;
   return make_base(l);
 }

@@ -124,5 +124,6 @@ LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   LEARNER::learner<sender, example>& l = init_learner(s, learn, learn, 1);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

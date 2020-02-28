@@ -700,6 +700,6 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

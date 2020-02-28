@@ -313,7 +313,7 @@ void print_features(vw& all, example& ec)
 
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
-    { 
+    {
       for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
       std::cout << std::endl;
     }
@@ -711,7 +711,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
       if (*it != 0.f)
       {
         const auto weight_index = it.index() >> weights.stride_shift();
-        
+
         const auto map_it = all.index_name_map.find(weight_index);
         if (map_it != all.index_name_map.end())
         {
@@ -1249,6 +1249,7 @@ base_learner* setup(options_i& options, vw& all)
   ret.set_update(bare->update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
+  ret.label_type = label_type_t::simple;
   return make_base(ret);
 }
 

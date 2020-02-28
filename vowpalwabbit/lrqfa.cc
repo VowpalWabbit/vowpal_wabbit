@@ -158,6 +158,6 @@ LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
   learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
       predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

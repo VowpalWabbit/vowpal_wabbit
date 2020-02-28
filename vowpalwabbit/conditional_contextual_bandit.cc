@@ -663,7 +663,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
-  all.label_type = label_type_t::ccb;
 
   // Stash the base learners stride_shift so we can properly add a feature later.
   data->base_learner_stride_shift = all.weights.stride_shift();
@@ -680,9 +679,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
-
+  l.label_type = label_type_t::conditional_contextual_bandit;
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   l.set_finish_example(finish_multiline_example);
   return make_base(l);
 }

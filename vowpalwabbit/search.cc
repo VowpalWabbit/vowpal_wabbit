@@ -2912,7 +2912,6 @@ base_learner* setup(options_i& options, vw& all)
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.p->lp = MC::mc_label;
-  all.label_type = label_type_t::mc;
   if (priv.task && priv.task->initialize)
     priv.task->initialize(*sch.get(), priv.A, options);
   if (priv.metatask && priv.metatask->initialize)
@@ -2943,6 +2942,28 @@ base_learner* setup(options_i& options, vw& all)
   l.set_end_examples(end_examples);
   l.set_finish(search_finish);
   l.set_end_pass(end_pass);
+
+  // In search, tasks can define which label should be used. There isn't a great
+  // way to do this right now. However, currently the only usage is for cost
+  // sensitive. So we will check at this point if the label parser is either
+  // multiclass or cost sensitive. In any other case throw as it is not
+  // supported yet. TODO: improve the handling of tasks specifying label types.
+  if (all.p->lp.parse_label == COST_SENSITIVE::cs_label.parse_label)
+  {
+    l.label_type = label_type_t::cs;
+    l.pred_type = prediction_type_t::multiclass;
+  }
+  else if (all.p->lp.parse_label == MC::mc_label.parse_label)
+  {
+    l.label_type = label_type_t::multi;
+    l.pred_type = prediction_type_t::multiclass;
+  }
+  else
+  {
+    THROW(
+        "Only multi and cost sensitive are supported in search right now. To support more, please add another check "
+        "for label types.")
+  }
   return make_base(l);
 }
 

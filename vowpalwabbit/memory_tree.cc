@@ -1289,6 +1289,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
     l.set_end_pass(end_pass);
+    l.label_type = label_type_t::multi;
 
     return make_base(l);
   }  // multi-label classification
@@ -1307,7 +1308,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     // l.set_end_pass(end_pass);
 
     all.p->lp = MULTILABEL::multilabel;
-    all.label_type = label_type_t::multi;
+    l.label_type = label_type_t::multi;
     all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
     return make_base(l);

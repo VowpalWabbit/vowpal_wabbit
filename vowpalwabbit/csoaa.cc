@@ -866,6 +866,9 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->label_features.reserve(256);
   prediction_type_t pred_type;
 
+  if (ld->rank && ld->is_probabilities)
+    THROW("Cannot specify both csoaa_rank and probabilities at the same time.");
+
   if (ld->rank)
     pred_type = prediction_type_t::action_scores;
   else if (ld->is_probabilities)
@@ -878,6 +881,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
       do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
   l.set_end_pass(end_pass);
+  l.label_type = label_type_t::cs;
   all.cost_sensitive = make_base(l);
   return all.cost_sensitive;
 }

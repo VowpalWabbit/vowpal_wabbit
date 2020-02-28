@@ -9,6 +9,7 @@
 #include "simple_label.h"
 #include "parser.h"
 #include "future_compat.h"
+#include "label.h"
 #include <memory>
 
 
@@ -56,6 +57,8 @@ inline func_data tuple_dbf(void* data, base_learner* base, void (*func)(void*))
 struct learn_data
 {
   using fn = void (*)(void* data, base_learner& base, void* ex);
+  // Label is either label& or std::vector<label>&
+  using fn_with_label = void (*)(void* data, base_learner& base, void* ex, void* label);
   using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
       bool finalize_predictions);
 
@@ -63,6 +66,10 @@ struct learn_data
   base_learner* base;
   fn learn_f;
   fn predict_f;
+
+  fn_with_label learn_with_label_f;
+  fn_with_label predict_with_label_f;
+
   fn update_f;
   multi_fn multipredict_f;
 };
@@ -128,6 +135,46 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   }
 }
 
+#define TYPED_LEARN_FN(TYPE, FIELD_NAME)                                                                               \
+  inline void learn_with_label(E& ec, TYPE& label, size_t i = 0)                                             \
+  {                                                                                                                    \
+    assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value));  \
+    increment_offset(ec, increment, i);                                                                                \
+    if (learn_fd.learn_with_label_f != nullptr)                                                                        \
+    {                                                                                                                  \
+      learn_fd.learn_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&label)); \
+    }                                                                                                                  \
+    else                                                                                                               \
+    {                                                                                                                  \
+      polylabel saved = ec.l;                                                                                          \
+      ec.l.FIELD_NAME = label;                                                                                              \
+      learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));                                        \
+      ec.l = saved;                                                                                                    \
+    }                                                                                                                  \
+                                                                                                                       \
+    decrement_offset(ec, increment, i);                                                                                \
+  }
+
+#define TYPED_PREDICT_FN(TYPE, FIELD_NAME)                                                                               \
+  inline void predict_with_label(E& ec, TYPE& label, size_t i = 0)                                             \
+  {                                                                                                                    \
+    assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value));  \
+    increment_offset(ec, increment, i);                                                                                \
+    if (learn_fd.predict_with_label_f != nullptr)                                                                        \
+    {                                                                                                                  \
+      learn_fd.predict_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&label)); \
+    }                                                                                                                  \
+    else                                                                                                               \
+    {                                                                                                                  \
+      polylabel saved = ec.l;                                                                                          \
+      ec.l.FIELD_NAME = label;                                                                                              \
+      learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));                                        \
+      ec.l = saved;                                                                                                    \
+    }                                                                                                                  \
+                                                                                                                       \
+    decrement_offset(ec, increment, i);                                                                                \
+  }
+
 template <class T, class E>
 struct learner
 {
@@ -145,6 +192,7 @@ struct learner
   learner(){};  // Should only be able to construct a learner through init_learner function
  public:
   prediction_type_t pred_type;
+  label_type_t label_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
   bool is_multiline;  // Is this a single-line or multi-line reduction?
@@ -152,214 +200,421 @@ struct learner
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
+  TYPED_LEARN_FN(no_label::no_label, empty);
+  TYPED_LEARN_FN(label_data, simple);
+  TYPED_LEARN_FN(MULTICLASS::label_t, multi);
+  TYPED_LEARN_FN(COST_SENSITIVE::label, cs);
+  TYPED_LEARN_FN(CB::label, cb);
+  TYPED_LEARN_FN(CCB::label, conditional_contextual_bandit);
+  TYPED_LEARN_FN(CB_EVAL::label, cb_eval);
+  TYPED_LEARN_FN(MULTILABEL::labels, multilabels);
+  TYPED_PREDICT_FN(no_label::no_label, empty);
+  TYPED_PREDICT_FN(label_data, simple);
+  TYPED_PREDICT_FN(MULTICLASS::label_t, multi);
+  TYPED_PREDICT_FN(COST_SENSITIVE::label, cs);
+  TYPED_PREDICT_FN(CB::label, cb);
+  TYPED_PREDICT_FN(CCB::label, conditional_contextual_bandit);
+  TYPED_PREDICT_FN(CB_EVAL::label, cb_eval);
+  TYPED_PREDICT_FN(MULTILABEL::labels, multilabels);
+
   // called once for each example.  Must work under reduction.
-  inline void learn(E& ec, size_t i = 0)
-  {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    increment_offset(ec, increment, i);
-    learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
-    decrement_offset(ec, increment, i);
-  }
 
-  inline void predict(E& ec, size_t i = 0)
-  {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    increment_offset(ec, increment, i);
-    learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
-    decrement_offset(ec, increment, i);
-  }
 
-  inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
-  {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    if (learn_fd.multipredict_f == NULL)
+  // template<typename LabelT>
+  // inline void predict_with_label(E& ec, LabelT& label, size_t i = 0)
+  // {
+  //   assert((is_multiline && std::is_same<multi_ex, E>::value) ||
+  //       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+  //   increment_offset(ec, increment, i);
+  //   learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
+  //   decrement_offset(ec, increment, i);
+  // }
+
+  // called once for each example.  Must work under reduction.
+  // inline void learn(E& ec, size_t i = 0)
+  // {
+  //   assert((is_multiline && std::is_same<multi_ex, E>::value) ||
+  //       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+  //   increment_offset(ec, increment, i);
+  //   learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
+  //   decrement_offset(ec, increment, i);
+  // }
+
+#define LABEL_TYPE_CASE(TYPE, LABEL_NAME)                                                                            \
+  case label_type_t::LABEL_NAME:                                                                                     \
+  {\
+    TYPE saved = ec.l.LABEL_NAME;                                                                                    \
+    learn_fd.learn_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
+    ec.l.LABEL_NAME = saved;                                                                                         \
+  }\
+    break;
+
+#define LABEL_TYPE_VEC_CASE(TYPE, LABEL_NAME)                                                                        \
+  case label_type_t::LABEL_NAME:                                                                                     \
+    {\
+    std::vector<TYPE> saved;                                                                                         \
+    saved.reserve(ec.size());                                                                                        \
+    for (const auto& example : ec)                                                                                   \
+    {                                                                                                                \
+      saved.push_back(example->l.LABEL_NAME);                                                                         \
+    }                                                                                                                \
+    learn_fd.learn_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
+    size_t it = 0;                                                                                                   \
+    for (const auto& example : ec)                                                                                   \
+    {                                                                                                                \
+      example->l.LABEL_NAME = saved[it++];                                                                            \
+    }                                                                                                                \
+    }\
+    break;
+
+
+#define LABEL_TYPE_CASE_PRED(TYPE, LABEL_NAME)                                                                            \
+  case label_type_t::LABEL_NAME:                                                                                     \
+  {\
+    TYPE saved = ec.l.LABEL_NAME;                                                                                    \
+    learn_fd.predict_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
+    ec.l.LABEL_NAME = saved;                                                                                         \
+  }\
+    break;
+
+#define LABEL_TYPE_VEC_CASE_PRED(TYPE, LABEL_NAME)                                                                        \
+  case label_type_t::LABEL_NAME:                                                                                     \
+    {\
+    std::vector<TYPE> saved;                                                                                         \
+    saved.reserve(ec.size());                                                                                        \
+    for (const auto& example : ec)                                                                                   \
+    {                                                                                                                \
+      saved.push_back(example->l.LABEL_NAME);                                                                         \
+    }                                                                                                                \
+    learn_fd.predict_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
+    size_t it = 0;                                                                                                   \
+    for (const auto& example : ec)                                                                                   \
+    {                                                                                                                \
+      example->l.LABEL_NAME = saved[it++];                                                                            \
+    }                                                                                                                \
+    }\
+    break;
+
+    inline void learn(example& ec, size_t i = 0)
     {
-      increment_offset(ec, increment, lo);
-      for (size_t c = 0; c < count; c++)
+      assert((is_multiline && std::is_same<multi_ex, example>::value) ||
+          (!is_multiline && std::is_same<example, example>::value));  // sanity check under debug compile
+      increment_offset(ec, increment, i);
+      if (learn_fd.learn_with_label_f != nullptr)
+      {
+        switch (learn_fd.base->label_type)
+        {
+          LABEL_TYPE_CASE(no_label::no_label, empty);
+          LABEL_TYPE_CASE(label_data, simple);
+          LABEL_TYPE_CASE(MULTICLASS::label_t, multi);
+          LABEL_TYPE_CASE(COST_SENSITIVE::label, cs);
+          LABEL_TYPE_CASE(CB::label, cb);
+          LABEL_TYPE_CASE(CCB::label, conditional_contextual_bandit);
+          LABEL_TYPE_CASE(CB_EVAL::label, cb_eval);
+          LABEL_TYPE_CASE(MULTILABEL::labels, multilabels);
+          default:
+            THROW("Unknown label type");
+            break;
+        }
+      }
+      else
+      {
+        learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
+      }
+      decrement_offset(ec, increment, i);
+    }
+
+    inline void learn(multi_ex& ec, size_t i = 0)
+    {
+      assert((is_multiline && std::is_same<multi_ex, multi_ex>::value) ||
+          (!is_multiline && std::is_same<example, multi_ex>::value));  // sanity check under debug compile
+      increment_offset(ec, increment, i);
+      if (learn_fd.learn_with_label_f != nullptr)
+      {
+        switch (learn_fd.base->label_type)
+        {
+          LABEL_TYPE_VEC_CASE(no_label::no_label, empty);
+          LABEL_TYPE_VEC_CASE(label_data, simple);
+          LABEL_TYPE_VEC_CASE(MULTICLASS::label_t, multi);
+          LABEL_TYPE_VEC_CASE(COST_SENSITIVE::label, cs);
+          LABEL_TYPE_VEC_CASE(CB::label, cb);
+          LABEL_TYPE_VEC_CASE(CCB::label, conditional_contextual_bandit);
+          LABEL_TYPE_VEC_CASE(CB_EVAL::label, cb_eval);
+          LABEL_TYPE_VEC_CASE(MULTILABEL::labels, multilabels);
+          default:
+            THROW("Unknown label type");
+            break;
+        }
+      }
+      else
+      {
+        learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
+      }
+      decrement_offset(ec, increment, i);
+    }
+
+     inline void predict(example& ec, size_t i = 0)
+    {
+      assert((is_multiline && std::is_same<multi_ex, example>::value) ||
+          (!is_multiline && std::is_same<example, example>::value));  // sanity check under debug compile
+      increment_offset(ec, increment, i);
+      if (learn_fd.predict_with_label_f != nullptr)
+      {
+        switch (learn_fd.base->label_type)
+        {
+          LABEL_TYPE_CASE_PRED(no_label::no_label, empty);
+          LABEL_TYPE_CASE_PRED(label_data, simple);
+          LABEL_TYPE_CASE_PRED(MULTICLASS::label_t, multi);
+          LABEL_TYPE_CASE_PRED(COST_SENSITIVE::label, cs);
+          LABEL_TYPE_CASE_PRED(CB::label, cb);
+          LABEL_TYPE_CASE_PRED(CCB::label, conditional_contextual_bandit);
+          LABEL_TYPE_CASE_PRED(CB_EVAL::label, cb_eval);
+          LABEL_TYPE_CASE_PRED(MULTILABEL::labels, multilabels);
+          default:
+            THROW("Unknown label type");
+            break;
+        }
+      }
+      else
       {
         learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
-        if (finalize_predictions)
-          pred[c] = ec.pred;  // TODO: this breaks for complex labels because = doesn't do deep copy!
-        else
-          pred[c].scalar = ec.partial_prediction;
-        // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
-        // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
-        increment_offset(ec, increment, 1);
       }
-      decrement_offset(ec, increment, lo + count);
+      decrement_offset(ec, increment, i);
     }
-    else
+
+    inline void predict(multi_ex& ec, size_t i = 0)
     {
-      increment_offset(ec, increment, lo);
-      learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), count, increment, pred, finalize_predictions);
-      decrement_offset(ec, increment, lo);
+      assert((is_multiline && std::is_same<multi_ex, multi_ex>::value) ||
+          (!is_multiline && std::is_same<example, multi_ex>::value));  // sanity check under debug compile
+      increment_offset(ec, increment, i);
+      if (learn_fd.predict_with_label_f != nullptr)
+      {
+        switch (learn_fd.base->label_type)
+        {
+          LABEL_TYPE_VEC_CASE_PRED(no_label::no_label, empty);
+          LABEL_TYPE_VEC_CASE_PRED(label_data, simple);
+          LABEL_TYPE_VEC_CASE_PRED(MULTICLASS::label_t, multi);
+          LABEL_TYPE_VEC_CASE_PRED(COST_SENSITIVE::label, cs);
+          LABEL_TYPE_VEC_CASE_PRED(CB::label, cb);
+          LABEL_TYPE_VEC_CASE_PRED(CCB::label, conditional_contextual_bandit);
+          LABEL_TYPE_VEC_CASE_PRED(CB_EVAL::label, cb_eval);
+          LABEL_TYPE_VEC_CASE_PRED(MULTILABEL::labels, multilabels);
+          default:
+            THROW("Unknown label type");
+            break;
+        }
+      }
+      else
+      {
+        learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
+      }
+      decrement_offset(ec, increment, i);
     }
-  }
 
-  template <class L>
-  inline void set_predict(void (*u)(T&, L&, E&))
-  {
-    learn_fd.predict_f = (learn_data::fn)u;
-  }
-  template <class L>
-  inline void set_learn(void (*u)(T&, L&, E&))
-  {
-    learn_fd.learn_f = (learn_data::fn)u;
-  }
-  template <class L>
-  inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
-  {
-    learn_fd.multipredict_f = (learn_data::multi_fn)u;
-  }
-
-  inline void update(E& ec, size_t i = 0)
-  {
-    assert((is_multiline && std::is_same<multi_ex, E>::value) ||
-        (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    increment_offset(ec, increment, i);
-    learn_fd.update_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
-    decrement_offset(ec, increment, i);
-  }
-  template <class L>
-  inline void set_update(void (*u)(T& data, L& base, E&))
-  {
-    learn_fd.update_f = (learn_data::fn)u;
-  }
-
-  // used for active learning and confidence to determine how easily predictions are changed
-  inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
-  {
-    sensitivity_fd.data = learn_fd.data;
-    sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
-  }
-  inline float sensitivity(example& ec, size_t i = 0)
-  {
-    increment_offset(ec, increment, i);
-    const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
-    decrement_offset(ec, increment, i);
-    return ret;
-  }
-
-  // called anytime saving or loading needs to happen. Autorecursive.
-  inline void save_load(io_buf& io, const bool read, const bool text)
-  {
-    save_load_fd.save_load_f(save_load_fd.data, io, read, text);
-    if (save_load_fd.base)
-      save_load_fd.base->save_load(io, read, text);
-  }
-  inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
-  {
-    save_load_fd.save_load_f = (save_load_data::fn)sl;
-    save_load_fd.data = learn_fd.data;
-    save_load_fd.base = learn_fd.base;
-  }
-
-  // called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(T&)) { finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f)); }
-  inline void finish()
-  {
-    if (finisher_fd.data)
+    inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
     {
-      finisher_fd.func(finisher_fd.data);
+      assert((is_multiline && std::is_same<multi_ex, E>::value) ||
+          (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+      if (learn_fd.multipredict_f == NULL)
+      {
+        increment_offset(ec, increment, lo);
+        for (size_t c = 0; c < count; c++)
+        {
+          learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
+          if (finalize_predictions)
+            pred[c] = ec.pred;  // TODO: this breaks for complex labels because = doesn't do deep copy!
+          else
+            pred[c].scalar = ec.partial_prediction;
+          // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because
+          // = doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
+          increment_offset(ec, increment, 1);
+        }
+        decrement_offset(ec, increment, lo + count);
+      }
+      else
+      {
+        increment_offset(ec, increment, lo);
+        learn_fd.multipredict_f(
+            learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), count, increment, pred, finalize_predictions);
+        decrement_offset(ec, increment, lo);
+      }
     }
-    learner_data.~shared_ptr<void>();
-    if (finisher_fd.base)
+
+    template <class L, typename LabelT>
+    inline void set_predict(void (*u)(T&, L&, E&, LabelT&))
     {
-      finisher_fd.base->finish();
-      free(finisher_fd.base);
+      learn_fd.predict_with_label_f = (learn_data::fn_with_label)u;
     }
-  }
-
-  void end_pass()
-  {
-    end_pass_fd.func(end_pass_fd.data);
-    if (end_pass_fd.base)
-      end_pass_fd.base->end_pass();
-  }  // autorecursive
-  void set_end_pass(void (*f)(T&)) { end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
-
-  // called after parsing of examples is complete.  Autorecursive.
-  void end_examples()
-  {
-    end_examples_fd.func(end_examples_fd.data);
-    if (end_examples_fd.base)
-      end_examples_fd.base->end_examples();
-  }
-  void set_end_examples(void (*f)(T&)) { end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
-
-  // Called at the beginning by the driver.  Explicitly not recursive.
-  void init_driver() { init_fd.func(init_fd.data); }
-  void set_init_driver(void (*f)(T&)) { init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
-
-  // called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(vw& all, E& ec)
-  {
-    finish_example_fd.finish_example_f(all, finish_example_fd.data, static_cast<void*>(&ec));
-  }
-  // called after learn example for each example.  Explicitly not recursive.
-  void set_finish_example(void (*f)(vw& all, T&, E&))
-  {
-    finish_example_fd.data = learn_fd.data;
-    finish_example_fd.finish_example_f = (end_fptr_type)(f);
-  }
-
-  template <class L>
-  static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type_t pred_type)
-  {
-    learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
-
-    if (base != nullptr)
-    {  // a reduction
-
-      // This is a copy assignment into the current object. The purpose is to copy all of the
-      // function data objects so that if this reduction does not define a function such as
-      // save_load then calling save_load on this object will essentially result in forwarding the
-      // call the next reduction that actually implements it.
-      ret = *(learner<T, E>*)(base);
-
-      ret.learn_fd.base = make_base(*base);
-      ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)recur_sensitivity;
-      ret.finisher_fd.data = dat;
-      ret.finisher_fd.base = make_base(*base);
-      ret.finisher_fd.func = (func_data::fn)noop;
-      ret.weights = ws;
-      ret.increment = base->increment * ret.weights;
-    }
-    else  // a base learner
+    template <class L>
+    inline void set_predict(void (*u)(T&, L&, E&))
     {
-      ret.weights = 1;
-      ret.increment = ws;
-      ret.end_pass_fd.func = (func_data::fn)noop;
-      ret.end_examples_fd.func = (func_data::fn)noop;
-      ret.init_fd.func = (func_data::fn)noop;
-      ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
-      ret.finisher_fd.data = dat;
-      ret.finisher_fd.func = (func_data::fn)noop;
-      ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
-      ret.finish_example_fd.data = dat;
-      ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
+      learn_fd.predict_f = (learn_data::fn)u;
+    }
+    template <class L, typename LabelT>
+    inline void set_learn(void (*u)(T&, L&, E&, LabelT&))
+    {
+      learn_fd.learn_with_label_f = (learn_data::fn_with_label)u;
+    }
+    template <class L>
+    inline void set_learn(void (*u)(T&, L&, E&))
+    {
+      learn_fd.learn_f = (learn_data::fn)u;
+    }
+    template <class L>
+    inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
+    {
+      learn_fd.multipredict_f = (learn_data::multi_fn)u;
     }
 
-    ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
-      ptr->~T();
-      free(ptr);
-    });
+    inline void update(E& ec, size_t i = 0)
+    {
+      assert((is_multiline && std::is_same<multi_ex, E>::value) ||
+          (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
+      increment_offset(ec, increment, i);
+      learn_fd.update_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
+      decrement_offset(ec, increment, i);
+    }
+    template <class L>
+    inline void set_update(void (*u)(T& data, L& base, E&))
+    {
+      learn_fd.update_f = (learn_data::fn)u;
+    }
 
-    ret.learn_fd.data = dat;
-    ret.learn_fd.learn_f = (learn_data::fn)learn;
-    ret.learn_fd.update_f = (learn_data::fn)learn;
-    ret.learn_fd.predict_f = (learn_data::fn)predict;
-    ret.learn_fd.multipredict_f = nullptr;
-    ret.pred_type = pred_type;
-    ret.is_multiline = std::is_same<multi_ex, E>::value;
+    // used for active learning and confidence to determine how easily predictions are changed
+    inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
+    {
+      sensitivity_fd.data = learn_fd.data;
+      sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
+    }
+    inline float sensitivity(example& ec, size_t i = 0)
+    {
+      increment_offset(ec, increment, i);
+      const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
+      decrement_offset(ec, increment, i);
+      return ret;
+    }
 
-    return ret;
-  }
+    // called anytime saving or loading needs to happen. Autorecursive.
+    inline void save_load(io_buf& io, const bool read, const bool text)
+    {
+      save_load_fd.save_load_f(save_load_fd.data, io, read, text);
+      if (save_load_fd.base)
+        save_load_fd.base->save_load(io, read, text);
+    }
+    inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
+    {
+      save_load_fd.save_load_f = (save_load_data::fn)sl;
+      save_load_fd.data = learn_fd.data;
+      save_load_fd.base = learn_fd.base;
+    }
+
+    // called to clean up state.  Autorecursive.
+    void set_finish(void (*f)(T&)) { finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f)); }
+    inline void finish()
+    {
+      if (finisher_fd.data)
+      {
+        finisher_fd.func(finisher_fd.data);
+      }
+      learner_data.~shared_ptr<void>();
+      if (finisher_fd.base)
+      {
+        finisher_fd.base->finish();
+        free(finisher_fd.base);
+      }
+    }
+
+    void end_pass()
+    {
+      end_pass_fd.func(end_pass_fd.data);
+      if (end_pass_fd.base)
+        end_pass_fd.base->end_pass();
+    }  // autorecursive
+    void set_end_pass(void (*f)(T&)) { end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+
+    // called after parsing of examples is complete.  Autorecursive.
+    void end_examples()
+    {
+      end_examples_fd.func(end_examples_fd.data);
+      if (end_examples_fd.base)
+        end_examples_fd.base->end_examples();
+    }
+    void set_end_examples(void (*f)(T&))
+    {
+      end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
+    }
+
+    // Called at the beginning by the driver.  Explicitly not recursive.
+    void init_driver() { init_fd.func(init_fd.data); }
+    void set_init_driver(void (*f)(T&)) { init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+
+    // called after learn example for each example.  Explicitly not recursive.
+    inline void finish_example(vw& all, E& ec)
+    {
+      finish_example_fd.finish_example_f(all, finish_example_fd.data, static_cast<void*>(&ec));
+    }
+    // called after learn example for each example.  Explicitly not recursive.
+    void set_finish_example(void (*f)(vw& all, T&, E&))
+    {
+      finish_example_fd.data = learn_fd.data;
+      finish_example_fd.finish_example_f = (end_fptr_type)(f);
+    }
+
+    template <class L>
+    static learner<T, E>& init_learner(
+        T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws, prediction_type_t pred_type)
+    {
+      learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
+
+      if (base != nullptr)
+      {  // a reduction
+
+        // This is a copy assignment into the current object. The purpose is to copy all of the
+        // function data objects so that if this reduction does not define a function such as
+        // save_load then calling save_load on this object will essentially result in forwarding the
+        // call the next reduction that actually implements it.
+        ret = *(learner<T, E>*)(base);
+
+        ret.learn_fd.base = make_base(*base);
+        ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)recur_sensitivity;
+        ret.finisher_fd.data = dat;
+        ret.finisher_fd.base = make_base(*base);
+        ret.finisher_fd.func = (func_data::fn)noop;
+        ret.weights = ws;
+        ret.increment = base->increment * ret.weights;
+      }
+      else  // a base learner
+      {
+        ret.weights = 1;
+        ret.increment = ws;
+        ret.end_pass_fd.func = (func_data::fn)noop;
+        ret.end_examples_fd.func = (func_data::fn)noop;
+        ret.init_fd.func = (func_data::fn)noop;
+        ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
+        ret.finisher_fd.data = dat;
+        ret.finisher_fd.func = (func_data::fn)noop;
+        ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
+        ret.finish_example_fd.data = dat;
+        ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
+      }
+
+      ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
+        ptr->~T();
+        free(ptr);
+      });
+
+      ret.learn_fd.data = dat;
+      ret.learn_fd.learn_f = (learn_data::fn)learn;
+      ret.learn_fd.update_f = (learn_data::fn)learn;
+      ret.learn_fd.predict_f = (learn_data::fn)predict;
+      ret.learn_fd.multipredict_f = nullptr;
+      ret.pred_type = pred_type;
+      ret.is_multiline = std::is_same<multi_ex, E>::value;
+
+      return ret;
+    }
 };
+
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
@@ -494,4 +749,5 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
 
   for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
+
 }  // namespace LEARNER

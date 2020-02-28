@@ -249,34 +249,43 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     all.delete_prediction = delete_scalars;
     if (probabilities)
     {
-      auto loss_function_type = all.loss->getType();
+      const auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
+      {
         all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
-      // the three boolean template parameters are: is_learn, print_all and scores
-      l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
-          predict_or_learn<false, false, true, true>, all.p, data->k, prediction_type_t::scalars);
+      }
+      l = &LEARNER::init_multiclass_learner(data, base,
+          predict_or_learn<true /*is_learn*/, false /*print_all*/, true /*scores*/, true /*probabilities*/>,
+          predict_or_learn<false /*is_learn*/, false /*print_all*/, true /*scores*/, true /*probabilities*/>, all.p,
+          data->k, prediction_type_t::scalars);
       all.sd->report_multiclass_log_loss = true;
-      l->set_finish_example(finish_example_scores<true>);
+      l->set_finish_example(finish_example_scores<true /*probabilities*/>);
     }
     else
     {
-      l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
-          predict_or_learn<false, false, true, false>, all.p, data->k, prediction_type_t::scalars);
-      l->set_finish_example(finish_example_scores<false>);
+      l = &LEARNER::init_multiclass_learner(data, base,
+          predict_or_learn<true /*is_learn*/, false /*print_all*/, true /*scores*/, false /*probabilities*/>,
+          predict_or_learn<false /*is_learn*/, false /*print_all*/, true /*scores*/, false /*probabilities*/>, all.p,
+          data->k, prediction_type_t::scalars);
+      l->set_finish_example(finish_example_scores<false /*probabilities*/>);
     }
   }
   else if (all.raw_prediction > 0)
-    l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
-        predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type_t::multiclass);
+    l = &LEARNER::init_multiclass_learner(data, base,
+        predict_or_learn<true /*is_learn*/, true /*print_all*/, false /*scores*/, false /*probabilities*/>,
+        predict_or_learn<false /*is_learn*/, true /*print_all*/, false /*scores*/, false /*probabilities*/>, all.p,
+        data->k, prediction_type_t::multiclass);
   else
-    l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
-        predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type_t::multiclass);
+    l = &LEARNER::init_multiclass_learner(data, base,
+        predict_or_learn<true /*is_learn*/, false /*print_all*/, false /*scores*/, false /*probabilities*/>,
+        predict_or_learn<false /*is_learn*/, false /*print_all*/, false /*scores*/, false /*probabilities*/>, all.p,
+        data->k, prediction_type_t::multiclass);
 
   if (data_ptr->num_subsample > 0)
   {
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
   }
-
+  l->label_type = label_type_t::multi;
   return make_base(*l);
 }

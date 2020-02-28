@@ -44,6 +44,7 @@
 #include "constant.h"
 #include "rand48.h"
 #include "hashstring.h"
+#include "label.h"
 
 #include "options.h"
 #include "version.h"
@@ -319,17 +320,6 @@ enum AllReduceType
 
 class AllReduce;
 
-enum class label_type_t
-{
-  simple,
-  cb,       // contextual-bandit
-  cb_eval,  // contextual-bandit evaluation
-  cs,       // cost-sensitive
-  multi,
-  mc,
-  ccb  // conditional contextual-bandit
-};
-
 struct rand_state
 {
  private:
@@ -384,6 +374,14 @@ struct vw
   void finish_example(multi_ex&);
 
   void (*set_minmax)(shared_data* sd, float label);
+
+  VW_DEPRECATED("Use get_label_type")
+  label_type_t label_type;
+
+  label_type_t get_label_type() const
+  {
+    return l->label_type;
+  }
 
   uint64_t current_pass;
 
@@ -544,8 +542,6 @@ struct vw
   float progress_arg;  // next update progress dump multiplier
 
   std::map<uint64_t, std::string> index_name_map;
-
-  label_type_t label_type;
 
   vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }

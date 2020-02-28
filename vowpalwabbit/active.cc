@@ -170,6 +170,6 @@ base_learner* active_setup(options_i& options, vw& all)
     l = &init_learner(data, base, predict_or_learn_active<true>, predict_or_learn_active<false>);
     l->set_finish_example(return_active_example);
   }
-
+ l->label_type = label_type_t::simple;
   return make_base(*l);
 }

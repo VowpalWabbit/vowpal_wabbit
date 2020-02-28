@@ -210,8 +210,11 @@ base_learner* mf_setup(options_i& options, vw& all)
 
   all.random_positive_weights = true;
 
+  auto base = as_singleline(setup_base(options, all));
   learner<mf, example>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
+      init_learner(data, base, learn, predict<false>, 2 * data->rank + 1);
   l.set_finish(finish);
+  l.label_type = base->label_type;
+
   return make_base(l);
 }

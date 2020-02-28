@@ -61,5 +61,6 @@ LEARNER::base_learner* print_setup(options_i& options, vw& all)
   all.weights.stride_shift(0);
 
   LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1);
+  ret.label_type = label_type_t::simple;
   return make_base(ret);
 }

@@ -183,30 +183,24 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   }
 
   auto base = as_singleline(setup_base(options, all));
-  if (eval)
-  {
-    all.p->lp = CB_EVAL::cb_eval;
-    all.label_type = label_type_t::cb_eval;
-  }
-  else
-  {
-    all.p->lp = CB::cb_label;
-    all.label_type = label_type_t::cb;
-  }
 
   learner<cb, example>* l;
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(eval_finish_example);
+    all.p->lp = CB_EVAL::cb_eval;
+    l->label_type = label_type_t::cb_eval;
+
   }
   else
   {
     l = &init_learner(
         data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(finish_example);
+    all.p->lp = CB::cb_label;
+    l->label_type = label_type_t::cb;
   }
   c.scorer = all.scorer;
-
   return make_base(*l);
 }

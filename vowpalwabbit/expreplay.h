@@ -118,11 +118,13 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
               << std::endl;
 
-  er->base = LEARNER::as_singleline(setup_base(options, all));
+  // er is a unique ptr and after calling init_learner it is reset. So that we can reference base after init_learner we need to store it here.
+  auto base = LEARNER::as_singleline(setup_base(options, all));
+  er->base = base;
   LEARNER::learner<expreplay<lp>, example>* l =
       &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
   l->set_end_pass(end_pass<lp>);
-
+  l->label_type = base->label_type;
   return make_base(*l);
 }
 }  // namespace ExpReplay

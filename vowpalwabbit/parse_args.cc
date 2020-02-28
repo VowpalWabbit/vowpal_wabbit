@@ -1683,6 +1683,9 @@ vw* initialize(
     std::vector<std::string> dictionary_nses;
     parse_modules(options, all, dictionary_nses);
 
+    // Set this field to ensure compatability.
+    all.label_type = all.get_label_type();
+
     parse_sources(options, all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.

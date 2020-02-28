@@ -280,5 +280,6 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
+  l->label_type = label_type_t::cb;
   return make_base(*l);
 }

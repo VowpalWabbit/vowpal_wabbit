@@ -142,6 +142,6 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
   LEARNER::learner<VW::topk, multi_ex>& l =
       init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   l.set_finish_example(finish_example);
-
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

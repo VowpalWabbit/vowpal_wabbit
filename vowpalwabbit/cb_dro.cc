@@ -151,12 +151,19 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     THROW("invalid cb_dro parameter values supplied");
   }
 
+  auto* base = as_multiline(setup_base(options, all));
   if (options.was_supplied("cb_explore_adf"))
   {
-    return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>, learn_or_predict<false, true>, 1 /* weights */, prediction_type_t::action_probs));
+    auto& learner = init_learner(data, base, learn_or_predict<true, true>, learn_or_predict<false, true>,
+        1 /* weights */, prediction_type_t::action_probs);
+    learner.label_type = label_type_t::cb;
+    return make_base(learner);
   }
   else
   {
-    return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, false>, learn_or_predict<false, false>, 1 /* weights */, prediction_type_t::action_probs));
+    auto& learner = init_learner(data, base, learn_or_predict<true, false>, learn_or_predict<false, false>,
+        1 /* weights */, prediction_type_t::action_probs);
+    learner.label_type = label_type_t::cb;
+    return make_base(learner);
   }
 }

@@ -372,12 +372,13 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels)
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multiclass)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels);
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multiclass);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
+  l.label_type = label_type_t::cs;
   all.cost_sensitive = b;
   return b;
 }

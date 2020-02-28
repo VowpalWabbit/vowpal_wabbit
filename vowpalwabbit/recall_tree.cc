@@ -534,6 +534,6 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
   learner<recall_tree, example>& l = init_multiclass_learner(
       tree, as_singleline(setup_base(options, all)), learn, predict, all.p, tree->max_routers + tree->k);
   l.set_save_load(save_load_tree);
-
+  l.label_type = label_type_t::multi;
   return make_base(l);
 }

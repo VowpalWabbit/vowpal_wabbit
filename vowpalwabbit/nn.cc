@@ -300,7 +300,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
        * ec.feature_space[] is reverted to its original value
        * save_nn_output_namespace contains the COPIED value
        * save_nn_output_namespace is destroyed
-       */ 
+       */
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
       auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
       ec.feature_space[nn_output_namespace].deep_copy_from(n.output_layer.feature_space[nn_output_namespace]);
@@ -493,6 +493,7 @@ base_learner* nn_setup(options_i& options, vw& all)
     l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
+  l.label_type = label_type_t::simple;
 
   return make_base(l);
 }

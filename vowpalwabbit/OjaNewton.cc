@@ -599,5 +599,6 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
   learner<OjaNewton, example>& l = init_learner(ON, learn, predict, all.weights.stride());
   l.set_save_load(save_load);
   l.set_finish_example(keep_example);
+  l.label_type = label_type_t::simple;
   return make_base(l);
 }

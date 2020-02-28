@@ -8,28 +8,31 @@
 using namespace VW::config;
 
 template <bool is_learn>
-void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(char&, LEARNER::single_learner& base, example& ec, label_data& label_data)
 {
   if (is_learn)
-    base.learn(ec);
+    base.learn_with_label(ec, label_data);
   else
-    base.predict(ec);
+    base.predict_with_label(ec, label_data);
 
   if (ec.pred.scalar > 0)
     ec.pred.scalar = 1;
   else
     ec.pred.scalar = -1;
 
-  if (ec.l.simple.label != FLT_MAX)
+  const auto& label = label_data.label;
+  if (label != FLT_MAX)
   {
-    if (fabs(ec.l.simple.label) != 1.f)
-      std::cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << std::endl;
-    else if (ec.l.simple.label == ec.pred.scalar)
+    if (fabs(label) != 1.f)
+      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
+    else if (label == ec.pred.scalar)
       ec.loss = 0.;
     else
       ec.loss = ec.weight;
   }
 }
+
+using fn = void(*)(char&, LEARNER::single_learner&, example&);
 
 LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 {
@@ -42,6 +45,9 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
     return nullptr;
 
   LEARNER::learner<char, example>& ret =
-      LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+      LEARNER::init_learner(as_singleline(setup_base(options, all)), (fn)nullptr, (fn)nullptr);
+  ret.label_type = label_type_t::simple;
+  ret.set_learn(predict_or_learn<true>);
+  ret.set_predict(predict_or_learn<false>);
   return make_base(ret);
 }
