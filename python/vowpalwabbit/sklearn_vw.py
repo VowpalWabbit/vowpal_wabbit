@@ -604,7 +604,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
 
     # convert labels of the form [0,1] to [-,1]
     if convert_labels:
-        y = np.asarray([-1 if i==0 else 1 for i in y])
+        y = np.where(y < 1, -1, y)
 
     # make sure this is a 2d array
     if x.ndim == 1:
