@@ -329,19 +329,18 @@ void save_load_header(
             if (!read)
             { 
               std::string s(all.interactions[i].begin(),all.interactions[i].end());
-              memcpy(buff2, s.c_str(), inter_len);
+              memcpy(buff2, &all.interactions[i], inter_len);
 
               msg << "interaction: ";
-              msg.write(s.c_str(), inter_len);
+              msg.write((char*)all.interactions[i].data(), inter_len);
             }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
 
             if (read)
             {
-              std::string temp(buff2, inter_len);
-              std::vector<uint8_t> temp2(temp.begin(), temp.end());
-              all.interactions.push_back(temp2);
+              std::vector<uint8_t> temp(buff2, buff2 + inter_len);
+              all.interactions.push_back(temp);
             }
           }
 
