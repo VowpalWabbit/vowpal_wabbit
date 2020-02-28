@@ -247,9 +247,12 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   uint64_t mask = sch.get_mask();
   uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
 
-  v_array<uint32_t> &stack = data->stack, &tags = data->tags, *children = data->children, &temp = data->temp;
+  auto& stack = data->stack;
+  auto& tags = data->tags;
+  auto& children = data->children;
+  auto& temp = data->temp;
   example **ec_buf = data->ec_buf;
-  example &ex = *(data->ex);
+  example& ex = *(data->ex);
 
   size_t n = ec.size();
   bool empty = stack.empty();
@@ -379,8 +382,10 @@ bool is_valid(uint64_t action, const v_array<uint32_t>& valid_actions)
 void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads,
-                    heads = data->heads;
+  auto& action_loss = data->action_loss;
+  auto& stack = data->stack;
+  auto& gold_heads = data->gold_heads;
+  auto& heads = data->heads;
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
   for (size_t i = 1; i <= 4; i++) action_loss[i] = 0;
@@ -455,7 +460,8 @@ void get_cost_to_go_losses(Search::search &sch, v_array<std::pair<action, float>
   task_data *data = sch.get_task_data<task_data>();
   bool &one_learner = data->one_learner;
   uint32_t &sys = data->transition_system;
-  v_array<uint32_t> &action_loss = data->action_loss, &valid_actions = data->valid_actions;
+  auto& action_loss = data->action_loss;
+  auto& valid_actions = data->valid_actions;
   uint32_t &num_label = data->num_label;
   gold_action_losses.clear();
 
@@ -487,8 +493,10 @@ void get_cost_to_go_losses(Search::search &sch, v_array<std::pair<action, float>
 void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t /* n */, v_array<action> &gold_actions)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads,
-                    &valid_actions = data->valid_actions;
+  auto& action_loss = data->action_loss;
+  auto& stack = data->stack;
+  auto& gold_heads = data->gold_heads;
+  auto& valid_actions = data->valid_actions;
   gold_actions.clear();
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
@@ -554,8 +562,10 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
 void setup(Search::search &sch, multi_ex &ec)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &gold_heads = data->gold_heads, &heads = data->heads, &gold_tags = data->gold_tags,
-                    &tags = data->tags;
+  auto& gold_heads = data->gold_heads;
+  auto& heads = data->heads;
+  auto& gold_tags = data->gold_tags;
+  auto& tags = data->tags;
   size_t n = ec.size();
   heads.resize(n + 1);
   tags.resize(n + 1);

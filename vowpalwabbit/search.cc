@@ -469,7 +469,7 @@ bool should_print_update(vw& all, bool hit_new_pass = false)
     return true;
   if (PRINT_UPDATE_EVERY_PASS && hit_new_pass)
     return true;
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
 bool might_print_update(vw& all)
@@ -481,7 +481,7 @@ bool might_print_update(vw& all)
     return true;
   if (PRINT_UPDATE_EVERY_PASS)
     return true;  // SPEEDUP: make this better
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
 bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
@@ -495,7 +495,7 @@ bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.logger.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
@@ -541,7 +541,7 @@ std::string number_to_natural(size_t big)
 void print_update(search_private& priv)
 {
   vw& all = *priv.all;
-  if (!priv.printed_output_header && !all.quiet)
+  if (!priv.printed_output_header && !all.logger.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",

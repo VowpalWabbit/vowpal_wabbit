@@ -379,7 +379,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
 
-  if (!o.all->quiet)
+  if (!o.all->logger.quiet)
   {
     if (read)
       cerr << "Loading alpha: " << endl;
@@ -416,9 +416,9 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     cerr << "Number of weak learners = " << data->N << endl;
-  if (!all.quiet)
+  if (!all.logger.quiet)
     cerr << "Gamma = " << data->gamma << endl;
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));

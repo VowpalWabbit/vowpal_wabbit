@@ -170,7 +170,7 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
-  if (!all.quiet)
+  if (!all.logger.quiet)
     std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
   data->all = &all;
 

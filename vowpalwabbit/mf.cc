@@ -105,7 +105,7 @@ void predict(mf& data, single_learner& base, example& ec)
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
 }
 
 void learn(mf& data, single_learner& base, example& ec)
