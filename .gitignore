@@ -86,6 +86,11 @@ demo/ocr/letter.*
 demo/ocr/run.*
 **/TestResults
 
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
 # IntelliJ
 *.idea
 *.iml
