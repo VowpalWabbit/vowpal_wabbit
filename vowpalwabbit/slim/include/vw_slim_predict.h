@@ -416,7 +416,14 @@ class vw_predict
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
     }
 
-    score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
+    // create temporary interactions of type vector<vector<uint8_t>> to feed in GD::inline_predict
+    std::vector<std::vector<uint8_t>> _interactions_t(_interactions.size());
+    for (int i=0;i!=_interactions.size();i++){
+      std::vector<uint8_t> temp_str(_interactions[i].begin(), _interactions[i].end());
+      _interactions_t.push_back(temp_str);
+    }
+
+    score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions_t, /* permutations */ false, ex);
 
     return S_VW_PREDICT_OK;
   }
