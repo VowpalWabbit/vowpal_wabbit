@@ -31,6 +31,8 @@ enum example_type : uint8_t
   slot = 3
 };
 
+//TODO: Remove the elements that are in predict_data
+// ccb_label.cc will need a major revamp before that can happen
 struct label
 {
   example_type type;
@@ -38,6 +40,14 @@ struct label
   conditional_contextual_bandit_outcome* outcome;
   v_array<uint32_t> explicit_included_actions;
   float weight;
+};
+
+struct predict_data
+{
+  example_type type;
+  v_array<uint32_t> explicit_included_actions;
+
+  void clear() { explicit_included_actions.clear(); }
 };
 
 extern label_parser ccb_label_parser;

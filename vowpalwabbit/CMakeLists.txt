@@ -276,6 +276,7 @@ set(vw_all_sources
   parser.cc
   pmf_to_pdf.cc
   plt.cc
+  predict_data.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc
