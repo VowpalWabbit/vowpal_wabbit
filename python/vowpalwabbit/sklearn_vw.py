@@ -158,6 +158,7 @@ class VW(BaseEstimator):
         cache_file (str): path to cache file to use
         k (bool): auto delete cache file
         passes (int): Number of training passes
+        convert_labels (bool): Convert labels of the form [0,1] to [-1,1]
 
         Feature options
         hash (str): how to hash the features. Available options: strings, all
@@ -573,6 +574,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
         Target vector relative to X.
     sample_weight : {array-like}, shape (n_samples,), optional
                     sample weight vector relative to X.
+    convert_labels : {bool} convert labels of the form [0,1] to [-1,1]
 
     Returns
     -------
