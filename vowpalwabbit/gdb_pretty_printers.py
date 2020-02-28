@@ -1,5 +1,3 @@
-"""GDB Pretty Printing Module."""
-
 import itertools
 import gdb
 
@@ -35,32 +33,20 @@ class VArrayPrinter:
         self.capacity = int(self.end_buffer - self.begin_array)
 
     def children(self):
-        """
-        Get children of the object instance.
-        """
         object_info = [("size", self.size), ("capacity", self.capacity), ("erase count",
                                                                           self.erase_count)]
         children_item_iterator = self._iterator(self.begin_array, self.end_array)
         return itertools.chain(iter(object_info), children_item_iterator)
 
     def to_string(self):
-        """
-        Return class attributes as string.
-        """
         return ('size={}, capacity={}, erase count={}'
                 .format(self.size, self.capacity, self.erase_count))
 
     @staticmethod
     def display_hint():
-        """
-        Display hint.
-        """
         return 'array'
 
 def build_pretty_printer():
-    """
-    Build pretty printer.
-    """
     pretty_printer = gdb.printing.RegexpCollectionPrettyPrinter("vowpalwabbit")
     pretty_printer.add_printer('v_array', '.*v_array.*', VArrayPrinter)
     return pretty_printer
