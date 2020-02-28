@@ -85,7 +85,7 @@
     <Compile Update="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-      <DependentUpon>Serializer\VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
+      <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
     </Compile>
     <None Include="..\vw_key.snk" />
   </ItemGroup>
