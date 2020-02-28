@@ -18,6 +18,7 @@
 #include "example_predict.h"
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
+#include "slates_label.h"
 #include <vector>
 
 typedef union
@@ -28,6 +29,7 @@ typedef union
   COST_SENSITIVE::label cs;
   CB::label cb;
   CCB::label conditional_contextual_bandit;
+  slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;

@@ -31,6 +31,8 @@ enum example_type : uint8_t
   slot = 3
 };
 
+ACTION_SCORE::action_score convert_to_score(const VW::string_view& action_id_str, const VW::string_view& probability_str)
+
 struct label
 {
   example_type type;
