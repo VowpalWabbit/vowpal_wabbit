@@ -158,7 +158,7 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
     decrement_offset(ec, increment, i);
   }
 
@@ -167,7 +167,7 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
     decrement_offset(ec, increment, i);
   }
 
@@ -180,7 +180,7 @@ struct learner
       increment_offset(ec, increment, lo);
       for (size_t c = 0; c < count; c++)
       {
-        learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+        learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
         if (finalize_predictions)
           pred[c] = ec.pred;  // TODO: this breaks for complex labels because = doesn't do deep copy!
         else
@@ -194,7 +194,7 @@ struct learner
     else
     {
       increment_offset(ec, increment, lo);
-      learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
+      learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), count, increment, pred, finalize_predictions);
       decrement_offset(ec, increment, lo);
     }
   }
@@ -220,7 +220,7 @@ struct learner
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    learn_fd.update_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));
     decrement_offset(ec, increment, i);
   }
   template <class L>
@@ -297,7 +297,7 @@ struct learner
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
   {
-    finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
+    finish_example_fd.finish_example_f(all, finish_example_fd.data, static_cast<void*>(&ec));
   }
   // called after learn example for each example.  Explicitly not recursive.
   void set_finish_example(void (*f)(vw& all, T&, E&))
