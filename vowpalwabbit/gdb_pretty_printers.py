@@ -1,5 +1,7 @@
-import gdb
+"""GDB Pretty Printing Module."""
+
 import itertools
+import gdb
 
 class VArrayPrinter:
     "Print a v_array<T>"
@@ -16,7 +18,7 @@ class VArrayPrinter:
         def __next__(self):
             count = self.count
             self.count = self.count + 1
-           
+
             if self.item == self.end_array:
                 raise StopIteration
             element = self.item.dereference()
@@ -33,21 +35,35 @@ class VArrayPrinter:
         self.capacity = int(self.end_buffer - self.begin_array)
 
     def children(self):
-        object_info = [("size", self.size), ("capacity", self.capacity), ("erase count", self.erase_count)]
+        """
+        Get children of the object instance.
+        """
+        object_info = [("size", self.size), ("capacity", self.capacity), ("erase count",
+                                                                          self.erase_count)]
         children_item_iterator = self._iterator(self.begin_array, self.end_array)
         return itertools.chain(iter(object_info), children_item_iterator)
 
     def to_string(self):
+        """
+        Return class attributes as string.
+        """
         return ('size={}, capacity={}, erase count={}'
-            .format(self.size, self.capacity, self.erase_count))
+                .format(self.size, self.capacity, self.erase_count))
 
-    def display_hint(self):
+    @staticmethod
+    def display_hint():
+        """
+        Display hint.
+        """
         return 'array'
 
 def build_pretty_printer():
-    pp = gdb.printing.RegexpCollectionPrettyPrinter("vowpalwabbit")
-    pp.add_printer('v_array', '.*v_array.*', VArrayPrinter)
-    return pp
+    """
+    Build pretty printer.
+    """
+    pretty_printer = gdb.printing.RegexpCollectionPrettyPrinter("vowpalwabbit")
+    pretty_printer.add_printer('v_array', '.*v_array.*', VArrayPrinter)
+    return pretty_printer
 
 gdb.printing.register_pretty_printer(
     gdb.current_objfile(),
