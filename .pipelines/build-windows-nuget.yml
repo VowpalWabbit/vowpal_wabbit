@@ -36,11 +36,6 @@ steps:
 #     platform: 'x64'
 #     configuration: 'Release'
 
-#- script: CALL .scripts/restore.cmd
-#  displayName: 'Restore dependencies'
-#  env:
-#    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-#  failOnStderr: true
 - script: CALL .scripts/build.cmd
   displayName: 'Build vw.sln'
   failOnStderr: true
@@ -54,22 +49,21 @@ steps:
   inputs:
     testResultsFormat: VSTest
     testResultsFiles: '**/vowpalwabbit/out/test/Release/x64/*.trx'
-#- script: CALL .scripts/package.cmd
-#  displayName: 'Package artifacts'
-#  env:
-#    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-#    Tag: -$(Build.SourceVersion)--$(Build.BuildId)
-#    SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
-#  failOnStderr: true
+- script: CALL .scripts/package.cmd
+  displayName: 'Package artifacts'
+  env:
+    Tag: -$(Build.SourceVersion)--$(Build.BuildId)
+    SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
+  failOnStderr: true
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: target'
   inputs:
     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\target
     ArtifactName: target
   condition: succeededOrFailed()
-#- task: PublishBuildArtifacts@1
-#  displayName: 'Publish Artifact: package'
-#  inputs:
-#    PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
-#    ArtifactName: package
-#  condition: succeededOrFailed()
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: package'
+  inputs:
+     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
+     ArtifactName: package
+  condition: succeededOrFailed()
