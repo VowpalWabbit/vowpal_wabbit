@@ -93,24 +93,21 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
-  // std::vector<uint8_t> temp_var(pair[0], pair[0]+1);
-  std::vector<std::vector<uint8_t>> newpairs_t(19);// = new std::vector<std::vector<uint8_t>>(20);
-  std::vector<std::vector<uint8_t>> newtriples_t(12);// = new std::vector<std::vector<uint8_t>>(12);
+  std::vector<std::vector<uint8_t>> newpairs_(19);
+  std::vector<std::vector<uint8_t>> newtriples_(12);
   for (int i=0;i<19;i++){
-    // std::vector<uint8_t> s(pair[0], pair[0]+1);
-    newpairs_t[i].push_back(pair[i][0]);
-    newpairs_t[i].push_back(pair[i][1]);
+    newpairs_[i].push_back(pair[i][0]);
+    newpairs_[i].push_back(pair[i][1]);
   }
   for (int i=0;i<12;i++){
-    // std::vector<uint8_t> s(triple[0], triple[0]+2);
-    newtriples_t[i].push_back(triple[i][0]);
-    newtriples_t[i].push_back(triple[i][1]);
-    newtriples_t[i].push_back(triple[i][2]);
+    newtriples_[i].push_back(triple[i][0]);
+    newtriples_[i].push_back(triple[i][1]);
+    newtriples_[i].push_back(triple[i][2]);
   }
 
   all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(newpairs_t), std::end(newpairs_t));
-  all.interactions.insert(std::end(all.interactions), std::begin(newtriples_t), std::end(newtriples_t));
+  all.interactions.insert(std::end(all.interactions), std::begin(newpairs_), std::end(newpairs_));
+  all.interactions.insert(std::end(all.interactions), std::begin(newtriples_), std::end(newtriples_));
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
   else

@@ -825,11 +825,8 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       all.interactions.clear();
     }
 
-    // all.interactions = expanded_interactions;
-
-    for (std::vector<std::string>::iterator t=expanded_interactions.begin(); t!=expanded_interactions.end(); t++){
-      std::vector<uint8_t> s(t->begin(),t->end());
-      all.interactions.push_back(s);
+    for (auto t=expanded_interactions.begin(); t!=expanded_interactions.end(); t++){
+      all.interactions.emplace_back(std::vector<uint8_t>(t->begin(),t->end()));
     }
 
     // copy interactions of size 2 and 3 to old vectors for backward compatibility

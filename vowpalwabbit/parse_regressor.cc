@@ -351,20 +351,18 @@ void save_load_header(
         else  // < VERSION_FILE_WITH_INTERACTIONS
         {
           // pairs and triples may be restored but not reflected in interactions
-          std::vector<std::vector<uint8_t>> newpairs_t;
-          std::vector<std::vector<uint8_t>> newtriples_t;
+          std::vector<std::vector<uint8_t>> newpairs_(all.pairs.size());
+          std::vector<std::vector<uint8_t>> newtriples_(all.pairs.size());
 
-          for (std::vector<std::string>::iterator t = all.pairs.begin(); t != all.pairs.end(); t++){
-            std::vector<uint8_t> s(t->begin(), t->end());
-            newpairs_t.push_back(s);
+          for (auto t = all.pairs.begin(); t != all.pairs.end(); t++){
+            newpairs_.emplace_back(std::vector<uint8_t>(t->begin(), t->end()));
           }
 
-          for (std::vector<std::string>::iterator t = all.triples.begin(); t != all.triples.end(); t++){
-            std::vector<uint8_t> s(t->begin(), t->end());
-            newtriples_t.push_back(s);
+          for (auto t = all.triples.begin(); t != all.triples.end(); t++){
+            newtriples_.emplace_back(std::vector<uint8_t>(t->begin(), t->end()));
           }
-          all.interactions.insert(std::end(all.interactions), std::begin(newpairs_t), std::end(newpairs_t));
-          all.interactions.insert(std::end(all.interactions), std::begin(newtriples_t), std::end(newtriples_t));
+          all.interactions.insert(std::end(all.interactions), std::begin(newpairs_), std::end(newpairs_));
+          all.interactions.insert(std::end(all.interactions), std::begin(newtriples_), std::end(newtriples_));
         }
       }
 
