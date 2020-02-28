@@ -136,7 +136,7 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     THROW("cb_dro_wmax must exceed 1");
   }
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
     std::cerr << "Using DRO for CB learning" << std::endl;
     std::cerr << "cb_dro_alpha = " << alpha << std::endl;

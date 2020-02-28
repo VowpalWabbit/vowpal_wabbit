@@ -48,8 +48,8 @@ label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label
 
 void print_no_label_update(vw& all, example& ec)
 {
-  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
-      !all.bfgs)
+  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
+      !all.logger.quiet && !all.bfgs)
   {
     all.sd->print_update(all.holdout_set_off, all.current_pass, 0.f, ec.pred.scalar, ec.num_features, all.progress_add,
         all.progress_arg);

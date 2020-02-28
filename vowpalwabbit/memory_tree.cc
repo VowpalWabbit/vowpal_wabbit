@@ -1269,7 +1269,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
 
   init_tree(*tree);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "memory_tree:"
                       << " "
                       << "max_nodes = " << tree->max_nodes << " "

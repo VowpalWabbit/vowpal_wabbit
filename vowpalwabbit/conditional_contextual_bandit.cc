@@ -496,7 +496,7 @@ void print_decision_scores(int f, decision_scores_t& decision_scores)
 
 void print_update(vw& all, std::vector<example*>& slots, decision_scores_t& decision_scores, size_t num_features)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::string label_str = "";
     std::string delim = "";
