@@ -94,7 +94,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   all.triples.swap(newtriples);
 
   // std::vector<uint8_t> temp_var(pair[0], pair[0]+1);
-  std::vector<std::vector<uint8_t>> newpairs_t(20);// = new std::vector<std::vector<uint8_t>>(20);
+  std::vector<std::vector<uint8_t>> newpairs_t(19);// = new std::vector<std::vector<uint8_t>>(20);
   std::vector<std::vector<uint8_t>> newtriples_t(12);// = new std::vector<std::vector<uint8_t>>(12);
   for (int i=0;i<19;i++){
     // std::vector<uint8_t> s(pair[0], pair[0]+1);
