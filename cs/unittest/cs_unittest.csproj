@@ -6,7 +6,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>cs_unittest</RootNamespace>
     <AssemblyName>cs_unittest</AssemblyName>
-    <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
+    <TargetFrameworks>net452;netcoreapp3.1</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
