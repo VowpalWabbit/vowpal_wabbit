@@ -6,7 +6,7 @@
 namespace vw_slim
 {
 // && used to avoid constant string copying
-void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::vector<uint8_t>>& out_values)
+void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::vector<uint8_t>> out_values)
 {
   // append space to search for '--quadratic '
   arg_name += ' ';
