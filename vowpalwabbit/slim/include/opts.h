@@ -6,6 +6,8 @@
 // command line option parsing
 namespace vw_slim
 {
+void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::vector<uint8_t>> out_values);
+
 void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values);
 
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name);
