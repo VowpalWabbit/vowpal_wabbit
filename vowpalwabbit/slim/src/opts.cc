@@ -6,6 +6,52 @@
 namespace vw_slim
 {
 // && used to avoid constant string copying
+void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::vector<uint8_t>>& out_values)
+{
+  // append space to search for '--quadratic '
+  arg_name += ' ';
+
+  // support -q ab -v -q cd
+  for (size_t start = 0; start < command_line_args.size();)
+  {
+    auto idx = command_line_args.find(arg_name, start);
+    if (idx == std::string::npos)
+      return;  // no more occurences found, exit
+
+    auto idx_after_arg = idx + arg_name.size();
+
+    // skip all white space
+    for (; idx_after_arg < command_line_args.size() && std::isspace(command_line_args[idx_after_arg]); ++idx_after_arg)
+      ;
+
+    if (idx_after_arg == command_line_args.size())
+      return;
+
+    if (command_line_args[idx_after_arg] == '-' &&
+        // make sure we allow -5.2 (negative numbers)
+        !(idx_after_arg + 1 < command_line_args.size() &&
+            (command_line_args[idx_after_arg + 1] >= '0' && command_line_args[idx_after_arg + 1] <= '9')))
+    {
+      start = idx_after_arg;
+      continue;  // next option found
+    }
+
+    // find next non-white space character
+    auto idx_after_value = idx_after_arg;
+    for (; idx_after_value < command_line_args.size() && !std::isspace(command_line_args[idx_after_value]);
+         ++idx_after_value)
+      ;
+
+    auto value_size = idx_after_value - idx_after_arg;
+    if (value_size > 0){
+      std::string arg = command_line_args.substr(idx_after_arg, value_size);
+      std::vector<uint8_t> arg_(arg.begin(), arg.end());
+      out_values.emplace_back(arg_);
+    }
+    start = idx_after_arg + 1;
+  }
+}
+
 void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values)
 {
   // append space to search for '--quadratic '

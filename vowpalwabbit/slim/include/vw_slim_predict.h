@@ -221,7 +221,7 @@ class vw_predict
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  std::vector<std::string> _interactions;
+  std::vector<std::vector<uint8_t>> _interactions;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
@@ -297,10 +297,10 @@ class vw_predict
 
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
-    std::vector<std::string> vec_sorted;
-    for (const std::string& interaction : _interactions)
+    std::vector<std::vector<uint8_t>> vec_sorted;
+    for (const std::vector<uint8_t>& interaction : _interactions)
     {
-      std::string sorted_i(interaction);
+      std::vector<uint8_t> sorted_i(interaction);
       std::sort(std::begin(sorted_i), std::end(sorted_i));
       vec_sorted.push_back(sorted_i);
     }
@@ -417,13 +417,13 @@ class vw_predict
     }
 
     // create temporary interactions of type vector<vector<uint8_t>> to feed in GD::inline_predict
-    std::vector<std::vector<uint8_t>> _interactions_t(_interactions.size());
-    for (int i=0;i!=_interactions.size();i++){
-      std::vector<uint8_t> temp_str(_interactions[i].begin(), _interactions[i].end());
-      _interactions_t.push_back(temp_str);
-    }
+    // std::vector<std::vector<uint8_t>> _interactions_t(_interactions.size());
+    // for (int i=0;i!=_interactions.size();i++){
+    //   std::vector<uint8_t> temp_str(_interactions[i].begin(), _interactions[i].end());
+    //   _interactions_t.push_back(temp_str);
+    // }
 
-    score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions_t, /* permutations */ false, ex);
+    score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
 
     return S_VW_PREDICT_OK;
   }
