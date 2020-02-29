@@ -152,11 +152,6 @@
   <Target Name="T4DotNetCoreWorkaround" BeforeTargets="BeforeBuild" >
     <CallTarget Targets="TransformDuringBuild" />
   </Target>
-
-  <PropertyGroup>
-    <TrackerLogDirectory Condition=" $(TrackerLogDirectory)=='' ">$(BaseIntermediateOutputPath)\tlogs</TrackerLogDirectory>
-  </PropertyGroup>
-
   <PropertyGroup>
     <AssemblyTitle>Vowpal Wabbit</AssemblyTitle>
     <Description>Official Vowpal Wabbit library including C# interface.</Description>
