@@ -127,7 +127,6 @@ def test_cbandits_label():
     assert cbl.costs[0].probability == 0.5
     assert cbl.costs[0].partial_prediction == 0
     assert cbl.costs[0].cost == 10.0
-    # test issue 2295
     assert str(cbl) == '1:10.0:0.5'
     del model
 
@@ -139,8 +138,7 @@ def test_cost_sensitive_label():
     assert csl.costs[0].wap_value == 0.0
     assert csl.costs[0].partial_prediction == 0.0
     assert csl.costs[0].cost == 5.0
-    # test issue 2295
-    assert str(csl) == '2:5.0:0.0'
+    assert str(csl) == '2:5.0'
     del model
 
 

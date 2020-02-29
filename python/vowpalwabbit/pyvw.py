@@ -3,7 +3,7 @@
 
 from __future__ import division
 import pylibvw
-
+import warnings
 
 class SearchTask():
     """Search task class"""
@@ -517,7 +517,10 @@ class cost_sensitive_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self, action, cost=0., partial_prediction=0., wap_value=0.):
+            def __init__(self, action=None, cost=0., partial_prediction=0., wap_value=0., **kwargs):
+                if kwargs.get('label', False):
+                    action = kwargs['label']
+                    warnings.warn("label has been deprecated. Please use 'action' instead.", DeprecationWarning)
                 self.action = action
                 self.cost = cost
                 self.partial_prediction = partial_prediction
@@ -533,7 +536,7 @@ class cost_sensitive_label(abstract_label):
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join(["{}:{}:{}".format(c.action, c.cost, c.wap_value) for c in self.costs])
+        return ' '.join(["{}:{}".format(c.action, c.cost) for c in self.costs])
 
 
 class cbandits_label(abstract_label):
@@ -548,7 +551,10 @@ class cbandits_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self, action, cost=0., partial_prediction=0., probability=0.):
+            def __init__(self, action=None, cost=0., partial_prediction=0., probability=0., **kwargs):
+                if kwargs.get('label', False):
+                    action = kwargs['label']
+                    warnings.warn("label has been deprecated. Please use 'action' instead.", DeprecationWarning)
                 self.action = action
                 self.cost = cost
                 self.partial_prediction = partial_prediction
