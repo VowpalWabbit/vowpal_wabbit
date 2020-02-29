@@ -14,7 +14,6 @@ from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import shuffle
 from vowpalwabbit import pyvw
 
-
 DEFAULT_NS = ''
 CONSTANT_HASH = 116060
 INVALID_CHARS = re.compile(r"[\|: \n]+")
@@ -256,7 +255,9 @@ class VW(BaseEstimator):
             # store passes separately to be used in fit
             self.passes_ = self.params.pop('passes', 1)
             if self.params.get('bfgs'):
-                raise RuntimeError('An external data file must be used to fit models using the bfgs option')
+                raise RuntimeError(
+                    'An external data file must be used to fit models using the bfgs option'
+                )
 
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
@@ -428,7 +429,8 @@ class VW(BaseEstimator):
         """
 
         model = self.get_vw()
-        return csr_matrix([model.get_weight(i) for i in range(model.num_weights())])
+        return csr_matrix(
+            [model.get_weight(i) for i in range(model.num_weights())])
 
     def set_coefs(self, coefs):
         """Sets coefficients weights from ordered sparse matrix
@@ -510,7 +512,6 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     Only supports binary classification currently. Use VW directly for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
     """
-
     def __init__(self, **params):
 
         # assume logistic loss functions
@@ -632,7 +633,10 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
         weight = sample_weight[idx] if use_weight else 1
         features = row.split('0 ', 1)[1]
         # only using a single namespace and no tags
-        out.append(('{y} {w} |{ns} {x}'.format(y=truth, w=weight, ns=DEFAULT_NS, x=features)))
+        out.append(('{y} {w} |{ns} {x}'.format(y=truth,
+                                               w=weight,
+                                               ns=DEFAULT_NS,
+                                               x=features)))
 
     s.close()
 
