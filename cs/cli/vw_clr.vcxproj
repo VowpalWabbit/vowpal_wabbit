@@ -23,7 +23,6 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>vw_clr</RootNamespace>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <!-- There are no rules in the ruleset above that can run on this project type. Temporarily suppress running them
          (same as pre-path-fix behaviour as checked in) until we either replace this with a non-C++/CLI binding or

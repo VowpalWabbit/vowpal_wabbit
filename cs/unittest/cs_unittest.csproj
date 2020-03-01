@@ -8,7 +8,6 @@
     <AssemblyName>cs_unittest</AssemblyName>
     <TargetFrameworks>netcoreapp3.1;net452</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\vw_key.snk</AssemblyOriginatorKeyFile>
@@ -16,9 +15,8 @@
     <Platforms>x64</Platforms>
     <TestProjectType>UnitTest</TestProjectType>
     <RunSettingsFilePath>$(SolutionDir)\.runsettings</RunSettingsFilePath>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TextTransformPath>$(VsInstallRoot)\Common7\IDE\TextTransform.exe</TextTransformPath>
+    <TransformOnBuild>true</TransformOnBuild>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
@@ -91,16 +89,75 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BaseData.cs" />
+    <Compile Include="CbAdfData.cs" />
+    <Compile Include="RunTests.cs" >
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>RunTests.tt</DependentUpon>
+    </Compile>
     <None Update="RunTests.tt">
       <LastGenOutput>RunTests.cs</LastGenOutput>
       <Generator>TextTemplatingFileGenerator</Generator>
     </None>
+    <Compile Include="RunTestsHelper.cs" />
+    <Compile Include="Test1and2.cs" />
+    <Compile Include="Test3.cs" />
+    <Compile Include="TestAllReduce.cs" />
+    <Compile Include="TestAntlr.cs" />
+    <Compile Include="TestArguments.cs" />
+    <Compile Include="TestBase.cs" />
+    <Compile Include="TestCbAdf.cs" />
+    <Compile Include="TestConfidence.cs" />
+    <Compile Include="TestConfigInspector.cs" />
+    <Compile Include="TestConsole.cs" />
+    <Compile Include="TestDynamic.cs" />
+    <Compile Include="TestErrorListener.cs" />
+    <Compile Include="TestExampleCache.cs" />
+    <Compile Include="TestExpansion.cs" />
+    <Compile Include="TestFeatureExtraction.cs" />
+    <Compile Include="TestJson.cs" />
+    <Compile Include="TestJsonDict.cs" />
+    <Compile Include="TestJsonDirect.cs" />
+    <Compile Include="TestLabels.cs" />
+    <Compile Include="TestLeak.cs" />
+    <Compile Include="TestManagedHash.cs" />
+    <Compile Include="TestMarshalling.cs" />
+    <Compile Include="TestMarshallingOverflow.cs" />
+    <Compile Include="TestMarshalNumeric.cs" >
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>TestMarshalNumeric.tt</DependentUpon>
+    </Compile>
     <None Update="TestMarshalNumeric.tt">
       <LastGenOutput>TestMarshalNumeric.cs</LastGenOutput>
       <Generator>TextTemplatingFileGenerator</Generator>
     </None>
+    <Compile Include="TestModelLoading.cs" />
+    <Compile Include="TestMultiClassPredictionFactory.cs" />
+    <Compile Include="TestMultiworldTesting.cs" />
+    <Compile Include="TestNull.cs" />
+    <Compile Include="TestPooling.cs" />
+    <Compile Include="TestRunner.cs" />
+    <Compile Include="TestSerializer.cs" />
+    <Compile Include="TestTelemetryProcessor.cs" />
+    <Compile Include="TestTracing.cs" />
+    <Compile Include="TestWiki.cs" />
+    <Compile Include="TestWrapper.cs" />
+    <Compile Include="TrainSet0002Dat.cs" />
+    <Compile Include="TrainSetCs_testLdf.cs" />
+    <Compile Include="VowpalWabbitExampleJsonValidator.cs" />
+    <Compile Include="VowpalWabbitExampleValidator.cs" />
+    <Compile Include="VowpalWabbitListenerToEvents.cs" />
+    <Compile Include="VowpalWabbitStdErrPerformanceStatistics.cs" />
+    <Compile Include="VWTestHelper.cs" />
   </ItemGroup>
-
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" />
+  <!-- Workaround to make T4 transformations work on build in .NET Core projects. -->
+  <Target Name="T4DotNetCoreWorkaround" BeforeTargets="BeforeBuild" >
+    <CallTarget Targets="TransformDuringBuild" />
+  </Target>
   <PropertyGroup>
     <AssemblyTitle>cs_unittest</AssemblyTitle>
     <Description>cs_unittest</Description>
