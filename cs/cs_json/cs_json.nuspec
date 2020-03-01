@@ -29,6 +29,8 @@
     <file src="$RootRelativeOutputDirX64$$Configuration$\$Platform$\net452\VowpalWabbit.JSON.pdb" target="lib\net452" />
     <file src="$RootRelativeOutputDirX64$$Configuration$\$Platform$\net452\VowpalWabbit.JSON.xml" target="lib\net452" />
 
+    <file src="$RootRelativeOutputDirX64$$Configuration$\$Platform$\netcoreapp3.1\Ijwhost.dll" target="lib\netcoreapp3.1" />
+
     <file src="$RootRelativeOutputDirX64$$Configuration$\$Platform$\netcoreapp3.1\VowpalWabbit.JSON.dll" target="lib\netcoreapp3.1" />
     <file src="$RootRelativeOutputDirX64$$Configuration$\$Platform$\netcoreapp3.1\VowpalWabbit.JSON.pdb" target="lib\netcoreapp3.1" />
     <file src="$RootRelativeOutputDirX64$$Configuration$\$Platform$\netcoreapp3.1\VowpalWabbit.JSON.xml" target="lib\netcoreapp3.1" />
