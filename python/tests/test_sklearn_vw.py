@@ -262,3 +262,22 @@ def test_save_load(tmp_path):
     after_loading = model_after.predict(X)
 
     assert all([a == b for a, b in zip(before_saving, after_loading)])
+
+def test_repr():
+
+    model = VW()
+    expected = 'VW(convert_to_vw=True, passes=1, quiet=True)'
+    assert expected == model.__repr__()
+
+    model = VWClassifier()
+    expected = "VWClassifier(convert_to_vw=True, loss_function='logistic', passes=1, quiet=True)"
+    assert expected == model.__repr__()
+
+    model = VWRegressor()
+    expected = 'VWRegressor(convert_to_vw=True, passes=1, quiet=True)'
+    assert expected == model.__repr__()
+
+    model = VW(convert_to_vw=False, oaa=3, loss_function='logistic', probabilities=True)
+    expected = "VW(convert_to_vw=False, loss_function='logistic', \
+oaa=3, passes=1, probabilities=True, quiet=True)"
+    assert expected == model.__repr__()
