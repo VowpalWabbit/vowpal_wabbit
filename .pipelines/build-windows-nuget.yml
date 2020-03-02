@@ -67,9 +67,3 @@ steps:
      PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
      ArtifactName: package
   condition: succeededOrFailed()
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: binlog'
-  inputs:
-     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\msbuild.binlog
-     ArtifactName: binlog
-  condition: succeededOrFailed()
