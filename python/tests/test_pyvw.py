@@ -134,7 +134,7 @@ def test_cbandits_label():
 def test_cost_sensitive_label():
     model = vw(csoaa=4, quiet=True)
     csl = pyvw.cost_sensitive_label(model.example('2:5 |'))
-    assert csl.costs[0].action == 2
+    assert csl.costs[0].label == 2
     assert csl.costs[0].wap_value == 0.0
     assert csl.costs[0].partial_prediction == 0.0
     assert csl.costs[0].cost == 5.0
