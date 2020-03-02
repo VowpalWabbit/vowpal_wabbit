@@ -579,15 +579,17 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
         super(ThresholdingLinearClassifierMixin, self).__init__(**params)
 
     def predict(self, X):
-        """Predict class labels for samples in X.
+        r"""Predict class labels for samples in X.
 
         Parameters
-        ----------
+        ==========
+
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             Samples.
 
         Returns
-        -------
+        =======
+
         C : array, shape = [n_samples]
             Predicted class label per sample.
         """
@@ -616,12 +618,14 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
         """Predict class labels for samples in X.
 
         Parameters
-        ----------
+        ==========
+
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             Samples.
 
         Returns
-        -------
+        =======
+
         C : array, shape = [n_samples]
             Predicted class label per sample.
         """
@@ -634,12 +638,14 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
         sample to the hyperplane.
 
         Parameters
-        ----------
+        ==========
+
         X : {array-like, sparse matrix}, shape = (n_samples, n_features)
             Samples.
 
         Returns
-        -------
+        =======
+
         array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
             Confidence scores per (sample, class) combination. In the binary
             case, confidence score for self.classes_[1] where >0 means this
@@ -659,7 +665,8 @@ def tovw(x, y=None, sample_weight=None):
     """Convert array or sparse matrix to Vowpal Wabbit format
 
     Parameters
-    ----------
+    ==========
+
     x : {array-like, sparse matrix}, shape (n_samples, n_features)
         Training vector, where n_samples is the number of samples and
         n_features is the number of features.
@@ -669,12 +676,14 @@ def tovw(x, y=None, sample_weight=None):
                     sample weight vector relative to X.
 
     Returns
-    -------
+    =======
+
     out : {array-like}, shape (n_samples, 1)
           Training vectors in VW string format
 
     Examples
-    --------
+    ========
+
     >>> import pandas as pd
     >>> from sklearn.feature_extraction.text import HashingVectorizer
     >>> from vowpalwabbit.sklearn_vw import tovw
