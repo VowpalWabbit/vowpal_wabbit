@@ -199,7 +199,7 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
         it++;                                                                                                         \
       }                                                                                                               \
       learn_fd.learn_f(                                                                                               \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(saved));         \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));         \
       it = 0;                                                                                                  \
       for (const auto& example : example_collection)                                                                  \
       {                                                                                                               \
@@ -232,7 +232,7 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
         it++;                                                                                                         \
       }                                                                                                               \
       learn_fd.predict_f(                                                                                             \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(saved));         \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));         \
       it = 0;                                                                                                  \
       for (const auto& example : example_collection)                                                                  \
       {                                                                                                               \
@@ -781,6 +781,25 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
     base.learn(examples, id);
   else
     base.predict(examples, id);
+
+  for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
+}
+
+template <bool is_learn, typename LabelT>
+void multiline_learn_or_predict_with_labels(multi_learner& base, multi_ex& examples, LabelT& labels, const uint64_t offset, const uint32_t id = 0)
+{
+  std::vector<uint64_t> saved_offsets;
+  saved_offsets.reserve(examples.size());
+  for (auto ec : examples)
+  {
+    saved_offsets.push_back(ec->ft_offset);
+    ec->ft_offset = offset;
+  }
+
+  if (is_learn)
+    base.learn_with_label(examples, labels, id);
+  else
+    base.predict_with_label(examples, labels, id);
 
   for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
