@@ -145,10 +145,11 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
     }                                                                                                                  \
     else                                                                                                               \
     {                                                                                                                  \
-      polylabel saved = ec.l;                                                                                          \
-      ec.l.FIELD_NAME = label;                                                                                         \
+      polylabel saved = std::move(ec.l);                                                                                          \
+      ec.l.FIELD_NAME = std::move(label);                                                                                         \
       learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));                                        \
-      ec.l = saved;                                                                                                    \
+      label = std::move(ec.l.FIELD_NAME);\
+      ec.l = std::move(saved);                                                                                                    \
     }                                                                                                                  \
                                                                                                                        \
     decrement_offset(ec, increment, i);                                                                                \
@@ -166,69 +167,80 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
     }                                                                                                                 \
     else                                                                                                              \
     {                                                                                                                 \
-      polylabel saved = ec.l;                                                                                         \
-      ec.l.FIELD_NAME = label;                                                                                        \
-      learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));                                     \
-      ec.l = saved;                                                                                                   \
+      polylabel saved = std::move(ec.l);                                                                                          \
+      ec.l.FIELD_NAME = std::move(label);                                                                                         \
+      learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));                                        \
+      label = std::move(ec.l.FIELD_NAME);\
+      ec.l = std::move(saved);                                                                                                    \
     }                                                                                                                 \
                                                                                                                       \
     decrement_offset(ec, increment, i);                                                                               \
   }
 
-#define TYPED_MULTI_EXAMPLE_LEARN_FN(TYPE, FIELD_NAME)                                                              \
-  inline void learn_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& label, size_t i = 0)   \
+#define TYPED_MULTI_EXAMPLE_LEARN_FN(TYPE, FIELD_NAME)                                                                \
+  inline void learn_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& labels, size_t i = 0)    \
   {                                                                                                                   \
     assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value)); \
     increment_offset(example_collection, increment, i);                                                               \
-    if (learn_fd.learn_with_label_f != nullptr)                                                                     \
+    if (learn_fd.learn_with_label_f != nullptr)                                                                       \
     {                                                                                                                 \
-      learn_fd.learn_with_label_f(                                                                                  \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&label));        \
+      learn_fd.learn_with_label_f(                                                                                    \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&labels));       \
     }                                                                                                                 \
     else                                                                                                              \
     {                                                                                                                 \
-      std::vector<TYPE> saved;                                                                                        \
+      std::vector<polylabel> saved;                                                                                   \
       saved.reserve(example_collection.size());                                                                       \
-      for (const auto& example : example_collection)                                                                  \
-      {                                                                                                               \
-        saved.push_back(example->l.FIELD_NAME);                                                                       \
-      }                                                                                                               \
-      learn_fd.learn_f(                                                                                             \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(saved));         \
       size_t it = 0;                                                                                                  \
       for (const auto& example : example_collection)                                                                  \
       {                                                                                                               \
-        example->l.FIELD_NAME = saved[it++];                                                                          \
+        saved.push_back(std::move(example->l));                                                                       \
+        example->l.FIELD_NAME = std::move(labels[it]);                                                                \
+        it++;                                                                                                         \
       }                                                                                                               \
-    } \
+      learn_fd.learn_f(                                                                                               \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(saved));         \
+      it = 0;                                                                                                  \
+      for (const auto& example : example_collection)                                                                  \
+      {                                                                                                               \
+        example->l = std::move(saved[it]);                                                                            \
+        labels[it] = std::move(example->l.FIELD_NAME); \
+        it++;                                                           \
+      }                                                                                                               \
+    }                                                                                                                 \
   }
 
 #define TYPED_MULTI_EXAMPLE_PREDICT_FN(TYPE, FIELD_NAME)                                                              \
-  inline void predict_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& label, size_t i = 0)   \
+  inline void predict_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& labels, size_t i = 0)   \
   {                                                                                                                   \
     assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value)); \
     increment_offset(example_collection, increment, i);                                                               \
     if (learn_fd.predict_with_label_f != nullptr)                                                                     \
     {                                                                                                                 \
       learn_fd.predict_with_label_f(                                                                                  \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&label));        \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&labels));        \
     }                                                                                                                 \
     else                                                                                                              \
     {                                                                                                                 \
-      std::vector<TYPE> saved;                                                                                        \
+      std::vector<polylabel> saved;                                                                                   \
       saved.reserve(example_collection.size());                                                                       \
-      for (const auto& example : example_collection)                                                                  \
-      {                                                                                                               \
-        saved.push_back(example->l.FIELD_NAME);                                                                       \
-      }                                                                                                               \
-      learn_fd.predict_f(                                                                                             \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(saved));         \
       size_t it = 0;                                                                                                  \
       for (const auto& example : example_collection)                                                                  \
       {                                                                                                               \
-        example->l.FIELD_NAME = saved[it++];                                                                          \
+        saved.push_back(std::move(example->l));                                                                       \
+        example->l.FIELD_NAME = std::move(labels[it]);                                                                \
+        it++;                                                                                                         \
       }                                                                                                               \
-    } \
+      learn_fd.predict_f(                                                                                             \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(saved));         \
+      it = 0;                                                                                                  \
+      for (const auto& example : example_collection)                                                                  \
+      {                                                                                                               \
+        example->l = std::move(saved[it]);                                                                            \
+        labels[it] = std::move(example->l.FIELD_NAME);\
+         it++;                                                           \
+      }                                                                                                               \
+    }                                                                                                                 \
   }
 
 #define DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(TYPE, FIELD_NAME) \
@@ -237,60 +249,61 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   TYPED_MULTI_EXAMPLE_LEARN_FN(TYPE, FIELD_NAME)               \
   TYPED_MULTI_EXAMPLE_PREDICT_FN(TYPE, FIELD_NAME)
 
-#define TYPED_EXAMPLE_LEARN_CASE(TYPE, FIELD_NAME)                                                                            \
+#define TYPED_EXAMPLE_LEARN_CASE(TYPE, FIELD_NAME)                                                                   \
   case label_type_t::FIELD_NAME:                                                                                     \
   {                                                                                                                  \
-    TYPE saved = ec.l.FIELD_NAME;                                                                                    \
+    TYPE saved = std::move(ec.l.FIELD_NAME);                                                                         \
     learn_fd.learn_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
-    ec.l.FIELD_NAME = saved;                                                                                         \
+    ec.l.FIELD_NAME = std::move(saved);                                                                              \
   }                                                                                                                  \
   break;
 
-#define TYPED_MULTI_EXAMPLE_LEARN_CASE(TYPE, FIELD_NAME)                                                                        \
+#define TYPED_MULTI_EXAMPLE_LEARN_CASE(TYPE, FIELD_NAME)                                                             \
   case label_type_t::FIELD_NAME:                                                                                     \
   {                                                                                                                  \
     std::vector<TYPE> saved;                                                                                         \
     saved.reserve(ec.size());                                                                                        \
     for (const auto& example : ec)                                                                                   \
     {                                                                                                                \
-      saved.push_back(example->l.FIELD_NAME);                                                                        \
+      saved.push_back(std::move(example->l.FIELD_NAME));                                                             \
     }                                                                                                                \
     learn_fd.learn_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
     size_t it = 0;                                                                                                   \
     for (const auto& example : ec)                                                                                   \
     {                                                                                                                \
-      example->l.FIELD_NAME = saved[it++];                                                                           \
+      example->l.FIELD_NAME = std::move(saved[it]);                                                                  \
+      it++;                                                                                                          \
     }                                                                                                                \
   }                                                                                                                  \
   break;
 
-#define TYPED_EXAMPLE_PREDICT_CASE(TYPE, FIELD_NAME)                                                                         \
+#define TYPED_EXAMPLE_PREDICT_CASE(TYPE, FIELD_NAME)                                                                   \
   case label_type_t::FIELD_NAME:                                                                                       \
   {                                                                                                                    \
-    TYPE saved = ec.l.FIELD_NAME;                                                                                      \
+    TYPE saved = std::move(ec.l.FIELD_NAME);                                                                           \
     learn_fd.predict_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
-    ec.l.FIELD_NAME = saved;                                                                                           \
+    ec.l.FIELD_NAME = std::move(saved);                                                                                \
   }                                                                                                                    \
   break;
 
-#define TYPED_MULTI_EXAMPLE_PREDICT_CASE(TYPE, FIELD_NAME)                                                                     \
+#define TYPED_MULTI_EXAMPLE_PREDICT_CASE(TYPE, FIELD_NAME)                                                             \
   case label_type_t::FIELD_NAME:                                                                                       \
   {                                                                                                                    \
     std::vector<TYPE> saved;                                                                                           \
     saved.reserve(ec.size());                                                                                          \
     for (const auto& example : ec)                                                                                     \
     {                                                                                                                  \
-      saved.push_back(example->l.FIELD_NAME);                                                                          \
+      saved.push_back(std::move(example->l.FIELD_NAME));                                                               \
     }                                                                                                                  \
     learn_fd.predict_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
     size_t it = 0;                                                                                                     \
     for (const auto& example : ec)                                                                                     \
     {                                                                                                                  \
-      example->l.FIELD_NAME = saved[it++];                                                                             \
+      example->l.FIELD_NAME = std::move(saved[it]);                                                                    \
+      it++;                                                                                                            \
     }                                                                                                                  \
   }                                                                                                                    \
   break;
-
 
 template <class T, class E>
 struct learner
