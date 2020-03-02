@@ -562,10 +562,10 @@ class cost_sensitive_label(abstract_label):
     def from_example(self, ex):
         class wclass:
             def __init__(self,
-                        label,
-                        cost=0.,
-                        partial_prediction=0.,
-                        wap_value=0.):
+                         label,
+                         cost=0.,
+                         partial_prediction=0.,
+                         wap_value=0.):
                 self.label = label
                 self.cost = cost
                 self.partial_prediction = partial_prediction
@@ -597,11 +597,11 @@ class cbandits_label(abstract_label):
     def from_example(self, ex):
         class wclass:
             def __init__(self,
-                        action=None,
-                        cost=0.,
-                        partial_prediction=0.,
-                        probability=0.,
-                        **kwargs):
+                         action=None,
+                         cost=0.,
+                         partial_prediction=0.,
+                         probability=0.,
+                         **kwargs):
                 if kwargs.get('label', False):
                     action = kwargs['label']
                     warnings.warn("label has been deprecated. Please use 'action' instead.", DeprecationWarning)
