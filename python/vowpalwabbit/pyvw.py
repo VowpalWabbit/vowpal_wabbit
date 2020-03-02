@@ -565,8 +565,7 @@ class cost_sensitive_label(abstract_label):
                         label,
                         cost=0.,
                         partial_prediction=0.,
-                        wap_value=0.,
-                        **kwargs):
+                        wap_value=0.):
                 self.label = label
                 self.cost = cost
                 self.partial_prediction = partial_prediction
