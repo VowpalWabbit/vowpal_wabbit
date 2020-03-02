@@ -8,19 +8,19 @@
 using namespace VW::config;
 
 template <bool is_learn>
-void predict_or_learn(char&, LEARNER::single_learner& base, example& ec, label_data& label_data)
+void predict_or_learn(char&, LEARNER::single_learner& base, example& ec, label_data& simple_label)
 {
   if (is_learn)
-    base.learn_with_label(ec, label_data);
+    base.learn_with_label(ec, simple_label);
   else
-    base.predict_with_label(ec, label_data);
+    base.predict_with_label(ec, simple_label);
 
   if (ec.pred.scalar > 0)
     ec.pred.scalar = 1;
   else
     ec.pred.scalar = -1;
 
-  const auto& label = label_data.label;
+  const auto& label = simple_label.label;
   if (label != FLT_MAX)
   {
     if (fabs(label) != 1.f)
