@@ -298,7 +298,7 @@ class vw_predict
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
     std::vector<std::vector<uint8_t>> vec_sorted;
-    for (const std::vector<uint8_t>& interaction : _interactions)
+    for (auto interaction : _interactions)
     {
       std::vector<uint8_t> sorted_i(interaction);
       std::sort(std::begin(sorted_i), std::end(sorted_i));

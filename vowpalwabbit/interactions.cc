@@ -239,7 +239,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
   if (all.permutations)
   {
     // just multiply precomputed values for all namespaces
-    for (auto inter : *ec.interactions)
+    for (auto &inter : *ec.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
