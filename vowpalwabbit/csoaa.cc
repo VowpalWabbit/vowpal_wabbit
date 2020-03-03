@@ -126,7 +126,6 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
       predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
   all.p->lp = cs_label;
-  all.label_type = label_type_t::cs;
 
   l.set_finish_example(finish_example);
   all.cost_sensitive = make_base(l);
@@ -833,7 +832,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
     all.delete_prediction = delete_action_scores;
 
   all.p->lp = COST_SENSITIVE::cs_label;
-  all.label_type = label_type_t::cs;
 
   ld->treat_as_classifier = false;
   if (ldf_arg == "multiline" || ldf_arg == "m")

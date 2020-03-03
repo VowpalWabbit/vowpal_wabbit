@@ -40,9 +40,8 @@ struct ccb
   std::vector<bool> exclude_list, include_list;
   std::vector<std::string> generated_interactions;
   std::vector<std::string>* original_interactions;
-  size_t action_with_label;
-
   std::vector<CB::label> cb_labels;
+  size_t action_with_label;
 
   multi_ex cb_ex;
 
@@ -656,10 +655,11 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   data->id_namespace_str.push_back((char)ccb_id_namespace);
   data->id_namespace_str.append("_id");
+  data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  using fn = void (*)(ccb&, LEARNER::multi_learner&, multi_ex&);
+  using learn_pred_fn = void (*)(ccb&, LEARNER::multi_learner&, multi_ex&);
   learner<ccb, multi_ex>& l =
-      init_learner(data, base, (fn) nullptr, (fn) nullptr, 1, prediction_type_t::decision_probs);
+      init_learner(data, base, (learn_pred_fn) nullptr, (learn_pred_fn) nullptr, 1, prediction_type_t::decision_probs);
   l.label_type = label_type_t::conditional_contextual_bandit;
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
   l.set_finish_example(finish_multiline_example);

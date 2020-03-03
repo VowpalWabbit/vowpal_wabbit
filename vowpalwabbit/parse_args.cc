@@ -1683,8 +1683,10 @@ vw* initialize(
     std::vector<std::string> dictionary_nses;
     parse_modules(options, all, dictionary_nses);
 
+IGNORE_DEPRECATED_USAGE_START
     // Set this field to ensure compatability.
     all.label_type = all.get_label_type();
+IGNORE_DEPRECATED_USAGE_END
 
     parse_sources(options, all, *model, skipModelLoad);
 

@@ -137,7 +137,7 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
 #define TYPED_EXAMPLE_LEARN_FN(TYPE, FIELD_NAME)                                                                       \
   inline void learn_with_label(example& ec, TYPE& label, size_t i = 0)                                                 \
   {                                                                                                                    \
-    assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value));  \
+    assert(!is_multiline);                                                                                             \
     increment_offset(ec, increment, i);                                                                                \
     if (learn_fd.learn_with_label_f != nullptr)                                                                        \
     {                                                                                                                  \
@@ -154,89 +154,89 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
     decrement_offset(ec, increment, i);                                                                                \
   }
 
-#define TYPED_EXAMPLE_PREDICT_FN(TYPE, FIELD_NAME)                                                                    \
-  inline void predict_with_label(example& ec, TYPE& label, size_t i = 0)                                              \
-  {                                                                                                                   \
-    assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value)); \
-    increment_offset(ec, increment, i);                                                                               \
-    if (learn_fd.predict_with_label_f != nullptr)                                                                     \
-    {                                                                                                                 \
-      learn_fd.predict_with_label_f(                                                                                  \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&label));                        \
-    }                                                                                                                 \
-    else                                                                                                              \
-    {                                                                                                                 \
-      polylabel saved = std::move(ec.l);                                                                              \
-      ec.l.FIELD_NAME = std::move(label);                                                                             \
-      learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));                                     \
-      label = std::move(ec.l.FIELD_NAME);                                                                             \
-      ec.l = std::move(saved);                                                                                        \
-    }                                                                                                                 \
-    decrement_offset(ec, increment, i);                                                                               \
+#define TYPED_EXAMPLE_PREDICT_FN(TYPE, FIELD_NAME)                                             \
+  inline void predict_with_label(example& ec, TYPE& label, size_t i = 0)                       \
+  {                                                                                            \
+    assert(!is_multiline);                                                                     \
+    increment_offset(ec, increment, i);                                                        \
+    if (learn_fd.predict_with_label_f != nullptr)                                              \
+    {                                                                                          \
+      learn_fd.predict_with_label_f(                                                           \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&label)); \
+    }                                                                                          \
+    else                                                                                       \
+    {                                                                                          \
+      polylabel saved = std::move(ec.l);                                                       \
+      ec.l.FIELD_NAME = std::move(label);                                                      \
+      learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec));              \
+      label = std::move(ec.l.FIELD_NAME);                                                      \
+      ec.l = std::move(saved);                                                                 \
+    }                                                                                          \
+    decrement_offset(ec, increment, i);                                                        \
   }
 
-#define TYPED_MULTI_EXAMPLE_LEARN_FN(TYPE, FIELD_NAME)                                                                \
-  inline void learn_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& labels, size_t i = 0)    \
-  {                                                                                                                   \
-    assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value)); \
-    increment_offset(example_collection, increment, i);                                                               \
-    if (learn_fd.learn_with_label_f != nullptr)                                                                       \
-    {                                                                                                                 \
-      learn_fd.learn_with_label_f(                                                                                    \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&labels));       \
-    }                                                                                                                 \
-    else                                                                                                              \
-    {                                                                                                                 \
-      std::vector<polylabel> saved;                                                                                   \
-      saved.reserve(example_collection.size());                                                                       \
-      size_t it = 0;                                                                                                  \
-      for (const auto& example : example_collection)                                                                  \
-      {                                                                                                               \
-        saved.push_back(std::move(example->l));                                                                       \
-        example->l.FIELD_NAME = std::move(labels[it]);                                                                \
-        it++;                                                                                                         \
-      }                                                                                                               \
-      learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));                       \
-      it = 0;                                                                                                         \
-      for (const auto& example : example_collection)                                                                  \
-      {                                                                                                               \
-        labels[it] = std::move(example->l.FIELD_NAME);                                                                \
-        example->l = std::move(saved[it]);                                                                            \
-        it++;                                                                                                         \
-      }                                                                                                               \
-    }                                                                                                                 \
+#define TYPED_MULTI_EXAMPLE_LEARN_FN(TYPE, FIELD_NAME)                                                             \
+  inline void learn_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& labels, size_t i = 0) \
+  {                                                                                                                \
+    assert(is_multiline);                                                                                          \
+    increment_offset(example_collection, increment, i);                                                            \
+    if (learn_fd.learn_with_label_f != nullptr)                                                                    \
+    {                                                                                                              \
+      learn_fd.learn_with_label_f(                                                                                 \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&labels));    \
+    }                                                                                                              \
+    else                                                                                                           \
+    {                                                                                                              \
+      std::vector<polylabel> saved;                                                                                \
+      saved.reserve(example_collection.size());                                                                    \
+      size_t it = 0;                                                                                               \
+      for (const auto& example : example_collection)                                                               \
+      {                                                                                                            \
+        saved.push_back(std::move(example->l));                                                                    \
+        example->l.FIELD_NAME = std::move(labels[it]);                                                             \
+        it++;                                                                                                      \
+      }                                                                                                            \
+      learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));                    \
+      it = 0;                                                                                                      \
+      for (const auto& example : example_collection)                                                               \
+      {                                                                                                            \
+        labels[it] = std::move(example->l.FIELD_NAME);                                                             \
+        example->l = std::move(saved[it]);                                                                         \
+        it++;                                                                                                      \
+      }                                                                                                            \
+    }                                                                                                              \
   }
 
-#define TYPED_MULTI_EXAMPLE_PREDICT_FN(TYPE, FIELD_NAME)                                                              \
-  inline void predict_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& labels, size_t i = 0)  \
-  {                                                                                                                   \
-    assert((is_multiline && std::is_same<multi_ex, E>::value) || (!is_multiline && std::is_same<example, E>::value)); \
-    increment_offset(example_collection, increment, i);                                                               \
-    if (learn_fd.predict_with_label_f != nullptr)                                                                     \
-    {                                                                                                                 \
-      learn_fd.predict_with_label_f(                                                                                  \
-          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&labels));       \
-    }                                                                                                                 \
-    else                                                                                                              \
-    {                                                                                                                 \
-      std::vector<polylabel> saved;                                                                                   \
-      saved.reserve(example_collection.size());                                                                       \
-      size_t it = 0;                                                                                                  \
-      for (const auto& example : example_collection)                                                                  \
-      {                                                                                                               \
-        saved.push_back(std::move(example->l));                                                                       \
-        example->l.FIELD_NAME = std::move(labels[it]);                                                                \
-        it++;                                                                                                         \
-      }                                                                                                               \
-      learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));                     \
-      it = 0;                                                                                                         \
-      for (const auto& example : example_collection)                                                                  \
-      {                                                                                                               \
-        labels[it] = std::move(example->l.FIELD_NAME);                                                                \
-        example->l = std::move(saved[it]);                                                                            \
-        it++;                                                                                                         \
-      }                                                                                                               \
-    }                                                                                                                 \
+#define TYPED_MULTI_EXAMPLE_PREDICT_FN(TYPE, FIELD_NAME)                                                             \
+  inline void predict_with_label(std::vector<example*>& example_collection, std::vector<TYPE>& labels, size_t i = 0) \
+  {                                                                                                                  \
+    assert(is_multiline);                                                                                            \
+    increment_offset(example_collection, increment, i);                                                              \
+    if (learn_fd.predict_with_label_f != nullptr)                                                                    \
+    {                                                                                                                \
+      learn_fd.predict_with_label_f(                                                                                 \
+          learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection), static_cast<void*>(&labels));      \
+    }                                                                                                                \
+    else                                                                                                             \
+    {                                                                                                                \
+      std::vector<polylabel> saved;                                                                                  \
+      saved.reserve(example_collection.size());                                                                      \
+      size_t it = 0;                                                                                                 \
+      for (const auto& example : example_collection)                                                                 \
+      {                                                                                                              \
+        saved.push_back(std::move(example->l));                                                                      \
+        example->l.FIELD_NAME = std::move(labels[it]);                                                               \
+        it++;                                                                                                        \
+      }                                                                                                              \
+      learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));                    \
+      it = 0;                                                                                                        \
+      for (const auto& example : example_collection)                                                                 \
+      {                                                                                                              \
+        labels[it] = std::move(example->l.FIELD_NAME);                                                               \
+        example->l = std::move(saved[it]);                                                                           \
+        it++;                                                                                                        \
+      }                                                                                                              \
+    }                                                                                                                \
   }
 
 #define DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(TYPE, FIELD_NAME) \
@@ -398,7 +398,7 @@ struct learner
     increment_offset(ec, increment, i);
     if (learn_fd.predict_with_label_f != nullptr)
     {
-      switch (learn_fd.base->label_type)
+      switch (label_type)
       {
         TYPED_EXAMPLE_PREDICT_CASE(no_label::no_label, empty);
         TYPED_EXAMPLE_PREDICT_CASE(label_data, simple);
@@ -426,7 +426,7 @@ struct learner
     increment_offset(ec, increment, i);
     if (learn_fd.predict_with_label_f != nullptr)
     {
-      switch (learn_fd.base->label_type)
+      switch (label_type)
       {
         TYPED_MULTI_EXAMPLE_PREDICT_CASE(no_label::no_label, empty);
         TYPED_MULTI_EXAMPLE_PREDICT_CASE(label_data, simple);
@@ -448,6 +448,7 @@ struct learner
     decrement_offset(ec, increment, i);
   }
 
+  // TODO support label based signature
   inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
@@ -795,7 +796,7 @@ void multiline_learn_or_predict_with_labels(multi_learner& base, multi_ex& examp
   if (is_learn)
     base.learn_with_label(examples, labels, id);
   else
-    base.predict(examples, id);
+    base.predict_with_label(examples, labels, id);
 
   for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }

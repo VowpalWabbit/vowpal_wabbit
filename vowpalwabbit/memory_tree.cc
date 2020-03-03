@@ -1300,7 +1300,6 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
         tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type_t::multilabels);
 
     // all.p->lp = MULTILABEL::multilabel;
-    // all.label_type = label_type_t::multi;
     // all.delete_prediction = MULTILABEL::multilabel.delete_label;
     // srand(time(0));
     l.set_end_pass(end_pass);

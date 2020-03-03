@@ -301,7 +301,7 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    if (ctx.all->label_type == label_type_t::conditional_contextual_bandit)
+    if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
     {
       auto ld = (CCB::label*)&ctx.ex->l;
 
@@ -501,7 +501,7 @@ struct MultiState : BaseState<audit>
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     // mark shared example
-    if (ctx.all->label_type == label_type_t::cb)
+    if (ctx.all->get_label_type() == label_type_t::cb)
     {
       CB::label* ld = &ctx.ex->l.cb;
       CB::cb_class f;
@@ -513,7 +513,7 @@ struct MultiState : BaseState<audit>
 
       ld->costs.push_back(f);
     }
-    else if (ctx.all->label_type == label_type_t::conditional_contextual_bandit)
+    else if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
     {
       CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
       ld->type = CCB::example_type::shared;
@@ -529,7 +529,7 @@ struct MultiState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
-    if (ctx.all->label_type == label_type_t::conditional_contextual_bandit)
+    if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
     {
       ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
     }
@@ -901,7 +901,7 @@ class DefaultState : public BaseState<audit>
 
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
-      if (ctx.all->label_type == label_type_t::conditional_contextual_bandit)
+      if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
             [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
@@ -1468,14 +1468,14 @@ void read_line_json(
 
 inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
-  if (all.label_type == label_type_t::cb)
+  if (all.get_label_type() == label_type_t::cb)
   {
     for (auto& e : examples)
     {
       e->l.cb.weight = 1 - pdrop;
     }
   }
-  else if (all.label_type == label_type_t::conditional_contextual_bandit)
+  else if (all.get_label_type() == label_type_t::conditional_contextual_bandit)
   {
     for (auto& e : examples)
     {
