@@ -358,6 +358,58 @@ class poisson_loss : public loss_function
   }
 };
 
+class modified_hubber_loss : public loss_function
+{
+ public:
+  std::string getType() { return "modified_hubber"; }
+
+  float getLoss(shared_data*, float prediction, float label)
+  {
+    if (label != -1.f && label != 1.f)
+      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
+     float e = max(0, 1-prediction*label);
+    return (prediction*label >= -1.f) ? e*e : -4*label*prediction;
+  }
+
+  float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
+  {
+
+  }
+
+  float getUnsafeUpdate(float prediction, float label, float update_scale)
+  {
+
+  }
+
+  float getRevertingWeight(shared_data* /* sd */, float /* prediction */, float /* eta_t */)
+  {
+
+  }
+
+  float getSquareGrad(float prediction, float label)
+  {
+    float d = first_derivative(nullptr, prediction, label)
+     return d*d;
+  }
+
+  float first_derivative(shared_data*, float prediction, float label)
+  {
+     float e = max(0, 1-prediction*label);
+    if (prediction*label >= -1.f)
+    {
+      if(e == 0) return 0;
+      else return -label;
+    }
+    else
+    {
+      return -4*label;
+    }
+  }
+
+  float second_derivative(shared_data*, float prediction, float  label) return 0;
+
+};
+
 loss_function* getLossFunction(vw& all, std::string funcName, float function_parameter)
 {
   if (funcName.compare("squared") == 0 || funcName.compare("Huber") == 0)
