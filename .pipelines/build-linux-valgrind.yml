@@ -21,9 +21,7 @@ strategy:
   maxParallel: 2
 
 steps:
-- bash: |
-    set -e
-    sudo apt install -y valgrind
+- bash: sudo apt install -y valgrind
   displayName: Install Valgrind
 - bash: ./.scripts/linux/build-minimal.sh $(BUILD_CONFIGURATION)
   displayName: Build C++ VW binary
