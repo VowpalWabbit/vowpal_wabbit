@@ -49,7 +49,7 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
     }
     start = idx_after_arg + 1;
   }
-
+}
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name)
 {
   std::vector<std::string> values;
