@@ -7,7 +7,7 @@
 namespace vw_slim
 {
 template<class Tcontainer>
-void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<Tcontainer>& out_values)
+void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<Tcontainer>& out_values);
 
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name);
 
