@@ -12,18 +12,10 @@ container:
   image: vowpalwabbit/ubuntu1604-build:0.5.0
   endpoint: DockerHub
 
-strategy:
-  matrix:
-    Debug:
-      BUILD_CONFIGURATION: 'Debug'
-    Release:
-      BUILD_CONFIGURATION: 'Release'
-  maxParallel: 2
-
 steps:
 - bash: sudo apt install -y valgrind
   displayName: Install Valgrind
-- bash: ./.scripts/linux/build-minimal.sh $(BUILD_CONFIGURATION)
+- bash: ./.scripts/linux/build-minimal.sh Release
   displayName: Build C++ VW binary
 - bash: ./.scripts/linux/test-valgrind.sh
   displayName: Run test suite with Valgrind
