@@ -9,7 +9,7 @@ CALL %~dp0init.cmd
 
 REM TODO: Ensure all errors caught by the smoke test will result in non-zero exit codes
 ECHO Running VW C Smoke test
-"%vwRoot%\vowpalwabbit\out\target\Release\x64\c_test.exe"
+"%vwRoot%\vowpalwabbit\out\target\Release\x64\native\c_test.exe"
 
 IF "%ERRORLEVEL%" NEQ "0" (
     ENDLOCAL
@@ -17,7 +17,7 @@ IF "%ERRORLEVEL%" NEQ "0" (
 )
 
 ECHO Running VW Unit Tests in C++
-"%vwRoot%\vowpalwabbit\out\target\Release\x64\vw_unit_test.exe"
+"%vwRoot%\vowpalwabbit\out\target\Release\x64\native\vw_unit_test.exe"
 
 IF "%ERRORLEVEL%" NEQ "0" (
     ENDLOCAL
