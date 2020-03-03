@@ -17,14 +17,14 @@ steps:
     command: 'restore'
     restoreSolution: './vowpalwabbit/vw.sln'
 
- - task: VSBuild@1
-   displayName: Build vw.sln
-   inputs:
-     solution: './vowpalwabbit/vw.sln'
-     vsVersion: '16.0'
-     msbuildArgs: '/nr:false'
-     platform: 'x64'
-     configuration: 'Release'
+- task: VSBuild@1
+  displayName: Build vw.sln
+  inputs:
+    solution: './vowpalwabbit/vw.sln'
+    vsVersion: '16.0'
+    msbuildArgs: '/nr:false'
+    platform: 'x64'
+    configuration: 'Release'
 
 #- script: CALL .scripts/build.cmd
 #  displayName: 'Build vw.sln'
