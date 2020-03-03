@@ -9,7 +9,7 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 container:
-  image: vowpalwabbit/ubuntu1604-build:0.3.0
+  image: vowpalwabbit/ubuntu1604-build:0.5.0
   endpoint: DockerHub
 
 strategy:
@@ -22,8 +22,8 @@ strategy:
 
 steps:
 - bash: |
-    su --preserve-environment --login
-    apt-get install -y valgrind
+    set -e
+    sudo apt install -y valgrind
   displayName: Install Valgrind
 - bash: ./.scripts/linux/build-minimal.sh $(BUILD_CONFIGURATION)
   displayName: Build C++ VW binary
