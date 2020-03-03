@@ -48,7 +48,7 @@ steps:
   displayName: 'Publish Test Results'
   inputs:
     testResultsFormat: VSTest
-    testResultsFiles: '**/vowpalwabbit/out/test/Release/x64/*.trx'
+    testResultsFiles: '**/vowpalwabbit/out/test/Release/x64/**/*.trx'
 - script: CALL .scripts/package.cmd
   displayName: 'Package artifacts'
   env:
