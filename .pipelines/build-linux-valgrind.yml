@@ -4,8 +4,6 @@ schedules:
     branches:
       include:
       - master
-pr:
-  - master
 
 pool:
   vmImage: 'ubuntu-16.04'
