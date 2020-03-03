@@ -22,38 +22,44 @@ steps:
   inputs:
     solution: './vowpalwabbit/vw.sln'
     vsVersion: '16.0'
-    msbuildArgs: '/nr:false'
+    msbuildArgs: '/nr:false /bl:"$(Build.SourcesDirectory)\vowpalwabbit\vw.binlog"'
     platform: 'x64'
     configuration: 'Release'
 
-#- script: CALL .scripts/build.cmd
-#  displayName: 'Build vw.sln'
-#  failOnStderr: true
-#  env:
-#    ForceLinearBuild: true
 - script: CALL .scripts/test.cmd
   displayName: 'Run tests'
   failOnStderr: false
+
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'
   inputs:
     testResultsFormat: VSTest
     testResultsFiles: '**/vowpalwabbit/out/test/Release/x64/**/*.trx'
+
 - script: CALL .scripts/package.cmd
   displayName: 'Package artifacts'
   env:
     Tag: -$(Build.SourceVersion)--$(Build.BuildId)
     SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
   failOnStderr: true
+
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: target'
   inputs:
     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\target
     ArtifactName: target
   condition: succeededOrFailed()
+
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: package'
   inputs:
      PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
+     ArtifactName: package
+  condition: succeededOrFailed()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: vw.binlog'
+  inputs:
+     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\vw.binlog
      ArtifactName: package
   condition: succeededOrFailed()
