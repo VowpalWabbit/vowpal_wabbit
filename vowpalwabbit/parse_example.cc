@@ -144,6 +144,7 @@ class TC_parser
     {
       _v = float_feature_value = 0.f;
       // syntax error
+      _ae->malformed = true;
       parserWarning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
       return true;
     }
@@ -346,11 +347,13 @@ class TC_parser
       _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read + _read_idx >= _line.size())
       {
+        _ae->malformed = true;
         parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"");
       }
       if (std::isnan(_cur_channel_v))
       {
         _cur_channel_v = 1.f;
+        _ae->malformed = true;
         parserWarning(
             "warning: invalid namespace value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 1.");
       }
@@ -359,6 +362,7 @@ class TC_parser
     else
     {
       // syntax error
+      _ae->malformed = true;
       parserWarning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
   }
@@ -369,6 +373,7 @@ class TC_parser
         _line[_read_idx] == '\t' || _line[_read_idx] == ':' || _line[_read_idx] == '\r')
     {
       // syntax error
+      _ae->malformed = true;
       parserWarning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"");
     }
     else
@@ -400,6 +405,7 @@ class TC_parser
     if (!(_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
     {
       // syntax error
+      _ae->malformed=true;
       parserWarning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
   }
@@ -435,6 +441,7 @@ class TC_parser
     else
     {
       // syntax error
+      _ae->malformed = true;
       parserWarning(
           "malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
@@ -452,6 +459,7 @@ class TC_parser
     if (_read_idx < _line.size() && _line[_read_idx] != '\r')
     {
       // syntax error
+      _ae->malformed = true;
       parserWarning("malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
   }
@@ -538,14 +546,20 @@ void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples
 {
   std::vector<VW::string_view> lines;
   tokenize('\n', line, lines);
-  for (size_t i = 0; i < lines.size(); i++)
+  for (size_t i = 0, j=0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.
-    if (examples.size() < i + 1)
+    while (examples.size() < j + 1)
     {
       examples.push_back(&VW::get_unused_example(all));
     }
-    read_line(*all, examples[i], lines[i]);
+    read_line(*all, examples[j], lines[i]);
+    
+    // Check whether the example has to be used or not.
+    if(examples.last()->malformed)
+      examples.pop();
+    else
+      j++;
   }
 }
 
