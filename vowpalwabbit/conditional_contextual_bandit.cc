@@ -303,7 +303,7 @@ void calculate_and_insert_interactions(
           !found_namespaces[action_index - INTERACTIONS::printable_start])
       {
         found_namespaces[action_index - INTERACTIONS::printable_start] = true;
-        generated_interactions.push_back({(namespace_index)action_index, (namespace_index)ccb_id_namespace});
+        generated_interactions.push_back({static_cast<namespace_index>(action_index), static_cast<namespace_index>(ccb_id_namespace)});
       }
     }
   }
