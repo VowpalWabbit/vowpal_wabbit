@@ -50,6 +50,11 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
     start = idx_after_arg + 1;
   }
 }
+
+template void find_opt<std::string>(std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values);
+
+template void find_opt<std::vector<uint8_t>>(std::string const& command_line_args, std::string arg_name, std::vector<std::vector<uint8_t>>& out_values);
+
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name)
 {
   std::vector<std::string> values;
