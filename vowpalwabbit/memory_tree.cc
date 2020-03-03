@@ -1299,12 +1299,8 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     learner<memory_tree, example>& l = init_learner(
         tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type_t::multilabels);
 
-    // all.p->lp = MULTILABEL::multilabel;
-    // all.delete_prediction = MULTILABEL::multilabel.delete_label;
-    // srand(time(0));
     l.set_end_pass(end_pass);
     l.set_save_load(save_load_memory_tree);
-    // l.set_end_pass(end_pass);
 
     all.p->lp = MULTILABEL::multilabel;
     l.label_type = label_type_t::multi;
