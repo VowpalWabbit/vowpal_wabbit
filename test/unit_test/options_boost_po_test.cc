@@ -84,10 +84,10 @@ BOOST_AUTO_TEST_CASE(typed_option_collection_parsing) {
 
   options->add_and_parse(arg_group);
 
-  check_vectors(str_opt, { "test_str", "another", "at_end" });
-  check_vectors(int_opt, { 5 });
-  check_vectors(char_opt, { 'f', 'f', 'g' });
-  check_float_vectors(float_opt, { 4.3f }, 0.001f);
+  check_collections(str_opt, std::vector<std::string>{ "test_str", "another", "at_end" });
+  check_collections(int_opt, std::vector<int>{ 5 });
+  check_collections(char_opt, std::vector<char>{ 'f', 'f', 'g' });
+  check_collections(float_opt, std::vector<float>{ 4.3f }, 0.001f);
 }
 
 BOOST_AUTO_TEST_CASE(bool_implicit_and_explicit_options) {

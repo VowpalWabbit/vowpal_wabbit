@@ -5,10 +5,8 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 
 #include "label_parser.h"
-#include "v_array.h"
 #include "action_score.h"
 
 namespace slates
@@ -32,7 +30,7 @@ struct label
   // For shared examples
   // Only valid if labeled
   float cost;
- 
+
   // For action examples
   size_t slot_id;
 
@@ -43,23 +41,3 @@ struct label
 
 extern label_parser slates_label_parser;
 }  // namespace slates
-
-
-// struct label
-// {
-//   // General data
-//   example_type type = example_type::unset;
-//   float weight = 1.f;
-//   bool labeled = false;
-
-//   // For shared examples
-//   // Only valid if labeled
-//   float cost = 0.f;
- 
-//   // For action examples
-//   size_t slot_id = 0;
-
-//   // For slot examples
-//   // Only valid if labeled
-//   ACTION_SCORE::action_scores probabilities;
-// };
