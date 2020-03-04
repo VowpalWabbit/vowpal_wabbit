@@ -35,12 +35,11 @@ struct expreplay
   }
 };
 
-template <bool is_learn, label_parser& lp>
-void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
-{  // regardless of what happens, we must predict
-  base.predict(ec);
-  // if we're not learning, that's all that has to happen
-  if (!is_learn || lp.get_weight(&ec.l) == 0.)
+template <label_parser& lp>
+void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
+{  
+  // Cannot learn if the example weight is 0.
+  if (lp.get_weight(&ec.l) == 0.)
     return;
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
@@ -60,6 +59,12 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
     lp.copy_label(&er.buf[n].l, &ec.l);
   else
     er.buf[n].l = ec.l;
+}
+
+template <label_parser& lp>
+void predict(expreplay<lp>&, LEARNER::single_learner& base, example& ec)
+{  
+  base.predict(ec);
 }
 
 template <label_parser& lp>
@@ -120,7 +125,7 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 
   er->base = LEARNER::as_singleline(setup_base(options, all));
   LEARNER::learner<expreplay<lp>, example>* l =
-      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>, replay_string);
+      &init_learner(er, er->base, learn<lp>, predict<lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);

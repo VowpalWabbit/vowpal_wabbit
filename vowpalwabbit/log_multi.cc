@@ -320,10 +320,6 @@ void predict(log_multi& b, single_learner& base, example& ec)
 
 void learn(log_multi& b, single_learner& base, example& ec)
 {
-  //    verify_min_dfs(b, b.nodes[0]);
-  if (ec.l.multi.label == (uint32_t)-1 || b.progress)
-    predict(b, base, ec);
-
   if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
   {
     MULTICLASS::label_t mc = ec.l.multi;
@@ -499,10 +495,7 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
   new_options.add(make_option("log_multi", data->k).keep().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("disable progressive validation"))
-      .add(make_option("swap_resistance", data->swap_resist).default_value(4).help("disable progressive validation"))
-      .add(make_option("swap_resistance", data->swap_resist)
-               .default_value(4)
-               .help("higher = more resistance to swap, default=4"));
+      .add(make_option("swap_resistance", data->swap_resist).default_value(4).help("higher = more resistance to swap, default=4"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("log_multi"))

@@ -324,7 +324,6 @@ void predict(ect& e, single_learner& base, example& ec)
 void learn(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
-  predict(e, base, ec);
   uint32_t pred = ec.pred.multiclass;
 
   if (mc.label != (uint32_t)-1)

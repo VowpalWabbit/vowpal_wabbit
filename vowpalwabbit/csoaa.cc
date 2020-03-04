@@ -129,7 +129,9 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, c->num_classes, prediction_type::multiclass, "csoaa");
+      predict_or_learn<false>, c->num_classes, prediction_type::multiclass, "csoaa"
+      , false /*csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first*/
+      );
   all.example_parser->lbl_parser = cs_label;
   all.label_type = label_type::cs;
 
