@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+#include "example_predict.h"
+
 // command line option parsing
 namespace vw_slim
 {
