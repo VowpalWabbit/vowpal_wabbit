@@ -9,7 +9,7 @@
 
 constexpr float FLOAT_TOL = 0.0001f;
 
-template <template<typename...> typename ContainerOneT, template<typename...> typename ContainerTwoT>
+template <template<typename...> class ContainerOneT, template<typename...> class ContainerTwoT>
 void inline check_collections(const ContainerOneT<float>& lhs, const ContainerTwoT<float>& rhs, float tolerance_percent) {
   BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
   for (auto l = std::begin(lhs), r = std::begin(rhs); l < std::end(lhs); ++l, ++r) {
@@ -17,7 +17,7 @@ void inline check_collections(const ContainerOneT<float>& lhs, const ContainerTw
   }
 }
 
-template <template<typename...> typename ContainerOneT, template<typename...> typename ContainerTwoT>
+template <template<typename...> class ContainerOneT, template<typename...> class ContainerTwoT>
 void inline check_collections(const ContainerOneT<ACTION_SCORE::action_score>& lhs, const ContainerTwoT<ACTION_SCORE::action_score>& rhs, float tolerance_percent) {
   BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
   for (auto l = std::begin(lhs), r = std::begin(rhs); l < std::end(lhs); ++l, ++r) {
@@ -26,7 +26,7 @@ void inline check_collections(const ContainerOneT<ACTION_SCORE::action_score>& l
   }
 }
 
-template <template <typename...> typename ContainerOneT, template <typename...> typename ContainerTwoT, typename T>
+template <template <typename...> class ContainerOneT, template <typename...> class ContainerTwoT, typename T>
 void check_collections(const ContainerOneT<T>& lhs, const ContainerTwoT<T>& rhs) {
   BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 }
