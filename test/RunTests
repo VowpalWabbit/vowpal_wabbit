@@ -657,8 +657,18 @@ sub run_tests() {
         if ($status) {
             $ErrorCount++;
             if ($opt_V && $status == 100) {
-                my $errfile = valgrind_errfile($TestNo);
-                warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                # If the failing test was a script or Python file, ignore the failure because Valgrind
+                # doesn't really work there.
+                if (index($cmd, ".sh") != -1 || index($cmd, ".py") != -1) {
+                    print "$0: test $TestNo: Valgrind failure in script ignored\n";
+                    # Undo the error count change, as this failure is okay.
+                    $ErrorCount--;
+                    next;
+                }
+                else {
+                    my $errfile = valgrind_errfile($TestNo);
+                    warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                }
             } elsif ($TimeOut && $status == 124) {
                 warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
             } else {
