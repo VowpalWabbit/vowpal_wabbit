@@ -367,7 +367,7 @@ class modified_hubber_loss : public loss_function
   {
     if (label != -1.f && label != 1.f)
       std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
-     float e = max(0, 1-prediction*label);
+     float e = (1 - prediction*label >= 0.f) ? (1 - prediction*label) : 0.f;
     return (prediction*label >= -1.f) ? e*e : -4*label*prediction;
   }
 
@@ -388,25 +388,25 @@ class modified_hubber_loss : public loss_function
 
   float getSquareGrad(float prediction, float label)
   {
-    float d = first_derivative(nullptr, prediction, label)
-     return d*d;
+    float d = first_derivative(nullptr, prediction, label);
+     return d * d;
   }
 
   float first_derivative(shared_data*, float prediction, float label)
   {
-     float e = max(0, 1-prediction*label);
+     float e = (1 - prediction*label >= 0.f) ? (1 - prediction*label) : 0.f;
     if (prediction*label >= -1.f)
     {
       if(e == 0) return 0;
-      else return -label;
+      else return -1.f * label;
     }
     else
     {
-      return -4*label;
+      return -4.f * label;
     }
   }
 
-  float second_derivative(shared_data*, float prediction, float  label) return 0;
+  float second_derivative(shared_data*, float prediction, float  label) {return 0.f;}
 
 };
 
