@@ -136,10 +136,11 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
   return os;
 }
 
+void clear_memo_foreach_action(search_private& priv);
+
 struct search_private
 {
-  //FIXME: uncomment this private once this struct has a proper destructor
- //private:
+ private:
   struct cached_item_equivalent
   {
     bool operator()(const byte_array& A, const byte_array& B) const
@@ -163,7 +164,6 @@ struct search_private
  public:
   using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
- public:
   vw* all;
   std::shared_ptr<rand_state> _random_state;
 
@@ -298,6 +298,59 @@ struct search_private
                   // the "real" decision step but this really only matters for caching purposes
   v_array<v_array<action_cache>*>
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
+
+  ~search_private(){
+    if(all)
+    {
+      delete truth_string;
+      delete pred_string;
+      delete bad_string_stream;
+      neighbor_features.delete_v();
+      timesteps.delete_v();
+      if (cb_learner)
+        learn_losses.cb.costs.delete_v();
+      else
+        learn_losses.cs.costs.delete_v();
+      if (cb_learner)
+        gte_label.cb.costs.delete_v();
+      else
+        gte_label.cs.costs.delete_v();
+
+      condition_on_actions.delete_v();
+      learn_allowed_actions.delete_v();
+      ldf_test_label.costs.delete_v();
+      active_uncertainty.delete_v();
+      for (size_t i = 0; i < active_known.size(); i++) active_known[i].delete_v();
+      active_known.delete_v();
+
+      if (cb_learner)
+        allowed_actions_cache->cb.costs.delete_v();
+      else
+        allowed_actions_cache->cs.costs.delete_v();
+
+      train_trajectory.delete_v();
+
+      for (auto& ar : ptag_to_action) delete ar.repr;
+      ptag_to_action.delete_v();
+      clear_memo_foreach_action(*this);
+      memo_foreach_action.delete_v();
+
+      // destroy copied examples if we needed them
+      if (!examples_dont_change)
+      {
+        void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
+        for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
+        learn_ec_copy.delete_v();
+      }
+      learn_condition_on_names.delete_v();
+      learn_condition_on.delete_v();
+
+      learn_condition_on_act.delete_v();
+
+      free(allowed_actions_cache);
+      delete rawOutputStringStream;
+    }
+  }
 };
 
 void clear_memo_foreach_action(search_private& priv)
@@ -311,70 +364,18 @@ void clear_memo_foreach_action(search_private& priv)
   priv.memo_foreach_action.clear();
 }
 
-search::search() { priv = &calloc_or_throw<search_private>(); }
+search::search()
+{
+  priv = &calloc_or_throw<search_private>();
+  new (priv) search_private();
+}
 
 search::~search()
 {
-  if (this->priv && this->priv->all)
-  {
-    search_private& priv = *this->priv;
-
-    priv._random_state.~shared_ptr<rand_state>();
-    delete priv.truth_string;
-    delete priv.pred_string;
-    delete priv.bad_string_stream;
-    priv.rawOutputString.~basic_string();
-    priv.test_action_sequence.~vector<action>();
-    priv.dat_new_feature_audit_ss.~basic_stringstream();
-    priv.neighbor_features.delete_v();
-    priv.timesteps.delete_v();
-    if (priv.cb_learner)
-      priv.learn_losses.cb.costs.delete_v();
-    else
-      priv.learn_losses.cs.costs.delete_v();
-    if (priv.cb_learner)
-      priv.gte_label.cb.costs.delete_v();
-    else
-      priv.gte_label.cs.costs.delete_v();
-
-    priv.condition_on_actions.delete_v();
-    priv.learn_allowed_actions.delete_v();
-    priv.ldf_test_label.costs.delete_v();
-    priv.last_action_repr.~features();
-    priv.active_uncertainty.delete_v();
-    for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
-    priv.active_known.delete_v();
-
-    if (priv.cb_learner)
-      priv.allowed_actions_cache->cb.costs.delete_v();
-    else
-      priv.allowed_actions_cache->cs.costs.delete_v();
-
-    priv.train_trajectory.delete_v();
-
-    for (auto& ar : priv.ptag_to_action) delete ar.repr;
-    priv.ptag_to_action.delete_v();
-    clear_memo_foreach_action(priv);
-    priv.memo_foreach_action.delete_v();
-
-    // destroy copied examples if we needed them
-    if (!priv.examples_dont_change)
-    {
-      void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-      for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
-      priv.learn_ec_copy.delete_v();
-    }
-    priv.learn_condition_on_names.delete_v();
-    priv.learn_condition_on.delete_v();
-
-    priv.learn_condition_on_act.delete_v();
-    priv.cache_hash_map.~unordered_map<byte_array, scored_action, search_private::cached_item_hash,
-        search_private::cached_item_equivalent>();
-
-    free(priv.allowed_actions_cache);
-    delete priv.rawOutputStringStream;
+  if(this->priv){
+    this->priv->~search_private();
+    free(this->priv);
   }
-  free(this->priv);
 }
 
 std::string audit_feature_space("conditional");
@@ -468,7 +469,7 @@ bool should_print_update(vw& all, bool hit_new_pass = false)
     return true;
   if (PRINT_UPDATE_EVERY_PASS && hit_new_pass)
     return true;
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
 bool might_print_update(vw& all)
@@ -480,7 +481,7 @@ bool might_print_update(vw& all)
     return true;
   if (PRINT_UPDATE_EVERY_PASS)
     return true;  // SPEEDUP: make this better
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
 bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
@@ -494,7 +495,7 @@ bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.logger.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
@@ -540,7 +541,7 @@ std::string number_to_natural(size_t big)
 void print_update(search_private& priv)
 {
   vw& all = *priv.all;
-  if (!priv.printed_output_header && !all.quiet)
+  if (!priv.printed_output_header && !all.logger.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",

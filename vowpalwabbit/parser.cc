@@ -20,6 +20,8 @@
 #include <Windows.h>
 #include <io.h>
 typedef int socklen_t;
+//windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
+#define SOL_TCP IPPROTO_TCP
 
 int daemon(int /*a*/, int /*b*/)
 {
@@ -39,7 +41,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <netdb.h>
 #endif
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <netinet/in.h>
 #endif
 
@@ -57,6 +59,11 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
+
+// OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
+#if !defined(SOL_TCP) && defined(IPPROTO_TCP)
+#define SOL_TCP IPPROTO_TCP
+#endif
 
 using std::endl;
 
@@ -159,7 +166,7 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.p->output_lock);
-        all.p->output_done.wait(lock, [&] { return all.p->ready_parsed_examples.size() == 0; });
+        all.p->output_done.wait(lock, [&] { return all.p->finished_examples == all.p->end_parsed_examples && all.p->ready_parsed_examples.size() == 0; });
       }
 
       // close socket, erase final prediction sink and socket
@@ -172,6 +179,10 @@ void reset_source(vw& all, size_t numbits)
       int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
       if (f < 0)
         THROW("accept: " << strerror(errno));
+
+      // Disable Nagle delay algorithm due to daemon mode's interactive workload
+      int one = 1;
+      setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
       // note: breaking cluster parallel online learning by dropping support for id
 
@@ -396,8 +407,17 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
+#ifdef _WIN32
+#pragma warning(push)          // This next line is inappropriately triggering the Windows-side warning about getpid()
+#pragma warning(disable: 4996) // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
+#endif
+
       pid_file << getpid() << endl;
       pid_file.close();
+
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
     }
 
     if (all.daemon && !all.active)
@@ -427,7 +447,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         // store fork value and run child process if child
         if ((children[i] = fork()) == 0)
         {
-          all.quiet |= (i > 0);
+          all.logger.quiet |= (i > 0);
           goto child;
         }
       }
@@ -460,7 +480,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           {
             if ((children[i] = fork()) == 0)
             {
-              all.quiet |= (i > 0);
+              all.logger.quiet |= (i > 0);
               goto child;
             }
             break;
@@ -476,11 +496,15 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     all.p->max_fd = 0;
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "calling accept" << endl;
     int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f < 0)
       THROWERRNO("accept");
+
+    // Disable Nagle delay algorithm due to daemon mode's interactive workload
+    int one = 1;
+    setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
     all.p->label_sock = f;
 IGNORE_DEPRECATED_USAGE_START
@@ -492,7 +516,7 @@ IGNORE_DEPRECATED_USAGE_END
 
     all.p->input->files.push_back(f);
     all.p->max_fd = std::max(f, all.p->max_fd);
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
     all.p->max_fd++;
@@ -571,6 +595,7 @@ IGNORE_DEPRECATED_USAGE_END
       }
 
       all.p->resettable = all.p->write_cache;
+      all.chain_hash = input_options.chain_hash;
     }
   }
 
@@ -900,6 +925,7 @@ void finish_example(vw& all, example& ec)
 
   {
     std::lock_guard<std::mutex> lock(all.p->output_lock);
+    ++all.p->finished_examples;
     all.p->output_done.notify_one();
   }
 }

@@ -223,7 +223,7 @@ inline v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 
 inline v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 inline __m128 operator+(const __m128 a, const __m128 b) { return _mm_add_ps(a, b); }
 
@@ -848,7 +848,7 @@ void return_example(vw &all, example &ec)
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
   for (int f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars, ec.tag);
 
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
     all.sd->print_update(
         all.holdout_set_off, all.current_pass, "none", 0, ec.num_features, all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);

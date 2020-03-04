@@ -372,8 +372,8 @@ sub lenient_array_compare($$) {
         next if ($word1 eq $word2);
 
         # Some output contains '...', remove this for comparison.
-        $word1 =~ s/\.\.\.//; 
-        $word2 =~ s/\.\.\.//; 
+        $word1 =~ s/\.\.\.//;
+        $word2 =~ s/\.\.\.//;
 
         # There's some difference, is it significant?
         unless (looks_like_number($word1)) {
@@ -657,8 +657,16 @@ sub run_tests() {
         if ($status) {
             $ErrorCount++;
             if ($opt_V && $status == 100) {
-                my $errfile = valgrind_errfile($TestNo);
-                warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                # If the failing test was a script or Python file, ignore the failure because Valgrind
+                # doesn't really work there.
+                if (index($cmd, ".sh") != -1 || index($cmd, ".py") != -1) {
+                    print "$0: test $TestNo: Valgrind failure in script ignored\n";
+                    next;
+                }
+                else {
+                    my $errfile = valgrind_errfile($TestNo);
+                    warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                }
             } elsif ($TimeOut && $status == 124) {
                 warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
             } else {
@@ -1786,5 +1794,35 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -c -k --passes 2 -d train-sets/cache_interaction_audit.txt -q st --audit
     train-sets/ref/cache_interaction_audit.stdout
     train-sets/ref/cache_interaction_audit.stderr
+
+# Test 207: Enable chain hash option for json example
+{VW} --audit --json -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash && \
+    tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new && \
+        rm chain_hash_json_result.cmp && \
+            mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp
+    test-sets/ref/chain_hash_json_test.stderr
+    test-sets/ref/chain_hash_json_test.stdout
+    test-sets/ref/chain_hash_json_result.cmp
+
+# Test 208: Enable chain hash option for text example
+{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash && \
+    tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new && \
+        rm chain_hash_text_result.cmp && \
+            mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp
+    test-sets/ref/chain_hash_text_result.stderr
+    test-sets/ref/chain_hash_text_result.stdout
+    test-sets/ref/chain_hash_text_result.cmp
+
+# Test 209: Test override epsilon value saved in a model
+{VW} -i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds
+    pred-sets/ref/override_epsilon.stderr
+    pred-sets/ref/override_epsilon.preds
+
+# Test 210: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
+# SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)
+{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
+    && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.readable.txt
 
 # Do not delete this line or the empty line above it

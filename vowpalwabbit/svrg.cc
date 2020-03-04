@@ -53,13 +53,13 @@ inline float inline_predict(vw& all, example& ec)
 
 float predict_stable(const svrg& s, example& ec)
 {
-  return GD::finalize_prediction(s.all->sd, inline_predict<W_STABLE>(*s.all, ec));
+  return GD::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
 void predict(svrg& s, single_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
 }
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
@@ -114,7 +114,7 @@ void learn(svrg& s, single_learner& base, example& ec)
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
-    if (s.prev_pass != pass && !s.all->quiet)
+    if (s.prev_pass != pass && !s.all->logger.quiet)
     {
       std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
@@ -131,7 +131,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   }
   else  // Perform updates
   {
-    if (s.prev_pass != pass && !s.all->quiet)
+    if (s.prev_pass != pass && !s.all->logger.quiet)
     {
       std::cout << "svrg pass " << pass << ": taking steps" << std::endl;
     }

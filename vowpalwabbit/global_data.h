@@ -65,7 +65,7 @@ class namedlabels
   // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
   std::string m_label_list;
   std::vector<VW::string_view> m_id2name;
-  std::unordered_map<VW::string_view, uint64_t> m_name2id;
+  std::unordered_map<VW::string_view, uint32_t> m_name2id;
   uint32_t m_K;
 
  public:
@@ -73,13 +73,13 @@ class namedlabels
   {
     tokenize(',', m_label_list, m_id2name);
 
-    m_K = (uint32_t)m_id2name.size();
+    m_K = static_cast<uint32_t>(m_id2name.size());
     m_name2id.max_load_factor(0.25);
     m_name2id.reserve(m_K);
 
-    for (size_t k = 0; k < m_K; k++)
+    for (uint32_t k = 0; k < m_K; k++)
     {
-      const VW::string_view& l = m_id2name[k];
+      const VW::string_view& l = m_id2name[static_cast<size_t>(k)];
       auto iter = m_name2id.find(l);
       if (iter != m_name2id.end())
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
@@ -108,7 +108,7 @@ class namedlabels
       return VW::string_view();
     }
     else
-      return m_id2name[(size_t)(v - 1)];
+      return m_id2name[static_cast<size_t>(v - 1)];
   }
 };
 
@@ -319,7 +319,6 @@ enum AllReduceType
 
 class AllReduce;
 
-
 enum class label_type_t
 {
   simple,
@@ -345,6 +344,18 @@ struct rand_state
   void set_random_state(uint64_t initial) noexcept { random_state = initial; }
 };
 
+struct vw_logger
+{
+  bool quiet;
+
+  vw_logger()
+    : quiet(false) {
+  }
+
+  vw_logger(const vw_logger& other) = delete;
+  vw_logger& operator=(const vw_logger& other) = delete;
+};
+
 struct vw
 {
  private:
@@ -358,6 +369,8 @@ struct vw
 
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
+
+  bool chain_hash = false;
 
   LEARNER::base_learner* l;               // the top level learner
   LEARNER::single_learner* scorer;        // a scoring function
@@ -464,8 +477,8 @@ struct vw
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
   void (*delete_prediction)(void*);
+  vw_logger logger;
   bool audit;     // should I print lots of debugging information?
-  bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
@@ -530,7 +543,7 @@ struct vw
   bool progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;  // next update progress dump multiplier
 
-  std::map<std::string, size_t> name_index_map;
+  std::map<uint64_t, std::string> index_name_map;
 
   label_type_t label_type;
 
