@@ -327,7 +327,7 @@ void save_load_header(
             bytes_read_write += bin_text_read_write_fixed_validated(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
-            { 
+            {
               memcpy(buff2, &all.interactions[i], inter_len);
 
               msg << "interaction: ";
@@ -338,9 +338,6 @@ void save_load_header(
 
             if (read)
             {
-              // std::vector<uint8_t> temp(buff2, buff2 + inter_len);
-              // memcpy(&all.interactions.back(), buff2, inter_len);
-              // all.interactions.push_back(buff2);
               all.interactions.emplace_back(buff2, buff2 + inter_len);
             }
           }
@@ -351,15 +348,15 @@ void save_load_header(
         else  // < VERSION_FILE_WITH_INTERACTIONS
         {
           // pairs and triples may be restored but not reflected in interactions
-          std::vector<std::vector<uint8_t>> new_pairs(all.pairs.size());
-          std::vector<std::vector<uint8_t>> new_triples(all.pairs.size());
+          std::vector<std::vector<namespace_index>> new_pairs(all.pairs.size());
+          std::vector<std::vector<namespace_index>> new_triples(all.triples.size());
 
-          for (auto t = all.pairs.begin(); t != all.pairs.end(); t++){
-            new_pairs.emplace_back(std::vector<uint8_t>(t->begin(), t->end()));
+          for (auto &t : all.pairs){
+            new_pairs.emplace_back(t.begin(), t.end());
           }
 
-          for (auto t = all.triples.begin(); t != all.triples.end(); t++){
-            new_triples.emplace_back(std::vector<uint8_t>(t->begin(), t->end()));
+          for (auto &t : all.triples){
+            new_triples.emplace_back(t.begin(), t.end());
           }
           all.interactions.insert(std::end(all.interactions), std::begin(new_pairs), std::end(new_pairs));
           all.interactions.insert(std::end(all.interactions), std::begin(new_triples), std::end(new_triples));

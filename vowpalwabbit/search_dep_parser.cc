@@ -93,21 +93,21 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
-  std::vector<std::vector<uint8_t>> newpairs_(19);
-  std::vector<std::vector<uint8_t>> newtriples_(12);
+  std::vector<std::vector<namespace_index>> new_pairs(19); //19 is the length of c-style pairs array declared above
+  std::vector<std::vector<namespace_index>> new_triples(12); //12 is the length of c-style triples array declared above
   for (int i=0;i<19;i++){
-    newpairs_[i].push_back(pair[i][0]);
-    newpairs_[i].push_back(pair[i][1]);
+    new_pairs[i].push_back(pair[i][0]);
+    new_pairs[i].push_back(pair[i][1]);
   }
   for (int i=0;i<12;i++){
-    newtriples_[i].push_back(triple[i][0]);
-    newtriples_[i].push_back(triple[i][1]);
-    newtriples_[i].push_back(triple[i][2]);
+    new_triples[i].push_back(triple[i][0]);
+    new_triples[i].push_back(triple[i][1]);
+    new_triples[i].push_back(triple[i][2]);
   }
 
   all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(newpairs_), std::end(newpairs_));
-  all.interactions.insert(std::end(all.interactions), std::begin(newtriples_), std::end(newtriples_));
+  all.interactions.insert(std::end(all.interactions), std::begin(new_pairs), std::end(new_pairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(new_triples), std::end(new_triples));
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
   else

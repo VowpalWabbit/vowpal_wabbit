@@ -38,8 +38,8 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list, include_list;
-  std::vector<std::vector<uint8_t>> generated_interactions;
-  std::vector<std::vector<uint8_t>>* original_interactions;
+  std::vector<std::vector<namespace_index>> generated_interactions;
+  std::vector<std::vector<namespace_index>>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
 
@@ -283,7 +283,7 @@ void remove_slot_features(example* shared, example* slot)
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
 void calculate_and_insert_interactions(
-    example* shared, std::vector<example*> actions, std::vector<std::vector<uint8_t>>& generated_interactions)
+    example* shared, std::vector<example*> actions, std::vector<std::vector<namespace_index>>& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
@@ -314,7 +314,7 @@ void calculate_and_insert_interactions(
         !found_namespaces[shared_index - INTERACTIONS::printable_start])
     {
       found_namespaces[shared_index - INTERACTIONS::printable_start] = true;
-      generated_interactions.push_back({(namespace_index)shared_index, (namespace_index)ccb_id_namespace});
+      generated_interactions.push_back({static_cast<namespace_index>(shared_index), static_cast<namespace_index>(ccb_id_namespace)});
     }
   }
 }

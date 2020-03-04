@@ -446,7 +446,7 @@ struct vw
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<uint8_t>> interactions;
+  std::vector<std::vector<namespace_index>> interactions;
   // TODO #1863 deprecate in favor of only interactions field.
   std::vector<std::string> pairs;  // pairs of features to cross.
   // TODO #1863 deprecate in favor of only interactions field.

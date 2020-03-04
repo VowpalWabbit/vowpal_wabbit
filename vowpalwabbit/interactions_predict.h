@@ -95,7 +95,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(std::vector<std::vector<uint8_t>>& interactions, bool permutations, example_predict& ec,
+inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
     R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
