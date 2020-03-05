@@ -546,20 +546,14 @@ void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples
 {
   std::vector<VW::string_view> lines;
   tokenize('\n', line, lines);
-  for (size_t i = 0, j=0; i < lines.size(); i++)
+  for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.
-    while (examples.size() < j + 1)
+    while (examples.size() < i + 1)
     {
       examples.push_back(&VW::get_unused_example(all));
     }
-    read_line(*all, examples[j], lines[i]);
-    
-    // Check whether the example has to be used or not.
-    if(examples.last()->malformed)
-      examples.pop();
-    else
-      j++;
+    read_line(*all, examples[i], lines[i]);
   }
 }
 

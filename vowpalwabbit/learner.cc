@@ -147,7 +147,9 @@ class single_example_handler
 
   void on_example(example* ec)
   {
-    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+    if(ec->malformed)
+      return;
+    else if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
       _context.template process<example, learn_ex>(*ec);
     else if (ec->end_pass)
       _context.template process<example, end_pass>(*ec);
@@ -174,7 +176,7 @@ class multi_example_handler
     {
       ec_seq.push_back(ec);
     }
-    else
+    else if(!malformed)
     {
       VW::finish_example(master, *ec);
     }
@@ -207,9 +209,16 @@ class multi_example_handler
 
   void on_example(example* ec)
   {
+    if(ec->malformed)
+    {
+      malformed = true;
+    }
     if (try_complete_multi_ex(ec))
     {
-      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+      if(!malformed)
+      {
+        _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+      }
       ec_seq.clear();
     }
   }
@@ -217,6 +226,7 @@ class multi_example_handler
  private:
   context_type _context;
   multi_ex ec_seq;
+  bool malformed;
 };
 
 // ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop
