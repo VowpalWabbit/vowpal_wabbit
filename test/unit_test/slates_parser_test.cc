@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
     parse_label(lp, &p, "slates slot 0:0.2", *label);
     BOOST_CHECK_EQUAL(label->type, slates::example_type::slot);
     BOOST_CHECK_EQUAL(label->labeled, true);
-    check_collections(label->probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.2}}, FLOAT_TOL);
+    check_collections_with_tol(label->probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.2}}, FLOAT_TOL);
     lp.delete_label(label.get());
   }
 
@@ -71,7 +71,8 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
     parse_label(lp, &p, "slates slot 0:0.5,1:0.3,2:0.2", *label);
     BOOST_CHECK_EQUAL(label->type, slates::example_type::slot);
     BOOST_CHECK_EQUAL(label->labeled, true);
-    check_collections(label->probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.5},{1,0.3},{2,0.2}}, FLOAT_TOL);
+    check_collections_with_tol(
+        label->probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.3}, {2, 0.2}}, FLOAT_TOL);
     lp.delete_label(label.get());
   }
 
@@ -187,7 +188,8 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   BOOST_CHECK_EQUAL(uncached_label->type, slates::example_type::slot);
   BOOST_CHECK_EQUAL(uncached_label->labeled, true);
-  check_collections(uncached_label->probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.5},{1,0.25},{2,0.25}}, FLOAT_TOL);
+  check_collections_with_tol(uncached_label->probabilities,
+      std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
   lp.delete_label(label.get());
   lp.delete_label(uncached_label.get());
   p.words.delete_v();
@@ -212,7 +214,8 @@ BOOST_AUTO_TEST_CASE(slates_copy_label)
 
   BOOST_CHECK_EQUAL(copied_to->type, slates::example_type::slot);
   BOOST_CHECK_EQUAL(copied_to->labeled, true);
-  check_collections(copied_to->probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.5},{1,0.25},{2,0.25}}, FLOAT_TOL);
+  check_collections_with_tol(
+      copied_to->probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
   lp.delete_label(label.get());
   lp.delete_label(copied_to.get());
   p.words.delete_v();

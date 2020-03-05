@@ -9,28 +9,27 @@
 
 constexpr float FLOAT_TOL = 0.0001f;
 
-template <template<typename...> class ContainerOneT, template<typename...> class ContainerTwoT>
-void inline check_collections(const ContainerOneT<float>& lhs, const ContainerTwoT<float>& rhs, float tolerance_percent) {
-  BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
-  auto l = std::begin(lhs);
-  auto r = std::begin(rhs);
-  for (; l < std::end(lhs); ++l, ++r) {
-    BOOST_CHECK_CLOSE(*l, *r, tolerance_percent);
-  }
+inline void compare(float l, float r, float tol) { BOOST_CHECK_CLOSE(l, r, tol); }
+inline void compare(const ACTION_SCORE::action_score& l, const ACTION_SCORE::action_score& r, float float_tolerance)
+{
+  BOOST_CHECK_EQUAL(l.action, r.action);
+  BOOST_CHECK_CLOSE(l.score, r.score, float_tolerance);
 }
 
-template <template<typename...> class ContainerOneT, template<typename...> class ContainerTwoT>
-void inline check_collections(const ContainerOneT<ACTION_SCORE::action_score>& lhs, const ContainerTwoT<ACTION_SCORE::action_score>& rhs, float tolerance_percent) {
+template <typename ContainerOneT, typename ContainerTwoT>
+void check_collections_with_tol(const ContainerOneT& lhs, const ContainerTwoT& rhs, float float_tolerance)
+{
   BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
   auto l = std::begin(lhs);
   auto r = std::begin(rhs);
-  for (; l < std::end(lhs); ++l, ++r) {
-    BOOST_CHECK_EQUAL(l->action, r->action);
-    BOOST_CHECK_CLOSE(l->score, r->score, tolerance_percent);
+  for (; l < std::end(lhs); ++l, ++r)
+  {
+    compare(*l, *r, float_tolerance);
   }
 }
 
 template <template <typename...> class ContainerOneT, template <typename...> class ContainerTwoT, typename T>
-void check_collections(const ContainerOneT<T>& lhs, const ContainerTwoT<T>& rhs) {
+void check_collections(const ContainerOneT<T>& lhs, const ContainerTwoT<T>& rhs)
+{
   BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 }
