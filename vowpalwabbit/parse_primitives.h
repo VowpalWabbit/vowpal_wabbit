@@ -160,3 +160,22 @@ inline int int_of_string(VW::string_view s)
 
   return i;
 }
+
+inline int int_of_string_ml(VW::string_view s)
+{
+  char* end = nullptr;
+
+  int i = strtol(s.begin(), &end, 10);
+  if (end <= s.begin() && s.size() > 0)
+  {
+    std::cout << "warning: " << s << " is not a good int, replacing with 0"
+              << std::endl;
+    i = 0;
+  }
+
+  // checking if whole string is consumed
+  if (s.end() != end)
+    return -1;
+  return i;
+  
+}

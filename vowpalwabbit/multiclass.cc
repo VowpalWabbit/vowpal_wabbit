@@ -74,23 +74,25 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
 {
   label_t* ld = (label_t*)v;
 
+  int num;
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      // Checking whether there are multilabel in the multiclass label
-      tokenize(',', words[0], p->parse_name);
-      if(p->parse_name.size() > 1)
-      {
-        THROW("Multi class label cannot be more than 1");
-      }
-      
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      num = int_of_string_ml(words[0]);
+      if(num == -1)
+        THROW("Incorrect Label input, single integer label allowed in multiclass");
+
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : num;
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      num = int_of_string_ml(words[0]);
+      if(num == -1)
+        THROW("Incorrect Label input, single integer label allowed in multiclass");
+        
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : num;
       ld->weight = float_of_string(words[1]);
       break;
     default:
