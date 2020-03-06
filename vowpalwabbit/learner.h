@@ -641,9 +641,19 @@ struct learner
     });
 
     ret.learn_fd.data = dat;
+    // TODO remove when done converting
+    if (learn != nullptr)
+    {
+      ret.learn_fd.learn_with_label_f = nullptr;
+    }
     ret.learn_fd.learn_f = (learn_data::fn)learn;
     ret.learn_fd.update_f = (learn_data::fn)learn;
     ret.learn_fd.predict_f = (learn_data::fn)predict;
+    // TODO remove when done converting
+    if (learn != nullptr)
+    {
+      ret.learn_fd.predict_with_label_f = nullptr;
+    }
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
@@ -785,7 +795,8 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
 }
 
 template <bool is_learn, typename LabelT>
-void multiline_learn_or_predict_with_labels(multi_learner& base, multi_ex& examples, LabelT& labels, const uint64_t offset, const uint32_t id = 0)
+void multiline_learn_or_predict_with_labels(
+    multi_learner& base, multi_ex& examples, LabelT& labels, const uint64_t offset, const uint32_t id = 0)
 {
   std::vector<uint64_t> saved_offsets;
   saved_offsets.reserve(examples.size());
