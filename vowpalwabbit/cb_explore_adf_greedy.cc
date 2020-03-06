@@ -113,7 +113,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   if (epsilon < 0.0 || epsilon > 1.0)
   {
-    THROW("cb_explore_adf_greedy_epsilon must be in [0,1]");
+    THROW("The value of epsilon must be in [0,1]");
   }
 
   LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(

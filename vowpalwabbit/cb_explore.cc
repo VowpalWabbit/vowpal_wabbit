@@ -305,7 +305,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   
   if (data->epsilon < 0.0 || data->epsilon > 1.0)
   {
-    THROW("cb_explore_epsilon must be in [0,1]");
+    THROW("The value of epsilon must be in [0,1]");
   }
 
   all.delete_prediction = delete_action_scores;
