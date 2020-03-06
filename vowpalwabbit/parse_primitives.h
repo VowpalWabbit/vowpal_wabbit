@@ -161,7 +161,7 @@ inline int int_of_string(VW::string_view s)
   return i;
 }
 
-inline int int_of_string_ml(VW::string_view s)
+inline int int_of_string_mc(VW::string_view s)
 {
   char* end = nullptr;
 
@@ -175,7 +175,7 @@ inline int int_of_string_ml(VW::string_view s)
 
   // checking if whole string is consumed
   if (s.end() != end)
-    return -1;
+    THROW("Incorrect Label input, single integer label allowed in multiclass");
   return i;
   
 }

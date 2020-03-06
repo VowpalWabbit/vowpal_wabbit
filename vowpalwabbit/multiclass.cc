@@ -80,18 +80,14 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
     case 0:
       break;
     case 1:
-      num = int_of_string_ml(words[0]);
-      if(num == -1)
-        THROW("Incorrect Label input, single integer label allowed in multiclass");
+      num = int_of_string_mc(words[0]); //separate function to check for multi labels
 
       ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : num;
       ld->weight = 1.0;
       break;
     case 2:
-      num = int_of_string_ml(words[0]);
-      if(num == -1)
-        THROW("Incorrect Label input, single integer label allowed in multiclass");
-        
+      num = int_of_string_mc(words[0]);
+       
       ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : num;
       ld->weight = float_of_string(words[1]);
       break;
