@@ -661,6 +661,8 @@ sub run_tests() {
                 # doesn't really work there.
                 if (index($cmd, ".sh") != -1 || index($cmd, ".py") != -1) {
                     print "$0: test $TestNo: Valgrind failure in script ignored\n";
+                    # Undo the error count change, as this failure is okay.
+                    $ErrorCount--;
                     next;
                 }
                 else {

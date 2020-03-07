@@ -117,9 +117,13 @@ VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle
 }
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE features, size_t len)
-{ VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
-  VW::releaseFeatureSpace(f, len);
+{
+  auto f = reinterpret_cast<VW::primitive_feature_space*>(features);
+  for (size_t i = 0; i < len; i++)
+    delete[] f[i].fs;
+  delete[] f;
 }
+
 #ifdef USE_CODECVT
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t * line)
 { return VW_ReadExampleA(handle, utf16_to_utf8(line).c_str());
