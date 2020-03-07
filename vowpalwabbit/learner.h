@@ -209,7 +209,6 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
         const auto& example = example_collection[i];                                                               \
         labels[i] = std::move(example->l.FIELD_NAME);                                                              \
         example->l = std::move(saved[i]);                                                                          \
-        i++;                                                                                                       \
       }                                                                                                            \
     }                                                                                                              \
   }
