@@ -116,7 +116,8 @@ class VW(BaseEstimator):
                  dropout=None,
                  inpass=None,
                  meanfield=None,
-                 multitask=None):
+                 multitask=None,
+                 convert_labels=False):
         """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
@@ -156,6 +157,7 @@ class VW(BaseEstimator):
         cache_file (str): path to cache file to use
         k (bool): auto delete cache file
         passes (int): Number of training passes
+        convert_labels (bool): Convert labels of the form [0,1] to [-1,1]
 
         Feature options
         hash (str): how to hash the features. Available options: strings, all
@@ -236,6 +238,7 @@ class VW(BaseEstimator):
 
         # reset params and quiet models by default
         self.params = {'quiet': True}
+        self.convert_labels = convert_labels
 
         # assign all valid args to params dict
         args = dict(locals())
@@ -296,7 +299,10 @@ class VW(BaseEstimator):
         return self so pipeline can call transform() after fit
         """
         if self.convert_to_vw_:
-            X = tovw(x=X, y=y, sample_weight=sample_weight)
+            X = tovw(x=X,
+                     y=y,
+                     sample_weight=sample_weight,
+                     convert_labels=self.convert_labels)
 
         model = self.get_vw()
 
@@ -560,7 +566,7 @@ class VWRegressor(VW, RegressorMixin):
     pass
 
 
-def tovw(x, y=None, sample_weight=None):
+def tovw(x, y=None, sample_weight=None, convert_labels=False):
     """Convert array or sparse matrix to Vowpal Wabbit format
 
     Parameters
@@ -572,6 +578,7 @@ def tovw(x, y=None, sample_weight=None):
         Target vector relative to X.
     sample_weight : {array-like}, shape (n_samples,), optional
                     sample weight vector relative to X.
+    convert_labels : {bool} convert labels of the form [0,1] to [-1,1]
 
     Returns
     -------
@@ -598,6 +605,10 @@ def tovw(x, y=None, sample_weight=None):
         x = np.array(x)
     if not isinstance(y, np.ndarray):
         y = np.array(y)
+
+    # convert labels of the form [0,1] to [-,1]
+    if convert_labels:
+        y = np.where(y < 1, -1, y)
 
     # make sure this is a 2d array
     if x.ndim == 1:
