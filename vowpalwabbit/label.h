@@ -8,7 +8,7 @@ enum class label_type_t
   multi,
   cs,       // cost-sensitive
   cb,       // contextual-bandit
-  conditional_contextual_bandit,      // conditional contextual-bandit
+  ccb,      // conditional contextual-bandit
   cb_eval,  // contextual-bandit evaluation
   multilabels
 };
@@ -27,7 +27,7 @@ inline const char* to_string(label_type_t label_type)
     TO_STRING_CASE(label_type_t::multi)
     TO_STRING_CASE(label_type_t::cs)
     TO_STRING_CASE(label_type_t::cb)
-    TO_STRING_CASE(label_type_t::conditional_contextual_bandit)
+    TO_STRING_CASE(label_type_t::ccb)
     TO_STRING_CASE(label_type_t::cb_eval)
     TO_STRING_CASE(label_type_t::multilabels)
     default:

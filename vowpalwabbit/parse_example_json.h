@@ -301,7 +301,7 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+    if (ctx.all->get_label_type() == label_type_t::ccb)
     {
       auto ld = (CCB::label*)&ctx.ex->l;
 
@@ -513,9 +513,9 @@ struct MultiState : BaseState<audit>
 
       ld->costs.push_back(f);
     }
-    else if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+    else if (ctx.all->get_label_type() == label_type_t::ccb)
     {
-      CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
+      CCB::label* ld = &ctx.ex->l.ccb;
       ld->type = CCB::example_type::shared;
     }
     else
@@ -529,9 +529,9 @@ struct MultiState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
-    if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+    if (ctx.all->get_label_type() == label_type_t::ccb)
     {
-      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
+      ctx.ex->l.ccb.type = CCB::example_type::action;
     }
 
     ctx.examples->push_back(ctx.ex);
@@ -574,7 +574,7 @@ struct SlotsState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
-    ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+    ctx.ex->l.ccb.type = CCB::example_type::slot;
 
     ctx.examples->push_back(ctx.ex);
 
@@ -901,22 +901,22 @@ class DefaultState : public BaseState<audit>
 
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
-      if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+      if (ctx.all->get_label_type() == label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+            [](example* ex) { return ex->l.ccb.type == CCB::example_type::slot; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
           ctx.all->p->lp.default_label(&ctx.ex->l);
-          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+          ctx.ex->l.ccb.type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
           auto outcome = new CCB::conditional_contextual_bandit_outcome();
           outcome->cost = ctx.label_object_state.cb_label.cost;
           outcome->probabilities.push_back(
               {ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
-          ctx.ex->l.conditional_contextual_bandit.outcome = outcome;
+          ctx.ex->l.ccb.outcome = outcome;
         }
       }
     }
@@ -1118,7 +1118,7 @@ class CCBOutcomeList : public BaseState<audit>
     // Find start index of slot objects by iterating until we find the first slot example.
     for (auto ex : *ctx.examples)
     {
-      if (ex->l.conditional_contextual_bandit.type != CCB::example_type::slot)
+      if (ex->l.ccb.type != CCB::example_type::slot)
       {
         slot_object_index++;
       }
@@ -1154,12 +1154,12 @@ class CCBOutcomeList : public BaseState<audit>
     // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
     for (auto ex : *ctx.examples)
     {
-      if (ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+      if (ex->l.ccb.type == CCB::example_type::slot)
       {
-        if (ex->l.conditional_contextual_bandit.outcome)
+        if (ex->l.ccb.outcome)
         {
-          interactions->actions.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].action);
-          interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
+          interactions->actions.push_back(ex->l.ccb.outcome->probabilities[0].action);
+          interactions->probabilities.push_back(ex->l.ccb.outcome->probabilities[0].score);
         }
       }
     }
@@ -1475,11 +1475,11 @@ inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
       e->l.cb.weight = 1 - pdrop;
     }
   }
-  else if (all.get_label_type() == label_type_t::conditional_contextual_bandit)
+  else if (all.get_label_type() == label_type_t::ccb)
   {
     for (auto& e : examples)
     {
-      e->l.conditional_contextual_bandit.weight = 1 - pdrop;
+      e->l.ccb.weight = 1 - pdrop;
     }
   }
 }

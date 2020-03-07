@@ -27,7 +27,7 @@ typedef union
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
-  CCB::label conditional_contextual_bandit;
+  CCB::label ccb;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;

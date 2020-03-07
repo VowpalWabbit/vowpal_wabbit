@@ -84,8 +84,8 @@ bool sanity_checks(ccb& data)
   {
     for (auto slot : data.slots)
     {
-      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
-          slot->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+      if (slot->l.ccb.outcome != nullptr &&
+          slot->l.ccb.outcome->probabilities.size() == 0)
       {
         std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
         return false;
@@ -118,7 +118,7 @@ bool has_action(multi_ex& cb_ex) { return !cb_ex.empty(); }
 // the output_example function has special logic to ensure the number of feaures is correctly calculated.
 // Copy anything in default namespace for slot to ccb_slot_namespace in shared
 // Copy other slot namespaces to shared
-void inject_slot_features(example* shared, example* slot)
+void inject_slot_features(example* shared, const example* slot)
 {
   for (auto index : slot->indices)
   {
@@ -304,6 +304,10 @@ void build_cb_example(multi_ex& cb_ex, example* slot, size_t slot_index, std::ve
   data.origin_index.resize(data.actions.size(), 0);
   int label_to_set = -1;
 
+  // cb_ex will contain the shared example and all relevant actions (not excluded explicitly or already chosen)
+  // cb_labels must be resized after cb_ex is calculated so it can be made the correct size.
+  // indicies between cb_labels and ccb_labels must be mapped between because of these exclusions.
+
   // Determine the actions that should actually be in this example
   for (size_t i = 0; i < data.actions.size(); i++)
   {
@@ -329,6 +333,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, size_t slot_index, std::ve
       data.cb_label.cost = slot_outcome->cost;
     }
   }
+
 
   // Set the CB label
   ensure_cb_labels_is_correct_size(cb_ex.size(), cb_labels, data.cb_label_pool);
@@ -479,7 +484,7 @@ void print_update(vw& all, std::vector<example*>& slots, decision_scores_t& deci
     {
       counter++;
 
-      auto outcome = slot->l.conditional_contextual_bandit.outcome;
+      auto outcome = slot->l.ccb.outcome;
       if (outcome == nullptr)
       {
         label_str += delim;
@@ -546,7 +551,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   {
     num_features += ec->num_features;
 
-    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+    if (ec->l.ccb.type == CCB::example_type::slot)
     {
       slots.push_back(ec);
     }
@@ -557,7 +562,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   auto preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
-    auto outcome = slots[i]->l.conditional_contextual_bandit.outcome;
+    auto outcome = slots[i]->l.ccb.outcome;
     if (outcome != nullptr)
     {
       num_labelled++;
@@ -660,7 +665,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   using learn_pred_fn = void (*)(ccb&, LEARNER::multi_learner&, multi_ex&);
   learner<ccb, multi_ex>& l =
       init_learner(data, base, (learn_pred_fn) nullptr, (learn_pred_fn) nullptr, 1, prediction_type_t::decision_probs);
-  l.label_type = label_type_t::conditional_contextual_bandit;
+  l.label_type = label_type_t::ccb;
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
   l.set_finish_example(finish_multiline_example);
   l.set_learn(learn_or_predict<true>);
@@ -668,5 +673,5 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
+bool ec_is_example_header(example const& ec) { return ec.l.ccb.type == example_type::shared; }
 }  // namespace CCB

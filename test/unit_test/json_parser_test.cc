@@ -154,16 +154,16 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb)
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[6]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[7]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.ccb.type, CCB::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[1]->l.ccb.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[2]->l.ccb.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[3]->l.ccb.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[4]->l.ccb.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[5]->l.ccb.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[6]->l.ccb.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[7]->l.ccb.type, CCB::example_type::slot);
 
-  auto label1 = examples[5]->l.conditional_contextual_bandit;
+  auto label1 = examples[5]->l.ccb;
   BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(label1.explicit_included_actions[0], 1);
   BOOST_CHECK_EQUAL(label1.explicit_included_actions[1], 2);
@@ -172,11 +172,11 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb)
   BOOST_CHECK_EQUAL(label1.outcome->probabilities[0].action, 1);
   BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .25f, .0001f);
 
-  auto label2 = examples[6]->l.conditional_contextual_bandit;
+  auto label2 = examples[6]->l.ccb;
   BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);
   BOOST_CHECK(label2.outcome == nullptr);
 
-  auto label3 = examples[7]->l.conditional_contextual_bandit;
+  auto label3 = examples[7]->l.ccb;
   BOOST_CHECK_EQUAL(label3.explicit_included_actions.size(), 0);
   BOOST_CHECK_CLOSE(label3.outcome->cost, 4.f, .0001f);
   BOOST_CHECK_EQUAL(label3.outcome->probabilities.size(), 2);
@@ -222,13 +222,13 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 5);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.ccb.type, CCB::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[1]->l.ccb.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[2]->l.ccb.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[3]->l.ccb.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[4]->l.ccb.type, CCB::example_type::slot);
 
-  auto label1 = examples[4]->l.conditional_contextual_bandit;
+  auto label1 = examples[4]->l.ccb;
   BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 0);
   BOOST_CHECK_CLOSE(label1.outcome->cost, 1.f, .0001f);
   BOOST_CHECK_EQUAL(label1.outcome->probabilities.size(), 1);

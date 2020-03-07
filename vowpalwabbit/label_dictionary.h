@@ -9,11 +9,9 @@
 
 namespace LabelDict
 {
-typedef std::unordered_map<size_t, features> label_feature_map;
-inline bool size_t_eq(const size_t& a, const size_t& b) { return (a == b); }
-
-void add_example_namespace(example& ec, namespace_index ns, features& fs);
-void del_example_namespace(example& ec, namespace_index ns, features& fs);
+using label_feature_map = std::unordered_map<size_t, features>;
+void add_example_namespace(example& ec, namespace_index ns, const features& fs);
+void del_example_namespace(example& ec, namespace_index ns, const features& fs);
 
 void set_label_features(label_feature_map& lfm, size_t lab, features& fs);
 

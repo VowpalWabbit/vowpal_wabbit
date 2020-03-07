@@ -63,9 +63,10 @@ struct learn_data
 
   void* data;
   base_learner* base;
+
+  // This is a temporary measure to ease migration. If both are set then the _with_label variants take precedence.
   fn learn_f;
   fn predict_f;
-
   fn_with_label learn_with_label_f;
   fn_with_label predict_with_label_f;
 
@@ -134,6 +135,13 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   }
 }
 
+// To facilitate migration between labels being passed by argument and as a field of example we must translate between
+// the two implementations until it is completed. There are both multiline and singleline variants of the following:
+// - Union based reduction invoked with argument based call - MUST TRANSLATE
+// - Union based reduction invoked with union based call - FORWARD
+// - Argument based reduction invoked with union based call - MUST TRANSLATE
+// - Argument based reduction invoked with argument based call - FORWARD
+
 #define TYPED_EXAMPLE_LEARN_FN(TYPE, FIELD_NAME)                                                                       \
   inline void learn_with_label(example& ec, TYPE& label, size_t i = 0)                                                 \
   {                                                                                                                    \
@@ -189,20 +197,19 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
     {                                                                                                              \
       std::vector<polylabel> saved;                                                                                \
       saved.reserve(example_collection.size());                                                                    \
-      size_t it = 0;                                                                                               \
-      for (const auto& example : example_collection)                                                               \
+      for (size_t i = 0; i < example_collection.size(); i++)                                                       \
       {                                                                                                            \
+        const auto& example = example_collection[i];                                                               \
         saved.push_back(std::move(example->l));                                                                    \
-        example->l.FIELD_NAME = std::move(labels[it]);                                                             \
-        it++;                                                                                                      \
+        example->l.FIELD_NAME = std::move(labels[i]);                                                              \
       }                                                                                                            \
       learn_fd.learn_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));                    \
-      it = 0;                                                                                                      \
-      for (const auto& example : example_collection)                                                               \
+      for (size_t i = 0; i < example_collection.size(); i++)                                                       \
       {                                                                                                            \
-        labels[it] = std::move(example->l.FIELD_NAME);                                                             \
-        example->l = std::move(saved[it]);                                                                         \
-        it++;                                                                                                      \
+        const auto& example = example_collection[i];                                                               \
+        labels[i] = std::move(example->l.FIELD_NAME);                                                              \
+        example->l = std::move(saved[i]);                                                                          \
+        i++;                                                                                                       \
       }                                                                                                            \
     }                                                                                                              \
   }
@@ -221,20 +228,18 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
     {                                                                                                                \
       std::vector<polylabel> saved;                                                                                  \
       saved.reserve(example_collection.size());                                                                      \
-      size_t it = 0;                                                                                                 \
-      for (const auto& example : example_collection)                                                                 \
+      for (size_t i = 0; i < example_collection.size(); i++)                                                         \
       {                                                                                                              \
+        const auto& example = example_collection[i];                                                                 \
         saved.push_back(std::move(example->l));                                                                      \
-        example->l.FIELD_NAME = std::move(labels[it]);                                                               \
-        it++;                                                                                                        \
+        example->l.FIELD_NAME = std::move(labels[i]);                                                                \
       }                                                                                                              \
       learn_fd.predict_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&example_collection));                    \
-      it = 0;                                                                                                        \
-      for (const auto& example : example_collection)                                                                 \
+      for (size_t i = 0; i < example_collection.size(); i++)                                                         \
       {                                                                                                              \
-        labels[it] = std::move(example->l.FIELD_NAME);                                                               \
-        example->l = std::move(saved[it]);                                                                           \
-        it++;                                                                                                        \
+        const auto& example = example_collection[i];                                                                 \
+        labels[i] = std::move(example->l.FIELD_NAME);                                                                \
+        example->l = std::move(saved[i]);                                                                            \
       }                                                                                                              \
     }                                                                                                                \
   }
@@ -264,11 +269,10 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
       saved.push_back(std::move(example->l.FIELD_NAME));                                                             \
     }                                                                                                                \
     learn_fd.learn_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
-    size_t it = 0;                                                                                                   \
-    for (const auto& example : ec)                                                                                   \
+    for (size_t i = 0; i < ec.size(); i++)                                                                           \
     {                                                                                                                \
-      example->l.FIELD_NAME = std::move(saved[it]);                                                                  \
-      it++;                                                                                                          \
+      const auto& example = ec[i];                                                                                   \
+      example->l.FIELD_NAME = std::move(saved[i]);                                                                   \
     }                                                                                                                \
   }                                                                                                                  \
   break;
@@ -292,11 +296,10 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
       saved.push_back(std::move(example->l.FIELD_NAME));                                                               \
     }                                                                                                                  \
     learn_fd.predict_with_label_f(learn_fd.data, *learn_fd.base, static_cast<void*>(&ec), static_cast<void*>(&saved)); \
-    size_t it = 0;                                                                                                     \
-    for (const auto& example : ec)                                                                                     \
+    for (size_t i = 0; i < ec.size(); i++)                                                                             \
     {                                                                                                                  \
-      example->l.FIELD_NAME = std::move(saved[it]);                                                                    \
-      it++;                                                                                                            \
+      const auto& example = ec[i];                                                                                     \
+      example->l.FIELD_NAME = std::move(saved[i]);                                                                     \
     }                                                                                                                  \
   }                                                                                                                    \
   break;
@@ -331,7 +334,7 @@ struct learner
   DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(MULTICLASS::label_t, multi);
   DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(COST_SENSITIVE::label, cs);
   DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(CB::label, cb);
-  DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(CCB::label, conditional_contextual_bandit);
+  DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(CCB::label, ccb);
   DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(CB_EVAL::label, cb_eval);
   DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS(MULTILABEL::labels, multilabels);
 
@@ -348,7 +351,7 @@ struct learner
         TYPED_EXAMPLE_LEARN_CASE(MULTICLASS::label_t, multi);
         TYPED_EXAMPLE_LEARN_CASE(COST_SENSITIVE::label, cs);
         TYPED_EXAMPLE_LEARN_CASE(CB::label, cb);
-        TYPED_EXAMPLE_LEARN_CASE(CCB::label, conditional_contextual_bandit);
+        TYPED_EXAMPLE_LEARN_CASE(CCB::label, ccb);
         TYPED_EXAMPLE_LEARN_CASE(CB_EVAL::label, cb_eval);
         TYPED_EXAMPLE_LEARN_CASE(MULTILABEL::labels, multilabels);
         default:
@@ -377,7 +380,7 @@ struct learner
         TYPED_MULTI_EXAMPLE_LEARN_CASE(MULTICLASS::label_t, multi);
         TYPED_MULTI_EXAMPLE_LEARN_CASE(COST_SENSITIVE::label, cs);
         TYPED_MULTI_EXAMPLE_LEARN_CASE(CB::label, cb);
-        TYPED_MULTI_EXAMPLE_LEARN_CASE(CCB::label, conditional_contextual_bandit);
+        TYPED_MULTI_EXAMPLE_LEARN_CASE(CCB::label, ccb);
         TYPED_MULTI_EXAMPLE_LEARN_CASE(CB_EVAL::label, cb_eval);
         TYPED_MULTI_EXAMPLE_LEARN_CASE(MULTILABEL::labels, multilabels);
         default:
@@ -405,7 +408,7 @@ struct learner
         TYPED_EXAMPLE_PREDICT_CASE(MULTICLASS::label_t, multi);
         TYPED_EXAMPLE_PREDICT_CASE(COST_SENSITIVE::label, cs);
         TYPED_EXAMPLE_PREDICT_CASE(CB::label, cb);
-        TYPED_EXAMPLE_PREDICT_CASE(CCB::label, conditional_contextual_bandit);
+        TYPED_EXAMPLE_PREDICT_CASE(CCB::label, ccb);
         TYPED_EXAMPLE_PREDICT_CASE(CB_EVAL::label, cb_eval);
         TYPED_EXAMPLE_PREDICT_CASE(MULTILABEL::labels, multilabels);
         default:
@@ -433,7 +436,7 @@ struct learner
         TYPED_MULTI_EXAMPLE_PREDICT_CASE(MULTICLASS::label_t, multi);
         TYPED_MULTI_EXAMPLE_PREDICT_CASE(COST_SENSITIVE::label, cs);
         TYPED_MULTI_EXAMPLE_PREDICT_CASE(CB::label, cb);
-        TYPED_MULTI_EXAMPLE_PREDICT_CASE(CCB::label, conditional_contextual_bandit);
+        TYPED_MULTI_EXAMPLE_PREDICT_CASE(CCB::label, ccb);
         TYPED_MULTI_EXAMPLE_PREDICT_CASE(CB_EVAL::label, cb_eval);
         TYPED_MULTI_EXAMPLE_PREDICT_CASE(MULTILABEL::labels, multilabels);
         default:
@@ -801,3 +804,13 @@ void multiline_learn_or_predict_with_labels(multi_learner& base, multi_ex& examp
   for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
 }  // namespace LEARNER
+
+#undef TYPED_EXAMPLE_LEARN_FN
+#undef TYPED_EXAMPLE_PREDICT_FN
+#undef TYPED_MULTI_EXAMPLE_LEARN_FN
+#undef TYPED_MULTI_EXAMPLE_PREDICT_FN
+#undef DEFINE_TYPED_PREDICT_AND_LEARN_FUNCS
+#undef TYPED_EXAMPLE_LEARN_CASE
+#undef TYPED_MULTI_EXAMPLE_LEARN_CASE
+#undef TYPED_EXAMPLE_PREDICT_CASE
+#undef TYPED_MULTI_EXAMPLE_PREDICT_CASE

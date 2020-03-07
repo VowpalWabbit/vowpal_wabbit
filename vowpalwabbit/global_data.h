@@ -375,7 +375,7 @@ struct vw
 
   void (*set_minmax)(shared_data* sd, float label);
 
-  VW_DEPRECATED("Use get_label_type")
+  VW_DEPRECATED("Use get_label_type()")
   label_type_t label_type;
 
   label_type_t get_label_type() const

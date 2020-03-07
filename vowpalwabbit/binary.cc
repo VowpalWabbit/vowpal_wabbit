@@ -32,7 +32,6 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec, label_d
   }
 }
 
-using fn = void(*)(char&, LEARNER::single_learner&, example&);
 
 LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 {
@@ -44,8 +43,9 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
   if (!binary)
     return nullptr;
 
+  using predict_learn_fn = void(*)(char&, LEARNER::single_learner&, example&);
   LEARNER::learner<char, example>& ret =
-      LEARNER::init_learner(as_singleline(setup_base(options, all)), (fn)nullptr, (fn)nullptr);
+      LEARNER::init_learner(as_singleline(setup_base(options, all)), static_cast<predict_learn_fn>(nullptr), static_cast<predict_learn_fn>(nullptr));
   ret.label_type = label_type_t::simple;
   ret.set_learn(predict_or_learn<true>);
   ret.set_predict(predict_or_learn<false>);

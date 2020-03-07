@@ -8,7 +8,7 @@
 
 namespace LabelDict
 {
-void del_example_namespace(example& ec, namespace_index ns, features& fs)
+void del_example_namespace(example& ec, namespace_index ns, const features& fs)
 {
   // print_update is called after this del_example_namespace,
   // so we need to keep the ec.num_features correct,
@@ -25,7 +25,7 @@ void del_example_namespace(example& ec, namespace_index ns, features& fs)
   del_target.sum_feat_sq -= fs.sum_feat_sq;
 }
 
-void add_example_namespace(example& ec, namespace_index ns, features& fs)
+void add_example_namespace(example& ec, namespace_index ns, const features& fs)
 {
   bool has_ns = false;
   for (size_t i = 0; i < ec.indices.size(); i++)
