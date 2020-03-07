@@ -9,10 +9,10 @@ import io
 from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import shuffle
 from vowpalwabbit import pyvw
+from vowpalwabbit.objects import LinearClassifierMixin, SparseCoefMixin
 
 
 DEFAULT_NS = ''
