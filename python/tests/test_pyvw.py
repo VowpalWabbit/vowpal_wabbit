@@ -20,7 +20,7 @@ class TestVW:
         assert init == 0
         self.model.learn(ex)
         assert self.model.predict(ex) > init
-        assert self.model.predict({"| a:1 b:0.5":'a'}) == 0
+        assert self.model.predict({'x': ['b']}) == 0
 
     def test_get_tag(self):
         ex = self.model.example("1 foo| a b c")
@@ -211,10 +211,10 @@ def test_example_namespace():
     vw_ex = vw(quiet=True)
     ex = vw_ex.example('1 |a two features |b more features here')
     nmid = pyvw.namespace_id(ex, 1)
-    exm = pyvw.example_namespace(ex, nmid, ns_hash=0)
+    exm = pyvw.example_namespace(ex, nmid, ns_hash=vw_ex.hash_space(nmid.ns))
     assert isinstance(exm.ex, pyvw.example)
     assert isinstance(exm.ns, pyvw.namespace_id)
-    assert exm.ns_hash == 0
+    assert exm.ns_hash == 2514386435
     assert exm.num_features_in() == 3
     assert exm[2] == (11617, 1.0) # represents (feature, value)
     assert exm.iter_features()
@@ -273,10 +273,15 @@ def test_example():
     assert ex.iter_features()
     assert isinstance(ex.get_label(), pyvw.simple_label)
     assert ex.get_feature_id(ns, 123) == 123
-    assert ex.get_feature_id(ns, 'x') == 143313
+    assert ex.get_feature_id(ns, 'a') == 127530
     ex.push_hashed_feature(ns, 11222)
+    ex.push_features('x', ['a', 'b'])
+    ex.push_features('y', [('c', 1.), 'd'])
     ex.push_feature(ns, 11000)
     assert ex.num_features_in(ns) == 5
+    assert ex.num_features_in('x') == ex.num_features_in('y') == 2
     assert ex.sum_feat_sq(ns) == 5.0
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
+    assert ex.iter_features()
+    assert isinstance(ex.get_label(), pyvw.simple_label)
