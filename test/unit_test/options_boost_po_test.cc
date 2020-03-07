@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(typed_options_parsing) {
   char command_line[] = "exe --str_opt test_str -i 5 --bool_opt yes --char_opt f --float_opt 4.3";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(typed_option_collection_parsing) {
   char command_line[] = "exe --str_opt test_str another -i 5 --char_opt f --char_opt f g --float_opt 4.3 --str_opt at_end";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(bool_implicit_and_explicit_options) {
   char command_line[] = "exe --bool_switch";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(incorrect_option_type) {
   char command_line[] = "exe --int_opt str";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(multiple_locations_one_option) {
   char command_line[] = "exe --str_opt value";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(duplicate_option_clash) {
   char command_line[] = "exe --the_opt s";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
   char command_line[] = "exe --int_opt 3 --int_opt 5";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {
   char command_line[] = "exe --int_opt 3 --int_opt 3";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(add_two_groups) {
   char command_line[] = "exe --int_opt 3 --str_opt test";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(was_supplied_test) {
   char command_line[] = "exe --int_opt 3 --str_opt test";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
   char command_line[] = "exe --int_opt 3 --str_opt test --other_bool_opt --char_opt_option a c --char_opt_option d";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_CASE(unregistered_options) {
   char command_line[] = "exe --int_opt 3 --str_opt test";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
-  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+  std::unique_ptr<char*[]> argv(convert_to_command_args(command_line, argc));
 
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));

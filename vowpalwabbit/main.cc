@@ -42,7 +42,7 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  if (!all->quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"

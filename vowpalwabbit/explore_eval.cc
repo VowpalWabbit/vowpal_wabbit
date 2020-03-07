@@ -39,7 +39,7 @@ struct explore_eval
 
 void finish(explore_eval& data)
 {
-  if (!data.all->quiet)
+  if (!data.all->logger.quiet)
   {
     data.all->trace_message << "update count = " << data.update_count << std::endl;
     if (data.violations > 0)

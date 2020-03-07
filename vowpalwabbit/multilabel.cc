@@ -123,7 +123,7 @@ label_parser multilabel = {default_label, parse_label, cache_label, read_cached_
 
 void print_update(vw& all, bool is_test, example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
