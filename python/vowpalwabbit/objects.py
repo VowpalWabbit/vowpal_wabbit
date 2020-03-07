@@ -8,15 +8,13 @@ import scipy.sparse as sp
 from scipy.special import expit
 from sklearn.base import ClassifierMixin
 from sklearn.utils.extmath import safe_sparse_dot
-from sklearn.utils.validation import (check_is_fitted,
-                                      check_array)
+from sklearn.utils.validation import (check_is_fitted, check_array)
 
 
 class LinearClassifierMixin(ClassifierMixin):
     """Mixin for linear classifiers.
     Handles prediction for sparse and dense X.
     """
-
     def decision_function(self, X):
         """
         Predict confidence scores for samples.
@@ -39,13 +37,13 @@ class LinearClassifierMixin(ClassifierMixin):
 
         n_features = self.coef_.shape[1]
         if X.shape[1] != n_features:
-            raise ValueError("X has %d features per sample; expecting %d"
-                             % (X.shape[1], n_features))
+            raise ValueError("X has %d features per sample; expecting %d" %
+                             (X.shape[1], n_features))
 
         scores = safe_sparse_dot(X, self.coef_.T,
                                  dense_output=True) + self.intercept_
         return scores.ravel() if scores.shape[1] == 1 else scores
-    
+
     def predict(self, X):
         """
         Predict class labels for samples in X.
@@ -81,12 +79,12 @@ class LinearClassifierMixin(ClassifierMixin):
             prob /= prob.sum(axis=1).reshape((prob.shape[0], -1))
             return prob
 
+
 class SparseCoefMixin:
     """
     Mixin for converting coef_ to and from CSR format.
     L1-regularizing estimators should inherit this.
     """
-
     def densify(self):
         """
         Convert coefficient matrix to dense array format.
