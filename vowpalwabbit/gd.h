@@ -49,12 +49,22 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
       p->scalar +=
           fx * mp.weights[i];  // TODO: figure out how to use weight_parameters::iterator (not using change_begin())
   }
-  else  // TODO: this could be faster by unrolling into two loops
-    for (size_t c = 0; c < mp.count; ++c, fi += (uint64_t)mp.step, ++p)
+  else
+  {
+    uint64_t count = 0;
+    uint64_t copy_fi = (fi + (uint64_t)mp.step) & mask;
+    for (; copy_fi != fi && count < mp.count; copy_fi += (uint64_t)mp.step)
+    {
+      copy_fi &= mask;
+      ++count;
+    }
+    for (size_t c = 0; mp.count != 0 && c < count + 1; ++c, fi += (uint64_t)mp.step, ++p)
     {
       fi &= mask;
-      p->scalar += fx * mp.weights[fi];
+      for (size_t n = 0; n*(count + 1) + c < mp.count; ++n)
+        (p + n*(count + 1))->scalar += fx * mp.weights[fi];
     }
+  }
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
