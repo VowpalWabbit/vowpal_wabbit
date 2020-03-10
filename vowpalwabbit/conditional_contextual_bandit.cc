@@ -435,7 +435,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
     if (data.all->audit)
     {
-      inject_slot_id<true>(data, data.shared, slot_id);\
+      inject_slot_id<true>(data, data.shared, slot_id);
     }
     else
     {
