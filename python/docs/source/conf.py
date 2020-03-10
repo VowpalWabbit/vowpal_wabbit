@@ -44,6 +44,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
+    'numpydoc',
     'sphinx.ext.githubpages',
 ]
 
