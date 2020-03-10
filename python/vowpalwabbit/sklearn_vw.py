@@ -20,11 +20,11 @@ INVALID_CHARS = re.compile(r"[\|: \n]+")
 
 
 class VW(BaseEstimator):
-    r"""
+    """
     Vowpal Wabbit Scikit-learn Base Estimator wrapper
 
     Attributes
-    ==========
+    ----------
 
     params : dictionary
         dictionary of model parameter keys and values
@@ -119,12 +119,12 @@ class VW(BaseEstimator):
                  dropout=None,
                  inpass=None,
                  meanfield=None,
-                 multitask=None):
-        r"""
-        VW model constructor, exposing all supported parameters to keep sklearn happy
+                 multitask=None,
+                 convert_labels=False):
+        """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
-        ==========
+        ----------
 
         probabilities : float
             Float number between 0 and 1
@@ -132,7 +132,7 @@ class VW(BaseEstimator):
             seed random number generator
         ring_size : integer
             size of example ring
-        convert_to_vw : boolean
+        convert_to_vw : bool
             flag to convert X input to vw format
 
         Update options
@@ -160,18 +160,18 @@ class VW(BaseEstimator):
             Initial regressor(s)
         initial_weight : float
             Set all weights to an initial value of arg.
-        random_weights : boolean
+        random_weights : bool
             make initial weights random
         input_feature_regularizer : str
             Per feature regularization input file
 
         Diagnostic options
 
-        audit,a : boolean
+        audit,a : bool
             print weights of features
         progress,P : str/integer/float
             Progress update frequency. int: additive, float: multiplicative
-        quiet : boolean
+        quiet : bool
             Don't output disgnostics and progress updates
 
         Input options
@@ -182,10 +182,12 @@ class VW(BaseEstimator):
             use a cache. default is <data>.cache
         cache_file : str
             path to cache file to use
-        k : boolean
+        k : bool
             auto delete cache file
         passes : integer
             Number of training passes
+        convert_labels : bool
+            Convert labels of the form [0,1] to [-1,1]
 
         Feature options
 
@@ -201,7 +203,7 @@ class VW(BaseEstimator):
             Use ':' as a wildcard in S.
         bit_precision,b : integer
             number of bits in the feature table
-        noconstant : boolean
+        noconstant : bool
             Don't add a constant feature
         constant,C : float
             Set initial value of constant
@@ -223,9 +225,9 @@ class VW(BaseEstimator):
             look in this directory for dictionaries; defaults to current directory or env{PATH}
         interactions : str
             Create feature interactions of any level between namespaces.
-        permutations : boolean
+        permutations : bool
             Use permutations instead of combinations for feature interactions of same namespace.
-        leave_duplicate_interactions : boolean
+        leave_duplicate_interactions : bool
             Don't remove interactions with duplicate combinations of namespaces. For
             ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.
         quadratic,q : str
@@ -235,13 +237,13 @@ class VW(BaseEstimator):
 
         Example options
 
-        testonly,t : boolean
+        testonly,t : bool
             Ignore label information and just test
         min_prediction : float
             Smallest prediction to output
         max_prediction : float
             Largest prediction to output
-        sort_features : boolean
+        sort_features : bool
             turn this on to disregard order in which features have been defined. This will lead to
             smaller cache sizes
         loss_function : str
@@ -267,7 +269,7 @@ class VW(BaseEstimator):
             Output human-readable final regressor with numeric features
         invert_hash : str
             Output human-readable final regressor with feature names.  Computationally expensive.
-        save_resume : boolean
+        save_resume : bool
             save extra state so learning can be resumed later with new data
         output_feature_regularizer_binary : str
             Per feature regularization output file
@@ -302,7 +304,7 @@ class VW(BaseEstimator):
         meanfield : Train or test sigmoidal feed-forward network using mean field
 
         Returns
-        =======
+        -------
 
         (BaseEstimator): Returns self
 
@@ -315,7 +317,8 @@ class VW(BaseEstimator):
         del attr
 
         # reset params and quiet models by default
-        self.params = {'quiet': True}
+        self.params = {'quiet':  True}
+        self.convert_labels = convert_labels
 
         # assign all valid args to params dict
         args = dict(locals())
@@ -346,7 +349,7 @@ class VW(BaseEstimator):
         """Factory to create a vw instance on demand
 
         Returns
-        =======
+        -------
 
         pyvw.vw instance
 
@@ -363,7 +366,7 @@ class VW(BaseEstimator):
                 for N-1 passes use example objects directly (simulate cache file...but in memory for faster processing)
 
         Parameters
-        ==========
+        ----------
 
         X : {array-like, sparse matrix}, shape (n_samples, n_features or 1 if not convert_to_vw) or
             Training vector, where n_samples in the number of samples and
@@ -375,13 +378,13 @@ class VW(BaseEstimator):
                         sample weight vector relative to X.
 
         Returns
-        =======
+        -------
 
         Return self so pipeline can call transform() after fit
 
         """
         if self.convert_to_vw_:
-            X = tovw(x=X, y=y, sample_weight=sample_weight)
+            X = tovw(x=X, y=y, sample_weight=sample_weight, convert_labels=self.convert_labels)
 
         model = self.get_vw()
 
@@ -401,7 +404,7 @@ class VW(BaseEstimator):
          in a sklearn pipeline that isn't the final estimator
 
         Parameters
-        ==========
+        ----------
 
         X : {array-like, sparse matrix}, shape (n_samples, n_features or 1 if not convert_to_vw) or
             Training vector, where n_samples in the number of samples and
@@ -411,7 +414,7 @@ class VW(BaseEstimator):
             Target vector relative to X.
 
         Returns
-        =======
+        -------
 
         Return X to be passed into next estimator in pipeline
         """
@@ -423,7 +426,7 @@ class VW(BaseEstimator):
         """Predict with Vowpal Wabbit model
 
         Parameters
-        ==========
+        ----------
 
         X : {array-like, sparse matrix}, shape (n_samples, n_features or 1)
             Training vector, where n_samples in the number of samples and
@@ -431,7 +434,7 @@ class VW(BaseEstimator):
             if not using convert_to_vw, X is expected to be a list of vw formatted feature vector strings with labels
 
         Returns
-        =======
+        -------
 
         y : array-like, shape (n_samples, 1 or n_classes)
             Output vector relative to X.
@@ -490,7 +493,7 @@ class VW(BaseEstimator):
             any parameters not provided will remain as they were initialized to at construction
 
         Parameters
-        ===========
+        ----------
 
         params : dict
                  dictionary of model parameter keys and values to update
@@ -511,7 +514,7 @@ class VW(BaseEstimator):
         """Returns coefficient weights as ordered sparse matrix
 
         Returns
-        =======
+        -------
 
         sparse matrix : coefficient weights for model
         """
@@ -524,7 +527,7 @@ class VW(BaseEstimator):
         """Sets coefficients weights from ordered sparse matrix
 
         Parameters
-        ==========
+        ----------
 
         coefs : sparse matrix
             coefficient weights for model
@@ -538,7 +541,7 @@ class VW(BaseEstimator):
         """ Returns intercept weight for model
 
         Returns
-        =======
+        -------
 
         intercept value : integer, 0 if noconstant
         """
@@ -562,7 +565,7 @@ class VW(BaseEstimator):
 
 
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
-    r"""
+    """
     Mixin for linear classifiers.  A threshold is used to specify the positive
     class cutoff
 
@@ -579,16 +582,16 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
         super(ThresholdingLinearClassifierMixin, self).__init__(**params)
 
     def predict(self, X):
-        r"""Predict class labels for samples in X.
+        """Predict class labels for samples in X.
 
         Parameters
-        ==========
+        ----------
 
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             Samples.
 
         Returns
-        =======
+        -------
 
         C : array, shape = [n_samples]
             Predicted class label per sample.
@@ -618,13 +621,13 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
         """Predict class labels for samples in X.
 
         Parameters
-        ==========
+        ----------
 
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             Samples.
 
         Returns
-        =======
+        -------
 
         C : array, shape = [n_samples]
             Predicted class label per sample.
@@ -638,13 +641,13 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
         sample to the hyperplane.
 
         Parameters
-        ==========
+        ----------
 
         X : {array-like, sparse matrix}, shape = (n_samples, n_features)
             Samples.
 
         Returns
-        =======
+        -------
 
         array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
             Confidence scores per (sample, class) combination. In the binary
@@ -661,11 +664,11 @@ class VWRegressor(VW, RegressorMixin):
     pass
 
 
-def tovw(x, y=None, sample_weight=None):
+def tovw(x, y=None, sample_weight=None, convert_labels=False):
     """Convert array or sparse matrix to Vowpal Wabbit format
 
     Parameters
-    ==========
+    ----------
 
     x : {array-like, sparse matrix}, shape (n_samples, n_features)
         Training vector, where n_samples is the number of samples and
@@ -674,15 +677,16 @@ def tovw(x, y=None, sample_weight=None):
         Target vector relative to X.
     sample_weight : {array-like}, shape (n_samples,), optional
                     sample weight vector relative to X.
+    convert_labels : {bool} convert labels of the form [0,1] to [-1,1]
 
     Returns
-    =======
+    -------
 
     out : {array-like}, shape (n_samples, 1)
           Training vectors in VW string format
 
     Examples
-    ========
+    --------
 
     >>> import pandas as pd
     >>> from sklearn.feature_extraction.text import HashingVectorizer
@@ -702,6 +706,10 @@ def tovw(x, y=None, sample_weight=None):
         x = np.array(x)
     if not isinstance(y, np.ndarray):
         y = np.array(y)
+
+    # convert labels of the form [0,1] to [-,1]
+    if convert_labels:
+        y = np.where(y < 1, -1, y)
 
     # make sure this is a 2d array
     if x.ndim == 1:
