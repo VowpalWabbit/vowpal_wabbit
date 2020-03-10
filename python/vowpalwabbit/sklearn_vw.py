@@ -20,8 +20,7 @@ INVALID_CHARS = re.compile(r"[\|: \n]+")
 
 
 class VW(BaseEstimator):
-    """
-    Vowpal Wabbit Scikit-learn Base Estimator wrapper
+    """Vowpal Wabbit Scikit-learn Base Estimator wrapper
 
     Attributes
     ----------
@@ -565,8 +564,7 @@ class VW(BaseEstimator):
 
 
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
-    """
-    Mixin for linear classifiers.  A threshold is used to specify the positive
+    """Mixin for linear classifiers.  A threshold is used to specify the positive
     class cutoff
 
     Handles prediction for sparse and dense X.
