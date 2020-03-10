@@ -10,6 +10,7 @@ from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import shuffle
 from vowpalwabbit import pyvw
@@ -558,6 +559,34 @@ class VWRegressor(VW, RegressorMixin):
     """Vowpal Wabbit Regressor model """
 
     pass
+
+
+class VWMultiClassifier(OneVsRestClassifier, VW):
+    """Vowpal Wabbit Regressor model """
+
+    def __init__(self, **params):
+
+        super(VWClassifier, self).__init__(**params)
+
+    def predict(self, X):
+
+        """Fit underlying estimators.
+
+        Parameters
+        ----------
+        X : (sparse) array-like of shape (n_samples, n_features)
+            Data.
+        y : (sparse) array-like of shape (n_samples,) or (n_samples, n_classes)
+            Multi-class targets. An indicator matrix turns on multilabel
+            classification.
+
+        Returns
+        -------
+        self
+        """
+        pass
+
+
 
 
 def tovw(x, y=None, sample_weight=None):
