@@ -219,6 +219,7 @@
     <ClInclude Include="version.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
+    <ClInclude Include="vw_math.h" />
     <ClInclude Include="vw_string_view.h" />
     <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw_versions.h" />

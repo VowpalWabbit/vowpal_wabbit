@@ -143,6 +143,7 @@ set(vw_all_headers
   version.h
   vw_allreduce.h
   vw_exception.h
+  vw_math.h
   vw_string_view.h
   vw_validate.h
   vw_versions.h
