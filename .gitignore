@@ -144,3 +144,5 @@ reinforcement_learning/unit_test/rlclient-test.out
 cs/azure_service/azure_service.ccproj.user
 
 build
+dist/
+python/examples/*.model
