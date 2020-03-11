@@ -53,11 +53,10 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
   {
     uint64_t count = 0;
     uint64_t copy_fi = (fi + (uint64_t)mp.step) & mask;
-    for (; copy_fi != fi && count < mp.count; copy_fi += (uint64_t)mp.step)
-    {
+    // number of iteration after which the value of fi again starts repeating
+    for (; copy_fi != fi && count < mp.count; copy_fi += (uint64_t)mp.step, ++count)
       copy_fi &= mask;
-      ++count;
-    }
+
     for (size_t c = 0; mp.count != 0 && c < count + 1; ++c, fi += (uint64_t)mp.step, ++p)
     {
       fi &= mask;
