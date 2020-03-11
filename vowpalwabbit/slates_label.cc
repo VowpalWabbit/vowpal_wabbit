@@ -7,6 +7,7 @@
 #include "cache.h"
 #include "parser.h"
 #include "vw_string_view.h"
+#include "constant.h"
 
 #include <numeric>
 
@@ -126,13 +127,13 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
 
   if (words.size() < 2)
     THROW("slates labels may not be empty");
-  if (!(words[0] == "slates"))
+  if (!(words[0] == SLATES_LABEL))
   {
     THROW("slates labels require the first word to be slates");
   }
 
   const auto& type = words[1];
-  if (type == "shared")
+  if (type == SHARED_TYPE)
   {
     // There is a cost defined.
     if(words.size() == 3)
@@ -146,7 +147,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
     }
     ld.type = example_type::shared;
   }
-  else if (type == "action")
+  else if (type == ACTION_TYPE)
   {
     if(words.size() != 3)
     {
@@ -156,7 +157,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
     ld.slot_id = int_of_string(words[2]);
     ld.type = example_type::action;
   }
-  else if (type == "slot")
+  else if (type == SLOT_TYPE)
   {
     if (words.size() == 3)
     {
