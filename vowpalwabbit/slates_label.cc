@@ -8,7 +8,7 @@
 #include "parser.h"
 #include "vw_string_view.h"
 #include "constant.h"
-
+#include "vw_math.h"
 #include <numeric>
 
 namespace slates
@@ -120,28 +120,42 @@ void copy_label(void* dst, void* src)
   copy_array(ldDst.probabilities, ldSrc.probabilities);
 }
 
+// Slates labels come in three types, shared, action and slot with the following structure:
+// slates shared [global_cost]
+// slates action <slot_id>
+// slates slot [chosen_action_id:probability[,action_id:probability...]]
+//
+// For a more complete description of the grammar, including examples see:
+// https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
 void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
 {
   auto& ld = static_cast<polylabel*>(v)->slates;
   ld.weight = 1;
 
-  if (words.size() < 2)
-    THROW("slates labels may not be empty");
+  if (words.size() == 0)
+  {
+    THROW("Slates labels may not be empty");
+  }
   if (!(words[0] == SLATES_LABEL))
   {
-    THROW("slates labels require the first word to be slates");
+    THROW("Slates labels require the first word to be slates");
+  }
+
+  if (words.size() == 1)
+  {
+    THROW("Slates labels require a type. It must be one of: [shared, action, slot]");
   }
 
   const auto& type = words[1];
   if (type == SHARED_TYPE)
   {
     // There is a cost defined.
-    if(words.size() == 3)
+    if (words.size() == 3)
     {
       ld.cost = float_of_string(words[2]);
       ld.labeled = true;
     }
-    else if(words.size() != 2)
+    else if (words.size() != 2)
     {
       THROW("Slates shared labels must be of the form: slates shared [global_cost]");
     }
@@ -149,7 +163,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
   }
   else if (type == ACTION_TYPE)
   {
-    if(words.size() != 3)
+    if (words.size() != 3)
     {
       THROW("Slates action labels must be of the form: slates action <slot_id>");
     }
@@ -165,15 +179,17 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
       tokenize(',', words[2], p->parse_name);
 
       auto split_colons = v_init<VW::string_view>();
-      for(auto& token : p->parse_name) {
+      for (auto& token : p->parse_name)
+      {
         tokenize(':', token, split_colons);
-        if(split_colons.size() != 2)
+        if (split_colons.size() != 2)
         {
           THROW("Malformed action score token");
         }
 
         // Element 0 is the action, element 1 is the probability
-        ld.probabilities.push_back({static_cast<uint32_t>(int_of_string(split_colons[0])), float_of_string(split_colons[1])});
+        ld.probabilities.push_back(
+            {static_cast<uint32_t>(int_of_string(split_colons[0])), float_of_string(split_colons[1])});
       }
 
       // If a full distribution has been given, check if it sums to 1, otherwise throw.
@@ -184,22 +200,24 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
               return result_so_far + action_pred.score;
             });
 
-        // TODO do a proper comparison here.
-        if (total_pred > 1.1f || total_pred < 0.9f)
+        if (!VW::math::are_same(total_pred, 1.f))
         {
-          THROW("When providing all predicition probabilties they must add up to 1.f");
+          THROW(
+              "When providing all prediction probabilities they must add up to 1.0, instead summed to " << total_pred);
         }
       }
     }
-    else if (words.size() != 2)
+    else if (words.size() > 3)
     {
-      THROW("Slates shared labels must be of the form: slates slot [chosen_action_id:probability[,action_id:probability...]]");
+      THROW(
+          "Slates shared labels must be of the form: slates slot "
+          "[chosen_action_id:probability[,action_id:probability...]]");
     }
     ld.type = example_type::slot;
   }
   else
   {
-    THROW("unknown label type: " << type);
+    THROW("Unknown slates label type: " << type);
   }
 }
 
