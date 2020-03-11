@@ -132,6 +132,7 @@ set(vw_all_headers
   sender.h
   shared_feature_merger.h
   simple_label.h
+  slates_label.h
   spanning_tree.h
   stable_unique.h
   stagewise_poly.h
@@ -142,6 +143,7 @@ set(vw_all_headers
   version.h
   vw_allreduce.h
   vw_exception.h
+  vw_math.h
   vw_string_view.h
   vw_validate.h
   vw_versions.h
@@ -240,6 +242,7 @@ set(vw_all_sources
   sender.cc
   shared_feature_merger.cc
   simple_label.cc
+  slates_label.cc
   stagewise_poly.cc
   svrg.cc
   topk.cc

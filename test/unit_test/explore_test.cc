@@ -17,23 +17,23 @@ BOOST_AUTO_TEST_CASE(sample_after_nomalizing_basic) {
 
   auto scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  check_float_vectors(pdf, expected, .0001f);
+  check_collections_with_float_tolerance(pdf, expected, .0001f);
 
   scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  check_float_vectors(pdf, expected, .0001f);
+  check_collections_with_float_tolerance(pdf, expected, .0001f);
 
   scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  check_float_vectors(pdf, expected, .0001f);
+  check_collections_with_float_tolerance(pdf, expected, .0001f);
 
   scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  check_float_vectors(pdf, expected, .0001f);
+  check_collections_with_float_tolerance(pdf, expected, .0001f);
 
   scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  check_float_vectors(pdf, expected, .0001f);
+  check_collections_with_float_tolerance(pdf, expected, .0001f);
 }
 
 BOOST_AUTO_TEST_CASE(sample_after_nomalizing_degenerate) {
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(sample_after_nomalizing_degenerate) {
 
   const auto scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  check_float_vectors(pdf, expected, .0001f);
+  check_collections_with_float_tolerance(pdf, expected, .0001f);
 }
 
 BOOST_AUTO_TEST_CASE(swap_test) {
@@ -54,10 +54,10 @@ BOOST_AUTO_TEST_CASE(swap_test) {
   auto scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
   BOOST_CHECK_EQUAL(chosen_index, 3);
-  check_float_vectors(pdf, expected_pdf, .0001f);
+  check_collections_with_float_tolerance(pdf, expected_pdf, .0001f);
 
   scode = exploration::swap_chosen(begin(pdf), end(pdf), chosen_index);
 
   const std::vector<float> expected_pdf_2 = { 0.266666667f,	0.133333333f,	0.2f,	0.066666667f,	0.333333333f };
-  check_float_vectors(pdf, expected_pdf_2, .0001f);
+  check_collections_with_float_tolerance(pdf, expected_pdf_2, .0001f);
 }
