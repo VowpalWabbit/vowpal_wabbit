@@ -13,6 +13,7 @@
 #include "cb_adf.h"
 #include "cb_algs.h"
 #include "constant.h"
+#include "vw_math.h"
 
 #include <numeric>
 #include <algorithm>
@@ -347,9 +348,9 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
           });
 
       // TODO do a proper comparison here.
-      if (total_pred > 1.1f || total_pred < 0.9f)
+      if (!VW::math::are_same(total_pred, 1.f))
       {
-        THROW("When providing all predicition probabilties they must add up to 1.f");
+        THROW("When providing all prediction probabilities they must add up to 1.f, instead summed to " << total_pred);
       }
     }
   }
