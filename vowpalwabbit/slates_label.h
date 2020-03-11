@@ -25,6 +25,9 @@ struct label
   // General data
   example_type type;
   float weight;
+  // Because these labels provide both structural information as well as a
+  // label, this field will only be true is there is a label attached (label in
+  // the sense of cost)
   bool labeled;
 
   // For shared examples
