@@ -17,7 +17,7 @@ inline void compare(const ACTION_SCORE::action_score& l, const ACTION_SCORE::act
 }
 
 template <typename ContainerOneT, typename ContainerTwoT>
-void check_collections_with_tol(const ContainerOneT& lhs, const ContainerTwoT& rhs, float float_tolerance)
+void check_collections_with_float_tolerance(const ContainerOneT& lhs, const ContainerTwoT& rhs, float float_tolerance)
 {
   BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
   auto l = std::begin(lhs);
@@ -29,7 +29,7 @@ void check_collections_with_tol(const ContainerOneT& lhs, const ContainerTwoT& r
 }
 
 template <template <typename...> class ContainerOneT, template <typename...> class ContainerTwoT, typename T>
-void check_collections(const ContainerOneT<T>& lhs, const ContainerTwoT<T>& rhs)
+void check_collections_exact(const ContainerOneT<T>& lhs, const ContainerTwoT<T>& rhs)
 {
   BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 }

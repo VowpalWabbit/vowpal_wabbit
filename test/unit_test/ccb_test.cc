@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
-  check_collections(interactions, compare_set);
+  check_collections_exact(interactions, compare_set);
 
   interactions = {"UA", "UO", "UOA"};
   compare_set = {"UA", "UO", "UOA", {'U', 'A', (char)ccb_id_namespace}, {'U', 'O', (char)ccb_id_namespace},
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
 
-  check_collections(interactions, compare_set);
+  check_collections_exact(interactions, compare_set);
   VW::finish_example(vw, actions);
   VW::finish_example(vw, *shared_ex);
   VW::finish(vw);
