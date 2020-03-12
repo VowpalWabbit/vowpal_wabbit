@@ -966,6 +966,12 @@ void learn_batch(lda &l)
       l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
     }
+
+    if (l.finish_example_count > 0)
+    {
+      return_example(*l.all, *l.examples[d]);
+      l.finish_example_count--;
+    }
   }
 
   // -t there's no need to update weights (especially since it's a noop)
@@ -1006,7 +1012,6 @@ void learn_batch(lda &l)
   }
   l.sorted_features.resize(0);
 
-  return_batch_examples(l);
   l.examples.clear();
   l.doc_lengths.clear();
 }
