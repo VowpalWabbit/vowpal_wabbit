@@ -856,26 +856,6 @@ void return_example(vw &all, example &ec)
   VW::finish_example(all, ec);
 }
 
-void return_batch_examples(lda &l)
-{
-  if (l.minibatch <= 1)
-  {
-    return;
-  }
-
-  assert(l.finish_example_count > 0);
-
-  if (l.finish_example_count <= l.examples.size())
-  {
-    for (size_t d = 0; d < l.finish_example_count; d++)
-    {
-      return_example(*l.all, *l.examples[d]);
-    }
-
-    l.finish_example_count = 0;
-  }
-}
-
 void learn_batch(lda &l)
 {
   parameters &weights = l.all->weights;
@@ -894,8 +874,13 @@ void learn_batch(lda &l)
       l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
+
+      if (l.finish_example_count > 0)
+      {
+        return_example(*l.all, *l.examples[d]);
+        l.finish_example_count--;
+      }
     }
-    return_batch_examples(l);
     l.examples.clear();
     return;
   }
