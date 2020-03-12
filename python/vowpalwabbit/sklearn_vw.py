@@ -136,11 +136,16 @@ class VW(BaseEstimator):
 
         Update options
 
-        bfgs : use L-BFGS optimization algorithm
-        mem : set the rank of the inverse hessian approximation used by bfgs
-        ftrl : use FTRL-Proximal optimization algorithm
-        ftrl_alpha : ftrl alpha parameter
-        ftrl_beta : ftrl beta parameter
+        bfgs : bool
+            use L-BFGS optimization algorithm
+        mem : integer
+            set the rank of the inverse hessian approximation used by bfgs
+        ftrl : bool
+            use FTRL-Proximal optimization algorithm
+        ftrl_alpha : integer
+            ftrl alpha parameter
+        ftrl_beta : integer
+            ftrl beta parameter
         learning_rate,l : float
             Set learning rate
         power_t : float
@@ -297,15 +302,19 @@ class VW(BaseEstimator):
 
         nn : integer
             Use a sigmoidal feed-forward neural network with N hidden units
-        dropout : Train or test sigmoidal feed-forward network using dropout
-        inpass : Train or test sigmoidal feed-forward network with input pass-through
-        multitask : Share hidden layer across all reduced tasks
-        meanfield : Train or test sigmoidal feed-forward network using mean field
+        dropout : bool
+            Train or test sigmoidal feed-forward network using dropout
+        inpass : bool
+            Train or test sigmoidal feed-forward network with input pass-through
+        multitask : bool
+            Share hidden layer across all reduced tasks
+        meanfield : bool
+            Train or test sigmoidal feed-forward network using mean field
 
         Returns
         -------
 
-        (BaseEstimator): Returns self
+        self : BaseEstimator
 
         """
 
@@ -350,7 +359,7 @@ class VW(BaseEstimator):
         Returns
         -------
 
-        pyvw.vw instance
+        vw : pyvw.vw instance
 
         """
         if self.vw_ is None:
@@ -379,7 +388,8 @@ class VW(BaseEstimator):
         Returns
         -------
 
-        Return self so pipeline can call transform() after fit
+        self : BaseEstimator
+            So pipeline can call transform() after fit
 
         """
         if self.convert_to_vw_:
@@ -415,7 +425,8 @@ class VW(BaseEstimator):
         Returns
         -------
 
-        Return X to be passed into next estimator in pipeline
+        X : {array-like, sparse matrix}
+            To be passed into next estimator in pipeline
         """
         if not self.get_vw().finished:
             self.get_vw().finish()
@@ -542,7 +553,7 @@ class VW(BaseEstimator):
         Returns
         -------
 
-        intercept value : integer, 0 if noconstant
+        intercept value : integer, 0 if no constant
         """
 
         return self.get_vw().get_weight(CONSTANT_HASH)
@@ -647,7 +658,7 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
         Returns
         -------
 
-        array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
+        out : array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
             Confidence scores per (sample, class) combination. In the binary
             case, confidence score for self.classes_[1] where >0 means this
             class would be predicted.
