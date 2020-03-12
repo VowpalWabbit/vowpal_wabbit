@@ -858,6 +858,11 @@ void return_example(vw &all, example &ec)
 
 void return_batch_examples(lda &l)
 {
+  if (l.minibatch <= 1)
+  {
+    return;
+  }
+
   assert(l.finish_example_count > 0);
 
   if (l.finish_example_count <= l.examples.size())
@@ -1289,6 +1294,11 @@ void end_examples(lda &l)
 
 void finish_example(vw &all, lda &l, example &e)
 {
+  if (l.minibatch <= 1)
+  {
+    return return_example(all, e);
+  }
+
   if (l.examples.size() > 0)
   {
     // if there's still examples to be queued, inc only to finish later
