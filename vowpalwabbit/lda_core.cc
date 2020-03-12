@@ -60,6 +60,8 @@ struct lda
   size_t minibatch;
   lda_math_mode mmode;
 
+  size_t finish_example_count;
+
   v_array<float> Elogtheta;
   v_array<float> decay_levels;
   v_array<float> total_new;
@@ -854,6 +856,21 @@ void return_example(vw &all, example &ec)
   VW::finish_example(all, ec);
 }
 
+void return_batch_examples(lda &l)
+{
+  assert(l.finish_example_count > 0);
+
+  if (l.finish_example_count <= l.examples.size())
+  {
+    for (size_t d = 0; d < l.finish_example_count; d++)
+    {
+      return_example(*l.all, *l.examples[d]);
+    }
+
+    l.finish_example_count = 0;
+  }
+}
+
 void learn_batch(lda &l)
 {
   parameters &weights = l.all->weights;
@@ -872,8 +889,8 @@ void learn_batch(lda &l)
       l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
-      return_example(*l.all, *l.examples[d]);
     }
+    return_batch_examples(l);
     l.examples.clear();
     return;
   }
@@ -944,7 +961,6 @@ void learn_batch(lda &l)
       l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
     }
-    return_example(*l.all, *l.examples[d]);
   }
 
   // -t there's no need to update weights (especially since it's a noop)
@@ -985,6 +1001,7 @@ void learn_batch(lda &l)
   }
   l.sorted_features.resize(0);
 
+  return_batch_examples(l);
   l.examples.clear();
   l.doc_lengths.clear();
 }
@@ -1270,7 +1287,21 @@ void end_examples(lda &l)
     end_examples(l, l.all->weights.dense_weights);
 }
 
-void finish_example(vw &, lda &, example &) {}
+void finish_example(vw &all, lda &l, example &e)
+{
+  if (l.examples.size() > 0)
+  {
+    // if there's still examples to be queued, inc only to finish later
+    l.finish_example_count++;
+  }
+  else
+  {
+    // return now since it has been processed (example size = 0)
+    return_example(all, e);
+  }
+
+  assert(l.finish_example_count <= l.minibatch);
+}
 
 std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 {
@@ -1310,6 +1341,8 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   // Convert from int to corresponding enum value.
   ld->mmode = static_cast<lda_math_mode>(math_mode);
+
+  ld->finish_example_count = 0;
 
   if (!options.was_supplied("lda"))
     return nullptr;
