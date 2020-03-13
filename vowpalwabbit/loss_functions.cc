@@ -358,10 +358,10 @@ class poisson_loss : public loss_function
   }
 };
 
-class modified_hubber_loss : public loss_function
+class modified_huber_loss : public loss_function
 {
  public:
-  std::string getType() { return "modified_hubber"; }
+  std::string getType() { return "modified_huber"; }
 
   float getLoss(shared_data*, float prediction, float label)
   {
