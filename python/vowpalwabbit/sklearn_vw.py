@@ -482,8 +482,7 @@ class VW(BaseEstimator):
             return str(self.params)
 
     def __repr__(self,  N_CHAR_MAX=700):
-
-        return BaseEstimator.__repr__(self)
+        return BaseEstimator.__repr__(self, N_CHAR_MAX=N_CHAR_MAX)
 
     def __del__(self):
         if hasattr(self, 'vw_') and self.vw_ is not None:
