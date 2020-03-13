@@ -1330,6 +1330,12 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
 
+    if (ring_size == 0)
+    {
+      all.trace_message << "warning: --ring_size: ring_size can't be 0, switching to the default value of 256"
+                          << endl;
+      ring_size = 256;
+    }
     all.p = new parser{ring_size, strict_parse};
     all.p->_shared_data = all.sd;
 
