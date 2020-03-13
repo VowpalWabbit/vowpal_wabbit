@@ -8,7 +8,7 @@ import io
 
 from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.datasets import dump_svmlight_file
@@ -560,31 +560,70 @@ class VWRegressor(VW, RegressorMixin):
 
     pass
 
+class ThresholdingMultiClassifierMixin(ClassifierMixin):
 
-class VWMultiClassifier(OneVsRestClassifier, VW):
-    """Vowpal Wabbit Regressor model """
-
-    def __init__(self, **params):
-
-        super(VWClassifier, self).__init__(**params)
 
     def predict(self, X):
-
-        """Fit underlying estimators.
+        """Predict class labels for samples in X.
 
         Parameters
         ----------
-        X : (sparse) array-like of shape (n_samples, n_features)
-            Data.
-        y : (sparse) array-like of shape (n_samples,) or (n_samples, n_classes)
-            Multi-class targets. An indicator matrix turns on multilabel
-            classification.
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Samples.
 
         Returns
         -------
-        self
+        C : array, shape = [n_samples]
+            Predicted class label per sample.
         """
-        pass
+        scores = self.decision_function(X)
+        indices = scores.argmax(axis=1)+1
+        return indices
+
+
+class VWMultiClassifier(SparseCoefMixin, ThresholdingMultiClassifierMixin, VW):
+    """Vowpal Wabbit MultiClassifier model """
+
+    def __init__(self, **params):
+
+        params['probabilities'] = True
+        super(VWMultiClassifier, self).__init__(**params)
+
+    def predict(self, X):
+        """Predict class labels for samples in X.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Samples.
+
+        Returns
+        -------
+        C : array, shape = [n_samples]
+            Predicted class label per sample.
+        """
+
+        return ThresholdingMultiClassifierMixin.predict(self, X=X)
+
+    def decision_function(self, X):
+        """Predict confidence scores for samples.
+        The confidence score for a sample is the signed distance of that
+        sample to the hyperplane.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = (n_samples, n_features)
+            Samples.
+
+        Returns
+        -------
+        array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
+            Confidence scores per (sample, class) combination. In the binary
+            case, confidence score for self.classes_[1] where >0 means this
+            class would be predicted.
+        """
+
+        return VW.predict(self, X=X)
 
 
 
