@@ -8,6 +8,22 @@ import warnings
 class SearchTask():
     """Search task class"""
     def __init__(self, vw, sch, num_actions):
+        """
+        Parameters
+        ----------
+
+        vw : vw object
+        sch : search object
+        num_actions : integer
+            The number of actions with the object can be initialized with
+
+        Returns
+        -------
+
+        self : SearchTask
+
+        """
+
         self.vw = vw
         self.sch = sch
         self.bogus_example = [self.vw.example("1 | x")]
@@ -40,27 +56,103 @@ class SearchTask():
             self.bogus_example)  # this will cause our ._run hook to get called
 
     def learn(self, data_iterator):
-        """Train search task by providing an iterator of examples"""
+        """Train search task by providing an iterator of examples.
+
+        Parameters
+        ----------
+
+        data_iterator: iterable objects
+            Consists of examples to be learned
+
+        Returns
+        -------
+
+        self : SearchTask
+
+        """
         for my_example in data_iterator.__iter__():
             self._call_vw(my_example, isTest=False)
 
     def example(self, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
-        """Create an example
-            initStringOrDict can specify example as VW formatted string, or a dictionary
-            labelType can specify the desire label type"""
+        """Create an example initStringOrDict can specify example as VW
+        formatted string, or a dictionary labelType can specify the desire
+        label type
+
+        Parameters
+        ----------
+
+        initStringOrDict : str/dict
+            Example in either string or dictionary form
+        labelType : integer
+            labelType of the example, by default is 0(lDefault)
+
+        Returns
+        -------
+
+        out : Example
+
+        """
         if self.sch.predict_needs_example():
             return self.vw.example(initStringOrDict, labelType)
         else:
             return self.vw.example(None, labelType)
 
     def predict(self, my_example, useOracle=False):
-        """Return prediction"""
+        """Predict on the example
+
+        Parameters
+        ----------
+
+        my_example : Example
+            example used for prediction
+        useOracle : bool
+
+        Returns
+        -------
+
+        out : integer
+            Prediction on the example
+        """
         self._call_vw(my_example, isTest=True, useOracle=useOracle)
         return self._output
 
 
 def get_prediction(ec, prediction_type):
-    """Get specified type of prediction from example"""
+    """Get specified type of prediction from example
+
+    Parameters
+    ----------
+
+    ec : Example
+    prediction_type
+        - pSCALAR : Scalar prediction type
+        - pSCALARS : Multiple scalar-valued prediction type
+        - pACTION_SCORES : Multiple action scores prediction type
+        - pACTION_PROBS : Multiple action probabilities prediction type
+        - pMULTICLASS : Multiclass prediction type
+        - pMULTILABELS : Multilabel prediction type
+        - pPROB : Probability prediction type
+        - pMULTICLASSPROBS : Multiclass probabilities prediction type
+        - pDECISION_SCORES : Decision scores prediction type
+
+    Examples
+    --------
+
+    >>> from vowpalwabbit import pyvw
+    >>> import pylibvw
+    >>> vw = pyvw.vw(quiet=True)
+    >>> ex = vw.example('1 |a two features |b more features here')
+    >>> pyvw.get_prediction(ex, pylibvw.vw.pSCALAR)
+    0.0
+    >>> pyvw.get_prediction(ex, pylibvw.vw.pPROB)
+    0.0
+
+    Returns
+    -------
+
+    out : integer/list
+        Prediction according to parameter prediction_type
+    """
     switch_prediction_type = {
         pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
         pylibvw.vw.pSCALARS: ec.get_scalars,
