@@ -10,7 +10,6 @@ from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
-from sklearn.multiclass import OneVsRestClassifier
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import shuffle
 from vowpalwabbit import pyvw
@@ -560,28 +559,8 @@ class VWRegressor(VW, RegressorMixin):
 
     pass
 
-class ThresholdingMultiClassifierMixin(ClassifierMixin):
 
-
-    def predict(self, X):
-        """Predict class labels for samples in X.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
-            Samples.
-
-        Returns
-        -------
-        C : array, shape = [n_samples]
-            Predicted class label per sample.
-        """
-        scores = self.decision_function(X)
-        indices = scores.argmax(axis=1)+1
-        return indices
-
-
-class VWMultiClassifier(SparseCoefMixin, ThresholdingMultiClassifierMixin, VW):
+class VWMultiClassifier(ClassifierMixin, VW):
     """Vowpal Wabbit MultiClassifier model """
 
     def __init__(self, **params):
@@ -601,14 +580,25 @@ class VWMultiClassifier(SparseCoefMixin, ThresholdingMultiClassifierMixin, VW):
         -------
         C : array, shape = [n_samples]
             Predicted class label per sample.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
+        >>> y = np.array([1, 1, 2, 2, 3, 3])
+        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
+        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model.fit(X, y)
+        >>> model.predict(X)
         """
 
-        return ThresholdingMultiClassifierMixin.predict(self, X=X)
+        scores = self.predict_proba(X)
+        indices = scores.argmax(axis=1)+1
+        return indices
 
-    def decision_function(self, X):
-        """Predict confidence scores for samples.
-        The confidence score for a sample is the signed distance of that
-        sample to the hyperplane.
+    def predict_proba(self, X):
+        """Predict probabilities for each class.
+
 
         Parameters
         ----------
@@ -621,6 +611,16 @@ class VWMultiClassifier(SparseCoefMixin, ThresholdingMultiClassifierMixin, VW):
             Confidence scores per (sample, class) combination. In the binary
             case, confidence score for self.classes_[1] where >0 means this
             class would be predicted.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
+        >>> y = np.array([1, 1, 2, 2, 3, 3])
+        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
+        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model.fit(X, y)
+        >>> model.predict_proba(X)
         """
 
         return VW.predict(self, X=X)
