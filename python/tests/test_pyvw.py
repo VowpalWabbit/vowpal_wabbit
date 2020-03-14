@@ -122,13 +122,23 @@ def test_multilabel_prediction_type():
 
 def test_cbandits_label():
     model = vw(cb=4, quiet=True)
-    assert pyvw.cbandits_label(model.example('1 |')).costs[0].label == 1
+    cbl = pyvw.cbandits_label(model.example('1:10:0.5 |'))
+    assert cbl.costs[0].action == 1
+    assert cbl.costs[0].probability == 0.5
+    assert cbl.costs[0].partial_prediction == 0
+    assert cbl.costs[0].cost == 10.0
+    assert str(cbl) == '1:10.0:0.5'
     del model
 
 
 def test_cost_sensitive_label():
     model = vw(csoaa=4, quiet=True)
-    assert pyvw.cost_sensitive_label(model.example('1 |')).costs[0].label == 1
+    csl = pyvw.cost_sensitive_label(model.example('2:5 |'))
+    assert csl.costs[0].label == 2
+    assert csl.costs[0].wap_value == 0.0
+    assert csl.costs[0].partial_prediction == 0.0
+    assert csl.costs[0].cost == 5.0
+    assert str(csl) == '2:5.0'
     del model
 
 
