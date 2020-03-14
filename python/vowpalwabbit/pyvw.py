@@ -172,15 +172,31 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
     def __init__(self, arg_str=None, **kw):
-        """Initialize the vw object. The (optional) argString is the
-        same as the command line arguments you'd use to run vw (eg,"--audit").
-        you can also use key/value pairs as in:
-          pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
-        or a combination, for instance:
-          pyvw.vw("--audit", b=26)
-        value in a pair could also be a list of values, for instance:
-          pyvw.vw("-q", ["ab", "ac"])
-        will be translated into passing two -q keys"""
+        """Initialize the vw object.
+
+        Parameters
+        ----------
+
+        arg_str : str
+            The arg_str is the same as the command line arguments, by default is
+            None. You'd use to run vw (eg,"--audit").
+
+        **kw : Using key/value pairs for different options available
+
+        Examples
+        --------
+
+        >>> from vowpalwabbit import vw
+        >>> vw1 = pyvw.vw('--audit')
+        >>> vw2 = pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
+        >>> vw3 = pyvw.vw("--audit", b=26)
+        >>> vw4 = pyvw.vw("-q", ["ab", "ac"])
+
+        Returns
+        -------
+
+        self : vw
+        """
         def format_input_pair(key, val):
             if type(val) is bool and not val:
                 s = ''
@@ -213,7 +229,36 @@ class vw(pylibvw.vw):
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or a single
-        example for a single example learner."""
+        example for a single example learner.
+
+        Parameters
+        ----------
+
+        str_ex : str/list of str
+            string representing examples
+        labelType : integer
+            labelType of the example, by default is 0(lDefault)
+
+        Examples
+        --------
+
+        >>> from vowpalwabbit import pyvw
+        >>> model = pyvw.vw(quiet=True)
+        >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
+        >>> model = vw(quiet=True, cb_adf=True)
+        >>> ex = model.parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
+        >>> len(ex) # Shows the multiline example is parsed
+        2
+        >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
+        >>> len(ex) # Shows the multiline example is parsed
+        2
+
+        Returns
+        -------
+
+        ec : list
+            list of examples parsed
+        """
         if not (isinstance(str_ex, list) or isinstance(str_ex, str)):
             raise TypeError(
                 'Unsupported type. List or string object must be passed.')
@@ -235,7 +280,14 @@ class vw(pylibvw.vw):
         return ec
 
     def finish_example(self, ex):
-        """Should only be used in conjunction with the parse method"""
+        """Should only be used in conjunction with the parse method
+
+        Parameters
+        ----------
+
+        ex : Example
+            example to be finished
+        """
 
         if isinstance(ex, example):
             if self._is_multiline():
@@ -260,14 +312,34 @@ class vw(pylibvw.vw):
         return pylibvw.vw.num_weights(self)
 
     def get_weight(self, index, offset=0):
-        """Given an (integer) index (and an optional offset), return
-        the weight for that position in the (learned) weight vector."""
+        """Get the weight at a particular position in the (learned) weight vector.
+
+        Parameters
+        ----------
+
+        index : integer
+            position in the learned  weight vector
+        offset : integer
+            By default is 0
+
+        Returns
+        -------
+
+        weight : float
+            Weight at the given index
+
+        """
         return pylibvw.vw.get_weight(self, index, offset)
 
     def learn(self, ec):
-        """Perform an online update; ec can either be an example
-        object or a string (in which case it is parsed and then
-        learned on) or list which is iterated over."""
+        """Perform an online update
+
+        Parameters
+        ----------
+
+        ec : example/str/list
+            examples on which the model gets updated
+        """
         # If a string was given, parse it before passing to learner.
         new_example = False
         if isinstance(ec, str):
@@ -289,11 +361,22 @@ class vw(pylibvw.vw):
             self.finish_example(ec)
 
     def predict(self, ec, prediction_type=None):
-        """Just make a prediction on this example; ec can either be an example
-        object or a string (in which case it is parsed and then predicted on).
+        """Just make a prediction on the example
 
-        if prediction_type is provided the matching return type is used
-        otherwise the the learner's prediction type will determine the output."""
+        Parameters
+        ----------
+
+        ec : Example/list/str
+            examples to be predicted
+        prediction_type : optional, if provided then the matching return type is
+            used otherwise the the learner's prediction type will determine the
+            output, by default is None
+
+        Returns
+        -------
+
+        prediction : Prediction made on each examples
+        """
 
         new_example = False
         if isinstance(ec, dict):
@@ -343,7 +426,24 @@ class vw(pylibvw.vw):
             self.finished = True
 
     def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
-        """TODO: document"""
+        """Create an example initStringOrDict can specify example as VW
+        formatted string, or a dictionary labelType can specify the desire
+        label type
+
+        Parameters
+        ----------
+
+        initStringOrDict : str/dict
+            Example in either string or dictionary form
+        labelType : integer
+            labelType of the example, by default is 0(lDefault)
+
+        Returns
+        -------
+
+        out : Example
+
+        """
         return example(self, stringOrDict, labelType)
 
     def __del__(self):
@@ -358,38 +458,50 @@ class vw(pylibvw.vw):
                     condition=None,
                     allowed=None,
                     learner_id=0):
-            """The basic (via-reduction) prediction mechanism. Several
-            variants are supported through this overloaded function:
+            """The basic (via-reduction) prediction mechanism
 
-              'examples' can be a single example (interpreted as
-                 non-LDF mode) or a list of examples (interpreted as
-                 LDF mode).  it can also be a lambda function that
-                 returns a single example or list of examples, and in
-                 that list, each element can also be a lambda function
-                 that returns an example. this is done for lazy
-                 example construction (aka speed).
+            Parameters
+            ----------
 
-              'my_tag' should be an integer id, specifying this prediction
+            examples : Example/list
+                can be a single example (interpreted as
+                non-LDF mode) or a list of examples (interpreted as
+                LDF mode).  it can also be a lambda function that
+                returns a single example or list of examples, and in
+                that list, each element can also be a lambda function
+                that returns an example. this is done for lazy
+                example construction (aka speed).
 
-              'oracle' can be a single label (or in LDF mode a single
-                 array index in 'examples') or a list of such labels if
-                 the oracle policy is indecisive; if it is None, then
-                 the oracle doesn't care
+            my_tag : integer
+                should be an integer id, specifying this prediction
 
-              'condition' should be either: (1) a (tag,char) pair, indicating
-                 to condition on the given tag with identifier from the char;
-                 or (2) a (tag,len,char) triple, indicating to condition on
-                 tag, tag-1, tag-2, ..., tag-len with identifiers char,
-                 char+1, char+2, ..., char+len. or it can be a (heterogenous)
-                 list of such things.
+            oracle : label/list
+                can be a single label (or in LDF mode a single
+                array index in 'examples') or a list of such labels if
+                the oracle policy is indecisive; if it is None, then
+                the oracle doesn't care
 
-              'allowed' can be None, in which case all actions are allowed;
-                 or it can be list of valid actions (in LDF mode, this should
-                 be None and you should encode the valid actions in 'examples')
+            condition : Optional, by default is None
+                should be either: (1) a (tag,char) pair, indicating
+                to condition on the given tag with identifier from the char;
+                or (2) a (tag,len,char) triple, indicating to condition on
+                tag, tag-1, tag-2, ..., tag-len with identifiers char,
+                char+1, char+2, ..., char+len. or it can be a (heterogenous)
+                list of such things.
 
-              'learner_id' specifies the underlying learner id
+            allowed : optional, by default id None
+                can be None, in which case all actions are allowed;
+                or it can be list of valid actions (in LDF mode, this should
+                be None and you should encode the valid actions in 'examples')
 
-            Returns a single prediction.
+            learner_id : integer
+                specifies the underlying learner id
+
+            Returns
+            -------
+
+            out : integer
+                a single prediction.
 
             """
             P = sch.get_predictor(my_tag)
