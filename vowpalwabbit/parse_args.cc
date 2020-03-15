@@ -1388,6 +1388,29 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
       all.all_reduce = new AllReduceSockets(
           span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
     }
+    
+    /*if (all.eta < 0.0 || all.eta > 1.0)
+    {
+      all.trace_message << "the value of learning_rate_decay must be in [0,1]. resetting from: " << all.eta << " to 0.5" << endl;
+      all.eta = 0.5;
+    }*/
+
+
+    /*if (all.power_t < 0.0 || all.power_t > 1.0)
+    {
+      all.trace_message << "the value of power_on_learning_rate_decay must be in [0,1]. resetting from: " << all.power_t << " to 0.5" << endl;
+      all.power_t = 0.5;
+    }*/
+
+    if (all.eta < 0.0 || all.eta > 1.0)
+    {
+      THROW("the value of learning_rate must be in [0,1]");
+    }
+
+    if (all.power_t < 0.0 || all.power_t > 1.0)
+    {
+      THROW("the value of power_on_learning_rate_decay must be in [0,1]");
+    }
 
     parse_diagnostics(options, all);
 
