@@ -601,10 +601,23 @@ class namespace_id():
     in a particular example. Mostly used internally, you shouldn't
     really need to touch this."""
     def __init__(self, ex, id):
-        """Given an example and an id, construct a namespace_id. The
-        id can either be an integer (in which case we take it to be an
-        index into ex.indices[]) or a string (in which case we take
-        the first character as the namespace id)."""
+        """Given an example and an id, construct a namespace_id.
+
+        Parameters
+        ----------
+
+        ex : Example
+            example used to create a namespace id
+        id : integer/str
+            The id can either be an integer (in which case we take it to be an
+            index into ex.indices[]) or a string (in which case we take
+            the first character as the namespace id).
+
+        Returns
+        -------
+
+        self : namespace_id
+        """
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
                 raise Exception('namespace ' + str(id) + ' out of bounds')
@@ -630,10 +643,25 @@ class example_namespace():
     indexing like ex['x'][0] to get the 0th feature in namespace 'x'
     in example ex."""
     def __init__(self, ex, ns, ns_hash=None):
-        """Construct an example_namespace given an example and a
-        target namespace (ns should be a namespace_id)"""
+        """Construct an example_namespace
+
+        Parameters
+        ----------
+
+        ex : Example
+            examples from which namespace is to be extracted
+        ns : namespace_id
+            Target namespace
+        ns_hash : Optional, by default is None
+            The hash of the namespace
+
+        Returns
+        -------
+
+        self : example_namespace
+        """
         if not isinstance(ns, namespace_id):
-            raise TypeError
+            raise TypeError("ns should an instance of namespace_id.")
         self.ex = ex
         self.ns = ns
         self.ns_hash = None
@@ -656,7 +684,17 @@ class example_namespace():
 
     def push_feature(self, feature, v=1.):
         """Add an unhashed feature to the current namespace (fails if
-        setup has already run on this example)."""
+        setup has already run on this example).
+
+        Parameters
+        ----------
+
+        feature : integer/str
+            Feature to be pushed to current namespace
+        v : float
+            Feature value, by default is 1.0
+
+        """
         if self.ns_hash is None:
             self.ns_hash = self.ex.vw.hash_space(self.ns)
         self.ex.push_feature(self.ns, feature, v, self.ns_hash)
@@ -668,11 +706,19 @@ class example_namespace():
         return self.ex.pop_feature(self.ns)
 
     def push_features(self, ns, featureList):
-        """Push a list of features to a given namespace. Each feature
-        in the list can either be an integer (already hashed) or a
-        string (to be hashed) and may be paired with a value or not
-        (if not, the value is assumed to be 1.0). See example.push_features
-        for examples."""
+        """Push a list of features to a given namespace.
+
+        Parameters
+        ----------
+
+        ns : namespace
+            namespace to which feature list is to be pushed
+        featureList : list
+            Each feature in the list can either be an integer (already hashed)
+            or a string (to be hashed) and may be paired with a value or not
+            (if not, the value is assumed to be 1.0).
+        See example.push_features for examples.
+        """
         self.ex.push_features(self.ns, featureList)
 
 
@@ -808,7 +854,9 @@ class cbandits_label(abstract_label):
                          **kwargs):
                 if kwargs.get('label', False):
                     action = kwargs['label']
-                    warnings.warn("label has been deprecated. Please use 'action' instead.", DeprecationWarning)
+                    warnings.warn(
+                    "label has been deprecated. Please use 'action' instead.",
+                    DeprecationWarning)
                 self.label = action
                 self.action = action
                 self.cost = cost
@@ -824,7 +872,8 @@ class cbandits_label(abstract_label):
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join(["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs])
+        return ' '.join(["{}:{}:{}".format(c.action, c.cost, c.probability)
+                for c in self.costs])
 
 
 class example(pylibvw.example):
