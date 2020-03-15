@@ -615,7 +615,7 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
 
 class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     """Vowpal Wabbit Classifier model
-    Only supports binary classification currently. Use VW directly for multiclass classification
+    Use VWMultiClassifier for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
     """
     def __init__(self, **params):
