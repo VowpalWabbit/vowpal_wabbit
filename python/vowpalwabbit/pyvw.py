@@ -1103,9 +1103,7 @@ class example(pylibvw.example):
         out : integer
             Hashed feature id
 
-        Note
-        -----
-
+        .. note::
         If --hash all is on, then get_feature_id(ns,"5") !=
         get_feature_id(ns, 5). If you've already hashed the namespace,
         you can optionally provide that value to avoid re-hashing it.
@@ -1174,6 +1172,8 @@ class example(pylibvw.example):
 
     def push_namespace(self, ns):
         """Push a new namespace onto this example.
+        You should only do this if you're sure that this example doesn't
+        already have the given namespace
 
         Parameters
         ----------
@@ -1181,11 +1181,6 @@ class example(pylibvw.example):
         ns : namespace
             namespace which is to be pushed onto example
 
-        Note
-        ----
-
-        You should only do this if you're sure that this example doesn't
-        already have the given namespace
         """
         if self.setup_done: self.unsetup_example()
         pylibvw.example.push_namespace(self, self.get_ns(ns).ord_ns)
