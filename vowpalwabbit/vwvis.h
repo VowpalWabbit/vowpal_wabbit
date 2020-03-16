@@ -1,7 +1,7 @@
 #pragma once
 
 
-#ifdef MS_CONV
+#ifdef _WIN32
 #define VW_DEFAULT_VIS
 #else
 #define VW_DEFAULT_VIS __attribute__((__visibility__("default")))
