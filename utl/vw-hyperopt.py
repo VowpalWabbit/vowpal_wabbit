@@ -295,7 +295,8 @@ class HyperOptimizer(object):
 
         elif self.outer_loss_function == 'quantile': # Minimum at Median
             tau = 0.5
-            loss = max(tau * (self.y_true_holdout - y_pred_holdout), (tau - 1) * (self.y_true_holdout - y_pred_holdout))
+            loss = np.mean([max(tau * (true - pred), (tau - 1) * (true - pred)) \
+                          for true, pred in zip(self.y_true_holdout, y_pred_holdout)])
 
         else:
             raise KeyError('Invalide outer loss function')
