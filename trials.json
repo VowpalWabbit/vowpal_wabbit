@@ -1,1 +1,0 @@
-[{"status": "ok", "loss": 0.417463665, "eval_time": 0, "train_command": "vw -d ./test/train-sets/hyperopt_test.dat -f ./current.model --holdout_off -c  --ftrl_alpha 0.37085746478703163 --ftrl_beta 0.18946055679061272 --loss_function quantile --ftrl", "current_trial": 1}]
