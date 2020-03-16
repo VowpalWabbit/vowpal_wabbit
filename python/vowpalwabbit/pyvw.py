@@ -245,10 +245,9 @@ class vw(pylibvw.vw):
         >>> from vowpalwabbit import pyvw
         >>> model = pyvw.vw(quiet=True)
         >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
+        >>> len(ex)
+        1
         >>> model = vw(quiet=True, cb_adf=True)
-        >>> ex = model.parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
-        >>> len(ex) # Shows the multiline example is parsed
-        2
         >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
         >>> len(ex) # Shows the multiline example is parsed
         2
