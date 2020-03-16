@@ -18,6 +18,7 @@
 #include "example_predict.h"
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
+#include "slates_label.h"
 #include <vector>
 
 typedef union
@@ -28,6 +29,7 @@ typedef union
   COST_SENSITIVE::label cs;
   CB::label cb;
   CCB::label conditional_contextual_bandit;
+  slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;
@@ -77,6 +79,7 @@ struct example : public example_predict  // core example datatype.
   bool sorted;    // Are the features sorted or not?
   bool malformed = false; // Check if the example is malformed or not
   
+
   VW_DEPRECATED("in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. Standalone examples are by definition always in use.")
   bool in_use = true;
 };
