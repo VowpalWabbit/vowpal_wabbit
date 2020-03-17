@@ -89,8 +89,6 @@ class SearchTask():
         initStringOrDict : str/dict
             Example in either string or dictionary form
         labelType : integer
-            labelType of the example, by default is 0(lDefault). The integer is
-            used to map the labels. Following are the available options:
             - 0 : lDEFAULT
             - 1 : lBINARY
             - 2 : lMULTICLASS
@@ -98,6 +96,8 @@ class SearchTask():
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            The integer is used to map the corresponding labelType using the
+            above available options
 
         Returns
         -------
@@ -250,8 +250,6 @@ class vw(pylibvw.vw):
             line is considered as an example. In case of list, each string
             element is considered as an example
         labelType : integer
-            labelType of the example, by default is 0(lDefault). The integer is
-            used to map the labels. Following are the available options:
             - 0 : lDEFAULT
             - 1 : lBINARY
             - 2 : lMULTICLASS
@@ -259,6 +257,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            The integer is used to map the corresponding labelType using the
+            above available options
 
         Examples
         --------
@@ -457,8 +457,6 @@ class vw(pylibvw.vw):
         initStringOrDict : str/dict
             Example in either string or dictionary form
         labelType : integer
-            labelType of the example, by default is 0(lDefault). The integer is
-            used to map the labels. Following are the available options:
             - 0 : lDEFAULT
             - 1 : lBINARY
             - 2 : lMULTICLASS
@@ -466,6 +464,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            The integer is used to map the corresponding labelType using the
+            above available options
 
         Returns
         -------
@@ -931,12 +931,25 @@ class example(pylibvw.example):
             we (repeatedly) execute it fn() until it's not a function
             any more(for lazy feature computation). By default is None
         labelType : integer
-            The labelType of example, by default is 0(lDefault)
+            - 0 : lDEFAULT
+            - 1 : lBINARY
+            - 2 : lMULTICLASS
+            - 3 : lCOST_SENSITIVE
+            - 4 : lCONTEXTUAL_BANDIT
+            - 5 : lMAX
+            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            The integer is used to map the corresponding labelType using the
+            above available options
 
         Returns
         -------
 
         self : Example
+
+        See Also
+        --------
+
+        pyvw.vw
 
         """
 
