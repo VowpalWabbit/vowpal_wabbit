@@ -1,0 +1,84 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include "decision_scores.h"
+
+#include "slates.h"
+#include "conditional_contextual_bandit.h"
+#include "action_score.h"
+#include "io_buf.h"
+#include "global_data.h"
+
+#include <iostream>
+
+template <typename LabelPrintFunc>
+void print_update(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features, LabelPrintFunc label_print_func)
+{
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
+  {
+    std::ostringstream label_buf;
+    label_buf << std::setw(shared_data::col_current_label) << std::right << std::setfill(' ') << label_print_func(slots);
+
+    std::string pred_str;
+    std::string delim;
+    size_t counter = 0;
+    for (auto slot : decision_scores)
+    {
+      counter++;
+      pred_str += delim;
+      pred_str += std::to_string(slot[0].action);
+      delim = ",";
+
+      // Stop after 3...
+      if (counter > 2)
+      {
+        pred_str += delim;
+        pred_str += "...";
+        break;
+      }
+    }
+    std::ostringstream pred_buf;
+    pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ') << pred_str;
+
+    all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf.str(), pred_buf.str(), num_features,
+        all.progress_add, all.progress_arg);
+  }
+}
+
+namespace VW
+{
+void print_decision_scores(int f, VW::decision_scores_t& decision_scores)
+{
+  if (f >= 0)
+  {
+    std::stringstream ss;
+    for (auto slot : decision_scores)
+    {
+      std::string delimiter;
+      for (auto action_score : slot)
+      {
+        ss << delimiter << action_score.action << ':' << action_score.score;
+        delimiter = ",";
+      }
+      ss << '\n';
+    }
+    ssize_t len = ss.str().size();
+    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    if (t != len)
+    {
+      std::cerr << "write error: " << strerror(errno) << std::endl;
+    }
+  }
+}
+
+void print_update_ccb(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features)
+{
+  print_update(all, slots, decision_scores, num_features, CCB::generate_ccb_label_printout);
+}
+
+void print_update_slates(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features)
+{
+  print_update(all, slots, decision_scores, num_features, slates::generate_slates_label_printout);
+}
+}
