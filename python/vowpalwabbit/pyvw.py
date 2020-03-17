@@ -22,6 +22,11 @@ class SearchTask():
 
         self : SearchTask
 
+        See Also
+        --------
+
+        pyvw.vw
+
         """
 
         self.vw = vw
@@ -84,7 +89,15 @@ class SearchTask():
         initStringOrDict : str/dict
             Example in either string or dictionary form
         labelType : integer
-            labelType of the example, by default is 0(lDefault)
+            labelType of the example, by default is 0(lDefault). The integer is
+            used to map the labels. Following are the available options:
+            - 0 : lDEFAULT
+            - 1 : lBINARY
+            - 2 : lMULTICLASS
+            - 3 : lCOST_SENSITIVE
+            - 4 : lCONTEXTUAL_BANDIT
+            - 5 : lMAX
+            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
 
         Returns
         -------
@@ -144,8 +157,6 @@ def get_prediction(ec, prediction_type):
     >>> ex = vw.example('1 |a two features |b more features here')
     >>> pyvw.get_prediction(ex, pylibvw.vw.pSCALAR)
     0.0
-    >>> pyvw.get_prediction(ex, pylibvw.vw.pPROB)
-    0.0
 
     Returns
     -------
@@ -178,8 +189,8 @@ class vw(pylibvw.vw):
         ----------
 
         arg_str : str
-            The arg_str is the same as the command line arguments, by default is
-            None. You'd use to run vw (eg,"--audit").
+            The command line arguments to initialize VW with,
+            for example "--audit". By default is None.
 
         **kw : Using key/value pairs for different options available
 
@@ -235,9 +246,19 @@ class vw(pylibvw.vw):
         ----------
 
         str_ex : str/list of str
-            string representing examples
+            string representing examples. If the string is multiline then each
+            line is considered as an example. In case of list, each string
+            element is considered as an example
         labelType : integer
-            labelType of the example, by default is 0(lDefault)
+            labelType of the example, by default is 0(lDefault). The integer is
+            used to map the labels. Following are the available options:
+            - 0 : lDEFAULT
+            - 1 : lBINARY
+            - 2 : lMULTICLASS
+            - 3 : lCOST_SENSITIVE
+            - 4 : lCONTEXTUAL_BANDIT
+            - 5 : lMAX
+            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
 
         Examples
         --------
@@ -367,9 +388,10 @@ class vw(pylibvw.vw):
 
         ec : Example/list/str
             examples to be predicted
-        prediction_type : optional, if provided then the matching return type is
+        prediction_type : optional, by default is None
+            if provided then the matching return type is
             used otherwise the the learner's prediction type will determine the
-            output, by default is None
+            output.
 
         Returns
         -------
@@ -435,7 +457,15 @@ class vw(pylibvw.vw):
         initStringOrDict : str/dict
             Example in either string or dictionary form
         labelType : integer
-            labelType of the example, by default is 0(lDefault)
+            labelType of the example, by default is 0(lDefault). The integer is
+            used to map the labels. Following are the available options:
+            - 0 : lDEFAULT
+            - 1 : lBINARY
+            - 2 : lMULTICLASS
+            - 3 : lCOST_SENSITIVE
+            - 4 : lCONTEXTUAL_BANDIT
+            - 5 : lMAX
+            - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
 
         Returns
         -------
