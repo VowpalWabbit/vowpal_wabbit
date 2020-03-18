@@ -1,0 +1,52 @@
+name: Build Documentation
+
+on: [push]
+
+jobs:
+  CXX:
+    container:
+      image: vowpalwabbit/ubuntu1604-build:0.4.0
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Doxygen
+      run: |
+        apt install -y doxygen graphviz
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DBUILD_DOCS=On
+    - name: Build docs
+      run: |
+        cd build
+        make doc
+    - name: Upload built docs
+      uses: actions/upload-artifact@v1
+      with:
+        name: C++ documentation
+        path: doc/html/
+  Python:
+    container:
+      image: vowpalwabbit/ubuntu1604-build:0.4.0
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Python package
+      run: |
+        /usr/local/miniconda/bin/activate test-python36
+        python setup.py install --user
+        /usr/local/miniconda/bin/deactivate
+    - name: Build docs
+      run: |
+        /usr/local/miniconda/bin/activate test-python36
+        cd python/docs
+        pip install sphinx numpy sklearn scipy
+        make html
+        /usr/local/miniconda/bin/deactivate
+    - name: Upload built docs
+      uses: actions/upload-artifact@v1
+      with:
+        name: Python documentation
+        path: python/docs/build/
+        
