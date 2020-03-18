@@ -67,7 +67,7 @@ jobs:
         run: ls
       - uses: actions/checkout@v1
         with:
-          repository: https://github.com/jackgerrits/docs.git
+          repository: jackgerrits/docs
       - name: Copy CXX Docs
         shell: bash
         run: cp -r cxx_docs docs/vowpal_wabbit/cpp/latest/
