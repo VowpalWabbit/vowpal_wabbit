@@ -6,10 +6,48 @@
 
 #include "reductions_fwd.h"
 
+#include "slates_label.h"
+#include "learner.h"
+
 #include <string>
+#include <vector>
 
 namespace slates
 {
+struct slates_data
+{
+ private:
+  std::vector<slates::label> _stashed_labels;
+
+  /*
+  The primary job of this reduction is to convert slate labels to a form CCB can process.
+  This is an example of this conversion in the form of textual labels:
+    slates shared 0.8
+    slates action 0
+    slates action 0
+    slates action 0
+    slates action 1
+    slates action 1
+    slates slot 1:0.8
+    slates slot 0:0.6
+
+    ccb shared
+    ccb action
+    ccb action
+    ccb action
+    ccb action
+    ccb action
+    ccb slot 1:0.8:0.8 0,1,2
+    ccb slot 3:0.8:0.6 3,4
+  */
+  template <bool is_learn>
+  void learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples);
+
+ public:
+  void learn(LEARNER::multi_learner& base, multi_ex& examples) { learn_or_predict<true>(base, examples); }
+  void predict(LEARNER::multi_learner& base, multi_ex& examples) { learn_or_predict<false>(base, examples); }
+};
+
 LEARNER::base_learner* slates_setup(VW::config::options_i& options, vw& all);
 std::string generate_slates_label_printout(const std::vector<example*>& slots);
 }  // namespace slates

@@ -4,10 +4,11 @@
 #include <boost/test/test_tools.hpp>
 
 #include "test_common.h"
-#include "vw.h"
-#include "example.h"
 
 #include <vector>
+
+#include "vw.h"
+#include "example.h"
 #include "slates.h"
 #include "slates_label.h"
 #include "ccb_label.h"
@@ -30,15 +31,15 @@ struct test_base
   }
 };
 
-
 template <typename LearnFunc, typename PredictFunc>
-LEARNER::base_learner* make_test_learner(LearnFunc learn, PredictFunc predict)
+LEARNER::base_learner* make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = scoped_calloc_or_throw<test_base<LearnFunc, PredictFunc>>(learn, predict);
   using func = void (*)(test_base<LearnFunc, PredictFunc>&, LEARNER::multi_learner&, multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
-  auto& l = LEARNER::init_learner(test_base_data, (LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr), static_cast<func>(predict_fptr));
+  auto& l = LEARNER::init_learner(test_base_data, (LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
+      static_cast<func>(predict_fptr), 0, prediction_type_t::decision_probs);
   return LEARNER::make_base(l);
 }
 
@@ -48,33 +49,52 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
   multi_ex examples;
   examples.push_back(VW::read_example(vw, std::string("slates shared 0.8 | ignore_me")));
   examples.push_back(VW::read_example(vw, std::string("slates action 0 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 0 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 0 | ignore_me")));
   examples.push_back(VW::read_example(vw, std::string("slates action 1 | ignore_me")));
   examples.push_back(VW::read_example(vw, std::string("slates action 1 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates slot 1:0.8 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates slot 0:0.6 | ignore_me")));
+  examples.push_back(VW::read_example(vw, std::string("slates slot 0:0.8 | ignore_me")));
+  examples.push_back(VW::read_example(vw, std::string("slates slot 1:0.6 | ignore_me")));
 
-  vw.predict(examples);
+  auto mock_learn_or_pred = [](multi_ex& examples)
+  {
+    BOOST_CHECK_EQUAL(examples.size(), 6);
+    BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
+    BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+    BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+    BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
 
-  auto learn_assert = [](multi_ex& examples){};
-  auto pred_assert = [](multi_ex& examples){};
-  auto test_base_learner = make_test_learner(learn_assert, pred_assert);
+    BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+    BOOST_CHECK_CLOSE(examples[4]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
+    check_collections_with_float_tolerance(examples[4]->l.conditional_contextual_bandit.outcome->probabilities,
+        std::vector<ACTION_SCORE::action_score>{{0, 0.8f}});
+    check_collections_exact(examples[4]->l.conditional_contextual_bandit.explicit_included_actions,
+        std::vector<uint32_t>{0});
+    BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+    BOOST_CHECK_CLOSE(examples[5]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
+    check_collections_with_float_tolerance(examples[5]->l.conditional_contextual_bandit.outcome->probabilities,
+        std::vector<ACTION_SCORE::action_score>{{2, 0.6f}});
+    check_collections_exact(
+        examples[5]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{1,2});
 
-  // auto& decision_scores = examples[0]->pred.decision_scores;
-  // BOOST_CHECK_EQUAL(decision_scores.size(), 3);
+    // Prepare and return the prediction
+    auto slot_zero = v_init<ACTION_SCORE::action_score>();
+    slot_zero.push_back({0, 1.0});
+    auto slot_one = v_init<ACTION_SCORE::action_score>();
+    slot_one.push_back({1, 0.5});
+    slot_one.push_back({2, 0.5});
+    examples[0]->pred.decision_scores.push_back(slot_zero);
+    examples[0]->pred.decision_scores.push_back(slot_one);
+  };
+  auto test_base_learner =
+      LEARNER::as_multiline(make_test_learner(mock_learn_or_pred, mock_learn_or_pred));
+  slates::slates_data slate_reduction;
+  slate_reduction.learn(*test_base_learner, examples);
 
-  // BOOST_CHECK_EQUAL(decision_scores[0].size(), 1);
-  // BOOST_CHECK_EQUAL(decision_scores[0][0].action, 0);
-  // BOOST_CHECK_CLOSE(decision_scores[0][0].score, 1.f, FLOAT_TOL);
-
-  // BOOST_CHECK_EQUAL(decision_scores[1].size(), 1);
-  // BOOST_CHECK_EQUAL(decision_scores[1][0].action, 3);
-  // BOOST_CHECK_CLOSE(decision_scores[1][0].score, 1.f, FLOAT_TOL);
-
-  // BOOST_CHECK_EQUAL(decision_scores[2].size(), 1);
-  // BOOST_CHECK_EQUAL(decision_scores[2][0].action, 1);
-  // BOOST_CHECK_CLOSE(decision_scores[2][0].score, 1.f, FLOAT_TOL);
+  // This confirms that the reductions converted the CCB space decision scores back to slates action index space.
+  BOOST_CHECK_EQUAL(examples[0]->pred.decision_scores.size(), 2);
+  check_collections_with_float_tolerance(
+      examples[0]->pred.decision_scores[0], std::vector<ACTION_SCORE::action_score>{{0, 1.f}});
+  check_collections_with_float_tolerance(
+      examples[0]->pred.decision_scores[1], std::vector<ACTION_SCORE::action_score>{{0, 0.5f}, {1, 0.5f}});
 
   vw.finish_example(examples);
   VW::finish(vw);

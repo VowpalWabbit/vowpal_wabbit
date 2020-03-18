@@ -22,127 +22,93 @@ using namespace VW::config;
 
 namespace slates
 {
-struct slates_data
+template <bool is_learn>
+void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples)
 {
-private:
-  std::vector<slates::label> _stashed_labels;
-
-  /*
-  The primary job of this reduction is to convert slate labels to a form CCB can process.
-  This is an example of this conversion in the form of textual labels:
-    slates shared 0.8
-    slates action 0
-    slates action 0
-    slates action 0
-    slates action 1
-    slates action 1
-    slates slot 1:0.8
-    slates slot 0:0.6
-
-    ccb shared
-    ccb action
-    ccb action
-    ccb action
-    ccb action
-    ccb action
-    ccb slot 1:0.8:0.8 0,1,2
-    ccb slot 3:0.8:0.6 3,4
-  */
-  template <bool is_learn>
-  void learn_or_predict(multi_learner& base, multi_ex& examples)
+  _stashed_labels.reserve(examples.size());
+  for (auto& example : examples)
   {
-    _stashed_labels.reserve(examples.size());
-    for (auto& example : examples)
-    {
-      _stashed_labels.push_back(std::move(example->l.slates));
-    }
+    _stashed_labels.push_back(std::move(example->l.slates));
+  }
 
-    const auto num_slots = std::count_if(examples.begin(), examples.end(), [](const example* example) {
-      return example->l.conditional_contextual_bandit.type == CCB::example_type::slot;
-    });
+  const auto num_slots = std::count_if(examples.begin(), examples.end(),
+      [](const example* example) { return example->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
 
-    float global_cost = 0.f;
-    bool global_cost_found = false;
-    size_t action_index = 0;
-    size_t slot_index = 0;
-    std::vector<std::vector<uint32_t>> slot_action_pools(num_slots);
-    for (size_t i = 0; i < examples.size(); i++)
+  float global_cost = 0.f;
+  bool global_cost_found = false;
+  uint32_t action_index = 0;
+  size_t slot_index = 0;
+  std::vector<std::vector<uint32_t>> slot_action_pools(num_slots);
+  for (size_t i = 0; i < examples.size(); i++)
+  {
+    CCB::label ccb_label;
+    memset(&ccb_label, 0, sizeof(ccb_label));
+    CCB::ccb_label_parser.default_label(&ccb_label);
+    const auto& slates_label = _stashed_labels[i];
+    if (slates_label.type == slates::example_type::shared)
     {
-      CCB::label ccb_label;
-      const auto& slates_label = _stashed_labels[i];
-      if (slates_label.type == slates::example_type::shared)
+      ccb_label.type = CCB::example_type::shared;
+      if (slates_label.labeled)
       {
-        ccb_label.type = CCB::example_type::shared;
-        if (slates_label.labeled)
+        global_cost_found = true;
+        global_cost = slates_label.cost;
+      }
+    }
+    else if (slates_label.type == slates::example_type::action)
+    {
+      ccb_label.type = CCB::example_type::action;
+      slot_action_pools[slates_label.slot_id].push_back(action_index);
+      action_index++;
+    }
+    else if (slates_label.type == slates::example_type::slot)
+    {
+      ccb_label.type = CCB::example_type::slot;
+      if (global_cost_found)
+      {
+        ccb_label.outcome = new CCB::conditional_contextual_bandit_outcome();
+        ccb_label.outcome->cost = global_cost;
+        ccb_label.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
+        ccb_label.explicit_included_actions = v_init<uint32_t>();
+        for (const auto index : slot_action_pools[slot_index])
         {
-          global_cost_found = true;
-          global_cost = slates_label.cost;
+          ccb_label.explicit_included_actions.push_back(index);
+        }
+        for (const auto& action_score : slates_label.probabilities)
+        {
+          // We need to convert from slate space which is zero based for
+          // each slot to CCB where all action indices are in the same space.
+          auto ccb_space_index = slot_action_pools[slot_index][action_score.action];
+          ccb_label.outcome->probabilities.push_back({ccb_space_index, action_score.score});
         }
       }
-      else if (slates_label.type == slates::example_type::action)
-      {
-        ccb_label.type = CCB::example_type::action;
-        slot_action_pools[slates_label.slot_id].push_back(action_index);
-        action_index++;
-      }
-      else if (slates_label.type == slates::example_type::slot)
-      {
-        ccb_label.type = CCB::example_type::slot;
-        if (global_cost_found)
-        {
-          ccb_label.outcome = new CCB::conditional_contextual_bandit_outcome();
-          ccb_label.outcome->cost = global_cost;
-          ccb_label.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
-          for (const auto& action_score : slates_label.probabilities)
-          {
-            // We need to convert from slate space which is zero based for
-            // each slot to CCB where all action indices are in the same space.
-            auto ccb_space_index = slot_action_pools[slot_index][action_score.action];
-            ccb_label.outcome->probabilities.push_back({ccb_space_index, action_score.score});
-          }
-        }
-        slot_index++;
-      }
-
-      ccb_label.weight = slates_label.weight;
-      examples[i]->l.conditional_contextual_bandit = ccb_label;
-    }
-    multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
-
-    // Need to convert decision scores to the original index space. This can be
-    // done by going through the prediction for each slots and subtracting the
-    // number of actions seen so far.
-    auto size_so_far = 0;
-    for (auto& action_scores : examples[0]->pred.decision_scores)
-    {
-      for (size_t i = 0; i < action_scores.size(); i++)
-      {
-        action_scores[i].action = action_scores[i].action - size_so_far;
-      }
-      size_so_far += action_scores.size();
+      slot_index++;
     }
 
-    for (size_t i = 0; i < examples.size(); i++)
-    {
-      CCB::ccb_label_parser.delete_label(&examples[i]->l.conditional_contextual_bandit);
-      examples[i]->l.slates = std::move(_stashed_labels[i]);
-    }
-    _stashed_labels.clear();
+    ccb_label.weight = slates_label.weight;
+    examples[i]->l.conditional_contextual_bandit = ccb_label;
   }
+  LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
- public:
-
-  void learn(multi_learner& base, multi_ex& examples)
+  // Need to convert decision scores to the original index space. This can be
+  // done by going through the prediction for each slots and subtracting the
+  // number of actions seen so far.
+  uint32_t size_so_far = 0;
+  for (auto& action_scores : examples[0]->pred.decision_scores)
   {
-    learn_or_predict<true>(base, examples);
+    for (size_t i = 0; i < action_scores.size(); i++)
+    {
+      action_scores[i].action = action_scores[i].action - size_so_far;
+    }
+    size_so_far += static_cast<uint32_t>(action_scores.size());
   }
 
-  void predict(multi_learner& base, multi_ex& examples)
+  for (size_t i = 0; i < examples.size(); i++)
   {
-    learn_or_predict<false>(base, examples);
+    CCB::ccb_label_parser.delete_label(&examples[i]->l.conditional_contextual_bandit);
+    examples[i]->l.slates = std::move(_stashed_labels[i]);
   }
-};
-
+  _stashed_labels.clear();
+}
 
 std::string generate_slates_label_printout(const std::vector<example*>& slots)
 {
@@ -203,9 +169,9 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   for (size_t slot_index = 0; slot_index < slots.size(); slot_index++)
   {
     const auto& label_probabilties = slots[slot_index]->l.slates.probabilities;
-    if(is_labelled)
+    if (is_labelled)
     {
-      if(label_probabilties.empty())
+      if (label_probabilties.empty())
       {
         THROW("Probabilities missing for labeled example");
       }
@@ -231,7 +197,6 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
 
   VW::print_update_slates(all, slots, predictions, num_features);
 }
-
 
 void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
 {
@@ -279,7 +244,8 @@ base_learner* slates_setup(options_i& options, vw& all)
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = slates_label_parser;
   all.label_type = label_type_t::slates;
-  auto& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
+  auto& l =
+      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
   l.set_finish_example(finish_multiline_example);
   return make_base(l);
 }
