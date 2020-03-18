@@ -109,8 +109,9 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -m "Update documentation for commit: ${{ github.sha }}"
-      - name: Push to Docs repo
-        shell: bash
-        run: |
-          cd docs
-          git push origin master
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          repository: jackgerrits/docs
+          directory: docs
+          github_token: ${{ secrets.GITHUB_TOKEN }}
