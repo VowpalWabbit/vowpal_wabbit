@@ -106,6 +106,8 @@ jobs:
         run: |
           cd docs
           git add --all
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git commit -m "Update documentation for commit: ${{ github.sha }}"
       - name: Push to Docs repo
         shell: bash
