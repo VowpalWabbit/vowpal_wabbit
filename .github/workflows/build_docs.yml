@@ -64,11 +64,19 @@ jobs:
           name: python_docs
       - name: Print contents of directory
         shell: bash
-        run: ls
+        run: |
+          pwd
+          ls
       - uses: actions/checkout@v1
         with:
           repository: jackgerrits/docs
           ref: master
+          path: ${{github.workspace}}/docs
+      - name: Print contents of directory
+        shell: bash
+        run: |
+          pwd
+          ls
       - name: Copy CXX Docs
         shell: bash
         run: |
@@ -83,7 +91,7 @@ jobs:
           cp -r python_docs/html/ docs/vowpal_wabbit/python/latest/
       - name: Commit and push
         shell: bash
-        working-directory: docs
+        working-directory: ${{github.workspace}}/docs
         run: |
           git checkout master
           git add --all
