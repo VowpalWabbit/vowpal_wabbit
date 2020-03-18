@@ -57,7 +57,7 @@ jobs:
       - name: Download Python Docs
         uses: actions/download-artifact@v1
         with:
-          name: python_docs
+          name: cxx_docs
       - name: Download Python Docs
         uses: actions/download-artifact@v1
         with:
@@ -65,3 +65,17 @@ jobs:
       - name: Print contents of directory
         shell: bash
         run: ls
+      - uses: actions/checkout@v1
+        repository: https://github.com/jackgerrits/docs.git
+      - name: Copy CXX Docs
+        shell: bash
+        run: cp -r cxx_docs docs/vowpal_wabbit/cpp/latest/
+      - name: Copy Python Docs
+        shell: bash
+        run: cp -r python_docs/html/ docs/vowpal_wabbit/python/latest/
+      - name: Commit and push
+        shell: bash
+        run: |
+          cd docs
+          git commit -m "Update documentation for commit: ${{ github.sha }}""
+          git push origin master
