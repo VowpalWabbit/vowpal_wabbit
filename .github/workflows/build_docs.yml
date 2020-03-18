@@ -67,6 +67,7 @@ jobs:
         run: |
           pwd
           ls
+          echo $GITHUB_WORKSPACE
       - uses: actions/checkout@v1
         with:
           repository: jackgerrits/docs
@@ -75,12 +76,10 @@ jobs:
       - name: Print contents of directory
         shell: bash
         run: |
+          echo $GITHUB_WORKSPACE
           pwd
           ls
-      - name: Print contents of directory
-        shell: bash
-        working-directory: docs
-        run: |
+          cd docs
           pwd
           ls
       - name: Copy CXX Docs
@@ -97,17 +96,17 @@ jobs:
           cp -r python_docs/html/ docs/vowpal_wabbit/python/latest/
       - name: Checkout
         shell: bash
-        working-directory: docs
+        working-directory: /docs
         run: |
           git checkout master
       - name: Commit
         shell: bash
-        working-directory: docs
+        working-directory: /docs
         run: |
           git add --all
           git commit -m "Update documentation for commit: ${{ github.sha }}""
       - name: Push
         shell: bash
-        working-directory: docs
+        working-directory: /docs
         run: |
           git push origin master
