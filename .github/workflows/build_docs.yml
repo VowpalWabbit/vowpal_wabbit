@@ -54,7 +54,7 @@ jobs:
     needs: [CXX, Python]
     runs-on: ubuntu-latest
     steps:
-      - name: Download Python Docs
+      - name: Download CXX Docs
         uses: actions/download-artifact@v1
         with:
           name: cxx_docs
@@ -79,5 +79,6 @@ jobs:
         shell: bash
         run: |
           cd docs
+          git add --all
           git commit -m "Update documentation for commit: ${{ github.sha }}""
           git push origin master
