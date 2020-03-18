@@ -13,12 +13,14 @@
 #include <iostream>
 
 template <typename LabelPrintFunc>
-void print_update(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features, LabelPrintFunc label_print_func)
+void print_update(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features,
+    LabelPrintFunc label_print_func)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::ostringstream label_buf;
-    label_buf << std::setw(shared_data::col_current_label) << std::right << std::setfill(' ') << label_print_func(slots);
+    label_buf << std::setw(shared_data::col_current_label) << std::right << std::setfill(' ')
+              << label_print_func(slots);
 
     std::string pred_str;
     std::string delim;
@@ -72,13 +74,25 @@ void print_decision_scores(int f, VW::decision_scores_t& decision_scores)
   }
 }
 
-void print_update_ccb(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features)
+void delete_decision_scores(void* polypred)
+{
+  auto decision_scores = static_cast<polyprediction*>(polypred)->decision_scores;
+  for (auto& inner : decision_scores)
+  {
+    inner.delete_v();
+  }
+  decision_scores.delete_v();
+}
+
+void print_update_ccb(
+    vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features)
 {
   print_update(all, slots, decision_scores, num_features, CCB::generate_ccb_label_printout);
 }
 
-void print_update_slates(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features)
+void print_update_slates(
+    vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features)
 {
   print_update(all, slots, decision_scores, num_features, slates::generate_slates_label_printout);
 }
-}
+}  // namespace VW

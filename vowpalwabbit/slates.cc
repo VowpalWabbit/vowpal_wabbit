@@ -17,7 +17,6 @@
 #include "action_score.h"
 #include "ccb_label.h"
 
-using namespace LEARNER;
 using namespace VW::config;
 
 namespace slates
@@ -108,6 +107,16 @@ void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examp
     examples[i]->l.slates = std::move(_stashed_labels[i]);
   }
   _stashed_labels.clear();
+}
+
+void slates_data::learn(LEARNER::multi_learner& base, multi_ex& examples)
+{
+  learn_or_predict<true>(base, examples);
+}
+
+void slates_data::predict(LEARNER::multi_learner& base, multi_ex& examples)
+{
+  learn_or_predict<false>(base, examples);
 }
 
 std::string generate_slates_label_printout(const std::vector<example*>& slots)
@@ -210,7 +219,7 @@ void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
 }
 
 template <bool is_learn>
-void learn_or_predict(slates_data& data, multi_learner& base, multi_ex& examples)
+void learn_or_predict(slates_data& data, LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
   {
@@ -222,7 +231,7 @@ void learn_or_predict(slates_data& data, multi_learner& base, multi_ex& examples
   }
 }
 
-base_learner* slates_setup(options_i& options, vw& all)
+LEARNER::base_learner* slates_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<slates_data>();
   bool slates_option = false;
@@ -244,9 +253,10 @@ base_learner* slates_setup(options_i& options, vw& all)
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = slates_label_parser;
   all.label_type = label_type_t::slates;
-  auto& l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
+  all.delete_prediction = VW::delete_decision_scores;
+  auto& l = LEARNER::init_learner(
+      data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
   l.set_finish_example(finish_multiline_example);
-  return make_base(l);
+  return LEARNER::make_base(l);
 }
 }  // namespace slates

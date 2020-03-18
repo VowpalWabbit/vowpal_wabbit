@@ -44,8 +44,8 @@ struct slates_data
   void learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples);
 
  public:
-  void learn(LEARNER::multi_learner& base, multi_ex& examples) { learn_or_predict<true>(base, examples); }
-  void predict(LEARNER::multi_learner& base, multi_ex& examples) { learn_or_predict<false>(base, examples); }
+  void learn(LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(LEARNER::multi_learner& base, multi_ex& examples);
 };
 
 LEARNER::base_learner* slates_setup(VW::config::options_i& options, vw& all);
