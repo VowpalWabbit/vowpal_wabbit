@@ -79,7 +79,14 @@ jobs:
           echo $GITHUB_WORKSPACE
           pwd
           ls
-          cd docs
+          cd ../docs
+          pwd
+          ls
+      - name: Print contents of directory
+        shell: bash
+        working-directory: $GITHUB_WORKSPACE/../docs
+        run: |
+          echo $GITHUB_WORKSPACE
           pwd
           ls
       - name: Copy CXX Docs
