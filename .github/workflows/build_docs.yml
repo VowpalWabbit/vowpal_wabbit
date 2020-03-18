@@ -24,7 +24,7 @@ jobs:
     - name: Upload built docs
       uses: actions/upload-artifact@v1
       with:
-        name: C++ documentation
+        name: cxx_docs
         path: doc/html/
   Python:
     container:
@@ -41,12 +41,27 @@ jobs:
       run: |
         /usr/local/miniconda/bin/activate test-python36
         cd python/docs
-        pip install sphinx numpy sklearn scipy
+        pip install sphinx numpy sklearn scipy numpydoc
         make html
         /usr/local/miniconda/bin/deactivate
     - name: Upload built docs
       uses: actions/upload-artifact@v1
       with:
-        name: Python documentation
+        name: python_docs
         path: python/docs/build/
-        
+  Upload:
+    name: Upload Docs
+    needs: [CXX, Python]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Python Docs
+        uses: actions/download-artifact@v1
+        with:
+          name: python_docs
+      - name: Download Python Docs
+        uses: actions/download-artifact@v1
+        with:
+          name: python_docs
+      - name: Print contents of directory
+        shell: bash
+        run: ls
