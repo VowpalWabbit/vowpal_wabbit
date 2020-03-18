@@ -4,6 +4,7 @@
 
 #pragma once
 #ifndef VW_NOEXCEPT
+#include "vwvis.h"
 #include <stdexcept>
 #include <sstream>
 
@@ -17,7 +18,7 @@
 
 namespace VW
 {
-class vw_exception : public std::exception
+class VW_DEFAULT_VIS vw_exception : public std::exception
 {
  private:
   // source file exception was thrown
@@ -40,7 +41,7 @@ class vw_exception : public std::exception
   int LineNumber() const;
 };
 
-class vw_argument_disagreement_exception : public vw_exception
+class VW_DEFAULT_VIS vw_argument_disagreement_exception : public vw_exception
 {
  public:
   vw_argument_disagreement_exception(const char* file, int lineNumber, const std::string& message)
@@ -62,7 +63,7 @@ class vw_argument_disagreement_exception : public vw_exception
   ~vw_argument_disagreement_exception() noexcept override = default;
 };
 
-class vw_argument_invalid_value_exception : public vw_exception
+class VW_DEFAULT_VIS vw_argument_invalid_value_exception : public vw_exception
 {
  public:
   vw_argument_invalid_value_exception(const char* file, int lineNumber, const std::string& message)
@@ -84,7 +85,7 @@ class vw_argument_invalid_value_exception : public vw_exception
   ~vw_argument_invalid_value_exception() noexcept override = default;
 };
 
-class vw_unrecognised_option_exception : public vw_exception
+class VW_DEFAULT_VIS vw_unrecognised_option_exception : public vw_exception
 {
  public:
   vw_unrecognised_option_exception(const char* file, int lineNumber, const std::string& message)
@@ -106,7 +107,7 @@ class vw_unrecognised_option_exception : public vw_exception
   ~vw_unrecognised_option_exception() noexcept override = default;
 };
 
-class strict_parse_exception : public vw_exception
+class VW_DEFAULT_VIS strict_parse_exception : public vw_exception
 {
  public:
   strict_parse_exception(const char* file, int lineNumber, const std::string& message)

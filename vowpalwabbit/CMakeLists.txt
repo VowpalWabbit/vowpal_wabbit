@@ -151,6 +151,7 @@ set(vw_all_headers
   vw_versions.h
   vw.h
   vwdll.h
+  vwvis.h
   warm_cb.h
 )
 
