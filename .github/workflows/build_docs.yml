@@ -106,7 +106,7 @@ jobs:
         run: |
           cd docs
           git add --all
-          git commit -m "Update documentation for commit: ${{ github.sha }}""
+          git commit -m "Update documentation for commit: ${{ github.sha }}"
       - name: Push to Docs repo
         shell: bash
         run: |
