@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw
+from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw, VWMultiClassifier
 from sklearn import datasets
 from sklearn.model_selection import KFold
 from scipy.sparse import csr_matrix
@@ -282,3 +282,32 @@ def test_repr():
     expected = "VW('convert_labels:False', 'loss_function:logistic', "\
     "'oaa:3', 'probabilities:True', 'quiet:True')"
     assert expected == model.__repr__()
+
+class TestVWClassifier:
+
+    def test_init(self):
+        assert isinstance(VWMultiClassifier(), VWMultiClassifier)
+
+    def test_predict_proba(self, data):
+        raw_model = VW(probabilities = True, oaa = 2,  loss_function = 'logistic')
+        raw_model.fit(data.x, data.y)
+
+        model = VWMultiClassifier(oaa = 2, loss_function = 'logistic')
+        model.fit(data.x, data.y)
+
+        assert np.allclose(raw_model.predict(data.x), model.predict_proba(data.x))
+        # ensure model can make multiple calls to predict
+        assert np.allclose(raw_model.predict(data.x), model.predict_proba(data.x))
+
+    def test_predict(self, data):
+        raw_model = VW(oaa = 2,  loss_function = 'logistic')
+        raw_model.fit(data.x, data.y)
+
+        model = VWMultiClassifier(oaa = 2, loss_function = 'logistic')
+        model.fit(data.x, data.y)
+
+        assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
+
+    def test_delete(self):
+        raw_model = VW()
+        del raw_model
