@@ -41,7 +41,7 @@ def read_arguments():
     parser.add_argument('--searcher', type=str, default='tpe', choices=['tpe', 'rand'])
     parser.add_argument('--additional_cmd', type=str, help="Additional arguments to be passed to vw while tuning hyper params. E.g.: '--keep a --keep b'", default='')
     parser.add_argument('--max_evals', type=int, default=100)
-    parser.add_argument('--cb', default=False, help="Is it a contextual bandit problelms?")
+    parser.add_argument('--is_cb', default=False, help="Is it a contextual bandit problelms?")
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
   #  parser.add_argument('--iterations', type=str, default='1000', help="number of iterations")
@@ -188,11 +188,11 @@ class HyperoptSpaceConstructorCB(HyperoptSpaceConstructor):
 
     def __init__(self, command):  
         self.cb_algorithm_metadata = {
-            'first': {'arg': '--first', 'prohibited_flags': {'--mellowness', '--lambda'}}
-            'greedy': {'arg': '', 'prohibited_flags': {'--mellowness', '--lambda'}}
-            'cover': {'arg': '--cover', 'prohibited_flags': {'--mellowness', '--lambda'}}
-            'softmax': {'arg': '--softmax', 'prohibited_flags': {'--mellowness'}}
-            'bag': {'arg': '--bag', 'prohibited_flags': {'--mellowness', '--lambda'}}
+            'first': {'arg': '--first', 'prohibited_flags': {'--mellowness', '--lambda'}},
+            'greedy': {'arg': '', 'prohibited_flags': {'--mellowness', '--lambda'}},
+            'cover': {'arg': '--cover', 'prohibited_flags': {'--mellowness', '--lambda'}},
+            'softmax': {'arg': '--softmax', 'prohibited_flags': {'--mellowness'}},
+            'bag': {'arg': '--bag', 'prohibited_flags': {'--mellowness', '--lambda'}},
             'regcb': {'arg': '--regcb', 'prohibited_flags': {'--lambda'}}
         }
 
@@ -253,7 +253,6 @@ class HyperOptimizer(object):
         self.train_command = None
         self.validate_command = None
         
-        self.space = self._get_space(command)
         self.max_evals = max_evals
         self.searcher = searcher
         self.additional_cmd = additional_cmd   
@@ -262,10 +261,6 @@ class HyperOptimizer(object):
         self.trials = Trials()
         self.current_trial = 0
 
-    def _get_space(self, command):
-        hs = HyperoptSpaceConstructor(command)
-        hs.string_to_pyll()
-        return hs.space
 
     def _configure_logger(self):
         LOGGER_FORMAT = "%(asctime)s,%(msecs)03d %(levelname)-8s [%(name)s/%(module)s:%(lineno)d]: %(message)s"
@@ -312,7 +307,14 @@ class HyperOptimizerNotCB(HyperOptimizer):
         self.is_regression = is_regression
         self.labels_clf_count = 0
 
-        HyperOptimizer.__init__(self, train_set, holdout_set, command, max_evals=100, searcher='tpe', additional_cmd='')
+        self.space = self._get_space(command)
+
+        HyperOptimizer.__init__(self, train_set, holdout_set, command, max_evals=max_evals, searcher=searcher, additional_cmd=additional_cmd)
+
+    def _get_space(self, command):
+        hs = HyperoptSpaceConstructorNotCB(command)
+        hs.string_to_pyll()
+        return hs.space
 
     def compose_vw_train_command(self):
         data_part = ('vw -d %s -f %s --holdout_off -c %s'
@@ -484,7 +486,14 @@ class HyperOptimizerCB(HyperOptimizer):
     def __init__(self, train_set, holdout_set, command, max_evals=100,
                  searcher='tpe', additional_cmd=''):
 
-        HyperOptimizer.__init__(self, train_set, holdout_set, command, max_evals=100, searcher='tpe', additional_cmd='')
+    	self.space = self._get_space(command)
+
+    	HyperOptimizer.__init__(self, train_set, holdout_set, command, max_evals=max_evals, searcher=searcher, additional_cmd=additional_cmd)
+
+    def _get_space(self, command):
+        hs = HyperoptSpaceConstructorNotCB(command)
+        hs.string_to_pyll()
+        return hs.space
 
     '''
     Run validation and train commamd for multiple seeds so that we could get more generalise setting
@@ -511,7 +520,6 @@ class HyperOptimizerCB(HyperOptimizer):
         self.compose_vw_validate_command()
         self.logger.info("executing the following command (validation): %s" % self.validate_command)
         subprocess.call(shlex.split(self.validate_command))
-
     
 
     def validation_metric_vw(self):
@@ -577,25 +585,24 @@ class HyperOptimizerCB(HyperOptimizer):
         for test_seeds. 
         
         """
-        pass
-        
+        pass     
     
 
 
 def main():
     args = read_arguments()
-    if args.cb:
-        h = HyperOptimizer(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
+    if args.is_cb:
+        h = HyperOptimizerCB(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
+                        max_evals=args.max_evals,
+                        additional_cmd=args.additional_cmd,
+                        searcher=args.searcher)
+    else:
+        h = HyperOptimizerNotCB(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
                         max_evals=args.max_evals,
                         outer_loss_function=args.outer_loss_function,
                         additional_cmd=args.additional_cmd,
                         searcher=args.searcher, is_regression=args.regression)
         h.get_y_true_holdout()
-    else:
-        h = HyperOptimizer(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
-                        max_evals=args.max_evals,
-                        additional_cmd=args.additional_cmd,
-                        searcher=args.searcher)
 
     h.hyperopt_search()
     if args.plot:
