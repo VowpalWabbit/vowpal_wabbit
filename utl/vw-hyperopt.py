@@ -9,7 +9,6 @@ Github version of hyperparameter optimization for Vowpal Wabbit via hyperopt
 """
 TODO: Add option: cb, cb_explore and cb_explore_adf
 TODO: Add option for cb_type
-TODO: Arguments for both cb and non-cb are not provided at the same time
 TODO: Training and testing for multiple seeds
 """
 
@@ -38,23 +37,29 @@ except ImportError:
 def read_arguments():
     parser = argparse.ArgumentParser()
 
+    subparsers = parser.add_subparsers(dest='subcommand')
+    parser_cb = subparsers.add_parser('is_cb', help="It is contextual bandit problelms")
+    parser_not_cb = subparsers.add_parser('not_cb', help="Not a contextual bandit problelms")
+    parser_cb.set_defaults(is_cb=True)
+    parser_not_cb.set_defaults(is_cb=False)
+
     parser.add_argument('--searcher', type=str, default='tpe', choices=['tpe', 'rand'])
     parser.add_argument('--additional_cmd', type=str, help="Additional arguments to be passed to vw while tuning hyper params. E.g.: '--keep a --keep b'", default='')
     parser.add_argument('--max_evals', type=int, default=100)
-    parser.add_argument('--is_cb', default=False, help="Is it a contextual bandit problelms?")
+    
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
-  #  parser.add_argument('--iterations', type=str, default='1000', help="number of iterations")
+  #  parser_cb.add_argument('--iterations', type=str, default='1000', help="number of iterations")
 
     # TODO: Number for seeds on which training should be done for a particular hyperparameter setting
-    parser.add_argument('--train_seed', type=int, default='3', help="number of seeds for training") 
+    parser_cb.add_argument('--train_seed', type=int, default='3', help="number of seeds for training") 
     # TODO: Number for seeds on which testing should be done for a particular hyperparameter setting 
-    parser.add_argument('--test_seeed', type=int, default='5', help="number of seeds for testing")
+    parser_cb.add_argument('--test_seeed', type=int, default='5', help="number of seeds for testing")
 
     parser.add_argument('--vw_space', type=str, required=True, help="hyperparameter search space (must be 'quoted')")
-    parser.add_argument('--outer_loss_function', default='logistic',
+    parser_not_cb.add_argument('--outer_loss_function', default='logistic',
                         choices=['logistic', 'roc-auc', 'pr-auc', 'hinge', 'squared', 'quantile'])  
-    parser.add_argument('--regression', action='store_true', default=False, help="""regression (continuous class labels)
+    parser_not_cb.add_argument('--regression', action='store_true', default=False, help="""regression (continuous class labels)
                                                                         or classification (-1 or 1, default value).""")
     parser.add_argument('--plot', action='store_true', default=False, help=("Plot the results in the end. "
                                                                             "Requires matplotlib and "
@@ -67,13 +72,17 @@ class HyperoptSpaceConstructor(object):
     """
     Takes command-line input and transforms it into hyperopt search space
     An example of command-line input:
-
     --algorithms=ftrl,sgd --l2=1e-8..1e-4~LO -l=0.01..10~L --ftrl_beta=0.01..1 --passes=1..10~I -q=SE+SZ+DR,SE~O
     """
 
     def __init__(self, command):
         self.command = command
-        self.space = None   
+        self.space = None 
+
+        self.algorithm_metadata = {
+            'ftrl': {'arg': '--ftrl', 'prohibited_flags': set()},
+            'sgd': {'arg': '', 'prohibited_flags': {'--ftrl_alpha', '--ftrl_beta'}}
+        }  
 
         self.range_pattern = re.compile("[^~]+")  # re.compile("(?<=\[).+(?=\])")
         self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
@@ -131,7 +140,6 @@ class HyperoptSpaceConstructorNotCB(HyperoptSpaceConstructor):
     """
     Takes command-line input and transforms it into hyperopt search space
     An example of command-line input:
-
     --algorithms=ftrl,sgd --l2=1e-8..1e-4~LO -l=0.01..10~L --ftrl_beta=0.01..1 --passes=1..10~I -q=SE+SZ+DR,SE~O
     """
 
@@ -182,7 +190,6 @@ class HyperoptSpaceConstructorCB(HyperoptSpaceConstructor):
     """
     Takes command-line input and transforms it into hyperopt search space
     An example of command-line input:
-
     --algorithms=first,greedy,softmax --l2=1e-8..1e-4~LO -l=0.01..10~L --ftrl_beta=0.01..1 --passes=1..10~I -q=SE+SZ+DR,SE~O
     """
 
@@ -331,11 +338,13 @@ class HyperOptimizerNotCB(HyperOptimizer):
             data_part += ' --loss_function=logistic --probabilities'
         self.validate_command = data_part
 
+    #I will put this function base class
     def fit_vw(self):
         self.compose_vw_train_command()
         self.logger.info("executing the following command (training): %s" % self.train_command)
         subprocess.call(shlex.split(self.train_command))
 
+    #I will put this function base class
     def validate_vw(self):
         self.compose_vw_validate_command()
         self.logger.info("executing the following command (validation): %s" % self.validate_command)
@@ -403,6 +412,7 @@ class HyperOptimizerNotCB(HyperOptimizer):
 
         return loss
 
+    #I will put this function base class
     def hyperopt_search(self, parallel=False):  # TODO: implement parallel search with MongoTrials
         def objective(kwargs):
             start = dt.now()
@@ -511,11 +521,13 @@ class HyperOptimizerCB(HyperOptimizer):
                     % (self.holdout_set, self.train_model, self.holdout_pred, 33, self.additional_cmd) # Use get_seed function
         self.validate_command = data_part
 
+    #I will put this function base class
     def fit_vw(self):
         self.compose_vw_train_command()
         self.logger.info("executing the following command (training): %s" % self.train_command)
         subprocess.call(shlex.split(self.train_command))
 
+    #I will put this function base class
     def validate_vw(self):
         self.compose_vw_validate_command()
         self.logger.info("executing the following command (validation): %s" % self.validate_command)
@@ -529,7 +541,7 @@ class HyperOptimizerCB(HyperOptimizer):
         '''
         pass
 
-
+    #I will put this function base class
     def hyperopt_search(self, parallel=False):  # TODO: implement parallel search with MongoTrials
         def objective(kwargs):
             start = dt.now()
@@ -611,3 +623,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
