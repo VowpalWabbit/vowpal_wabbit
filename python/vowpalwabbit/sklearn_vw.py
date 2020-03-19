@@ -482,8 +482,10 @@ class VW(BaseEstimator):
             return str(self.params)
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, (self.__str__())
-       .replace("{","").replace("}", ""))
+        if self.params is not None:
+            repr_items_ = dict(sorted(self.params.items()))
+            repr_items_ = str(repr_items_).replace("{","").replace("}", "")
+            return "%s(%s)" % (self.__class__.__name__, repr_items_)
 
     def __del__(self):
         if hasattr(self, 'vw_') and self.vw_ is not None:

@@ -266,19 +266,19 @@ def test_save_load(tmp_path):
 def test_repr():
 
     model = VW()
-    expected = "VW('quiet': True, 'convert_labels': False)"
+    expected = "VW('convert_labels': False, 'quiet': True)"
     assert expected == model.__repr__()
 
     model = VWClassifier()
-    expected = "VWClassifier('quiet': True, 'convert_labels': False, "\
-    "'loss_function': 'logistic')"
+    expected = "VWClassifier('convert_labels': False, "\
+    "'loss_function': 'logistic', 'quiet': True)"
     assert expected == model.__repr__()
 
     model = VWRegressor()
-    expected = "VWRegressor('quiet': True, 'convert_labels': False)"
+    expected = "VWRegressor('convert_labels': False, 'quiet': True)"
     assert expected == model.__repr__()
 
     model = VW(convert_to_vw=False, oaa=3, loss_function='logistic', probabilities=True)
-    expected = "VW('quiet': True, 'convert_labels': False, "\
-    "'oaa': 3, 'loss_function': 'logistic', 'probabilities': True)"
+    expected = "VW('convert_labels': False, 'loss_function': 'logistic', "\
+    "'oaa': 3, 'probabilities': True, 'quiet': True)"
     assert expected == model.__repr__()
