@@ -263,6 +263,14 @@ def test_save_load(tmp_path):
 
     assert all([a == b for a, b in zip(before_saving, after_loading)])
 
+
+def test_sgd_param():
+
+    model1 = VWRegressor(sgd=True)
+    model2 = VWClassifier(sgd = True)
+    assert model1.get_params()['sgd'] == True
+    assert model2.get_params()['sgd'] == True
+
 class TestVWClassifier:
 
     def test_init(self):

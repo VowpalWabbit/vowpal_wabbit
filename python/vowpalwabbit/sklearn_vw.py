@@ -119,7 +119,8 @@ class VW(BaseEstimator):
                  inpass=None,
                  meanfield=None,
                  multitask=None,
-                 convert_labels=False):
+                 convert_labels=False,
+                 sgd=False):
         """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
@@ -310,6 +311,11 @@ class VW(BaseEstimator):
             Share hidden layer across all reduced tasks
         meanfield : bool
             Train or test sigmoidal feed-forward network using mean field
+
+        Update Rule options
+
+        sgd : bool
+            Use sgd for the update rule
 
         Returns
         -------
