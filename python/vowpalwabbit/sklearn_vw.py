@@ -8,7 +8,7 @@ import io
 
 from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import shuffle
@@ -615,7 +615,7 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
 
 class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     """Vowpal Wabbit Classifier model
-    Only supports binary classification currently. Use VW directly for multiclass classification
+    Use VWMultiClassifier for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
     """
     def __init__(self, **params):
@@ -671,6 +671,74 @@ class VWRegressor(VW, RegressorMixin):
     """Vowpal Wabbit Regressor model """
 
     pass
+
+
+class VWMultiClassifier(ClassifierMixin, VW):
+    """Vowpal Wabbit MultiClassifier model """
+
+    def __init__(self, **params):
+
+        params['probabilities'] = True
+        super(VWMultiClassifier, self).__init__(**params)
+
+    def predict(self, X):
+        """Predict class labels for samples in X.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Samples.
+
+        Returns
+        -------
+        C : array, shape = [n_samples]
+            Predicted class label per sample.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
+        >>> y = np.array([1, 1, 2, 2, 3, 3])
+        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
+        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model.fit(X, y)
+        >>> model.predict(X)
+        """
+
+        scores = self.predict_proba(X)
+        indices = scores.argmax(axis=1)+1
+        return indices
+
+    def predict_proba(self, X):
+        """Predict probabilities for each class.
+
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = (n_samples, n_features)
+            Samples.
+
+        Returns
+        -------
+        array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
+            Confidence scores per (sample, class) combination. In the binary
+            case, confidence score for self.classes_[1] where >0 means this
+            class would be predicted.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
+        >>> y = np.array([1, 1, 2, 2, 3, 3])
+        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
+        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model.fit(X, y)
+        >>> model.predict_proba(X)
+        """
+
+        return VW.predict(self, X=X)
+
+
 
 
 def tovw(x, y=None, sample_weight=None, convert_labels=False):
