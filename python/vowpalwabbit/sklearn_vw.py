@@ -315,7 +315,7 @@ class VW(BaseEstimator):
         Update Rule options
 
         sgd : bool
-            Use sgd for the Updatation Rule
+            Use sgd for the update rule
 
         Returns
         -------
