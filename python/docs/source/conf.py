@@ -14,6 +14,8 @@
 #
 import os
 import sys
+import vowpalwabbit
+
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../../'))
 
@@ -25,22 +27,11 @@ copyright = u'2019, John langford et al'
 author = u'John langford et al'
 
 
-# Read version automatically from the version.txt.----------------------------
-def rev_replace(st, old, new, occurrence):
-    li = st.rsplit(old, occurrence)
-    return new.join(li)
+# Read version automatically from vowpalwabbit.__version__--------------------
 
-path = os.getcwd() # path of present directory
+version = vowpalwabbit.__version__
 
-# This makes sure that the path is correct after replacing only the last
-# occurrence of 'python/docs/source' in path by 'version.txt'
-ver_path = rev_replace(path, 'python/docs/source', 'version.txt', 1)
-
-# The short X.Y version
-version = open(ver_path).readlines()[0].strip()
-# The full version, including alpha/beta/rc tags
 release = version
-
 
 # -- General configuration ---------------------------------------------------
 
