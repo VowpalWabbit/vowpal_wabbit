@@ -447,8 +447,6 @@ struct vw
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::string> interactions;
-  // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> pairs;  // pairs of features to cross.
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;

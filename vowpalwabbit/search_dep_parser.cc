@@ -90,10 +90,9 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   const char *triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BEJ", "BEH", "BJK", "BEN"};
   std::vector<std::string> newpairs(pair, pair + 19);
   std::vector<std::string> newtriples(triple, triple + 12);
-  all.pairs.swap(newpairs);
 
   all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(newpairs), std::end(newpairs));
   all.interactions.insert(std::end(all.interactions), std::begin(newtriples), std::end(newtriples));
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);

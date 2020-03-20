@@ -58,8 +58,23 @@ int main(int argc, char *argv[])
   size_t rank = atoi(location);
 
   // global model params
-  unsigned char left_ns = model->pairs[0][0];
-  unsigned char right_ns = model->pairs[0][1];
+  string firstPair;
+  for (auto const& i : model->interactions)
+  {
+    if(i.size() == 2)
+    {
+      firstPair = i;
+      break;
+    }
+  }
+  if(firstPair.size() != 2)
+  {
+    cout << "Model doesn't include a quadratic interaction." << std::endl;
+    return 2;
+  }
+
+  unsigned char left_ns = firstPair[0];
+  unsigned char right_ns = firstPair[1];
   dense_parameters& weights = model->weights.dense_weights;
 
   // const char *filename = argv[0];
