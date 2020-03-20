@@ -122,8 +122,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
   auto label = scoped_calloc_or_throw<slates::label>();
   parse_label(lp, &p, "slates shared 0.5", *label.get());
   lp.cache_label(label.get(), io);
-  io.space.end() = io.head;
-  io.head = io.space.begin();
+  io.flip_from_write_to_read();
 
   auto uncached_label = scoped_calloc_or_throw<slates::label>();
   lp.default_label(uncached_label.get());
@@ -150,8 +149,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
   auto label = scoped_calloc_or_throw<slates::label>();
   parse_label(lp, &p, "slates action 5", *label.get());
   lp.cache_label(label.get(), io);
-  io.space.end() = io.head;
-  io.head = io.space.begin();
+  io.flip_from_write_to_read();
 
   auto uncached_label = scoped_calloc_or_throw<slates::label>();
   lp.default_label(uncached_label.get());
@@ -179,8 +177,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
   auto label = scoped_calloc_or_throw<slates::label>();
   parse_label(lp, &p, "slates slot 0:0.5,1:0.25,2:0.25", *label.get());
   lp.cache_label(label.get(), io);
-  io.space.end() = io.head;
-  io.head = io.space.begin();
+  io.flip_from_write_to_read();
 
   auto uncached_label = scoped_calloc_or_throw<slates::label>();
   lp.default_label(uncached_label.get());

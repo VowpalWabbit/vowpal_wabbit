@@ -274,6 +274,7 @@ class io_buf
 
   bool isbinary();
   size_t readto(char*& pointer, char terminal);
+  void flip_from_write_to_read();
 };
 
 

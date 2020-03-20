@@ -129,8 +129,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   auto label = scoped_calloc_or_throw<CCB::label>();
   parse_label(lp, &p, "ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label.get());
   lp.cache_label(label.get(), io);
-  io.space.end() = io.head;
-  io.head = io.space.begin();
+  io.flip_from_write_to_read();
 
   auto uncached_label = scoped_calloc_or_throw<CCB::label>();
   lp.default_label(uncached_label.get());

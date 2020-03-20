@@ -629,7 +629,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   }
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
-  sizes[all.all_reduce->node] = b->head - b->space.begin();
+  sizes[all.all_reduce->node] = b->available_to_read();
   // params.all->opts_n_args.trace_message<<"Sizes = "<<sizes[all.node]<<" ";
   all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
@@ -645,12 +645,12 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   if (total_sum > 0)
   {
     queries = calloc_or_throw<char>(total_sum);
-    memcpy(queries + prev_sum, b->space.begin(), b->head - b->space.begin());
+    memcpy(queries + prev_sum, b->space.begin(), b->available_to_read());
     b->space.delete_v();
     all_reduce<char, copy_char>(all, queries, total_sum);
 
     b->space.begin() = queries;
-    b->head = b->space.begin();
+    b->set(b->space.begin());
     b->space.end() = &queries[total_sum * sizeof(char)];
 
     size_t num_read = 0;
@@ -674,7 +674,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
       else
         break;
 
-      num_read += b->head - b->space.begin();
+      num_read += b->available_to_read();
       if (num_read == prev_sum)
         params.local_begin = i + 1;
       if (num_read == prev_sum + sizes[all.all_reduce->node])

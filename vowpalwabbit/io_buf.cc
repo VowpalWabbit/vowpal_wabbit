@@ -158,3 +158,10 @@ void io_buf::close_file_or_socket(int f)
   close(f);
 #endif
 }
+
+//make all data that was writen available for reading
+void io_buf::flip_from_write_to_read()
+{
+  space.end() = head;
+  head = space.begin();
+}
