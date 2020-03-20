@@ -189,7 +189,7 @@ void reset_source(vw& all, size_t numbits)
       all.final_prediction_sink.push_back((size_t)f);
       all.p->input->files.push_back(f);
 
-      if (isbinary(*(all.p->input)))
+      if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
 IGNORE_DEPRECATED_USAGE_START
@@ -524,7 +524,7 @@ IGNORE_DEPRECATED_USAGE_END
       all.p->reader = read_features_string;
     else
     {
-      if (isbinary(*(all.p->input)))
+      if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
 IGNORE_DEPRECATED_USAGE_START

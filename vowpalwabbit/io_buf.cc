@@ -40,49 +40,49 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
   }
 }
 
-bool isbinary(io_buf& i)
+bool io_buf::isbinary()
 {
-  if (i.space.end() == i.head)
-    if (i.fill(i.files[i.current]) <= 0)
+  if (space.end() == head)
+    if (fill(files[current]) <= 0)
       return false;
 
-  bool ret = (*i.head == 0);
+  bool ret = (*head == 0);
   if (ret)
-    i.head++;
+    head++;
 
   return ret;
 }
 
-size_t readto(io_buf& i, char*& pointer, char terminal)
+size_t io_buf::readto(char*& pointer, char terminal)
 {
   // Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
-  pointer = i.head;
-  while (pointer < i.space.end() && *pointer != terminal) pointer++;
-  if (pointer != i.space.end())
+  pointer = head;
+  while (pointer < space.end() && *pointer != terminal) pointer++;
+  if (pointer != space.end())
   {
-    size_t n = pointer - i.head;
-    i.head = pointer + 1;
+    size_t n = pointer - head;
+    head = pointer + 1;
     pointer -= n;
     return n + 1;
   }
   else
   {
-    if (i.space.end() == i.space.end_array)
+    if (space.end() == space.end_array)
     {
-      size_t left = i.space.end() - i.head;
-      memmove(i.space.begin(), i.head, left);
-      i.head = i.space.begin();
-      i.space.end() = i.space.begin() + left;
-      pointer = i.space.end();
+      size_t left = space.end() - head;
+      memmove(space.begin(), head, left);
+      head = space.begin();
+      space.end() = space.begin() + left;
+      pointer = space.end();
     }
-    if (i.current < i.files.size() && i.fill(i.files[i.current]) > 0)  // more bytes are read.
-      return readto(i, pointer, terminal);
-    else if (++i.current < i.files.size())  // no more bytes, so go to next file.
-      return readto(i, pointer, terminal);
+    if (current < files.size() && fill(files[current]) > 0)  // more bytes are read.
+      return readto(pointer, terminal);
+    else if (++current < files.size())  // no more bytes, so go to next file.
+      return readto(pointer, terminal);
     else  // no more bytes to read, return everything we have.
     {
-      size_t n = pointer - i.head;
-      i.head = pointer;
+      size_t n = pointer - head;
+      head = pointer;
       pointer -= n;
       return n;
     }

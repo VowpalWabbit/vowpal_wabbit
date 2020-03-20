@@ -262,10 +262,11 @@ class io_buf
     }
     return len;
   }
+
+  bool isbinary();
+  size_t readto(char*& pointer, char terminal);
 };
 
-bool isbinary(io_buf& i);
-size_t readto(io_buf& i, char*& pointer, char terminal);
 
 inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
 {
