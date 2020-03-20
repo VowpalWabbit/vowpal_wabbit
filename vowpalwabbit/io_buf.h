@@ -55,6 +55,7 @@ class io_buf
   bool _verify_hash;
   uint32_t _hash;
   static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
+  char* head;
 
  public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
@@ -62,12 +63,16 @@ class io_buf
   v_array<int> files;
   size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
-  char* head;
   v_array<char> currentname;
   v_array<char> finalname;
 
   static constexpr int READ = 1;
   static constexpr int WRITE = 2;
+
+  size_t available_to_read() const
+  {
+    return head - space.begin();
+  }
 
   void verify_hash(bool verify)
   {
@@ -131,6 +136,12 @@ class io_buf
     return ret;
   }
 
+  void reset_buffer()
+  {
+    space.end() = space.begin();
+    head = space.begin();
+  }
+
   virtual void reset_file(int f)
   {
 #ifdef _WIN32
@@ -138,8 +149,6 @@ class io_buf
 #else
     lseek(f, 0, SEEK_SET);
 #endif
-    space.end() = space.begin();
-    head = space.begin();
   }
 
   io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
@@ -170,7 +179,7 @@ class io_buf
   {  // if the loaded values have reached the allocated space
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
-      size_t head_loc = head - space.begin();
+      size_t head_loc = available_to_read();
       space.resize(2 * (space.end_array - space.begin()));
       head = space.begin() + head_loc;
     }
@@ -193,7 +202,7 @@ class io_buf
   {
     if (!files.empty())
     {
-      if (write_file(files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
+      if (write_file(files[0], space.begin(), available_to_read()) != (int)(available_to_read()))
         std::cerr << "error, failed to write example\n";
       head = space.begin();
     }
