@@ -264,12 +264,34 @@ def test_save_load(tmp_path):
     assert all([a == b for a, b in zip(before_saving, after_loading)])
 
 
+def test_repr():
+
+    model = VW()
+    expected = "VW('convert_labels:False', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VWClassifier()
+    expected = "VWClassifier('convert_labels:False', "\
+    "'loss_function:logistic', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VWRegressor()
+    expected = "VWRegressor('convert_labels:False', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VW(convert_to_vw=False, oaa=3, loss_function='logistic', probabilities=True)
+    expected = "VW('convert_labels:False', 'loss_function:logistic', "\
+    "'oaa:3', 'probabilities:True', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+
 def test_sgd_param():
 
     model1 = VWRegressor(sgd=True)
     model2 = VWClassifier(sgd = True)
     assert model1.get_params()['sgd'] == True
     assert model2.get_params()['sgd'] == True
+
 
 class TestVWClassifier:
 
