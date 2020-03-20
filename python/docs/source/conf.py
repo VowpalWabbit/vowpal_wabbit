@@ -14,6 +14,8 @@
 #
 import os
 import sys
+import vowpalwabbit
+
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../../'))
 
@@ -24,11 +26,12 @@ project = u'VowpalWabbit'
 copyright = u'2019, John langford et al'
 author = u'John langford et al'
 
-# The short X.Y version
-version = u''
-# The full version, including alpha/beta/rc tags
-release = u'8.6.1'
 
+# Read version automatically from vowpalwabbit.__version__--------------------
+
+version = vowpalwabbit.__version__
+
+release = version
 
 # -- General configuration ---------------------------------------------------
 
@@ -44,8 +47,18 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
+    'numpydoc',
     'sphinx.ext.githubpages',
 ]
+
+# This helps to document __init__
+def skip(app, what, name, obj, would_skip, options):
+    if name == "__init__":
+        return False
+    return would_skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
