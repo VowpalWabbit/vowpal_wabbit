@@ -24,10 +24,22 @@ project = u'VowpalWabbit'
 copyright = u'2019, John langford et al'
 author = u'John langford et al'
 
+
+# Read version automatically from the version.txt.----------------------------
+def rev_replace(st, old, new, occurrence):
+    li = st.rsplit(old, occurrence)
+    return new.join(li)
+
+path = os.getcwd() # path of present directory
+
+# This makes sure that the path is correct after replacing only the last
+# occurrence of 'python/docs/source' in path by 'version.txt'
+ver_path = rev_replace(path, 'python/docs/source', 'version.txt', 1)
+
 # The short X.Y version
-version = u''
+version = open(ver_path).readlines()[0].strip()
 # The full version, including alpha/beta/rc tags
-release = u'8.6.1'
+release = version
 
 
 # -- General configuration ---------------------------------------------------
