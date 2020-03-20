@@ -1324,18 +1324,18 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     time(&all.init_time);
 
     bool strict_parse = false;
-    size_t ring_size;
+    int ring_size;
     option_group_definition vw_args("VW options");
     vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
-
-    if (ring_size == 0)
+    
+    if (ring_size <= 0)
     {
-      all.trace_message << "warning: --ring_size: ring_size can't be 0, switching to the default value of 256"
-                          << endl;
-      ring_size = 256;
+      THROW("ring_size should be positive");
     }
+
+
     all.p = new parser{ring_size, strict_parse};
     all.p->_shared_data = all.sd;
 
@@ -1952,3 +1952,4 @@ void finish(vw& all, bool delete_all)
     throw finalize_regressor_exception;
 }
 }  // namespace VW
+
