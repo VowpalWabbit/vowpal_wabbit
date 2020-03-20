@@ -42,6 +42,7 @@ typedef int socket_t;
 #include <future>
 #endif
 #include "vw_exception.h"
+#include "vwvis.h"
 #include <cassert>
 
 constexpr size_t ar_buf_size = 1 << 16;
@@ -72,7 +73,7 @@ void addbufs(T* buf1, const T* buf2, const size_t n)
   for (size_t i = 0; i < n; i++) f(buf1[i], buf2[i]);
 }
 
-class AllReduce
+class VW_DEFAULT_VIS AllReduce
 {
  public:
   const size_t total;  // total number of nodes

@@ -8,7 +8,7 @@ import io
 
 from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import shuffle
@@ -22,12 +22,14 @@ INVALID_CHARS = re.compile(r"[\|: \n]+")
 class VW(BaseEstimator):
     """Vowpal Wabbit Scikit-learn Base Estimator wrapper
 
-        Attributes
-        ----------
-        params : {dict}
-                 dictionary of model parameter keys and values
-        fit_ : {bool}
-               this variable is only created after the model is fitted
+    Attributes
+    ----------
+
+    params : dictionary
+        dictionary of model parameter keys and values
+    fit_ : bool
+        this variable is only created after the model is fitted
+
     """
 
     params = dict()
@@ -117,117 +119,209 @@ class VW(BaseEstimator):
                  inpass=None,
                  meanfield=None,
                  multitask=None,
-                 convert_labels=False):
+                 convert_labels=False,
+                 sgd=False):
         """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
         ----------
-        probabilities
-        random_seed (int): seed random number generator
-        ring_size (int): size of example ring
-        convert_to_vw (bool): flag to convert X input to vw format
+
+        probabilities : float
+            Float number between 0 and 1
+        random_seed : integer
+            seed random number generator
+        ring_size : integer
+            size of example ring
+        convert_to_vw : bool
+            flag to convert X input to vw format
 
         Update options
-        bfgs: use L-BFGS optimization algorithm
-        mem: set the rank of the inverse hessian approximation used by bfgs
-        ftrl: use FTRL-Proximal optimization algorithm
-        ftrl_alpha: ftrl alpha parameter
-        ftrl_beta: ftrl beta parameter
-        learning_rate,l (float): Set learning rate
-        power_t (float): t power value
-        decay_learning_rate (float): Set Decay factor for learning_rate between passes
-        initial_t (float): initial t value
-        feature_mask (str): Use existing regressor to determine which parameters may be updated.
-                            If no initial_regressor given, also used for initial weights.
+
+        bfgs : bool
+            use L-BFGS optimization algorithm
+        mem : integer
+            set the rank of the inverse hessian approximation used by bfgs
+        ftrl : bool
+            use FTRL-Proximal optimization algorithm
+        ftrl_alpha : integer
+            ftrl alpha parameter
+        ftrl_beta : integer
+            ftrl beta parameter
+        learning_rate,l : float
+            Set learning rate
+        power_t : float
+            t power value
+        decay_learning_rate : float
+            Set Decay factor for learning_rate between passes
+        initial_t : float
+            initial t value
+        feature_mask : str
+            Use existing regressor to determine which parameters may be updated.
+            If no initial_regressor given, also used for initial weights.
 
         Weight options
-        initial_regressor,i (str): Initial regressor(s)
-        initial_weight (float): Set all weights to an initial value of arg.
-        random_weights (bool): make initial weights random
-        input_feature_regularizer (str): Per feature regularization input file
+
+        initial_regressor,i : str
+            Initial regressor(s)
+        initial_weight : float
+            Set all weights to an initial value of arg.
+        random_weights : bool
+            make initial weights random
+        input_feature_regularizer : str
+            Per feature regularization input file
 
         Diagnostic options
-        audit,a (bool): print weights of features
-        progress,P (str): Progress update frequency. int: additive, float: multiplicative
-        quiet (bool): Don't output disgnostics and progress updates
+
+        audit,a : bool
+            print weights of features
+        progress,P : str/integer/float
+            Progress update frequency. int: additive, float: multiplicative
+        quiet : bool
+            Don't output disgnostics and progress updates
 
         Input options
-        data,d (str): path to data file for fitting external to sklearn
-        cache,c (bool): use a cache. default is <data>.cache
-        cache_file (str): path to cache file to use
-        k (bool): auto delete cache file
-        passes (int): Number of training passes
-        convert_labels (bool): Convert labels of the form [0,1] to [-1,1]
+
+        data,d : str
+            path to data file for fitting external to sklearn
+        cache,c : str
+            use a cache. default is <data>.cache
+        cache_file : str
+            path to cache file to use
+        k : bool
+            auto delete cache file
+        passes : integer
+            Number of training passes
+        convert_labels : bool
+            Convert labels of the form [0,1] to [-1,1]
 
         Feature options
-        hash (str): how to hash the features. Available options: strings, all
-        ignore (str): ignore namespaces beginning with character <arg>
-        keep (str): keep namespaces beginning with character <arg>
-        redefine (str): Redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in
-                        form 'N:=S' where := is operator. Empty N or S are treated as default namespace.
-                        Use ':' as a wildcard in S.
-        bit_precision,b (int): number of bits in the feature table
-        noconstant (bool): Don't add a constant feature
-        constant,C (float): Set initial value of constant
-        ngram (str): Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.
-        skips (str): Generate skips in N grams. This in conjunction with the ngram tag can be used to generate
-                     generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN.
-        feature_limit (str): limit to N features. To apply to a single namespace 'foo', arg should be fN
-        affix (str): generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for
-                     namespace a, 3-char suffixes for b and 1 char prefixes for default namespace
-        spelling (str): compute spelling features for a give namespace (use '_' for default namespace)
-        dictionary (str): read a dictionary for additional features (arg either 'x:file' or just 'file')
-        dictionary_path (str): look in this directory for dictionaries; defaults to current directory or env{PATH}
-        interactions (str): Create feature interactions of any level between namespaces.
-        permutations (bool): Use permutations instead of combinations for feature interactions of same namespace.
-        leave_duplicate_interactions (bool): Don't remove interactions with duplicate combinations of namespaces. For
-                                             ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.
-        quadratic,q (str): Create and use quadratic features, q:: corresponds to a wildcard for all printable characters
-        cubic (str): Create and use cubic features
+
+        hash : str
+            how to hash the features. Available options: strings, all
+        ignore : str
+            ignore namespaces beginning with character <arg>
+        keep : str
+            keep namespaces beginning with character <arg>
+        redefine : str
+            Redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in
+            form 'N:=S' where := is operator. Empty N or S are treated as default namespace.
+            Use ':' as a wildcard in S.
+        bit_precision,b : integer
+            number of bits in the feature table
+        noconstant : bool
+            Don't add a constant feature
+        constant,C : float
+            Set initial value of constant
+        ngram : str
+            Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.
+        skips : str
+            Generate skips in N grams. This in conjunction with the ngram tag can be used to generate
+            generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN.
+        feature_limit : str
+            limit to N features. To apply to a single namespace 'foo', arg should be fN
+        affix : str
+            generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for
+            namespace a, 3-char suffixes for b and 1 char prefixes for default namespace
+        spelling : str
+            compute spelling features for a give namespace (use '_' for default namespace)
+        dictionary : str
+            read a dictionary for additional features (arg either 'x:file' or just 'file')
+        dictionary_path : str
+            look in this directory for dictionaries; defaults to current directory or env{PATH}
+        interactions : str
+            Create feature interactions of any level between namespaces.
+        permutations : bool
+            Use permutations instead of combinations for feature interactions of same namespace.
+        leave_duplicate_interactions : bool
+            Don't remove interactions with duplicate combinations of namespaces. For
+            ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.
+        quadratic,q : str
+            Create and use quadratic features, q:: corresponds to a wildcard for all printable characters
+        cubic : str
+            Create and use cubic features
 
         Example options
-        testonly,t (bool): Ignore label information and just test
-        min_prediction (float): Smallest prediction to output
-        max_prediction (float): Largest prediction to output
-        sort_features (bool): turn this on to disregard order in which features have been defined. This will lead to
-                              smaller cache sizes
-        loss_function (str): default_value("squared"), "Specify the loss function to be used, uses squared by default.
-                             Currently available ones are squared, classic, hinge, logistic and quantile.
-        link (str): apply a link function to convert output: e.g. 'logistic'
-        quantile_tau (float): default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5
-        l1 (float): l_1 lambda
-        l2 (float): l_2 lambda
-        named_labels (str): use names for labels (multiclass, etc.) rather than integers, argument specified all
-                            possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\"
+
+        testonly,t : bool
+            Ignore label information and just test
+        min_prediction : float
+            Smallest prediction to output
+        max_prediction : float
+            Largest prediction to output
+        sort_features : bool
+            turn this on to disregard order in which features have been defined. This will lead to
+            smaller cache sizes
+        loss_function : str
+            default_value("squared"), "Specify the loss function to be used, uses squared by default.
+            Currently available ones are squared, classic, hinge, logistic and quantile.
+        link : str
+            apply a link function to convert output: e.g. 'logistic'
+        quantile_tau : float
+            Parameter \\tau associated with Quantile loss. Defaults to 0.5
+        l1 : float
+            l_1 lambda
+        l2 : float
+            l_2 lambda
+        named_labels : str
+            use names for labels (multiclass, etc.) rather than integers, argument specified all
+            possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\"
 
         Output model
-        final_regressor,f (str): Final regressor
-        readable_model (str): Output human-readable final regressor with numeric features
-        invert_hash (str): Output human-readable final regressor with feature names.  Computationally expensive.
-        save_resume (bool): save extra state so learning can be resumed later with new data
-        output_feature_regularizer_binary (str): Per feature regularization output file
-        output_feature_regularizer_text (str): Per feature regularization output file, in text
+
+        final_regressor,f : str
+            Final regressor
+        readable_model : str
+            Output human-readable final regressor with numeric features
+        invert_hash : str
+            Output human-readable final regressor with feature names.  Computationally expensive.
+        save_resume : bool
+            save extra state so learning can be resumed later with new data
+        output_feature_regularizer_binary : str
+            Per feature regularization output file
+        output_feature_regularizer_text : str
+            Per feature regularization output file, in text
 
         Multiclass options
-        oaa (int): Use one-against-all multiclass learning with labels
-        ect (int): Use error correcting tournament multiclass learning
-        csoaa (int): Use cost sensitive one-against-all multiclass learning
-        wap (int): Use weighted all pairs multiclass learning
+
+        oaa : integer
+            Use one-against-all multiclass learning with labels
+        ect : integer
+            Use error correcting tournament multiclass learning
+        csoaa : integer
+            Use cost sensitive one-against-all multiclass learning
+        wap : integer
+            Use weighted all pairs multiclass learning
 
         Contextual Bandit Optimization
-        cb (int): Use contextual bandit learning with specified costs
-        cbify (int): Convert multiclass on <k> classes into a contextual bandit problem
+
+        cb : integer
+            Use contextual bandit learning with specified costs
+        cbify : integer
+            Convert multiclass on <k> classes into a contextual bandit problem
 
         Neural Network options
-        nn (int): Use a sigmoidal feed-forward neural network with N hidden units
-        dropout: Train or test sigmoidal feed-forward network using dropout
-        inpass: Train or test sigmoidal feed-forward network with input pass-through
-        multitask: Share hidden layer across all reduced tasks
-        meanfield: Train or test sigmoidal feed-forward network using mean field
+
+        nn : integer
+            Use a sigmoidal feed-forward neural network with N hidden units
+        dropout : bool
+            Train or test sigmoidal feed-forward network using dropout
+        inpass : bool
+            Train or test sigmoidal feed-forward network with input pass-through
+        multitask : bool
+            Share hidden layer across all reduced tasks
+        meanfield : bool
+            Train or test sigmoidal feed-forward network using mean field
+
+        Update Rule options
+
+        sgd : bool
+            Use sgd for the update rule
 
         Returns
         -------
-        (BaseEstimator): Returns self
+
+        self : BaseEstimator
+
         """
 
         # clear estimator attributes
@@ -270,7 +364,9 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        pyvw.vw instance
+
+        vw : pyvw.vw instance
+
         """
         if self.vw_ is None:
             self.vw_ = pyvw.vw(**self.params)
@@ -285,6 +381,7 @@ class VW(BaseEstimator):
 
         Parameters
         ----------
+
         X : {array-like, sparse matrix}, shape (n_samples, n_features or 1 if not convert_to_vw) or
             Training vector, where n_samples in the number of samples and
             n_features is the number of features.
@@ -296,7 +393,10 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        return self so pipeline can call transform() after fit
+
+        self : BaseEstimator
+            So pipeline can call transform() after fit
+
         """
         if self.convert_to_vw_:
             X = tovw(x=X, y=y, sample_weight=sample_weight, convert_labels=self.convert_labels)
@@ -320,6 +420,7 @@ class VW(BaseEstimator):
 
         Parameters
         ----------
+
         X : {array-like, sparse matrix}, shape (n_samples, n_features or 1 if not convert_to_vw) or
             Training vector, where n_samples in the number of samples and
             n_features is the number of features.
@@ -329,7 +430,9 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        return X to be passed into next estimator in pipeline
+
+        X : {array-like, sparse matrix}
+            To be passed into next estimator in pipeline
         """
         if not self.get_vw().finished:
             self.get_vw().finish()
@@ -340,6 +443,7 @@ class VW(BaseEstimator):
 
         Parameters
         ----------
+
         X : {array-like, sparse matrix}, shape (n_samples, n_features or 1)
             Training vector, where n_samples in the number of samples and
             n_features is the number of features.
@@ -347,6 +451,7 @@ class VW(BaseEstimator):
 
         Returns
         -------
+
         y : array-like, shape (n_samples, 1 or n_classes)
             Output vector relative to X.
         """
@@ -405,7 +510,8 @@ class VW(BaseEstimator):
 
         Parameters
         ----------
-        params : {dict}
+
+        params : dict
                  dictionary of model parameter keys and values to update
         """
 
@@ -425,7 +531,8 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        {sparse matrix} coefficient weights for model
+
+        sparse matrix : coefficient weights for model
         """
 
         model = self.get_vw()
@@ -437,7 +544,9 @@ class VW(BaseEstimator):
 
         Parameters
         ----------
-        coefs : {sparse matrix} coefficient weights for model
+
+        coefs : sparse matrix
+            coefficient weights for model
         """
 
         model = self.get_vw()
@@ -449,7 +558,8 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        {int} intercept value, 0 if noconstant
+
+        intercept value : integer, 0 if no constant
         """
 
         return self.get_vw().get_weight(CONSTANT_HASH)
@@ -491,11 +601,13 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
 
         Parameters
         ----------
+
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             Samples.
 
         Returns
         -------
+
         C : array, shape = [n_samples]
             Predicted class label per sample.
         """
@@ -509,7 +621,7 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
 
 class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     """Vowpal Wabbit Classifier model
-    Only supports binary classification currently. Use VW directly for multiclass classification
+    Use VWMultiClassifier for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
     """
     def __init__(self, **params):
@@ -525,11 +637,13 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
 
         Parameters
         ----------
+
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             Samples.
 
         Returns
         -------
+
         C : array, shape = [n_samples]
             Predicted class label per sample.
         """
@@ -543,12 +657,14 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
 
         Parameters
         ----------
+
         X : {array-like, sparse matrix}, shape = (n_samples, n_features)
             Samples.
 
         Returns
         -------
-        array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
+
+        out : array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
             Confidence scores per (sample, class) combination. In the binary
             case, confidence score for self.classes_[1] where >0 means this
             class would be predicted.
@@ -563,11 +679,80 @@ class VWRegressor(VW, RegressorMixin):
     pass
 
 
+class VWMultiClassifier(ClassifierMixin, VW):
+    """Vowpal Wabbit MultiClassifier model """
+
+    def __init__(self, **params):
+
+        params['probabilities'] = True
+        super(VWMultiClassifier, self).__init__(**params)
+
+    def predict(self, X):
+        """Predict class labels for samples in X.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Samples.
+
+        Returns
+        -------
+        C : array, shape = [n_samples]
+            Predicted class label per sample.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
+        >>> y = np.array([1, 1, 2, 2, 3, 3])
+        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
+        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model.fit(X, y)
+        >>> model.predict(X)
+        """
+
+        scores = self.predict_proba(X)
+        indices = scores.argmax(axis=1)+1
+        return indices
+
+    def predict_proba(self, X):
+        """Predict probabilities for each class.
+
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = (n_samples, n_features)
+            Samples.
+
+        Returns
+        -------
+        array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
+            Confidence scores per (sample, class) combination. In the binary
+            case, confidence score for self.classes_[1] where >0 means this
+            class would be predicted.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
+        >>> y = np.array([1, 1, 2, 2, 3, 3])
+        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
+        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model.fit(X, y)
+        >>> model.predict_proba(X)
+        """
+
+        return VW.predict(self, X=X)
+
+
+
+
 def tovw(x, y=None, sample_weight=None, convert_labels=False):
     """Convert array or sparse matrix to Vowpal Wabbit format
 
     Parameters
     ----------
+
     x : {array-like, sparse matrix}, shape (n_samples, n_features)
         Training vector, where n_samples is the number of samples and
         n_features is the number of features.
@@ -579,11 +764,13 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
 
     Returns
     -------
+
     out : {array-like}, shape (n_samples, 1)
           Training vectors in VW string format
 
     Examples
     --------
+
     >>> import pandas as pd
     >>> from sklearn.feature_extraction.text import HashingVectorizer
     >>> from vowpalwabbit.sklearn_vw import tovw
