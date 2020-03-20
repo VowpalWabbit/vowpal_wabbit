@@ -70,7 +70,7 @@ jobs:
           echo $GITHUB_WORKSPACE
       - uses: actions/checkout@v1
         with:
-          repository: jackgerrits/docs
+          repository: VowpalWabbit/docs
           ref: master
           # For some reason, path is relative to the directory above GITHUB_WORKSPACE
           # To ensure the rest of the script makes sense, we need to place this under vowpal_wabbit
@@ -112,6 +112,6 @@ jobs:
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
-          repository: jackgerrits/docs
+          repository: VowpalWabbit/docs
           directory: docs
           github_token: ${{ secrets.automation_github_token }}
