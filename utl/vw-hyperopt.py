@@ -77,12 +77,7 @@ class HyperoptSpaceConstructor(object):
 
     def __init__(self, command):
         self.command = command
-        self.space = None 
-
-        self.algorithm_metadata = {
-            'ftrl': {'arg': '--ftrl', 'prohibited_flags': set()},
-            'sgd': {'arg': '', 'prohibited_flags': {'--ftrl_alpha', '--ftrl_beta'}}
-        }  
+        self.space = None  
 
         self.range_pattern = re.compile("[^~]+")  # re.compile("(?<=\[).+(?=\])")
         self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
@@ -151,7 +146,6 @@ class HyperoptSpaceConstructorNotCB(HyperoptSpaceConstructor):
 
         HyperoptSpaceConstructor.__init__(self, command)
 
-    #I will put this function base class
     def string_to_pyll(self):
         line = shlex.split(self.command)
 
@@ -205,7 +199,6 @@ class HyperoptSpaceConstructorCB(HyperoptSpaceConstructor):
 
         HyperoptSpaceConstructor.__init__(self, command)
 
-    #I will put this function base class
     def string_to_pyll(self):
         line = shlex.split(self.command)
 
@@ -412,7 +405,6 @@ class HyperOptimizerNotCB(HyperOptimizer):
 
         return loss
 
-    #I will put this function base class
     def hyperopt_search(self, parallel=False):  # TODO: implement parallel search with MongoTrials
         def objective(kwargs):
             start = dt.now()
@@ -541,7 +533,6 @@ class HyperOptimizerCB(HyperOptimizer):
         '''
         pass
 
-    #I will put this function base class
     def hyperopt_search(self, parallel=False):  # TODO: implement parallel search with MongoTrials
         def objective(kwargs):
             start = dt.now()
