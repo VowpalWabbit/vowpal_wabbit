@@ -17,9 +17,10 @@
 #include "parser.h"
 #include "parse_example.h"
 
+#include "vwvis.h"
 #include "options.h"
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 /*    Caveats:
     (1) Some commandline parameters do not make sense as a library.
