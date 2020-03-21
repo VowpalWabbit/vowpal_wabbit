@@ -30,6 +30,4 @@ Make Sure you've checked out Existing Issues
 <!-- Pull Requests are much Appreciated -->
 
 <!-- End. -->
-<!--
-Thank you! Your help makes our documentation better. We *deeply* appreciate it.
--->
+
