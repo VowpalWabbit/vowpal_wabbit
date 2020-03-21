@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Gitter Chat
+    url: https://gitter.im/VowpalWabbit/community/
+    about: Please ask questions here.
