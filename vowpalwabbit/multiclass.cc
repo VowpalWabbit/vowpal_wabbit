@@ -79,12 +79,11 @@ void parse_label(parser* , shared_data* sd, void* v, v_array<VW::string_view>& w
     case 0:
       break;
     case 1:
-      //separate function to check for multi labels
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string_mc(words[0]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0], true); //true flag for complete string read
       ld->weight = 1.0;
       break;
     case 2:       
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string_mc(words[0]);
+      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0], true);
       ld->weight = float_of_string(words[1]);
       break;
     default:

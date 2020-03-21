@@ -145,7 +145,7 @@ inline float float_of_string(VW::string_view s)
   return f;
 }
 
-inline int int_of_string(VW::string_view s)
+inline int int_of_string(VW::string_view s, bool compl_str=false)
 {
   char* end = nullptr;
 
@@ -158,24 +158,9 @@ inline int int_of_string(VW::string_view s)
     i = 0;
   }
 
-  return i;
-}
-
-inline int int_of_string_mc(VW::string_view s)
-{
-  char* end = nullptr;
-
-  int i = strtol(s.begin(), &end, 10);
-  if (end <= s.begin() && s.size() > 0)
-  {
-    std::cout << "warning: " << s << " is not a good int, replacing with 0"
-              << std::endl;
-    i = 0;
-  }
-
-  // checking if whole string is consumed
-  if (s.end() != end)
+  //checking if whole string was consumed
+  if (s.end() != end && compl_str)
     THROW("Incorrect Label input, single integer label allowed in multiclass");
-  return i;
   
+  return i;
 }
