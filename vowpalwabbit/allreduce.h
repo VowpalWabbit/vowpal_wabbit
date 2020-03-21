@@ -94,7 +94,7 @@ struct Data
   size_t length;
 };
 
-class AllReduceSync
+class VW_DEFAULT_VIS AllReduceSync
 {
  private:
   std::mutex* m_mutex;
@@ -119,7 +119,7 @@ class AllReduceSync
   void** buffers;
 };
 
-class AllReduceThreads : public AllReduce
+class VW_DEFAULT_VIS AllReduceThreads : public AllReduce
 {
  private:
   AllReduceSync* m_sync;
@@ -175,7 +175,7 @@ class AllReduceThreads : public AllReduce
   }
 };
 
-class AllReduceSockets : public AllReduce
+class VW_DEFAULT_VIS AllReduceSockets : public AllReduce
 {
  private:
   node_socks socks;
