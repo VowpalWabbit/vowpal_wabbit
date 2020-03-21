@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
+#include "vwvis.h"
 
 #define cdbg std::clog
 #undef cdbg
@@ -17,7 +18,7 @@
 typedef uint32_t action;
 typedef uint32_t ptag;
 
-namespace Search
+namespace VW_DEFAULT_VIS Search
 {
 struct search_private;
 struct search_task;
