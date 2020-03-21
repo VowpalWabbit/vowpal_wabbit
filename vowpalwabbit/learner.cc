@@ -7,7 +7,7 @@
 #include "vw.h"
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
-
+#include "vwvis.h"
 
 #define CASE(type) \
   case type:       \
@@ -270,14 +270,14 @@ void generic_driver(ready_examples_queue& examples, context_type& context)
   drain_examples(context.get_master());
 }
 
-void generic_driver(vw& all)
+void VW_DEFAULT_VIS generic_driver(vw& all)
 {
   single_instance_context context(all);
   ready_examples_queue examples(all);
   generic_driver(examples, context);
 }
 
-void generic_driver(const std::vector<vw*>& all)
+void VW_DEFAULT_VIS generic_driver(const std::vector<vw*>& all)
 {
   multi_instance_context context(all);
   ready_examples_queue examples(context.get_master());
@@ -285,7 +285,7 @@ void generic_driver(const std::vector<vw*>& all)
 }
 
 template <typename handler_type>
-void generic_driver_onethread(vw& all)
+void VW_DEFAULT_VIS generic_driver_onethread(vw& all)
 {
   single_instance_context context(all);
   handler_type handler(context);
@@ -298,7 +298,7 @@ void generic_driver_onethread(vw& all)
   all.l->end_examples();
 }
 
-void generic_driver_onethread(vw& all)
+void VW_DEFAULT_VIS generic_driver_onethread(vw& all)
 {
   if (all.l->is_multiline)
     generic_driver_onethread<multi_example_handler<single_instance_context>>(all);

@@ -4,11 +4,12 @@
 #pragma once
 #include "label_parser.h"
 #include <vector>
+#include "vwvis.h"
 
 struct example;
 struct vw;
 
-namespace COST_SENSITIVE
+namespace VW_DEFAULT_VIS COST_SENSITIVE
 {
 struct wclass
 {

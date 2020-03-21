@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "gd.h"
+#include "vwvis.h"
 
 float collision_cleanup(features& fs)
 {
@@ -66,7 +67,7 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->sorted = src->sorted;
 }
 
-void copy_example_data(bool audit, example* dst, example* src)
+void VW_DEFAULT_VIS copy_example_data(bool audit, example* dst, example* src)
 {
   // std::cerr << "copy_example_data dst = " << dst << std::endl;
   copy_example_metadata(audit, dst, src);
@@ -80,7 +81,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->interactions = src->interactions;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+void VW_DEFAULT_VIS copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
 {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
@@ -117,7 +118,7 @@ void vec_store(features_and_source& p, float fx, uint64_t fi)
   p.feature_map.push_back(feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask));
 }
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 {
@@ -196,7 +197,7 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 example* alloc_examples(size_t, size_t count = 1)
 {
@@ -212,7 +213,7 @@ example* alloc_examples(size_t, size_t count = 1)
   return ec;
 }
 
-void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
+void VW_DEFAULT_VIS dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
 {
   if (delete_label)
     delete_label(&ec.l);

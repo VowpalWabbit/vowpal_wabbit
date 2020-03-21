@@ -16,6 +16,7 @@ namespace po = boost::program_options;
 #include "options.h"
 #include "options_types.h"
 #include "vw_exception.h"
+#include "vwvis.h"
 
 // Boost Program Options requires that all types that have a default option are ostreamable
 namespace std
@@ -41,10 +42,10 @@ namespace VW
 {
 namespace config
 {
-struct options_boost_po : public options_i
+struct VW_DEFAULT_VIS options_boost_po : public options_i
 {
-  options_boost_po(int argc, char** argv) : options_boost_po(std::vector<std::string>(argv + 1, argv + argc)) {}
 
+  options_boost_po(int argc, char** argv) : options_boost_po(std::vector<std::string>(argv + 1, argv + argc)) {}
   options_boost_po(std::vector<std::string> args) : m_command_line(args) {}
 
   options_boost_po(options_boost_po&) = delete;

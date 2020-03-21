@@ -26,11 +26,13 @@
 #include "vw_string_view.h"
 #include "queue.h"
 #include "object_pool.h"
+#include "simple_label.h"
+#include "vwvis.h"
 
 struct vw;
 struct input_options;
 
-struct example_initializer
+struct VW_DEFAULT_VIS example_initializer
 {
   example* operator()(example* ex);
 };

@@ -10,6 +10,7 @@
 #include "label_parser.h"
 #include "v_array.h"
 #include "action_score.h"
+#include "vwvis.h"
 
 namespace CCB
 {
@@ -40,5 +41,5 @@ struct label
   float weight;
 };
 
-extern label_parser ccb_label_parser;
+extern label_parser VW_DEFAULT_VIS ccb_label_parser;
 }  // namespace CCB

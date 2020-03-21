@@ -524,7 +524,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   }
 }
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 void read_line(vw& all, example* ex, VW::string_view line)
 {

@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "io_buf.h"
 #include <cstdio>
+#include <vwvis.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
@@ -123,7 +124,7 @@ bool io_buf::is_socket(int f)
 #endif
 }
 
-ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes)
+ssize_t VW_DEFAULT_VIS io_buf::read_file_or_socket(int f, void* buf, size_t nbytes)
 {
 #ifdef _WIN32
   if (is_socket(f))
@@ -135,7 +136,7 @@ ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes)
 #endif
 }
 
-ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
+ssize_t VW_DEFAULT_VIS io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
 {
 #ifdef _WIN32
   if (is_socket(f))
@@ -147,7 +148,7 @@ ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
 #endif
 }
 
-void io_buf::close_file_or_socket(int f)
+void VW_DEFAULT_VIS io_buf::close_file_or_socket(int f)
 {
 #ifdef _WIN32
   if (io_buf::is_socket(f))

@@ -11,7 +11,7 @@
 #include "hash.h"
 #include "vw_exception.h"
 
-hash_func_t getHasher(const std::string& s)
+hash_func_t VW_DEFAULT_VIS getHasher(const std::string& s)
 {
   if (s == "strings")
     return hashstring;
@@ -21,7 +21,7 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
-std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
+std::vector<std::string> VW_DEFAULT_VIS escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
   std::vector<std::string> tokens;
   std::string current;

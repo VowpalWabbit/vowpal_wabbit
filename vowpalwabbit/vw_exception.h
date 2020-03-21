@@ -16,7 +16,7 @@
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 class VW_DEFAULT_VIS vw_exception : public std::exception
 {

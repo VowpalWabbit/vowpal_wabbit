@@ -27,6 +27,7 @@
 #include "vw_validate.h"
 #include "vw_versions.h"
 #include "options_serializer_boost_po.h"
+#include <vwvis.h>
 
 template <class T>
 class set_initial_wrapper
@@ -638,7 +639,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
   }
 }
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 void save_predictor(vw& all, std::string reg_name) { dump_regressor(all, reg_name, false); }
 

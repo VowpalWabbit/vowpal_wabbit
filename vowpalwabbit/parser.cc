@@ -698,7 +698,7 @@ void feature_limit(vw& all, example* ex)
     }
 }
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 example& get_unused_example(vw* all)
 {

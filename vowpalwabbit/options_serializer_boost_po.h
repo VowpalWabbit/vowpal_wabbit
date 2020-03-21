@@ -9,14 +9,14 @@
 #include "options_types.h"
 
 #include "vw_exception.h"
-
+#include "vwvis.h"
 #include <sstream>
 
 namespace VW
 {
 namespace config
 {
-struct options_serializer_boost_po : options_serializer_i
+struct VW_DEFAULT_VIS options_serializer_boost_po : options_serializer_i
 {
   options_serializer_boost_po() { m_output_stream.precision(15); }
 

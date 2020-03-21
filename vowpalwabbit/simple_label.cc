@@ -11,6 +11,7 @@
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_string_view.h"
+#include "vwvis.h"
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
@@ -108,7 +109,7 @@ void parse_simple_label(parser*, shared_data* sd, void* v, v_array<VW::string_vi
   count_label(sd, ld->label);
 }
 
-label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
+label_parser VW_DEFAULT_VIS simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
     delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
 
 void print_update(vw& all, example& ec)

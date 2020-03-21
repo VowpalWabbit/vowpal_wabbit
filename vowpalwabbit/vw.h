@@ -108,7 +108,7 @@ const char* get_tag(example* ec);
 size_t get_feature_number(example* ec);
 float get_confidence(example* ec);
 feature* get_features(vw& all, example* ec, size_t& feature_number);
-void return_features(feature* f);
+void VW_DEFAULT_VIS return_features(feature* f);
 
 void add_constant_feature(vw& all, example* ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);

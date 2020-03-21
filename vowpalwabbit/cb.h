@@ -5,10 +5,11 @@
 
 #include "label_parser.h"
 #include <vector>
+#include "vwvis.h"
 
 struct example;
 
-namespace CB
+namespace VW_DEFAULT_VIS CB
 {
 struct cb_class
 {

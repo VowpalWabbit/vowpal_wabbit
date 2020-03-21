@@ -11,8 +11,9 @@
 #include "v_array.h"
 #include "action_score.h"
 #include "options.h"
+#include "vwvis.h"
 
-namespace LEARNER
+namespace VW_DEFAULT_VIS LEARNER
 {
 template <class T, class E>
 struct learner;
@@ -22,7 +23,7 @@ using base_learner = learner<char, char>;
 struct vw;
 struct example;
 
-namespace CCB
+namespace VW_DEFAULT_VIS CCB
 {
 void calculate_and_insert_interactions(
     example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions);

@@ -8,8 +8,9 @@
 
 #include "label_parser.h"
 #include "action_score.h"
+#include "vwvis.h"
 
-namespace slates
+namespace VW_DEFAULT_VIS slates
 {
 
 enum example_type : uint8_t

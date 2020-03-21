@@ -3,8 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "search.h"
+#include "vwvis.h"
 
-namespace SequenceTask
+namespace VW_DEFAULT_VIS SequenceTask
 {
 void initialize(Search::search&, size_t&, VW::config::options_i&);
 void run(Search::search&, multi_ex&);

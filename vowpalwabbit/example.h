@@ -20,6 +20,7 @@
 #include "ccb_label.h"
 #include "slates_label.h"
 #include <vector>
+#include "vwvis.h"
 
 typedef union
 {
@@ -125,7 +126,7 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 
 typedef std::vector<example*> multi_ex;
 
-namespace VW
+namespace VW_DEFAULT_VIS VW
 {
 void return_multiple_example(vw& all, v_array<example*>& examples);
 }  // namespace VW
