@@ -142,6 +142,17 @@ def test_cost_sensitive_label():
     del model
 
 
+def test_multiclass_probabilities_label():
+    n = 4
+    model = pyvw.vw(loss_function='logistic', oaa=n, probabilities=True, quiet=True)
+    ex = model.example('1 | a b c d', 2)
+    model.learn(ex)
+    mpl = pyvw.multiclass_probabilities_label(ex)
+    assert str(mpl) == '1:0.25 2:0.25 3:0.25 4:0.25'
+    mpl = pyvw.multiclass_probabilities_label([1, 2, 3], [0.4, 0.3, 0.3])
+    assert str(mpl) == '1:0.4 2:0.3 3:0.3'
+
+
 def test_regressor_args():
     # load and parse external data file
     data_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources', 'train.dat')
