@@ -46,6 +46,7 @@
 #include "hashstring.h"
 
 #include "options.h"
+#include "vwvis.h"
 #include "version.h"
 
 typedef float weight;
@@ -356,7 +357,7 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
-struct vw
+struct VW_DEFAULT_VIS vw
 {
  private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
