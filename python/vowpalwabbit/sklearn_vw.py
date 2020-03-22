@@ -602,8 +602,6 @@ class ThresholdingLinearClassifierMixin(LinearSVC):
 
         # assume 0 as positive score threshold
         self.pos_threshold = params.pop('pos_threshold', 0.0)
-        # run __init__ from classifier mixin
-        ClassifierMixin.__init__(**params)
 
     def predict(self, X):
         """Predict class labels for samples in X.
@@ -632,7 +630,7 @@ class ThresholdingLinearClassifierMixin(LinearSVC):
             "ThresholdingLinearClassifierMixin has no attribute 'fit'")
 
 
-class VWClassifier(ThresholdingLinearClassifierMixin, VW):
+class VWClassifier(VW, ThresholdingLinearClassifierMixin):
     """Vowpal Wabbit Classifier model
     Use VWMultiClassifier for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
