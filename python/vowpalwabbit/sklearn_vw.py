@@ -9,11 +9,10 @@ import io
 from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
-from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets import dump_svmlight_file
+from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
 from vowpalwabbit import pyvw
-from vowpalwabbit.objects import LinearClassifierMixin, SparseCoefMixin
 
 DEFAULT_NS = ''
 CONSTANT_HASH = 116060
@@ -494,8 +493,9 @@ class VW(BaseEstimator):
     def __repr__(self):
         if self.params is not None:
             repr_items_ = sorted(self.params.items())
-            repr_items_ = str([str(itm[0])+":"+str(itm[1]) for itm in repr_items_])
-            repr_items_ = repr_items_.replace("[","").replace("]", "")
+            repr_items_ = str(
+                [str(itm[0]) + ":" + str(itm[1]) for itm in repr_items_])
+            repr_items_ = repr_items_.replace("[", "").replace("]", "")
 
             return "{}({})".format(self.__class__.__name__, repr_items_)
 
@@ -589,7 +589,7 @@ class VW(BaseEstimator):
         self.fit_ = True
 
 
-class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
+class ThresholdingLinearClassifierMixin(LinearSVC):
     """Mixin for linear classifiers.  A threshold is used to specify the positive
     class cutoff
 
@@ -602,8 +602,8 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
 
         # assume 0 as positive score threshold
         self.pos_threshold = params.pop('pos_threshold', 0.0)
-
-        super(ThresholdingLinearClassifierMixin, self).__init__(**params)
+        # run __init__ from classifier mixin
+        ClassifierMixin.__init__(**params)
 
     def predict(self, X):
         """Predict class labels for samples in X.
@@ -627,8 +627,12 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
             indices = scores.argmax(axis=1)
         return self.classes_[indices]
 
+    def fit(self, *args, **kwargs):
+        raise AttributeError(
+            "ThresholdingLinearClassifierMixin has no attribute 'fit'")
 
-class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
+
+class VWClassifier(ThresholdingLinearClassifierMixin, VW):
     """Vowpal Wabbit Classifier model
     Use VWMultiClassifier for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
@@ -690,7 +694,6 @@ class VWRegressor(VW, RegressorMixin):
 
 class VWMultiClassifier(ClassifierMixin, VW):
     """Vowpal Wabbit MultiClassifier model """
-
     def __init__(self, **params):
 
         params['probabilities'] = True
@@ -721,7 +724,7 @@ class VWMultiClassifier(ClassifierMixin, VW):
         """
 
         scores = self.predict_proba(X)
-        indices = scores.argmax(axis=1)+1
+        indices = scores.argmax(axis=1) + 1
         return indices
 
     def predict_proba(self, X):
@@ -752,8 +755,6 @@ class VWMultiClassifier(ClassifierMixin, VW):
         """
 
         return VW.predict(self, X=X)
-
-
 
 
 def tovw(x, y=None, sample_weight=None, convert_labels=False):
