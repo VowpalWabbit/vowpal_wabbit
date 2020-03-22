@@ -71,7 +71,7 @@ bool comp_io_buf::compressed() { return true; }
 
 void comp_io_buf::flush()
 {
-  if (write_file(0, space.begin(), available_to_read()) != (int)(available_to_read()))
+  if (write_file(0, buffer_start(), available_to_read()) != (int)(available_to_read()))
     std::cerr << "error, failed to write to cache\n";
   reset_buffer(); // space.end() == space.begin() on the write path.
 }
