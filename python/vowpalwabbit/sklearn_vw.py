@@ -625,10 +625,6 @@ class ThresholdingLinearClassifierMixin(LinearSVC):
             indices = scores.argmax(axis=1)
         return self.classes_[indices]
 
-    def fit(self, *args, **kwargs):
-        raise AttributeError(
-            "ThresholdingLinearClassifierMixin has no attribute 'fit'")
-
 
 class VWClassifier(VW, ThresholdingLinearClassifierMixin):
     """Vowpal Wabbit Classifier model
