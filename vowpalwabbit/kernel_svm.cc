@@ -645,13 +645,12 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   if (total_sum > 0)
   {
     queries = calloc_or_throw<char>(total_sum);
-    memcpy(queries + prev_sum, b->space.begin(), b->available_to_read());
-    b->space.delete_v();
-    all_reduce<char, copy_char>(all, queries, total_sum);
+    size_t bytes_copied = b->copy_to(queries + prev_sum, total_sum - prev_sum);
+    if(bytes_copied < b->available_to_read())
+      THROW("kernel_svm: Failed to alloc enough space.");
 
-    b->space.begin() = queries;
-    b->set(b->space.begin());
-    b->space.end() = &queries[total_sum * sizeof(char)];
+    all_reduce<char, copy_char>(all, queries, total_sum);
+    b->replace_buffer(queries, total_sum);
 
     size_t num_read = 0;
     params.pool_pos = 0;

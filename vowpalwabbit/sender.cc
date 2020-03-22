@@ -38,8 +38,6 @@ struct sender
 
   ~sender()
   {
-    buf->files.delete_v();
-    buf->space.delete_v();
     free(delay_ring);
     delete buf;
   }

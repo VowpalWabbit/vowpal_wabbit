@@ -495,7 +495,7 @@ void save_load_header(
       {
         uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
             ? model_file.hash()
-            : (uint32_t)uniform_hash(model_file.space.begin(), bytes_read_write, 0);
+            : (uint32_t)uniform_hash(model_file.buffer_start(), bytes_read_write, 0);
 
         uint32_t check_sum_saved = check_sum;
 

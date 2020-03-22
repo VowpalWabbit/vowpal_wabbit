@@ -56,10 +56,9 @@ class io_buf
   uint32_t _hash;
   static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
   char* head;
-
- public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
                         // the buffer.
+ public:
   v_array<int> files;
   size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
@@ -275,6 +274,9 @@ class io_buf
   bool isbinary();
   size_t readto(char*& pointer, char terminal);
   void flip_from_write_to_read();
+  size_t copy_to(void *dst, size_t max_size);
+  void replace_buffer(char *buf, size_t capacity);
+  char* buffer_start() { return space.begin(); } //This actually sucks, replace it with slicing
 };
 
 
