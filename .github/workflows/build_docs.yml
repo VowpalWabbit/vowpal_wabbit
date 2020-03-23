@@ -53,6 +53,8 @@ jobs:
     name: Upload Docs
     needs: [CXX, Python]
     runs-on: ubuntu-latest
+    # The upload step should only be run on the main repository.
+    if: github.repository == 'VowpalWabbit/vowpal_wabbit'
     steps:
       - name: Download CXX Docs
         uses: actions/download-artifact@v1
