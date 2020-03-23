@@ -343,8 +343,13 @@ class VW(BaseEstimator):
         ext_file_args = ['data', 'd']
         if any(x in self.params for x in ext_file_args):
             # fitting will be handled by vw directly
+            # with the given number of passes and initialize the vw model here
+            # itself and store it in self.vw_
             self.fit_ = True
-            self.passes_ = 1
+            if not self.params.get('passes', None): # To prevent overwriting of passes
+                self.params['passes'] = 2   # default 2 if not given
+            self.passes_ = self.params['passes']
+            self.vw_ = self.get_vw()
         else:
             # store passes separately to be used in fit
             self.passes_ = self.params.pop('passes', 1)
@@ -355,8 +360,8 @@ class VW(BaseEstimator):
 
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
-
-        self.vw_ = None
+        if not hasattr(self, 'vw_'):
+            self.vw_ = None
         super(VW, self).__init__()
 
     def get_vw(self):
@@ -368,7 +373,7 @@ class VW(BaseEstimator):
         vw : pyvw.vw instance
 
         """
-        if self.vw_ is None:
+        if getattr(self, 'vw_', None) is None:
             self.vw_ = pyvw.vw(**self.params)
 
         return self.vw_

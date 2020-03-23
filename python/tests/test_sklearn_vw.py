@@ -97,12 +97,14 @@ class TestVW:
 
     def test_get_coefs(self, data):
         model = VW()
+        assert model.vw_ is None
         model.fit(data.x, data.y)
         weights = model.get_coefs()
         assert np.allclose(weights.indices, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 116060])
 
     def test_get_intercept(self, data):
         model = VW()
+        assert model.vw_ is None
         model.fit(data.x, data.y)
         intercept = model.get_intercept()
         assert isinstance(intercept, float)
@@ -126,7 +128,9 @@ class TestVW:
              '1 | feature2:-0.028 feature1:4.43',
              '2 | feature5:1.532 feature6:-3.2']
         model = VW(convert_to_vw=False, oaa=3, loss_function='logistic')
+        assert model.vw_ is None
         model.fit(X)
+        assert model.vw_ is not None
         prediction = model.predict(X)
         assert np.allclose(prediction, [1., 2., 3., 1., 2.])
 
@@ -137,6 +141,7 @@ class TestVW:
              '4 |user D |movie 4',
              '5 |user E |movie 1']
         model = VW(convert_to_vw=False, lrq='um4', lrqdropout=True, loss_function='quantile')
+        assert model.vw_ is None
         assert model.params['lrq'] == 'um4'
         assert model.params['lrqdropout']
         model.fit(X)
@@ -146,6 +151,8 @@ class TestVW:
     def test_bfgs(self):
         data_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources', 'train.dat')
         model = VW(convert_to_vw=False, oaa=3, passes=30, bfgs=True, data=data_file, cache=True, quiet=False)
+        assert model.vw_ is not None
+        assert model.passes_ == 30
         X = ['1 | feature1:2.5',
              '2 | feature1:0.11 feature2:-0.0741',
              '3 | feature3:2.33 feature4:0.8 feature5:-3.1',
