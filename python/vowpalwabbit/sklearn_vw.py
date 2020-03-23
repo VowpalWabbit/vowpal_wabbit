@@ -373,7 +373,7 @@ class VW(BaseEstimator):
         vw : pyvw.vw instance
 
         """
-        if getattr(self, 'vw_', None) is None:
+        if not getattr(self, 'vw_', None):
             self.vw_ = pyvw.vw(**self.params)
 
         return self.vw_
