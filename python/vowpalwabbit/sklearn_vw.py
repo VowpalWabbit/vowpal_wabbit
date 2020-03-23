@@ -344,9 +344,7 @@ class VW(BaseEstimator):
         if any(x in self.params for x in ext_file_args):
             # fitting will be handled by vw directly
             self.fit_ = True
-            if not self.params.get('passes', None): # To prevent overwriting of passes
-                self.params['passes'] = 1   # default 1 if not given
-            self.passes_ = self.params['passes']
+            self.passes_ = self.params.get('passes', 1)
         else:
             # store passes separately to be used in fit
             self.passes_ = self.params.pop('passes', 1)
