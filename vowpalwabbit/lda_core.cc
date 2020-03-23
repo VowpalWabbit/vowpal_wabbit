@@ -859,6 +859,9 @@ void return_example(vw &all, example &ec)
 void learn_batch(lda &l)
 {
   parameters &weights = l.all->weights;
+
+  assert(l.finish_example_count == (l.examples.size() - 1));
+
   if (l.sorted_features.empty())  // FAST-PASS for real "true"
   {
     // This can happen when the socket connection is dropped by the client.
