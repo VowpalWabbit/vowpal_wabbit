@@ -1,4 +1,4 @@
-Vowpal Wabbit Python Wrapper
+Python Wrapper Documentation
 ============================
 
 Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
