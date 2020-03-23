@@ -62,8 +62,6 @@ class io_buf
   v_array<int> files;
   size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
-  v_array<char> currentname;
-  v_array<char> finalname;
 
   static constexpr int READ = 1;
   static constexpr int WRITE = 2;
@@ -154,8 +152,6 @@ class io_buf
   {
     space = v_init<char>();
     files = v_init<int>();
-    currentname = v_init<char>();
-    finalname = v_init<char>();
     space.resize(INITIAL_BUFF_SIZE);
     head = space.begin();
   }

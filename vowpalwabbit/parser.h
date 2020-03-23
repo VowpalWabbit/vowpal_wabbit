@@ -83,6 +83,9 @@ struct parser
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
   io_buf* output = nullptr;  // Where to output the cache.
+  std::string currentname;
+  std::string finalname;
+
   bool write_cache = false;
   bool sort_features = false;
   bool sorted_cache = false;

@@ -137,11 +137,11 @@ void reset_source(vw& all, size_t numbits)
     all.p->output->flush();
     all.p->write_cache = false;
     all.p->output->close_file();
-    remove(all.p->output->finalname.begin());
+    remove(all.p->finalname.c_str());
 
-    if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
-      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
-                                                                          << all.p->output->finalname);
+    if (0 != rename(all.p->currentname.c_str(), all.p->finalname.c_str()))
+      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->currentname << " to "
+                                                                          << all.p->finalname);
 
     while (input->num_files() > 0)
       if (input->compressed())
@@ -155,7 +155,7 @@ void reset_source(vw& all, size_t numbits)
         if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
           io_buf::close_file_or_socket(fd);
       }
-    input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
+    input->open_file(all.p->finalname.c_str(), all.stdin_off, io_buf::READ);  // pushing is merged into
                                                                                       // open_file
     all.p->reader = read_cached_features;
   }
@@ -244,10 +244,9 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
     return;
   }
 
-  std::string temp = newname + std::string(".writing");
-  push_many(output->currentname, temp.c_str(), temp.length() + 1);
+  all.p->currentname = newname + std::string(".writing");
 
-  int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
+  int f = output->open_file(all.p->currentname.c_str(), all.stdin_off, io_buf::WRITE);
   if (f == -1)
   {
     all.trace_message << "can't create cache file !" << endl;
@@ -261,7 +260,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   output->write_file(f, "c", 1);
   output->write_file(f, &all.num_bits, sizeof(all.num_bits));
 
-  push_many(output->finalname, newname.c_str(), newname.length() + 1);
+  all.p->finalname = newname;
   all.p->write_cache = true;
   if (!quiet)
     all.trace_message << "creating cache_file = " << newname << endl;
@@ -1039,13 +1038,6 @@ void free_parser(vw& all)
 
   if (!all.ngram_strings.empty())
     all.p->gram_mask.delete_v();
-
-  io_buf* output = all.p->output;
-  if (output != nullptr)
-  {
-    output->finalname.delete_v();
-    output->currentname.delete_v();
-  }
 
   while (!all.p->example_pool.empty())
   {
