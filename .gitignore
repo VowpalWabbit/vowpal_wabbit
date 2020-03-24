@@ -137,5 +137,5 @@ cs/azure_service/azure_service.ccproj.user
 
 build
 dist/
-tmp.model
+*.model
 python/examples/*.model
