@@ -2,16 +2,18 @@
 # pylint: unused-argument, invalid-name, too-many-arguments, too-many-locals
 """Utilities to support integration of Vowpal Wabbit and scikit-learn"""
 
-import numpy as np
-import re
 import io
+import os
+import re
+from tempfile import NamedTemporaryFile
 
+import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets import dump_svmlight_file
-from sklearn.utils import shuffle
+from sklearn.utils import check_array, check_X_y, shuffle
 from vowpalwabbit import pyvw
 
 DEFAULT_NS = ''
@@ -25,28 +27,23 @@ class VW(BaseEstimator):
     Attributes
     ----------
 
-    params : dictionary
-        dictionary of model parameter keys and values
-    fit_ : bool
-        this variable is only created after the model is fitted
-
+    convert_to_vw : bool
+        flag to convert X input to vw format
+    convert_labels : bool
+        Convert labels of the form [0,1] to [-1,1]
+    vw_ : pyvw.vw
+        vw instance
     """
 
-    params = dict()
+    convert_to_vw = True
+    convert_labels = True
+    vw_ = None
 
     def __init__(self,
-                 rank=None,
-                 lrq=None,
-                 lrqdropout=None,
-                 probabilities=None,
-                 random_seed=None,
+                 convert_to_vw=True,
+                 convert_labels=True,
                  ring_size=None,
-                 convert_to_vw=None,
-                 bfgs=None,
-                 mem=None,
-                 ftrl=None,
-                 ftrl_alpha=None,
-                 ftrl_beta=None,
+                 strict_parse=None,
                  learning_rate=None,
                  l=None,
                  power_t=None,
@@ -57,21 +54,16 @@ class VW(BaseEstimator):
                  i=None,
                  initial_weight=None,
                  random_weights=None,
+                 normal_weights=None,
+                 truncated_normal_weights=None,
+                 sparse_weights=None,
                  input_feature_regularizer=None,
-                 audit=None,
-                 a=None,
-                 progress=None,
-                 P=None,
-                 quiet=None,
-                 data=None,
-                 d=None,
-                 cache=None,
-                 c=None,
-                 k=None,
-                 passes=None,
-                 no_stdin=None,
+                 quiet=True,
+                 random_seed=None,
                  hash=None,
+                 hash_seed=None,
                  ignore=None,
+                 ignore_linear=None,
                  keep=None,
                  redefine=None,
                  bit_precision=None,
@@ -94,59 +86,104 @@ class VW(BaseEstimator):
                  cubic=None,
                  testonly=None,
                  t=None,
+                 holdout_off=None,
+                 holdout_period=None,
+                 holdout_after=None,
+                 early_terminate=None,
+                 passes=1,
+                 initial_pass_length=None,
+                 examples=None,
                  min_prediction=None,
                  max_prediction=None,
                  sort_features=None,
                  loss_function=None,
-                 link=None,
                  quantile_tau=None,
                  l1=None,
                  l2=None,
+                 no_bias_regularization=None,
                  named_labels=None,
                  final_regressor=None,
                  f=None,
                  readable_model=None,
                  invert_hash=None,
                  save_resume=None,
+                 preserve_performance_counters=None,
                  output_feature_regularizer_binary=None,
                  output_feature_regularizer_text=None,
                  oaa=None,
                  ect=None,
                  csoaa=None,
                  wap=None,
+                 probabilities=None,
+                 score=None,
                  nn=None,
-                 dropout=None,
                  inpass=None,
-                 meanfield=None,
                  multitask=None,
-                 convert_labels=False,
-                 sgd=False):
+                 dropout=None,
+                 meanfield=None,
+                 conjugate_gradient=None,
+                 bfgs=None,
+                 hessian_on=None,
+                 mem=None,
+                 termination=None,
+                 lda=None,
+                 lda_alpha=None,
+                 lda_rho=None,
+                 lda_D=None,
+                 lda_epsilon=None,
+                 minibatch=None,
+                 svrg=None,
+                 stage_size=None,
+                 ftrl=None,
+                 coin=None,
+                 pistol=None,
+                 ftrl_alpha=None,
+                 ftrl_beta=None,
+                 ksvm=None,
+                 kernel=None,
+                 bandwidth=None,
+                 degree=None,
+                 sgd=None,
+                 adaptive=None,
+                 invariant=None,
+                 normalized=None,
+                 link=None,
+                 stage_poly=None,
+                 sched_exponent=None,
+                 batch_sz=None,
+                 batch_sz_no_doubling=None,
+                 lrq=None,
+                 lrqdropout=None,
+                 lrqfa=None,
+                 data=None,
+                 d=None,
+                 cache=None,
+                 c=None,
+                 cache_file=None,
+                 json=None,
+                 kill_cache=None,
+                 k=None):
         """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
         ----------
 
-        probabilities : float
-            Float number between 0 and 1
-        random_seed : integer
-            seed random number generator
-        ring_size : integer
-            size of example ring
+        Estimator options
+
         convert_to_vw : bool
             flag to convert X input to vw format
+        convert_labels : bool
+            Convert labels of the form [0,1] to [-1,1]
+
+        VW options
+
+        ring_size : int
+            size of example ring
+        strict_parse : bool
+            throw on malformed examples
 
         Update options
 
-        bfgs : bool
-            use L-BFGS optimization algorithm
-        mem : integer
-            set the rank of the inverse hessian approximation used by bfgs
-        ftrl : bool
-            use FTRL-Proximal optimization algorithm
-        ftrl_alpha : integer
-            ftrl alpha parameter
-        ftrl_beta : integer
-            ftrl beta parameter
         learning_rate,l : float
             Set learning rate
         power_t : float
@@ -167,39 +204,35 @@ class VW(BaseEstimator):
             Set all weights to an initial value of arg.
         random_weights : bool
             make initial weights random
+        normal_weights : bool
+            make initial weights normal
+        truncated_normal_weights : bool
+            make initial weights truncated normal
+        sparse_weights : float
+            Use a sparse datastructure for weights
         input_feature_regularizer : str
             Per feature regularization input file
 
         Diagnostic options
 
-        audit,a : bool
-            print weights of features
-        progress,P : str/integer/float
-            Progress update frequency. int: additive, float: multiplicative
         quiet : bool
             Don't output disgnostics and progress updates
 
-        Input options
+        Randomization options
 
-        data,d : str
-            path to data file for fitting external to sklearn
-        cache,c : str
-            use a cache. default is <data>.cache
-        cache_file : str
-            path to cache file to use
-        k : bool
-            auto delete cache file
-        passes : integer
-            Number of training passes
-        convert_labels : bool
-            Convert labels of the form [0,1] to [-1,1]
+        random_seed : integer
+            seed random number generator
 
         Feature options
 
         hash : str
             how to hash the features. Available options: strings, all
+        hash_seed : int
+            seed for hash function
         ignore : str
             ignore namespaces beginning with character <arg>
+        ignore_linear : str
+            ignore namespaces beginning with character <arg> for linear terms only
         keep : str
             keep namespaces beginning with character <arg>
         redefine : str
@@ -244,6 +277,21 @@ class VW(BaseEstimator):
 
         testonly,t : bool
             Ignore label information and just test
+        holdout_off : bool
+            no holdout data in multiple passes
+        holdout_period : int
+            holdout period for test only
+        holdout_after : int
+            holdout after n training examples
+        early_terminate : int
+            Specify the number of passes tolerated when holdout loss doesn't
+            decrease before early termination
+        passes : int
+            Number of Training Passes
+        initial_pass_length : int
+            initial number of examples per pass
+        examples : int
+            number of examples to parse
         min_prediction : float
             Smallest prediction to output
         max_prediction : float
@@ -254,14 +302,14 @@ class VW(BaseEstimator):
         loss_function : str
             default_value("squared"), "Specify the loss function to be used, uses squared by default.
             Currently available ones are squared, classic, hinge, logistic and quantile.
-        link : str
-            apply a link function to convert output: e.g. 'logistic'
         quantile_tau : float
             Parameter \\tau associated with Quantile loss. Defaults to 0.5
         l1 : float
-            l_1 lambda
+            l_1 lambda (L1 regularization)
         l2 : float
-            l_2 lambda
+            l_2 lambda (L2 regularization)
+        no_bias_regularization : bool
+            no bias in regularization
         named_labels : str
             use names for labels (multiclass, etc.) rather than integers, argument specified all
             possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\"
@@ -276,46 +324,152 @@ class VW(BaseEstimator):
             Output human-readable final regressor with feature names.  Computationally expensive.
         save_resume : bool
             save extra state so learning can be resumed later with new data
+        preserve_performance_counters : bool
+            reset performance counters when warmstarting
         output_feature_regularizer_binary : str
             Per feature regularization output file
         output_feature_regularizer_text : str
             Per feature regularization output file, in text
 
-        Multiclass options
+       Multiclass options
 
         oaa : integer
             Use one-against-all multiclass learning with labels
+        oaa_subsample : int
+            subsample this number of negative examples when learning
         ect : integer
             Use error correcting tournament multiclass learning
         csoaa : integer
             Use cost sensitive one-against-all multiclass learning
         wap : integer
             Use weighted all pairs multiclass learning
-
-        Contextual Bandit Optimization
-
-        cb : integer
-            Use contextual bandit learning with specified costs
-        cbify : integer
-            Convert multiclass on <k> classes into a contextual bandit problem
+        probabilities : float
+            predict probabilities of all classes
+        scores : bool
+            output raw scores per class
 
         Neural Network options
 
         nn : integer
             Use a sigmoidal feed-forward neural network with N hidden units
-        dropout : bool
-            Train or test sigmoidal feed-forward network using dropout
         inpass : bool
             Train or test sigmoidal feed-forward network with input pass-through
         multitask : bool
             Share hidden layer across all reduced tasks
+        dropout : bool
+            Train or test sigmoidal feed-forward network using dropout
         meanfield : bool
             Train or test sigmoidal feed-forward network using mean field
 
-        Update Rule options
+        LBFGS and Conjugate Gradient options
+
+        conjugate_gradient : bool
+            use conjugate gradient based optimization
+        bgfs : bool
+            use bfgs updates
+        hessian_on : bool
+            use second derivative in line search
+        mem : int
+            memory in bfgs
+        termination : float
+            termination threshold
+
+        Latent Dirichlet Allocation options
+
+        lda : int
+            Run lda with <int> topics
+        lda_alpha : float
+            Prior on sparsity of per-document topic weights
+        lda_rho : float
+            Prior on sparsity of topic distributions
+        lda_D : int
+            Number of documents
+        lda_epsilon : float
+            Loop convergence threshold
+        minibatch : int
+            Minibatch size for LDA
+
+        Stochastic Variance Reduced Gradient options
+
+        svrg : bool
+            Streaming Stochastic Variance Reduced Gradient
+        stage_size : int
+            Number of passes per SVRG stage
+
+        Follow the Regularized Leader options
+
+        ftrl : bool
+            Run Follow the Proximal Regularized Leader
+        coin : bool
+            Coin betting optimizer
+        pistol : bool
+            PiSTOL: Parameter free STOchastic Learning
+        ftrl_alpha : float
+            Alpha parameter for FTRL optimization
+        ftrl_beta : float
+            Beta parameters for FTRL optimization
+
+        Kernel SVM options
+
+        ksvm : bool
+            kernel svm
+        kernel : str
+            type of kernel (rbf or linear (default))
+        bandwidth : int
+            bandwidth of rbf kernel
+        degree : int
+            degree of poly kernel
+
+        Gradient Descent options
 
         sgd : bool
-            Use sgd for the update rule
+            use regular stochastic gradient descent update
+        adaptive : bool
+            use adaptive, individual learning rates
+        adax : bool
+            use adaptive learning rates with x^2 instead of g^2x^2
+        invariant : bool
+            use save/importance aware updates
+        normalized : bool
+            use per feature normalized updates
+
+        Scorer options
+
+        link : str
+            Specify the link function: identity, logistic, glf1 or poisson
+
+        Stagewise polynomial options:
+
+        stage_poly : bool
+            use stagewise polynomial feature learning
+        sched_exponent : int
+            exponent controlling quantity of included features
+        batch_sz : int
+            multiplier on batch size before including more features
+        batch_sz_no_doubling : bool
+            batch_sz does not double
+
+        Low Rank Quadratics options:
+
+        lrq : bool
+                use low rank quadratic features
+        lrqdropout : bool
+                use dropout training for low rank quadratic features
+        lrqfa : bool
+                use low rank quadratic features with field aware weights
+
+        Input options
+
+        data,d : str
+            path to data file for fitting external to sklearn
+        cache,c : str
+            use a cache. default is <data>.cache
+        cache_file : str
+            path to cache file to use
+        json : bool
+            enable JSON parsing
+        kill_cache, k : bool
+            do not reuse existing cache file, create a new one always
 
         Returns
         -------
@@ -324,43 +478,14 @@ class VW(BaseEstimator):
 
         """
 
-        # clear estimator attributes
-        for attr in ['fit_', 'passes_', 'convert_to_vw_', 'vw_']:
-            if hasattr(self, attr):
-                delattr(self, attr)
-        del attr
+        for k, v in dict(locals()).items():
+            if k != 'self' and k != '__class__':
+                setattr(self, k, v)
 
-        # reset params and quiet models by default
-        self.params = {'quiet':  True}
-        self.convert_labels = convert_labels
-
-        # assign all valid args to params dict
-        args = dict(locals())
-        for k, v in args.items():
-            if k != 'self' and k != '__class__' and v is not None:
-                self.params[k] = v
-
-        ext_file_args = ['data', 'd']
-        if any(x in self.params for x in ext_file_args):
-            # fitting will be handled by vw directly
-            self.fit_ = True
-            self.passes_ = 1
-        else:
-            # store passes separately to be used in fit
-            self.passes_ = self.params.pop('passes', 1)
-            if self.params.get('bfgs'):
-                raise RuntimeError(
-                    'An external data file must be used to fit models using the bfgs option'
-                )
-
-        # pull out convert_to_vw from params
-        self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
-
-        self.vw_ = None
         super(VW, self).__init__()
 
     def get_vw(self):
-        """Factory to create a vw instance on demand
+        """Get the vw instance
 
         Returns
         -------
@@ -368,12 +493,9 @@ class VW(BaseEstimator):
         vw : pyvw.vw instance
 
         """
-        if self.vw_ is None:
-            self.vw_ = pyvw.vw(**self.params)
-
         return self.vw_
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X=None, y=None, sample_weight=None):
         """Fit the model according to the given training data
 
         TODO: for first pass create and store example objects.
@@ -398,45 +520,42 @@ class VW(BaseEstimator):
             So pipeline can call transform() after fit
 
         """
-        if self.convert_to_vw_:
-            X = tovw(x=X, y=y, sample_weight=sample_weight, convert_labels=self.convert_labels)
 
-        model = self.get_vw()
+        params = {k: v for k, v in self.get_params().items() if v is not None}
 
-        # add examples to model
-        for n in range(self.passes_):
-            if n >= 1:
-                X_ = shuffle(X)
-            else:
-                X_ = X
-            for idx, x in enumerate(X_):
-                model.learn(x)
-        self.fit_ = True
+        passes = 1
+        use_data_file = params.get('data', False)
+        use_data_file = params.get('d', use_data_file)
+        if not use_data_file:
+            # remove passes from vw params since we're feeding in the data manually
+            passes = params.pop('passes', passes)
+            if params.get('bfgs', False):
+                raise RuntimeError(
+                    'An external data file must be used to fit models using the bfgs option'
+                )
+
+        # remove estimator attributes from vw params
+        params.pop('convert_to_vw', None)
+        params.pop('convert_labels', None)
+        self.vw_ = pyvw.vw(**params)
+
+        if X is not None:
+            if self.convert_to_vw:
+                X = tovw(x=X,
+                         y=y,
+                         sample_weight=sample_weight,
+                         convert_labels=self.convert_labels)
+
+            # add examples to model
+            for n in range(passes):
+                if n >= 1:
+                    examples = shuffle(X)
+                else:
+                    examples = X
+                for idx, example in enumerate(examples):
+                    self.vw_.learn(example)
+
         return self
-
-    def transform(self, X, y=None):
-        """Transform does nothing by default besides closing the model. Transform is required for any estimator
-         in a sklearn pipeline that isn't the final estimator
-
-        Parameters
-        ----------
-
-        X : {array-like, sparse matrix}, shape (n_samples, n_features or 1 if not convert_to_vw) or
-            Training vector, where n_samples in the number of samples and
-            n_features is the number of features.
-            if not using convert_to_vw, X is expected to be a list of vw formatted feature vector strings with labels
-        y : array-like, shape (n_samples,), optional if not convert_to_vw
-            Target vector relative to X.
-
-        Returns
-        -------
-
-        X : {array-like, sparse matrix}
-            To be passed into next estimator in pipeline
-        """
-        if not self.get_vw().finished:
-            self.get_vw().finish()
-        return X
 
     def predict(self, X):
         """Predict with Vowpal Wabbit model
@@ -457,7 +576,7 @@ class VW(BaseEstimator):
         """
 
         # check_is_fitted
-        if not hasattr(self, 'fit_'):
+        if self.vw_ is None:
             msg = ("This %(name)s instance is not fitted yet. Call 'fit' with "
                    "appropriate arguments before using this method.")
             raise NotFittedError(msg % {'name': self.__class__.__name__})
@@ -467,14 +586,16 @@ class VW(BaseEstimator):
         except AttributeError:
             num_samples = len(X)
 
-        if self.convert_to_vw_:
+        if self.convert_to_vw:
             X = tovw(X)
 
         model = self.get_vw()
 
         shape = [num_samples]
-        if 'oaa' in self.params and 'probabilities' in self.params:
-            shape.append(self.params['oaa'])
+        oaa = getattr(self, 'oaa', False)
+        probabilities = getattr(self, 'probabilities', False)
+        if oaa and probabilities:
+            shape.append(oaa)
         y = np.empty(shape)
 
         # predict examples
@@ -483,52 +604,18 @@ class VW(BaseEstimator):
 
         return y
 
-    def __str__(self):
-        if self.params is not None:
-            return str(self.params)
-
-    def __repr__(self):
-        if self.params is not None:
-            repr_items_ = sorted(self.params.items())
-            repr_items_ = str([str(itm[0])+":"+str(itm[1]) for itm in repr_items_])
-            repr_items_ = repr_items_.replace("[","").replace("]", "")
-
-            return "{}({})".format(self.__class__.__name__, repr_items_)
-
-    def __del__(self):
-        if hasattr(self, 'vw_') and self.vw_ is not None:
-            del self.vw_
-
     def get_params(self, deep=True):
-        """This returns the set of vw and estimator parameters currently in use"""
-        out = dict()
-        # add in the vw params
-        out.update(self.params)
-        # add in the estimator params
-        out['passes'] = self.passes_
-        out['convert_to_vw'] = self.convert_to_vw_
-        return out
+        """This returns the set of estimator parameters currently in use"""
+        return {k: v for k, v in vars(self).items() if k != 'vw_'}
 
-    def set_params(self, **params):
+    def set_params(self, **kwargs):
         """This destroys and recreates the Vowpal Wabbit model with updated parameters
-            any parameters not provided will remain as they were initialized to at construction
+            any parameters not provided will remain as they are currently"""
 
-        Parameters
-        ----------
-
-        params : dict
-                 dictionary of model parameter keys and values to update
-        """
-
-        self.params.update(params)
-
-        # manage passes and convert_to_vw params different because they are estimator params, not vw params
-        if 'passes' not in params:
-            self.params['passes'] = self.passes_
-        if 'convert_to_vw' not in params:
-            self.params['convert_to_vw'] = self.convert_to_vw_
-
-        self.__init__(**self.params)
+        params = self.get_params()
+        params.update(kwargs)
+        self.__init__(**params)
+        self.vw_ = None
         return self
 
     def get_coefs(self):
@@ -572,17 +659,40 @@ class VW(BaseEstimator):
     def save(self, filename):
         """Save model to file"""
         model = self.get_vw()
-        model.save(filename)
+        model.save(filename=filename)
 
     def load(self, filename):
         """Load model from file"""
-        params = {}
-        params.update(self.params)
-        params["initial_regressor"] = filename
-        self.set_params(**params)
+        self.set_params(initial_regressor=filename)
+        self.fit()
+        setattr(self, 'initial_regressor', None)
 
-        # Assume that the model is already fitted when loaded from file.
-        self.fit_ = True
+    def __del__(self):
+        self.vw_ = None
+
+    def __repr__(self, **kwargs):
+        vw_vars = sorted((k,v) for k, v in vars(self).items() if v is not None)
+        items = ["{i[0]}: {i[1]}".format(i=i) for i in vw_vars]
+        return "{}({})".format(self.__class__.__name__, ', '.join(items))
+
+    def __getstate__(self):
+        """Support pickling"""
+        f = NamedTemporaryFile()
+        self.save(filename=f.name)
+        state = self.get_params()
+        with open(f.name, 'rb') as tmp:
+            state['vw_'] = tmp.read()
+        f.close()
+        return state
+
+    def __setstate__(self, state):
+        """Support unpickling"""
+        f = NamedTemporaryFile(delete=False)
+        f.write(state.pop('vw_'))
+        f.close()
+        self.set_params(**state)
+        self.load(filename=f.name)
+        os.unlink(f.name)
 
 
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
@@ -750,8 +860,6 @@ class VWMultiClassifier(ClassifierMixin, VW):
         return VW.predict(self, X=X)
 
 
-
-
 def tovw(x, y=None, sample_weight=None, convert_labels=False):
     """Convert array or sparse matrix to Vowpal Wabbit format
 
@@ -789,21 +897,14 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
     use_truth = y is not None
     use_weight = sample_weight is not None
 
-    # convert to numpy array if needed
-    if not isinstance(x, (np.ndarray, csr_matrix)):
-        x = np.array(x)
-    if not isinstance(y, np.ndarray):
-        y = np.array(y)
+    if use_truth:
+        x, y = check_X_y(x, y, accept_sparse=True)
+    else:
+        x = check_array(x, accept_sparse=True)
 
-    # convert labels of the form [0,1] to [-,1]
+    # convert labels of the form [0,1] to [-1,1]
     if convert_labels:
         y = np.where(y < 1, -1, y)
-
-    # make sure this is a 2d array
-    if x.ndim == 1:
-        x = x.reshape(1, -1)
-    if y.ndim == 0:
-        y = y.reshape(1)
 
     rows, cols = x.shape
 
