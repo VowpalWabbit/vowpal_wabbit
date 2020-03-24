@@ -146,6 +146,7 @@ class io_buf
 #else
     lseek(f, 0, SEEK_SET);
 #endif
+    reset_buffer();
   }
 
   io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
