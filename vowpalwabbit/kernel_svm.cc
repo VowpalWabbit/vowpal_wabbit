@@ -629,7 +629,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   }
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
-  sizes[all.all_reduce->node] = b->available_to_read();
+  sizes[all.all_reduce->node] = b->unflushed_bytes_count();
   // params.all->opts_n_args.trace_message<<"Sizes = "<<sizes[all.node]<<" ";
   all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
@@ -646,7 +646,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   {
     queries = calloc_or_throw<char>(total_sum);
     size_t bytes_copied = b->copy_to(queries + prev_sum, total_sum - prev_sum);
-    if(bytes_copied < b->available_to_read())
+    if(bytes_copied < b->unflushed_bytes_count())
       THROW("kernel_svm: Failed to alloc enough space.");
 
     all_reduce<char, copy_char>(all, queries, total_sum);
@@ -673,7 +673,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
       else
         break;
 
-      num_read += b->available_to_read();
+      num_read += b->unflushed_bytes_count();
       if (num_read == prev_sum)
         params.local_begin = i + 1;
       if (num_read == prev_sum + sizes[all.all_reduce->node])

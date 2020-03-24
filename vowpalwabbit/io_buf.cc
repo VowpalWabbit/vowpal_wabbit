@@ -168,7 +168,7 @@ void io_buf::flip_from_write_to_read()
 
 size_t io_buf::copy_to(void *dst, size_t max_size)
 {
-  size_t to_copy = std::min(available_to_read(), max_size);
+  size_t to_copy = std::min(unflushed_bytes_count(), max_size);
   memcpy(dst, space.begin(), to_copy);
   return to_copy;
 }

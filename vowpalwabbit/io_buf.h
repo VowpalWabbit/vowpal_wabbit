@@ -175,7 +175,7 @@ class io_buf
   {  // if the loaded values have reached the allocated space
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
-      size_t head_loc = available_to_read();
+      size_t head_loc = unflushed_bytes_count();
       space.resize(2 * (space.end_array - space.begin()));
       head = space.begin() + head_loc;
     }
@@ -198,7 +198,7 @@ class io_buf
   {
     if (!files.empty())
     {
-      if (write_file(files[0], space.begin(), available_to_read()) != (int)(available_to_read()))
+      if (write_file(files[0], space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
         std::cerr << "error, failed to write example\n";
       head = space.begin();
     }
