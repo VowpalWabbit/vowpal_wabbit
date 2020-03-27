@@ -11,7 +11,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.special import logit
 from sklearn.exceptions import NotFittedError
-from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
+from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.extmath import log_logistic
 from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import dump_svmlight_file
