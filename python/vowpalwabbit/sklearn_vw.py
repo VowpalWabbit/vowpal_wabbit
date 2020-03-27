@@ -11,7 +11,8 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
-from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
+from sklearn.utils.extmath import log_logistic
+from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import check_array, check_X_y, shuffle
 from vowpalwabbit import pyvw
@@ -479,7 +480,7 @@ class VW(BaseEstimator):
         """
 
         for k, v in dict(locals()).items():
-            if k != 'self' and k != '__class__':
+            if k != 'self' and not k.endswith('_'):
                 setattr(self, k, v)
 
         super(VW, self).__init__()
@@ -535,8 +536,8 @@ class VW(BaseEstimator):
                 )
 
         # remove estimator attributes from vw params
-        params.pop('convert_to_vw', None)
-        params.pop('convert_labels', None)
+        for key in self._get_est_params():
+            params.pop(key, None)
         self.vw_ = pyvw.vw(**params)
 
         if X is not None:
@@ -581,13 +582,17 @@ class VW(BaseEstimator):
                    "appropriate arguments before using this method.")
             raise NotFittedError(msg % {'name': self.__class__.__name__})
 
-        try:
-            num_samples = X.shape[0] if X.ndim > 1 else len(X)
-        except AttributeError:
-            num_samples = len(X)
-
         if self.convert_to_vw:
             X = tovw(X)
+
+        if hasattr(X, '__len__'):
+            num_samples = len(X)
+        elif hasattr(X, '__shape__'):
+            num_samples = X.shape[0]
+        elif hasattr(X, '__array__'):
+            num_samples = np.asarray(X).shape[0]
+        else:
+            raise Exception('Invalid type for input X')
 
         model = self.get_vw()
 
@@ -605,7 +610,7 @@ class VW(BaseEstimator):
         return y
 
     def get_params(self, deep=True):
-        """This returns the set of estimator parameters currently in use"""
+        """This returns the full set of vw and estimator parameters currently in use"""
         return {k: v for k, v in vars(self).items() if k != 'vw_'}
 
     def set_params(self, **kwargs):
@@ -614,7 +619,14 @@ class VW(BaseEstimator):
 
         params = self.get_params()
         params.update(kwargs)
+        private_params = dict()
+        for k, v in params.copy().items():
+            if k.endswith('_'):
+                private_params[k] = v
+                params.pop(k)
         self.__init__(**params)
+        for k, v in private_params.items():
+            setattr(self, k, v)
         self.vw_ = None
         return self
 
@@ -667,6 +679,10 @@ class VW(BaseEstimator):
         self.fit()
         setattr(self, 'initial_regressor', None)
 
+    def _get_est_params(self):
+        """This returns only the set of estimator parameters currently in use"""
+        return dict(convert_labels=self.convert_labels, convert_to_vw=self.convert_to_vw)
+
     def __del__(self):
         self.vw_ = None
 
@@ -695,80 +711,49 @@ class VW(BaseEstimator):
         os.unlink(f.name)
 
 
-class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
-    """Mixin for linear classifiers.  A threshold is used to specify the positive
-    class cutoff
+class LinearClassifierMixin(LogisticRegression):
+    def __init__(self):
+        # overwrite init here so base class inits aren't used
+        pass
 
-    Handles prediction for sparse and dense X.
+
+class VWClassifier(VW, LinearClassifierMixin):
+    """Vowpal Wabbit Classifier model for binary classification
+    Use VWMultiClassifier for multiclass classification
+    Note - We are assuming the VW.predict returns logits, applying link=logistic will break this assumption
+
+    Attributes
+    ----------
+
+    coef_ : scipy.sparse_matrix
+        Empty sparse matrix used the check if model has been fit
+    classes_ : np.array
+        Binary class labels
     """
 
+    coef_ = None
     classes_ = np.array([-1., 1.])
 
-    def __init__(self, **params):
+    def __init__(self, loss_function='logistic', **kwargs):
+        kwargs['loss_function'] = loss_function
+        super(VWClassifier, self).__init__(**kwargs)
 
-        # assume 0 as positive score threshold
-        self.pos_threshold = params.pop('pos_threshold', 0.0)
-
-        super(ThresholdingLinearClassifierMixin, self).__init__(**params)
-
-    def predict(self, X):
-        """Predict class labels for samples in X.
-
-        Parameters
-        ----------
-
-        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
-            Samples.
-
-        Returns
-        -------
-
-        C : array, shape = [n_samples]
-            Predicted class label per sample.
-        """
-        scores = self.decision_function(X)
-        if len(scores.shape) == 1:
-            indices = (scores >= self.pos_threshold).astype(np.int)
-        else:
-            indices = scores.argmax(axis=1)
-        return self.classes_[indices]
-
-
-class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
-    """Vowpal Wabbit Classifier model
-    Use VWMultiClassifier for multiclass classification
-    note - don't try to apply link='logistic' on top of the existing functionality
-    """
-    def __init__(self, **params):
-
-        # assume logistic loss functions
-        if 'loss_function' not in params:
-            params['loss_function'] = 'logistic'
-
-        super(VWClassifier, self).__init__(**params)
-
-    def predict(self, X):
-        """Predict class labels for samples in X.
-
-        Parameters
-        ----------
-
-        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
-            Samples.
-
-        Returns
-        -------
-
-        C : array, shape = [n_samples]
-            Predicted class label per sample.
-        """
-
-        return ThresholdingLinearClassifierMixin.predict(self, X=X)
+    def fit(self, X=None, y=None, sample_weight=None):
+        # this attribute is used to check fitted in sparsify()
+        if self.coef_ is None:
+            self.coef_ = csr_matrix([])
+            y = check_array(y, ensure_2d=False, dtype=None, accept_sparse=True)
+            self.classes_, y = np.unique(y, return_inverse=True)
+            # TODO: raise error once check_sparsify_coefficients respects binary_only flag
+            #if len(self.classes_) != 2:
+            #    raise Exception('VWClassifier can only be used for binary classification')
+        return VW.fit(self, X=X, y=y, sample_weight=sample_weight)
 
     def decision_function(self, X):
-        """Predict confidence scores for samples.
-        The confidence score for a sample is the signed distance of that
-        sample to the hyperplane.
+        return VW.predict(self, X=X)
+
+    def predict_proba(self, X):
+        """Predict probabilities for samples
 
         Parameters
         ----------
@@ -779,28 +764,13 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
         Returns
         -------
 
-        out : array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
-            Confidence scores per (sample, class) combination. In the binary
-            case, confidence score for self.classes_[1] where >0 means this
-            class would be predicted.
+        T : array-like of shape (n_samples, n_classes)
+            Returns the probability of the sample for each class in the model,
+            where classes are ordered as they are in ``self.classes_``.
         """
 
-        return VW.predict(self, X=X)
-
-
-class VWRegressor(VW, RegressorMixin):
-    """Vowpal Wabbit Regressor model """
-
-    pass
-
-
-class VWMultiClassifier(ClassifierMixin, VW):
-    """Vowpal Wabbit MultiClassifier model """
-
-    def __init__(self, **params):
-
-        params['probabilities'] = True
-        super(VWMultiClassifier, self).__init__(**params)
+        probs = np.exp(log_logistic(self.decision_function(X)))
+        return np.column_stack((1 - probs, probs))
 
     def predict(self, X):
         """Predict class labels for samples in X.
@@ -821,14 +791,36 @@ class VWMultiClassifier(ClassifierMixin, VW):
         >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
         >>> y = np.array([1, 1, 2, 2, 3, 3])
         >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
-        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model = VWMultiClassifier(oaa=2, loss_function='logistic')
         >>> model.fit(X, y)
         >>> model.predict(X)
         """
 
         scores = self.predict_proba(X)
-        indices = scores.argmax(axis=1)+1
-        return indices
+        indices = scores.argmax(axis=1)
+        return self.classes_[indices]
+
+    def _get_est_params(self):
+        """This returns only the set of estimator parameters currently in use"""
+        params = VW._get_est_params(self)
+        params.update(dict(classes_=self.classes_, coef_=self.coef_))
+        return params
+
+    def _more_tags(self):
+        return dict(binary_only=True, no_validation=True)
+
+
+class VWRegressor(VW, RegressorMixin):
+    """Vowpal Wabbit Regressor model """
+    pass
+
+
+class VWMultiClassifier(VWClassifier):
+    """Vowpal Wabbit MultiClassifier model """
+
+    def __init__(self, **kwargs):
+        kwargs['probabilities'] = True
+        super(VWMultiClassifier, self).__init__(**kwargs)
 
     def predict_proba(self, X):
         """Predict probabilities for each class.
@@ -856,7 +848,6 @@ class VWMultiClassifier(ClassifierMixin, VW):
         >>> model.fit(X, y)
         >>> model.predict_proba(X)
         """
-
         return VW.predict(self, X=X)
 
 
@@ -902,9 +893,14 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
     else:
         x = check_array(x, accept_sparse=True)
 
+    if use_weight:
+        sample_weight = check_array(sample_weight, accept_sparse=False, ensure_2d=False, dtype=np.int, order="C")
+    else:
+        sample_weight = np.ones(x.shape[0], dtype=np.int)
+
     # convert labels of the form [0,1] to [-1,1]
     if convert_labels:
-        y = np.where(y < 1, -1, y)
+        y = np.where(y < 1, -1, 1)
 
     rows, cols = x.shape
 
@@ -923,7 +919,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
     out = []
     for idx, row in enumerate(rows):
         truth = y[idx] if use_truth else 1
-        weight = sample_weight[idx] if use_weight else 1
+        weight = sample_weight[idx]
         features = row.split('0 ', 1)[1]
         # only using a single namespace and no tags
         out.append(('{y} {w} |{ns} {x}'.format(y=truth,
