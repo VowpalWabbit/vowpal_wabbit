@@ -9,6 +9,7 @@ from tempfile import NamedTemporaryFile
 
 import numpy as np
 from scipy.sparse import csr_matrix
+from scipy.special import logit
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.utils.extmath import log_logistic
@@ -116,7 +117,6 @@ class VW(BaseEstimator):
                  csoaa=None,
                  wap=None,
                  probabilities=None,
-                 score=None,
                  nn=None,
                  inpass=None,
                  multitask=None,
@@ -346,8 +346,6 @@ class VW(BaseEstimator):
             Use weighted all pairs multiclass learning
         probabilities : float
             predict probabilities of all classes
-        scores : bool
-            output raw scores per class
 
         Neural Network options
 
@@ -538,6 +536,10 @@ class VW(BaseEstimator):
         # remove estimator attributes from vw params
         for key in self._get_est_params():
             params.pop(key, None)
+
+        # add vw attributes
+        params.update(self._get_vw_params())
+
         self.vw_ = pyvw.vw(**params)
 
         if X is not None:
@@ -597,10 +599,16 @@ class VW(BaseEstimator):
         model = self.get_vw()
 
         shape = [num_samples]
-        oaa = getattr(self, 'oaa', False)
-        probabilities = getattr(self, 'probabilities', False)
-        if oaa and probabilities:
-            shape.append(oaa)
+        classes = getattr(self, 'classes_', None)
+        if classes is None:
+            for estimator in ['csoaa', 'ect', 'oaa', 'wap']:
+                n_classes = getattr(self, estimator)
+                if n_classes is not None:
+                    break
+        else:
+            n_classes = len(classes)
+        if n_classes is not None and getattr(self, 'probabilities', False):
+            shape.append(n_classes)
         y = np.empty(shape)
 
         # predict examples
@@ -683,6 +691,10 @@ class VW(BaseEstimator):
         """This returns only the set of estimator parameters currently in use"""
         return dict(convert_labels=self.convert_labels, convert_to_vw=self.convert_to_vw)
 
+    def _get_vw_params(self):
+        """This returns specific vw parameters to inject at fit"""
+        return dict()
+
     def __del__(self):
         self.vw_ = None
 
@@ -739,18 +751,85 @@ class VWClassifier(VW, LinearClassifierMixin):
         super(VWClassifier, self).__init__(**kwargs)
 
     def fit(self, X=None, y=None, sample_weight=None):
+        """
+        Fit the model according to the given training data.
+
+        Parameters
+        ----------
+
+        X : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training vector, where n_samples is the number of samples and
+            n_features is the number of features.
+        y : array-like of shape (n_samples,)
+            Target vector relative to X.
+        sample_weight : array-like of shape (n_samples,) default=None
+            Array of weights that are assigned to individual samples.
+            If not provided, then each sample is given unit weight.
+
+        Returns
+        -------
+
+        self
+            Fitted estimator.
+        """
+
         # this attribute is used to check fitted in sparsify()
         if self.coef_ is None:
             self.coef_ = csr_matrix([])
-            y = check_array(y, ensure_2d=False, dtype=None, accept_sparse=True)
-            self.classes_, y = np.unique(y, return_inverse=True)
+            if y is not None:
+                y = check_array(y, ensure_2d=False, dtype=None, accept_sparse=True)
+                self.classes_, y = np.unique(y, return_inverse=True)
             # TODO: raise error once check_sparsify_coefficients respects binary_only flag
-            #if len(self.classes_) != 2:
+            #if self._more_tags.get('binary_only') and len(self.classes_) != 2:
             #    raise Exception('VWClassifier can only be used for binary classification')
         return VW.fit(self, X=X, y=y, sample_weight=sample_weight)
 
     def decision_function(self, X):
+        """
+        Predict confidence scores for samples.
+        The confidence score for a sample is the signed distance of that
+        sample to the hyperplane.
+
+        Parameters
+        ----------
+
+        X : array_like or sparse matrix, shape (n_samples, n_features)
+            Samples.
+
+        Returns
+        -------
+
+        array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes)
+            Confidence scores per (sample, class) combination. In the binary
+            case, confidence score for self.classes_[1] where >0 means this
+            class would be predicted.
+        """
+
         return VW.predict(self, X=X)
+
+    def predict(self, X):
+        """
+        Predict class labels for samples in X.
+
+        Parameters
+        ----------
+
+        X : array_like or sparse matrix, shape (n_samples, n_features)
+            Samples.
+
+        Returns
+        -------
+
+        C : array, shape [n_samples]
+            Predicted class label per sample.
+        """
+
+        scores = self.decision_function(X)
+        if len(scores.shape) == 1:
+            indices = (scores > 0).astype(np.int)
+        else:
+            indices = scores.argmax(axis=1)
+        return self.classes_[indices]
 
     def predict_proba(self, X):
         """Predict probabilities for samples
@@ -772,34 +851,6 @@ class VWClassifier(VW, LinearClassifierMixin):
         probs = np.exp(log_logistic(self.decision_function(X)))
         return np.column_stack((1 - probs, probs))
 
-    def predict(self, X):
-        """Predict class labels for samples in X.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
-            Samples.
-
-        Returns
-        -------
-        C : array, shape = [n_samples]
-            Predicted class label per sample.
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
-        >>> y = np.array([1, 1, 2, 2, 3, 3])
-        >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
-        >>> model = VWMultiClassifier(oaa=2, loss_function='logistic')
-        >>> model.fit(X, y)
-        >>> model.predict(X)
-        """
-
-        scores = self.predict_proba(X)
-        indices = scores.argmax(axis=1)
-        return self.classes_[indices]
-
     def _get_est_params(self):
         """This returns only the set of estimator parameters currently in use"""
         params = VW._get_est_params(self)
@@ -807,24 +858,108 @@ class VWClassifier(VW, LinearClassifierMixin):
         return params
 
     def _more_tags(self):
-        return dict(binary_only=True, no_validation=True)
+        # disable validation to allow for features to differ between fit and predict
+        return dict(binary_only=True, requires_fit=True, no_validation=True)
 
 
 class VWRegressor(VW, RegressorMixin):
     """Vowpal Wabbit Regressor model """
-    pass
+
+    def _more_tags(self):
+        return dict(poor_score=True)
 
 
 class VWMultiClassifier(VWClassifier):
-    """Vowpal Wabbit MultiClassifier model """
+    """Vowpal Wabbit MultiClassifier model
+    Note - We are assuming the VW.predict returns probabilities, setting probabilities=False will break this assumption
 
-    def __init__(self, **kwargs):
-        kwargs['probabilities'] = True
+    Attributes
+    ----------
+
+    classes_ : np.array
+        class labels
+    estimator_: dict
+        type of estimator to use [csoaa, ect, oaa, wap] and number of classes
+    """
+
+    classes_ = None
+    estimator_ = None
+
+    def __init__(self, probabilities=True, **kwargs):
+        kwargs['probabilities'] = probabilities
         super(VWMultiClassifier, self).__init__(**kwargs)
+
+    def fit(self, X=None, y=None, sample_weight=None):
+        """
+        Fit the model according to the given training data.
+
+        Parameters
+        ----------
+
+        X : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training vector, where n_samples is the number of samples and
+            n_features is the number of features.
+        y : array-like of shape (n_samples,)
+            Target vector relative to X.
+        sample_weight : array-like of shape (n_samples,) default=None
+            Array of weights that are assigned to individual samples.
+            If not provided, then each sample is given unit weight.
+
+        Returns
+        -------
+
+        self
+            Fitted estimator.
+        """
+
+        # this attribute is used to check fitted in sparsify()
+        if self.coef_ is None:
+            self.coef_ = csr_matrix([])
+
+            if y is not None:
+                y = check_array(y, ensure_2d=False, dtype=None, accept_sparse=True)
+                self.classes_, y = np.unique(y, return_inverse=True)
+
+            # must set multiclass estimator
+            for estimator in ['csoaa', 'ect', 'oaa', 'wap']:
+                n_classes = getattr(self, estimator)
+                self.estimator_ = {estimator: n_classes}
+                if n_classes is not None:
+                    if self.classes_ is None:
+                        self.classes_ = range(1, n_classes + 1)
+                    break
+            else:
+                # use oaa by default and determine classes from y
+                self.estimator_ = dict(oaa=len(self.classes_))
+
+        return VW.fit(self, X=X, y=y, sample_weight=sample_weight)
+
+    def decision_function(self, X):
+        """
+        Predict confidence scores for samples.
+        The confidence score for a sample is the signed distance of that
+        sample to the hyperplane.
+
+        Parameters
+        ----------
+
+        X : array_like or sparse matrix, shape (n_samples, n_features)
+            Samples.
+
+        Returns
+        -------
+
+        array, shape=(n_samples, n_classes)
+            Confidence scores per (sample, class) combination.
+        """
+
+        logits = logit(VW.predict(self, X=X))
+        if logits.shape[1] == 2:
+            logits = logits[:, 1]
+        return logits
 
     def predict_proba(self, X):
         """Predict probabilities for each class.
-
 
         Parameters
         ----------
@@ -844,11 +979,24 @@ class VWMultiClassifier(VWClassifier):
         >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
         >>> y = np.array([1, 1, 2, 2, 3, 3])
         >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
-        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
+        >>> model = VWMultiClassifier(oaa=2, loss_function='logistic')
         >>> model.fit(X, y)
         >>> model.predict_proba(X)
         """
         return VW.predict(self, X=X)
+
+    def _get_vw_params(self):
+        """This returns specific vw parameters to inject at fit"""
+        return self.estimator_
+
+    def _get_est_params(self):
+        """This returns only the set of estimator parameters currently in use"""
+        params = VWClassifier._get_est_params(self)
+        params.update(dict(estimator_=self.estimator_))
+        return params
+
+    def _more_tags(self):
+        return dict(binary_only=False, poor_score=True)
 
 
 def tovw(x, y=None, sample_weight=None, convert_labels=False):

@@ -9,7 +9,6 @@ from scipy.sparse import csr_matrix
 from sklearn import datasets
 from sklearn.model_selection import KFold
 from sklearn.utils.estimator_checks import check_estimator
-from sklearn.exceptions import NotFittedError
 from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw, VWMultiClassifier
 
 
@@ -39,13 +38,22 @@ def test_tovw():
     assert tovw(x=csr_matrix(x), y=y, sample_weight=w, convert_labels=True) == expected
 
 
-class TestVW:
+class BaseVWTest:
+    estimator = None
+
     def test_check_estimator(self):
         # run VW through the sklearn estimator validation check
-        check_estimator(VW)
+        # must have sklearn version >= 0.22 due to https://github.com/scikit-learn/scikit-learn/issues/6981
+        check_estimator(self.estimator)
 
-    def test_init(self):
-        assert isinstance(VW(), VW)
+    def test_repr(self):
+        model = self.estimator()
+        expected = self.estimator.__name__ + "(convert_labels: True, convert_to_vw: True, passes: 1, quiet: True)"
+        assert expected == model.__repr__()
+
+
+class TestVW(BaseVWTest):
+    estimator = VW
 
     def test_fit(self, data):
         model = VW(loss_function='logistic')
@@ -82,11 +90,6 @@ class TestVW:
         model.fit(data.x, data.y)
         assert not np.allclose(weights.data, model.get_coefs().data)
 
-    def test_predict_not_fit(self, data):
-        model = VW(loss_function='logistic')
-        with pytest.raises(NotFittedError):
-            model.predict(data.x[0])
-
     def test_predict(self, data):
         model = VW(loss_function='logistic')
         model.fit(data.x, data.y)
@@ -105,6 +108,7 @@ class TestVW:
 
         model.set_params(l=0.1)
         assert getattr(model, 'l') == 0.1
+        assert getattr(model, 'vw_') is None
 
         # confirm model params reset with new construction
         model = VW()
@@ -183,6 +187,34 @@ class TestVW:
         assert vw.predict(['| a b c']) > 0
         assert vw.predict(['| d e f']) < 0
 
+    def test_del(self, data):
+        model = VW()
+        model.fit(data.x, data.y)
+        del model
+
+
+class TestVWClassifier(BaseVWTest):
+    estimator = VWClassifier
+
+    def test_decision_function(self, data):
+        model = VWClassifier()
+        model.fit(data.x, data.y)
+        actual = model.decision_function(data.x)
+        assert actual.shape[0] == 100
+        assert np.isclose(actual[0], 0.4069, atol=1e-4)
+
+    def test_predict_proba(self, data):
+        model = VWClassifier()
+        model.fit(data.x, data.y)
+        actual = model.predict_proba(data.x)
+        assert actual.shape[0] == 100
+        assert np.allclose(actual[0], [0.3997, 0.6003], atol=1e-4)
+
+    def test_repr(self):
+        model = VWClassifier()
+        expected = "VWClassifier(convert_labels: True, convert_to_vw: True, loss_function: logistic, passes: 1, quiet: True)"
+        assert expected == model.__repr__()
+
     def test_shuffle_list(self):
         # dummy data in vw format
         X = ['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat']
@@ -209,49 +241,9 @@ class TestVW:
             except KeyError:
                 pytest.fail("Failed the fit over sub-sampled DataFrame")
 
-    def test_del(self):
-        model = VW()
-        del model
 
-    def test_repr(self):
-        model = VW()
-        expected = "VW(convert_labels: True, convert_to_vw: True, passes: 1, quiet: True)"
-        assert expected == model.__repr__()
-
-
-class TestVWClassifier:
-
-    def test_check_estimator(self):
-        # must have sklearn version >= 0.22 due to https://github.com/scikit-learn/scikit-learn/issues/6981
-        check_estimator(VWClassifier)
-
-    def test_init(self):
-        assert isinstance(VWClassifier(), VWClassifier)
-
-    def test_decision_function(self, data):
-        model = VWClassifier()
-        model.fit(data.x, data.y)
-        actual = model.decision_function(data.x)
-        assert actual.shape[0] == 100
-        assert np.isclose(actual[0], 0.4069, atol=1e-4)
-
-    def test_predict_proba(self, data):
-        model = VWClassifier()
-        model.fit(data.x, data.y)
-        actual = model.predict_proba(data.x)
-        assert actual.shape[0] == 100
-        assert np.allclose(actual[0], [0.3997, 0.6003], atol=1e-4)
-
-    def test_repr(self):
-        model = VWClassifier()
-        expected = "VWClassifier(convert_labels: True, convert_to_vw: True, loss_function: logistic, passes: 1, quiet: True)"
-        assert expected == model.__repr__()
-
-
-class TestVWRegressor:
-
-    def test_init(self):
-        assert isinstance(VWRegressor(), VWRegressor)
+class TestVWRegressor(BaseVWTest):
+    estimator = VWRegressor
 
     def test_predict(self, data):
         raw_model = VW()
@@ -264,27 +256,27 @@ class TestVWRegressor:
         # ensure model can make multiple calls to predict
         assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
 
-    def test_repr(self):
-        model = VWRegressor()
-        expected = "VWRegressor(convert_labels: True, convert_to_vw: True, passes: 1, quiet: True)"
-        assert expected == model.__repr__()
 
+class TestVWMultiClassifier(BaseVWTest):
 
-class TestVWMultiClassifier:
-
-    def test_init(self):
-        assert isinstance(VWMultiClassifier(), VWMultiClassifier)
+    estimator = VWMultiClassifier
 
     def test_predict_proba(self, data):
         model = VWMultiClassifier(oaa=2, loss_function='logistic')
         model.fit(data.x, data.y)
         actual = model.predict_proba(data.x)
-        expected = None
-        assert np.allclose(actual, expected)
+        assert actual.shape == (100, 2)
+        expected = [0.89670777, 0.10329216]
+        assert np.allclose(actual[0], expected)
 
     def test_predict(self, data):
         model = VWMultiClassifier(oaa=2, loss_function='logistic')
         model.fit(data.x, data.y)
         actual = model.predict(data.x)
-        expected = None
-        assert np.allclose(actual, expected)
+        assert actual.shape == (100,)
+        assert all([x in [-1, 1] for x in actual])
+
+    def test_repr(self):
+        model = VWMultiClassifier()
+        expected = "VWMultiClassifier(convert_labels: True, convert_to_vw: True, loss_function: logistic, passes: 1, probabilities: True, quiet: True)"
+        assert expected == model.__repr__()
