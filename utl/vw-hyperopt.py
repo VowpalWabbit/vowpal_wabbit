@@ -33,6 +33,7 @@ def read_arguments():
     parser.add_argument('--searcher', type=str, default='tpe', choices=['tpe', 'rand'])
     parser.add_argument('--additional_cmd', type=str, help="Additional arguments to be passed to vw while tuning hyper params. E.g.: '--keep a --keep b'", default='')
     parser.add_argument('--max_evals', type=int, default=100)
+    parser.add_argument('--quiet', action='store_true', default=False, help=("Don't output diagnostics"))
     parser.add_argument('--train', type=str, required=True, help="training set")
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
     parser.add_argument('--vw_space', type=str, required=True, help="hyperparameter search space (must be 'quoted')")
@@ -51,7 +52,6 @@ class HyperoptSpaceConstructor(object):
     """
     Takes command-line input and transforms it into hyperopt search space
     An example of command-line input:
-
     --algorithms=ftrl,sgd --l2=1e-8..1e-4~LO -l=0.01..10~L --ftrl_beta=0.01..1 --passes=1..10~I -q=SE+SZ+DR,SE~O
     """
 
@@ -150,11 +150,12 @@ class HyperoptSpaceConstructor(object):
         self.space = hp.choice('algorithm', self.space.values())
 
 class HyperOptimizer(object):
-    def __init__(self, train_set, holdout_set, command, max_evals=100,
+    def __init__(self, train_set, holdout_set, quiet, command, max_evals=100,
                  outer_loss_function='logistic',
                  searcher='tpe', is_regression=False, additional_cmd=''):
         self.train_set = train_set
         self.holdout_set = holdout_set
+        self.quiet = quiet
 
         self.train_model = './current.model'
         self.holdout_pred = './holdout.pred'
@@ -220,16 +221,16 @@ class HyperOptimizer(object):
         self.param_suffix += ' %s' % (kwargs['argument'])
 
     def compose_vw_train_command(self):
-        data_part = ('vw -d %s -f %s --holdout_off -c %s'
-                     % (self.train_set, self.train_model, self.additional_cmd))
+        data_part = ('vw %s -d %s -f %s --holdout_off -c %s'
+                     % ('--quiet' if self.quiet else '', self.train_set, self.train_model, self.additional_cmd))
         if self.labels_clf_count > 2: # multiclass, should take probabilities
             data_part += ('--oaa %s --loss_function=logistic --probabilities '
                           % (self.labels_clf_count))
         self.train_command = ' '.join([data_part, self.param_suffix])
 
     def compose_vw_validate_command(self):
-        data_part = 'vw -t -d %s -i %s -p %s --holdout_off -c %s' \
-                    % (self.holdout_set, self.train_model, self.holdout_pred, self.additional_cmd)
+        data_part = 'vw %s -t -d %s -i %s -p %s --holdout_off -c %s' \
+                    % ('--quiet' if self.quiet else '',  self.holdout_set, self.train_model, self.holdout_pred, self.additional_cmd)
         if self.labels_clf_count > 2: # multiclass
             data_part += ' --loss_function=logistic --probabilities'
         self.validate_command = data_part
@@ -383,8 +384,8 @@ class HyperOptimizer(object):
 
 def main():
     args = read_arguments()
-    h = HyperOptimizer(train_set=args.train, holdout_set=args.holdout, command=args.vw_space,
-                       max_evals=args.max_evals,
+    h = HyperOptimizer(train_set=args.train, holdout_set=args.holdout, quiet=args.quiet,
+                       command=args.vw_space, max_evals=args.max_evals,
                        outer_loss_function=args.outer_loss_function,
                        additional_cmd=args.additional_cmd,
                        searcher=args.searcher, is_regression=args.regression)
@@ -396,4 +397,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
