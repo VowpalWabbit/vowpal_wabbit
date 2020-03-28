@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw
+from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw, VWMultiClassifier
 from sklearn import datasets
 from sklearn.model_selection import KFold
 from scipy.sparse import csr_matrix
@@ -262,3 +262,62 @@ def test_save_load(tmp_path):
     after_loading = model_after.predict(X)
 
     assert all([a == b for a, b in zip(before_saving, after_loading)])
+
+
+def test_repr():
+
+    model = VW()
+    expected = "VW('convert_labels:False', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VWClassifier()
+    expected = "VWClassifier('convert_labels:False', "\
+    "'loss_function:logistic', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VWRegressor()
+    expected = "VWRegressor('convert_labels:False', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VW(convert_to_vw=False, oaa=3, loss_function='logistic', probabilities=True)
+    expected = "VW('convert_labels:False', 'loss_function:logistic', "\
+    "'oaa:3', 'probabilities:True', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+
+def test_sgd_param():
+
+    model1 = VWRegressor(sgd=True)
+    model2 = VWClassifier(sgd = True)
+    assert model1.get_params()['sgd'] == True
+    assert model2.get_params()['sgd'] == True
+
+
+class TestVWClassifier:
+
+    def test_init(self):
+        assert isinstance(VWMultiClassifier(), VWMultiClassifier)
+
+    def test_predict_proba(self, data):
+        raw_model = VW(probabilities = True, oaa = 2,  loss_function = 'logistic')
+        raw_model.fit(data.x, data.y)
+
+        model = VWMultiClassifier(oaa = 2, loss_function = 'logistic')
+        model.fit(data.x, data.y)
+
+        assert np.allclose(raw_model.predict(data.x), model.predict_proba(data.x))
+        # ensure model can make multiple calls to predict
+        assert np.allclose(raw_model.predict(data.x), model.predict_proba(data.x))
+
+    def test_predict(self, data):
+        raw_model = VW(oaa = 2,  loss_function = 'logistic')
+        raw_model.fit(data.x, data.y)
+
+        model = VWMultiClassifier(oaa = 2, loss_function = 'logistic')
+        model.fit(data.x, data.y)
+
+        assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
+
+    def test_delete(self):
+        raw_model = VW()
+        del raw_model
