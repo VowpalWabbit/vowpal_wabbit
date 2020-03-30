@@ -6,12 +6,12 @@
 /*! \mainpage
  *
  * For the primary interface see:
- * - \link VW VW Namespace \endlink
+ * - \link VW VW namespace documentation \endlink
  *
  * For other docs see:
  * - [Project website](https://vowpalwabbit.org)
  * - [Wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki)
- * - C++ Build instructions:
+ * - C++ build instructions:
  *     - [Install dependencies](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Dependencies)
  *     - [Build](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building)
  *     - [Install](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Installing)
