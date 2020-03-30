@@ -22,7 +22,7 @@ struct options_serializer_boost_po : options_serializer_i
 
   virtual void add(base_option& option) override;
   virtual std::string str() override;
-  virtual const char* data() override;
+  virtual std::unique_ptr<const char> data() override;
   virtual size_t size() override;
 
  private:
