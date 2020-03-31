@@ -612,7 +612,6 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   bool noconstant;
   bool leave_duplicate_interactions;
   std::string affix;
-  std::string q_colon;
 
   option_group_definition feature_options("Feature options");
   feature_options
@@ -661,8 +660,6 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
                .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
-      // TODO this option is unused - remove?
-      .add(make_option("q:", q_colon).help("DEPRECATED ':' corresponds to a wildcard for all printable characters"))
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
   options.add_and_parse(feature_options);
 
@@ -1329,7 +1326,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
-    
+
     if (ring_size_tmp <= 0)
     {
       THROW("ring_size should be positive");
@@ -1952,4 +1949,3 @@ void finish(vw& all, bool delete_all)
     throw finalize_regressor_exception;
 }
 }  // namespace VW
-
