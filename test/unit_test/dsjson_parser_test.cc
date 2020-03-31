@@ -343,3 +343,86 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_with_nan)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
+{
+  std::string json_text = R"(
+{
+  "_label_cost": 1,
+  "_outcomes": [
+      {
+          "_a": 1,
+          "_p": 0.8
+      },
+      {
+          "_a": 0,
+          "_p": 0.6
+      }
+  ],
+  "c": {
+      "shared_feature": 1.0,
+      "_multi": [
+          {
+              "_slot_id": 0,
+              "feature": 1.0
+          },
+          {
+              "_slot_id": 0,
+              "feature": 1.0
+          },
+          {
+              "_slot_id": 0,
+              "feature": 1.0
+          },
+          {
+              "_slot_id": 1,
+              "feature": 1.0
+          },
+          {
+              "_slot_id": 1,
+              "feature": 1.0
+          }
+      ],
+      "_slots": [
+          {
+              "feature": 1.0
+          },
+          {
+              "feature": 1.0
+          }
+      ]
+  }
+}
+)";
+
+  auto vw = VW::initialize("--slates --dsjson --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto examples = parse_dsjson(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 7);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, slates::example_type::slot);
+
+  const auto& label0 = examples[0]->l.slates;
+  BOOST_CHECK_CLOSE(label0.cost, 1.f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(label0.labeled, true);
+
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.slot_id, 0);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.slot_id, 0);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.slot_id, 0);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.slot_id, 1);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
+
+  const auto& label6 = examples[6]->l.slates;
+  check_collections_with_float_tolerance(label6.probabilities, std::vector<ACTION_SCORE::action_score>{{1,0.8f}}, FLOAT_TOL);
+  const auto& label7 = examples[7]->l.slates;
+  check_collections_with_float_tolerance(label6.probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.6f}}, FLOAT_TOL);
+
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}

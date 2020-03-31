@@ -331,6 +331,26 @@ class LabelObjectState : public BaseState<audit>
         cb_label = {0., 0, 0., 0.};
       }
     }
+    else if (ctx.all->label_type == label_type_t::slates)
+    {
+      auto& ld = ctx.ex->l.slates;
+      if ((actions.size() != 0) && (probs.size() != 0))
+      {
+        if (actions.size() != probs.size())
+        {
+          THROW("Actions and probabilties must be the same length.");
+        }
+        ld.labeled = true;
+
+        for (size_t i = 0; i < this->actions.size(); i++)
+        {
+          ld.probabilities.push_back({actions[i], probs[i]});
+        }
+        actions.clear();
+        probs.clear();
+        cb_label = {0., 0, 0., 0.};
+      }
+    }
     else if (found_cb)
     {
       CB::label* ld = (CB::label*)&ctx.ex->l;
@@ -518,8 +538,13 @@ struct MultiState : BaseState<audit>
       CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
       ld->type = CCB::example_type::shared;
     }
+    else if (ctx.all->label_type == label_type_t::slates)
+    {
+      auto& ld = ctx.ex->l.slates;
+      ld.type = slates::example_type::shared;
+    }
     else
-      THROW("label type is not CB or CCB")
+      THROW("label type is not CB, CCB or slates")
 
     return this;
   }
@@ -532,6 +557,10 @@ struct MultiState : BaseState<audit>
     if (ctx.all->label_type == label_type_t::ccb)
     {
       ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
+    }
+    else if (ctx.all->label_type == label_type_t::slates)
+    {
+      ctx.ex->l.slates.type = slates::example_type::action;
     }
 
     ctx.examples->push_back(ctx.ex);
@@ -574,7 +603,14 @@ struct SlotsState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
-    ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+    if (ctx.all->label_type == label_type_t::ccb)
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+    }
+    else if (ctx.all->label_type == label_type_t::slates)
+    {
+      ctx.ex->l.slates.type = slates::example_type::slot;
+    }
 
     ctx.examples->push_back(ctx.ex);
 
@@ -815,6 +851,18 @@ class DefaultState : public BaseState<audit>
       if (ctx.key_length == 2 && ctx.key[1] == 'p')
       {
         ctx.array_float_state.output_array = &ctx.label_object_state.probs;
+        ctx.array_float_state.return_state = this;
+        return &ctx.array_float_state;
+      }
+
+      else if (length == 8 && !strncmp(str, "_slot_id", 8))
+      {
+        if (ctx.all->label_type != label_type_t::slates)
+        {
+          THROW("Can only use _slot_id with slates examples");
+        }
+
+        ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
@@ -1070,6 +1118,22 @@ class FloatToFloatState : public BaseState<audit>
 };
 
 template <bool audit>
+class UIntToUIntState : public BaseState<audit>
+{
+ public:
+  UIntToUIntState() : BaseState<audit>("UIntToUIntState") {}
+
+  uint32_t* output_uint;
+  BaseState<audit>* return_state;
+
+  BaseState<audit>* Uint(Context<audit>& /*ctx*/, unsigned i) override
+  {
+    *output_uint = i;
+    return return_state;
+  }
+};
+
+template <bool audit>
 class BoolToBoolState : public BaseState<audit>
 {
  public:
@@ -1096,7 +1160,7 @@ struct DecisionServiceInteraction
 };
 
 template <bool audit>
-class CCBOutcomeList : public BaseState<audit>
+class SlotOutcomeList : public BaseState<audit>
 {
   int slot_object_index = 0;
 
@@ -1109,7 +1173,7 @@ class CCBOutcomeList : public BaseState<audit>
  public:
   DecisionServiceInteraction* interactions;
 
-  CCBOutcomeList() : BaseState<audit>("CCBOutcomeList") {}
+  SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
@@ -1118,7 +1182,11 @@ class CCBOutcomeList : public BaseState<audit>
     // Find start index of slot objects by iterating until we find the first slot example.
     for (auto ex : *ctx.examples)
     {
-      if (ex->l.conditional_contextual_bandit.type != CCB::example_type::slot)
+      if (
+        (ctx.all->label_type == label_type_t::ccb
+          && ex->l.conditional_contextual_bandit.type != CCB::example_type::slot)
+        || (ctx.all->label_type == label_type_t::slates
+          && ex->l.slates.type != slates::example_type::slot))
       {
         slot_object_index++;
       }
@@ -1154,12 +1222,22 @@ class CCBOutcomeList : public BaseState<audit>
     // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
     for (auto ex : *ctx.examples)
     {
-      if (ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+      if (ctx.all->label_type == label_type_t::ccb
+          && ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
       {
         if (ex->l.conditional_contextual_bandit.outcome)
         {
           interactions->actions.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].action);
           interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
+        }
+      }
+      else if (ctx.all->label_type == label_type_t::slates
+          && ex->l.slates.type == slates::example_type::slot)
+      {
+        if (ex->l.slates.labeled)
+        {
+          interactions->actions.push_back(ex->l.slates.probabilities[0].action);
+          interactions->probabilities.push_back(ex->l.slates.probabilities[0].score);
         }
       }
     }
@@ -1243,8 +1321,8 @@ class DecisionServiceState : public BaseState<audit>
       }
       else if (length == 9 && !strncmp(str, "_outcomes", 9))
       {
-        ctx.ccb_outcome_list_state.interactions = data;
-        return &ctx.ccb_outcome_list_state;
+        ctx.slot_outcome_list_state.interactions = data;
+        return &ctx.slot_outcome_list_state;
       }
     }
 
@@ -1299,8 +1377,9 @@ struct Context
   ArrayToVectorState<audit, unsigned> array_uint_state;
   StringToStringState<audit> string_state;
   FloatToFloatState<audit> float_state;
+  UIntToUIntState<audit> uint_state;
   BoolToBoolState<audit> bool_state;
-  CCBOutcomeList<audit> ccb_outcome_list_state;
+  SlotOutcomeList<audit> slot_outcome_list_state;
 
   BaseState<audit>* root_state;
 
@@ -1481,6 +1560,10 @@ inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
     {
       e->l.conditional_contextual_bandit.weight = 1 - pdrop;
     }
+  }
+  if (all.label_type == label_type_t::slates)
+  {
+    // TODO
   }
 }
 
