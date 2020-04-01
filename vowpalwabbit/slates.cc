@@ -124,6 +124,7 @@ void slates_data::predict(LEARNER::multi_learner& base, multi_ex& examples)
   learn_or_predict<false>(base, examples);
 }
 
+// TODO this abstraction may not really work as this function now doens't have access to the global cost...
 std::string generate_slates_label_printout(const std::vector<example*>& slots)
 {
   size_t counter = 0;
@@ -132,19 +133,16 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
   for (const auto& slot : slots)
   {
     counter++;
-
-    auto outcome = slot->l.conditional_contextual_bandit.outcome;
-    if (outcome == nullptr)
+    const auto& label = slot->l.slates;
+    if (label.labeled )
     {
       label_str += delim;
-      label_str += "?";
+      label_str += std::to_string(label.probabilities[0].action);
     }
     else
     {
       label_str += delim;
-      label_str += std::to_string(outcome->probabilities[0].action);
-      label_str += ":";
-      label_str += std::to_string(outcome->cost);
+      label_str += "?";
     }
 
     delim = ",";
