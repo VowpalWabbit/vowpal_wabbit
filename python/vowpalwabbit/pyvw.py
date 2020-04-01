@@ -137,16 +137,16 @@ def get_prediction(ec, prediction_type):
     ----------
 
     ec : Example
-    prediction_type
-        - pSCALAR : Scalar prediction type
-        - pSCALARS : Multiple scalar-valued prediction type
-        - pACTION_SCORES : Multiple action scores prediction type
-        - pACTION_PROBS : Multiple action probabilities prediction type
-        - pMULTICLASS : Multiclass prediction type
-        - pMULTILABELS : Multilabel prediction type
-        - pPROB : Probability prediction type
-        - pMULTICLASSPROBS : Multiclass probabilities prediction type
-        - pDECISION_SCORES : Decision scores prediction type
+    prediction_type : integer
+        - 0: pSCALAR
+        - 1: pSCALARS
+        - 2: pACTION_SCORES
+        - 3: pACTION_PROBS
+        - 4: pMULTICLASS
+        - 5: pMULTILABELS
+        - 6: pPROB
+        - 7: pMULTICLASSPROBS
+        - 8: pDECISION_SCORES
 
     Examples
     --------
@@ -155,7 +155,7 @@ def get_prediction(ec, prediction_type):
     >>> import pylibvw
     >>> vw = pyvw.vw(quiet=True)
     >>> ex = vw.example('1 |a two features |b more features here')
-    >>> pyvw.get_prediction(ex, pylibvw.vw.pSCALAR)
+    >>> pyvw.get_prediction(ex, 0)
     0.0
 
     Returns
