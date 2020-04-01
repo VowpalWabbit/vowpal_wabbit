@@ -1,5 +1,16 @@
 #pragma once
 
+// Decision Service JSON header information - required to construct final label
+struct DecisionServiceInteraction
+{
+  std::string eventId;
+  std::vector<unsigned> actions;
+  std::vector<float> probabilities;
+  float probabilityOfDrop = 0.f;
+  bool skipLearn{false};
+};
+
+
 template <bool audit>
 struct Namespace
 {
@@ -42,3 +53,31 @@ struct Namespace
       ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, ss.str())));
   }
 };
+
+template<bool audit>
+void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, vw& all)
+{
+  Namespace<audit> n;
+  n.feature_group = ns[0];
+  n.namespace_hash = VW::hash_space_cstr(all, ns);
+  n.ftrs = ex->feature_space.data() + ns[0];
+  n.feature_count = 0;
+  n.name = ns;
+  namespaces.push_back(std::move(n));
+}
+
+template<bool audit>
+void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
+{
+  auto& ns = namespaces.back();
+  if (ns.feature_count > 0)
+  {
+    auto feature_group = ns.feature_group;
+    // Do not insert feature_group if it already exists.
+    if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
+    {
+      ex->indices.push_back(feature_group);
+    }
+  }
+  namespaces.pop_back();
+}

@@ -30,6 +30,7 @@
 
 #include "best_constant.h"
 #include "json_utils.h"
+#include "parse_slates_example_json.h"
 #include "vw_string_view.h"
 #include <algorithm>
 #include <vector>
@@ -1105,16 +1106,6 @@ class BoolToBoolState : public BaseState<audit>
   }
 };
 
-// Decision Service JSON header information - required to construct final label
-struct DecisionServiceInteraction
-{
-  std::string eventId;
-  std::vector<unsigned> actions;
-  std::vector<float> probabilities;
-  float probabilityOfDrop = 0.f;
-  bool skipLearn{false};
-};
-
 template <bool audit>
 class SlotOutcomeList : public BaseState<audit>
 {
@@ -1525,11 +1516,6 @@ inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
   }
 }
 
-// template <bool audit>
-// void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
-//     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
-// {
-
 template <bool audit>
 void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
@@ -1537,7 +1523,8 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   if(all.label_type == label_type_t::slates)
   {
-
+    parse_slates_example<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
+    apply_pdrop(all, data->probabilityOfDrop, examples);
     return;
   }
 
