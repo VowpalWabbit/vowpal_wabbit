@@ -29,7 +29,7 @@
 #include "conditional_contextual_bandit.h"
 
 #include "best_constant.h"
-
+#include "json_utils.h"
 #include "vw_string_view.h"
 #include <algorithm>
 #include <vector>
@@ -50,50 +50,6 @@ struct BaseState;
 
 template <bool audit>
 struct Context;
-
-template <bool audit>
-struct Namespace
-{
-  char feature_group;
-  feature_index namespace_hash;
-  features* ftrs;
-  size_t feature_count;
-  BaseState<audit>* return_state;
-  const char* name;
-
-  void AddFeature(feature_value v, feature_index i, const char* feature_name)
-  {
-    // filter out 0-values
-    if (v == 0)
-      return;
-
-    ftrs->push_back(v, i);
-    feature_count++;
-
-    if (audit)
-      ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, feature_name)));
-  }
-
-  void AddFeature(vw* all, const char* str)
-  {
-    ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
-    feature_count++;
-
-    if (audit)
-      ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));
-  }
-
-  void AddFeature(vw* all, const char* key, const char* value)
-  {
-    ftrs->push_back(1., VW::hash_feature(*all, value, VW::hash_feature(*all, key, namespace_hash)));
-    feature_count++;
-
-    std::stringstream ss;
-    ss << key << "^" << value;
-    if (audit)
-      ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, ss.str())));
-  }
-};
 
 template <bool audit>
 struct BaseState
@@ -317,7 +273,7 @@ class LabelObjectState : public BaseState<audit>
         outcome->cost = cb_label.cost;
         if (actions.size() != probs.size())
         {
-          THROW("Actions and probabilties must be the same length.");
+          THROW("Actions and probabilities must be the same length.");
         }
 
         for (size_t i = 0; i < this->actions.size(); i++)
@@ -338,7 +294,7 @@ class LabelObjectState : public BaseState<audit>
       {
         if (actions.size() != probs.size())
         {
-          THROW("Actions and probabilties must be the same length.");
+          THROW("Actions and probabilities must be the same length.");
         }
         ld.labeled = true;
 
@@ -1349,6 +1305,7 @@ struct Context
 
   // the path of namespaces
   std::vector<Namespace<audit>> namespace_path;
+  std::vector<BaseState<audit>*> return_path;
 
   v_array<example*>* examples;
   example* ex;
@@ -1419,11 +1376,11 @@ struct Context
     n.namespace_hash = VW::hash_space_cstr(*all, ns);
     n.ftrs = ex->feature_space.data() + ns[0];
     n.feature_count = 0;
-    n.return_state = return_state;
 
     n.name = ns;
 
     namespace_path.push_back(n);
+    return_path.push_back(return_state);
   }
 
   BaseState<audit>* PopNamespace()
@@ -1439,8 +1396,9 @@ struct Context
       }
     }
 
-    auto return_state = namespace_path.back().return_state;
+    auto return_state = return_path.back();
     namespace_path.pop_back();
+    return_path.pop_back();
     return return_state;
   }
 
@@ -1567,10 +1525,22 @@ inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
   }
 }
 
+// template <bool audit>
+// void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
+//     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+// {
+
 template <bool audit>
 void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
+
+  if(all.label_type == label_type_t::slates)
+  {
+
+    return;
+  }
+
   std::vector<char> line_vec;
   if (copy_line)
   {
