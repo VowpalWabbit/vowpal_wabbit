@@ -6,134 +6,150 @@
 
 using namespace rapidjson;
 
-template<bool audit>
-void handle_features_value(const char* key_namespace, const Value& value, example* current_example, std::vector<Namespace<audit>>& namespaces, vw& all)
+inline float get_number(const rapidjson::Value& value)
+{
+  float number = 0.f;
+  if (value.IsInt())
+  {
+    number = static_cast<float>(value.GetInt());
+  }
+  if (value.IsUint())
+  {
+    number = static_cast<float>(value.GetUint());
+  }
+  else if (value.IsFloat())
+  {
+    number = value.GetFloat();
+  }
+  else if (value.IsDouble())
+  {
+    number = static_cast<float>(value.GetDouble());
+  }
+  else
+  {
+    THROW("Tried to get value as number, but type was " << value.GetType());
+  }
+
+  return number;
+}
+
+template <bool audit>
+void handle_features_value(const char* key_namespace, const Value& value, example* current_example,
+    std::vector<Namespace<audit>>& namespaces, vw& all)
 {
   assert(key_namespace != nullptr);
-  assert(!namespaces.empty());
   assert(std::strlen(key_namespace) != 0);
   // Check if it is a reserved field, and if so move on.
-  if(key_namespace[0] == '_')
+  if (key_namespace[0] == '_')
   {
     return;
   }
 
   const auto key_namespace_length = std::strlen(key_namespace);
-  switch(value.GetType())
-    {
-      case Type::kNullType:
+  switch (value.GetType())
+  {
+    case Type::kNullType:
       // Do nothing?
       THROW("Null fields not supported")
       break;
-      case Type::kFalseType:
+    case Type::kFalseType:
       // No nothing for false!
+      assert(true);
       break;
-      case Type::kTrueType:
-        namespaces.back().AddFeature(&all, key_namespace);
+    case Type::kTrueType:
+      assert(!namespaces.empty());
+      namespaces.back().AddFeature(&all, key_namespace);
       break;
-      case Type::kObjectType:
+    case Type::kObjectType:
+    {
+      push_ns(current_example, key_namespace, namespaces, all);
+      for (auto& object_value : value.GetObject())
       {
-        push_ns(current_example, key_namespace, namespaces, all);
-        for(auto& object_value : value.GetObject())
-        {
-          handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, all);
-        }
-        pop_ns(current_example, namespaces);
+        handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, all);
       }
-      break;
-      case Type::kArrayType:
-      {
-        push_ns(current_example, key_namespace, namespaces, all);
-        auto array_hash = namespaces.back().namespace_hash;
-
-        for(auto& array_value : value.GetArray())
-        {
-          switch(array_value.GetType())
-          {
-            case Type::kNumberType:
-            {
-              float number = 0.f;
-              if(value.IsInt())
-              {
-                number = static_cast<float>(value.GetInt());
-              }
-              else if(value.IsFloat())
-              {
-                number = value.GetFloat();
-              }
-
-              if (audit)
-              {
-                std::stringstream str;
-                str << '[' << (array_hash - namespaces.back().namespace_hash) << ']';
-                namespaces.back().AddFeature(number, array_hash, str.str().c_str());
-              }
-              else
-              {
-                namespaces.back().AddFeature(number, array_hash, nullptr);
-              }
-              array_hash++;
-            }
-            break;
-            case Type::kObjectType:
-            {
-              handle_features_value(key_namespace, array_value, current_example, namespaces, all);
-            }
-            break;
-            default:
-            THROW("NOT HANDLED")
-          }
-        }
-        pop_ns(current_example, namespaces);
-      }
-      break;
-      case Type::kStringType:
-      {
-        const char* str = value.GetString();
-        // String escape
-        const char* end = str + value.GetStringLength();
-        for (char* p = (char*)str; p != end; p++)
-        {
-          switch (*p)
-          {
-            case ' ':
-            case '\t':
-            case '|':
-            case ':':
-              *p = '_';
-          }
-        }
-
-        if (all.chain_hash)
-        {
-          namespaces.back().AddFeature(&all, key_namespace, str);
-        }
-        else
-        {
-          char* prepend = (char*)str - key_namespace_length;
-          std::memmove(prepend, key_namespace, key_namespace_length);
-          namespaces.back().AddFeature(&all, prepend);
-        }
-      }
-
-      break;
-      case Type::kNumberType:
-      {
-        float number = 0.f;
-        if(value.IsInt())
-        {
-          number = static_cast<float>(value.GetInt());
-        }
-        else if(value.IsFloat())
-        {
-          number = value.GetFloat();
-        }
-        namespaces.back().AddFeature(number, VW::hash_feature_cstr(all, const_cast<char*>(key_namespace), namespaces.back().namespace_hash), key_namespace);
-      }
-      break;
-      default:
-      break;
+      pop_ns(current_example, namespaces);
     }
+    break;
+    case Type::kArrayType:
+    {
+      push_ns(current_example, key_namespace, namespaces, all);
+      auto array_hash = namespaces.back().namespace_hash;
+
+      for (auto& array_value : value.GetArray())
+      {
+        switch (array_value.GetType())
+        {
+          case Type::kNumberType:
+          {
+            float number = get_number(array_value);
+            if (audit)
+            {
+              std::stringstream str;
+              str << '[' << (array_hash - namespaces.back().namespace_hash) << ']';
+              namespaces.back().AddFeature(number, array_hash, str.str().c_str());
+            }
+            else
+            {
+              namespaces.back().AddFeature(number, array_hash, nullptr);
+            }
+            array_hash++;
+          }
+          break;
+          case Type::kObjectType:
+          {
+            handle_features_value(key_namespace, array_value, current_example, namespaces, all);
+          }
+          break;
+          default:
+            THROW("NOT HANDLED")
+        }
+      }
+      pop_ns(current_example, namespaces);
+    }
+    break;
+    case Type::kStringType:
+    {
+      assert(!namespaces.empty());
+      const char* str = value.GetString();
+      // String escape
+      const char* end = str + value.GetStringLength();
+      for (char* p = (char*)str; p != end; p++)
+      {
+        switch (*p)
+        {
+          case ' ':
+          case '\t':
+          case '|':
+          case ':':
+            *p = '_';
+        }
+      }
+
+      if (all.chain_hash)
+      {
+        namespaces.back().AddFeature(&all, key_namespace, str);
+      }
+      else
+      {
+        char* prepend = (char*)str - key_namespace_length;
+        std::memmove(prepend, key_namespace, key_namespace_length);
+        namespaces.back().AddFeature(&all, prepend);
+      }
+    }
+
+    break;
+    case Type::kNumberType:
+    {
+      assert(!namespaces.empty());
+      float number = get_number(value);
+      namespaces.back().AddFeature(number,
+          VW::hash_feature_cstr(all, const_cast<char*>(key_namespace), namespaces.back().namespace_hash),
+          key_namespace);
+    }
+    break;
+    default:
+      break;
+  }
 }
 
 template <bool audit>
@@ -145,7 +161,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
 
   std::vector<Namespace<audit>> namespaces;
   // Build shared example
-  const auto& context = document["c"].GetObject();
+  const Value& context = document["c"].GetObject();
   handle_features_value(" ", context, examples[0], namespaces, all);
   all.p->lp.default_label(&examples[0]->l);
   examples[0]->l.slates.type = slates::example_type::shared;
@@ -153,7 +169,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
   assert(namespaces.size() == 0);
 
   const auto& multi = context["_multi"].GetArray();
-  for(auto& obj : multi)
+  for (const Value& obj : multi)
   {
     auto ex = &(*example_factory)(ex_factory_context);
     all.p->lp.default_label(&ex->l);
@@ -165,9 +181,9 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
     assert(namespaces.size() == 0);
   }
 
-  const auto& slots = document["_slots"].GetArray();
+  const auto& slots = context["_slots"].GetArray();
   std::vector<example*> slot_examples;
-  for(auto& slot_object : slots)
+  for (const Value& slot_object : slots)
   {
     auto ex = &(*example_factory)(ex_factory_context);
     all.p->lp.default_label(&ex->l);
@@ -178,61 +194,65 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
     assert(namespaces.size() == 0);
   }
 
-  if(document.HasMember("_label_cost"))
+  if (document.HasMember("_label_cost"))
   {
     examples[0]->l.slates.cost = document["_label_cost"].GetFloat();
-    for(auto ex : examples)
+    for (auto ex : examples)
     {
       ex->l.slates.labeled = true;
     }
   }
 
-  const auto& outcomes = document["_outcomes"].GetArray();
-  assert(outcomes.Size() == slot_examples.size());
-  for(size_t i = 0; i < outcomes.Size(); i++)
+  if (document.HasMember("_outcomes"))
   {
-    auto& current_obj = outcomes[i];
-    auto& destination = slot_examples[i]->l.slates.probabilities;
-    auto& actions = current_obj["_a"];
-    if(actions.GetType() == Type::kNumberType)
+    const auto& outcomes = document["_outcomes"].GetArray();
+    assert(outcomes.Size() == slot_examples.size());
+    for (size_t i = 0; i < outcomes.Size(); i++)
     {
-      destination.push_back({actions.GetUint(),0.f});
-    }
-    else if (actions.GetType() == Type::kArrayType)
-    {
-      for(auto& val : actions.GetArray())
+      auto& current_obj = outcomes[i];
+      auto& destination = slot_examples[i]->l.slates.probabilities;
+      auto& actions = current_obj["_a"];
+      if (actions.GetType() == Type::kNumberType)
       {
-        destination.push_back({val.GetUint(),0.f});
+        destination.push_back({actions.GetUint(), 0.f});
+      }
+      else if (actions.GetType() == Type::kArrayType)
+      {
+        for (auto& val : actions.GetArray())
+        {
+          destination.push_back({val.GetUint(), 0.f});
+        }
+      }
+      else
+      {
+        assert(false);
+      }
+
+      auto& probs = current_obj["_p"];
+      if (probs.GetType() == Type::kNumberType)
+      {
+        assert(destination.size() != 0);
+        destination[0].score = probs.GetFloat();
+      }
+      else if (probs.GetType() == Type::kArrayType)
+      {
+        assert(probs.Size() == destination.size());
+        const auto& probs_array = probs.GetArray();
+        for (size_t i = 0; i < probs_array.Size(); i++)
+        {
+          destination[i].score = probs_array[i].GetUint();
+        }
+      }
+      else
+      {
+        assert(false);
       }
     }
-    else
-    {
-      assert(false);
-    }
 
-    auto& probs = current_obj["_p"];
-    if(probs.GetType() == Type::kNumberType)
-    {
-      destination.push_back({probs.GetUint(),0.f});
-    }
-    else if (probs.GetType() == Type::kArrayType)
-    {
-      assert(probs.size() == destination.size());
-      const auto& probs_array = probs.GetArray();
-      for(size_t i = 0; i < probs_array.Size(); i++)
-      {
-        destination[i].score = probs_array[i].GetUint();
-      }
-    }
-    else
-    {
-      assert(false);
-    }
-
-    for(const auto& slot : slot_examples)
+    for (const auto& slot : slot_examples)
     {
       const auto& slates_label = slot->l.slates;
-      if(slates_label.labeled)
+      if (slates_label.labeled)
       {
         data->probabilities.push_back(slates_label.probabilities[0].score);
         data->actions.push_back(slates_label.probabilities[0].action);
