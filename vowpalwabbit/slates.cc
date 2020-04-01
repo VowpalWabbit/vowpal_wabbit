@@ -31,7 +31,7 @@ void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examp
     _stashed_labels.push_back(std::move(example->l.slates));
   }
 
-  const auto num_slots = std::count_if(examples.begin(), examples.end(),
+  const size_t num_slots = std::count_if(examples.begin(), examples.end(),
       [](const example* example) { return example->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
 
   float global_cost = 0.f;
@@ -128,7 +128,7 @@ void slates_data::predict(LEARNER::multi_learner& base, multi_ex& examples)
 std::string generate_slates_label_printout(const std::vector<example*>& slots)
 {
   size_t counter = 0;
-  std::string label_str;
+  std::stringstream label_ss;
   std::string delim;
   for (const auto& slot : slots)
   {
@@ -136,13 +136,11 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
     const auto& label = slot->l.slates;
     if (label.labeled )
     {
-      label_str += delim;
-      label_str += std::to_string(label.probabilities[0].action);
+      label_ss << delim << label.probabilities[0].action;
     }
     else
     {
-      label_str += delim;
-      label_str += "?";
+      label_ss << delim << "?";
     }
 
     delim = ",";
@@ -150,13 +148,12 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
     // Stop after 2...
     if (counter > 1 && slots.size() > 2)
     {
-      label_str += delim;
-      label_str += "...";
+      label_ss << delim << "...";
       break;
     }
   }
 
-  return label_str;
+  return label_ss.str();
 }
 
 void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
