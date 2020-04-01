@@ -65,8 +65,9 @@ void print_decision_scores(int f, VW::decision_scores_t& decision_scores)
       }
       ss << '\n';
     }
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    const auto str = ss.str();
+    ssize_t len = str.size();
+    ssize_t t = io_buf::write_file_or_socket(f, str.c_str(), (unsigned int)len);
     if (t != len)
     {
       std::cerr << "write error: " << strerror(errno) << std::endl;

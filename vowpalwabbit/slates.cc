@@ -24,6 +24,7 @@ namespace slates
 template <bool is_learn>
 void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples)
 {
+  _stashed_labels.clear();
   _stashed_labels.reserve(examples.size());
   for (auto& example : examples)
   {
@@ -55,6 +56,10 @@ void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examp
     }
     else if (slates_label.type == slates::example_type::action)
     {
+      if (slates_label.slot_id >= num_slots)
+      {
+        THROW("slot_id cannot be larger than or equal to the number of slots");
+      }
       ccb_label.type = CCB::example_type::action;
       slot_action_pools[slates_label.slot_id].push_back(action_index);
       action_index++;
@@ -192,9 +197,12 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   }
 
   bool holdout_example = is_labelled;
-  for (const auto& example : ec_seq)
+  if (holdout_example != false)
   {
-    holdout_example &= example->test_only;
+    for (const auto& example : ec_seq)
+    {
+      holdout_example &= example->test_only;
+    }
   }
 
   all.sd->update(holdout_example, is_labelled, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
