@@ -1,24 +1,21 @@
 ---
 name: "Documentation Improvement"
-about: Reporting errors or suggestions for improving the Documentation.
+about: Report an error, missing docs or request new docs
 title: ''
 labels: 'Documentation'
 assignees: ''
 
 ---
 
-<!-- 
-Please fill out as much of the below template and delete unnecessary text.
--->
 
 ### Description
 
-> A brief description of the Documentation Improvement or New Section request.
+> A brief description of the error, missing documentation or what you would like added
 
 
 ### Link to Documentation Page
 
-> Where the confusion/inconsistency/incomplete documentation is.
+> Where is documentation in question?
 
 <!--
 Link to Specific Documentation Page
