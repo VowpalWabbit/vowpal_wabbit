@@ -1,25 +1,22 @@
 ---
-name: "Feature Request"
-about: Request/Suggest a new feature in VW
+name: "Feature request"
+about: Request/suggest a new feature in VW
 title: ''
-labels: feature_request
+labels: "Feature Request"
 assignees: ''
 
 ---
 
-<!-- Please fill out as much of the template as you can. Delete sections if unneccesary -->
-<!-- 
-Make Sure you've checked out Existing Issues
--->
+<!-- Please check if there is an existing issue that matches your request. -->
 
-## Short Description
-<!-- Describe Your Idea -->
+## Short description
+<!-- Describe your idea -->
 
 
-## **How This Feature Will Help You/Others**
+## **How this feature will help you/others**
 
 
-## **Possible Solution/Implementation Details**
+## **Possible solution/implementation details**
 <!-- Describe the solution you'd like. -->
 
 
@@ -27,7 +24,6 @@ Make Sure you've checked out Existing Issues
 <!-- Link to already similar features if possible -->
 
 ## **Can You Help With This Feature**
-<!-- Pull Requests are much Appreciated -->
 
-<!-- End. -->
+
 
