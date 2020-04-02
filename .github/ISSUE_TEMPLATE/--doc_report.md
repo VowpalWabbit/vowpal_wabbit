@@ -1,5 +1,5 @@
 ---
-name: "Documentation Improvement"
+name: "Documentation improvement"
 about: Report an error, missing docs or request new docs
 title: ''
 labels: 'Documentation'
@@ -18,9 +18,9 @@ assignees: ''
 > Where is documentation in question?
 
 <!--
-Link to Specific Documentation Page
+specific documentation page
 -->
 
 <!-- 
-Your help makes our Documentation better! We *deeply* appreciate your help in improving our Documentation.
+Your help makes our documentation better! We *deeply* appreciate your help in improving our documentation.
 -->
