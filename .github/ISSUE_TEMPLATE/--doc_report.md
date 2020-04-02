@@ -2,7 +2,7 @@
 name: "Documentation Improvement"
 about: Reporting errors or suggestions for improving the Documentation.
 title: ''
-labels: 'documentation'
+labels: 'Documentation'
 assignees: ''
 
 ---
