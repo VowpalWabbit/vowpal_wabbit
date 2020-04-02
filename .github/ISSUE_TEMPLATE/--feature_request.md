@@ -20,10 +20,9 @@ assignees: ''
 <!-- Describe the solution you'd like. -->
 
 
-## **Example/Links If Any**
+## **Example/links if any**
 <!-- Link to already similar features if possible -->
 
 ## **Can You Help With This Feature**
-
 
 
