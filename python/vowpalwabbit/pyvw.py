@@ -137,7 +137,7 @@ def get_prediction(ec, prediction_type):
     ----------
 
     ec : Example
-    prediction_type : integer
+    prediction_type : enumerate
         - 0: pSCALAR
         - 1: pSCALARS
         - 2: pACTION_SCORES
