@@ -279,7 +279,7 @@ class vw(pylibvw.vw):
         ec : list
             list of examples parsed
         """
-        if not (isinstance(str_ex, list) or isinstance(str_ex, str)):
+        if not isinstance(str_ex, (list, str)):
             raise TypeError(
                 'Unsupported type. List or string object must be passed.')
         if isinstance(str_ex, list):
@@ -693,7 +693,7 @@ class example_namespace():
             raise TypeError("ns should an instance of namespace_id.")
         self.ex = ex
         self.ns = ns
-        self.ns_hash = None
+        self.ns_hash = ns_hash
 
     def num_features_in(self):
         """Return the total number of features in this namespace."""
@@ -764,6 +764,8 @@ class abstract_label:
 class simple_label(abstract_label):
     """Class for simple VW label"""
     def __init__(self, label=0., weight=1., initial=0., prediction=0.):
+        if not isinstance(label, (example, float)):
+            raise TypeError('Label should be float or an example.')
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
@@ -782,13 +784,15 @@ class simple_label(abstract_label):
     def __str__(self):
         s = str(self.label)
         if self.weight != 1.:
-            s += ':' + self.weight
+            s += ':' + str(self.weight)
         return s
 
 
 class multiclass_label(abstract_label):
     """Class for multiclass VW label with prediction"""
     def __init__(self, label=1, weight=1., prediction=1):
+        if not isinstance(label, (example, int)):
+            raise TypeError('Label should be integer or an example.')
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
@@ -805,7 +809,7 @@ class multiclass_label(abstract_label):
     def __str__(self):
         s = str(self.label)
         if self.weight != 1.:
-            s += ':' + self.weight
+            s += ':' + str(self.weight)
         return s
 
 
