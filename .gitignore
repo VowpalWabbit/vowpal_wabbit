@@ -145,4 +145,6 @@ cs/azure_service/azure_service.ccproj.user
 
 build
 dist/
+*.model
 python/examples/*.model
+doc/html

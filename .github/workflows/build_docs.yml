@@ -1,6 +1,10 @@
 name: Build Documentation
 
-on: [push]
+on:
+  # Only build docs on pushes to master branch
+  push:
+    branches:
+      - master
 
 jobs:
   CXX:
