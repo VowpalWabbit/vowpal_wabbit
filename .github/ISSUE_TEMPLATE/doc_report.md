@@ -15,10 +15,10 @@ assignees: ''
 
 ### Link to Documentation Page
 
-> Where is documentation in question?
+> Where is the documentation in question?
 
 <!--
-specific documentation page
+Specific documentation page
 -->
 
 <!-- 
