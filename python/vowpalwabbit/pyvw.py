@@ -137,7 +137,7 @@ def get_prediction(ec, prediction_type):
     ----------
 
     ec : Example
-    prediction_type : enumerate
+    prediction_type : integer
         - 0: pSCALAR
         - 1: pSCALARS
         - 2: pACTION_SCORES
@@ -155,7 +155,7 @@ def get_prediction(ec, prediction_type):
     >>> import pylibvw
     >>> vw = pyvw.vw(quiet=True)
     >>> ex = vw.example('1 |a two features |b more features here')
-    >>> pyvw.get_prediction(ex, 0)
+    >>> pyvw.get_prediction(ex, pylibvw.vw.pSCALAR)
     0.0
 
     Returns
