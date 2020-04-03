@@ -146,6 +146,7 @@ class TestVW:
     def test_bfgs(self):
         data_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources', 'train.dat')
         model = VW(convert_to_vw=False, oaa=3, passes=30, bfgs=True, data=data_file, cache=True, quiet=False)
+        assert model.passes_ == 30
         X = ['1 | feature1:2.5',
              '2 | feature1:0.11 feature2:-0.0741',
              '3 | feature3:2.33 feature4:0.8 feature5:-3.1',

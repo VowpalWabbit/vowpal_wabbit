@@ -3,7 +3,7 @@ target_link_libraries(ezexample_predict PRIVATE VowpalWabbit::vw)
 set_target_properties(ezexample_predict PROPERTIES FOLDER Examples)
 
 add_executable(ezexample_predict_threaded ezexample_predict_threaded.cc)
-target_link_libraries(ezexample_predict_threaded PRIVATE VowpalWabbit::vw Boost::system Boost::thread)
+target_link_libraries(ezexample_predict_threaded PRIVATE VowpalWabbit::vw)
 set_target_properties(ezexample_predict_threaded PROPERTIES FOLDER Examples)
 
 add_executable(ezexample_train ezexample_train.cc)
