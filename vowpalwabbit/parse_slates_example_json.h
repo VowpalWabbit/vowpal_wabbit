@@ -157,7 +157,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
     VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   Document document;
-  document.Parse(line, length);
+  document.ParseInsitu(line);
 
   std::vector<Namespace<audit>> namespaces;
   // Build shared example
