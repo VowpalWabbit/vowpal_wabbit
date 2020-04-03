@@ -1,11 +1,12 @@
 name: Build Documentation
 
+# Build documentation on:
+# - pushes to master and uploads to latest folder
+# - Released and uploads to folder that matches release tag
 on:
-  # Only build docs on pushes to master branch
   push:
     branches:
       - master
-  # If
   release:
     types:
       - created
