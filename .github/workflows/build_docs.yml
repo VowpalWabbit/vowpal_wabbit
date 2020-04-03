@@ -65,10 +65,10 @@ jobs:
     steps:
       - name: Set folder name to latest if push
         if: github.event_name == 'push'
-        run: echo "::set-env name=FOLDER_NAME::latest"
+        run: echo ::set-env name=FOLDER_NAME::latest
       - name: Set folder name to version if release
         if: github.event_name == 'release'
-        run: echo "::set-env name=FOLDER_NAME::"$(echo ${GITHUB_REF:10})"
+        run: echo ::set-env name=FOLDER_NAME::$(echo ${GITHUB_REF:10})
       - name: Download CXX Docs
         uses: actions/download-artifact@v1
         with:
