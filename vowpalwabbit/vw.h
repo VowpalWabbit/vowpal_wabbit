@@ -3,6 +3,22 @@
 // license as described in the file LICENSE.
 #pragma once
 
+/*! \mainpage
+ *
+ * For the primary interface see:
+ * - \link VW VW namespace documentation \endlink
+ *
+ * For other docs see:
+ * - [Project website](https://vowpalwabbit.org)
+ * - [Wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki)
+ * - C++ build instructions:
+ *     - [Install dependencies](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Dependencies)
+ *     - [Build](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building)
+ *     - [Install](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Installing)
+ * - [Install other languages](https://vowpalwabbit.org/start.html)
+ * - [Tutorials](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Tutorial)
+ */
+
 #ifdef _WIN32
 #ifdef LEAKCHECK
 // Visual Leak Detector for memory leak detection on Windows
