@@ -153,7 +153,6 @@ struct options_serializer_i
 {
   virtual void add(base_option& argument) = 0;
   virtual std::string str() = 0;
-  virtual std::unique_ptr<const char> data() = 0;
   virtual size_t size() = 0;
 };
 

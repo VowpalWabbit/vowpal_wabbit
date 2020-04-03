@@ -4,19 +4,9 @@
 
 #include "options_serializer_boost_po.h"
 
-#include <memory>
-
 using namespace VW::config;
 
 std::string options_serializer_boost_po::str() { return m_output_stream.str(); }
-
-std::unique_ptr<const char> options_serializer_boost_po::data() {
-  auto str = m_output_stream.str();
-  char* buffer = new char[str.size() + 1];
-  str.copy(buffer, str.size());
-  buffer[str.size()] = '\0';
-  return std::unique_ptr<const char>(buffer);
-}
 
 size_t options_serializer_boost_po::size() { return m_output_stream.str().size(); }
 
