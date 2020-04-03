@@ -63,15 +63,11 @@ jobs:
     runs-on: ubuntu-latest
     # The upload step should only be run on the main repository.
     steps:
-      - name: Blah
-        run: echo "${{ github.event_name }}"
-      - name: Blah
-        run: echo "${{ github.event.type }}"
       - name: Set folder name to latest if push
         if: github.event_name == 'push'
         run: echo "::set-env name=FOLDER_NAME::latest"
       - name: Set folder name to version if release
-        if: github.event_name == 'release' && github.event.type == 'published'
+        if: github.event_name == 'release'
         run: echo "::set-env name=FOLDER_NAME::"$(echo ${GITHUB_REF:10})"
       - name: Download CXX Docs
         uses: actions/download-artifact@v1
