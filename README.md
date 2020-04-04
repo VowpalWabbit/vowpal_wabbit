@@ -1,6 +1,5 @@
 <img src="/logo_assets/vowpal-wabbits-github-logo@3x.png" height="auto" width="100%" alt="Vowpal Wabbit">
 
-[![Build Status](https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master)](https://travis-ci.org/VowpalWabbit/vowpal_wabbit)
 [![Linux build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/23?label=Linux%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=23&branchName=master)
 [![Windows build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/14?label=Windows%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=14&branchName=master)
 [![MacOS build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/22?label=MacOS%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=22&branchName=master)
