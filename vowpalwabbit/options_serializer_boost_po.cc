@@ -8,8 +8,6 @@ using namespace VW::config;
 
 std::string options_serializer_boost_po::str() { return m_output_stream.str(); }
 
-const char* options_serializer_boost_po::data() { return m_output_stream.str().c_str(); }
-
 size_t options_serializer_boost_po::size() { return m_output_stream.str().size(); }
 
 void options_serializer_boost_po::add(base_option& option) { add_impl<supported_options_types>(option); }
