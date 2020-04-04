@@ -139,3 +139,4 @@ build
 dist/
 *.model
 python/examples/*.model
+doc/html
