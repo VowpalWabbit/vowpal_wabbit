@@ -19,7 +19,5 @@ steps:
 - bash: ./.scripts/linux/test-with-coverage.sh
   displayName: Test with coverage C++
 - script: |
-    bash <(curl -s https://codecov.io/bash)
+    bash <(curl -s https://codecov.io/bash) -n "$(NAME)" -C $BUILD_SOURCEVERSION
   displayName: 'Upload to codecov.io'
-  env:
-    CODECOV_TOKEN: $(CODECOV_TOKEN)
