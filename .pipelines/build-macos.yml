@@ -21,3 +21,5 @@ steps:
 - script: |
     bash <(curl -s https://codecov.io/bash)
   displayName: 'Upload to codecov.io'
+  env:
+    CODECOV_TOKEN: $(CODECOV_TOKEN)
