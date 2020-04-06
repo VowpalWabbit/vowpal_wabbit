@@ -14,14 +14,10 @@ on:
 jobs:
   CXX:
     container:
-      image: vowpalwabbit/ubuntu1604-build:0.4.0
+      image: vowpalwabbit/ubuntu1604-build:0.6.0
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Install Doxygen
-        run: |
-          apt update -y
-          apt install -y doxygen graphviz
       - name: Configure
         run: |
           mkdir build
@@ -38,7 +34,7 @@ jobs:
           path: doc/html/
   Python:
     container:
-      image: vowpalwabbit/ubuntu1604-build:0.4.0
+      image: vowpalwabbit/ubuntu1604-build:0.6.0
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
