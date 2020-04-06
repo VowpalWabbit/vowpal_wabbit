@@ -40,12 +40,11 @@ class sparse_iterator
 
   sparse_iterator(weight_map::iterator& iter, uint32_t stride) : _iter(iter), _stride(stride) {}
 
-  sparse_iterator& operator=(const sparse_iterator& other)
-  {
-    _iter = other._iter;
-    _stride = other._stride;
-    return *this;
-  }
+  sparse_iterator& operator=(const sparse_iterator& other) = default;
+  sparse_iterator(const sparse_iterator& other) = default;
+  sparse_iterator& operator=(sparse_iterator&& other) = default;
+  sparse_iterator(sparse_iterator&& other) = default;
+
   uint64_t index() { return _iter->first; }
 
   T& operator*() { return *(_iter->second); }

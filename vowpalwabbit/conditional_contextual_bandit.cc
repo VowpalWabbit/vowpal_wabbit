@@ -494,7 +494,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 std::string generate_ccb_label_printout(const std::vector<example*>& slots)
 {
   size_t counter = 0;
-  std::string label_str;
+  std::stringstream label_ss;
   std::string delim;
   for (const auto& slot : slots)
   {
@@ -503,15 +503,11 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
     auto outcome = slot->l.conditional_contextual_bandit.outcome;
     if (outcome == nullptr)
     {
-      label_str += delim;
-      label_str += "?";
+      label_ss << delim << "?";
     }
     else
     {
-      label_str += delim;
-      label_str += std::to_string(outcome->probabilities[0].action);
-      label_str += ":";
-      label_str += std::to_string(outcome->cost);
+      label_ss << delim << outcome->probabilities[0].action << ":" << outcome->cost;
     }
 
     delim = ",";
@@ -519,12 +515,11 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
     // Stop after 2...
     if (counter > 1 && slots.size() > 2)
     {
-      label_str += delim;
-      label_str += "...";
+      label_ss << delim << "...";
       break;
     }
   }
-  return label_str;
+  return label_ss.str();
 }
 
 void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)

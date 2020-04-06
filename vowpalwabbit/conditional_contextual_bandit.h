@@ -9,9 +9,7 @@
 #include <string>
 
 #include "reductions_fwd.h"
-#include "v_array.h"
 #include "action_score.h"
-#include "options.h"
 
 namespace CCB
 {

@@ -21,6 +21,8 @@ struct slates_data
 
   /*
   The primary job of this reduction is to convert slate labels to a form CCB can process.
+  Note: Shared must come before action and slot, and all action examples must come before
+  slot examples.
   This is an example of this conversion in the form of textual labels:
     slates shared 0.8
     slates action 0

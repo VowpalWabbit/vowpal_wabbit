@@ -24,13 +24,14 @@ namespace slates
 template <bool is_learn>
 void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples)
 {
+  _stashed_labels.clear();
   _stashed_labels.reserve(examples.size());
   for (auto& example : examples)
   {
     _stashed_labels.push_back(std::move(example->l.slates));
   }
 
-  const auto num_slots = std::count_if(examples.begin(), examples.end(),
+  const size_t num_slots = std::count_if(examples.begin(), examples.end(),
       [](const example* example) { return example->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
 
   float global_cost = 0.f;
@@ -55,6 +56,11 @@ void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examp
     }
     else if (slates_label.type == slates::example_type::action)
     {
+
+      if (slates_label.slot_id >= num_slots)
+      {
+        THROW("slot_id cannot be larger than or equal to the number of slots");
+      }
       ccb_label.type = CCB::example_type::action;
       slot_action_pools[slates_label.slot_id].push_back(action_index);
       action_index++;
@@ -119,41 +125,35 @@ void slates_data::predict(LEARNER::multi_learner& base, multi_ex& examples)
   learn_or_predict<false>(base, examples);
 }
 
+// TODO this abstraction may not really work as this function now doesn't have access to the global cost...
 std::string generate_slates_label_printout(const std::vector<example*>& slots)
 {
   size_t counter = 0;
-  std::string label_str;
+  std::stringstream label_ss;
   std::string delim;
   for (const auto& slot : slots)
   {
     counter++;
-
-    auto outcome = slot->l.conditional_contextual_bandit.outcome;
-    if (outcome == nullptr)
+    const auto& label = slot->l.slates;
+    if (label.labeled )
     {
-      label_str += delim;
-      label_str += "?";
+      label_ss << delim << label.probabilities[0].action;
     }
     else
     {
-      label_str += delim;
-      label_str += std::to_string(outcome->probabilities[0].action);
-      label_str += ":";
-      label_str += std::to_string(outcome->cost);
-    }
+      label_ss << delim << "?";    }
 
     delim = ",";
 
     // Stop after 2...
     if (counter > 1 && slots.size() > 2)
     {
-      label_str += delim;
-      label_str += "...";
+      label_ss << delim << "...";
       break;
     }
   }
 
-  return label_str;
+  return label_ss.str();
 }
 
 void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
@@ -192,9 +192,12 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   }
 
   bool holdout_example = is_labelled;
-  for (const auto& example : ec_seq)
+  if (holdout_example != false)
   {
-    holdout_example &= example->test_only;
+    for (const auto& example : ec_seq)
+    {
+      holdout_example &= example->test_only;
+    }
   }
 
   all.sd->update(holdout_example, is_labelled, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
