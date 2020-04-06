@@ -51,6 +51,7 @@ set(vw_all_headers
   ccb_label.h
   classweight.h
   comp_io.h
+  compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
@@ -196,6 +197,7 @@ set(vw_all_sources
   example.cc
   explore_eval.cc
   ftrl.cc
+  future_compat.h
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
