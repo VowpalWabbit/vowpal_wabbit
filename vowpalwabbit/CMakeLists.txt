@@ -197,7 +197,6 @@ set(vw_all_sources
   example.cc
   explore_eval.cc
   ftrl.cc
-  future_compat.h
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
