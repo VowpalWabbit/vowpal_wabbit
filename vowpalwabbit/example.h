@@ -19,6 +19,7 @@
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
 #include "slates_label.h"
+#include "decision_scores.h"
 #include <vector>
 
 typedef union
@@ -45,7 +46,7 @@ typedef union
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  CCB::decision_scores_t decision_scores;
+  VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc

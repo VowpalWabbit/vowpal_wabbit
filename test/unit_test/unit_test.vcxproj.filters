@@ -21,6 +21,9 @@
     <ClCompile Include="stable_unique_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="slates_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="slates_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

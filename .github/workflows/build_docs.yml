@@ -1,10 +1,15 @@
 name: Build Documentation
 
+# Build documentation on:
+# - pushes to master and uploads to latest folder
+# - Released and uploads to folder that matches release tag
 on:
-  # Only build docs on pushes to master branch
   push:
     branches:
       - master
+  release:
+    types:
+      - created
 
 jobs:
   CXX:
@@ -61,6 +66,12 @@ jobs:
     # The upload step should only be run on the main repository.
     if: github.repository == 'VowpalWabbit/vowpal_wabbit'
     steps:
+      - name: Set folder name to latest if push
+        if: github.event_name == 'push'
+        run: echo "::set-env name=FOLDER_NAME::latest"
+      - name: Set folder name to version if release
+        if: github.event_name == 'release'
+        run: echo "::set-env name=FOLDER_NAME::$(echo ${GITHUB_REF:10})"
       - name: Download CXX Docs
         uses: actions/download-artifact@v1
         with:
@@ -94,15 +105,15 @@ jobs:
       - name: Copy CXX Docs
         shell: bash
         run: |
-          rm -rf docs/vowpal_wabbit/cpp/latest/
-          mkdir -p docs/vowpal_wabbit/cpp/latest/
-          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/latest/
+          rm -rf docs/vowpal_wabbit/cpp/${{ env.FOLDER_NAME }}/
+          mkdir -p docs/vowpal_wabbit/cpp/${{ env.FOLDER_NAME }}/
+          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/${{ env.FOLDER_NAME }}/
       - name: Copy Python Docs
         shell: bash
         run: |
-          rm -rf docs/vowpal_wabbit/python/latest/
-          mkdir -p docs/vowpal_wabbit/python/latest/
-          cp -r python_docs/html/* docs/vowpal_wabbit/python/latest/
+          rm -rf docs/vowpal_wabbit/python/${{ env.FOLDER_NAME }}/
+          mkdir -p docs/vowpal_wabbit/python/${{ env.FOLDER_NAME }}/
+          cp -r python_docs/html/* docs/vowpal_wabbit/python/${{ env.FOLDER_NAME }}/
       - name: Checkout master
         shell: bash
         run: |
