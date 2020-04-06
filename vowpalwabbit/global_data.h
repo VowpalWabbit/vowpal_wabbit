@@ -44,6 +44,7 @@
 #include "constant.h"
 #include "rand48.h"
 #include "hashstring.h"
+#include "decision_scores.h"
 
 #include "options.h"
 #include "version.h"
@@ -327,7 +328,8 @@ enum class label_type_t
   cs,       // cost-sensitive
   multi,
   mc,
-  ccb  // conditional contextual-bandit
+  ccb,  // conditional contextual-bandit
+  slates
 };
 
 struct rand_state

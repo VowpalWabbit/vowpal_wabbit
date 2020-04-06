@@ -60,6 +60,7 @@ set(vw_all_headers
   crossplat_compat.h
   cs_active.h
   csoaa.h
+  decision_scores.h
   distributionally_robust.h
   ect.h
   error_reporting.h
@@ -133,6 +134,7 @@ set(vw_all_headers
   shared_feature_merger.h
   simple_label.h
   slates_label.h
+  slates.h
   spanning_tree.h
   stable_unique.h
   stagewise_poly.h
@@ -188,6 +190,7 @@ set(vw_all_sources
   cost_sensitive.cc
   cs_active.cc
   csoaa.cc
+  decision_scores.cc
   distributionally_robust.cc
   ect.cc
   example.cc
@@ -244,6 +247,7 @@ set(vw_all_sources
   shared_feature_merger.cc
   simple_label.cc
   slates_label.cc
+  slates.cc
   stagewise_poly.cc
   svrg.cc
   topk.cc
