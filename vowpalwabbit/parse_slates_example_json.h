@@ -48,19 +48,19 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
   const auto key_namespace_length = std::strlen(key_namespace);
   switch (value.GetType())
   {
-    case Type::kNullType:
+    case rapidjson::kNullType:
       // Do nothing?
       THROW("Null fields not supported")
       break;
-    case Type::kFalseType:
+    case rapidjson::kFalseType:
       // No nothing for false!
       assert(true);
       break;
-    case Type::kTrueType:
+    case rapidjson::kTrueType:
       assert(!namespaces.empty());
       namespaces.back().AddFeature(&all, key_namespace);
       break;
-    case Type::kObjectType:
+    case rapidjson::kObjectType:
     {
       push_ns(current_example, key_namespace, namespaces, all);
       for (auto& object_value : value.GetObject())
@@ -70,7 +70,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
       pop_ns(current_example, namespaces);
     }
     break;
-    case Type::kArrayType:
+    case rapidjson::kArrayType:
     {
       push_ns(current_example, key_namespace, namespaces, all);
       auto array_hash = namespaces.back().namespace_hash;
@@ -79,7 +79,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
       {
         switch (array_value.GetType())
         {
-          case Type::kNumberType:
+          case rapidjson::kNumberType:
           {
             float number = get_number(array_value);
             if (audit)
@@ -95,7 +95,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
             array_hash++;
           }
           break;
-          case Type::kObjectType:
+          case rapidjson::kObjectType:
           {
             handle_features_value(key_namespace, array_value, current_example, namespaces, all);
           }
@@ -107,7 +107,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
       pop_ns(current_example, namespaces);
     }
     break;
-    case Type::kStringType:
+    case rapidjson::kStringType:
     {
       assert(!namespaces.empty());
       const char* str = value.GetString();
@@ -138,7 +138,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
     }
 
     break;
-    case Type::kNumberType:
+    case rapidjson::kNumberType:
     {
       assert(!namespaces.empty());
       float number = get_number(value);
@@ -153,7 +153,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 }
 
 template <bool audit>
-void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size_t length,
+void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   Document document;
@@ -212,11 +212,11 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
       auto& current_obj = outcomes[i];
       auto& destination = slot_examples[i]->l.slates.probabilities;
       auto& actions = current_obj["_a"];
-      if (actions.GetType() == Type::kNumberType)
+      if (actions.GetType() == rapidjson::kNumberType)
       {
         destination.push_back({actions.GetUint(), 0.f});
       }
-      else if (actions.GetType() == Type::kArrayType)
+      else if (actions.GetType() == rapidjson::kArrayType)
       {
         for (auto& val : actions.GetArray())
         {
@@ -229,12 +229,12 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
       }
 
       auto& probs = current_obj["_p"];
-      if (probs.GetType() == Type::kNumberType)
+      if (probs.GetType() == rapidjson::kNumberType)
       {
         assert(destination.size() != 0);
         destination[0].score = probs.GetFloat();
       }
-      else if (probs.GetType() == Type::kArrayType)
+      else if (probs.GetType() == rapidjson::kArrayType)
       {
         assert(probs.Size() == destination.size());
         const auto& probs_array = probs.GetArray();
