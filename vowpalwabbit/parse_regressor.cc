@@ -328,7 +328,7 @@ void save_load_header(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
             {
-              memcpy(buff2, &all.interactions[i].data(), inter_len);
+              memcpy(buff2, all.interactions[i].data(), inter_len);
 
               msg << "interaction: ";
               msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
@@ -348,18 +348,14 @@ void save_load_header(
         else  // < VERSION_FILE_WITH_INTERACTIONS
         {
           // pairs and triples may be restored but not reflected in interactions
-          std::vector<std::vector<namespace_index>> new_pairs(all.pairs.size());
-          std::vector<std::vector<namespace_index>> new_triples(all.triples.size());
 
           for (auto &t : all.pairs){
-            new_pairs.emplace_back(t.begin(), t.end());
+            all.interactions.emplace_back(t.begin(), t.end());
           }
 
           for (auto &t : all.triples){
-            new_triples.emplace_back(t.begin(), t.end());
+            all.interactions.emplace_back(t.begin(), t.end());
           }
-          all.interactions.insert(std::end(all.interactions), std::begin(new_pairs), std::end(new_pairs));
-          all.interactions.insert(std::end(all.interactions), std::begin(new_triples), std::end(new_triples));
         }
       }
 
