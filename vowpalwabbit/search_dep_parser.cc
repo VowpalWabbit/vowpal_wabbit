@@ -92,12 +92,8 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   all.triples.swap(newtriples);
 
   all.interactions.clear();
-  for (auto &t : all.pairs){
-    all.interactions.emplace_back(t.begin(), t.end());
-  }
-  for (auto &t : all.triples){
-    all.interactions.emplace_back(t.begin(), t.end());
-  }
+  all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
 
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);

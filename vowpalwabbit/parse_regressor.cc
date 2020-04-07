@@ -348,14 +348,8 @@ void save_load_header(
         else  // < VERSION_FILE_WITH_INTERACTIONS
         {
           // pairs and triples may be restored but not reflected in interactions
-
-          for (auto &t : all.pairs){
-            all.interactions.emplace_back(t.begin(), t.end());
-          }
-
-          for (auto &t : all.triples){
-            all.interactions.emplace_back(t.begin(), t.end());
-          }
+          all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
+          all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
         }
       }
 
