@@ -191,6 +191,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
         ld.probabilities.push_back(
             {static_cast<uint32_t>(int_of_string(split_colons[0])), float_of_string(split_colons[1])});
       }
+      split_colons.delete_v();
 
       // If a full distribution has been given, check if it sums to 1, otherwise throw.
       if (ld.probabilities.size() > 1)
