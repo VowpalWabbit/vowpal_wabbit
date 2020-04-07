@@ -85,29 +85,20 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   else
     sch.set_num_learners(3);
 
-  const char *pair[] = {
-      "BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
-  const char *triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BEJ", "BEH", "BJK", "BEN"};
-  std::vector<std::string> newpairs(pair, pair + 19);
-  std::vector<std::string> newtriples(triple, triple + 12);
+  std::vector<std::vector<namespace_index> > newpairs {
+      {'B','C'}, {'B','E'}, {'B','B'}, {'C','C'}, {'D','D'}, {'E','E'}, {'F','F'}, {'G','G'}, {'E','F'}, {'B','H'}, {'B','J'}, {'E','L'}, {'d','B'}, {'d','C'}, {'d','D'}, {'d','E'}, {'d','F'}, {'d','G'}, {'d','d'}};
+  std::vector<std::vector<namespace_index> > newtriples {{'E','F','G'}, {'B','E','F'}, {'B','C','E'}, {'B','C','D'}, {'B','E','L'}, {'E','L','M'}, {'B','H','I'}, {'B','C','C'}, {'B','E','J'}, {'B','E','H'}, {'B','J','K'}, {'B','E','N'}};
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
-  std::vector<std::vector<namespace_index>> new_pairs(19); //19 is the length of c-style pairs array declared above
-  std::vector<std::vector<namespace_index>> new_triples(12); //12 is the length of c-style triples array declared above
-  for (int i=0;i<19;i++){
-    new_pairs[i].push_back(pair[i][0]);
-    new_pairs[i].push_back(pair[i][1]);
+  all.interactions.clear();
+  for (auto &t : all.pairs){
+    all.interactions.emplace_back(t.begin(), t.end());
   }
-  for (int i=0;i<12;i++){
-    new_triples[i].push_back(triple[i][0]);
-    new_triples[i].push_back(triple[i][1]);
-    new_triples[i].push_back(triple[i][2]);
+  for (auto &t : all.triples){
+    all.interactions.emplace_back(t.begin(), t.end());
   }
 
-  all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(new_pairs), std::end(new_pairs));
-  all.interactions.insert(std::end(all.interactions), std::begin(new_triples), std::end(new_triples));
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
   else

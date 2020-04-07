@@ -47,7 +47,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (std::string& i : all.pairs)
+  for (auto& i : all.pairs)
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     {
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
@@ -96,7 +96,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
-  for (std::string& i : d.all->pairs)
+  for (auto& i : d.all->pairs)
   {
     ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
@@ -117,7 +117,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (std::string& i : d.all->pairs)
+  for (auto& i : d.all->pairs)
   {
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
@@ -197,7 +197,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
-  for (std::string& i : all.pairs)
+  for (auto& i : all.pairs)
   {
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {

@@ -262,16 +262,16 @@ void save_load_header(
 
           if (!read)
           {
-            memcpy(pair, all.pairs[i].c_str(), 2);
-            msg << all.pairs[i] << " ";
+            memcpy(pair, all.pairs[i].data(), 2);
+            msg << all.pairs[i].data() << " ";
           }
 
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
           if (read)
           {
-            std::string temp(pair);
+            std::vector<namespace_index> temp(pair, pair+std::strlen(pair));
             if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-              all.pairs.push_back(temp);
+              all.pairs.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -291,15 +291,15 @@ void save_load_header(
 
           if (!read)
           {
-            msg << all.triples[i] << " ";
-            memcpy(triple, all.triples[i].c_str(), 3);
+            msg << all.triples[i].data() << " ";
+            memcpy(triple, all.triples[i].data(), 3);
           }
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
           if (read)
           {
-            std::string temp(triple);
+            std::vector<namespace_index> temp(triple, triple + std::strlen(triple));
             if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-              all.triples.push_back(temp);
+              all.triples.emplace_back(temp.begin(), temp.end());
           }
         }
 

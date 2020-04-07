@@ -17,7 +17,7 @@ using namespace VW::config;
 
 struct mf
 {
-  std::vector<std::string> pairs;
+  std::vector<std::vector<namespace_index> > pairs;
 
   size_t rank;
 
@@ -69,7 +69,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (std::string& i : data.pairs)
+  for (auto& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -127,7 +127,7 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (std::string& i : data.pairs)
+  for (auto& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];

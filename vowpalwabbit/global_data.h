@@ -448,11 +448,11 @@ struct vw
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<namespace_index>> interactions;
+  std::vector<std::vector<namespace_index> > interactions;
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> pairs;  // pairs of features to cross.
+  std::vector<std::vector<namespace_index> > pairs;  // pairs of features to cross.
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> triples;  // triples of features to cross.
+  std::vector<std::vector<namespace_index> > triples;  // triples of features to cross.
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;

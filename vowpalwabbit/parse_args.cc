@@ -727,7 +727,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   }
 
   // prepare namespace interactions
-  std::vector<std::string> expanded_interactions;
+  std::vector<std::vector<namespace_index> > expanded_interactions;
 
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
@@ -759,8 +759,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << i << " ";
     }
 
+    std::vector<std::vector<namespace_index> > new_quadratics;
+    for (const auto & i : quadratics){
+      new_quadratics.emplace_back(i.begin(), i.end());
+    }
+
     expanded_interactions =
-        INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
+        INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.logger.quiet)
       all.trace_message << endl;
@@ -777,8 +782,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_cubic =
-        INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
+    std::vector<std::vector<namespace_index> > new_cubics;
+    for (const auto & i : cubics){
+      new_cubics.emplace_back(i.begin(), i.end());
+    }
+
+    std::vector<std::vector<namespace_index> > exp_cubic =
+        INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!all.logger.quiet)
@@ -797,7 +807,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
+    std::vector<std::vector<namespace_index> > new_interactions;
+    for (const auto & i : interactions){
+      new_interactions.emplace_back(i.begin(), i.end());
+    }
+
+    std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!all.logger.quiet)

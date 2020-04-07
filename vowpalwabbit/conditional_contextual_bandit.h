@@ -10,6 +10,7 @@
 
 #include "reductions_fwd.h"
 #include "action_score.h"
+#include "example_predict.h"
 
 namespace CCB
 {

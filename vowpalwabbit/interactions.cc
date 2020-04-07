@@ -16,7 +16,7 @@ namespace INTERACTIONS
 // expand namespace interactions if contain wildcards
 // recursive function used internally in this module
 void expand_namespaces_with_recursion(
-    std::string const& ns, std::vector<std::string>& res, std::string& val, size_t pos)
+    std::vector<namespace_index> const& ns, std::vector<std::vector<namespace_index> >& res, std::vector<namespace_index>& val, size_t pos)
 {
   assert(pos <= ns.size());
 
@@ -25,7 +25,7 @@ void expand_namespaces_with_recursion(
     // we're at the end of interaction
 
     // and store it in res
-    res.push_back(val);
+    res.emplace_back(val);
     // don't free s memory as it's data will be used later
   }
   else
@@ -57,14 +57,14 @@ void expand_namespaces_with_recursion(
 // called from parse_args.cc
 // process all interactions in a vector
 
-std::vector<std::string> expand_interactions(
-    const std::vector<std::string>& vec, const size_t required_length, const std::string& err_msg)
+std::vector<std::vector<namespace_index> > expand_interactions(
+    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg)
 {
-  std::vector<std::string> res;
+  std::vector<std::vector<namespace_index> > res;
 
-  for (std::string const& i : vec)
+  for (auto const& i : vec)
   {
-    const size_t len = i.length();
+    const size_t len = i.size();
     if (required_length > 0 && len != required_length)
     // got strict requirement of interaction length and it was failed.
     {
@@ -74,7 +74,7 @@ std::vector<std::string> expand_interactions(
       // regardles of required_length value this check is always performed
       THROW("error, feature interactions must involve at least two namespaces" << err_msg);
 
-    std::string temp;
+    std::vector<namespace_index> temp;
     expand_namespaces_with_recursion(i, res, temp, 0);
   }
   return res;
@@ -88,7 +88,7 @@ std::vector<std::string> expand_interactions(
 // with one exeption - returns false if interaction made of one namespace
 // like 'aaa' as it has no sense to sort such things.
 
-inline bool must_be_left_sorted(const std::string& oi)
+inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 {
   if (oi.size() <= 1)
     return true;  // one letter in std::string - no need to sort
@@ -118,17 +118,17 @@ inline bool must_be_left_sorted(const std::string& oi)
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 
 void sort_and_filter_duplicate_interactions(
-    std::vector<std::string>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+    std::vector<std::vector<namespace_index> >& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
   // 2 out parameters
   removed_cnt = 0;
   sorted_cnt = 0;
 
   // interaction value sort + original position
-  std::vector<std::pair<std::string, size_t>> vec_sorted;
+  std::vector<std::pair<std::vector<namespace_index>, size_t>> vec_sorted;
   for (size_t i = 0; i < vec.size(); ++i)
   {
-    std::string sorted_i(vec[i]);
+    std::vector<namespace_index> sorted_i(vec[i]);
     std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
     vec_sorted.push_back(std::make_pair(sorted_i, i));
   }
@@ -137,11 +137,11 @@ void sort_and_filter_duplicate_interactions(
   {
     // remove duplicates
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
+        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
           return a.first < b.first;
         });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
+        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
           return a.first == b.first;
         });
     vec_sorted.erase(last, vec_sorted.end());
@@ -151,7 +151,7 @@ void sort_and_filter_duplicate_interactions(
 
     // restore original order
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
+        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
           return a.second < b.second;
         });
   }
@@ -159,7 +159,7 @@ void sort_and_filter_duplicate_interactions(
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
   // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
   // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
-  std::vector<std::string> res;
+  std::vector<std::vector<namespace_index> > res;
   for (auto& i : vec_sorted)
   {
     if (must_be_left_sorted(i.first))
