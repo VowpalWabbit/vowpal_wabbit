@@ -328,7 +328,7 @@ void save_load_header(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
             {
-              memcpy(buff2, &all.interactions[i], inter_len);
+              memcpy(buff2, &all.interactions[i].data(), inter_len);
 
               msg << "interaction: ";
               msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
