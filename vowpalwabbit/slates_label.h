@@ -8,10 +8,10 @@
 
 #include "label_parser.h"
 #include "action_score.h"
-
+namespace VW
+{
 namespace slates
 {
-
 enum example_type : uint8_t
 {
   unset = 0,
@@ -44,3 +44,4 @@ struct label
 
 extern label_parser slates_label_parser;
 }  // namespace slates
+}  // namespace VW

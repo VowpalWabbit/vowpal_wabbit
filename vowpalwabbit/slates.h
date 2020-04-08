@@ -12,12 +12,14 @@
 #include <string>
 #include <vector>
 
+namespace VW
+{
 namespace slates
 {
 struct slates_data
 {
  private:
-  std::vector<slates::label> _stashed_labels;
+  std::vector<label> _stashed_labels;
 
   /*
   The primary job of this reduction is to convert slate labels to a form CCB can process.
@@ -53,3 +55,4 @@ struct slates_data
 LEARNER::base_learner* slates_setup(VW::config::options_i& options, vw& all);
 std::string generate_slates_label_printout(const std::vector<example*>& slots);
 }  // namespace slates
+}  // namespace VW

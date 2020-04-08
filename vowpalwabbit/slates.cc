@@ -19,6 +19,8 @@
 
 using namespace VW::config;
 
+namespace VW
+{
 namespace slates
 {
 template <bool is_learn>
@@ -286,3 +288,4 @@ LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   return LEARNER::make_base(l);
 }
 }  // namespace slates
+}
