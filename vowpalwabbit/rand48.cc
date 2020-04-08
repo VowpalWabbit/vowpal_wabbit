@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 // A quick implementation similar to drand48 for cross-platform compatibility
+#include <cmath>
 #include <cstdint>
 //
 // NB: the 'ULL' suffix is not part of the constant it is there to
@@ -26,3 +27,18 @@ float merand48(uint64_t& initial)
 }
 
 float merand48_noadvance(uint64_t v) { return merand48(v); }
+
+float merand48_boxmuller(uint64_t& index)
+{
+  static float x1 = 0.0;
+  static float x2 = 0.0;
+  static float temp = 0.0;
+  do
+  {
+    x1 = 2.0f * merand48(index) - 1.0f;
+    x2 = 2.0f * merand48(index) - 1.0f;
+    temp = x1 * x1 + x2 * x2;
+  } while ((temp >= 1.0) || (temp == 0.0));
+  temp = sqrtf((-2.0f * logf(temp)) / temp);
+  return x1 * temp;
+}
