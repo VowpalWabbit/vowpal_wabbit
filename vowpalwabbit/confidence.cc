@@ -6,7 +6,7 @@
 #include "vw.h"
 #include "math.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 
 using namespace VW::config;
 

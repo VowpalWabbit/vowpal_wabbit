@@ -498,6 +498,3 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
 }
 }  // namespace LEARNER
 }  // namespace VW
-
-// TODO remove need for this:
-#include "compat.h"

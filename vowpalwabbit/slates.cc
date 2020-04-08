@@ -22,7 +22,7 @@ using namespace VW::config;
 namespace slates
 {
 template <bool is_learn>
-void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples)
+void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   _stashed_labels.clear();
   _stashed_labels.reserve(examples.size());
@@ -91,7 +91,7 @@ void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examp
     ccb_label.weight = slates_label.weight;
     examples[i]->l.conditional_contextual_bandit = ccb_label;
   }
-  LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
+  VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   // Need to convert decision scores to the original index space. This can be
   // done by going through the prediction for each slots and subtracting the
@@ -114,12 +114,12 @@ void slates_data::learn_or_predict(LEARNER::multi_learner& base, multi_ex& examp
   _stashed_labels.clear();
 }
 
-void slates_data::learn(LEARNER::multi_learner& base, multi_ex& examples)
+void slates_data::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   learn_or_predict<true>(base, examples);
 }
 
-void slates_data::predict(LEARNER::multi_learner& base, multi_ex& examples)
+void slates_data::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   learn_or_predict<false>(base, examples);
 }
@@ -222,7 +222,7 @@ void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
 }
 
 template <bool is_learn>
-void learn_or_predict(slates_data& data, LEARNER::multi_learner& base, multi_ex& examples)
+void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
   {
@@ -234,7 +234,7 @@ void learn_or_predict(slates_data& data, LEARNER::multi_learner& base, multi_ex&
   }
 }
 
-LEARNER::base_learner* slates_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<slates_data>();
   bool slates_option = false;
@@ -257,9 +257,9 @@ LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   all.p->lp = slates_label_parser;
   all.label_type = label_type_t::slates;
   all.delete_prediction = VW::delete_decision_scores;
-  auto& l = LEARNER::init_learner(
+  auto& l = VW::LEARNER::init_learner(
       data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
   l.set_finish_example(finish_multiline_example);
-  return LEARNER::make_base(l);
+  return VW::LEARNER::make_base(l);
 }
 }  // namespace slates
