@@ -19,9 +19,9 @@ multi_ex parse_dsjson(vw& all, std::string line)
       (VW::example_factory_t)&VW::get_unused_example, (void*)&all, &interaction);
 
   multi_ex result;
-  for (size_t i = 0; i < examples.size(); ++i)
+  for (const auto& ex : examples)
   {
-    result.push_back(examples[i]);
+    result.push_back(ex);
   }
   examples.delete_v();
   return result;
