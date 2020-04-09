@@ -25,9 +25,9 @@ namespace VW
 // of CB for that call.
 using decision_scores_t = v_array<ACTION_SCORE::action_scores>;
 
-void print_decision_scores(int f, decision_scores_t& decision_scores);
+void print_decision_scores(int f, const VW::decision_scores_t& decision_scores);
 void delete_decision_scores(void* polypred);
 
-void print_update_ccb(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features);
-void print_update_slates(vw& all, std::vector<example*>& slots, VW::decision_scores_t& decision_scores, size_t num_features);
+void print_update_ccb(vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
+void print_update_slates(vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
 }
