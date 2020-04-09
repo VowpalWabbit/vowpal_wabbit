@@ -162,7 +162,6 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
-  bool rnd = false;
   float epsilon = 0.;
   float alpha = 0.;
   float invlambda = 0.;
@@ -173,13 +172,12 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
-      .add(make_option("rnd", rnd).keep().help("rnd exploration"))
+      .add(make_option("rnd", numrnd).keep().help("rnd based exploration"))
       .add(make_option("alpha", alpha).keep().allow_override().default_value(0.1f).help("ci width for rnd (bigger => more exploration on repeating features)"))
-      .add(make_option("invlambda", invlambda).keep().allow_override().default_value(0.1f).help("covariance regularization strength rnd (bigger => more exploration on new features)"))
-      .add(make_option("numrnd", numrnd).keep().allow_override().default_value(1).help("number of rnd predictors (bigger => better but slower)"));
+      .add(make_option("invlambda", invlambda).keep().allow_override().default_value(0.1f).help("covariance regularization strength rnd (bigger => more exploration on new features)"));
   options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !rnd)
+  if (!cb_explore_adf_option || !options.was_supplied("rnd"))
     return nullptr;
 
   if (alpha < 0)
@@ -208,7 +206,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // ensure truncated_normal_weights
   if (!options.was_supplied("truncated_normal_weights"))
     {
-      options.insert("truncated_normal_weights", std::to_string(true));
+      options.insert("truncated_normal_weights", "");
     }
 
   size_t problem_multiplier = 1 + numrnd;
