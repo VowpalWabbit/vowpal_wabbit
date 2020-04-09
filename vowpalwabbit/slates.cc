@@ -156,6 +156,27 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
   return label_ss.str();
 }
 
+// PseudoInverse estimator for slate recommendation. The following implements
+// the case for a Cartesian product when the logging policy is a product
+// distribution. This can be seen in example 4 of the paper.
+// https://arxiv.org/abs/1605.04812
+float get_estimate(const ACTION_SCORE::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
+{
+  assert(label_probs.size() != 0);
+  assert(prediction_probs.size() != 0);
+  assert(label_probs.size() == prediction_probs.size());
+
+  float p_over_ps = 0.f;
+  const size_t number_of_slots = label_probs.size();
+  for(size_t slot_index = 0; slot_index < number_of_slots; slot_index++)
+  {
+    p_over_ps += (prediction_probs[slot_index][0].score / label_probs[slot_index].score);
+  }
+  p_over_ps -= (number_of_slots - 1);
+
+  return cost * p_over_ps;
+}
+
 void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
 {
   std::vector<example*> slots;
@@ -163,6 +184,7 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   float loss = 0.;
   bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
   float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
+  auto label_probs = v_init<ACTION_SCORE::action_score>();
 
   for (auto ec : ec_seq)
   {
@@ -171,25 +193,26 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
     if (ec->l.slates.type == slates::example_type::slot)
     {
       slots.push_back(ec);
-    }
-  }
-
-  auto predictions = ec_seq[0]->pred.decision_scores;
-  for (size_t slot_index = 0; slot_index < slots.size(); slot_index++)
-  {
-    const auto& label_probabilties = slots[slot_index]->l.slates.probabilities;
-    if (is_labelled)
-    {
-      if (label_probabilties.empty())
+      if(is_labelled)
       {
-        THROW("Probabilities missing for labeled example");
+        const auto& this_example_label_probs = ec->l.slates.probabilities;
+        if (this_example_label_probs.empty())
+        {
+          THROW("Probabilities missing for labeled example");
+        }
+        // Only care about top action for each slot.
+        label_probs.push_back(this_example_label_probs[0]);
       }
-
-      float l = CB_ALGS::get_cost_estimate(
-          label_probabilties[TOP_ACTION_INDEX], cost, predictions[slot_index][TOP_ACTION_INDEX].action);
-      loss += l * predictions[slot_index][TOP_ACTION_INDEX].score;
     }
   }
+
+  // Calculate the estimate for this example based on the pseudo inverse estimator.
+  const auto& predictions = ec_seq[0]->pred.decision_scores;
+  if (is_labelled)
+  {
+    loss = get_estimate(label_probs, cost, predictions);
+  }
+  label_probs.delete_v();
 
   bool holdout_example = is_labelled;
   if (holdout_example != false)
