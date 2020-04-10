@@ -125,9 +125,9 @@ class multi_instance_context
  public:
   multi_instance_context(const std::vector<vw*>& all) : _all(all) {}
   multi_instance_context(std::vector<std::unique_ptr<vw>>&& all) : _all_unique(std::move(all)) {
-    for(const auto& all : _all_unique)
+    for(const auto& all_unique_ptr : _all_unique)
     {
-      _all.push_back(all.get());
+      _all.push_back(all_unique_ptr.get());
     }
   }
 
