@@ -8,7 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-
 #define CASE(type) \
   case type:       \
     return #type;
@@ -30,6 +29,8 @@ const char* to_string(prediction_type_t prediction_type)
   }
 }
 
+namespace VW
+{
 namespace LEARNER
 {
 void learn_ex(example& ec, vw& all)
@@ -60,7 +61,7 @@ void save(example& ec, vw& all)
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
   save_predictor(all, final_regressor_name, 0);
 
@@ -309,3 +310,4 @@ void generic_driver_onethread(vw& all)
 float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 
 }  // namespace LEARNER
+}  // namespace VW

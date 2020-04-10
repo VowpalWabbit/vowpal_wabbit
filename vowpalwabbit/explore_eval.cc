@@ -14,7 +14,7 @@
 // input = contextual bandit label
 // output = chosen ranking
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
@@ -39,7 +39,7 @@ struct explore_eval
 
 void finish(explore_eval& data)
 {
-  if (!data.all->quiet)
+  if (!data.all->logger.quiet)
   {
     data.all->trace_message << "update count = " << data.update_count << std::endl;
     if (data.violations > 0)

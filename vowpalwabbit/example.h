@@ -18,6 +18,8 @@
 #include "example_predict.h"
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
+#include "slates_label.h"
+#include "decision_scores.h"
 #include <vector>
 
 typedef union
@@ -28,6 +30,7 @@ typedef union
   COST_SENSITIVE::label cs;
   CB::label cb;
   CCB::label conditional_contextual_bandit;
+  slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;
@@ -43,7 +46,7 @@ typedef union
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  CCB::decision_scores_t decision_scores;
+  VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc
@@ -75,7 +78,7 @@ struct example : public example_predict  // core example datatype.
   bool test_only;
   bool end_pass;  // special example indicating end of pass.
   bool sorted;    // Are the features sorted or not?
-  
+
   VW_DEPRECATED("in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. Standalone examples are by definition always in use.")
   bool in_use = true;
 };

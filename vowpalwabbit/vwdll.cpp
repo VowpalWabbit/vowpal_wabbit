@@ -83,7 +83,7 @@ VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
   {
     pointer->do_reset_source = true;
     VW::start_parser(*pointer);
-    LEARNER::generic_driver(*pointer);
+    VW::LEARNER::generic_driver(*pointer);
     VW::end_parser(*pointer);
   }
 }
@@ -117,9 +117,13 @@ VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle
 }
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE features, size_t len)
-{ VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
-  VW::releaseFeatureSpace(f, len);
+{
+  auto f = reinterpret_cast<VW::primitive_feature_space*>(features);
+  for (size_t i = 0; i < len; i++)
+    delete[] f[i].fs;
+  delete[] f;
 }
+
 #ifdef USE_CODECVT
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t * line)
 { return VW_ReadExampleA(handle, utf16_to_utf8(line).c_str());
@@ -301,7 +305,7 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetActionScoreLength(VW_EXAMPLE e)
 VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e)
 { vw * pointer = static_cast<vw*>(handle);
   example * ex = static_cast<example*>(e);
-  LEARNER::as_singleline(pointer->l)->predict(*ex);
+  VW::LEARNER::as_singleline(pointer->l)->predict(*ex);
   //BUG: The below method may return garbage as it assumes a certain structure for ex->ld
   //which may not be the actual one used (e.g., for cost-sensitive multi-class learning)
   return VW::get_prediction(ex);
@@ -310,7 +314,7 @@ VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e)
 VW_DLL_MEMBER float VW_CALLING_CONV VW_PredictCostSensitive(VW_HANDLE handle, VW_EXAMPLE e)
 { vw * pointer = static_cast<vw*>(handle);
   example * ex = static_cast<example*>(e);
-  LEARNER::as_singleline(pointer->l)->predict(*ex);
+  VW::LEARNER::as_singleline(pointer->l)->predict(*ex);
   return VW::get_cost_sensitive_prediction(ex);
 }
 

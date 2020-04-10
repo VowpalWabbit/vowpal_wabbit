@@ -42,7 +42,7 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  if (!all->quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
     if (should_use_onethread)
     {
       if (alls.size() == 1)
-        LEARNER::generic_driver_onethread(all);
+        VW::LEARNER::generic_driver_onethread(all);
       else
         THROW("--onethread doesn't make sense with multiple learners");
     }
@@ -123,9 +123,9 @@ int main(int argc, char* argv[])
     {
       VW::start_parser(all);
       if (alls.size() == 1)
-        LEARNER::generic_driver(all);
+        VW::LEARNER::generic_driver(all);
       else
-        LEARNER::generic_driver(alls);
+        VW::LEARNER::generic_driver(alls);
       VW::end_parser(all);
     }
 

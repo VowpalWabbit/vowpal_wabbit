@@ -25,7 +25,7 @@
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 // todo:
@@ -313,7 +313,7 @@ void print_features(vw& all, example& ec)
 
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
-    { 
+    {
       for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
       std::cout << std::endl;
     }
@@ -328,12 +328,14 @@ void print_audit_features(vw& all, example& ec)
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, float ret)
+float finalize_prediction(shared_data* sd, vw_logger& logger, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl;
+    if (!logger.quiet) {
+      std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl;
+    }
     return ret;
   }
   if (ret > sd->max_label)
@@ -377,7 +379,7 @@ void predict(gd& g, base_learner&, example& ec)
     ec.partial_prediction = inline_predict(all, ec);
 
   ec.partial_prediction *= (float)all.sd->contraction;
-  ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
   if (audit)
     print_audit_features(all, ec);
 }
@@ -416,7 +418,7 @@ void multipredict(
   if (all.sd->contraction != 1.)
     for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
+    for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
@@ -709,7 +711,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
       if (*it != 0.f)
       {
         const auto weight_index = it.index() >> weights.stride_shift();
-        
+
         const auto map_it = all.index_name_map.find(weight_index);
         if (map_it != all.index_name_map.end())
         {

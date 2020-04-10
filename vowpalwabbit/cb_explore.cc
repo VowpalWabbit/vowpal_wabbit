@@ -10,7 +10,7 @@
 #include "explore.h"
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
@@ -224,7 +224,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -301,6 +301,11 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
+  }
+
+  if (data->epsilon < 0.0 || data->epsilon > 1.0)
+  {
+    THROW("The value of epsilon must be in [0,1]");
   }
 
   all.delete_prediction = delete_action_scores;

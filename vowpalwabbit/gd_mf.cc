@@ -17,7 +17,7 @@
 #include "vw_exception.h"
 #include "array_parameters.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct gdmf
@@ -153,7 +153,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   all.set_minmax(all.sd, ld.label);
 
-  ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ld.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
