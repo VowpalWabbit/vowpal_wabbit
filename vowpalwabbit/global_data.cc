@@ -17,7 +17,6 @@
 #include "vw_allreduce.h"
 #include "parse_args.h"
 #include "vw.h"
-
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 
