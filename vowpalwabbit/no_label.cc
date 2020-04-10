@@ -11,6 +11,7 @@
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_string_view.h"
+#include "vw.h"
 
 namespace no_label
 {

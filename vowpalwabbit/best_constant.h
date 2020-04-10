@@ -4,7 +4,7 @@
 
 #pragma once
 #include <cfloat>
-#include "vw.h"
+#include "global_data.h"
 
 inline void count_label(shared_data* sd, float l)
 {

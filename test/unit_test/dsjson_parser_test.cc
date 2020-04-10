@@ -8,6 +8,7 @@
 #include <vector>
 #include "conditional_contextual_bandit.h"
 #include "parse_example_json.h"
+#include "vw.h"
 
 multi_ex parse_dsjson(vw& all, std::string line)
 {

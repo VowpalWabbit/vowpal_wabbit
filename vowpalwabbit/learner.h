@@ -94,6 +94,7 @@ struct finish_example_data
 
 void generic_driver(vw& all);
 void generic_driver(const std::vector<vw*>& alls);
+void generic_driver(std::vector<std::unique_ptr<vw>>&& all);
 void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
@@ -144,7 +145,7 @@ struct learner
   func_data finisher_fd;
 
   std::shared_ptr<void> learner_data;
-  learner(){};  // Should only be able to construct a learner through init_learner function
+  learner() = default;  // Should only be able to construct a learner through init_learner function
  public:
   prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.

@@ -49,9 +49,9 @@
 #include "options.h"
 #include "version.h"
 
-typedef float weight;
+using weight = float;
 
-typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
 
 struct dictionary_info
 {
@@ -361,9 +361,39 @@ struct vw_logger
 struct vw
 {
  private:
-  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
+  // per instance random_state
+  std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();
 
- public:
+  vw();
+public:
+  /* Caveats:
+    (1) Some commandline parameters do not make sense as a library.
+    (2) The code is not yet reentrant.
+  */
+  static std::unique_ptr<vw> initialize(VW::config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
+      trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+  static std::unique_ptr<vw> initialize(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+      trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+  static std::unique_ptr<vw> initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
+      trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+  /// Create a new VW instance while sharing the model with another instance
+  /// The extra arguments will be appended to those of the other VW instance
+  static std::unique_ptr<vw> seed_vw_model(
+      vw* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+  /// Allows the input command line string to have spaces escaped by '\'
+  static std::unique_ptr<vw> initialize_escaped(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+      trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
+  ~vw();
+  vw(const vw&) = delete;
+  vw& operator=(const vw&) = delete;
+
+  // vw object cannot be moved as many objects hold a pointer to it.
+  // That pointer would be invalidated if it were to be moved.
+  vw(const vw&&) = delete;
+  vw& operator=(const vw&&) = delete;
+
+  bool is_managed_by_unique;
   shared_data* sd;
 
   parser* p;
@@ -550,17 +580,7 @@ struct vw
 
   label_type_t label_type;
 
-  vw();
-  ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
-
-  vw(const vw&) = delete;
-  vw& operator=(const vw&) = delete;
-
-  // vw object cannot be moved as many objects hold a pointer to it.
-  // That pointer would be invalidated if it were to be moved.
-  vw(const vw&&) = delete;
-  vw& operator=(const vw&&) = delete;
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

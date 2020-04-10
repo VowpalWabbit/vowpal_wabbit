@@ -23,12 +23,12 @@
 
 using namespace VW::config;
 
-vw* setup(options_i& options)
+std::unique_ptr<vw> setup(options_i& options)
 {
-  vw* all = nullptr;
+  std::unique_ptr<vw> all = nullptr;
   try
   {
-    all = VW::initialize(options);
+    all = vw::initialize(options);
   }
   catch (const std::exception& ex)
   {
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   {
     // support multiple vw instances for training of the same datafile for the same instance
     std::vector<std::unique_ptr<options_boost_po>> arguments;
-    std::vector<vw*> alls;
+    std::vector<std::unique_ptr<vw>> alls;
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
@@ -125,19 +125,19 @@ int main(int argc, char* argv[])
       if (alls.size() == 1)
         VW::LEARNER::generic_driver(all);
       else
-        VW::LEARNER::generic_driver(alls);
+        VW::LEARNER::generic_driver(std::move(alls));
       VW::end_parser(all);
     }
 
-    for (vw* v : alls)
+    for (auto& vw_ptr : alls)
     {
-      if (v->p->exc_ptr)
+      if (vw_ptr->p->exc_ptr)
       {
-        std::rethrow_exception(v->p->exc_ptr);
+        std::rethrow_exception(vw_ptr->p->exc_ptr);
       }
 
-      VW::sync_stats(*v);
-      VW::finish(*v);
+      VW::sync_stats(*vw_ptr);
+      VW::finish(std::move(vw_ptr));
     }
   }
   catch (VW::vw_exception& e)

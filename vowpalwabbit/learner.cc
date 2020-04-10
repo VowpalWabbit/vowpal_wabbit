@@ -124,6 +124,12 @@ class multi_instance_context
 {
  public:
   multi_instance_context(const std::vector<vw*>& all) : _all(all) {}
+  multi_instance_context(std::vector<std::unique_ptr<vw>>&& all) : _all_unique(std::move(all)) {
+    for(const auto& all : _all_unique)
+    {
+      _all.push_back(all.get());
+    }
+  }
 
   vw& get_master() const { return *_all.front(); }
 
@@ -136,6 +142,7 @@ class multi_instance_context
 
  private:
   std::vector<vw*> _all;
+  std::vector<std::unique_ptr<vw>> _all_unique;
 };
 
 // single_example_handler / multi_example_handler - consumer classes with on_example handle method, incapsulating
@@ -144,7 +151,7 @@ template <typename context_type>
 class single_example_handler
 {
  public:
-  single_example_handler(const context_type& context) : _context(context) {}
+  single_example_handler(context_type&& context) : _context(std::move(context)) {}
 
   void on_example(example* ec)
   {
@@ -196,7 +203,7 @@ class multi_example_handler
   }
 
  public:
-  multi_example_handler(const context_type context) : _context(context) {}
+  multi_example_handler(context_type&& context) : _context(std::move(context)) {}
 
   ~multi_example_handler()
   {
@@ -254,18 +261,18 @@ void process_examples(queue_type& examples, handler_type& handler)
 }
 
 template <typename context_type>
-void generic_driver(ready_examples_queue& examples, context_type& context)
+void generic_driver(ready_examples_queue& examples, context_type&& context)
 {
   if (context.get_master().l->is_multiline)
   {
     using handler_type = multi_example_handler<context_type>;
-    handler_type handler(context);
+    handler_type handler(std::move(context));
     process_examples(examples, handler);
   }
   else
   {
     using handler_type = single_example_handler<context_type>;
-    handler_type handler(context);
+    handler_type handler(std::move(context));
     process_examples(examples, handler);
   }
   drain_examples(context.get_master());
@@ -275,21 +282,28 @@ void generic_driver(vw& all)
 {
   single_instance_context context(all);
   ready_examples_queue examples(all);
-  generic_driver(examples, context);
+  generic_driver(examples, std::move(context));
 }
 
 void generic_driver(const std::vector<vw*>& all)
 {
   multi_instance_context context(all);
   ready_examples_queue examples(context.get_master());
-  generic_driver(examples, context);
+  generic_driver(examples, std::move(context));
+}
+
+void generic_driver(std::vector<std::unique_ptr<vw>>&& all)
+{
+  multi_instance_context context(std::move(all));
+  ready_examples_queue examples(context.get_master());
+  generic_driver(examples, std::move(context));
 }
 
 template <typename handler_type>
 void generic_driver_onethread(vw& all)
 {
   single_instance_context context(all);
-  handler_type handler(context);
+  handler_type handler(std::move(context));
   auto multi_ex_fptr = [&handler](vw& all, v_array<example*> examples) {
     all.p->end_parsed_examples += examples.size();  // divergence: lock & signal
     custom_examples_queue examples_queue(examples);

@@ -15,6 +15,11 @@
 #include "vw_exception.h"
 #include "future_compat.h"
 #include "vw_allreduce.h"
+#include "parse_args.h"
+#include "vw.h"
+
+#include "options_boost_po.h"
+#include "options_serializer_boost_po.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -324,6 +329,7 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
+  is_managed_by_unique = true;
   label_type = label_type_t::simple;
 
   l = nullptr;
@@ -485,4 +491,150 @@ vw::~vw()
 
   delete loss;
   delete all_reduce;
+}
+
+std::unique_ptr<vw> vw::initialize(VW::config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
+    void* trace_context)
+{
+  // Can't use make_unique here as it requires access to the constructor which is private.
+  auto all = std::unique_ptr<vw>(new vw);
+  parse_args(*all, options, trace_listener, trace_context);
+
+  try
+  {
+    // if user doesn't pass in a model, read from options
+    io_buf localModel;
+    if (!model)
+    {
+      std::vector<std::string> all_initial_regressor_files(all->initial_regressors);
+      if (options.was_supplied("input_feature_regularizer"))
+      {
+        all_initial_regressor_files.push_back(all->per_feature_regularizer_input);
+      }
+      read_regressor_file(*all, all_initial_regressor_files, localModel);
+      model = &localModel;
+    }
+
+    // Loads header of model files and loads the command line options into the options object.
+    load_header_merge_options(options, *all, *model);
+
+    std::vector<std::string> dictionary_nses;
+    parse_modules(options, *all, dictionary_nses);
+
+    parse_sources(options, *all, *model, skipModelLoad);
+
+    // we must delay so parse_mask is fully defined.
+    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(*all, dictionary_nses[id]);
+
+    options.check_unregistered();
+
+    // upon direct query for help -- spit it out to stdout;
+    if (options.get_typed_option<bool>("help").value())
+    {
+      std::cout << options.help();
+      exit(0);
+    }
+
+    all->l->init_driver();
+
+    return std::move(all);
+  }
+  catch (std::exception& e)
+  {
+    all->trace_message << "Error: " << e.what() << std::endl;
+    VW::finish(std::move(all));
+    throw;
+  }
+  catch (...)
+  {
+    VW::finish(std::move(all));
+    throw;
+  }
+}
+
+std::unique_ptr<vw> vw::initialize(
+    const std::string& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  int argc = 0;
+  char** argv = VW::to_argv(s, argc);
+  std::unique_ptr<vw> ret = nullptr;
+
+  try
+  {
+    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+  }
+  catch (...)
+  {
+    VW::free_args(argc, argv);
+    throw;
+  }
+
+  VW::free_args(argc, argv);
+  return ret;
+}
+
+std::unique_ptr<vw> vw::initialize(
+    int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  VW::config::options_i* options = new VW::config::options_boost_po(argc, argv);
+  auto all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
+
+  // When VW is deleted the options object will be cleaned up too.
+  all->should_delete_options = true;
+  return all;
+}
+
+std::unique_ptr<vw> vw::seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
+{
+  VW::config::options_serializer_boost_po serializer;
+  for (auto const& option : vw_model->options->get_all_options())
+  {
+    if (vw_model->options->was_supplied(option->m_name))
+    {
+      // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the
+      // model.
+      if (option->m_name == "no_stdin" || option->m_name == "initial_regressor")
+      {
+        continue;
+      }
+
+      serializer.add(*option);
+    }
+  }
+
+  auto serialized_options = serializer.str();
+  serialized_options = serialized_options + " " + extra_args;
+
+  auto new_model =
+      vw::initialize(serialized_options.c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
+  free_it(new_model->sd);
+
+  // reference model states stored in the specified VW instance
+  new_model->weights.shallow_copy(vw_model->weights);  // regressor
+  new_model->sd = vw_model->sd;                        // shared data
+  new_model->p->_shared_data = new_model->sd;
+
+  return new_model;
+}
+
+// Allows the input command line string to have spaces escaped by '\'
+std::unique_ptr<vw> vw::initialize_escaped(
+    const std::string& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  int argc = 0;
+  char** argv = VW::to_argv_escaped(s, argc);
+  std::unique_ptr<vw> ret = nullptr;
+
+  try
+  {
+    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+  }
+  catch (...)
+  {
+    VW::free_args(argc, argv);
+    throw;
+  }
+
+  VW::free_args(argc, argv);
+  return ret;
 }

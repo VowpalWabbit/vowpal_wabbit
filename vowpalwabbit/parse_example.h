@@ -5,7 +5,7 @@
 #include <cstdint>
 #include "parse_primitives.h"
 #include "example.h"
-#include "vw.h"
+#include "global_data.h"
 #include "vw_string_view.h"
 
 // example processing

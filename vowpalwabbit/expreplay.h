@@ -4,7 +4,6 @@
 
 #pragma once
 #include "learner.h"
-#include "vw.h"
 #include "parse_args.h"
 #include "rand48.h"
 #include <memory>

@@ -5,6 +5,10 @@
 #include "global_data.h"
 #include "options.h"
 
+#include <vector>
+#include <string>
+#include <memory>
+
 // Used in parse_source
 struct input_options
 {
@@ -24,9 +28,11 @@ struct input_options
 };
 
 // trace listener + context need to be passed at initialization to capture all messages.
-vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-void parse_modules(VW::config::options_i& options, vw& all);
+void parse_args(vw& all, VW::config::options_i& options, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+void parse_modules(VW::config::options_i& options, vw& all, std::vector<std::string>& dictionary_nses);
 void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad = false);
+VW::config::options_i& load_header_merge_options(VW::config::options_i& options, vw& all, io_buf& model);
+void parse_dictionary_argument(vw& all, const std::string& str);
 
 VW::LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
 

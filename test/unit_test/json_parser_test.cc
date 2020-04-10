@@ -4,6 +4,7 @@
 #include <boost/test/test_tools.hpp>
 
 #include "test_common.h"
+#include "vw.h"
 
 #include <vector>
 #include "conditional_contextual_bandit.h"

@@ -32,28 +32,12 @@
 #include "simple_label.h"
 #include "parser.h"
 #include "parse_example.h"
-
 #include "options.h"
 
 #include "compat.h"
 
 namespace VW
 {
-/*    Caveats:
-    (1) Some commandline parameters do not make sense as a library.
-    (2) The code is not yet reentrant.
-   */
-vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* seed_vw_model(
-    vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-// Allows the input command line string to have spaces escaped by '\'
-vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
@@ -67,9 +51,12 @@ void free_args(int argc, char* argv[]);
 
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
-/*
-  Call finish() after you are done with the vw instance.  This cleans up memory usage.
- */
+
+// This will effectively consume the vw object and cleanup.
+void finish(std::unique_ptr<vw>&& all);
+
+// Call finish() after you are done with the vw instance.  This cleans up memory usage.
+VW_DEPRECATED("Use the unique_ptr based api instead")
 void finish(vw& all, bool delete_all = true);
 void sync_stats(vw& all);
 

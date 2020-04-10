@@ -6,6 +6,7 @@
 
 #include "parse_primitives.h"
 #include "v_array.h"
+#include "vw.h"
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD

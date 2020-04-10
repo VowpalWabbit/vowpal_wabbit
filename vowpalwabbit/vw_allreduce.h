@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "vw.h"
+#include "global_data.h"
 #include "allreduce.h"
 
 template <class T, void (*f)(T&, const T&)>

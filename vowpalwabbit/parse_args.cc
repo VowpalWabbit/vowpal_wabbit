@@ -16,6 +16,7 @@
 #include "vw.h"
 #include "interactions.h"
 
+#include "global_data.h"
 #include "sender.h"
 #include "nn.h"
 #include "gd.h"
@@ -154,7 +155,7 @@ std::string find_in_path(std::vector<std::string> paths, std::string fname)
   return "";
 }
 
-void parse_dictionary_argument(vw& all, std::string str)
+void parse_dictionary_argument(vw& all, const std::string& str)
 {
   if (str.length() == 0)
     return;
@@ -1310,9 +1311,8 @@ void parse_reductions(options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
-vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_context)
+void parse_args(vw& all, options_i& options, trace_message_t trace_listener, void* trace_context)
 {
-  vw& all = *(new vw());
   all.options = &options;
 
   if (trace_listener)
@@ -1400,11 +1400,12 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     parse_diagnostics(options, all);
 
     all.initial_t = (float)all.sd->t;
-    return all;
   }
   catch (...)
   {
+IGNORE_DEPRECATED_USAGE_START
     VW::finish(all);
+IGNORE_DEPRECATED_USAGE_END
     throw;
   }
 }
@@ -1665,150 +1666,6 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(
-    options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
-{
-  vw& all = parse_args(options, trace_listener, trace_context);
-
-  try
-  {
-    // if user doesn't pass in a model, read from options
-    io_buf localModel;
-    if (!model)
-    {
-      std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
-      if (options.was_supplied("input_feature_regularizer"))
-      {
-        all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
-      }
-      read_regressor_file(all, all_initial_regressor_files, localModel);
-      model = &localModel;
-    }
-
-    // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(options, all, *model);
-
-    std::vector<std::string> dictionary_nses;
-    parse_modules(options, all, dictionary_nses);
-
-    parse_sources(options, all, *model, skipModelLoad);
-
-    // we must delay so parse_mask is fully defined.
-    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
-
-    options.check_unregistered();
-
-    // upon direct query for help -- spit it out to stdout;
-    if (options.get_typed_option<bool>("help").value())
-    {
-      cout << options.help();
-      exit(0);
-    }
-
-    all.l->init_driver();
-
-    return &all;
-  }
-  catch (std::exception& e)
-  {
-    all.trace_message << "Error: " << e.what() << endl;
-    finish(all);
-    throw;
-  }
-  catch (...)
-  {
-    finish(all);
-    throw;
-  }
-}
-
-vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
-{
-  int argc = 0;
-  char** argv = to_argv(s, argc);
-  vw* ret = nullptr;
-
-  try
-  {
-    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
-  }
-  catch (...)
-  {
-    free_args(argc, argv);
-    throw;
-  }
-
-  free_args(argc, argv);
-  return ret;
-}
-
-vw* initialize_escaped(
-    std::string const& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
-{
-  int argc = 0;
-  char** argv = to_argv_escaped(s, argc);
-  vw* ret = nullptr;
-
-  try
-  {
-    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
-  }
-  catch (...)
-  {
-    free_args(argc, argv);
-    throw;
-  }
-
-  free_args(argc, argv);
-  return ret;
-}
-
-vw* initialize(
-    int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
-{
-  options_i* options = new config::options_boost_po(argc, argv);
-  vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
-
-  // When VW is deleted the options object will be cleaned up too.
-  all->should_delete_options = true;
-  return all;
-}
-
-// Create a new VW instance while sharing the model with another instance
-// The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t trace_listener, void* trace_context)
-{
-  options_serializer_boost_po serializer;
-  for (auto const& option : vw_model->options->get_all_options())
-  {
-    if (vw_model->options->was_supplied(option->m_name))
-    {
-      // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the
-      // model.
-      if (option->m_name == "no_stdin" || option->m_name == "initial_regressor")
-      {
-        continue;
-      }
-
-      serializer.add(*option);
-    }
-  }
-
-  auto serialized_options = serializer.str();
-  serialized_options = serialized_options + " " + extra_args;
-
-  vw* new_model =
-      VW::initialize(serialized_options.c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
-  free_it(new_model->sd);
-
-  // reference model states stored in the specified VW instance
-  new_model->weights.shallow_copy(vw_model->weights);  // regressor
-  new_model->sd = vw_model->sd;                        // shared data
-  new_model->p->_shared_data = new_model->sd;
-
-  return new_model;
-}
-
 void sync_stats(vw& all)
 {
   if (all.all_reduce != nullptr)
@@ -1826,6 +1683,14 @@ void sync_stats(vw& all)
     float total_features = (float)all.sd->total_features;
     all.sd->total_features = (uint64_t)accumulate_scalar(all, total_features);
   }
+}
+
+void finish(std::unique_ptr<vw>&& all)
+{
+  IGNORE_DEPRECATED_USAGE_START
+  // Do not delete as the unique_ptr will handle that.
+  finish(*all.get(), false);
+  IGNORE_DEPRECATED_USAGE_END
 }
 
 void finish(vw& all, bool delete_all)
@@ -1897,8 +1762,12 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception_thrown = true;
   }
 
-  if (delete_all)
+  // If this object is managed with a unique pointer then we should not delete.
+  // This can happen if a user calls the wrong API or an exception is thrown and the user is using the new api.
+  if (delete_all && !all.is_managed_by_unique)
+  {
     delete &all;
+  }
 
   if (finalize_regressor_exception_thrown)
     throw finalize_regressor_exception;

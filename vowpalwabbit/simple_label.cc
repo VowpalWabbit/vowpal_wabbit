@@ -11,6 +11,7 @@
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_string_view.h"
+#include "vw.h"
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
