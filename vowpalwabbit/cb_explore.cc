@@ -10,7 +10,7 @@
 #include "explore.h"
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
@@ -302,7 +302,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
   }
-  
+
   if (data->epsilon < 0.0 || data->epsilon > 1.0)
   {
     THROW("The value of epsilon must be in [0,1]");

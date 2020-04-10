@@ -17,7 +17,7 @@
 #include "vw_exception.h"
 #include "array_parameters.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct gdmf

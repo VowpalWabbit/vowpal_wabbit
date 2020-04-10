@@ -35,6 +35,8 @@
 
 #include "options.h"
 
+#include "compat.h"
+
 namespace VW
 {
 /*    Caveats:
