@@ -15,7 +15,7 @@
 #include <vector>
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;

@@ -12,7 +12,7 @@
 #include "reductions.h"
 #include "gd.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct mf

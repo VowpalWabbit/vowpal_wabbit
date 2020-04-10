@@ -15,7 +15,7 @@
 #include "vw_versions.h"
 #include "explore.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
@@ -51,7 +51,7 @@ struct cb_adf
 
  public:
   template <bool is_learn>
-  void do_actual_learning(LEARNER::multi_learner& base, multi_ex& ec_seq);
+  void do_actual_learning(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
   cb_adf(
@@ -61,7 +61,7 @@ struct cb_adf
     _gen_cs.cb_type = cb_type;
   }
 
-  void set_scorer(LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
+  void set_scorer(VW::LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
 
   bool get_rank_all() const { return _rank_all; }
 
