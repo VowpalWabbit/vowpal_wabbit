@@ -1897,56 +1897,6 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception_thrown = true;
   }
 
-  if (all.l != nullptr)
-  {
-    all.l->finish();
-    free_it(all.l);
-  }
-
-  // Check if options object lifetime is managed internally.
-  if (all.should_delete_options)
-    delete all.options;
-
-  // TODO: migrate all finalization into parser destructor
-  if (all.p != nullptr)
-  {
-    free_parser(all);
-    finalize_source(all.p);
-    all.p->parse_name.clear();
-    all.p->parse_name.delete_v();
-    delete all.p;
-  }
-
-  bool seeded;
-  if (all.weights.seeded() > 0)
-    seeded = true;
-  else
-    seeded = false;
-  if (!seeded)
-  {
-    if (all.sd->ldict)
-    {
-      all.sd->ldict->~namedlabels();
-      free(all.sd->ldict);
-    }
-    free(all.sd);
-  }
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
-    if (all.final_prediction_sink[i] != 1)
-      io_buf::close_file_or_socket(all.final_prediction_sink[i]);
-  all.final_prediction_sink.delete_v();
-
-  all.loaded_dictionaries.clear();
-  // TODO: should we be clearing the namespace dictionaries?
-  for (auto & ns_dict : all.namespace_dictionaries)
-  {
-    ns_dict.clear();
-  }
-
-  delete all.loss;
-
-  delete all.all_reduce;
-
   if (delete_all)
     delete &all;
 

@@ -14,6 +14,7 @@
 #include "gd.h"
 #include "vw_exception.h"
 #include "future_compat.h"
+#include "vw_allreduce.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -438,3 +439,50 @@ vw::vw()
   sd->holdout_multiclass_log_loss = 0;
 }
 IGNORE_DEPRECATED_USAGE_END
+
+vw::~vw()
+{
+  if (l != nullptr)
+  {
+    l->finish();
+    free(l);
+  }
+
+  // Check if options object lifetime is managed internally.
+  if (should_delete_options)
+    delete options;
+
+  // TODO: migrate all finalization into parser destructor
+  if (p != nullptr)
+  {
+    free_parser(*this);
+    finalize_source(p);
+    p->parse_name.clear();
+    p->parse_name.delete_v();
+    delete p;
+  }
+
+  const bool seeded = weights.seeded() > 0;
+  if (!seeded)
+  {
+    if (sd->ldict)
+    {
+      sd->ldict->~namedlabels();
+      free(sd->ldict);
+    }
+    free(sd);
+  }
+
+  for (auto& sink : final_prediction_sink)
+  {
+    // This is checking if the sink corresponds to stdout. TODO: abstract this.
+    if (sink != 1)
+    {
+      io_buf::close_file_or_socket(sink);
+    }
+  }
+  final_prediction_sink.delete_v();
+
+  delete loss;
+  delete all_reduce;
+}
