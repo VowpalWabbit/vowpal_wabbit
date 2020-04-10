@@ -10,7 +10,7 @@
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 using namespace CB;

@@ -40,3 +40,6 @@ constexpr const char* SLATES_LABEL = "slates";
 constexpr const char* SHARED_TYPE = "shared";
 constexpr const char* ACTION_TYPE = "action";
 constexpr const char* SLOT_TYPE = "slot";
+
+static constexpr uint32_t SHARED_EX_INDEX = 0;
+static constexpr uint32_t TOP_ACTION_INDEX = 0;

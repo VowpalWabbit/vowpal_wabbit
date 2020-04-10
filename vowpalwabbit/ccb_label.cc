@@ -21,7 +21,7 @@
 #include <cmath>
 #include "vw_string_view.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 

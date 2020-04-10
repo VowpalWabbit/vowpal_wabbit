@@ -75,8 +75,8 @@ struct cb_explore_adf_base
   {
   }
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
-  static void predict(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
-  static void learn(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
+  static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
+  static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
  private:
   void output_example_seq(vw& all, multi_ex& ec_seq);
@@ -85,7 +85,7 @@ struct cb_explore_adf_base
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
-    cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
   data._known_cost = CB_ADF::get_observed_cost(examples);
@@ -108,7 +108,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
-    cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
   if (label_example != nullptr)

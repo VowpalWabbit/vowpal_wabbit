@@ -38,6 +38,7 @@
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
 #include "cb_explore_adf_softmax.h"
+#include "slates.h"
 #include "mwt.h"
 #include "confidence.h"
 #include "scorer.h"
@@ -1221,7 +1222,7 @@ void load_input_model(vw& all, io_buf& io_temp)
   }
 }
 
-LEARNER::base_learner* setup_base(options_i& options, vw& all)
+VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
   auto setup_func = all.reduction_stack.top();
   all.reduction_stack.pop();
@@ -1296,6 +1297,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
+  all.reduction_stack.push(slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);
@@ -1329,7 +1331,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
-    
+
     if (ring_size_tmp <= 0)
     {
       THROW("ring_size should be positive");
@@ -1952,4 +1954,3 @@ void finish(vw& all, bool delete_all)
     throw finalize_regressor_exception;
 }
 }  // namespace VW
-
