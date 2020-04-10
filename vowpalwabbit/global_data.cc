@@ -472,9 +472,15 @@ vw::~vw()
     }
     free(sd);
   }
-  for (size_t i = 0; i < final_prediction_sink.size(); i++)
-    if (final_prediction_sink[i] != 1)
-      io_buf::close_file_or_socket(final_prediction_sink[i]);
+
+  for (auto& sink : final_prediction_sink)
+  {
+    // This is checking if the sink corresponds to stdout. TODO: abstract this.
+    if (sink != 1)
+    {
+      io_buf::close_file_or_socket(sink);
+    }
+  }
   final_prediction_sink.delete_v();
 
   delete loss;
