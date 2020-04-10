@@ -64,7 +64,7 @@ vw_ptr my_initialize(std::string args)
 
 void my_run_parser(vw_ptr all)
 {   VW::start_parser(*all);
-    LEARNER::generic_driver(*all);
+    VW::LEARNER::generic_driver(*all);
     VW::end_parser(*all);
 }
 

@@ -20,7 +20,7 @@
 #include <unordered_set>
 #include <bitset>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 

@@ -45,14 +45,14 @@ struct slates_data
     ccb slot 3:0.8:0.6 3,4
   */
   template <bool is_learn>
-  void learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples);
+  void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
  public:
-  void learn(LEARNER::multi_learner& base, multi_ex& examples);
-  void predict(LEARNER::multi_learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
-LEARNER::base_learner* slates_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* slates_setup(VW::config::options_i& options, vw& all);
 std::string generate_slates_label_printout(const std::vector<example*>& slots);
 }  // namespace slates
 }  // namespace VW

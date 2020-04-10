@@ -9,7 +9,7 @@
 #include <cmath>
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 #define NORM2 (m + 1)
