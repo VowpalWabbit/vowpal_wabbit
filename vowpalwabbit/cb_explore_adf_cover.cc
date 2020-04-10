@@ -31,7 +31,7 @@ struct cb_explore_adf_cover
   bool _nounif;
   bool _first_only;
   size_t _counter;
-  LEARNER::multi_learner* _cs_ldf_learner;
+  VW::LEARNER::multi_learner* _cs_ldf_learner;
   GEN_CS::cb_to_cs_adf _gen_cs;
 
   v_array<ACTION_SCORE::action_score> _action_probs;
@@ -43,20 +43,20 @@ struct cb_explore_adf_cover
 
  public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, bool first_only,
-      LEARNER::multi_learner* cs_ldf_learner, LEARNER::single_learner* scorer, size_t cb_type);
+      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type);
   ~cb_explore_adf_cover();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
-  void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, bool first_only,
-    LEARNER::multi_learner* cs_ldf_learner, LEARNER::single_learner* scorer, size_t cb_type)
+    VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type)
     : _cover_size(cover_size), _psi(psi), _nounif(nounif), _first_only(first_only), _cs_ldf_learner(cs_ldf_learner)
 {
   _gen_cs.cb_type = cb_type;
@@ -64,7 +64,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
 }
 
 template <bool is_learn>
-void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
   _gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
@@ -78,12 +78,12 @@ void cb_explore_adf_cover::predict_or_learn_impl(LEARNER::multi_learner& base, m
       GEN_CS::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels);
     else
       GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
-    LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+    VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
   }
   else
   {
     GEN_CS::gen_cs_example_ips(examples, _cs_labels);
-    LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   const uint32_t num_actions = (uint32_t)preds.size();
@@ -175,7 +175,7 @@ cb_explore_adf_cover::~cb_explore_adf_cover()
   _gen_cs.pred_scores.costs.delete_v();
 }
 
-LEARNER::base_learner* setup(config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   using config::make_option;
 
@@ -240,7 +240,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // Set explore_type
   size_t problem_multiplier = cover_size + 1;
 
-  LEARNER::multi_learner* base = LEARNER::as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
   all.label_type = label_type_t::cb;
 
@@ -248,7 +248,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
-  LEARNER::learner<explore_type, multi_ex>& l = init_learner(
+  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);

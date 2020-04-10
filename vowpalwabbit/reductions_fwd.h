@@ -30,5 +30,3 @@ namespace config
 struct options_i;
 }  // namespace config
 }  // namespace VW
-
-#include "compat.h"

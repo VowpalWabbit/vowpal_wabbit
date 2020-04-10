@@ -10,7 +10,7 @@
 
 #include <vector>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 // using namespace COST_SENSITIVE;

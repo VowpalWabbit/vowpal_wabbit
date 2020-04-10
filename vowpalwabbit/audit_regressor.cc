@@ -69,7 +69,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* base */, example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, example& ec)
 {
   vw& all = *rd.all;
 
@@ -96,9 +96,9 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
 }
 
 // This is a learner which does nothing with examples.
-// void learn(audit_regressor_data&, LEARNER::base_learner&, example&) {}
+// void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, LEARNER::single_learner& base, example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, example& ec)
 {
   vw& all = *rd.all;
 
@@ -241,7 +241,7 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
   std::string out_file;
 
@@ -269,12 +269,12 @@ LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->out_file = new io_buf();
   dat->out_file->open_file(out_file.c_str(), all.stdin_off, io_buf::WRITE);
 
-  LEARNER::learner<audit_regressor_data, example>& ret =
-      LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);
+  VW::LEARNER::learner<audit_regressor_data, example>& ret =
+      VW::LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);
   ret.set_init_driver(init_driver);
 
-  return LEARNER::make_base<audit_regressor_data>(ret);
+  return VW::LEARNER::make_base<audit_regressor_data>(ret);
 }

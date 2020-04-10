@@ -90,7 +90,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 }
 
 template <bool is_learn, bool print_all>
-void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& ec)
 {
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
@@ -149,7 +149,7 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   ec.num_features = in.num_features;
 }
 
-LEARNER::base_learner* interact_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
   std::string s;
   option_group_definition new_options("Interact via elementwise multiplication");
@@ -174,8 +174,8 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
     std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
   data->all = &all;
 
-  LEARNER::learner<interact, example>* l;
-  l = &LEARNER::init_learner(
+  VW::LEARNER::learner<interact, example>* l;
+  l = &VW::LEARNER::init_learner(
       data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   return make_base(*l);

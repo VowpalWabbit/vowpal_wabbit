@@ -182,9 +182,9 @@ void vw::learn(example& ec)
     THROW("This reduction does not support single-line examples.");
 
   if (ec.test_only || !training)
-    LEARNER::as_singleline(l)->predict(ec);
+    VW::LEARNER::as_singleline(l)->predict(ec);
   else
-    LEARNER::as_singleline(l)->learn(ec);
+    VW::LEARNER::as_singleline(l)->learn(ec);
 }
 
 void vw::learn(multi_ex& ec)
@@ -193,9 +193,9 @@ void vw::learn(multi_ex& ec)
     THROW("This reduction does not support multi-line example.");
 
   if (!training)
-    LEARNER::as_multiline(l)->predict(ec);
+    VW::LEARNER::as_multiline(l)->predict(ec);
   else
-    LEARNER::as_multiline(l)->learn(ec);
+    VW::LEARNER::as_multiline(l)->learn(ec);
 }
 
 void vw::predict(example& ec)
@@ -207,7 +207,7 @@ void vw::predict(example& ec)
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   ec.test_only = true;
 
-  LEARNER::as_singleline(l)->predict(ec);
+  VW::LEARNER::as_singleline(l)->predict(ec);
 }
 
 void vw::predict(multi_ex& ec)
@@ -222,7 +222,7 @@ void vw::predict(multi_ex& ec)
     ex->test_only = true;
   }
 
-  LEARNER::as_multiline(l)->predict(ec);
+  VW::LEARNER::as_multiline(l)->predict(ec);
 }
 
 void vw::finish_example(example& ec)
@@ -230,7 +230,7 @@ void vw::finish_example(example& ec)
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
-  LEARNER::as_singleline(l)->finish_example(*this, ec);
+  VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
 void vw::finish_example(multi_ex& ec)
@@ -238,7 +238,7 @@ void vw::finish_example(multi_ex& ec)
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
-  LEARNER::as_multiline(l)->finish_example(*this, ec);
+  VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
 void compile_gram(
