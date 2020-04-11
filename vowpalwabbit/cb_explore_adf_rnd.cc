@@ -27,13 +27,13 @@ struct cb_explore_adf_rnd
   float epsilon;
   float alpha;
   float sqrtinvlambda;
-  int numrnd;
+  uint32_t numrnd;
 
   size_t increment;
   vw* all;
 
  public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, int _numrnd, size_t _increment, vw* _all) : epsilon(_epsilon), alpha(_alpha), sqrtinvlambda(std::sqrt(_invlambda)), numrnd(_numrnd), increment(_increment), all(_all) { }
+  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, size_t _numrnd, size_t _increment, vw* _all) : epsilon(_epsilon), alpha(_alpha), sqrtinvlambda(std::sqrt(_invlambda)), numrnd(_numrnd), increment(_increment), all(_all) { }
   ~cb_explore_adf_rnd() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -45,6 +45,9 @@ struct cb_explore_adf_rnd
   void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
 
   std::vector<float> bonuses;
+  std::vector<float> initials;
+  float get_initial_prediction(example*);
+  void get_initial_predictions(multi_ex&, uint32_t);
   void zero_bonuses(multi_ex&);
   void accumulate_bonuses(multi_ex&);
   void finish_bonuses();
@@ -52,7 +55,6 @@ struct cb_explore_adf_rnd
 
   CB::cb_class save_class;
   template<bool> void save_labels(multi_ex&);
-  float get_prediction_offset(example*);
   template<bool> void make_fake_rnd_labels(multi_ex&);
   template<bool> void restore_labels(multi_ex&);
   template<bool> void base_learn_or_predict(LEARNER::multi_learner&, multi_ex&, uint32_t);
@@ -68,7 +70,11 @@ void cb_explore_adf_rnd::zero_bonuses(multi_ex& examples)
 void cb_explore_adf_rnd::accumulate_bonuses(multi_ex& examples)
 {
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  for (const auto& p : preds) { bonuses[p.action] += p.score * p.score; }
+  for (const auto& p : preds)
+    {
+      float score = p.score - initials[p.action];
+      bonuses[p.action] += score * score;
+    }
 }
 
 void cb_explore_adf_rnd::finish_bonuses()
@@ -115,26 +121,48 @@ namespace
   class LazyGaussianWeight
     {
       private:
+        mutable uint32_t count;
         float sigma;
 
       public:
-        LazyGaussianWeight(float _sigma) : sigma(_sigma) { }
+        LazyGaussianWeight(float _sigma) : count(0), sigma(_sigma) { }
         float operator[](uint64_t index) const
           {
+            ++count;
             return sigma * merand48_boxmuller(index);
+          }
+
+        uint32_t get_fc() const
+          {
+            return std::max((uint32_t) 1, count);
           }
     };
 }
 
-float cb_explore_adf_rnd::get_prediction_offset(example* ec)
+float cb_explore_adf_rnd::get_initial_prediction(example* ec)
 {
   LazyGaussianWeight w(sqrtinvlambda);
-  return GD::inline_predict(w,
-                            all->ignore_some_linear,
-                            all->ignore_linear,
-                            all->interactions,
-                            all->permutations,
-                            *ec);
+  float rv = GD::inline_predict(w,
+                                all->ignore_some_linear,
+                                all->ignore_linear,
+                                all->interactions,
+                                all->permutations,
+                                *ec);
+  return rv / std::sqrt(w.get_fc());
+}
+
+void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id)
+{
+  initials.clear();
+  initials.reserve(examples.size());
+  for (size_t i = 0; i < examples.size(); ++i)
+    {
+      auto* ec = examples[i];
+
+      LEARNER::increment_offset(*ec, increment, id);
+      initials.push_back(get_initial_prediction(ec));
+      LEARNER::decrement_offset(*ec, increment, id);
+    }
 }
 
 template <bool is_learn>
@@ -147,11 +175,7 @@ void cb_explore_adf_rnd::make_fake_rnd_labels(multi_ex& examples)
           auto* ec = examples[i];
           if (is_the_labeled_example(ec))
             {
-              LEARNER::increment_offset(*ec, increment, 1 + i);
-              float initial = get_prediction_offset(ec);
-              LEARNER::decrement_offset(*ec, increment, 1 + i);
-
-              ec->l.cb.costs[0].cost = alpha * (all->get_random_state()->get_and_update_gaussian() + initial);
+              ec->l.cb.costs[0].cost = alpha * all->get_random_state()->get_and_update_gaussian() + initials[i];
               ec->l.cb.costs[0].probability = 1.0f;
               break;
             }
@@ -194,10 +218,11 @@ void cb_explore_adf_rnd::predict_or_learn_impl(LEARNER::multi_learner& base, mul
 {
   save_labels<is_learn>(examples);
   zero_bonuses(examples);
-  for (int i = 0; i < numrnd; ++i)
+  for (uint32_t id = 0; id < numrnd; ++id)
     {
+      get_initial_predictions(examples, 1 + id);
       make_fake_rnd_labels<is_learn>(examples);
-      base_learn_or_predict<is_learn>(base, examples, 1 + i);
+      base_learn_or_predict<is_learn>(base, examples, 1 + id);
       accumulate_bonuses(examples);
     }
   finish_bonuses();
@@ -219,7 +244,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   float epsilon = 0.;
   float alpha = 0.;
   float invlambda = 0.;
-  int numrnd = 1;
+  uint32_t numrnd = 1;
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
@@ -227,7 +252,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
       .add(make_option("rnd", numrnd).keep().help("rnd based exploration"))
-      .add(make_option("alpha", alpha).keep().allow_override().default_value(0.0125f).help("ci width for rnd (bigger => more exploration on repeating features)"))
+      .add(make_option("alpha", alpha).keep().allow_override().default_value(0.125f).help("ci width for rnd (bigger => more exploration on repeating features)"))
       .add(make_option("invlambda", invlambda).keep().allow_override().default_value(0.125f).help("covariance regularization strength rnd (bigger => more exploration on new features)"));
   options.add_and_parse(new_options);
 
@@ -270,7 +295,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   {
     THROW("The value of epsilon must be in [0,1]");
   }
-  
+
   LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
