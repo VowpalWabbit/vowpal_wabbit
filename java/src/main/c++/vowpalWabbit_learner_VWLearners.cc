@@ -30,7 +30,7 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_performRemainingPass
       adjust_used_index(*vwInstance);
       vwInstance->do_reset_source = true;
       VW::start_parser(*vwInstance);
-      LEARNER::generic_driver(*vwInstance);
+      VW::LEARNER::generic_driver(*vwInstance);
       VW::end_parser(*vwInstance);
     }
   }

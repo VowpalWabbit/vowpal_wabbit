@@ -17,11 +17,11 @@ namespace VW
 struct autolink
 {
   autolink(uint32_t d, uint32_t stride_shift);
-  void predict(LEARNER::single_learner& base, example& ec);
-  void learn(LEARNER::single_learner& base, example& ec);
+  void predict(VW::LEARNER::single_learner& base, example& ec);
+  void learn(VW::LEARNER::single_learner& base, example& ec);
 
  private:
-  void prepare_example(LEARNER::single_learner& base, example& ec);
+  void prepare_example(VW::LEARNER::single_learner& base, example& ec);
   void reset_example(example& ec);
 
   // degree of the polynomial
@@ -36,21 +36,21 @@ VW::autolink::autolink(uint32_t poly_degree, uint32_t stride_shift)
 {
 }
 
-void VW::autolink::predict(LEARNER::single_learner& base, example& ec)
+void VW::autolink::predict(VW::LEARNER::single_learner& base, example& ec)
 {
   prepare_example(base, ec);
   base.predict(ec);
   reset_example(ec);
 }
 
-void VW::autolink::learn(LEARNER::single_learner& base, example& ec)
+void VW::autolink::learn(VW::LEARNER::single_learner& base, example& ec)
 {
   prepare_example(base, ec);
   base.learn(ec);
   reset_example(ec);
 }
 
-void VW::autolink::prepare_example(LEARNER::single_learner& base, example& ec)
+void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
   float base_pred = ec.pred.scalar;
@@ -78,7 +78,7 @@ void VW::autolink::reset_example(example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(VW::autolink& b, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(VW::autolink& b, VW::LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
     b.learn(base, ec);
@@ -86,7 +86,7 @@ void predict_or_learn(VW::autolink& b, LEARNER::single_learner& base, example& e
     b.predict(base, ec);
 }
 
-LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 {
   uint32_t d;
   option_group_definition new_options("Autolink");
