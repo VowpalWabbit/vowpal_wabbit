@@ -252,7 +252,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
       .add(make_option("rnd", numrnd).keep().help("rnd based exploration"))
-      .add(make_option("alpha", alpha).keep().allow_override().default_value(0.125f).help("ci width for rnd (bigger => more exploration on repeating features)"))
+      .add(make_option("alpha", alpha).keep().allow_override().default_value(0.01f).help("ci width for rnd (bigger => more exploration on repeating features)"))
       .add(make_option("invlambda", invlambda).keep().allow_override().default_value(0.125f).help("covariance regularization strength rnd (bigger => more exploration on new features)"));
   options.add_and_parse(new_options);
 
