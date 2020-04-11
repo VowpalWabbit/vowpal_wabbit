@@ -20,6 +20,9 @@ class TestVW:
         assert init == 0
         self.model.learn(ex)
         assert self.model.predict(ex) > init
+        ex = ["| a", "| b"]
+        assert self.model.predict(ex) == [self.model.predict(ex[0]), self.model.predict(ex[1])]
+        self.model.learn(ex)
 
     def test_get_tag(self):
         ex = self.model.example("1 foo| a b c")
