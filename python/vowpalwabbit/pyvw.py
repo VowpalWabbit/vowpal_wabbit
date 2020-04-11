@@ -372,7 +372,7 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
-        if isinstance(ec, list):
+        elif isinstance(ec, list):
             if self._is_multiline():
                 ec = self.parse(ec)
             else:
@@ -383,6 +383,7 @@ class vw(pylibvw.vw):
             if getattr(ec, 'setup_done', None) is None:
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
+
         elif isinstance(ec, list):
             if self._is_multiline():
                 pylibvw.vw.learn_multi(self, ec)
@@ -430,7 +431,7 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
-        if isinstance(ec, list):
+        elif isinstance(ec, list):
             if self._is_multiline():
                 ec = self.parse(ec)
             else:
