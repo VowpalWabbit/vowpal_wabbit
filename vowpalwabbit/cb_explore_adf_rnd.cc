@@ -26,14 +26,14 @@ struct cb_explore_adf_rnd
  private:
   float epsilon;
   float alpha;
-  float invlambda;
+  float sqrtinvlambda;
   int numrnd;
 
   size_t increment;
   vw* all;
 
  public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, int _numrnd, size_t _increment, vw* _all) : epsilon(_epsilon), alpha(_alpha), invlambda(_invlambda), numrnd(_numrnd), increment(_increment), all(_all) { }
+  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, int _numrnd, size_t _increment, vw* _all) : epsilon(_epsilon), alpha(_alpha), sqrtinvlambda(std::sqrt(_invlambda)), numrnd(_numrnd), increment(_increment), all(_all) { }
   ~cb_explore_adf_rnd() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -73,7 +73,7 @@ void cb_explore_adf_rnd::accumulate_bonuses(multi_ex& examples)
 
 void cb_explore_adf_rnd::finish_bonuses()
 {
-  for (auto& b: bonuses) { b = sqrt(b / numrnd) * invlambda; }
+  for (auto& b: bonuses) { b = sqrt(b / numrnd); }
 }
 
 void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds,
@@ -114,17 +114,21 @@ namespace
 {
   class LazyGaussianWeight
     {
+      private:
+        float sigma;
+
       public:
+        LazyGaussianWeight(float _sigma) : sigma(_sigma) { }
         float operator[](uint64_t index) const
           {
-            return merand48_boxmuller(index);
+            return sigma * merand48_boxmuller(index);
           }
     };
 }
 
 float cb_explore_adf_rnd::get_prediction_offset(example* ec)
 {
-  LazyGaussianWeight w;
+  LazyGaussianWeight w(sqrtinvlambda);
   return GD::inline_predict(w,
                             all->ignore_some_linear,
                             all->ignore_linear,
@@ -230,12 +234,12 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!cb_explore_adf_option || !options.was_supplied("rnd"))
     return nullptr;
 
-  if (alpha < 0)
+  if (alpha <= 0)
   {
     THROW("The value of alpha must be positive.")
   }
 
-  if (invlambda < 0)
+  if (invlambda <= 0)
   {
     THROW("The value of invlambda must be positive.")
   }
