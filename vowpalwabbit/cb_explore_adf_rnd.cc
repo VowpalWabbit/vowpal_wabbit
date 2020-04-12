@@ -37,12 +37,12 @@ struct cb_explore_adf_rnd
   ~cb_explore_adf_rnd() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
-  void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   std::vector<float> bonuses;
   std::vector<float> initials;
@@ -57,7 +57,7 @@ struct cb_explore_adf_rnd
   template<bool> void save_labels(multi_ex&);
   template<bool> void make_fake_rnd_labels(multi_ex&);
   template<bool> void restore_labels(multi_ex&);
-  template<bool> void base_learn_or_predict(LEARNER::multi_learner&, multi_ex&, uint32_t);
+  template<bool> void base_learn_or_predict(VW::LEARNER::multi_learner&, multi_ex&, uint32_t);
 };
 
 void cb_explore_adf_rnd::zero_bonuses(multi_ex& examples)
@@ -159,9 +159,9 @@ void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id
     {
       auto* ec = examples[i];
 
-      LEARNER::increment_offset(*ec, increment, id);
+      VW::LEARNER::increment_offset(*ec, increment, id);
       initials.push_back(get_initial_prediction(ec));
-      LEARNER::decrement_offset(*ec, increment, id);
+      VW::LEARNER::decrement_offset(*ec, increment, id);
     }
 }
 
@@ -201,7 +201,7 @@ void cb_explore_adf_rnd::restore_labels(multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::base_learn_or_predict(LEARNER::multi_learner& base, multi_ex& examples, uint32_t id)
+void cb_explore_adf_rnd::base_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples, uint32_t id)
 {
   if (is_learn)
     {
@@ -214,7 +214,7 @@ void cb_explore_adf_rnd::base_learn_or_predict(LEARNER::multi_learner& base, mul
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   save_labels<is_learn>(examples);
   zero_bonuses(examples);
@@ -237,7 +237,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(LEARNER::multi_learner& base, mul
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -284,7 +284,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   size_t problem_multiplier = 1 + numrnd;
 
-  LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
   all.label_type = label_type_t::cb;
 
@@ -296,7 +296,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     THROW("The value of epsilon must be in [0,1]");
   }
 
-  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
