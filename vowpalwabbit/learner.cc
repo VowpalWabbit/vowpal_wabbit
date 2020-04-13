@@ -8,7 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-
 #define CASE(type) \
   case type:       \
     return #type;
@@ -30,6 +29,8 @@ const char* to_string(prediction_type_t prediction_type)
   }
 }
 
+namespace VW
+{
 namespace LEARNER
 {
 void learn_ex(example& ec, vw& all)
@@ -309,3 +310,4 @@ void generic_driver_onethread(vw& all)
 float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 
 }  // namespace LEARNER
+}  // namespace VW

@@ -13,6 +13,7 @@
 #include "gd.h"
 #include "options_serializer_boost_po.h"
 #include "future_compat.h"
+#include "slates_label.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -39,6 +40,7 @@ const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
 const size_t lMAX = 5;
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
+const size_t lSLATES = 7;
 
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
@@ -62,7 +64,7 @@ vw_ptr my_initialize(std::string args)
 
 void my_run_parser(vw_ptr all)
 {   VW::start_parser(*all);
-    LEARNER::generic_driver(*all);
+    VW::LEARNER::generic_driver(*all);
     VW::end_parser(*all);
 }
 
@@ -107,6 +109,7 @@ label_parser* get_label_parser(vw*all, size_t labelType)
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT: return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT: return &CCB::ccb_label_parser;
+    case lSLATES: return &slates::slates_label_parser;
     default: THROW("get_label_parser called on invalid label type");
   }
 }
@@ -128,6 +131,10 @@ size_t my_get_label_type(vw*all)
   else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
   {
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
+  }
+  else if (lp->parse_label == slates::slates_label_parser.parse_label)
+  {
+    return lSLATES;
   }
   else
   {
@@ -813,6 +820,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("lCostSensitive", lCOST_SENSITIVE, "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
   .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT, "Contextual bandit label type -- used as input to the example() initializer")
   .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT, "Conditional Contextual bandit label type -- used as input to the example() initializer")
+  .def_readonly("lSlates", lSLATES, "Slates label type -- used as input to the example() initializer")
 
   .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
   .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")

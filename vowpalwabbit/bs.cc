@@ -15,7 +15,7 @@
 #include "bs.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct bs

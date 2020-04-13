@@ -51,6 +51,7 @@ set(vw_all_headers
   ccb_label.h
   classweight.h
   comp_io.h
+  compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in

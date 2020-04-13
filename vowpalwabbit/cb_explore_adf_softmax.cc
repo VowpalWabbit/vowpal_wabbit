@@ -31,20 +31,20 @@ struct cb_explore_adf_softmax
   ~cb_explore_adf_softmax() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
-  void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
 cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda) : _epsilon(epsilon), _lambda(lambda) {}
 
 template <bool is_learn>
-void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_softmax::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
+  VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   exploration::generate_softmax(
@@ -53,7 +53,7 @@ void cb_explore_adf_softmax::predict_or_learn_impl(LEARNER::multi_learner& base,
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -87,7 +87,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
   all.label_type = label_type_t::cb;
 
@@ -98,8 +98,8 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   {
     THROW("The value of epsilon must be in [0,1]");
   }
-  
-  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
+
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
