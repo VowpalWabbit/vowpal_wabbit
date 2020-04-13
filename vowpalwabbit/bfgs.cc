@@ -22,7 +22,7 @@ Implementation by Miro Dudik.
 #include "vw_exception.h"
 #include <exception>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 #define CG_EXTRA 1
