@@ -1,23 +1,13 @@
+pool:
+  vmImage: 'macOS-10.14'
+
 pr:
 - master
 
-trigger:
-- '*'
-
-pool:
-  vmImage: 'ubuntu-16.04'
-
-container:
-  image: vowpalwabbit/ubuntu1604-build:0.5.0
-  endpoint: DockerHub
-
 steps:
-- bash: sudo apt install curl
-  displayName: Install curl
-- bash: ./.scripts/linux/build-with-coverage.sh
-  displayName: Build with coverage C++
-- bash: ./.scripts/linux/test-with-coverage.sh
-  displayName: Test with coverage C++
-- script: |
-    bash <(curl -s https://codecov.io/bash) -Z -C $(System.pullRequest.sourceCommitId)
-  displayName: 'Upload to codecov.io'
+- bash: .scripts/macos/restore.sh $(Build.SourcesDirectory)
+  displayName: 'Restore dependencies'
+- bash: .scripts/macos/build.sh $(Build.SourcesDirectory)
+  displayName: 'Build'
+- bash: .scripts/macos/test.sh $(Build.SourcesDirectory)
+  displayName: 'Run tests'
