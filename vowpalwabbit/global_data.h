@@ -44,6 +44,7 @@
 #include "constant.h"
 #include "rand48.h"
 #include "hashstring.h"
+#include "decision_scores.h"
 
 #include "options.h"
 #include "version.h"
@@ -327,7 +328,8 @@ enum class label_type_t
   cs,       // cost-sensitive
   multi,
   mc,
-  ccb  // conditional contextual-bandit
+  ccb,  // conditional contextual-bandit
+  slates
 };
 
 struct rand_state
@@ -372,9 +374,9 @@ struct vw
 
   bool chain_hash = false;
 
-  LEARNER::base_learner* l;               // the top level learner
-  LEARNER::single_learner* scorer;        // a scoring function
-  LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  VW::LEARNER::base_learner* l;               // the top level learner
+  VW::LEARNER::single_learner* scorer;        // a scoring function
+  VW::LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -506,7 +508,7 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
   v_array<int> final_prediction_sink;  // set to send global predictions to.
@@ -520,6 +522,7 @@ struct vw
   void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
   loss_function* loss;
 
+  VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   bool stdin_off;
@@ -548,6 +551,7 @@ struct vw
   label_type_t label_type;
 
   vw();
+  ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
   vw(const vw&) = delete;

@@ -60,6 +60,8 @@ struct lda
   size_t minibatch;
   lda_math_mode mmode;
 
+  size_t finish_example_count;
+
   v_array<float> Elogtheta;
   v_array<float> decay_levels;
   v_array<float> total_new;
@@ -857,6 +859,9 @@ void return_example(vw &all, example &ec)
 void learn_batch(lda &l)
 {
   parameters &weights = l.all->weights;
+
+  assert(l.finish_example_count == (l.examples.size() - 1));
+
   if (l.sorted_features.empty())  // FAST-PASS for real "true"
   {
     // This can happen when the socket connection is dropped by the client.
@@ -872,7 +877,12 @@ void learn_batch(lda &l)
       l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
-      return_example(*l.all, *l.examples[d]);
+
+      if (l.finish_example_count > 0)
+      {
+        return_example(*l.all, *l.examples[d]);
+        l.finish_example_count--;
+      }
     }
     l.examples.clear();
     return;
@@ -944,7 +954,12 @@ void learn_batch(lda &l)
       l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
     }
-    return_example(*l.all, *l.examples[d]);
+
+    if (l.finish_example_count > 0)
+    {
+      return_example(*l.all, *l.examples[d]);
+      l.finish_example_count--;
+    }
   }
 
   // -t there's no need to update weights (especially since it's a noop)
@@ -989,7 +1004,7 @@ void learn_batch(lda &l)
   l.doc_lengths.clear();
 }
 
-void learn(lda &l, LEARNER::single_learner &, example &ec)
+void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
 {
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
@@ -1007,7 +1022,7 @@ void learn(lda &l, LEARNER::single_learner &, example &ec)
     learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
+void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1030,8 +1045,8 @@ void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1270,7 +1285,26 @@ void end_examples(lda &l)
     end_examples(l, l.all->weights.dense_weights);
 }
 
-void finish_example(vw &, lda &, example &) {}
+void finish_example(vw &all, lda &l, example &e)
+{
+  if (l.minibatch <= 1)
+  {
+    return return_example(all, e);
+  }
+
+  if (l.examples.size() > 0)
+  {
+    // if there's still examples to be queued, inc only to finish later
+    l.finish_example_count++;
+  }
+  else
+  {
+    // return now since it has been processed (example size = 0)
+    return_example(all, e);
+  }
+
+  assert(l.finish_example_count <= l.minibatch);
+}
 
 std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 {
@@ -1287,7 +1321,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-LEARNER::base_learner *lda_setup(options_i &options, vw &all)
+VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 {
   auto ld = scoped_calloc_or_throw<lda>();
   option_group_definition new_options("Latent Dirichlet Allocation");
@@ -1310,6 +1344,8 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   // Convert from int to corresponding enum value.
   ld->mmode = static_cast<lda_math_mode>(math_mode);
+
+  ld->finish_example_count = 0;
 
   if (!options.was_supplied("lda"))
     return nullptr;
@@ -1353,7 +1389,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   all.p->lp = no_label::no_label_parser;
 
-  LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
+  VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
       prediction_type_t::scalars);
 

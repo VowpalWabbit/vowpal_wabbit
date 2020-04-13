@@ -145,6 +145,7 @@
     <ClInclude Include="crossplat_compat.h" />
     <ClInclude Include="cs_active.h" />
     <ClInclude Include="csoaa.h" />
+    <ClInclude Include="decision_scores.h" />
     <ClInclude Include="distributionally_robust.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
@@ -208,6 +209,8 @@
     <ClInclude Include="sender.h" />
     <ClInclude Include="shared_feature_merger.h" />
     <ClInclude Include="simple_label.h" />
+    <ClInclude Include="slates_label.h" />
+    <ClInclude Include="slates.h" />
     <ClInclude Include="spanning_tree.h" />
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
@@ -218,6 +221,7 @@
     <ClInclude Include="version.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
+    <ClInclude Include="vw_math.h" />
     <ClInclude Include="vw_string_view.h" />
     <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw_versions.h" />
@@ -261,6 +265,7 @@
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
+    <ClCompile Include="decision_scores.cc" />
     <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
@@ -316,6 +321,8 @@
     <ClCompile Include="sender.cc" />
     <ClCompile Include="shared_feature_merger.cc" />
     <ClCompile Include="simple_label.cc" />
+    <ClCompile Include="slates_label.cc" />
+    <ClCompile Include="slates.cc" />
     <ClCompile Include="spanning_tree.cc" />
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />

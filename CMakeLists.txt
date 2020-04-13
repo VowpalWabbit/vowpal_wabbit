@@ -8,6 +8,14 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
+if(MSVC)
+  # Do nothing as the default compile flags for MSVC are okay.
+else()
+  # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
+  # is O2 and Release is O3, override that here:
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+endif()
+
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")

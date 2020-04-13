@@ -1,0 +1,9 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Stack Overflow
+    url: https://stackoverflow.com/questions/tagged/vowpalwabbit
+   about: Please ask questions or search for solutions here
+  - name: Gitter Chat
+    url: https://gitter.im/VowpalWabbit/community/
+    about: For shorter or simpler questions you can use Gitter
+    

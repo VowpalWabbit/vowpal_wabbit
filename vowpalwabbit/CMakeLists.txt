@@ -51,6 +51,7 @@ set(vw_all_headers
   ccb_label.h
   classweight.h
   comp_io.h
+  compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
@@ -60,6 +61,7 @@ set(vw_all_headers
   crossplat_compat.h
   cs_active.h
   csoaa.h
+  decision_scores.h
   distributionally_robust.h
   ect.h
   error_reporting.h
@@ -132,6 +134,8 @@ set(vw_all_headers
   sender.h
   shared_feature_merger.h
   simple_label.h
+  slates_label.h
+  slates.h
   spanning_tree.h
   stable_unique.h
   stagewise_poly.h
@@ -142,11 +146,13 @@ set(vw_all_headers
   version.h
   vw_allreduce.h
   vw_exception.h
+  vw_math.h
   vw_string_view.h
   vw_validate.h
   vw_versions.h
   vw.h
   vwdll.h
+  vwvis.h
   warm_cb.h
 )
 
@@ -185,6 +191,7 @@ set(vw_all_sources
   cost_sensitive.cc
   cs_active.cc
   csoaa.cc
+  decision_scores.cc
   distributionally_robust.cc
   ect.cc
   example.cc
@@ -240,6 +247,8 @@ set(vw_all_sources
   sender.cc
   shared_feature_merger.cc
   simple_label.cc
+  slates_label.cc
+  slates.cc
   stagewise_poly.cc
   svrg.cc
   topk.cc
