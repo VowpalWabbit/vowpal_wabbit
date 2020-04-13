@@ -19,5 +19,5 @@ steps:
 - bash: ./.scripts/linux/test-with-coverage.sh
   displayName: Test with coverage C++
 - script: |
-    bash <(curl -s https://codecov.io/bash) -C $(system.pullRequest.sourceCommitId)
+    bash <(curl -s https://codecov.io/bash) -Z -C $(System.pullRequest.sourceCommitId)
   displayName: 'Upload to codecov.io'
