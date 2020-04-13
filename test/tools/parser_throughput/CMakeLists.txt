@@ -1,2 +1,4 @@
 add_executable(parser_throughput main.cc)
-target_link_libraries(parser_throughput PRIVATE VowpalWabbit::vw Boost::program_options)
+
+# We are using a "private" header in VW and therefore must bring in the RapidJSON dependency manually.
+target_link_libraries(parser_throughput PRIVATE RapidJSON VowpalWabbit::vw Boost::program_options)
