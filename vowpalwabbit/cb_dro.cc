@@ -5,7 +5,7 @@
 
 #include "rand48.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 

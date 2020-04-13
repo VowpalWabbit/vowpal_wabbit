@@ -12,6 +12,7 @@ add_executable(vw-unit-test.out
   options_test.cc
   prediction_test.cc
   slates_parser_test.cc
+  slates_test.cc
   stable_unique_tests.cc
   test_common.h
   tokenize_tests.cc

@@ -16,7 +16,7 @@
 #include "vw.h"
 #include "v_array.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace memory_tree_ns
