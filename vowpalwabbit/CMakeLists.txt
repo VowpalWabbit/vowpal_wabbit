@@ -3,7 +3,7 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -13,7 +13,6 @@ add_library(VowpalWabbit::allreduce ALIAS allreduce)
 # Winsock32 should be available on Windows
 if(WIN32)
   target_link_libraries(allreduce PUBLIC wsock32 ws2_32)
-  target_compile_definitions(allreduce PUBLIC VWDLL_EXPORTS)
 else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
@@ -263,7 +262,7 @@ set(vw_all_sources
 
 add_library(vw ${vw_all_sources} ${vw_all_headers})
 
-target_link_libraries(vw
+target_link_libraries(vw STATIC
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
@@ -303,7 +302,7 @@ endif()
 
 # TODO code analysis
 if(WIN32)
-  target_compile_definitions(vw PUBLIC __SSE2__ VWDLL_EXPORTS)
+  target_compile_definitions(vw PUBLIC __SSE2__)
   target_compile_options(vw PUBLIC /MP /Zc:__cplusplus)
 else()
   target_compile_options(vw PUBLIC ${linux_flags})
