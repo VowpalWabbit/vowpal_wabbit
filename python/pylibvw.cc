@@ -109,7 +109,7 @@ label_parser* get_label_parser(vw*all, size_t labelType)
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT: return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT: return &CCB::ccb_label_parser;
-    case lSLATES: return &slates::slates_label_parser;
+    case lSLATES: return &VW::slates::slates_label_parser;
     default: THROW("get_label_parser called on invalid label type");
   }
 }
@@ -132,7 +132,7 @@ size_t my_get_label_type(vw*all)
   {
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
   }
-  else if (lp->parse_label == slates::slates_label_parser.parse_label)
+  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label)
   {
     return lSLATES;
   }
