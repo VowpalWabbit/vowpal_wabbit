@@ -260,9 +260,9 @@ set(vw_all_sources
   warm_cb.cc
 )
 
-add_library(vw ${vw_all_sources} ${vw_all_headers})
+add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
-target_link_libraries(vw STATIC
+target_link_libraries(vw
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
