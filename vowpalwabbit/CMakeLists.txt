@@ -13,6 +13,7 @@ add_library(VowpalWabbit::allreduce ALIAS allreduce)
 # Winsock32 should be available on Windows
 if(WIN32)
   target_link_libraries(allreduce PUBLIC wsock32 ws2_32)
+  target_compile_definitions(allreduce PUBLIC VWDLL_EXPORTS)
 else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
@@ -302,7 +303,7 @@ endif()
 
 # TODO code analysis
 if(WIN32)
-  target_compile_definitions(vw PUBLIC __SSE2__)
+  target_compile_definitions(vw PUBLIC __SSE2__ VWDLL_EXPORTS)
   target_compile_options(vw PUBLIC /MP /Zc:__cplusplus)
 else()
   target_compile_options(vw PUBLIC ${linux_flags})
