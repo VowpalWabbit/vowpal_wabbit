@@ -22,7 +22,7 @@
 #include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
-//Brings VW_DLL_MEMBER to help control exports
+//Brings VW_DLL_PUBLIC to help control exports
 #define VWDLL_EXPORTS
 #include "../vowpalwabbit/vwdll.h"
 
