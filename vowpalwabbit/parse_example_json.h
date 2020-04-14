@@ -498,7 +498,7 @@ struct MultiState : BaseState<audit>
     else if (ctx.all->label_type == label_type_t::slates)
     {
       auto& ld = ctx.ex->l.slates;
-      ld.type = slates::example_type::shared;
+      ld.type = VW::slates::example_type::shared;
     }
     else
       THROW("label type is not CB, CCB or slates")
@@ -517,7 +517,7 @@ struct MultiState : BaseState<audit>
     }
     else if (ctx.all->label_type == label_type_t::slates)
     {
-      ctx.ex->l.slates.type = slates::example_type::action;
+      ctx.ex->l.slates.type = VW::slates::example_type::action;
     }
 
     ctx.examples->push_back(ctx.ex);
@@ -566,7 +566,7 @@ struct SlotsState : BaseState<audit>
     }
     else if (ctx.all->label_type == label_type_t::slates)
     {
-      ctx.ex->l.slates.type = slates::example_type::slot;
+      ctx.ex->l.slates.type = VW::slates::example_type::slot;
     }
 
     ctx.examples->push_back(ctx.ex);
@@ -1133,7 +1133,7 @@ class SlotOutcomeList : public BaseState<audit>
         (ctx.all->label_type == label_type_t::ccb
           && ex->l.conditional_contextual_bandit.type != CCB::example_type::slot)
         || (ctx.all->label_type == label_type_t::slates
-          && ex->l.slates.type != slates::example_type::slot))
+          && ex->l.slates.type != VW::slates::example_type::slot))
       {
         slot_object_index++;
       }
@@ -1179,7 +1179,7 @@ class SlotOutcomeList : public BaseState<audit>
         }
       }
       else if (ctx.all->label_type == label_type_t::slates
-          && ex->l.slates.type == slates::example_type::slot)
+          && ex->l.slates.type == VW::slates::example_type::slot)
       {
         if (ex->l.slates.labeled)
         {

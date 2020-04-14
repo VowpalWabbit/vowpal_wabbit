@@ -164,7 +164,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
   const Value& context = document["c"].GetObject();
   handle_features_value(" ", context, examples[0], namespaces, all);
   all.p->lp.default_label(&examples[0]->l);
-  examples[0]->l.slates.type = slates::example_type::shared;
+  examples[0]->l.slates.type = VW::slates::example_type::shared;
 
   assert(namespaces.size() == 0);
 
@@ -173,7 +173,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
   {
     auto ex = &(*example_factory)(ex_factory_context);
     all.p->lp.default_label(&ex->l);
-    ex->l.slates.type = slates::example_type::action;
+    ex->l.slates.type = VW::slates::example_type::action;
     examples.push_back(ex);
     auto slot_id = obj["_slot_id"].GetInt();
     ex->l.slates.slot_id = slot_id;
@@ -187,7 +187,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
   {
     auto ex = &(*example_factory)(ex_factory_context);
     all.p->lp.default_label(&ex->l);
-    ex->l.slates.type = slates::example_type::slot;
+    ex->l.slates.type = VW::slates::example_type::slot;
     examples.push_back(ex);
     slot_examples.push_back(ex);
     handle_features_value(" ", slot_object, ex, namespaces, all);
