@@ -8,7 +8,6 @@ ${vowpal_wabbit_dir}/vw_exception.cc)
 # Winsock32 should be available on Windows
 if(WIN32)
   target_link_libraries(spanning_tree PRIVATE wsock32 ws2_32)
-  target_compile_definitions(spanning_tree PUBLIC VWDLL_EXPORTS)
 endif()
 
 if(STATIC_LINK_VW)
