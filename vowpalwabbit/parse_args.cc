@@ -1299,7 +1299,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
-  all.reduction_stack.push(slates::slates_setup);
+  all.reduction_stack.push(VW::slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);

@@ -117,6 +117,7 @@ set(vw_all_headers
   parse_example.h
   parse_primitives.h
   parse_regressor.h
+  parse_slates_example_json.h
   parser.h
   print.h
   queue.h
