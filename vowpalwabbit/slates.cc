@@ -19,6 +19,8 @@
 
 using namespace VW::config;
 
+namespace VW
+{
 namespace slates
 {
 template <bool is_learn>
@@ -56,6 +58,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
     }
     else if (slates_label.type == slates::example_type::action)
     {
+
       if (slates_label.slot_id >= num_slots)
       {
         THROW("slot_id cannot be larger than or equal to the number of slots");
@@ -124,7 +127,7 @@ void slates_data::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
   learn_or_predict<false>(base, examples);
 }
 
-// TODO this abstraction may not really work as this function now doens't have access to the global cost...
+// TODO this abstraction may not really work as this function now doesn't have access to the global cost...
 std::string generate_slates_label_printout(const std::vector<example*>& slots)
 {
   size_t counter = 0;
@@ -140,8 +143,7 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
     }
     else
     {
-      label_ss << delim << "?";
-    }
+      label_ss << delim << "?";    }
 
     delim = ",";
 
@@ -286,3 +288,4 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   return VW::LEARNER::make_base(l);
 }
 }  // namespace slates
+}
