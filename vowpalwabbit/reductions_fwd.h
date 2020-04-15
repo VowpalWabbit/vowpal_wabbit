@@ -29,8 +29,4 @@ namespace config
 {
 struct options_i;
 }  // namespace config
-namespace io
-{
-struct io_adapter;
-}
 }  // namespace VW

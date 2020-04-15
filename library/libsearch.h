@@ -6,21 +6,21 @@ license as described in the file LICENSE.
 #ifndef LIBSEARCH_HOOKTASK_H
 #define LIBSEARCH_HOOKTASK_H
 
-#include "parser.h"
-#include "parse_example.h"
-#include "vw.h"
-#include "search.h"
-#include "search_hooktask.h"
+#include "../vowpalwabbit/parser.h"
+#include "../vowpalwabbit/parse_example.h"
+#include "../vowpalwabbit/vw.h"
+#include "../vowpalwabbit/search.h"
+#include "../vowpalwabbit/search_hooktask.h"
 
 template<class INPUT, class OUTPUT> class SearchTask
 {
 public:
   SearchTask(vw& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
-  { 
-    VW::read_line(vw_obj, &bogus_example, (char*)"1 | x");
-    VW::setup_example(vw_obj, &bogus_example);
+  { bogus_example = VW::alloc_examples(vw_obj.p->lp.label_size, 1);
+    VW::read_line(vw_obj, bogus_example, (char*)"1 | x");
+    VW::setup_example(vw_obj, bogus_example);
 
-    trigger.push_back(&bogus_example);
+    trigger.push_back(bogus_example);
 
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     d->run_f = _search_run_fn;
@@ -31,23 +31,23 @@ public:
     d->extra_data2 = NULL;
   }
   virtual ~SearchTask()
-  {
-    trigger.clear();
+  { trigger.clear(); // the individual examples get cleaned up below
+    VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
   }
 
   virtual void _run(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // YOU MUST DEFINE THIS FUNCTION!
   void       _setup(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // OPTIONAL
   void    _takedown(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // OPTIONAL
 
-  void   learn(INPUT& input_example, OUTPUT& output) { bogus_example.test_only = false; call_vw(input_example, output); }
-  void predict(INPUT& input_example, OUTPUT& output) { bogus_example.test_only = true;  call_vw(input_example, output); }
+  void   learn(INPUT& input_example, OUTPUT& output) { bogus_example->test_only = false; call_vw(input_example, output); }
+  void predict(INPUT& input_example, OUTPUT& output) { bogus_example->test_only = true;  call_vw(input_example, output); }
 
 protected:
   vw& vw_obj;
   Search::search& sch;
 
 private:
-  example bogus_example;
+  example* bogus_example;
   multi_ex trigger;
 
   void call_vw(INPUT& input_example, OUTPUT& output)

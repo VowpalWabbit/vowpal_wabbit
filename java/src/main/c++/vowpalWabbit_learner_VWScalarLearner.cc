@@ -2,7 +2,7 @@
 #include "vw.h"
 #include "jni_base_learner.h"
 
-jfloat scalar_predictor(example *vec, JNIEnv *env) { return vec->pred.scalar(); }
+jfloat scalar_predictor(example *vec, JNIEnv *env) { return vec->pred.scalar; }
 
 JNIEXPORT jfloat JNICALL Java_vowpalWabbit_learner_VWScalarLearner_predict(
     JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)

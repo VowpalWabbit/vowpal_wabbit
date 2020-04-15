@@ -81,14 +81,6 @@ struct example : public example_predict  // core example datatype.
 
   VW_DEPRECATED("in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. Standalone examples are by definition always in use.")
   bool in_use = true;
-
-  ~example()
-  {
-    if (passthrough)
-    {
-      delete passthrough;
-    }
-  }
 };
 IGNORE_DEPRECATED_USAGE_END
 
@@ -99,7 +91,7 @@ struct flat_example
   polylabel l;
 
   size_t tag_len;
-  char* tag = nullptr;  // An identifier for the example.
+  char* tag;  // An identifier for the example.
 
   size_t example_counter;
   uint64_t ft_offset;
@@ -108,81 +100,6 @@ struct flat_example
   size_t num_features;      // precomputed, cause it's fast&easy.
   float total_sum_feat_sq;  // precomputed, cause it's kind of fast & easy.
   features fs;              // all the features
-
-  ~flat_example()
-  {
-    if (tag_len > 0)
-      free(tag);
-  }
-
-  flat_example(const flat_example& other)
-  {
-    l = other.l;
-    tag_len = other.tag_len;
-    if (tag_len > 0)
-    {
-      memcpy(tag, other.tag, tag_len);
-    }
-    example_counter = other.example_counter;
-    ft_offset = other.ft_offset;
-    global_weight = other.global_weight;
-    num_features = other.num_features;
-    total_sum_feat_sq = other.total_sum_feat_sq;
-    fs = other.fs;
-  }
-
-  flat_example& operator=(const flat_example& other)
-  {
-    l = other.l;
-    tag_len = other.tag_len;
-    if(tag != nullptr)
-    {
-      free(tag);
-      tag = nullptr;
-    }
-    if (tag_len > 0)
-    {
-      memcpy(tag, other.tag, tag_len);
-    }
-    example_counter = other.example_counter;
-    ft_offset = other.ft_offset;
-    global_weight = other.global_weight;
-    num_features = other.num_features;
-    total_sum_feat_sq = other.total_sum_feat_sq;
-    fs = other.fs;
-    return *this;
-  }
-
-  flat_example(flat_example&& other)
-  {
-    l = std::move(other.l);
-    tag_len = other.tag_len;
-    tag = other.tag;
-    example_counter = other.example_counter;
-    ft_offset = other.ft_offset;
-    global_weight = other.global_weight;
-    num_features = other.num_features;
-    total_sum_feat_sq = other.total_sum_feat_sq;
-    fs = std::move(other.fs);
-  }
-
-  flat_example& operator=(flat_example&& other)
-  {
-    l = std::move(other.l);
-    tag_len = other.tag_len;
-    if(tag != nullptr)
-    {
-      free(tag);
-    }
-    tag = other.tag;
-    example_counter = other.example_counter;
-    ft_offset = other.ft_offset;
-    global_weight = other.global_weight;
-    num_features = other.num_features;
-    total_sum_feat_sq = other.total_sum_feat_sq;
-    fs = std::move(other.fs);
-    return *this;
-  }
 };
 
 flat_example* flatten_example(vw& all, example* ec);

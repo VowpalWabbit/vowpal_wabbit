@@ -4,8 +4,6 @@
 #pragma once
 #include "label_parser.h"
 
-#include <cfloat>
-
 struct example;
 struct vw;
 
@@ -14,13 +12,9 @@ struct label_data
   float label;
   float weight;
   float initial;
-
-  label_data() : label(FLT_MAX), weight(0.f), initial(0.f) {}
-  label_data(float label, float weight, float initial) : label(label), weight(weight), initial(initial) {}
 };
 
-void return_simple_example(vw& all, polylabel&, example& ec);
-void return_simple_example_explicit(vw& all, example& ec);
+void return_simple_example(vw& all, void*, example& ec);
 
 extern label_parser simple_label;
 

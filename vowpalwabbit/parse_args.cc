@@ -176,22 +176,19 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   bool is_gzip = ends_with(fname, ".gz");
   auto f_adapter = is_gzip ? VW::io::open_compressed_file(fname, VW::io::file_mode::read)
                            : VW::io::open_file(fname, file_mode::read);
-
-  uint64_t fd_hash = hash_file_contents(f_adapter.get());
-
+  uint64_t fd_hash = hash_file_contents(f_adapter.get());   if (!all.logger.quiet)
   if (!all.logger.quiet)
     all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
                       << std::dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
-  {
     if (all.loaded_dictionaries[id].file_hash == fd_hash)
     {
       all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
       return;
     }
-  }
+
 
   std::unique_ptr<io_adapter> fd;
   try
@@ -202,12 +199,11 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   {
     THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");
   }
-
   auto map = std::make_shared<feature_dict>();
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  example* ec = VW::alloc_examples(1);
+  example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
 
@@ -229,7 +225,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          ec->~example();
+          VW::dealloc_example(all.p->lp.delete_label, *ec);
           free(ec);
           THROW("error: memory allocation failed in reading dictionary");
         }
@@ -261,7 +257,8 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     {
       continue;
     }
-    std::unique_ptr<features> arr(new features(ec->feature_space[def]));
+    std::unique_ptr<features> arr(new features);
+    arr->deep_copy_from(ec->feature_space[def]);
     map->emplace(word, std::move(arr));
 
     // clear up ec
@@ -273,7 +270,9 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  ec->~example();
+  io->close_file();
+  delete io;
+  VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
 
   if (!all.logger.quiet)
@@ -486,6 +485,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 {
   if (vw1.p->hasher != vw2.p->hasher)
     return "hasher";
+
 
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
     return "spelling_features";
@@ -836,7 +836,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some = true;
 
-    for (auto& i : ignores)
+    for (auto & i : ignores)
     {
       i = spoof_hex_encoded_namespaces(i);
       for (auto j : i) all.ignore[(size_t)(unsigned char)j] = true;
@@ -856,10 +856,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some_linear = true;
 
-    for (auto& i : ignore_linears)
+    for (auto & i : ignore_linears)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (auto j : i) all.ignore_linear[(size_t)(unsigned char)j] = true;
+      for (auto j : i)
+        all.ignore_linear[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.logger.quiet)
@@ -878,7 +879,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     all.ignore_some = true;
 
-    for (auto& i : keeps)
+    for (auto & i : keeps)
     {
       i = spoof_hex_encoded_namespaces(i);
       for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
@@ -905,9 +906,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
 
-    for (const auto& arg : redefines)
+    for (const auto & arg : redefines)
     {
-      const std::string& argument = spoof_hex_encoded_namespaces(arg);
+      const std::string & argument = spoof_hex_encoded_namespaces(arg);
       size_t arg_len = argument.length();
 
       size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
@@ -965,7 +966,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   if (options.was_supplied("dictionary"))
   {
     if (options.was_supplied("dictionary_path"))
-      for (const std::string& path : dictionary_path)
+      for (const std::string & path : dictionary_path)
         if (directory_exists(path))
           all.dictionary_path.push_back(path);
     if (directory_exists("."))
@@ -1122,19 +1123,14 @@ void parse_output_preds(options_i& options, vw& all)
   {
     if (!all.logger.quiet)
     {
-      all.trace_message << "raw predictions = " << raw_predictions << endl;
+      all.final_prediction_sink.push_back(VW::io::open_stdio().release());  // stdout
       if (options.was_supplied("binary"))
         all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
                           << endl;
-    }
-    if (raw_predictions == "stdout")
-      all.raw_prediction = VW::io::open_stdio().release();  // stdout
-    else
-    {
-        all.raw_prediction = VW::io::open_file(raw_predictions, file_mode::write).release();
-    }
-  }
-}
+      auto f = VW::io::open_file(predictions, file_mode::write).release();
+      // if (f < 0)
+      //   all.trace_message << "Error opening the predictions file: " << fstr << endl;
+      all.final_prediction_sink.push_back(f);
 
 void parse_output_model(options_i& options, vw& all)
 {
@@ -1179,17 +1175,10 @@ void load_input_model(vw& all, io_buf& io_temp)
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
-    io_temp.close_file();
+    all.raw_prediction = VW::io::open_stdio().release();  // stdout
 
     parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
-  }
-  else
-  {  // load mask first
-    parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
-
-    // load rest of regressor
-    all.l->save_load(io_temp, true, false);
-    io_temp.close_file();
+        all.raw_prediction = VW::io::open_file(raw_predictions, file_mode::write).release();
   }
 }
 
@@ -1202,11 +1191,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   if (base == nullptr)
     return setup_base(options, all);
   else
-  {
-    assert(base->label_type != label_type_t::unset);
-    assert(base->pred_type != prediction_type_t::unset);
     return base;
-  }
 }
 
 void parse_reductions(options_i& options, vw& all)
@@ -1620,10 +1605,10 @@ char** to_argv(std::string const& s, int& argc)
   for (size_t i = 0; i < foo.size(); i++)
   {
     size_t len = foo[i].length();
-    argv[i + 1] = calloc_or_throw<char>(len + 1);
-    memcpy(argv[i + 1], foo[i].data(), len);
+    argv[i+1] = calloc_or_throw<char>(len + 1);
+    memcpy(argv[i+1], foo[i].data(), len);
     // copy() is supported with boost::string_view, not with string_ref
-    // foo[i].copy(argv[i], len);
+    //foo[i].copy(argv[i], len);
     // unnecessary because of the calloc, but needed if we change stuff in the future
     // argv[i][len] = '\0';
   }

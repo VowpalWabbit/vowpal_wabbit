@@ -62,8 +62,7 @@ void VowpalWabbit::Driver()
 void VowpalWabbit::RunMultiPass()
 { if (m_vw->numpasses > 1)
   { try
-    {
-      m_vw->do_reset_source = true;
+    { m_vw->do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
       VW::end_parser(*m_vw);
@@ -307,7 +306,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			auto ex = GetOrCreateNativeExample();
 			state->examples->Add(ex);
 
-			v_array<example*> examples;
+			v_array<example*> examples = v_init<example*>();
 			example* native_example = ex->m_example;
 			examples.push_back(native_example);
 
@@ -325,6 +324,9 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 
 			// finalize example
 			VW::setup_examples(*m_vw, examples);
+
+			// delete native array of pointers, keep examples
+			examples.delete_v();
 
 			header->EventId = gcnew String(interaction.eventId.c_str());
 			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());
@@ -786,7 +788,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   if (ex == nullptr)
   { try
     { auto ex = VW::alloc_examples(0, 1);
-      m_vw->p->lp.default_label(ex->l);
+      m_vw->p->lp.default_label(&ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
     CATCHRETHROW
@@ -794,7 +796,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   try
   { VW::empty_example(*m_vw, *ex->m_example);
-    m_vw->p->lp.default_label(ex->m_example->l);
+    m_vw->p->lp.default_label(&ex->m_example->l);
 
     return ex;
   }

@@ -27,6 +27,7 @@ struct gdmf
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
+  ~gdmf() { scalars.delete_v(); }
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
@@ -76,7 +77,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar(), -1, ec.tag);
+  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -92,7 +93,7 @@ template <class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
 {
   vw& all = *d.all;
-  label_data& ld = ec.l.simple();
+  label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
   for (std::string& i : d.all->pairs)
@@ -155,12 +156,12 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ld.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar(), ld.label) * ec.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
 
   if (all.audit)
     mf_print_audit_features(d, ec, 0);
 
-  return ec.pred.scalar();
+  return ec.pred.scalar;
 }
 
 float mf_predict(gdmf& d, example& ec)
@@ -183,12 +184,12 @@ template <class T>
 void mf_train(gdmf& d, example& ec, T& weights)
 {
   vw& all = *d.all;
-  label_data& ld = ec.l.simple();
+  label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
   float eta_t = all.eta / powf((float)all.sd->t + ec.weight, (float)all.power_t) / 3.f * ec.weight;
-  float update = all.loss->getUpdate(ec.pred.scalar(), ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
+  float update = all.loss->getUpdate(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
   float regularization = eta_t * all.l2_lambda;
 
@@ -316,7 +317,7 @@ void learn(gdmf& d, single_learner&, example& ec)
   vw& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple().label != FLT_MAX)
+  if (all.training && ec.l.simple.label != FLT_MAX)
     mf_train(d, ec);
 }
 
@@ -376,6 +377,6 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
-  l.label_type = label_type_t::simple;
+
   return make_base(l);
 }

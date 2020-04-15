@@ -8,7 +8,6 @@
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw_exception.h"
-#include "util.h"
 
 namespace GEN_CS
 {
@@ -51,7 +50,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
-  CB::label& ld = ec.l.cb();
+  CB::label ld = ec.l.cb;
 
   float min = FLT_MAX;
   uint32_t argmin = 1;
@@ -116,7 +115,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
     }
   }
 
-  ec.pred.multiclass() = argmin;
+  ec.pred.multiclass = argmin;
 }
 
 template <bool is_learn>
@@ -263,31 +262,26 @@ void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<C
   size_t index = 0;
   for (auto ec : examples)
   {
-    cb_labels.push_back(std::move(ec->l.cb()));
+    cb_labels.push_back(ec->l.cb);
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.reset();
-    ec->l.init_as_cs(std::move(prepped_cs_labels[index++]));
+    ec->l.cs = prepped_cs_labels[index++];
     ec->ft_offset = offset;
   }
 
-  swap_to_scores(examples);
   // 2nd: predict for each ex
   // // call base.predict for all examples
   if (is_learn)
     base.learn(examples, (int32_t)id);
   else
     base.predict(examples, (int32_t)id);
-  swap_to_probs(examples);
 
   // 3rd: restore cb_label for each example
-  // (**ec).l.cb() = array.element.
+  // (**ec).l.cb = array.element.
   // and restore offsets
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    prepped_cs_labels[i].costs = std::move(examples[i]->l.cs().costs);
-    examples[i]->l.reset();
-    examples[i]->l.init_as_cb(std::move(cb_labels[i]));
+    examples[i]->l.cb = cb_labels[i];
     examples[i]->ft_offset = saved_offset;
   }
 }

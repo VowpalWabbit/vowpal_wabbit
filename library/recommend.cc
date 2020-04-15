@@ -230,12 +230,12 @@ int main(int argc, char* argv[])
 
         if (pr_queue.size() < (size_t)topk)
         {
-          pr_queue.push(std::make_pair(ex->pred.scalar(), str));
+          pr_queue.push(std::make_pair(ex->pred.scalar, str));
         }
-        else if (pr_queue.top().first < ex->pred.scalar())
+        else if (pr_queue.top().first < ex->pred.scalar)
         {
           pr_queue.pop();
-          pr_queue.push(std::make_pair(ex->pred.scalar(), str));
+          pr_queue.push(std::make_pair(ex->pred.scalar, str));
         }
 
         VW::finish_example(*model, *ex);

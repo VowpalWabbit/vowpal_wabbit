@@ -303,11 +303,6 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
-void delete_polyprediction(polyprediction& pred)
-{
-  pred.reset();
-}
-
 IGNORE_DEPRECATED_USAGE_START
 vw::vw()
 {
@@ -319,6 +314,8 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
+  label_type = label_type_t::simple;
+
   l = nullptr;
   scorer = nullptr;
   cost_sensitive = nullptr;
@@ -329,7 +326,7 @@ vw::vw()
   current_pass = 0;
 
   data_filename = "";
-  delete_prediction = &delete_polyprediction;
+  delete_prediction = nullptr;
 
   bfgs = false;
   no_bias = false;
@@ -353,7 +350,8 @@ vw::vw()
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  raw_prediction = nullptr;
+  final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
+  raw_prediction = -1;
   print = print_result;
   print_text = print_raw_text;
   print_by_ref = print_result_by_ref;

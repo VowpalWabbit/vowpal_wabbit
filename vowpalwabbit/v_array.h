@@ -22,28 +22,12 @@
 #endif
 
 #include "memory.h"
-#include "future_compat.h"
 
 const size_t erase_point = ~((1u << 10u) - 1u);
 
 template <class T>
 struct v_array
 {
- private:
-   void delete_v_array()
-   {
-     if (_begin != nullptr)
-     {
-       for (T* item = _begin; item != _end; ++item) item->~T();
-       free(_begin);
-     }
-     _begin = nullptr;
-     _end = nullptr;
-     end_array = nullptr;
-     erase_count = 0;
-  }
-
-
   // private:
   T* _begin;
   T* _end;
@@ -62,50 +46,12 @@ struct v_array
   inline T* cbegin() const { return _begin; }
   inline T* cend() const { return _end; }
 
-  v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
-  ~v_array() { delete_v_array(); }
-
-  v_array(v_array<T>&& other)
-  {
-    erase_count = 0;
-    _begin = nullptr;
-    _end = nullptr;
-    end_array = nullptr;
-
-    std::swap(_begin, other._begin);
-    std::swap(_end, other._end);
-    std::swap(end_array, other.end_array);
-    std::swap(erase_count, other.erase_count);
-  }
-
-  v_array<T>& operator=(v_array<T>&& other)
-  {
-    delete_v_array();
-    std::swap(_begin, other._begin);
-    std::swap(_end, other._end);
-    std::swap(end_array, other.end_array);
-    std::swap(erase_count, other.erase_count);
-    return *this;
-  }
-
-  v_array(const v_array<T>& other)
-  {
-    _begin = nullptr;
-    _end = nullptr;
-    end_array = nullptr;
-    erase_count = 0;
-
-    // TODO this should use the other version when T is trivially copyable and this otherwise.
-    copy_array_no_memcpy(*this, other);
-  }
-
-  v_array<T>& operator=(const v_array<T>& other)
-  {
-    delete_v_array();
-    copy_array_no_memcpy(*this, other);
-    return *this;
-  }
-
+  // v_array cannot have a user-defined constructor, because it participates in various unions.
+  // union members cannot have user-defined constructors.
+  // v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
+  // ~v_array() {
+  //  delete_v();
+  // }
   T last() const { return *(_end - 1); }
   T pop() { return *(--_end); }
   bool empty() const { return _begin == _end; }
@@ -147,10 +93,14 @@ struct v_array
     for (T* item = _begin; item != _end; ++item) item->~T();
     _end = _begin;
   }
-
-  VW_DEPRECATED("delete_v is no longer supported. Use the destructor of the object to clean up.")
-  void delete_v() {
-    delete_v_array();
+  void delete_v()
+  {
+    if (_begin != nullptr)
+    {
+      for (T* item = _begin; item != _end; ++item) item->~T();
+      free(_begin);
+    }
+    _begin = _end = end_array = nullptr;
   }
   void push_back(const T& new_ele)
   {
@@ -159,15 +109,7 @@ struct v_array
     new (_end++) T(new_ele);
   }
 
-  void push_back(T&& new_ele)
-  {
-    if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
-    new (_end++) T(std::move(new_ele));
-  }
-
   void push_back_unchecked(const T& new_ele) { new (_end++) T(new_ele); }
-  void push_back_unchecked(T&& new_ele) { new (_end++) T(std::move(new_ele)); }
 
   template <class... Args>
   void emplace_back(Args&&... args)
@@ -238,26 +180,12 @@ struct v_array
 
     return false;
   }
-
-  template<typename U>
-  friend void copy_array(v_array<U>& dst, const v_array<U>& src);
-  template<typename U>
-  friend void copy_array_no_memcpy(v_array<U>& dst, const v_array<U>& src);
-  template<typename U>
-  friend void copy_array(v_array<U>& dst, const v_array<U>& src, U (*copy_item)(U&));
-  template<typename U>
-  friend void push_many(v_array<U>& v, const U* _begin, size_t num);
-  template<typename U>
-  friend void calloc_reserve(v_array<U>& v, size_t length);
-
-  friend class io_buf;
 };
 
 template <class T>
-VW_DEPRECATED("v_init is no longer supported, use the constructor.")
 inline v_array<T> v_init()
 {
-  return v_array<T>();
+  return {nullptr, nullptr, nullptr, 0};
 }
 
 template <class T>
@@ -304,20 +232,18 @@ void calloc_reserve(v_array<T>& v, size_t length)
 }
 
 template <class T>
-VW_DEPRECATED("This performs a copy return and is no longer possible. Need to work out a better way here.")
 v_array<T> pop(v_array<v_array<T> >& stack)
 {
-  if (stack.end() != stack.begin())
-    return *(--stack.end());
+  if (stack._end != stack._begin)
+    return *(--stack._end);
   else
     return v_array<T>();
 }
 
 template <class T>
-VW_DEPRECATED("Use std::find")
 bool v_array_contains(v_array<T>& A, T x)
 {
-  for (T* e = A.begin(); e != A.end(); ++e)
+  for (T* e = A._begin; e != A._end; ++e)
     if (*e == x)
       return true;
   return false;
@@ -327,7 +253,7 @@ template <class T>
 std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
 {
   os << '[';
-  for (const T* i = v.begin(); i != v.end(); ++i) os << ' ' << *i;
+  for (T* i = v._begin; i != v._end; ++i) os << ' ' << *i;
   os << " ]";
   return os;
 }
@@ -336,7 +262,24 @@ template <class T, class U>
 std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
 {
   os << '[';
-  for (const std::pair<T, U>* i = v.begin(); i != v.end(); ++i) os << ' ' << i->first << ':' << i->second;
+  for (std::pair<T, U>* i = v._begin; i != v._end; ++i) os << ' ' << i->first << ':' << i->second;
   os << " ]";
   return os;
+}
+
+typedef v_array<unsigned char> v_string;
+
+inline v_string string2v_string(const std::string& s)
+{
+  v_string res = v_init<unsigned char>();
+  if (!s.empty())
+    push_many(res, (unsigned char*)s.data(), s.size());
+  return res;
+}
+
+inline std::string v_string2string(const v_string& v_s)
+{
+  std::string res;
+  for (unsigned char* i = v_s._begin; i != v_s._end; ++i) res.push_back(*i);
+  return res;
 }

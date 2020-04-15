@@ -21,6 +21,12 @@ struct cb
 {
   cb_to_cs cbcs;
   COST_SENSITIVE::label cb_cs_ld;
+
+  ~cb()
+  {
+    cb_cs_ld.costs.delete_v();
+    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
+  }
 };
 
 bool know_all_cost_example(CB::label& ld)
@@ -41,7 +47,7 @@ bool know_all_cost_example(CB::label& ld)
 template <bool is_learn>
 void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
-  CB::label ld = std::move(ec.l.cb());
+  CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld);
   if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
@@ -52,8 +58,8 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
   if (c.cb_type != CB_TYPE_DM)
   {
-    ec.l.reset();
-    ec.l.init_as_cs(data.cb_cs_ld);
+    ec.l.cs = data.cb_cs_ld;
+
     if (is_learn)
       base.learn(ec);
     else
@@ -61,16 +67,15 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
     for (size_t i = 0; i < ld.costs.size(); i++)
       ld.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
+    ec.l.cb = ld;
   }
-  ec.l.reset();
-  ec.l.init_as_cb(std::move(ld));
 }
 
 void predict_eval(cb&, single_learner&, example&) { THROW("can not use a test label for evaluation"); }
 
 void learn_eval(cb& data, single_learner&, example& ec)
 {
-  CB_EVAL::label& ld = ec.l.cb_eval();
+  CB_EVAL::label ld = ec.l.cb_eval;
 
   cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld.event);
@@ -79,7 +84,7 @@ void learn_eval(cb& data, single_learner&, example& ec)
   for (size_t i = 0; i < ld.event.costs.size(); i++)
     ld.event.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
 
-  ec.pred.multiclass() = ec.l.cb_eval().action;
+  ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
 void output_example(vw& all, cb& data, example& ec, CB::label& ld)
@@ -87,13 +92,14 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::test_label(ld))
-    loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass());
+  if (!CB::cb_label.test_label(&ld))
+    loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, !CB::test_label(ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (auto sink : all.final_prediction_sink)
-    all.print_by_ref(sink, (float)ec.pred.multiclass(), 0, ec.tag);
+  for (int sink : all.final_prediction_sink)
+    all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
+
   if (all.raw_prediction > 0)
   {
     std::stringstream outputStringStream;
@@ -107,18 +113,18 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
     all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, CB::test_label(ld), ec, nullptr, false);
+  print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
 }
 
 void finish_example(vw& all, cb& c, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb());
+  output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
 void eval_finish_example(vw& all, cb& c, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb_eval().event);
+  output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, ec);
 }
 }  // namespace CB_ALGS
@@ -177,23 +183,28 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   }
 
   auto base = as_singleline(setup_base(options, all));
+  if (eval)
+  {
+    all.p->lp = CB_EVAL::cb_eval;
+    all.label_type = label_type_t::cb_eval;
+  }
+  else
+  {
+    all.p->lp = CB::cb_label;
+    all.label_type = label_type_t::cb;
+  }
 
   learner<cb, example>* l;
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(eval_finish_example);
-    all.p->lp = CB_EVAL::cb_eval;
-    l->label_type = label_type_t::cb_eval;
-
   }
   else
   {
     l = &init_learner(
         data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(finish_example);
-    all.p->lp = CB::cb_label;
-    l->label_type = label_type_t::cb;
   }
   c.scorer = all.scorer;
 

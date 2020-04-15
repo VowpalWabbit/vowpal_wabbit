@@ -32,13 +32,14 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
 void finish(Search::search& sch)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
+  my_task_data->y_allowed.delete_v();
   delete my_task_data;
 }
 
 void run(Search::search& sch, multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
-  size_t gold_label = ec[0]->l.multi().label;
+  size_t gold_label = ec[0]->l.multi.label;
   size_t label = 0;
   size_t learner_id = 0;
 

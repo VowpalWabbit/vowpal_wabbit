@@ -44,7 +44,7 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(vw& all, example& ec)
 {
-  float acc = ec.l.simple().initial;
+  float acc = ec.l.simple.initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
@@ -64,7 +64,7 @@ void predict(svrg& s, single_learner&, example& ec)
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
 {
-  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple().label) * ec.weight;
+  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label) * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --
@@ -93,7 +93,7 @@ void update_inner(const svrg& s, example& ec)
 {
   update u;
   // |ec| already has prediction according to inner weights.
-  u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar());
+  u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar);
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
   u.eta = s.all->eta;
   u.norm = (float)s.stable_grad_count;
@@ -190,6 +190,5 @@ base_learner* svrg_setup(options_i& options, vw& all)
   all.weights.stride_shift(2);
   learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
   l.set_save_load(save_load);
-  l.label_type = label_type_t::simple;
   return make_base(l);
 }

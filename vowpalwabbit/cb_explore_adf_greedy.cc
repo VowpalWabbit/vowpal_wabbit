@@ -97,6 +97,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     options.insert("cb_adf", "");
   }
 
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
+
   size_t problem_multiplier = 1;
 
   if (!options.was_supplied("epsilon"))
@@ -104,6 +106,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
+  all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
   auto data = scoped_calloc_or_throw<explore_type>(epsilon, first_only);
@@ -115,7 +118,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
-  l.label_type = label_type_t::cb;
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

@@ -87,7 +87,7 @@ void multipredict(
     ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *b.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar() = ec.l.simple().initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
@@ -100,14 +100,14 @@ void multipredict(
     GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   }
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar() *= (float)all.sd->contraction;
+    for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
   if (finalize_predictions)
     for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
     {
-      ec.pred.scalar() = pred[c].scalar();
+      ec.pred.scalar = pred[c].scalar;
       GD::print_audit_features(all, ec);
       ec.ft_offset += (uint64_t)step;
     }
@@ -243,21 +243,21 @@ void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 
 void update_after_prediction_proximal(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_cb(ftrl& b, example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
 }
@@ -425,6 +425,5 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     l->set_multipredict(multipredict<false>);
   l->set_save_load(save_load);
   l->set_end_pass(end_pass);
-  l->label_type = label_type_t::simple;
   return make_base(*l);
 }

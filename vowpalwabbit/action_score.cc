@@ -30,4 +30,11 @@ void print_action_score(io_adapter*  f, const v_array<action_score>& a_s, const 
       std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
+
+void delete_action_scores(void* v)
+{
+  v_array<action_score>* cs = (v_array<action_score>*)v;
+  cs->delete_v();
+}
+
 }  // namespace ACTION_SCORE

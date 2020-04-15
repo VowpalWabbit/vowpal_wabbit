@@ -152,19 +152,27 @@ size_t my_get_prediction_type(vw_ptr all)
     case prediction_type_t::multilabels:     return pMULTILABELS;
     case prediction_type_t::prob:            return pPROB;
     case prediction_type_t::multiclassprobs: return pMULTICLASSPROBS;
-    case prediction_type_t::decision_scores:  return pDECISION_SCORES;
+    case prediction_type_t::decision_probs:  return pDECISION_SCORES;
     default: THROW("unsupported prediction type used");
   }
 }
 
+void my_delete_example(void*voidec)
+{ example* ec = (example*) voidec;
+  size_t labelType = ec->example_counter;
+  label_parser* lp = get_label_parser(NULL, labelType);
+  VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
+  free(ec);
+}
+
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 { label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = VW::alloc_examples(1);
-  lp->default_label(ec->l);
+  example* ec = VW::alloc_examples(lp->label_size, 1);
+  lp->default_label(&ec->l);
   ec->interactions = &vw->interactions;
   if (labelType == lCOST_SENSITIVE)
   { COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
-    ec->l.cs().costs.push_back(zero);
+    ec->l.cs.costs.push_back(zero);
   }
   ec->example_counter = labelType;
   return ec;
@@ -172,7 +180,7 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 
 example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 { example* ec = my_empty_example0(vw, labelType);
-  return boost::shared_ptr<example>(ec);
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
@@ -180,7 +188,7 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
   VW::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
-  return boost::shared_ptr<example>(ec);
+  return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
 example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
@@ -240,7 +248,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples;
+  v_array<example*> examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(all.get()));
   all->p->text_reader(all.get(), str, strlen(str), examples);
 
@@ -253,6 +261,8 @@ py::list my_parse(vw_ptr& all, char* str)
     example_collection.append(
         boost::shared_ptr<example>(ex, dont_delete_me));
   }
+  examples.clear();
+  examples.delete_v();
   return example_collection;
 }
 
@@ -411,7 +421,7 @@ void my_setup_example(vw_ptr vw, example_ptr ec)
 }
 
 void unsetup_example(vw_ptr vwP, example_ptr ae)
-{ vw& all = *vwP;
+{ vw&all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
@@ -466,19 +476,19 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t la
   vw->p->lp = old_lp;
 }
 
-float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple().label; }
-float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple().weight; }
-float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple().initial; }
-float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar(); }
-float ex_get_prob(example_ptr ec) { return ec->pred.prob(); }
+float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
+float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
+float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
+float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
+float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 
-uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi().label; }
-float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi().weight; }
-uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass(); }
+uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
+float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
+uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
 py::list ex_get_scalars(example_ptr ec)
 { py::list values;
-  const auto& scalars = ec->pred.scalars();
+  const auto& scalars = ec->pred.scalars;
 
   for (float s : scalars)
   { values.append(s);
@@ -489,7 +499,7 @@ py::list ex_get_scalars(example_ptr ec)
 py::list ex_get_action_scores(example_ptr ec)
 {
   py::list values;
-  auto const& scores = ec->pred.action_scores();
+  auto const& scores = ec->pred.a_s;
   std::vector<float> ordered_scores(scores.size());
   for (auto const& action_score: scores)
   {
@@ -507,7 +517,7 @@ py::list ex_get_action_scores(example_ptr ec)
 py::list ex_get_decision_scores(example_ptr ec)
 {
   py::list values;
-  for (auto const& scores : ec->pred.decision_scores())
+  for (auto const& scores : ec->pred.decision_scores)
   {
     py::list inner_list;
     for (auto action_score: scores)
@@ -523,7 +533,7 @@ py::list ex_get_decision_scores(example_ptr ec)
 
 py::list ex_get_multilabel_predictions(example_ptr ec)
 { py::list values;
-  MULTILABEL::labels labels = ec->pred.multilabels();
+  MULTILABEL::labels labels = ec->pred.multilabels;
 
   for (uint32_t l : labels.label_v)
   { values.append(l);
@@ -531,19 +541,19 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   return values;
 }
 
-uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass(); }
-uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs().costs.size(); }
-float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].x; }
-uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].class_index; }
-float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].partial_prediction; }
-float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs().costs[i].wap_value; }
+uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
+uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
+float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
+uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].class_index; }
+float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].partial_prediction; }
+float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].wap_value; }
 
-uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass(); }
-uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb().costs.size(); }
-float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb().costs[i].cost; }
-uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb().costs[i].action; }
-float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb().costs[i].probability; }
-float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb().costs[i].partial_prediction; }
+uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
+uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb.costs.size(); }
+float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].cost; }
+uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
+float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
+float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 
 // example_counter is being overriden by lableType!
 size_t   get_example_counter(example_ptr ec) { return ec->example_counter; }

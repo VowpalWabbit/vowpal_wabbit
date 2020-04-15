@@ -15,16 +15,16 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
   else
     base.predict(ec);
 
-  if (ec.pred.scalar() > 0)
-    ec.pred.scalar() = 1;
+  if (ec.pred.scalar > 0)
+    ec.pred.scalar = 1;
   else
-    ec.pred.scalar() = -1;
+    ec.pred.scalar = -1;
 
-  if (ec.l.simple().label != FLT_MAX)
+  if (ec.l.simple.label != FLT_MAX)
   {
-    if (fabs(ec.l.simple().label) != 1.f)
-      std::cout << "You are using label " << ec.l.simple().label << " not -1 or 1 as loss function expects!" << std::endl;
-    else if (ec.l.simple().label == ec.pred.scalar())
+    if (fabs(ec.l.simple.label) != 1.f)
+      std::cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << std::endl;
+    else if (ec.l.simple.label == ec.pred.scalar)
       ec.loss = 0.;
     else
       ec.loss = ec.weight;

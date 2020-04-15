@@ -27,28 +27,28 @@ using namespace VW::config;
 
 namespace CCB
 {
-void default_label(polylabel& v);
+void default_label(void* v);
 
-size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
+size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(v);
-  CCB::label& ld = v.ccb();
+  CCB::label* ld = static_cast<CCB::label*>(v);
 
-  if (ld.outcome)
+  if (ld->outcome)
   {
-    ld.outcome->probabilities.clear();
+    ld->outcome->probabilities.clear();
   }
-  ld.explicit_included_actions.clear();
+  ld->explicit_included_actions.clear();
 
   size_t read_count = 0;
   char* read_ptr;
 
-  size_t next_read_size = sizeof(ld.type);
+  size_t next_read_size = sizeof(ld->type);
   if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
     return 0;
-  ld.type = *(CCB::example_type*)read_ptr;
-  read_count += sizeof(ld.type);
+  ld->type = *(CCB::example_type*)read_ptr;
+  read_count += sizeof(ld->type);
 
   bool is_outcome_present;
   next_read_size = sizeof(bool);
@@ -59,13 +59,14 @@ size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
 
   if (is_outcome_present)
   {
-    ld.outcome = new CCB::conditional_contextual_bandit_outcome();
+    ld->outcome = new CCB::conditional_contextual_bandit_outcome();
+    ld->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
-    next_read_size = sizeof(ld.outcome->cost);
+    next_read_size = sizeof(ld->outcome->cost);
     if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
       return 0;
-    ld.outcome->cost = *(float*)read_ptr;
-    read_count += sizeof(ld.outcome->cost);
+    ld->outcome->cost = *(float*)read_ptr;
+    read_count += sizeof(ld->outcome->cost);
 
     uint32_t size_probs;
     next_read_size = sizeof(size_probs);
@@ -83,7 +84,7 @@ size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
       a_s = *(ACTION_SCORE::action_score*)read_ptr;
       read_count += sizeof(a_s);
 
-      ld.outcome->probabilities.push_back(a_s);
+      ld->outcome->probabilities.push_back(a_s);
     }
   }
 
@@ -102,95 +103,123 @@ size_t read_cached_label(shared_data*, polylabel& v, io_buf& cache)
       return 0;
     include = *(uint32_t*)read_ptr;
     read_count += sizeof(include);
-    ld.explicit_included_actions.push_back(include);
+    ld->explicit_included_actions.push_back(include);
   }
 
-  next_read_size = sizeof(ld.weight);
+  next_read_size = sizeof(ld->weight);
   if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
     return 0;
-  ld.weight = *(float*)read_ptr;
+  ld->weight = *(float*)read_ptr;
   return read_count;
 }
 
-float ccb_weight(polylabel& v)
+float ccb_weight(void* v)
 {
-  CCB::label& ld = (CCB::label&)v;
-  return ld.weight;
+  CCB::label* ld = (CCB::label*)v;
+  return ld->weight;
 }
 
-void cache_label(polylabel& v, io_buf& cache)
+void cache_label(void* v, io_buf& cache)
 {
   char* c;
-  CCB::label& ld = v.ccb();
+  CCB::label* ld = static_cast<CCB::label*>(v);
   size_t size = sizeof(uint8_t)  // type
       + sizeof(bool)             // outcome exists?
-      + (ld.outcome == nullptr ? 0
-                               : sizeof(ld.outcome->cost)                                     // cost
-                    + sizeof(uint32_t)                                                        // probabilities size
-                    + sizeof(ACTION_SCORE::action_score) * ld.outcome->probabilities.size())  // probabilities
+      + (ld->outcome == nullptr ? 0
+                                : sizeof(ld->outcome->cost)                                    // cost
+                    + sizeof(uint32_t)                                                         // probabilities size
+                    + sizeof(ACTION_SCORE::action_score) * ld->outcome->probabilities.size())  // probabilities
       + sizeof(uint32_t)  // explicit_included_actions size
-      + sizeof(uint32_t) * ld.explicit_included_actions.size() + sizeof(ld.weight);
+      + sizeof(uint32_t) * ld->explicit_included_actions.size() + sizeof(ld->weight);
 
   cache.buf_write(c, size);
 
-  *(uint8_t*)c = static_cast<uint8_t>(ld.type);
-  c += sizeof(ld.type);
+  *(uint8_t*)c = static_cast<uint8_t>(ld->type);
+  c += sizeof(ld->type);
 
-  *(bool*)c = ld.outcome != nullptr;
+  *(bool*)c = ld->outcome != nullptr;
   c += sizeof(bool);
 
-  if (ld.outcome != nullptr)
+  if (ld->outcome != nullptr)
   {
-    *(float*)c = ld.outcome->cost;
-    c += sizeof(ld.outcome->cost);
+    *(float*)c = ld->outcome->cost;
+    c += sizeof(ld->outcome->cost);
 
-    *(uint32_t*)c = convert(ld.outcome->probabilities.size());
+    *(uint32_t*)c = convert(ld->outcome->probabilities.size());
     c += sizeof(uint32_t);
 
-    for (const auto& score : ld.outcome->probabilities)
+    for (const auto& score : ld->outcome->probabilities)
     {
       *(ACTION_SCORE::action_score*)c = score;
       c += sizeof(ACTION_SCORE::action_score);
     }
   }
 
-  *(uint32_t*)c = convert(ld.explicit_included_actions.size());
+  *(uint32_t*)c = convert(ld->explicit_included_actions.size());
   c += sizeof(uint32_t);
 
-  for (const auto& included_action : ld.explicit_included_actions)
+  for (const auto& included_action : ld->explicit_included_actions)
   {
     *(uint32_t*)c = included_action;
     c += sizeof(included_action);
   }
 
-  *(float*)c = ld.weight;
-  c += sizeof(ld.weight);
+  *(float*)c = ld->weight;
+  c += sizeof(ld->weight);
 }
 
-void default_label(polylabel& v)
+void default_label(void* v)
 {
-  if (v.get_type() != label_type_t::unset)
-  {
-    v.reset();
-  }
-  CCB::label& ld = v.init_as_conditional_contextual_bandit();
+  CCB::label* ld = static_cast<CCB::label*>(v);
 
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if (ld.outcome)
+  if (ld->outcome)
   {
-    delete ld.outcome;
-    ld.outcome = nullptr;
+    ld->outcome->probabilities.delete_v();
+    delete ld->outcome;
+    ld->outcome = nullptr;
   }
 
-  ld.explicit_included_actions.clear();
-  ld.type = example_type::unset;
-  ld.weight = 1.0;
+  ld->explicit_included_actions.clear();
+  ld->type = example_type::unset;
+  ld->weight = 1.0;
 }
 
-bool test_label(polylabel& v)
+bool test_label(void* v)
 {
-  CCB::label& ld = v.ccb();
-  return ld.outcome == nullptr;
+  CCB::label* ld = static_cast<CCB::label*>(v);
+  return ld->outcome == nullptr;
+}
+
+void delete_label(void* v)
+{
+  CCB::label* ld = static_cast<CCB::label*>(v);
+  if (ld->outcome)
+  {
+    ld->outcome->probabilities.delete_v();
+    delete ld->outcome;
+    ld->outcome = nullptr;
+  }
+  ld->explicit_included_actions.delete_v();
+}
+
+void copy_label(void* dst, void* src)
+{
+  CCB::label* ldDst = static_cast<CCB::label*>(dst);
+  CCB::label* ldSrc = static_cast<CCB::label*>(src);
+
+  if (ldSrc->outcome)
+  {
+    ldDst->outcome = new CCB::conditional_contextual_bandit_outcome();
+    ldDst->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
+
+    ldDst->outcome->cost = ldSrc->outcome->cost;
+    copy_array(ldDst->outcome->probabilities, ldSrc->outcome->probabilities);
+  }
+
+  copy_array(ldDst->explicit_included_actions, ldSrc->explicit_included_actions);
+  ldDst->type = ldSrc->type;
+  ldDst->weight = ldSrc->weight;
 }
 
 ACTION_SCORE::action_score convert_to_score(const VW::string_view& action_id_str, const VW::string_view& probability_str)
@@ -219,15 +248,16 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
-  v_array<VW::string_view> split_commas;
+  auto split_commas = v_init<VW::string_view>();
   tokenize(',', outcome, split_commas);
 
-  v_array<VW::string_view> split_colons;
+  auto split_colons = v_init<VW::string_view>();
   tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3)
     THROW("Malformed ccb label");
 
+  ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
   ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
 
   ccb_outcome.cost = float_of_string(split_colons[1]);
@@ -244,21 +274,24 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
     ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
   }
 
+  split_colons.delete_v();
+  split_commas.delete_v();
+
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label& ld, v_array<VW::string_view>& split_inclusions)
+void parse_explicit_inclusions(CCB::label* ld, v_array<VW::string_view>& split_inclusions)
 {
   for (const auto& inclusion : split_inclusions)
   {
-    ld.explicit_included_actions.push_back(int_of_string(inclusion));
+    ld->explicit_included_actions.push_back(int_of_string(inclusion));
   }
 }
 
-void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
 {
-  CCB::label& ld = v.ccb();
-  ld.weight = 1.0;
+  CCB::label* ld = static_cast<CCB::label*>(v);
+  ld->weight = 1.0;
 
   if (words.size() < 2)
     THROW("ccb labels may not be empty");
@@ -272,19 +305,19 @@ void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>
   {
     if (words.size() > 2)
       THROW("shared labels may not have a cost");
-    ld.type = CCB::example_type::shared;
+    ld->type = CCB::example_type::shared;
   }
   else if (type == ACTION_TYPE)
   {
     if (words.size() > 2)
       THROW("action labels may not have a cost");
-    ld.type = CCB::example_type::action;
+    ld->type = CCB::example_type::action;
   }
   else if (type == SLOT_TYPE)
   {
     if (words.size() > 4)
       THROW("ccb slot label can only have a type cost and exclude list");
-    ld.type = CCB::example_type::slot;
+    ld->type = CCB::example_type::slot;
 
     // Skip the first two words "ccb <type>"
     for (size_t i = 2; i < words.size(); i++)
@@ -292,12 +325,12 @@ void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>
       auto is_outcome = words[i].find(':');
       if (is_outcome != VW::string_view::npos)
       {
-        if (ld.outcome != nullptr)
+        if (ld->outcome != nullptr)
         {
           THROW("There may be only 1 outcome associated with a slot.")
         }
 
-        ld.outcome = parse_outcome(words[i]);
+        ld->outcome = parse_outcome(words[i]);
       }
       else
       {
@@ -307,9 +340,9 @@ void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>
     }
 
     // If a full distribution has been given, check if it sums to 1, otherwise throw.
-    if (ld.outcome && ld.outcome->probabilities.size() > 1)
+    if (ld->outcome && ld->outcome->probabilities.size() > 1)
     {
-      float total_pred = std::accumulate(ld.outcome->probabilities.begin(), ld.outcome->probabilities.end(), 0.f,
+      float total_pred = std::accumulate(ld->outcome->probabilities.begin(), ld->outcome->probabilities.end(), 0.f,
           [](float result_so_far, ACTION_SCORE::action_score action_pred) {
             return result_so_far + action_pred.score;
           });
@@ -328,6 +361,6 @@ void parse_label(parser* p, shared_data*, polylabel& v, v_array<VW::string_view>
 }
 
 // Export the definition of this label parser.
-label_parser ccb_label_parser = {default_label, parse_label, cache_label, read_cached_label, polylabel_delete_label, ccb_weight,
-    polylabel_copy_label, test_label, sizeof(CCB::label)};
+label_parser ccb_label_parser = {default_label, parse_label, cache_label, read_cached_label, delete_label, ccb_weight,
+    copy_label, test_label, sizeof(CCB::label)};
 }  // namespace CCB

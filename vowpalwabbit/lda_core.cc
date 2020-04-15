@@ -89,6 +89,18 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, float *gamma, float *norm);
+
+  ~lda()
+  {
+    Elogtheta.delete_v();
+    decay_levels.delete_v();
+    total_new.delete_v();
+    examples.delete_v();
+    total_lambda.delete_v();
+    doc_lengths.delete_v();
+    digammas.delete_v();
+    v.delete_v();
+  }
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -667,9 +679,8 @@ static inline float find_cw(lda &l, float *u_for_w, float *v)
 namespace
 {
 // Effectively, these are static and not visible outside the compilation unit.
-// TODO: Make these non global as it makes this code non threadsafe
-v_array<float> new_gamma;
-v_array<float> old_gamma;
+v_array<float> new_gamma = v_init<float>();
+v_array<float> old_gamma = v_init<float>();
 }  // namespace
 
 // Returns an estimate of the part of the variational bound that
@@ -722,10 +733,10 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     for (size_t k = 0; k < l.topics; k++) new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
-  ec->pred.scalars().clear();
-  ec->pred.scalars().resize(l.topics);
-  memcpy(ec->pred.scalars().begin(), new_gamma.begin(), l.topics * sizeof(float));
-  ec->pred.scalars().end() = ec->pred.scalars().begin() + l.topics;
+  ec->pred.scalars.clear();
+  ec->pred.scalars.resize(l.topics);
+  memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
+  ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
 
@@ -837,7 +848,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 void return_example(vw &all, example &ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
-  for (auto f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars(), ec.tag);
+  for (int f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars, ec.tag);
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
     all.sd->print_update(
@@ -860,10 +871,10 @@ void learn_batch(lda &l)
     // do in this case, we just return.
     for (size_t d = 0; d < l.examples.size(); d++)
     {
-      l.examples[d]->pred.scalars().clear();
-      l.examples[d]->pred.scalars().resize(l.topics);
-      memset(l.examples[d]->pred.scalars().begin(), 0, l.topics * sizeof(float));
-      l.examples[d]->pred.scalars().end() = l.examples[d]->pred.scalars().begin() + l.topics;
+      l.examples[d]->pred.scalars.clear();
+      l.examples[d]->pred.scalars.resize(l.topics);
+      memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
+      l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
 
@@ -998,18 +1009,6 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-
-  // The contract of a reduction is that prediction and label must be valid on the way in and out.
-  // In the LDA batch, examples are cleared and so it breaks this contract. Copying them here only
-  // for the final example allows us to support that. This is not great either and should be revisited.
-  polylabel pl;
-  polyprediction pp;
-  if (num_ex + 1 == l.minibatch)
-  {
-    pl = ec.l;
-    pp = ec.pred;
-  }
-
   for (features &fs : ec)
   {
     for (features::iterator &f : fs)
@@ -1019,12 +1018,8 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
       l.doc_lengths[num_ex] += (int)f.value();
     }
   }
-  if (num_ex + 1 == l.minibatch)
-  {
+  if (++num_ex == l.minibatch)
     learn_batch(l);
-    ec.l = std::move(pl);
-    ec.pred = std::move(pp);
-  }
 }
 
 void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
@@ -1356,6 +1351,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     return nullptr;
 
   all.lda = (uint32_t)ld->topics;
+  all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;
@@ -1401,6 +1397,6 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
-  l.label_type = label_type_t::empty;
+
   return make_base(l);
 }

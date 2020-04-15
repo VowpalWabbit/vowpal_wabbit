@@ -10,7 +10,7 @@ using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
-  v_array<example*> examples;
+  v_array<example*> examples = v_init<example*>();
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
   try
@@ -32,8 +32,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.passes_complete++;
 
         // setup an end_pass example
-        examples[0]->l.reset();
-        all.p->lp.default_label(examples[0]->l);
+        all.p->lp.default_label(&examples[0]->l);
         examples[0]->end_pass = true;
         all.p->in_pass_counter = 0;
 
@@ -67,4 +66,5 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     all.p->exc_ptr = std::current_exception();
   }
   lock_done(*all.p);
+  examples.delete_v();
 }

@@ -42,8 +42,7 @@ void predict_or_learn(sfm_data&, VW::LEARNER::multi_learner& base, multi_ex& ec_
 
   multi_ex::value_type shared_example = nullptr;
 
-  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0])
-    || COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
+  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
   if (has_example_header)
   {
     shared_example = ec_seq[0];

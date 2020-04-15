@@ -24,6 +24,13 @@ using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
+template <typename T>
+void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
+{
+  array.clear();
+  pool.return_object(array);
+}
+
 struct ccb
 {
   vw* all;
@@ -45,6 +52,9 @@ struct ccb
   std::string id_namespace_str;
 
   size_t base_learner_stride_shift;
+
+  VW::v_array_pool<CB::cb_class> cb_label_pool;
+  VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
 };
 
 namespace CCB
@@ -67,7 +77,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
   for (auto ex : examples)
   {
-    switch (ex->l.ccb().type)
+    switch (ex->l.conditional_contextual_bandit.type)
     {
       case example_type::shared:
         data.shared = ex;
@@ -84,9 +94,8 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
     }
 
     // Stash the CCB labels before rewriting them.
-    data.stored_labels.push_back(std::move(ex->l.ccb()));
-    // Since we have just moved out of the label we should reset to avoid using garbage memory.
-    ex->l.reset();
+    data.stored_labels.push_back({ex->l.conditional_contextual_bandit.type, ex->l.conditional_contextual_bandit.outcome,
+        ex->l.conditional_contextual_bandit.explicit_included_actions, 0.});
   }
 
   return true;
@@ -104,8 +113,7 @@ bool sanity_checks(ccb& data)
 
   if (is_learn)
   {
-    auto first_slot_index = 1 /*shared*/ + data.actions.size();
-    for (size_t index = first_slot_index; index < data.stored_labels.size(); index++)
+    for (auto slot : data.slots)
     {
       if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
           slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
@@ -121,23 +129,23 @@ bool sanity_checks(ccb& data)
 // create empty/default cb labels
 void create_cb_labels(ccb& data)
 {
-  data.shared->l.init_as_cb();
-  data.shared->l.cb().costs.push_back(data.default_cb_label);
+  data.shared->l.cb.costs = data.cb_label_pool.get_object();
+  data.shared->l.cb.costs.push_back(data.default_cb_label);
   for (example* action : data.actions)
   {
-    action->l.reset();
-    action->l.init_as_cb();
+    action->l.cb.costs = data.cb_label_pool.get_object();
   }
-  data.shared->l.cb().weight = 1.0;
+  data.shared->l.cb.weight = 1.0;
 }
 
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  data.shared->l.reset();
+  return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
+
   for (example* action : data.actions)
   {
-    action->l.reset();
+    return_v_array(action->l.cb.costs, data.cb_label_pool);
   }
 }
 
@@ -150,13 +158,14 @@ void attach_label_to_example(
   data.cb_label.probability = outcome->probabilities[0].score;
   data.cb_label.cost = outcome->cost;
 
-  example->l.cb().costs.push_back(data.cb_label);
+  example->l.cb.costs.push_back(data.cb_label);
 }
 
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
-  decision_scores.push_back(std::move(data.shared->pred.action_probs()));
-  auto& pred = decision_scores[decision_scores.size() - 1];
+  auto& pred = data.shared->pred.a_s;
+  decision_scores.push_back(pred);
+
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : pred)
   {
@@ -173,7 +182,7 @@ void clear_pred_and_label(ccb& data)
   // Don't need to return to pool, as that will be done when the example is output.
 
   // This just needs to be cleared as it is reused.
-  data.actions[data.action_with_label]->l.cb().costs.clear();
+  data.actions[data.action_with_label]->l.cb.costs.clear();
 }
 
 // true if there exists at least 1 action in the cb multi-example
@@ -314,9 +323,9 @@ void calculate_and_insert_interactions(
 
 // build a cb example from the ccb example
 template <bool is_learn>
-void build_cb_example(multi_ex& cb_ex, example* slot, CCB::label& slot_label, ccb& data)
+void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
 {
-  bool slot_has_label = slot_label.outcome != nullptr;
+  bool slot_has_label = slot->l.conditional_contextual_bandit.outcome != nullptr;
 
   // Merge the slot features with the shared example and set it in the cb multi-example
   // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
@@ -364,19 +373,16 @@ void build_cb_example(multi_ex& cb_ex, example* slot, CCB::label& slot_label, cc
     data.origin_index[index++] = (uint32_t)i;
 
     // Remember the index of the chosen action
-    if (is_learn && slot_has_label && i == slot_label.outcome->probabilities[0].action)
+    if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
     {
       // This is used to remove the label later.
       data.action_with_label = (uint32_t)i;
-      attach_label_to_example(index, data.actions[i], slot_label.outcome, data);
+      attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
     }
   }
 
-  for (auto example : cb_ex)
-  {
-    example->pred.reset();
-    example->pred.init_as_action_probs();
-  }
+  // Must provide a prediction that cb can write into, this will be saved into the decision scores object later.
+  data.shared->pred.a_s = data.action_score_pool.get_object();
 
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
   // example.
@@ -408,7 +414,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
-  auto decision_scores = std::move(examples[0]->pred.decision_scores());
+  auto decision_scores = examples[0]->pred.decision_scores;
 
   // for each slot, re-build the cb example and call cb_explore_adf
   size_t slot_id = 0;
@@ -425,9 +431,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       ex->interactions = &data.generated_interactions;
     }
 
-    const auto example_index = examples.size() - data.slots.size() + slot_id;
     data.include_list.clear();
-    build_cb_example<is_learn>(data.cb_ex, slot, data.stored_labels[example_index], data);
+    build_cb_example<is_learn>(data.cb_ex, slot, data);
 
     if (data.all->audit)
     {
@@ -448,7 +453,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     else
     {
       // the cb example contains no action => cannot decide
-      decision_scores.push_back(ACTION_SCORE::action_scores());
+      decision_scores.push_back(data.action_score_pool.get_object());
     }
 
     data.shared->interactions = data.original_interactions;
@@ -478,15 +483,13 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Restore ccb labels to the example objects.
   for (size_t i = 0; i < examples.size(); i++)
   {
-    examples[i]->l.init_as_conditional_contextual_bandit(std::move(data.stored_labels[i]));
+    examples[i]->l.conditional_contextual_bandit = {
+        data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
   }
-  data.stored_labels.clear();
 
   // Save the predictions
-  examples[0]->pred.reset();
-  examples[0]->pred.init_as_decision_scores(std::move(decision_scores));
+  examples[0]->pred.decision_scores = decision_scores;
 }
-
 
 std::string generate_ccb_label_printout(const std::vector<example*>& slots)
 {
@@ -535,7 +538,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   {
     num_features += ec->num_features;
 
-    if (ec->l.ccb().type == CCB::example_type::slot)
+    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot)
     {
       slots.push_back(ec);
     }
@@ -543,10 +546,10 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
 
   // Is it hold out?
   size_t num_labelled = 0;
-  auto& preds = ec_seq[0]->pred.decision_scores();
+  auto preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
-    auto outcome = slots[i]->l.ccb().outcome;
+    auto outcome = slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
       num_labelled++;
@@ -586,6 +589,12 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
+  for (auto& a_s : ec_seq[0]->pred.decision_scores)
+  {
+    return_v_array(a_s, data.action_score_pool);
+  }
+  ec_seq[0]->pred.decision_scores.clear();
+
   VW::finish_example(all, ec_seq);
 }
 
@@ -620,6 +629,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
+  all.label_type = label_type_t::ccb;
 
   // Stash the base learners stride_shift so we can properly add a feature later.
   data->base_learner_stride_shift = all.weights.stride_shift();
@@ -635,15 +645,13 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   learner<ccb, multi_ex>& l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_scores);
-  l.label_type = label_type_t::conditional_contextual_bandit;
+      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
+
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
+
   l.set_finish_example(finish_multiline_example);
   return make_base(l);
 }
 
-bool ec_is_example_header(example const& ec)
-{
-  return ec.l.get_type() == label_type_t::conditional_contextual_bandit &&
-      ec.l.ccb().type == example_type::shared;
-}
+bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
 }  // namespace CCB

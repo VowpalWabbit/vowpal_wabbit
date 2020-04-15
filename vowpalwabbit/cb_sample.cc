@@ -32,7 +32,7 @@ struct cb_sample_data
     int64_t maybe_labelled_action = -1;
 
     // Find that chosen action in the learning case, skip the shared example.
-    auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb().costs.empty(); });
+    auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
     if (it != examples.end())
     {
       maybe_labelled_action = static_cast<int64_t>(std::distance(examples.begin(), it));
@@ -117,9 +117,6 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   }
 
   auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
-  auto base = as_multiline(setup_base(options, all));
-  auto l = make_base(init_learner(data, base, learn_or_predict<true>,
+  return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
       learn_or_predict<false>, 1 /* weights */, prediction_type_t::action_probs));
-  l->label_type = label_type_t::cb;
-  return l;
 }

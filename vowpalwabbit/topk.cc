@@ -43,7 +43,7 @@ void VW::topk::predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
   for (auto ec : ec_seq)
   {
     base.predict(*ec);
-    update_priority_queue(ec->pred.scalar(), ec->tag);
+    update_priority_queue(ec->pred.scalar, ec->tag);
   }
 }
 
@@ -52,7 +52,7 @@ void VW::topk::learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
   for (auto ec : ec_seq)
   {
     base.learn(*ec);
-    update_priority_queue(ec->pred.scalar(), ec->tag);
+    update_priority_queue(ec->pred.scalar, ec->tag);
   }
 }
 
@@ -97,7 +97,7 @@ void print_result(io_adapter* file_descriptor, std::pair<VW::topk::const_iterato
 
 void output_example(vw& all, example& ec)
 {
-  label_data& ld = ec.l.simple();
+  label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX)
@@ -117,10 +117,8 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& 
 
 void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
 {
-  for (auto ec : ec_seq)
-    output_example(all, *ec);
-  for (auto sink : all.final_prediction_sink) 
-    print_result(sink, d.get_container_view());
+  for (auto ec : ec_seq) output_example(all, *ec);
+  for (auto sink : all.final_prediction_sink) print_result(sink, d.get_container_view());
   d.clear_container();
   VW::finish_example(all, ec_seq);
 }
@@ -140,6 +138,6 @@ VW::LEARNER::base_learner* topk_setup(options_i& options, vw& all)
   VW::LEARNER::learner<VW::topk, multi_ex>& l =
       init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   l.set_finish_example(finish_example);
-  l.label_type = label_type_t::simple;
+
   return make_base(l);
 }

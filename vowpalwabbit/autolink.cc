@@ -53,7 +53,7 @@ void VW::autolink::learn(VW::LEARNER::single_learner& base, example& ec)
 void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
-  float base_pred = ec.pred.scalar();
+  float base_pred = ec.pred.scalar;
 
   // Add features of label.
   ec.indices.push_back(autolink_namespace);
@@ -63,7 +63,7 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
     if (base_pred != 0.)
     {
       fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift));
-      base_pred *= ec.pred.scalar();
+      base_pred *= ec.pred.scalar;
     }
   }
   ec.total_sum_feat_sq += fs.sum_feat_sq;
@@ -97,9 +97,6 @@ VW::LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
     return nullptr;
 
   auto autolink_reduction = scoped_calloc_or_throw<VW::autolink>(d, all.weights.stride_shift());
-  auto base = as_singleline(setup_base(options, all));
-  auto learner = make_base(init_learner(
-      autolink_reduction, base, predict_or_learn<true>, predict_or_learn<false>));
-  learner->label_type = base->label_type;
-  return learner;
+  return make_base(init_learner(
+      autolink_reduction, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>));
 }

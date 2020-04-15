@@ -8,7 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-
 #define CASE(type) \
   case type:       \
     return #type;
@@ -74,7 +73,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
   bool is_header = false;
-  if (all.get_label_type() == label_type_t::conditional_contextual_bandit)
+  if (all.label_type == label_type_t::ccb)
   {
     is_header = CCB::ec_is_example_header(ec);
   }
@@ -170,7 +169,7 @@ class multi_example_handler
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.p->lp.test_label(ec->l);
+    const bool is_test_ec = master.p->lp.test_label(&ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
     if (!is_newline)
     {

@@ -41,6 +41,7 @@ struct svm_example
   v_array<float> krow;
   flat_example ex;
 
+  ~svm_example();
   void init_svm_example(flat_example* fec);
   int compute_kernels(svm_params& params);
   int clear_kernels();
@@ -72,7 +73,9 @@ void free_svm_model(svm_model* model)
     model->support_vec[i] = 0;
   }
 
-  model->~svm_model();
+  model->support_vec.delete_v();
+  model->alpha.delete_v();
+  model->delta.delete_v();
   free(model);
 }
 
@@ -139,6 +142,17 @@ void svm_example::init_svm_example(flat_example* fec)
 {
   ex = std::move(*fec);
   free(fec);
+}
+
+svm_example::~svm_example()
+{
+  krow.delete_v();
+  // free flatten example contents
+  //flat_example* fec = &calloc_or_throw<flat_example>();
+  //*fec = ex;
+  //free_flatten_example(fec);  // free contents of flat example and frees fec.
+  if (ex.tag_len > 0)
+    free(ex.tag);
 }
 
 float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type);
@@ -259,6 +273,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
       {
         features& fs = fec->fs;
         size_t len = fs.size();
+        fs.values = v_init<feature_value>();
         fs.values.resize(len);
         brw = model_file.bin_read_fixed((char*)fs.values.begin(), len * sizeof(feature_value), "");
         if (!brw)
@@ -266,7 +281,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         fs.values.end() = fs.values.begin() + len;
 
         len = fs.indicies.size();
-        fs.indicies.clear();
+        fs.indicies = v_init<feature_index>();
         fs.indicies.resize(len);
         brw = model_file.bin_read_fixed((char*)fs.indicies.begin(), len * sizeof(feature_index), "");
         if (!brw)
@@ -456,7 +471,7 @@ void predict(svm_params& params, single_learner&, example& ec)
     sec->init_svm_example(fec);
     float score;
     predict(params, &sec, &score, 1);
-    ec.pred.scalar() = score;
+    ec.pred.scalar = score;
     sec->~svm_example();
     free(sec);
   }
@@ -469,9 +484,9 @@ size_t suboptimality(svm_model* model, double* subopt)
   double max_val = 0;
   for (size_t i = 0; i < model->num_support; i++)
   {
-    float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple().label;
+    float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
 
-    if ((tmp < model->support_vec[i]->ex.l.simple().weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
+    if ((tmp < model->support_vec[i]->ex.l.simple.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
     else
       subopt[i] = 0;
@@ -540,7 +555,7 @@ bool update(svm_params& params, size_t pos)
   bool overshoot = false;
   // params.all->opts_n_args.trace_message<<"Updating model "<<pos<<" "<<model->num_support<<" ";
   svm_example* fec = model->support_vec[pos];
-  label_data& ld = fec->ex.l.simple();
+  label_data& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
   float* inprods = fec->krow.begin();
   float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
@@ -554,8 +569,8 @@ bool update(svm_params& params, size_t pos)
   // std::cout<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld.label<<"
   // "<<model->delta[pos]<<" " << ai<<" "<<params.lambda<< endl;
 
-  if (ai > fec->ex.l.simple().weight)
-    ai = fec->ex.l.simple().weight;
+  if (ai > fec->ex.l.simple.weight)
+    ai = fec->ex.l.simple.weight;
   else if (ai < 0)
     ai = 0;
 
@@ -574,7 +589,7 @@ bool update(svm_params& params, size_t pos)
 
   for (size_t i = 0; i < model->num_support; i++)
   {
-    label_data& ldi = model->support_vec[i]->ex.l.simple();
+    label_data& ldi = model->support_vec[i]->ex.l.simple;
     model->delta[i] += diff * inprods[i] * ldi.label / params.lambda;
   }
 
@@ -631,7 +646,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   {
     queries = calloc_or_throw<char>(total_sum);
     memcpy(queries + prev_sum, b->space.begin(), b->head - b->space.begin());
-    b->space.clear();
+    b->space.delete_v();
     all_reduce<char, copy_char>(all, queries, total_sum);
 
     b->space.begin() = queries;
@@ -652,6 +667,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
         // for(int j = 0;j < fec->feature_map_len;j++)
         //   params.all->opts_n_args.trace_message<<fec->feature_map[j].weight_index<<":"<<fec->feature_map[j].x<<" ";
         // params.all->opts_n_args.trace_message<< endl;
+        // params.pool[i]->in_use = true;
         // params.current_t += ((label_data*) params.pool[i]->ld)->weight;
         // params.pool[i]->example_t = params.current_t;
       }
@@ -715,7 +731,7 @@ void train(svm_params& params)
         if (params._random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          fec->ex.l.simple().weight *= 1 / queryp;
+          fec->ex.l.simple.weight *= 1 / queryp;
           train_pool[i] = 1;
         }
       }
@@ -817,9 +833,9 @@ void learn(svm_params& params, single_learner&, example& ec)
     sec->init_svm_example(fec);
     float score = 0;
     predict(params, &sec, &score, 1);
-    ec.pred.scalar() = score;
+    ec.pred.scalar = score;
     // std::cout<<"Score = "<<score<< endl;
-    ec.loss = std::max(0.f, 1.f - score * ec.l.simple().label);
+    ec.loss = std::max(0.f, 1.f - score * ec.l.simple.label);
     params.loss_sum += ec.loss;
     if (params.all->training && ec.example_counter % 100 == 0)
       trim_cache(params);
@@ -926,6 +942,5 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   learner<svm_params, example>& l = init_learner(params, learn, predict, 1);
   l.set_save_load(save_load);
-  l.label_type = label_type_t::simple;
   return make_base(l);
 }

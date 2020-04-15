@@ -72,7 +72,6 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
   const bool is_mtr = _gen_cs.cb_type == CB_TYPE_MTR;
-  // swap_to_scores(examples);
   if (is_learn)
   {
     if (is_mtr)  // use DR estimates for non-ERM policies in MTR
@@ -86,8 +85,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     GEN_CS::gen_cs_example_ips(examples, _cs_labels);
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
-  // swap_to_probs(examples);
-  auto& preds = examples[0]->pred.action_probs();
+  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   const uint32_t num_actions = (uint32_t)preds.size();
 
   float additive_probability = 1.f / (float)_cover_size;
@@ -218,6 +216,8 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
     options.insert("cb_adf", "");
   }
 
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
+
   // Set cb_type
   size_t cb_type_enum;
   if (type_string.compare("dr") == 0)
@@ -242,6 +242,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
+  all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = scoped_calloc_or_throw<explore_type>(
@@ -249,7 +250,6 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
-  l.label_type = label_type_t::cb;
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

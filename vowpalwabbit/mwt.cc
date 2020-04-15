@@ -33,6 +33,13 @@ struct mwt
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   vw* all;
+
+  ~mwt()
+  {
+    evals.delete_v();
+    policies.delete_v();
+    indices.delete_v();
+  }
 };
 
 inline bool observed_cost(CB::cb_class* cl)
@@ -72,7 +79,7 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 template <bool learn, bool exclude, bool is_learn>
 void predict_or_learn(mwt& c, single_learner& base, example& ec)
 {
-  c.observation = get_observed_cost(ec.l.cb());
+  c.observation = get_observed_cost(ec.l.cb);
 
   if (c.observation != nullptr)
   {
@@ -110,11 +117,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   // modify the predictions to use a vector with a score for each evaluated feature.
-  v_array<float> preds = std::move(ec.pred.scalars());
-
-  // TODO Confirm that this type is correct
-  ec.pred.reset();
-  ec.pred.init_as_multiclass();
+  v_array<float> preds = ec.pred.scalars;
 
   if (learn)
   {
@@ -134,16 +137,15 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   // modify the predictions to use a vector with a score for each evaluated feature.
   preds.clear();
   if (learn)
-    preds.push_back((float)ec.pred.multiclass());
+    preds.push_back((float)ec.pred.multiclass);
   for (uint64_t index : c.policies) preds.push_back((float)c.evals[index].cost / (float)c.total);
 
-  ec.pred.reset();
-  ec.pred.init_as_scalars(std::move(preds));
+  ec.pred.scalars = preds;
 }
 
-void print_scalars(io_adapter* f, v_array<float>& scalars, v_array<char>& tag)
+void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
 {
-  if (f != nullptr)
+  if (f >= 0)
   {
     std::stringstream ss;
 
@@ -161,7 +163,7 @@ void print_scalars(io_adapter* f, v_array<float>& scalars, v_array<char>& tag)
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
       std::cerr << "write error: " << strerror(errno) << std::endl;
   }
@@ -172,19 +174,17 @@ void finish_example(vw& all, mwt& c, example& ec)
   float loss = 0.;
   if (c.learn)
     if (c.observation != nullptr)
-      loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars()[0]);
+      loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars[0]);
   all.sd->update(ec.test_only, c.observation != nullptr, loss, 1.f, ec.num_features);
 
-  for (auto sink : all.final_prediction_sink) print_scalars(sink, ec.pred.scalars(), ec.tag);
+  for (int sink : all.final_prediction_sink) print_scalars(sink, ec.pred.scalars, ec.tag);
 
   if (c.learn)
   {
-    v_array<float> temp = std::move(ec.pred.scalars());
-    ec.pred.reset();
-    ec.pred.init_as_multiclass() = (uint32_t)temp[0];
+    v_array<float> temp = ec.pred.scalars;
+    ec.pred.multiclass = (uint32_t)temp[0];
     CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
-    ec.pred.reset();
-    ec.pred.init_as_scalars(std::move(temp));
+    ec.pred.scalars = temp;
   }
   VW::finish_example(all, ec);
 }
@@ -250,7 +250,9 @@ base_learner* mwt_setup(options_i& options, vw& all)
   calloc_reserve(c->evals, all.length());
   c->evals.end() = c->evals.begin() + all.length();
 
+  all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
+  all.label_type = label_type_t::cb;
 
   if (c->num_classes > 0)
   {
@@ -278,6 +280,5 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
-  l->label_type = label_type_t::cb;
   return make_base(*l);
 }

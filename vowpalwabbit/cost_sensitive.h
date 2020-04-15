@@ -29,9 +29,6 @@ struct label
   v_array<wclass> costs;
 };
 
-void delete_label(label& label);
-void default_label(label& label);
-
 void output_example(vw& all, example& ec);
 void finish_example(vw& all, example& ec);
 template <class T>

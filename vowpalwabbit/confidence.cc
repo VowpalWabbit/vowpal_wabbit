@@ -21,20 +21,20 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   float threshold = 0.f;
   float sensitivity = 0.f;
 
-  float existing_label = ec.l.simple().label;
+  float existing_label = ec.l.simple.label;
   if (existing_label == FLT_MAX)
   {
     base.predict(ec);
     float opposite_label = 1.f;
-    if (ec.pred.scalar() > 0)
+    if (ec.pred.scalar > 0)
       opposite_label = -1.f;
-    ec.l.simple().label = opposite_label;
+    ec.l.simple.label = opposite_label;
   }
 
   if (!is_confidence_after_training)
     sensitivity = base.sensitivity(ec);
 
-  ec.l.simple().label = existing_label;
+  ec.l.simple.label = existing_label;
   if (is_learn)
     base.learn(ec);
   else
@@ -43,10 +43,10 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   if (is_confidence_after_training)
     sensitivity = base.sensitivity(ec);
 
-  ec.confidence = fabsf(ec.pred.scalar() - threshold) / sensitivity;
+  ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
 
-void confidence_print_result(io_adapter* f, float res, float confidence, v_array<char> tag)
+void confidence_print_result(int f, float res, float confidence, v_array<char> tag)
 {
   if (f >= 0)
   {
@@ -56,7 +56,7 @@ void confidence_print_result(io_adapter* f, float res, float confidence, v_array
       ss << ' ';
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
     if (t != len)
       std::cerr << "write error: " << strerror(errno) << std::endl;
   }
@@ -64,7 +64,7 @@ void confidence_print_result(io_adapter* f, float res, float confidence, v_array
 
 void output_and_account_confidence_example(vw& all, example& ec)
 {
-  label_data& ld = ec.l.simple();
+  label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
@@ -72,11 +72,12 @@ void output_and_account_confidence_example(vw& all, example& ec)
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for(auto f : all.final_prediction_sink)
+  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
   {
-    confidence_print_result(f, ec.pred.scalar(), ec.confidence, ec.tag);
+    int f = (int)all.final_prediction_sink[i];
+    confidence_print_result(f, ec.pred.scalar, ec.confidence, ec.tag);
   }
-  
+
   print_update(all, ec);
 }
 
@@ -129,7 +130,6 @@ base_learner* confidence_setup(options_i& options, vw& all)
       data, as_singleline(setup_base(options, all)), learn_with_confidence_ptr, predict_with_confidence_ptr);
 
   l.set_finish_example(return_confidence_example);
-  l.label_type = label_type_t::simple;
 
   return make_base(l);
 }

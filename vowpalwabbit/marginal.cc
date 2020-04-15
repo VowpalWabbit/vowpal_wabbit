@@ -56,7 +56,7 @@ template <bool is_learn>
 void make_marginal(data& sm, example& ec)
 {
   uint64_t mask = sm.all->weights.mask();
-  float label = ec.l.simple().label;
+  float label = ec.l.simple.label;
   vw& all = *sm.all;
   sm.alg_loss = 0.;
   sm.net_weight = 0.;
@@ -132,7 +132,7 @@ void compute_expert_loss(data& sm, example& ec)
 {
   vw& all = *sm.all;
   // add in the feature-based expert and normalize,
-  float label = ec.l.simple().label;
+  float label = ec.l.simple.label;
 
   if (sm.net_weight + sm.net_feature_weight > 0.)
     sm.average_pred += sm.net_feature_weight * sm.feature_pred;
@@ -143,7 +143,7 @@ void compute_expert_loss(data& sm, example& ec)
   }
   float inv_weight = 1.0f / (sm.net_weight + sm.net_feature_weight);
   sm.average_pred *= inv_weight;
-  ec.pred.scalar() = sm.average_pred;
+  ec.pred.scalar = sm.average_pred;
   ec.partial_prediction = sm.average_pred;
 
   if (is_learn)
@@ -157,7 +157,7 @@ void update_marginal(data& sm, example& ec)
 {
   vw& all = *sm.all;
   uint64_t mask = sm.all->weights.mask();
-  float label = ec.l.simple().label;
+  float label = ec.l.simple.label;
   float weight = ec.weight;
   if (sm.unweighted_marginals)
     weight = 1.;
@@ -189,7 +189,7 @@ void update_marginal(data& sm, example& ec)
           e.second.weight = get_adanormalhedge_weights(e.second.regret, e.second.abs_regret);
         }
 
-        m.first = m.first * (1. - sm.decay) + ec.l.simple().label * weight;
+        m.first = m.first * (1. - sm.decay) + ec.l.simple.label * weight;
         m.second = m.second * (1. - sm.decay) + weight;
       }
   }
@@ -203,7 +203,7 @@ void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, example& ec)
     if (sm.update_before_learn)
     {
       base.predict(ec);
-      float pred = ec.pred.scalar();
+      float pred = ec.pred.scalar;
       if (sm.compete)
       {
         sm.feature_pred = pred;
@@ -213,14 +213,14 @@ void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, example& ec)
       update_marginal(sm, ec);  // update features before learning.
       make_marginal<is_learn>(sm, ec);
       base.learn(ec);
-      ec.pred.scalar() = pred;
+      ec.pred.scalar = pred;
     }
     else
     {
       base.learn(ec);
       if (sm.compete)
       {
-        sm.feature_pred = ec.pred.scalar();
+        sm.feature_pred = ec.pred.scalar;
         compute_expert_loss<is_learn>(sm, ec);
       }
       update_marginal(sm, ec);
@@ -228,7 +228,7 @@ void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, example& ec)
   else
   {
     base.predict(ec);
-    float pred = ec.pred.scalar();
+    float pred = ec.pred.scalar;
     if (sm.compete)
     {
       sm.feature_pred = pred;
@@ -381,6 +381,6 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   VW::LEARNER::learner<MARGINAL::data, example>& ret =
       init_learner(d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   ret.set_save_load(save_load);
-  ret.label_type = label_type_t::simple;
+
   return make_base(ret);
 }

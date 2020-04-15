@@ -188,7 +188,7 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
-    ctx.all->p->lp.default_label(ctx.ex->l);
+    ctx.all->p->lp.default_label(&ctx.ex->l);
 
     // don't allow { { { } } }
     if (ctx.previous_state == this)
@@ -259,17 +259,17 @@ class LabelObjectState : public BaseState<audit>
     // simple
     if (!_stricmp(ctx.key, "Label"))
     {
-      ctx.ex->l.simple().label = v;
+      ctx.ex->l.simple.label = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      ctx.ex->l.simple().initial = v;
+      ctx.ex->l.simple.initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->l.simple().weight = v;
+      ctx.ex->l.simple.weight = v;
       found = true;
     }
     // CB
@@ -301,13 +301,13 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+    if (ctx.all->label_type == label_type_t::ccb)
     {
-      auto& ld = ctx.ex->l.ccb();
+      auto ld = (CCB::label*)&ctx.ex->l;
 
       for (auto id : inc)
       {
-        ld.explicit_included_actions.push_back(id);
+        ld->explicit_included_actions.push_back(id);
       }
       inc.clear();
 
@@ -327,21 +327,21 @@ class LabelObjectState : public BaseState<audit>
         actions.clear();
         probs.clear();
 
-        ld.outcome = outcome;
+        ld->outcome = outcome;
         cb_label = {0., 0, 0., 0.};
       }
     }
     else if (found_cb)
     {
-      auto& ld = ctx.ex->l.cb();
-      ld.costs.push_back(cb_label);
+      CB::label* ld = (CB::label*)&ctx.ex->l;
+      ld->costs.push_back(cb_label);
 
       found_cb = false;
       cb_label = {0., 0, 0., 0.};
     }
     else if (found)
     {
-      count_label(ctx.all->sd, ctx.ex->l.simple().label);
+      count_label(ctx.all->sd, ctx.ex->l.simple.label);
 
       found = false;
     }
@@ -426,14 +426,14 @@ struct LabelState : BaseState<audit>
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     // TODO: once we introduce label types, check here
-    ctx.ex->l.simple().label = v;
+    ctx.ex->l.simple.label = v;
     return ctx.previous_state;
   }
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
   {
     // TODO: once we introduce label types, check here
-    ctx.ex->l.simple().label = (float)v;
+    ctx.ex->l.simple.label = (float)v;
     return ctx.previous_state;
   }
 };
@@ -501,9 +501,9 @@ struct MultiState : BaseState<audit>
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     // mark shared example
-    if (ctx.all->get_label_type() == label_type_t::cb)
+    if (ctx.all->label_type == label_type_t::cb)
     {
-      CB::label* ld = &ctx.ex->l.cb();
+      CB::label* ld = &ctx.ex->l.cb;
       CB::cb_class f;
 
       f.partial_prediction = 0.;
@@ -513,9 +513,9 @@ struct MultiState : BaseState<audit>
 
       ld->costs.push_back(f);
     }
-    else if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+    else if (ctx.all->label_type == label_type_t::ccb)
     {
-      CCB::label* ld = &ctx.ex->l.ccb();
+      CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
       ld->type = CCB::example_type::shared;
     }
     else
@@ -528,10 +528,10 @@ struct MultiState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->p->lp.default_label(ctx.ex->l);
-    if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+    ctx.all->p->lp.default_label(&ctx.ex->l);
+    if (ctx.all->label_type == label_type_t::ccb)
     {
-      ctx.ex->l.ccb().type = CCB::example_type::action;
+      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
     }
 
     ctx.examples->push_back(ctx.ex);
@@ -573,8 +573,8 @@ struct SlotsState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->p->lp.default_label(ctx.ex->l);
-    ctx.ex->l.ccb().type = CCB::example_type::slot;
+    ctx.all->p->lp.default_label(&ctx.ex->l);
+    ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
 
     ctx.examples->push_back(ctx.ex);
 
@@ -901,22 +901,22 @@ class DefaultState : public BaseState<audit>
 
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
-      if (ctx.all->get_label_type() == label_type_t::conditional_contextual_bandit)
+      if (ctx.all->label_type == label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-            [](example* ex) { return ex->l.ccb().type == CCB::example_type::slot; });
+            [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-          ctx.all->p->lp.default_label(ctx.ex->l);
-          ctx.ex->l.ccb().type = CCB::example_type::slot;
+          ctx.all->p->lp.default_label(&ctx.ex->l);
+          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
           auto outcome = new CCB::conditional_contextual_bandit_outcome();
           outcome->cost = ctx.label_object_state.cb_label.cost;
           outcome->probabilities.push_back(
               {ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
-          ctx.ex->l.ccb().outcome = outcome;
+          ctx.ex->l.conditional_contextual_bandit.outcome = outcome;
         }
       }
     }
@@ -1118,7 +1118,7 @@ class CCBOutcomeList : public BaseState<audit>
     // Find start index of slot objects by iterating until we find the first slot example.
     for (auto ex : *ctx.examples)
     {
-      if (ex->l.ccb().type != CCB::example_type::slot)
+      if (ex->l.conditional_contextual_bandit.type != CCB::example_type::slot)
       {
         slot_object_index++;
       }
@@ -1154,12 +1154,12 @@ class CCBOutcomeList : public BaseState<audit>
     // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
     for (auto ex : *ctx.examples)
     {
-      if (ex->l.ccb().type == CCB::example_type::slot)
+      if (ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
       {
-        if (ex->l.ccb().outcome)
+        if (ex->l.conditional_contextual_bandit.outcome)
         {
-          interactions->actions.push_back(ex->l.ccb().outcome->probabilities[0].action);
-          interactions->probabilities.push_back(ex->l.ccb().outcome->probabilities[0].score);
+          interactions->actions.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].action);
+          interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
         }
       }
     }
@@ -1390,7 +1390,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
     ctx.init(all);
     ctx.examples = examples;
     ctx.ex = (*examples)[0];
-    all->p->lp.default_label(ctx.ex->l);
+    all->p->lp.default_label(&ctx.ex->l);
 
     ctx.stream = stream;
     ctx.stream_end = stream_end;
@@ -1468,17 +1468,18 @@ void read_line_json(
 
 inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
-  if (all.get_label_type() == label_type_t::cb)
+  if (all.label_type == label_type_t::cb)
   {
-    for (auto& e: examples)
+    for (auto& e : examples)
     {
-      e->l.cb().weight = 1 - pdrop;
+      e->l.cb.weight = 1 - pdrop;
     }
-  } else if (all.get_label_type() == label_type_t::conditional_contextual_bandit)
+  }
+  else if (all.label_type == label_type_t::ccb)
   {
-    for (auto& e: examples)
+    for (auto& e : examples)
     {
-      e->l.ccb().weight = 1 - pdrop;
+      e->l.conditional_contextual_bandit.weight = 1 - pdrop;
     }
   }
 }

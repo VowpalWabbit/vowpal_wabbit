@@ -57,7 +57,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
     float k = (float)all.sd->t;
     float threshold = 0.f;
 
-    ec.confidence = fabsf(ec.pred.scalar() - threshold) / base.sensitivity(ec);
+    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
     float importance = query_decision(a, ec.confidence, k);
 
     if (importance > 0)
@@ -68,7 +68,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
     }
     else
     {
-      ec.l.simple().label = FLT_MAX;
+      ec.l.simple.label = FLT_MAX;
       ec.weight = 0.f;
     }
   }
@@ -82,10 +82,10 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   else
     base.predict(ec);
 
-  if (ec.l.simple().label == FLT_MAX)
+  if (ec.l.simple.label == FLT_MAX)
   {
     float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
-    ec.confidence = fabsf(ec.pred.scalar() - threshold) / base.sensitivity(ec);
+    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
   }
 }
 
@@ -109,7 +109,7 @@ void active_print_result(io_adapter* f, float res, float weight, v_array<char> t
 
 void output_and_account_example(vw& all, active& a, example& ec)
 {
-  label_data& ld = ec.l.simple();
+  label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
@@ -123,7 +123,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
   all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (auto i : all.final_prediction_sink)
   {
-    active_print_result(i, ec.pred.scalar(), ai, ec.tag);
+    active_print_result(i, ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);
@@ -170,8 +170,6 @@ base_learner* active_setup(options_i& options, vw& all)
     l = &init_learner(data, base, predict_or_learn_active<true>, predict_or_learn_active<false>);
     l->set_finish_example(return_active_example);
   }
-
-  l->label_type = label_type_t::simple;
 
   return make_base(*l);
 }

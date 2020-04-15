@@ -28,7 +28,7 @@
     <PlatformToolset>v141</PlatformToolset>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -160,7 +160,6 @@
     <ClInclude Include="interactions.h" />
     <ClInclude Include="io_adapter.h" />
     <ClInclude Include="io_buf.h" />
-    <ClInclude Include="label.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
@@ -194,7 +193,7 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="parser.h" />
-    <ClInclude Include="prediction.h" />
+    <ClInclude Include="print.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="recall_tree.h" />
@@ -281,7 +280,6 @@
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="label_dictionary.cc" />
-    <ClCompile Include="label_parser.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
     <ClCompile Include="log_multi.cc" />

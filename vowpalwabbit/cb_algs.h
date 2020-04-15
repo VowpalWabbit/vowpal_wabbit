@@ -21,7 +21,7 @@ template <bool is_learn>
 float get_cost_pred(
     VW::LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 {
-  auto label = std::move(ec.l);
+  CB::label ld = ec.l.cb;
 
   label_data simple_temp;
   simple_temp.initial = 0.;
@@ -32,12 +32,8 @@ float get_cost_pred(
 
   const bool baseline_enabled_old = BASELINE::baseline_enabled(&ec);
   BASELINE::set_baseline_enabled(&ec);
-  ec.l.reset();
-  ec.l.init_as_simple(simple_temp);
-  // Save what is in the prediction right now, and restore it before we exit the function.
-  polyprediction p = std::move(ec.pred);
-  ec.pred.reset();
-  ec.pred.init_as_scalar();
+  ec.l.simple = simple_temp;
+  polyprediction p = ec.pred;
   if (is_learn && known_cost != nullptr && index == known_cost->action)
   {
     float old_weight = ec.weight;
@@ -50,10 +46,11 @@ float get_cost_pred(
 
   if (!baseline_enabled_old)
     BASELINE::reset_baseline_disabled(&ec);
-  float pred = ec.pred.scalar();
-  ec.pred = std::move(p);
+  float pred = ec.pred.scalar;
+  ec.pred = p;
 
-  ec.l = std::move(label);
+  ec.l.cb = ld;
+
   return pred;
 }
 

@@ -53,10 +53,10 @@ static void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner
   switch (pred_type)
   {
     case prediction_type_t::scalar:
-      ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple().label);
+      ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple.label);
       break;
     case prediction_type_t::multiclass:
-      ec.weight *= cweights.get_class_weight(ec.l.multi().label);
+      ec.weight *= cweights.get_class_weight(ec.l.multi.label);
       break;
     default:
       // suppress the warning
@@ -94,17 +94,10 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   if (base->pred_type == prediction_type_t::scalar)
     ret = &VW::LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type_t::scalar>,
         predict_or_learn<false, prediction_type_t::scalar>);
-    ret->label_type = label_type_t::simple;
-  }
   else if (base->pred_type == prediction_type_t::multiclass)
     ret = &VW::LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type_t::multiclass>,
         predict_or_learn<false, prediction_type_t::multiclass>);
-    ret->label_type = label_type_t::multi;
-  }
   else
-  {
     THROW("--classweight not implemented for this type of prediction");
-  }
-
   return make_base(*ret);
 }

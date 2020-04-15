@@ -26,7 +26,7 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-inline bool example_is_test(example& ec) { return ec.l.simple().label == FLT_MAX; }
+constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
 void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
@@ -109,12 +109,12 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     // Restore example
     if (iter == 0)
     {
-      first_prediction = ec.pred.scalar();
+      first_prediction = ec.pred.scalar;
       first_loss = ec.loss;
     }
     else
     {
-      ec.pred.scalar() = first_prediction;
+      ec.pred.scalar = first_prediction;
       ec.loss = first_loss;
     }
 
@@ -158,6 +158,6 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
   learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
       predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
-  l.label_type = label_type_t::simple;
+
   return make_base(l);
 }

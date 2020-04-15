@@ -11,5 +11,4 @@ VW::LEARNER::base_learner* csoaa_setup(VW::config::options_i& options, vw& all);
 VW::LEARNER::base_learner* csldf_setup(VW::config::options_i& options, vw& all);
 struct csoaa;
 void finish_example(vw& all, csoaa&, example& ec);
-void finish_example(vw& all, example& ec);
 }  // namespace CSOAA

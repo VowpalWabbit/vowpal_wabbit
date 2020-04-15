@@ -49,6 +49,13 @@ struct parser
     this->input = new io_buf{};
     this->output = new io_buf{};
     this->lp = simple_label;
+
+    // Free parser must still be used for the following fields.
+    this->words = v_init<VW::string_view>();
+    this->parse_name = v_init<VW::string_view>();
+    this->gram_mask = v_init<size_t>();
+    this->ids = v_init<size_t>();
+    this->counts = v_init<size_t>();
   }
 
   ~parser()
@@ -97,7 +104,9 @@ struct parser
   v_array<size_t> ids;     // unique ids for sources
   v_array<size_t> counts;  // partial examples received from sources
   size_t finished_count;   // the number of finished examples;
+  int label_sock = 0;
   int bound_sock = 0;
+  int max_fd = 0;
 
   v_array<VW::string_view> parse_name;
 
@@ -121,12 +130,6 @@ void set_done(vw& all);
 
 // source control functions
 void reset_source(vw& all, size_t numbits);
-VW_DEPRECATED("no longer needed")
 void finalize_source(parser* source);
-VW_DEPRECATED("no longer needed")
 void set_compressed(parser* par);
-
-VW_DEPRECATED("no longer needed. Use destructor") 
 void free_parser(vw& all);
-
-// ToDO file factory for auto compressed or not

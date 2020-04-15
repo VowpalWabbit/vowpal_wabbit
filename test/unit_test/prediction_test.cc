@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(predict_modifying_state)
     vw.learn(learn_example);
     vw.finish_example(learn_example);
     vw.predict(predict_example);
-    prediction_one = predict_example.pred.scalar();
+    prediction_one = predict_example.pred.scalar;
     vw.finish_example(predict_example);
     VW::finish(vw);
   }
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(predict_modifying_state)
     vw.learn(learn_example);
     vw.finish_example(learn_example);
     vw.predict(predict_example);
-    prediction_two = predict_example.pred.scalar();
+    prediction_two = predict_example.pred.scalar;
     vw.finish_example(predict_example);
     VW::finish(vw);
   }

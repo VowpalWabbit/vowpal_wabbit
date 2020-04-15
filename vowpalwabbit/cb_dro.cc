@@ -36,14 +36,14 @@ struct cb_dro_data
 
     if (is_learn)
     {
-      const auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb().costs.empty(); });
+      const auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
 
       if (it != examples.end())
       {
         const CB::cb_class logged = (*it)->l.cb.costs[0];
         const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
-        const auto& action_scores = examples[0]->pred.action_probs();
+        const auto action_scores = examples[0]->pred.a_s;
 
         // cb_explore_adf => want maximum probability
         // cb_adf => first action is a greedy action
@@ -151,19 +151,12 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     THROW("invalid cb_dro parameter values supplied");
   }
 
-  auto* base = as_multiline(setup_base(options, all));
   if (options.was_supplied("cb_explore_adf"))
   {
-    auto& learner = init_learner(data, base, learn_or_predict<true, true>, learn_or_predict<false, true>,
-        1 /* weights */, prediction_type_t::action_probs);
-    learner.label_type = label_type_t::cb;
-    return make_base(learner);
+    return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>, learn_or_predict<false, true>, 1 /* weights */, prediction_type_t::action_probs));
   }
   else
   {
-    auto& learner = init_learner(data, base, learn_or_predict<true, false>, learn_or_predict<false, false>,
-        1 /* weights */, prediction_type_t::action_probs);
-    learner.label_type = label_type_t::cb;
-    return make_base(learner);
+    return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, false>, learn_or_predict<false, false>, 1 /* weights */, prediction_type_t::action_probs));
   }
 }

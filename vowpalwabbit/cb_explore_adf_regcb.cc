@@ -95,7 +95,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
 
 void cb_explore_adf_regcb::get_cost_ranges(float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
 {
-  const size_t num_actions = examples[0]->pred.action_probs().size();
+  const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
   _max_costs.resize(num_actions);
 
@@ -105,15 +105,14 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, VW::LEARNER::multi_learn
   // backup cb example data
   for (const auto& ex : examples)
   {
-    _ex_as.push_back(std::move(ex->pred.action_probs()));
-    _ex_costs.push_back(std::move(ex->l.cb().costs));
+    _ex_as.push_back(ex->pred.a_s);
+    _ex_costs.push_back(ex->l.cb.costs);
   }
 
   // set regressor predictions
   for (const auto& as : _ex_as[0])
   {
-    examples[as.action]->pred.reset();
-    examples[as.action]->pred.init_as_scalar() = as.score;
+    examples[as.action]->pred.scalar = as.score;
   }
 
   const float cmin = _min_cb_cost;
@@ -122,33 +121,32 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, VW::LEARNER::multi_learn
   for (size_t a = 0; a < num_actions; ++a)
   {
     example* ec = examples[a];
-    ec->l.reset();
-    ec->l.init_as_simple().label = cmin - 1;
+    ec->l.simple.label = cmin - 1;
     float sens = base.sensitivity(*ec);
     float w = 0;  // importance weight
 
-    if (ec->pred.scalar() < cmin || std::isnan(sens) || std::isinf(sens))
+    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens))
       _min_costs[a] = cmin;
     else
     {
-      w = binary_search(ec->pred.scalar() - cmin + 1, delta, sens);
-      _min_costs[a] = (std::max)(ec->pred.scalar() - sens * w, cmin);
+      w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
+      _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
       if (_min_costs[a] > cmax)
         _min_costs[a] = cmax;
     }
 
     if (!min_only)
     {
-      ec->l.simple().label = cmax + 1;
+      ec->l.simple.label = cmax + 1;
       sens = base.sensitivity(*ec);
-      if (ec->pred.scalar() > cmax || std::isnan(sens) || std::isinf(sens))
+      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens))
       {
         _max_costs[a] = cmax;
       }
       else
       {
-        w = binary_search(cmax + 1 - ec->pred.scalar(), delta, sens);
-        _max_costs[a] = (std::min)(ec->pred.scalar() + sens * w, cmax);
+        w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
+        _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
         if (_max_costs[a] < cmin)
           _max_costs[a] = cmin;
       }
@@ -158,11 +156,8 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, VW::LEARNER::multi_learn
   // reset cb example data
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    examples[i]->pred.reset();
-    examples[i]->pred.init_as_action_probs() = std::move(_ex_as[i]);
-    examples[i]->l.reset();
-    examples[i]->l.init_as_cb();
-    examples[i]->l.cb().costs = std::move(_ex_costs[i]);
+    examples[i]->pred.a_s = _ex_as[i];
+    examples[i]->l.cb.costs = _ex_costs[i];
   }
 }
 
@@ -173,7 +168,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   {
     for (size_t i = 0; i < examples.size() - 1; ++i)
     {
-      CB::label& ld = examples[i]->l.cb();
+      CB::label& ld = examples[i]->l.cb;
       if (ld.costs.size() == 1)
         ld.costs[0].probability = 1.f;  // no importance weighting
     }
@@ -277,17 +272,19 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     options.replace("cb_type", mtr);
   }
 
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
+
   // Set explore_type
   size_t problem_multiplier = 1;
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
+  all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
   auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
-  l.label_type = label_type_t::cb;
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

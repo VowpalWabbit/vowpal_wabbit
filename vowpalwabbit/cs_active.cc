@@ -61,6 +61,8 @@ struct cs_active
   size_t labels_outside_range;
   float distance_to_range;
   float range;
+
+  ~cs_active() { examples_by_queries.delete_v(); }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -96,18 +98,18 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
   if (is_learn)
   {
     vw& all = *cs_a.all;
-    ec.l.simple().weight = 1.;
+    ec.l.simple.weight = 1.;
     ec.weight = 1.;
     if (is_simulation)
     {
       // In simulation mode
       if (query_this_label)
       {
-        ec.l.simple().label = cost;
+        ec.l.simple.label = cost;
         all.sd->queries += 1;
       }
       else
-        ec.l.simple().label = FLT_MAX;
+        ec.l.simple.label = FLT_MAX;
     }
     else
     {
@@ -116,16 +118,16 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
       // If the cost of this label was not queried, then skip it.
       if (query_needed)
       {
-        ec.l.simple().label = cost;
+        ec.l.simple.label = cost;
         if ((cost < cs_a.cost_min) || (cost > cs_a.cost_max))
           cerr << "warning: cost " << cost << " outside of cost range [" << cs_a.cost_min << ", " << cs_a.cost_max
                << "]!" << endl;
       }
       else
-        ec.l.simple().label = FLT_MAX;
+        ec.l.simple.label = FLT_MAX;
     }
 
-    if (ec.l.simple().label != FLT_MAX)
+    if (ec.l.simple.label != FLT_MAX)
       base.learn(ec, i - 1);
   }
   else if (!is_simulation)
@@ -162,10 +164,10 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
   else
   {
     // finding max_pred and min_pred by binary search
-    max_pred = std::min(
-        ec.pred.scalar() + sens * binarySearch(cs_a.cost_max - ec.pred.scalar(), delta, sens, tol), cs_a.cost_max);
-    min_pred = std::max(
-        ec.pred.scalar() - sens * binarySearch(ec.pred.scalar() - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+    max_pred =
+        std::min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
+    min_pred =
+        std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
       cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
@@ -177,7 +179,7 @@ template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
   // cerr << "------------- passthrough" << endl;
-  COST_SENSITIVE::label ld = std::move(ec.l.cs());
+  COST_SENSITIVE::label ld = ec.l.cs;
 
   // cerr << "is_learn=" << is_learn << " ld.costs.size()=" << ld.costs.size() << endl;
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
@@ -213,10 +215,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
-  ec.l.reset();
-  ec.l.init_as_simple();
-  ec.pred.reset();
-  ec.pred.init_as_scalar();
+  ec.l.simple = {0., 0., 0.};
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round
@@ -270,7 +269,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl.class_index, lqd.cl.x, prediction, score,
           lqd.cl.partial_prediction, query_label, lqd.query_needed);
       if (lqd.query_needed)
-        ec.pred.multilabels().label_v.push_back(lqd.cl.class_index);
+        ec.pred.multilabels.label_v.push_back(lqd.cl.class_index);
       if (cs_a.print_debug_stuff)
         cerr << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction
              << " score=" << score << " pp=" << lqd.cl.partial_prediction << " ql=" << query_label
@@ -280,7 +279,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     }
 
     // Need to pop metadata
-    cs_a.query_data.clear();
+    cs_a.query_data.delete_v();
 
     if (cs_a.all->sd->queries - queries > 0)
       cs_a.num_any_queries++;
@@ -305,13 +304,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     }
   }
 
-  ec.pred.reset();
-  ec.pred.init_as_multiclass() = prediction;
-  ec.l.reset();
-  ec.l.init_as_cs(std::move(ld));
+  ec.pred.multiclass = prediction;
+  ec.l.cs = ld;
 }
 
-void finish_example(vw& all, cs_active&, example& ec) { CSOAA::finish_example(all, ec); }
+void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec); }
 
 base_learner* cs_active_setup(options_i& options, vw& all)
 {
@@ -375,13 +372,12 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multiclass)
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multiclass);
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
-  l.label_type = label_type_t::cs;
   all.cost_sensitive = b;
   return b;
 }

@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include <cmath>
-#include "vw_string_view.h"
 #include <cctype>
 #include "parse_example.h"
 #include "hash.h"
@@ -246,7 +245,7 @@ class TC_parser
           affix_fs.push_back(_v, word_hash);
           if (audit)
           {
-            v_array<char> affix_v;
+            v_array<char> affix_v = v_init<char>();
             if (_index != ' ')
               affix_v.push_back(_index);
             affix_v.push_back(is_prefix ? '+' : '-');
@@ -288,7 +287,7 @@ class TC_parser
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
-          v_array<char> spelling_v;
+          v_array<char> spelling_v = v_init<char>();
           if (_index != ' ')
           {
             spelling_v.push_back(_index);
@@ -459,6 +458,7 @@ class TC_parser
 
   TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
   {
+    _spelling = v_init<char>();
     if (!_line.empty())
     {
       this->_read_idx = 0;
@@ -479,7 +479,7 @@ class TC_parser
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
-  all->p->lp.default_label(ae->l);
+  all->p->lp.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
 
@@ -513,7 +513,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   }
 
   if (!all->p->words.empty())
-    all->p->lp.parse_label(all->p, all->p->_shared_data, ae->l, all->p->words);
+    all->p->lp.parse_label(all->p, all->p->_shared_data, &ae->l, all->p->words);
 
   if (bar_idx != VW::string_view::npos)
   {

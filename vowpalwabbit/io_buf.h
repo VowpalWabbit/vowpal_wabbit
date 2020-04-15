@@ -75,8 +75,8 @@ class io_buf
   io_buf& operator=(io_buf& other) = delete;
   io_buf(io_buf&& other) = delete;
   io_buf& operator=(io_buf&& other) = delete;
-  
-  virtual ~io_buf() 
+
+  virtual ~io_buf()
   {
     for(auto adapter : files)
     {

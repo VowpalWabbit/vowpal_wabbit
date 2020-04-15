@@ -69,11 +69,17 @@ struct task_data
   std::stringstream* kbest_out;
   task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb)
   {
+    branches = v_init<branch>();
+    final = v_init<std::pair<branch, std::string*> >();
+    trajectory = v_init<act_score>();
     output_string = nullptr;
     kbest_out = nullptr;
   }
   ~task_data()
   {
+    branches.delete_v();
+    final.delete_v();
+    trajectory.delete_v();
     delete output_string;
     delete kbest_out;
   }
@@ -119,7 +125,7 @@ void run(Search::search& sch, multi_ex& ec)
           return;  // ignore the taken action
         task_data& d = *sch.get_metatask_data<task_data>();
         float delta = a_cost - min_cost;
-        path branch;
+        path branch = v_init<act_score>();
         push_many<act_score>(branch, d.trajectory.begin(), d.trajectory.size());
         branch.push_back(std::make_pair(a, a_cost));
         d.branches.push_back(std::make_pair(delta, branch));
@@ -141,7 +147,7 @@ void run(Search::search& sch, multi_ex& ec)
 
   {
     // construct the final trajectory
-    path original_final;
+    path original_final = v_init<act_score>();
     copy_array(original_final, d.trajectory);
     d.final.push_back(std::make_pair(std::make_pair(d.total_cost, original_final), d.output_string));
   }
@@ -183,7 +189,7 @@ void run(Search::search& sch, multi_ex& ec)
 
     {
       // construct the final trajectory
-      path this_final;
+      path this_final = v_init<act_score>();
       copy_array(this_final, d.trajectory);
       d.final.push_back(std::make_pair(std::make_pair(d.total_cost, this_final), d.output_string));
     }
@@ -231,9 +237,11 @@ void run(Search::search& sch, multi_ex& ec)
       .Run();
 
   // clean up memory
+  for (size_t i = 0; i < d.branches.size(); i++) d.branches[i].second.delete_v();
   d.branches.clear();
   for (size_t i = 0; i < d.final.size(); i++)
   {
+    d.final[i].first.second.delete_v();
     delete d.final[i].second;
   }
   d.final.clear();

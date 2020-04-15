@@ -273,12 +273,68 @@ struct features
     iterator_all end() { return iterator_all(_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()); }
   };
 
-  features() { sum_feat_sq = 0.f; }
+  features()
+  {
+    values = v_init<feature_value>();
+    indicies = v_init<feature_index>();
+    space_names = v_init<audit_strings_ptr>();
+    sum_feat_sq = 0.f;
+  }
 
-  features(const features&) = default;
-  features& operator=(const features&) = default;
-  features(features&& other) = default;
-  features& operator=(features&& other) = default;
+  ~features() { 
+     values.delete_v();
+     indicies.delete_v();
+     space_names.delete_v();
+   }
+   features(const features&) = delete;
+   features & operator=( const features& ) = delete;
+   
+   
+   // custom move operators required since we need to leave the old value in
+   // a null state to prevent freeing of shallow copied v_arrays
+   features(features&& other) :
+   values(std::move(other.values)),
+   indicies(std::move(other.indicies)),
+   space_names(std::move(other.space_names)),
+   sum_feat_sq(other.sum_feat_sq)
+   {
+     // We need to null out all the v_arrays to prevent double freeing during moves
+     auto & v = other.values;
+     v._begin = nullptr;
+     v._end = nullptr;
+     v.end_array = nullptr;
+     auto & i = other.indicies;
+     i._begin = nullptr;
+     i._end = nullptr;
+     i.end_array = nullptr;
+     auto & s = other.space_names;
+     s._begin = nullptr;
+     s._end = nullptr;
+     s.end_array = nullptr;
+     other.sum_feat_sq = 0;
+   }
+   features & operator=(features&& other)
+   {
+     values = std::move(other.values);
+     indicies = std::move(other.indicies);
+     space_names = std::move(other.space_names);
+     sum_feat_sq = other.sum_feat_sq;
+     // We need to null out all the v_arrays to prevent double freeing during moves
+     auto & v = other.values;
+     v._begin = nullptr;
+     v._end = nullptr;
+     v.end_array = nullptr;
+     auto & i = other.indicies;
+     i._begin = nullptr;
+     i._end = nullptr;
+     i.end_array = nullptr;
+     auto & s = other.space_names;
+     s._begin = nullptr;
+     s._end = nullptr;
+     s.end_array = nullptr;
+     other.sum_feat_sq = 0;
+     return *this;
+   }
 
   inline size_t size() const { return values.size(); }
 
@@ -385,7 +441,6 @@ struct features
     return true;
   }
 
-  VW_DEPRECATED("Use copy constructor")
   void deep_copy_from(const features& src)
   {
     copy_array(values, src.values);

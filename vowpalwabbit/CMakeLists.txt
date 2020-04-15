@@ -50,7 +50,6 @@ set(vw_all_headers
   cbify.h
   ccb_label.h
   classweight.h
-  comp_io.h
   compat.h
   conditional_contextual_bandit.h
   confidence.h
@@ -186,7 +185,6 @@ set(vw_all_sources
   cbify.cc
   ccb_label.cc
   classweight.cc
-  comp_io.cc
   conditional_contextual_bandit.cc
   confidence.cc
   cost_sensitive.cc

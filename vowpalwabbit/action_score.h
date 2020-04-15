@@ -81,4 +81,5 @@ inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2,
 
 void print_action_score(io_adapter* f, const v_array<action_score>& a_s, const v_array<char>&);
 
+void delete_action_scores(void* v);
 }  // namespace ACTION_SCORE

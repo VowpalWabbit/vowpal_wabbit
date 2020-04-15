@@ -105,6 +105,7 @@ struct bfgs
 
   ~bfgs()
   {
+    predictions.delete_v();
     free(mem);
     free(rho);
     free(alpha);
@@ -142,7 +143,7 @@ void reset_state(vw& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-bool test_example(example& ec) noexcept { return ec.l.simple().label == FLT_MAX; }
+constexpr bool test_example(example& ec) noexcept { return ec.l.simple.label == FLT_MAX; }
 
 float bfgs_predict(vw& all, example& ec)
 {
@@ -155,7 +156,7 @@ inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
 float predict_and_gradient(vw& all, example& ec)
 {
   float fp = bfgs_predict(all, ec);
-  label_data& ld = ec.l.simple();
+  label_data& ld = ec.l.simple;
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
@@ -168,7 +169,7 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 
 void update_preconditioner(vw& all, example& ec)
 {
-  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar(), ec.l.simple().label) * ec.weight;
+  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
   GD::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
@@ -176,7 +177,7 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(vw& all, example& ec)
 {
-  float temp = ec.l.simple().initial;
+  float temp = ec.l.simple.initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
 }
@@ -858,7 +859,7 @@ int process_pass(vw& all, bfgs& b)
 
 void process_example(vw& all, bfgs& b, example& ec)
 {
-  label_data& ld = ec.l.simple();
+  label_data& ld = ec.l.simple;
   if (b.first_pass)
     b.importance_weight_sum += ec.weight;
 
@@ -867,10 +868,10 @@ void process_example(vw& all, bfgs& b, example& ec)
   /********************************************************************/
   if (b.gradient_pass)
   {
-    ec.pred.scalar() = predict_and_gradient(all, ec);  // w[0] & w[1]
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar(), ld.label) * ec.weight;
+    ec.pred.scalar = predict_and_gradient(all, ec);  // w[0] & w[1]
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     b.loss_sum += ec.loss;
-    b.predictions.push_back(ec.pred.scalar());
+    b.predictions.push_back(ec.pred.scalar);
   }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/
@@ -880,13 +881,13 @@ void process_example(vw& all, bfgs& b, example& ec)
     float d_dot_x = dot_with_direction(all, ec);   // w[2]
     if (b.example_number >= b.predictions.size())  // Make things safe in case example source is strange.
       b.example_number = b.predictions.size() - 1;
-    ec.pred.scalar() = b.predictions[b.example_number];
+    ec.pred.scalar = b.predictions[b.example_number];
     ec.partial_prediction = b.predictions[b.example_number];
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar(), ld.label) * ec.weight;
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++], ld.label);
     b.curvature += ((double)d_dot_x) * d_dot_x * sd * ec.weight;
   }
-  ec.updated_prediction = ec.pred.scalar();
+  ec.updated_prediction = ec.pred.scalar;
 
   if (b.preconditioner_pass)
     update_preconditioner(all, ec);  // w[3]
@@ -954,7 +955,7 @@ template <bool audit>
 void predict(bfgs& b, base_learner&, example& ec)
 {
   vw* all = b.all;
-  ec.pred.scalar() = bfgs_predict(*all, ec);
+  ec.pred.scalar = bfgs_predict(*all, ec);
   if (audit)
     GD::print_audit_features(*(b.all), ec);
 }
@@ -1165,7 +1166,6 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
   l->set_end_pass(end_pass);
-  l->label_type = label_type_t::simple;
 
   return make_base(*l);
 }

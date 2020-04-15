@@ -35,16 +35,17 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-
-VW_DEPRECATED("Copy the label object directly.")
-void copy_example_label(example* dst, example* src, size_t, void (* /*copy_label*/)(polylabel&, polylabel&))
+void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(void*, void*))
 {
-  dst->l = src->l;
+  if (copy_label)
+    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
+  else
+    dst->l = src->l;
 }
 
 void copy_example_metadata(bool /* audit */, example* dst, example* src)
 {
-  dst->tag = src->tag;
+  copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 
   dst->ft_offset = src->ft_offset;
@@ -54,7 +55,8 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
     dst->passthrough = nullptr;
   else
   {
-    dst->passthrough = new features(*src->passthrough);
+    dst->passthrough = new features;
+    dst->passthrough->deep_copy_from(*src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
@@ -70,25 +72,18 @@ void copy_example_data(bool audit, example* dst, example* src)
   copy_example_metadata(audit, dst, src);
 
   // copy feature data
-  dst->indices = src->indices;
-  for (namespace_index c : src->indices)
-  {
-    // Performs deep copy of namespace  
-    dst->feature_space[c] = src->feature_space[c];
-  }
+  copy_array(dst->indices, src->indices);
+  for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
   // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
-
-  // Shallow copy
   dst->interactions = src->interactions;
 }
 
-void copy_example_data(
-    bool audit, example* dst, example* src, size_t /*label_size*/, void (* /*copy_label*/)(polylabel&, polylabel&))
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
 {
   copy_example_data(audit, dst, src);
-  dst->l = src->l;
+  copy_example_label(dst, src, label_size, copy_label);
 }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
@@ -129,6 +124,7 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
   fs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+  fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
   feature_map_len = fs.feature_map.size();
@@ -154,7 +150,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.l.simple().weight = ec->weight;
+  fec.l.simple.weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)
@@ -188,37 +184,50 @@ flat_example* flatten_sort_example(vw& all, example* ec)
   return fec;
 }
 
-VW_DEPRECATED("")
 void free_flatten_example(flat_example* fec)
 {
+  // note: The label memory should be freed by by freeing the original example.
   if (fec)
   {
-    fec->~flat_example();
+    fec->fs.~features();
+    if (fec->tag_len > 0)
+      free(fec->tag);
+    free(fec);
   }
 }
 
 namespace VW
 {
-example* alloc_examples(size_t count = 1)
+example* alloc_examples(size_t, size_t count = 1)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr)
     return nullptr;
   for (size_t i = 0; i < count; i++)
   {
-    new (&ec[i]) example();
+    ec[i].ft_offset = 0;
+    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
+    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
   return ec;
 }
 
-example* alloc_examples(size_t, size_t count)
+void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
 {
-  return alloc_examples(count);
-}
+  if (delete_label)
+    delete_label(&ec.l);
 
-VW_DEPRECATED("You can just use the example destructor when deallocating now")
-void dealloc_example(void (* /*delete_label*/)(polylabel&), example& ec, void (* /*delete_prediction*/)(void*))
-{
+  if (delete_prediction)
+    delete_prediction(&ec.pred);
+
+  ec.tag.delete_v();
+
+  if (ec.passthrough)
+  {
+    delete ec.passthrough;
+  }
+
+  ec.indices.delete_v();
   ec.~example();
 }
 

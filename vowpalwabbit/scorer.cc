@@ -17,21 +17,16 @@ struct scorer
 template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
-  // LDA uses this reduction and explicitly uses no label and so we must check here before using it.
-  const float simple_label = ec.l.get_type() == label_type_t::simple ? ec.l.simple().label : 0.f;
-
-  s.all->set_minmax(s.all->sd, simple_label);
-  if (is_learn && simple_label != FLT_MAX && ec.weight > 0)
+  s.all->set_minmax(s.all->sd, ec.l.simple.label);
+  if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
     base.learn(ec);
   else
     base.predict(ec);
 
-  // TODO: LDA returns scalars prediction type - what should we do here?
+  if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
+    ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
-  if (ec.weight > 0 && simple_label != FLT_MAX)
-    ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar(), simple_label) * ec.weight;
-
-  ec.pred.scalar() = link(ec.pred.scalar());
+  ec.pred.scalar = link(ec.pred.scalar);
 }
 
 template <float (*link)(float in)>
@@ -39,12 +34,12 @@ inline void multipredict(scorer&, VW::LEARNER::single_learner& base, example& ec
     polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, 0, count, pred, finalize_predictions);  // TODO: need to thread step through???
-  for (size_t c = 0; c < count; c++) pred[c].scalar() = link(pred[c].scalar());
+  for (size_t c = 0; c < count; c++) pred[c].scalar = link(pred[c].scalar);
 }
 
 void update(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
-  s.all->set_minmax(s.all->sd, ec.l.simple().label);
+  s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
 }
 
@@ -70,9 +65,7 @@ VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
                       .help("Specify the link function: identity, logistic, glf1 or poisson"));
   options.add_and_parse(new_options);
 
-  // This always returns a base_learner, except for in the case of LDA which does not use the scorer.
-  if (options.was_supplied("lda"))
-    return nullptr;
+  // This always returns a base_learner.
 
   s->all = &all;
 

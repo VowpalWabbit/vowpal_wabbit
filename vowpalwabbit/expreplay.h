@@ -8,7 +8,6 @@
 #include "parse_args.h"
 #include "rand48.h"
 #include <memory>
-#include <vector>
 
 namespace ExpReplay
 {
@@ -17,13 +16,11 @@ struct expreplay
 {
   vw* all;
   std::shared_ptr<rand_state> _random_state;
-  size_t N;                  // how big is the buffer?
-  std::vector<example> buf;  // the deep copies of examples (N of them)
-
-  std::vector<bool> filled;  // which of buf[] is filled
+  size_t N;             // how big is the buffer?
+  example* buf;         // the deep copies of examples (N of them)
+  bool* filled;         // which of buf[] is filled
   size_t replay_count;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in which
                         // case we're just permuting)
-
   VW::LEARNER::single_learner* base;
 
   ~expreplay()
@@ -43,7 +40,7 @@ void predict_or_learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, exam
 {  // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
-  if (!is_learn || lp.get_weight(ec.l) == 0.)
+  if (!is_learn || lp.get_weight(&ec.l) == 0.)
     return;
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
@@ -59,11 +56,10 @@ void predict_or_learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, exam
 
   er.filled[n] = true;
   VW::copy_example_data(er.all->audit, &er.buf[n], &ec);  // don't copy the label
-
-  // By copying these, we don't need to know the type and it can be generic.
-  er.buf[n].l = ec.l;
-  // Technically we don't need to copy here, but this allows us to set the type of pred correctly.
-  er.buf[n].pred = ec.pred;
+  if (lp.copy_label)
+    lp.copy_label(&er.buf[n].l, &ec.l);
+  else
+    er.buf[n].l = ec.l;
 }
 
 template <label_parser& lp>
@@ -85,7 +81,6 @@ void end_pass(expreplay<lp>& er)
     }
 }
 
-// TODO Only lp dependency is on weight - which should be able to be removed once weight is an example concept.
 template <char er_level, label_parser& lp>
 VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
@@ -111,13 +106,13 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
 
   er->all = &all;
   er->_random_state = all.get_random_state();
-  er->buf.resize(er->N);
-  for (auto& ex : er->buf)
-  {
-    ex.interactions = &all.interactions;
-  }
+  er->buf = VW::alloc_examples(1, er->N);
+  er->buf->interactions = &all.interactions;
 
-  er->filled.resize(er->N, false);
+  if (er_level == 'c')
+    for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+
+  er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.logger.quiet)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
@@ -127,7 +122,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   VW::LEARNER::learner<expreplay<lp>, example>* l =
       &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
   l->set_end_pass(end_pass<lp>);
-  l->label_type = base->label_type;
+
   return make_base(*l);
 }
 }  // namespace ExpReplay

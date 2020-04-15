@@ -37,7 +37,7 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  uint64_t ft_offset = 0;                              // An offset for all feature values.
+  uint64_t ft_offset;                                  // An offset for all feature values.
 
   // Interactions are specified by this vector of strings, where each string is an interaction and each char is a
   // namespace.
@@ -48,9 +48,7 @@ struct example_predict
 };
 
 // make sure we have an exception safe version of example_predict
-class
-VW_DEPRECATED("example now uses C++ lifecycle functions. Please migrate to that instead for RAII needs.")
-safe_example_predict : public example_predict
+class safe_example_predict : public example_predict
 {
  public:
   safe_example_predict();

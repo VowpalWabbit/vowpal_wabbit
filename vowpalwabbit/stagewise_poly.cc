@@ -75,6 +75,8 @@ struct stagewise_poly
     cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
+    //synth_ec.feature_space[tree_atomics].delete_v();
+    synth_ec.indices.delete_v();
     free(sd);
     free(depthsbits);
   }
@@ -501,12 +503,12 @@ void predict(stagewise_poly &poly, single_learner &base, example &ec)
   base.predict(poly.synth_ec);
   ec.partial_prediction = poly.synth_ec.partial_prediction;
   ec.updated_prediction = poly.synth_ec.updated_prediction;
-  ec.pred.scalar() = poly.synth_ec.pred.scalar();
+  ec.pred.scalar = poly.synth_ec.pred.scalar;
 }
 
 void learn(stagewise_poly &poly, single_learner &base, example &ec)
 {
-  bool training = poly.all->training && ec.l.simple().label != FLT_MAX;
+  bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
 
   if (training)
@@ -521,7 +523,7 @@ void learn(stagewise_poly &poly, single_learner &base, example &ec)
     base.learn(poly.synth_ec);
     ec.partial_prediction = poly.synth_ec.partial_prediction;
     ec.updated_prediction = poly.synth_ec.updated_prediction;
-    ec.pred.scalar() = poly.synth_ec.pred.scalar();
+    ec.pred.scalar = poly.synth_ec.pred.scalar;
 
     if (ec.example_counter
         // following line is to avoid repeats when multiple reductions on same example.
@@ -654,7 +656,7 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   //#endif //DEBUG
 }
 
-base_learner* stagewise_poly_setup(options_i &options, vw &all)
+base_learner *stagewise_poly_setup(options_i &options, vw &all)
 {
   auto poly = scoped_calloc_or_throw<stagewise_poly>();
   bool stage_poly = false;
@@ -694,12 +696,10 @@ base_learner* stagewise_poly_setup(options_i &options, vw &all)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  poly->synth_ec.pred.init_as_scalar();
-
   learner<stagewise_poly, example> &l = init_learner(poly, as_singleline(setup_base(options, all)), learn, predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
-  l.label_type = label_type_t::simple;
+
   return make_base(l);
 }

@@ -183,17 +183,17 @@ void reset_source(vw& all, size_t numbits)
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
-        IGNORE_DEPRECATED_USAGE_START
+IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
-        IGNORE_DEPRECATED_USAGE_END
+IGNORE_DEPRECATED_USAGE_END
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
         all.p->reader = read_features_string;
-        IGNORE_DEPRECATED_USAGE_START
+IGNORE_DEPRECATED_USAGE_START
         all.print = print_result;
-        IGNORE_DEPRECATED_USAGE_END
+IGNORE_DEPRECATED_USAGE_END
         all.print_by_ref = print_result_by_ref;
       }
     }
@@ -297,7 +297,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   {
     if (!quiet)
       all.trace_message << "using no cache" << endl;
-    all.p->output->space.clear();
+    all.p->output->space.delete_v();
   }
 }
 
@@ -421,7 +421,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       // create children
       size_t num_children = all.num_children;
-      v_array<int> children;
+      v_array<int> children = v_init<int>();
       children.resize(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
@@ -492,7 +492,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.p->label_sock = f;
 IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
-    IGNORE_DEPRECATED_USAGE_END
+IGNORE_DEPRECATED_USAGE_END
     all.print_by_ref = print_result_by_ref;
 
     all.final_prediction_sink.push_back(f);
@@ -502,6 +502,7 @@ IGNORE_DEPRECATED_USAGE_START
     if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
+    all.p->max_fd++;
     if (all.active)
       all.p->reader = read_features_string;
     else
@@ -509,9 +510,9 @@ IGNORE_DEPRECATED_USAGE_START
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
-        IGNORE_DEPRECATED_USAGE_START
+IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
-        IGNORE_DEPRECATED_USAGE_END
+IGNORE_DEPRECATED_USAGE_END
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
@@ -689,7 +690,7 @@ void generateGrams(vw& all, example*& ex)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.p->lp.default_label(ae->l);
+  all.p->lp.default_label(&ae->l);
   ae->end_pass = true;
   all.p->in_pass_counter = 0;
 }
@@ -727,7 +728,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.p->write_cache)
   {
-    all.p->lp.cache_label(ae->l, *(all.p->output));
+    all.p->lp.cache_label(&ae->l, *(all.p->output));
     cache_features(*(all.p->output), ae, all.parse_mask);
   }
 
@@ -744,12 +745,12 @@ void setup_example(vw& all, example* ae)
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
       all.p->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
   // If this example has a test only label then it is true regardless.
-  ae->test_only |= all.p->lp.test_label(ae->l);
+  ae->test_only |= all.p->lp.test_label(&ae->l);
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
 
-  ae->weight = all.p->lp.get_weight(ae->l);
+  ae->weight = all.p->lp.get_weight(&ae->l);
 
   if (all.ignore_some)
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
@@ -792,43 +793,6 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
-
-  // Prediction type should be preinitialized for the given reductions expected type.
-  if (ae->pred.get_type() == prediction_type_t::unset)
-  {
-    switch (all.l->pred_type)
-    {
-      case (prediction_type_t::scalar):
-        ae->pred.init_as_scalar();
-        break;
-      case (prediction_type_t::scalars):
-        ae->pred.init_as_scalars();
-        break;
-      case (prediction_type_t::action_scores):
-        ae->pred.init_as_action_scores();
-        break;
-      case (prediction_type_t::action_probs):
-        ae->pred.init_as_action_probs();
-        break;
-      case (prediction_type_t::decision_scores):
-        ae->pred.init_as_decision_scores();
-        break;
-      case (prediction_type_t::multiclass):
-        ae->pred.init_as_multiclass();
-        break;
-      case (prediction_type_t::multilabels):
-        ae->pred.init_as_multilabels();
-        break;
-      case (prediction_type_t::prob):
-        ae->pred.init_as_prob();
-        break;
-      case (prediction_type_t::multiclassprobs):
-        ae->pred.multiclassprobs();
-        break;
-      default:
-        THROW(to_string(all.l->pred_type) << " is not supported here");
-    }
-  }
 }
 }  // namespace VW
 
@@ -837,7 +801,7 @@ namespace VW
 example* new_unused_example(vw& all)
 {
   example* ec = &get_unused_example(&all);
-  all.p->lp.default_label(ec->l);
+  all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
   ec->example_counter = (size_t)all.p->begin_parsed_examples.load();
   return ec;
@@ -867,15 +831,15 @@ void add_constant_feature(vw& vw, example* ec)
 
 void add_label(example* ec, float label, float weight, float base)
 {
-  ec->l.simple().label = label;
-  ec->l.simple().initial = base;
+  ec->l.simple.label = label;
+  ec->l.simple.initial = base;
   ec->weight = weight;
 }
 
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
-  all.p->lp.default_label(ret->l);
+  all.p->lp.default_label(&ret->l);
 
   if (label.length() > 0)
     parse_example_label(all, *ret, label);
@@ -929,19 +893,17 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<VW::string_view> words;
+  v_array<VW::string_view> words = v_init<VW::string_view>();
 
   tokenize(' ', label, words);
-  all.p->lp.parse_label(all.p, all.p->_shared_data, ec.l, words);
+  all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
+  words.clear();
+  words.delete_v();
 }
 
 void empty_example(vw& /*all*/, example& ec)
 {
   for (features& fs : ec) fs.clear();
-
-  // TODO - This is inefficient as we are losing allocated buffers. Once tests are passing this should be removed.
-  ec.l.reset();
-  ec.pred.reset();
 
   ec.indices.clear();
   ec.tag.clear();
@@ -992,30 +954,30 @@ namespace VW
 {
 example* get_example(parser* p) { return p->ready_parsed_examples.pop(); }
 
-float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars()[i]; }
+float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
 
-float get_label(example* ec) { return ec->l.simple().label; }
+float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) { return ec->l.simple().initial; }
+float get_initial(example* ec) { return ec->l.simple.initial; }
 
-float get_prediction(example* ec) { return ec->pred.scalar(); }
+float get_prediction(example* ec) { return ec->pred.scalar; }
 
-float get_cost_sensitive_prediction(example* ec) { return (float)ec->pred.multiclass(); }
+float get_cost_sensitive_prediction(example* ec) { return (float)ec->pred.multiclass; }
 
-v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars(); }
+v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars; }
 
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 {
-  MULTILABEL::labels labels = ec->pred.multilabels();
+  MULTILABEL::labels labels = ec->pred.multilabels;
   len = labels.label_v.size();
   return labels.label_v.begin();
 }
 
 float get_action_score(example* ec, size_t i)
 {
-  ACTION_SCORE::action_scores scores = ec->pred.action_scores();
+  ACTION_SCORE::action_scores scores = ec->pred.a_s;
 
   if (i < scores.size())
   {
@@ -1027,7 +989,7 @@ float get_action_score(example* ec, size_t i)
   }
 }
 
-size_t get_action_score_length(example* ec) { return ec->pred.action_scores().size(); }
+size_t get_action_score_length(example* ec) { return ec->pred.a_s.size(); }
 
 size_t get_tag_length(example* ec) { return ec->tag.size(); }
 
@@ -1040,12 +1002,13 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 example* example_initializer::operator()(example* ex)
 {
-  new (&ex->l) polylabel();
-  new (&ex->pred) polyprediction();
-  IGNORE_DEPRECATED_USAGE_START
-  ex->in_use = true;
-  IGNORE_DEPRECATED_USAGE_END
+  memset(&ex->l, 0, sizeof(polylabel));
   ex->passthrough = nullptr;
+  ex->tag = v_init<char>();
+  ex->indices = v_init<namespace_index>();
+IGNORE_DEPRECATED_USAGE_START
+  ex->in_use = true;
+IGNORE_DEPRECATED_USAGE_END
   memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
   return ex;
 }
@@ -1059,8 +1022,53 @@ namespace VW
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
 
-VW_DEPRECATED("No longer needed. Use destructor.")
-void free_parser(vw& /*all*/) {}
+// a copy of dealloc_example except that this does not call the example destructor
+// Work to remove this is currently in progress
+void cleanup_example(void(*delete_label)(void*), example& ec, void(*delete_prediction)(void*))
+{
+  if (delete_label)
+    delete_label(&ec.l);
+
+  if (delete_prediction)
+    delete_prediction(&ec.pred);
+
+  ec.tag.delete_v();
+
+  if (ec.passthrough)
+  {
+    delete ec.passthrough;
+  }
+
+  ec.indices.delete_v();
+}
+
+void free_parser(vw& all)
+{
+  all.p->words.delete_v();
+
+  if (!all.ngram_strings.empty())
+    all.p->gram_mask.delete_v();
+
+  io_buf* output = all.p->output;
+  if (output != nullptr)
+  {
+    output->finalname.delete_v();
+    output->currentname.delete_v();
+  }
+
+  while (!all.p->example_pool.empty())
+  {
+    example* temp = all.p->example_pool.get_object();
+    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+  }
+
+  while (all.p->ready_parsed_examples.size() != 0)
+  {
+    example* temp = all.p->ready_parsed_examples.pop();
+    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+  }
+  all.p->counts.delete_v();
+}
 
 namespace VW
 {

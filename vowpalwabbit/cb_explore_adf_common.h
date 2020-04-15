@@ -93,8 +93,8 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, replace the label example with an empty one
-    data._action_label = std::move(label_example->l.cb());
-    label_example->l.cb() = std::move(data._empty_label);
+    data._action_label = label_example->l.cb;
+    label_example->l.cb = data._empty_label;
   }
 
   data.explore.predict(base, examples);
@@ -102,8 +102,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, restore label
-    data._empty_label = std::move(label_example->l.cb());
-    label_example->l.cb() = std::move(data._action_label);
+    label_example->l.cb = data._action_label;
   }
 }
 
@@ -135,7 +134,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
-  const auto& preds = ec.pred.action_probs();
+  const auto& preds = ec.pred.a_s;
 
   for (const auto& example : ec_seq)
   {
@@ -159,13 +158,13 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.action_probs(), ec.tag);
+  for (auto sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.a_s, ec.tag);
 
   if (all.raw_prediction > 0)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    const auto& costs = ec.l.cb().costs;
+    const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {

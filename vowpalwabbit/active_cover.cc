@@ -53,7 +53,7 @@ bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */
 
   // Get loss difference
   float middle = 0.f;
-  ec.confidence = fabsf(ec.pred.scalar() - middle) / base.sensitivity(ec);
+  ec.confidence = fabsf(ec.pred.scalar - middle) / base.sensitivity(ec);
 
   float k = (float)all.sd->t;
   float loss_delta = ec.confidence / k;
@@ -112,7 +112,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
   for (size_t i = 0; i < a.cover_size; i++)
   {
     l.predict(ec, i + 1);
-    q2 += ((float)(sign(ec.pred.scalar()) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+    q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
   }
 
   p = std::sqrt(q2) / (1 + std::sqrt(q2));
@@ -141,10 +141,10 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
   {
     vw& all = *a.all;
 
-    float prediction = ec.pred.scalar();
+    float prediction = ec.pred.scalar;
     float t = (float)a.all->sd->t;
     float ec_input_weight = ec.weight;
-    float ec_input_label = ec.l.simple().label;
+    float ec_input_label = ec.l.simple.label;
 
     // Compute threshold defining allowed set A
     float threshold = get_threshold((float)all.sd->sum_loss, t, a.active_c0, a.alpha);
@@ -155,7 +155,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // Query (or not)
     if (!in_dis)  // Use predicted label
     {
-      ec.l.simple().label = sign(prediction);
+      ec.l.simple.label = sign(prediction);
       ec.weight = ec_input_weight;
       base.learn(ec, 0);
     }
@@ -163,21 +163,21 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     {
       all.sd->queries += 1;
       ec.weight = ec_input_weight * importance;
-      ec.l.simple().label = ec_input_label;
+      ec.l.simple.label = ec_input_label;
       base.learn(ec, 0);
     }
     else  // skipped example
     {
       // Make sure the loss computation does not include
       // skipped examples
-      ec.l.simple().label = FLT_MAX;
+      ec.l.simple.label = FLT_MAX;
       ec.weight = 0;
     }
 
     // Update the learners in the cover and their weights
     float q2 = 4.f * pmin * pmin;
     float p, s, cost, cost_delta = 0;
-    float ec_output_label = ec.l.simple().label;
+    float ec_output_label = ec.l.simple.label;
     float ec_output_weight = ec.weight;
     float r = 2.f * threshold * t * a.alpha / a.active_c0 / a.beta_scale;
 
@@ -206,7 +206,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 
       // Choose min-cost label as the label
       // Set importance weight to be the cost difference
-      ec.l.simple().label = -1.f * sign(cost_delta) * sign(prediction);
+      ec.l.simple.label = -1.f * sign(cost_delta) * sign(prediction);
       ec.weight = ec_input_weight * fabs(cost_delta);
 
       // Update learner
@@ -214,20 +214,20 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       base.predict(ec, i + 1);
 
       // Update numerator of lambda
-      a.lambda_n[i] += 2.f * ((float)(sign(ec.pred.scalar()) != sign(prediction))) * cost_delta;
+      a.lambda_n[i] += 2.f * ((float)(sign(ec.pred.scalar) != sign(prediction))) * cost_delta;
       a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] += ((float)(sign(ec.pred.scalar()) != sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
+      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
 
       // Accumulating weights of learners in the cover
-      q2 += ((float)(sign(ec.pred.scalar()) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+      q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
     }
 
     // Restoring the weight, the label, and the prediction
     ec.weight = ec_output_weight;
-    ec.l.simple().label = ec_output_label;
-    ec.pred.scalar() = prediction;
+    ec.l.simple.label = ec_output_label;
+    ec.pred.scalar = prediction;
   }
 }
 
@@ -281,6 +281,6 @@ base_learner* active_cover_setup(options_i& options, vw& all)
   // Create new learner
   learner<active_cover, example>& l = init_learner(
       data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
-  l.label_type = label_type_t::simple;
+
   return make_base(l);
 }

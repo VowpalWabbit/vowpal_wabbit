@@ -61,7 +61,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   size_t num_features = 0;
 
   float loss = 0.;
-  const auto& preds = (*ec_seq)[0]->pred.action_probs();
+  ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
@@ -84,14 +84,13 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto sink : all.final_prediction_sink)
-    print_action_score(sink, ec.pred.action_probs(), ec.tag);
+  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction)
+  if (all.raw_prediction > 0)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    const auto& costs = ec.l.cb().costs;
+    const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -110,7 +109,7 @@ void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
   if (ec_seq.size() > 0)
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
-    if (all.raw_prediction)
+    if (all.raw_prediction > 0)
       all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
   }
 }
@@ -132,18 +131,18 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
   if (label_example != nullptr)  // extract label
   {
-    data.action_label = label_example->l.cb();
-    label_example->l.cb() = data.empty_label;
+    data.action_label = label_example->l.cb;
+    label_example->l.cb = data.empty_label;
   }
   multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)  // restore label
-    label_example->l.cb() = data.action_label;
+    label_example->l.cb = data.action_label;
 
   data.known_cost = CB_ADF::get_observed_cost(ec_seq);
   if (label_example != nullptr && is_learn)
   {
-    auto& a_s = ec_seq[0]->pred.action_probs();
+    ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
     for (size_t i = 0; i < a_s.size(); i++)
@@ -165,12 +164,12 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
       example* ec_found = nullptr;
       for (example*& ec : ec_seq)
       {
-        if (ec->l.cb().costs.size() == 1 && ec->l.cb().costs[0].cost != FLT_MAX && ec->l.cb().costs[0].probability > 0)
+        if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
           ec_found = ec;
         if (threshold > 1)
           ec->weight *= threshold;
       }
-      ec_found->l.cb().costs[0].probability = action_probability;
+      ec_found->l.cb.costs[0].probability = action_probability;
 
       multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
@@ -179,7 +178,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
         float inv_threshold = 1.f / threshold;
         for (auto& ec : ec_seq) ec->weight *= inv_threshold;
       }
-      ec_found->l.cb().costs[0].probability = data.known_cost.probability;
+      ec_found->l.cb.costs[0].probability = data.known_cost.probability;
       data.update_count++;
     }
   }
@@ -212,14 +211,16 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   if (!options.was_supplied("cb_explore_adf"))
     options.insert("cb_explore_adf", "");
 
+  all.delete_prediction = nullptr;
+
   multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
+  all.label_type = label_type_t::cb;
 
   learner<explore_eval, multi_ex>& l =
       init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
-  l.label_type = label_type_t::cb;
   return make_base(l);
 }
