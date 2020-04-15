@@ -30,7 +30,7 @@ typedef union
   COST_SENSITIVE::label cs;
   CB::label cb;
   CCB::label conditional_contextual_bandit;
-  slates::label slates;
+  VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;
