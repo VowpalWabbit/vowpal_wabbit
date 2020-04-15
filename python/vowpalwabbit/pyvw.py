@@ -11,8 +11,8 @@ class Copperhead():
         self.vw = vw
         self.redpy = redpy
 
-        def run():
-            self._learn()
+        def run(example):
+            self._learn(example)
 
         self.redpy.set_python_reduction_hook(run)
 

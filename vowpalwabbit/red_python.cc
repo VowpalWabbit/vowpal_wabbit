@@ -55,8 +55,9 @@ void red_python::do_actual_learning(LEARNER::single_learner& base, example& ec)
 
 void learn(red_python& c, single_learner& base, example& ec)
 { 
+  //c.ch->exc = &ec;
   if (c.ch->run_f)
-    c.ch->run_f(*c.ch);
+    c.ch->run_f(*c.ch, &ec);
   else
     std::cerr << "warning: HookTask::structured_predict called before hook is set" << std::endl;
 }

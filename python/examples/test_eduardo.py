@@ -7,8 +7,8 @@ class MyCustomPythonicReduction(pyvw.Copperhead):
     def _predict(self):
         print("hello there I'm predicting stuff")
 
-    def _learn(self):
-        print("hello there I can also learn stuff")
+    def _learn(self, ec):
+        print("hello there I can also learn stuff btw the total_sum_feat_sq is " + str(ec.get_total_sum_feat_sq()))
 
 
 print(os.getpid())

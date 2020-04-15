@@ -645,13 +645,20 @@ uint32_t search_get_num_actions(search_ptr sch)
   return (uint32_t)d->num_actions;
 }
 
-void learn_redpy_fn(RED_PYTHON::Copperhead& redpy)
+void learn_redpy_fn(RED_PYTHON::Copperhead& redpy, example* ec)
 {
   try
   {
     // HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)redpy.run_object;
-    run.attr("__call__")();
+
+    //possible delete gets triggered
+    boost::shared_ptr<example> temp_ptr(ec, dont_delete_me);
+    py::object temp = py::object(temp_ptr);
+
+    // py::object temp = py::object(*ec);
+    run.attr("__call__")(temp);
+    
   }
   catch (...)
   {
