@@ -11,7 +11,7 @@
 #include "reductions.h"
 #include "rand48.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace recall_tree_ns
@@ -537,7 +537,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
 
   init_tree(*tree.get());
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "recall_tree:"
                       << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
                       << " max_depth = " << tree->max_depth << " routing = "

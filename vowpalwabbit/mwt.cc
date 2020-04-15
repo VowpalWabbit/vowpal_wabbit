@@ -7,7 +7,7 @@
 #include "cb_algs.h"
 #include "io_buf.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 

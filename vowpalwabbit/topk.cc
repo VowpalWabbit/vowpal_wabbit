@@ -23,8 +23,8 @@ class topk
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
-  void predict(LEARNER::single_learner& base, multi_ex& ec_seq);
-  void learn(LEARNER::single_learner& base, multi_ex& ec_seq);
+  void predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq);
+  void learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq);
   std::pair<const_iterator_t, const_iterator_t> get_container_view();
   void clear_container();
 
@@ -38,7 +38,7 @@ class topk
 
 VW::topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
-void VW::topk::predict(LEARNER::single_learner& base, multi_ex& ec_seq)
+void VW::topk::predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -47,7 +47,7 @@ void VW::topk::predict(LEARNER::single_learner& base, multi_ex& ec_seq)
   }
 }
 
-void VW::topk::learn(LEARNER::single_learner& base, multi_ex& ec_seq)
+void VW::topk::learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -107,7 +107,7 @@ void output_example(vw& all, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(VW::topk& d, LEARNER::single_learner& base, multi_ex& ec_seq)
+void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& ec_seq)
 {
   if (is_learn)
     d.learn(base, ec_seq);
@@ -125,7 +125,7 @@ void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-LEARNER::base_learner* topk_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {
   uint32_t K;
   option_group_definition new_options("Top K");
@@ -137,7 +137,7 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 
   auto data = scoped_calloc_or_throw<VW::topk>(K);
 
-  LEARNER::learner<VW::topk, multi_ex>& l =
+  VW::LEARNER::learner<VW::topk, multi_ex>& l =
       init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.label_type = label_type_t::simple;

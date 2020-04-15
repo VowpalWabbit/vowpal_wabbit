@@ -91,7 +91,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRem
     {
       all->do_reset_source = true;
       VW::start_parser(*all);
-      LEARNER::generic_driver(*all);
+      VW::LEARNER::generic_driver(*all);
       VW::end_parser(*all);
     }
   }
@@ -483,7 +483,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_learn(JNI
     all->learn(*ex);
 
     // as this is not a ring-based example it is not free'd
-    LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
+    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
   }
   catch (...)
   {
@@ -502,7 +502,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
     all->predict(*ex);
 
     // as this is not a ring-based example it is not free'd
-    LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
+    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
 
     return Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(env, exampleObj);
   }

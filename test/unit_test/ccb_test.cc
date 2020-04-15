@@ -13,10 +13,10 @@
 BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
-  auto shared_ex = VW::read_example(vw, "ccb shared |User f");
+  auto shared_ex = VW::read_example(vw, std::string("ccb shared |User f"));
   multi_ex actions;
-  actions.push_back(VW::read_example(vw, "ccb action |Action f"));
-  actions.push_back(VW::read_example(vw, "ccb action |Other f |Action f"));
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Action f")));
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
 
   std::vector<std::string> interactions;
   std::vector<std::string> compare_set = {{'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
-  check_vectors(interactions, compare_set);
+  check_collections_exact(interactions, compare_set);
 
   interactions = {"UA", "UO", "UOA"};
   compare_set = {"UA", "UO", "UOA", {'U', 'A', (char)ccb_id_namespace}, {'U', 'O', (char)ccb_id_namespace},
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
 
-  check_vectors(interactions, compare_set);
+  check_collections_exact(interactions, compare_set);
   VW::finish_example(vw, actions);
   VW::finish_example(vw, *shared_ex);
   VW::finish(vw);
@@ -45,14 +45,14 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, "ccb shared |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 1 |"));
+  examples.push_back(VW::read_example(vw, std::string("ccb shared |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 1 |")));
 
   vw.predict(examples);
 

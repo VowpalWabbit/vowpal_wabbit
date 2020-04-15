@@ -8,7 +8,7 @@
 using namespace VW::config;
 
 template <bool is_learn>
-void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
     base.learn(ec);
@@ -31,7 +31,7 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   }
 }
 
-LEARNER::base_learner* binary_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 {
   bool binary = false;
   option_group_definition new_options("Binary loss");
@@ -41,8 +41,7 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
   if (!binary)
     return nullptr;
 
-  LEARNER::learner<char, example>& ret =
-      LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
-  ret.label_type = label_type_t::simple;
+  VW::LEARNER::learner<char, example>& ret =
+      VW::LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }

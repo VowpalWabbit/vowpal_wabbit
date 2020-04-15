@@ -5,7 +5,7 @@
 
 #include "rand48.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
@@ -40,8 +40,8 @@ struct cb_dro_data
 
       if (it != examples.end())
       {
-        const CB::cb_class logged = (*it)->l.cb().costs[0];
-        const uint32_t labelled_action = std::distance(examples.begin(), it);
+        const CB::cb_class logged = (*it)->l.cb.costs[0];
+        const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
         const auto& action_scores = examples[0]->pred.action_probs();
 
@@ -60,7 +60,7 @@ struct cb_dro_data
 
         chisq.update(chosen_action == labelled_action ? w : 0, r);
 
-        float qlb = w > 0 ? chisq.effn() * chisq.qlb(w, r) / w : 1;
+        float qlb = static_cast<float>(w > 0 ? chisq.effn() * chisq.qlb(w, r) / w : 1);
 
         // avoid pathological cases
         qlb = std::max(qlb, 0.01f);
@@ -136,7 +136,7 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     THROW("cb_dro_wmax must exceed 1");
   }
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
     std::cerr << "Using DRO for CB learning" << std::endl;
     std::cerr << "cb_dro_alpha = " << alpha << std::endl;

@@ -25,7 +25,7 @@
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 // todo:
@@ -263,9 +263,9 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
       tempstream << '[' << (dat.offset >> stride_shift) << ']';
       ns_pre += tempstream.str();
     }
-
-    if (!dat.all.name_index_map.count(ns_pre))
-      dat.all.name_index_map.insert(std::map<std::string, size_t>::value_type(ns_pre, index >> stride_shift));
+    const auto strided_index = index >> stride_shift;
+    if (!dat.all.index_name_map.count(strided_index))
+      dat.all.index_name_map.insert(std::make_pair(strided_index, ns_pre));
   }
 }
 
@@ -279,7 +279,7 @@ void print_lda_features(vw& all, example& ec)
   {
     for (features::iterator_all& f : fs.values_indices_audit())
     {
-      std::cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
+      std::cout << '\t' << f.audit()->get()->first << '^' << f.audit()->get()->second << ':'
                 << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
@@ -300,7 +300,7 @@ void print_features(vw& all, example& ec)
       if (fs.space_names.size() > 0)
         for (features::iterator_all& f : fs.values_indices_audit())
         {
-          audit_interaction(dat, f.audit().get());
+          audit_interaction(dat, f.audit()->get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
           audit_interaction(dat, NULL);
         }
@@ -328,12 +328,14 @@ void print_audit_features(vw& all, example& ec)
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, float ret)
+float finalize_prediction(shared_data* sd, vw_logger& logger, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl;
+    if (!logger.quiet) {
+      std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl;
+    }
     return ret;
   }
   if (ret > sd->max_label)
@@ -377,13 +379,7 @@ void predict(gd& g, base_learner&, example& ec)
     ec.partial_prediction = inline_predict(all, ec);
 
   ec.partial_prediction *= (float)all.sd->contraction;
-
-  if (ec.pred.get_type() != prediction_type_t::unset)
-  {
-    ec.pred.reset();
-  }
-
-  ec.pred.init_as_scalar() = finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
   if (audit)
     print_audit_features(all, ec);
 }
@@ -422,7 +418,7 @@ void multipredict(
   if (all.sd->contraction != 1.)
     for (size_t c = 0; c < count; c++) pred[c].scalar() *= (float)all.sd->contraction;
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar() = finalize_prediction(all.sd, pred[c].scalar());
+    for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
@@ -708,18 +704,23 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   if (all.print_invert)  // write readable model with feature names
   {
     std::stringstream msg;
-    typedef std::map<std::string, size_t> str_int_map;
 
-    for (str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
+    for (auto it = weights.begin(); it != weights.end(); ++it)
     {
-      weight* v = &weights.strided_index(it->second);
-      if (*v != 0.)
+      const auto weight_value = *it;
+      if (*it != 0.f)
       {
-        msg << it->first;
-        brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()), msg, true);
+        const auto weight_index = it.index() >> weights.stride_shift();
 
-        msg << ":" << it->second << ":" << *v << "\n";
-        bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, true);
+        const auto map_it = all.index_name_map.find(weight_index);
+        if (map_it != all.index_name_map.end())
+        {
+          msg << map_it->second;
+          bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+        }
+
+        msg << ":" << weight_index << ":" << weight_value << "\n";
+        bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
       }
     }
     return;

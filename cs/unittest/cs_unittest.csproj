@@ -28,6 +28,9 @@
     <OutputPath>$(SolutionDir)$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)out\int\$(Configuration)\x64\$(ProjectName)\</IntermediateOutputPath>
   </PropertyGroup>
+  <PropertyGroup>
+    <TextTransformPath>$(VsInstallRoot)\Common7\IDE\TextTransform.exe</TextTransformPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -150,11 +153,6 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
-    <Compile Include="RunTests.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>RunTests.tt</DependentUpon>
-    </Compile>
     <Compile Include="RunTestsHelper.cs" />
     <Compile Include="TestConfidence.cs" />
     <Compile Include="TestMultiClassPredictionFactory.cs" />
@@ -260,7 +258,6 @@
   <ItemGroup>
     <None Include="RunTests.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>RunTests.cs</LastGenOutput>
     </None>
     <None Include="TestMarshalNumeric.tt">
       <Generator>TextTemplatingFileGenerator</Generator>

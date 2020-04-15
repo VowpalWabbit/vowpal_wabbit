@@ -13,7 +13,7 @@
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 static constexpr uint32_t parent_bit = 1;

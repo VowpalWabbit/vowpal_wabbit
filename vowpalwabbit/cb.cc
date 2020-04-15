@@ -9,7 +9,7 @@
 #include "vw.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 
 namespace CB
 {
@@ -184,7 +184,7 @@ bool ec_is_example_header(example const& ec)  // example headers just have "shar
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     size_t num_features = ec.num_features;
 

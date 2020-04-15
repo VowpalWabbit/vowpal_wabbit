@@ -23,11 +23,23 @@ struct expreplay
   std::vector<bool> filled;  // which of buf[] is filled
   size_t replay_count;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in which
                         // case we're just permuting)
-  LEARNER::single_learner* base;
+
+  VW::LEARNER::single_learner* base;
+
+  ~expreplay()
+  {
+    for (size_t n = 0; n < N; n++)
+    {
+      lp.delete_label(&buf[n].l);
+      VW::dealloc_example(NULL, buf[n], NULL);  // TODO: need to free label
+    }
+    free(buf);
+    free(filled);
+  }
 };
 
 template <bool is_learn, label_parser& lp>
-void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, example& ec)
 {  // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
@@ -55,7 +67,7 @@ void predict_or_learn(expreplay<lp>& er, LEARNER::single_learner& base, example&
 }
 
 template <label_parser& lp>
-void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
+void multipredict(expreplay<lp>&, VW::LEARNER::single_learner& base, example& ec, size_t count, size_t step,
     polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
@@ -75,7 +87,7 @@ void end_pass(expreplay<lp>& er)
 
 // TODO Only lp dependency is on weight - which should be able to be removed once weight is an example concept.
 template <char er_level, label_parser& lp>
-LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
   std::string replay_string = "replay_";
   replay_string += er_level;
@@ -107,14 +119,12 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 
   er->filled.resize(er->N, false);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
               << std::endl;
 
-  // er is a unique ptr and after calling init_learner it is reset. So that we can reference base after init_learner we need to store it here.
-  auto base = LEARNER::as_singleline(setup_base(options, all));
-  er->base = base;
-  LEARNER::learner<expreplay<lp>, example>* l =
+  er->base = VW::LEARNER::as_singleline(setup_base(options, all));
+  VW::LEARNER::learner<expreplay<lp>, example>* l =
       &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
   l->set_end_pass(end_pass<lp>);
   l->label_type = base->label_type;

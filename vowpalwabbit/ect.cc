@@ -13,7 +13,7 @@
 
 #include "reductions.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct direction
@@ -51,7 +51,7 @@ struct ect
 
 bool exists(const v_array<size_t>& db)
 {
-  for (unsigned long i : db)
+  for (size_t i : db)
     if (i != 0)
       return true;
   return false;

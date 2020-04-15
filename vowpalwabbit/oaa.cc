@@ -23,7 +23,7 @@ struct oaa
   size_t subsample_id;                    // for randomized subsampling, where do we live in the list
 };
 
-void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
+void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi();
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
@@ -73,7 +73,7 @@ void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
 
 // Prediction types is scalars when scores is true and multiclass when scores is false.
 template <bool is_learn, bool print_all, bool scores, bool probabilities>
-void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc_label_data = ec.l.multi();
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
@@ -224,7 +224,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   VW::finish_example(all, ec);
 }
 
-LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<oaa>();
   bool probabilities = false;
@@ -274,7 +274,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   }
 
   oaa* data_ptr = data.get();
-  LEARNER::learner<oaa, example>* l;
+  VW::LEARNER::learner<oaa, example>* l;
   auto base = as_singleline(setup_base(options, all));
   if (probabilities || scores)
   {
@@ -284,33 +284,25 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
       if (loss_function_type != "logistic")
       {
         all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
-      }
-      l = &LEARNER::init_multiclass_learner(data, base,
-          predict_or_learn<true /*is_learn*/, false /*print_all*/, true /*scores*/, true /*probabilities*/>,
-          predict_or_learn<false /*is_learn*/, false /*print_all*/, true /*scores*/, true /*probabilities*/>, all.p,
-          data->k, prediction_type_t::scalars);
+      // the three boolean template parameters are: is_learn, print_all and scores
+      l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
+          predict_or_learn<false, false, true, true>, all.p, data->k, prediction_type_t::scalars);
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true /*probabilities*/>);
     }
     else
     {
-      l = &LEARNER::init_multiclass_learner(data, base,
-          predict_or_learn<true /*is_learn*/, false /*print_all*/, true /*scores*/, false /*probabilities*/>,
-          predict_or_learn<false /*is_learn*/, false /*print_all*/, true /*scores*/, false /*probabilities*/>, all.p,
-          data->k, prediction_type_t::scalars);
-      l->set_finish_example(finish_example_scores<false /*probabilities*/>);
+      l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
+          predict_or_learn<false, false, true, false>, all.p, data->k, prediction_type_t::scalars);
+      l->set_finish_example(finish_example_scores<false>);
     }
   }
-  else if (all.raw_prediction)
-    l = &LEARNER::init_multiclass_learner(data, base,
-        predict_or_learn<true /*is_learn*/, true /*print_all*/, false /*scores*/, false /*probabilities*/>,
-        predict_or_learn<false /*is_learn*/, true /*print_all*/, false /*scores*/, false /*probabilities*/>, all.p,
-        data->k, prediction_type_t::multiclass);
+  else if (all.raw_prediction > 0)
+    l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
+        predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type_t::multiclass);
   else
-    l = &LEARNER::init_multiclass_learner(data, base,
-        predict_or_learn<true /*is_learn*/, false /*print_all*/, false /*scores*/, false /*probabilities*/>,
-        predict_or_learn<false /*is_learn*/, false /*print_all*/, false /*scores*/, false /*probabilities*/>, all.p,
-        data->k, prediction_type_t::multiclass);
+    l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
+        predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type_t::multiclass);
 
   if (data_ptr->num_subsample > 0)
   {

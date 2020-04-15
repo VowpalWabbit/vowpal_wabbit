@@ -35,7 +35,7 @@ struct sfm_data
 };
 
 template <bool is_learn>
-void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
+void predict_or_learn(sfm_data&, VW::LEARNER::multi_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
     THROW("cb_adf: At least one action must be provided for an example to be valid.");
@@ -67,20 +67,20 @@ void predict_or_learn(sfm_data&, LEARNER::multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)
+VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)
 {
   if (!use_reduction(options))
     return nullptr;
 
   auto data = scoped_calloc_or_throw<sfm_data>();
 
-  auto* base = LEARNER::as_multiline(setup_base(options, all));
-  auto& learner = LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
-  learner.label_type = base->label_type;
+  auto* base = VW::LEARNER::as_multiline(setup_base(options, all));
+  auto& learner = VW::LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
+
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.
 
-  return LEARNER::make_base(learner);
+  return VW::LEARNER::make_base(learner);
 }
 
 }  // namespace shared_feature_merger

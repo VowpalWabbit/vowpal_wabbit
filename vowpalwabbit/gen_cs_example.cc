@@ -11,7 +11,7 @@
 
 namespace GEN_CS
 {
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace CB;
 

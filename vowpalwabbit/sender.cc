@@ -78,7 +78,7 @@ void receive_result(sender& s)
   return_simple_example_explicit(*(s.all), ec);
 }
 
-void learn(sender& s, LEARNER::single_learner&, example& ec)
+void learn(sender& s, VW::LEARNER::single_learner&, example& ec)
 {
   assert(ec.pred.get_type() == prediction_type_t::scalar);
   if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
@@ -100,7 +100,7 @@ void end_examples(sender& s)
   s.buf->close_files();
 }
 
-LEARNER::base_learner* sender_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* sender_setup(options_i& options, vw& all)
 {
   std::string host;
 
@@ -119,7 +119,7 @@ LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   s->all = &all;
   s->delay_ring = calloc_or_throw<example*>(all.p->ring_size);
 
-  LEARNER::learner<sender, example>& l = init_learner(s, learn, learn, 1);
+  VW::LEARNER::learner<sender, example>& l = init_learner(s, learn, learn, 1);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   l.label_type = label_type_t::simple;

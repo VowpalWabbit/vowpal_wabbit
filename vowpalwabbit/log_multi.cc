@@ -9,7 +9,7 @@
 
 #include "reductions.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 class node_pred

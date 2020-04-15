@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "v_array.h"
 #include "action_score.h"
 
 #include "v_array.h"

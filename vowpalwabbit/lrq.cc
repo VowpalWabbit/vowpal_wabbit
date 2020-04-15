@@ -8,7 +8,7 @@
 #include "vw_exception.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQstate
@@ -179,7 +179,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
   lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
     all.trace_message << "creating low rank quadratic features for pairs: ";
     if (lrq->dropout)
@@ -188,7 +188,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
   for (std::string const& i : lrq->lrpairs)
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
     {
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
@@ -205,7 +205,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
     maxk = std::max(k, k);
   }
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << std::endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);

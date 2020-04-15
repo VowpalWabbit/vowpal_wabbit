@@ -8,7 +8,7 @@
 #include "reductions.h"
 #include "vw.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace

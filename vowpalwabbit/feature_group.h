@@ -194,17 +194,23 @@ class features_value_index_audit_iterator : public features_value_index_iterator
   features_value_index_audit_iterator& operator++()
   {
     features_value_index_iterator::operator++();
-    _begin_audit++;
+    if (_begin_audit != nullptr)
+    {
+      _begin_audit++;
+    }
     return *this;
   }
 
-  inline audit_strings_ptr& audit() { return *_begin_audit; }
+  inline audit_strings_ptr* audit() { return _begin_audit; }
 
   template <typename T>
   features_value_index_audit_iterator& operator+=(T index)
   {
     features_value_index_iterator::operator+=(index);
-    _begin_audit += index;
+    if (_begin_audit != nullptr)
+    {
+      _begin_audit += index;
+    }
     return *this;
   }
 

@@ -584,7 +584,7 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
   {
     io_temp.add_file(VW::io::open_file(all_intial[0], file_mode::read).release());
 
-    if (!all.quiet)
+    if (!all.logger.quiet)
     {
       // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)

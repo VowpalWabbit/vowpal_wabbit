@@ -38,6 +38,7 @@
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
 #include "cb_explore_adf_softmax.h"
+#include "slates.h"
 #include "mwt.h"
 #include "confidence.h"
 #include "scorer.h"
@@ -178,7 +179,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
 
   uint64_t fd_hash = hash_file_contents(f_adapter.get());
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
                       << std::dec << endl;
 
@@ -201,7 +202,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   {
     THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");
   }
-  
+
   auto map = std::make_shared<feature_dict>();
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
@@ -275,7 +276,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   ec->~example();
   free(ec);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
                       << endl;
 
@@ -351,14 +352,14 @@ void parse_diagnostics(options_i& options, vw& all)
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
-      .add(make_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
+      .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
   options.add_and_parse(diagnostic_group);
 
-  // pass all.quiet around
+  // pass all.logger.quiet around
   if (all.all_reduce)
-    all.all_reduce->quiet = all.quiet;
+    all.all_reduce->quiet = all.logger.quiet;
 
   // Upon direct query for version -- spit it out to stdout
   if (version_arg)
@@ -367,7 +368,7 @@ void parse_diagnostics(options_i& options, vw& all)
     exit(0);
   }
 
-  if (options.was_supplied("progress") && !all.quiet)
+  if (options.was_supplied("progress") && !all.logger.quiet)
   {
     all.progress_arg = (float)::atof(progress_arg.c_str());
     // --progress interval is dual: either integer or floating-point
@@ -429,7 +430,10 @@ input_options parse_source(vw& all, options_i& options)
               .help(
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
-      .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
+      .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
+      .add(make_option("chain_hash", parsed_options.chain_hash)
+               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
+
 
   options.add_and_parse(input_options);
 
@@ -645,7 +649,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
       // TODO this option is unused - remove?
-      .add(make_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
+      .add(make_option("q:", q_colon).help("DEPRECATED ':' corresponds to a wildcard for all printable characters"))
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
   options.add_and_parse(feature_options);
 
@@ -664,6 +668,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     }
   }
 
+  if (options.was_supplied("q:"))
+  {
+    all.trace_message << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions."
+                      << endl;
+  }
+
   if (options.was_supplied("affix"))
     parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
 
@@ -674,7 +684,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     for (size_t i = 0; i < all.ngram_strings.size(); i++)
       all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
-    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
+    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.logger.quiet);
   }
 
   if (options.was_supplied("skips"))
@@ -684,11 +694,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     for (size_t i = 0; i < all.skip_strings.size(); i++)
       all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
-    compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
+    compile_gram(all.skip_strings, all.skips, (char*)"skips", all.logger.quiet);
   }
 
   if (options.was_supplied("feature_limit"))
-    compile_limits(all.limit_strings, all.limit, all.quiet);
+    compile_limits(all.limit_strings, all.limit, all.logger.quiet);
 
   if (options.was_supplied("bit_precision"))
   {
@@ -725,31 +735,31 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
   if (options.was_supplied("quadratic"))
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "creating quadratic features for pairs: ";
 
     for (auto& i : quadratics)
     {
       i = spoof_hex_encoded_namespaces(i);
-      if (!all.quiet)
+      if (!all.logger.quiet)
         all.trace_message << i << " ";
     }
 
     expanded_interactions =
         INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
 
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << endl;
   }
 
   if (options.was_supplied("cubic"))
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "creating cubic features for triples: ";
     for (auto i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.quiet)
+      if (!all.logger.quiet)
         all.trace_message << *i << " ";
     }
 
@@ -757,25 +767,25 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << endl;
   }
 
   if (options.was_supplied("interactions"))
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "creating features for following interactions: ";
     for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.quiet)
+      if (!all.logger.quiet)
         all.trace_message << *i << " ";
     }
 
     std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << endl;
   }
 
@@ -832,7 +842,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto j : i) all.ignore[(size_t)(unsigned char)j] = true;
     }
 
-    if (!all.quiet)
+    if (!all.logger.quiet)
     {
       all.trace_message << "ignoring namespaces beginning with: ";
       for (auto const& ignore : ignores)
@@ -852,7 +862,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (auto j : i) all.ignore_linear[(size_t)(unsigned char)j] = true;
     }
 
-    if (!all.quiet)
+    if (!all.logger.quiet)
     {
       all.trace_message << "ignoring linear terms for namespaces beginning with: ";
       for (auto const& ignore : ignore_linears)
@@ -874,7 +884,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
     }
 
-    if (!all.quiet)
+    if (!all.logger.quiet)
     {
       all.trace_message << "using namespaces beginning with: ";
       for (auto const& keep : keeps)
@@ -1030,7 +1040,7 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   if (test_only || all.eta == 0.)
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "only testing" << endl;
     all.training = false;
     if (all.lda > 0)
@@ -1051,7 +1061,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   {
     all.sd->ldict = &calloc_or_throw<namedlabels>();
     new (all.sd->ldict) namedlabels(named_labels);
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
@@ -1069,7 +1079,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
   all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
       all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
@@ -1092,7 +1102,7 @@ void parse_output_preds(options_i& options, vw& all)
 
   if (options.was_supplied("predictions"))
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "predictions = " << predictions << endl;
 
     if (predictions == "stdout")
@@ -1110,7 +1120,7 @@ void parse_output_preds(options_i& options, vw& all)
 
   if (options.was_supplied("raw_predictions"))
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
     {
       all.trace_message << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
@@ -1147,7 +1157,7 @@ void parse_output_model(options_i& options, vw& all)
       .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
-  if (all.final_regressor_name.compare("") && !all.quiet)
+  if (all.final_regressor_name.compare("") && !all.logger.quiet)
     all.trace_message << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash"))
@@ -1183,7 +1193,7 @@ void load_input_model(vw& all, io_buf& io_temp)
   }
 }
 
-LEARNER::base_learner* setup_base(options_i& options, vw& all)
+VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
   auto setup_func = all.reduction_stack.top();
   all.reduction_stack.pop();
@@ -1262,6 +1272,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
+  all.reduction_stack.push(slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);
@@ -1290,11 +1301,17 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     time(&all.init_time);
 
     bool strict_parse = false;
-    size_t ring_size;
+    int ring_size_tmp;
     option_group_definition vw_args("VW options");
-    vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"))
+    vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
+
+    if (ring_size_tmp <= 0)
+    {
+      THROW("ring_size should be positive");
+    }
+    size_t ring_size = static_cast<size_t>(ring_size_tmp);
 
     all.p = new parser{ring_size, strict_parse};
     all.p->_shared_data = all.sd;
@@ -1351,8 +1368,8 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     if (options.was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce =
-          new AllReduceSockets(span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.quiet);
+      all.all_reduce = new AllReduceSockets(
+          span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
     }
 
     parse_diagnostics(options, all);
@@ -1507,7 +1524,7 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
 
   parse_reductions(options, all);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
     all.trace_message << "Num weight bits = " << all.num_bits << endl;
     all.trace_message << "learning rate = " << all.eta << endl;
@@ -1526,7 +1543,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
     model.close_file();
 
   auto parsed_source_options = parse_source(all, options);
-  enable_sources(all, all.quiet, all.numpasses, parsed_source_options);
+  enable_sources(all, all.logger.quiet, all.numpasses, parsed_source_options);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
@@ -1789,7 +1806,7 @@ void sync_stats(vw& all)
 void finish(vw& all, bool delete_all)
 {
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!all.quiet && !all.options->was_supplied("audit_regressor"))
+  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
   {
     all.trace_message.precision(6);
     all.trace_message << std::fixed;
@@ -1854,48 +1871,6 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception = e;
     finalize_regressor_exception_thrown = true;
   }
-
-  if (all.l != nullptr)
-  {
-    all.l->finish();
-    free_it(all.l);
-  }
-
-  // Check if options object lifetime is managed internally.
-  if (all.should_delete_options)
-    delete all.options;
-
-  delete all.p;
-
-  bool seeded;
-  if (all.weights.seeded() > 0)
-    seeded = true;
-  else
-    seeded = false;
-  if (!seeded)
-  {
-    if (all.sd->ldict)
-    {
-      all.sd->ldict->~namedlabels();
-      free(all.sd->ldict);
-    }
-    free(all.sd);
-  }
-  for (auto& sink : all.final_prediction_sink)
-  {
-    delete sink;
-  }
-
-  all.loaded_dictionaries.clear();
-  // TODO: should we be clearing the namespace dictionaries?
-  for (auto& ns_dict : all.namespace_dictionaries)
-  {
-    ns_dict.clear();
-  }
-
-  delete all.loss;
-
-  delete all.all_reduce;
 
   if (delete_all)
     delete &all;

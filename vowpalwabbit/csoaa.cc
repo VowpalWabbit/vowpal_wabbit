@@ -13,7 +13,7 @@
 #include <algorithm>
 #include "csoaa.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
 

@@ -33,6 +33,7 @@
 #include "array_parameters.h"
 #include "parse_primitives.h"
 #include "loss_functions.h"
+#include "comp_io.h"
 #include "example.h"
 #include "config.h"
 #include "learner.h"
@@ -43,6 +44,7 @@
 #include "constant.h"
 #include "rand48.h"
 #include "hashstring.h"
+#include "decision_scores.h"
 
 #include "options.h"
 #include "version.h"
@@ -64,7 +66,7 @@ class namedlabels
   // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
   std::string m_label_list;
   std::vector<VW::string_view> m_id2name;
-  std::unordered_map<VW::string_view, uint64_t> m_name2id;
+  std::unordered_map<VW::string_view, uint32_t> m_name2id;
   uint32_t m_K;
 
  public:
@@ -72,13 +74,13 @@ class namedlabels
   {
     tokenize(',', m_label_list, m_id2name);
 
-    m_K = (uint32_t)m_id2name.size();
+    m_K = static_cast<uint32_t>(m_id2name.size());
     m_name2id.max_load_factor(0.25);
     m_name2id.reserve(m_K);
 
-    for (size_t k = 0; k < m_K; k++)
+    for (uint32_t k = 0; k < m_K; k++)
     {
-      const VW::string_view& l = m_id2name[k];
+      const VW::string_view& l = m_id2name[static_cast<size_t>(k)];
       auto iter = m_name2id.find(l);
       if (iter != m_name2id.end())
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
@@ -96,7 +98,7 @@ class namedlabels
       std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
       return 0;
     }
-    return static_cast<uint32_t>(iter->second);
+    return iter->second;
   }
 
   VW::string_view get(uint32_t v) const
@@ -107,7 +109,7 @@ class namedlabels
       return VW::string_view();
     }
     else
-      return m_id2name[(size_t)(v - 1)];
+      return m_id2name[static_cast<size_t>(v - 1)];
   }
 };
 
@@ -318,6 +320,18 @@ enum AllReduceType
 
 class AllReduce;
 
+enum class label_type_t
+{
+  simple,
+  cb,       // contextual-bandit
+  cb_eval,  // contextual-bandit evaluation
+  cs,       // cost-sensitive
+  multi,
+  mc,
+  ccb,  // conditional contextual-bandit
+  slates
+};
+
 struct rand_state
 {
  private:
@@ -330,6 +344,18 @@ struct rand_state
   float get_and_update_random() { return merand48(random_state); }
   float get_random() const { return merand48_noadvance(random_state); }
   void set_random_state(uint64_t initial) noexcept { random_state = initial; }
+};
+
+struct vw_logger
+{
+  bool quiet;
+
+  vw_logger()
+    : quiet(false) {
+  }
+
+  vw_logger(const vw_logger& other) = delete;
+  vw_logger& operator=(const vw_logger& other) = delete;
 };
 
 struct vw
@@ -346,9 +372,11 @@ struct vw
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
-  LEARNER::base_learner* l;               // the top level learner
-  LEARNER::single_learner* scorer;        // a scoring function
-  LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  bool chain_hash = false;
+
+  VW::LEARNER::base_learner* l;               // the top level learner
+  VW::LEARNER::single_learner* scorer;        // a scoring function
+  VW::LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -358,11 +386,6 @@ struct vw
   void finish_example(multi_ex&);
 
   void (*set_minmax)(shared_data* sd, float label);
-
-  label_type_t get_label_type() const
-  {
-    return l->label_type;
-  }
 
   uint64_t current_pass;
 
@@ -402,7 +425,7 @@ struct vw
 
   uint32_t wpp;
 
-  std::unique_ptr<io_adapter> stdout_adapter;
+  int stdout_fileno;
 
   std::vector<std::string> initial_regressors;
 
@@ -454,11 +477,10 @@ struct vw
   // This array is required to be value initialized so that the std::vectors are constructed.
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
-  
-  VW_DEPRECATED("Use the polyprediciton destructor")
-  void (*delete_prediction)(polyprediction&);
+
+  void (*delete_prediction)(void*);
+  vw_logger logger;
   bool audit;     // should I print lots of debugging information?
-  bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
@@ -486,20 +508,21 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
-  v_array<io_adapter*> final_prediction_sink; // set to send global predictions to.
-  io_adapter* raw_prediction;                  // file descriptors for text output.
+  v_array<int> final_prediction_sink;  // set to send global predictions to.
+  int raw_prediction;                  // file descriptors for text output.
 
   VW_DEPRECATED("print has been deprecated, use print_by_ref")
-  void (*print)(io_adapter*, float, float, v_array<char>);
-  void (*print_by_ref)(io_adapter*, float, float, const v_array<char>&);
+  void (*print)(int, float, float, v_array<char>);
+  void (*print_by_ref)(int, float, float, const v_array<char>&);
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
-  void (*print_text)(io_adapter*, std::string, v_array<char>);
-  void (*print_text_by_ref)(io_adapter*, const std::string&, const v_array<char>&);
+  void (*print_text)(int, std::string, v_array<char>);
+  void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
   loss_function* loss;
 
+  VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   bool stdin_off;
@@ -523,11 +546,12 @@ struct vw
   bool progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;  // next update progress dump multiplier
 
-  std::map<std::string, size_t> name_index_map;
+  std::map<uint64_t, std::string> index_name_map;
 
   label_type_t label_type;
 
   vw();
+  ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
   vw(const vw&) = delete;
@@ -540,15 +564,15 @@ struct vw
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")
-void print_result(io_adapter* f, float res, float weight, v_array<char> tag);
-void print_result_by_ref(io_adapter* f, float res, float weight, const v_array<char>& tag);
+void print_result(int f, float res, float weight, v_array<char> tag);
+void print_result_by_ref(int f, float res, float weight, const v_array<char>& tag);
 
 VW_DEPRECATED("Use binary_print_result_by_ref instead")
-void binary_print_result(io_adapter* f, float res, float weight, v_array<char> tag);
-void binary_print_result_by_ref(io_adapter* f, float res, float weight, const v_array<char>& tag);
+void binary_print_result(int f, float res, float weight, v_array<char> tag);
+void binary_print_result_by_ref(int f, float res, float weight, const v_array<char>& tag);
 
 void noop_mm(shared_data*, float label);
-void get_prediction(io_adapter* sock, float& res, float& weight);
+void get_prediction(int sock, float& res, float& weight);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);

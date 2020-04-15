@@ -11,7 +11,7 @@
 #include "active.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)

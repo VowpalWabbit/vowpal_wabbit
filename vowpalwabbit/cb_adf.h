@@ -6,7 +6,7 @@
 #include <vector>
 #include "reductions_fwd.h"
 
-LEARNER::base_learner* cb_adf_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* cb_adf_setup(VW::config::options_i& options, vw& all);
 
 namespace CB_ADF
 {

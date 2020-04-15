@@ -67,6 +67,7 @@ class TC_parser
   v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
+  bool _chain_hash;
 
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
 
@@ -93,37 +94,59 @@ class TC_parser
     }
   }
 
-  inline float featureValue()
+  inline VW::string_view stringFeatureValue(VW::string_view sv)
   {
-    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
-        _line[_read_idx] == '|' || _line[_read_idx] == '\r')
-      return 1.;
+    size_t start_idx = sv.find_first_not_of(" \t\r\n");
+    if (start_idx > 0 && start_idx != std::string::npos)
+    {
+      _read_idx += start_idx;
+      sv.remove_prefix(start_idx);
+    }
+
+    size_t end_idx = sv.find_first_of(" \t\r\n");
+    if (end_idx == std::string::npos)
+    {
+      end_idx = sv.size();
+    }
+    _read_idx += end_idx;
+    return sv.substr(0, end_idx);
+  }
+
+  inline bool isFeatureValueFloat(float& float_feature_value)
+  {
+    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
+        _line[_read_idx] == '\r')
+    {
+      float_feature_value = 1.;
+      return true;
+    }
+
     else if (_line[_read_idx] == ':')
     {
       // featureValue --> ':' 'Float'
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _v = parseFloat(sv.begin(), end_read, sv.end());
+      _v = float_feature_value = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read == 0)
       {
-        parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"");
+        return false;
       }
       if (std::isnan(_v))
       {
-        _v = 0.f;
+        _v = float_feature_value = 0.f;
         parserWarning(
             "warning: invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.");
       }
       _read_idx += end_read;
-      return _v;
+      return true;
     }
     else
     {
+      _v = float_feature_value = 0.f;
       // syntax error
-      parserWarning(
-          "malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
-      return 0.f;
+      parserWarning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
+      return true;
     }
   }
 
@@ -148,20 +171,57 @@ class TC_parser
     {
       // maybeFeature --> 'String' FeatureValue
       VW::string_view feature_name = read_name();
-      _v = _cur_channel_v * featureValue();
-      uint64_t word_hash;
-      if (!feature_name.empty())
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
+      VW::string_view string_feature_value;
+
+      float float_feature_value = 0.f;
+      bool is_feature_float = isFeatureValueFloat(float_feature_value);
+
+      if (_chain_hash && !is_feature_float)
+      {
+        string_feature_value = stringFeatureValue(_line.substr(_read_idx));
+        _v = 1;
+      }
       else
+      {
+        _v = _cur_channel_v * float_feature_value;
+      }
+
+
+      uint64_t word_hash;
+
+      if (_chain_hash && !string_feature_value.empty())
+      {
+        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(),
+                         _p->hasher(string_feature_value.begin(), string_feature_value.length(), _channel_hash)) & _parse_mask);
+      }
+      else if (!feature_name.empty())
+      {
+        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
+      }
+      else
+      {
         word_hash = _channel_hash + _anon++;
+      }
+
       if (_v == 0)
         return;  // dont add 0 valued features to list of features
       features& fs = _ae->feature_space[_index];
       fs.push_back(_v, word_hash);
+
       if (audit)
       {
-        fs.space_names.push_back(audit_strings_ptr(new audit_strings(_base.to_string(), feature_name.to_string())));
+        if (_chain_hash && !string_feature_value.empty())
+        {
+          std::stringstream ss;
+          ss << feature_name << "^" << string_feature_value;
+          fs.space_names.push_back(audit_strings_ptr(new audit_strings(_base.to_string(), ss.str())));
+        }
+        else
+        {
+          fs.space_names.push_back(audit_strings_ptr(new audit_strings(_base.to_string(), feature_name.to_string())));
+        }
       }
+
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
         features& affix_fs = _ae->feature_space[affix_namespace];
@@ -182,8 +242,7 @@ class TC_parser
               affix_name.remove_prefix(affix_name.size() - len);
           }
 
-          word_hash =
-              _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
+          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
           affix_fs.push_back(_v, word_hash);
           if (audit)
           {
@@ -301,8 +360,7 @@ class TC_parser
     else
     {
       // syntax error
-      parserWarning(
-          "malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
+      parserWarning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
   }
 
@@ -387,8 +445,7 @@ class TC_parser
 
   inline void listNameSpace()
   {
-    while (
-        (_read_idx < _line.size()) && (_line[_read_idx] == '|'))  // ListNameSpace --> '|' NameSpace ListNameSpace
+    while ((_read_idx < _line.size()) && (_line[_read_idx] == '|'))  // ListNameSpace --> '|' NameSpace ListNameSpace
     {
       ++_read_idx;
       nameSpace();
@@ -414,7 +471,7 @@ class TC_parser
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
-
+      this->_chain_hash = all.chain_hash;
       listNameSpace();
     }
   }

@@ -26,7 +26,7 @@
 #define SVM_KER_RBF 1
 #define SVM_KER_POLY 2
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 using std::endl;
@@ -842,7 +842,7 @@ void learn(svm_params& params, single_learner&, example& ec)
   }
 }
 
-LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 {
   auto params = scoped_calloc_or_throw<svm_params>();
   std::string kernel_type;

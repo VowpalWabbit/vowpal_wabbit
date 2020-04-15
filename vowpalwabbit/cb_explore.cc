@@ -10,7 +10,7 @@
 #include "explore.h"
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
@@ -237,7 +237,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -297,7 +297,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
                .keep()
                .help("Online explore-exploit for a <k> action contextual bandit problem"))
       .add(make_option("first", data->tau).keep().help("tau-first exploration"))
-      .add(make_option("epsilon", data->epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon).keep().allow_override().default_value(0.05f).help("epsilon-greedy exploration"))
       .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
@@ -316,6 +316,12 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     options.insert("cb", ss.str());
   }
 
+  if (data->epsilon < 0.0 || data->epsilon > 1.0)
+  {
+    THROW("The value of epsilon must be in [0,1]");
+  }
+
+  all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
 
   single_learner* base = as_singleline(setup_base(options, all));

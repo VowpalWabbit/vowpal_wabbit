@@ -69,7 +69,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* base */, example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, example& ec)
 {
   vw& all = *rd.all;
 
@@ -96,9 +96,9 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
 }
 
 // This is a learner which does nothing with examples.
-// void learn(audit_regressor_data&, LEARNER::base_learner&, example&) {}
+// void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, LEARNER::single_learner& base, example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, example& ec)
 {
   vw& all = *rd.all;
 
@@ -161,7 +161,7 @@ inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t pro
 void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 {
   bool printed = false;
-  if (ec.example_counter + 1 >= all.sd->dump_interval && !all.quiet)
+  if (ec.example_counter + 1 >= all.sd->dump_interval && !all.logger.quiet)
   {
     print_ex(all, ec.example_counter + 1, dd.values_audited, dd.values_audited * 100 / dd.loaded_regressor_values);
     all.sd->weighted_unlabeled_examples = (double)(ec.example_counter + 1);  // used in update_dump_interval
@@ -229,7 +229,7 @@ void init_driver(audit_regressor_data& dat)
   if (dat.loaded_regressor_values == 0)
     THROW("regressor has no non-zero weights. Nothing to audit.");
 
-  if (!dat.all->quiet)
+  if (!dat.all->logger.quiet)
   {
     dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
     dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
@@ -241,7 +241,7 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
   std::string out_file;
 
@@ -270,13 +270,13 @@ LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->out_file->add_file(VW::io::open_file(out_file, file_mode::write).release());
 
   auto base = as_singleline(setup_base(options, all));
-  LEARNER::learner<audit_regressor_data, example>& ret =
-      LEARNER::init_learner(dat, base, audit_regressor, audit_regressor, 1);
+   VW::LEARNER::learner<audit_regressor_data, example>& ret =
+       VW::LEARNER::init_learner(dat, base, audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);
   ret.set_init_driver(init_driver);
   ret.label_type = base->label_type;
 
-  return LEARNER::make_base<audit_regressor_data>(ret);
+  return VW::LEARNER::make_base<audit_regressor_data>(ret);
 }

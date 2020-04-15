@@ -13,6 +13,8 @@
 
 #include <memory>
 
+namespace VW
+{
 namespace LEARNER
 {
 template <class T, class E>
@@ -539,3 +541,4 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
   for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
 }  // namespace LEARNER
+}  // namespace VW

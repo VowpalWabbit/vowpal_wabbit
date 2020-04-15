@@ -17,7 +17,7 @@ struct cb_to_cs
   size_t cb_type;
   uint32_t num_actions;
   COST_SENSITIVE::label pred_scores;
-  LEARNER::single_learner* scorer;
+  VW::LEARNER::single_learner* scorer;
   float avg_loss_regressors;
   size_t nb_ex_regressors;
   float last_pred_reg;
@@ -39,7 +39,7 @@ struct cb_to_cs_adf
   // for DR
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
-  LEARNER::single_learner* scorer;
+  VW::LEARNER::single_learner* scorer;
 };
 
 CB::cb_class* get_observed_cost(CB::label& ld);
@@ -247,7 +247,7 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
 }
 
 template <bool is_learn>
-void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
+void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
     COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
 {
   cb_labels.clear();

@@ -130,7 +130,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
     }
     return ret;
   }
-    
+
 }
 
 inline float float_of_string(VW::string_view s)
