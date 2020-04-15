@@ -396,7 +396,7 @@ class vw(pylibvw.vw):
                 % type(ec))
 
         if new_example:
-                self.finish_example(ec)
+            self.finish_example(ec)
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on the example
