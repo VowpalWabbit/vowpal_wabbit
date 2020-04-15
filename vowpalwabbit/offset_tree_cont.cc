@@ -87,13 +87,21 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
         depth_const = (1 << (++depth + 1)) - 1;
       
       uint32_t id = 2 * i + 1;
-      bool right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
-      bool left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
+      bool right_only = false;
+      bool left_only = false;
+      if (bandwidth)
+      {
+        right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
+        left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
+      }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
       
       id = 2 * i + 2;
-      right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
-      left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
+      if (bandwidth)
+      {
+        right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
+        left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
+      }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
     }
 
@@ -350,7 +358,7 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
                .keep()
                .help("Offset tree continuous reduction to scorer [-1, 1] versus binary -1/+1"))  // TODO: oct
       .add(make_option("bandwidth", bandwidth)
-               .default_value(1)
+               .default_value(0)
                .keep()
                .help("bandwidth for continuous actions in terms of #actions"));  // TODO: h# or 2^h#
 
