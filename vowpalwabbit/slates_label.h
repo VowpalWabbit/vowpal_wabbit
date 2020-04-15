@@ -35,7 +35,7 @@ struct label
   float cost;
 
   // For action examples
-  size_t slot_id;
+  uint32_t slot_id;
 
   // For slot examples
   // Only valid if labeled
