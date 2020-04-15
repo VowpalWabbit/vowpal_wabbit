@@ -279,15 +279,19 @@ class vw(pylibvw.vw):
         ec : list
             list of examples parsed
         """
+
+        #check if already parsed
         if isinstance(str_ex, example) and getattr(str_ex, 'setup_done', None):
             return str_ex
 
         elif isinstance(str_ex, list):
             if all([getattr(ex, 'setup_done', None) for ex in str_ex]):
                 return str_ex
+
         if not isinstance(str_ex, (list, str)):
             raise TypeError(
                 'Unsupported type. List or string object must be passed.')
+
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
         str_ex = str_ex.replace('\r', '')
@@ -373,32 +377,25 @@ class vw(pylibvw.vw):
             new_example = True
 
         elif isinstance(ec, list):
-            if self._is_multiline():
-                ec = self.parse(ec)
-            else:
-                ec = list(map(self.parse, ec))
+            if not self._is_multiline():
+                raise TypeError("Expecting a mutiline Learner.")
+            ec = self.parse(ec)
             new_example = True
 
         if isinstance(ec, example):
-            if getattr(ec, 'setup_done', None) is None:
+            if not getattr(ec, 'setup_done', None):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
 
         elif isinstance(ec, list):
-            if self._is_multiline():
-                pylibvw.vw.learn_multi(self, ec)
-            else:
-                for ex in ec:
-                    pylibvw.vw.learn(self, ex)
+            pylibvw.vw.learn_multi(self, ec)
+
         else:
             raise TypeError(
                 'expecting string or example object as ec argument for learn, got %s'
                 % type(ec))
 
         if new_example:
-            if isinstance(ec, list) and not self._is_multiline():
-                map(self.finish_example, ec)
-            else:
                 self.finish_example(ec)
 
     def predict(self, ec, prediction_type=None):
@@ -432,10 +429,9 @@ class vw(pylibvw.vw):
             new_example = True
 
         elif isinstance(ec, list):
-            if self._is_multiline():
-                ec = self.parse(ec)
-            else:
-                ec = list(map(self.parse, ec))
+            if not self._is_multiline():
+                raise TypeError("Expecting a multiline Learner.")
+            ec = self.parse(ec)
             new_example = True
 
         if not isinstance(ec, example) and not isinstance(ec, list):
@@ -449,11 +445,8 @@ class vw(pylibvw.vw):
         if isinstance(ec, example):
             pylibvw.vw.predict(self, ec)
         else:
-            if self._is_multiline():
-                pylibvw.vw.predict_multi(self, ec)
-            else:
-                for ex in ec:
-                    pylibvw.vw.predict(self, ex)
+            pylibvw.vw.predict_multi(self, ec)
+
 
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
@@ -461,18 +454,10 @@ class vw(pylibvw.vw):
         if isinstance(ec, example):
             prediction = get_prediction(ec, prediction_type)
         else:
-            if self._is_multiline():
-                prediction = get_prediction(ec[0], prediction_type)
-            else:
-                prediction = []
-                for ex in ec:
-                    prediction.append(get_prediction(ex, prediction_type))
+            prediction = get_prediction(ec[0], prediction_type)
 
         if new_example:
-            if isinstance(ec, list) and not self._is_multiline():
-                map(self.finish_example, ec)
-            else:
-                self.finish_example(ec)
+            self.finish_example(ec)
 
         return prediction
 

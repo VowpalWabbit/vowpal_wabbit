@@ -2,7 +2,7 @@ import os
 
 from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import vw
-
+import pytest
 
 BIT_SIZE = 18
 
@@ -21,8 +21,8 @@ class TestVW:
         self.model.learn(ex)
         assert self.model.predict(ex) > init
         ex = ["| a", "| b"]
-        assert self.model.predict(ex) == [self.model.predict(ex[0]), self.model.predict(ex[1])]
-        self.model.learn(ex)
+        check_error_raises(TypeError, lambda: self.model.predict(ex))
+        check_error_raises(TypeError, lambda: self.model.learn(ex))
 
     def test_get_tag(self):
         ex = self.model.example("1 foo| a b c")
@@ -209,12 +209,14 @@ def test_parse():
     del model
 
 
-def test_predict_multiline():
+def test_learn_predict_multiline():
     model = vw(quiet=True, cb_adf=True)
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
     finish = model.finish_example(ex)
     assert model.predict(ex) == [0.0, 0.0]
-    del model
+    ex = ["| a", "| b"]
+    model.learn(ex)
+    assert model.predict(ex) == [0.0, 0.0]
 
 
 def test_namespace_id():
@@ -323,3 +325,22 @@ def test_example_features():
     ns2 = pyvw.namespace_id(ex, 2)
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
+
+def check_error_raises(type, argument):
+    """
+    This function is used to check whether the exception is raised or not.
+
+    Parameter
+    ---------
+
+    type: Type of Error raised
+    argument: lambda function with no parameters.
+
+    Example:
+    >>> ex = ["|a", "|b"]
+    >>> vw = pyvw.vw(quiet=True)
+    >>> check_error_raises(TypeError, lambda: vw.learn(ex))
+
+    """
+    with pytest.raises(type) as error:
+        argument()
