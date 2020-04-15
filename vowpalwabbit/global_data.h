@@ -423,6 +423,9 @@ struct vw
 
   void* /*Search::search*/ searchstr;
 
+  // needed for python red AKA a copperhead snake (red(uction) snake(python))
+  void* /* TBD to be define */ copperhead;
+
   uint32_t wpp;
 
   int stdout_fileno;

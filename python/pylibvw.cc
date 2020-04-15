@@ -15,6 +15,8 @@
 #include "future_compat.h"
 #include "slates_label.h"
 
+#include "red_python.h"
+
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #include <boost/make_shared.hpp>
@@ -32,6 +34,8 @@ typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
+
+typedef boost::shared_ptr<RED_PYTHON::Copperhead> redpython_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -74,6 +78,12 @@ void my_finish(vw_ptr all)
 
 void my_save(vw_ptr all, std::string name)
 { VW::save_predictor(*all, name);
+}
+
+redpython_ptr get_red_python_ptr(vw_ptr all)
+{ 
+  RED_PYTHON::Copperhead* temp = (RED_PYTHON::Copperhead*)(all->copperhead);
+  return boost::shared_ptr<RED_PYTHON::Copperhead>(temp, dont_delete_me);
 }
 
 search_ptr get_search_ptr(vw_ptr all)
@@ -608,6 +618,14 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<ui
 }
 */
 
+void verify_redpy_set_properly(redpython_ptr redpy)
+{
+  if (redpy->random_number == 0)
+  {
+    THROW("redpy: something is clearly wrong!");
+  }
+}
+
 void verify_search_set_properly(search_ptr sch)
 {
   if (sch->task_name == nullptr)
@@ -625,6 +643,23 @@ uint32_t search_get_num_actions(search_ptr sch)
 { verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   return (uint32_t)d->num_actions;
+}
+
+void learn_redpy_fn(RED_PYTHON::Copperhead& redpy)
+{
+  try
+  {
+    // HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    py::object run = *(py::object*)redpy.run_object;
+    run.attr("__call__")();
+  }
+  catch (...)
+  {
+    // TODO: Properly translate and return Python exception. #2169
+    PyErr_Print();
+    PyErr_Clear();
+    THROW("Exception in 'search_run_fn'");
+  }
 }
 
 void search_run_fn(Search::search& sch)
@@ -686,6 +721,13 @@ void py_delete_run_object(void* pyobj)
 void set_force_oracle(search_ptr sch, bool useOracle)
 { verify_search_set_properly(sch);
   sch->set_force_oracle(useOracle);
+}
+
+void set_python_reduction_hook(redpython_ptr redpy, py::object learn_object)
+{ verify_redpy_set_properly(redpy);
+  redpy->run_f = &learn_redpy_fn;
+  redpy->run_object = new py::object(learn_object);
+  return;
 }
 
 void set_structured_predict_hook(search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object)
@@ -804,6 +846,8 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
+  .def("get_red_python_ptr", &get_red_python_ptr, "return a pointer to the RED_PYTHON::Copperhead data structure")
+
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
   .def("get_id", &get_model_id, "return the model id")
@@ -915,6 +959,10 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
   .def("set_tag", &my_set_tag, "change the tag of this prediction")
   .def("predict", &Search::predictor::predict, "make a prediction")
+  ;
+
+  py::class_<RED_PYTHON::Copperhead, redpython_ptr>("red_python")
+  .def("set_python_reduction_hook", &set_python_reduction_hook, "Set the hook (function pointer) (you don't want to call this yourself!")
   ;
 
   py::class_<Search::search, search_ptr>("search")

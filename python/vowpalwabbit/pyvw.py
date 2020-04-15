@@ -5,6 +5,23 @@ from __future__ import division
 import pylibvw
 import warnings
 
+class Copperhead():
+    """Copperhead class"""
+    def __init__(self, vw, redpy):
+        self.vw = vw
+        self.redpy = redpy
+
+        def run():
+            self._learn()
+
+        self.redpy.set_python_reduction_hook(run)
+
+    def _predict(self):
+        pass
+
+    def _learn(self):
+        pass
+
 class SearchTask():
     """Search task class"""
     def __init__(self, vw, sch, num_actions):
@@ -477,6 +494,10 @@ class vw(pylibvw.vw):
 
     def __del__(self):
         self.finish()
+
+    def init_python_reduction_task(self, chead):
+        redpy = self.get_red_python_ptr()
+        return chead(self, redpy)
 
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()

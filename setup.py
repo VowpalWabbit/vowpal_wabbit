@@ -85,6 +85,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         distutils.dir_util.mkpath(lib_output_dir)
 
         # example of cmake args
+        self.debug = True
         config = 'Debug' if self.debug else 'Release'
 
         cmake_args = [

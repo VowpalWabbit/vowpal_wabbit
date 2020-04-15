@@ -155,6 +155,7 @@ set(vw_all_headers
   vwdll.h
   vwvis.h
   warm_cb.h
+  red_python.h
 )
 
 set(vw_all_sources
@@ -258,6 +259,7 @@ set(vw_all_sources
   vw_exception.cc
   vw_validate.cc
   warm_cb.cc
+  red_python.cc
 )
 
 add_library(vw ${vw_all_sources} ${vw_all_headers})

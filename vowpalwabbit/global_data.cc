@@ -384,6 +384,8 @@ vw::vw()
 
   searchstr = nullptr;
 
+  copperhead = nullptr;
+
   nonormalize = false;
   l1_lambda = 0.0;
   l2_lambda = 0.0;
