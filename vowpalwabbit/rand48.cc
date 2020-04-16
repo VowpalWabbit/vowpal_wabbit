@@ -39,6 +39,6 @@ float merand48_boxmuller(uint64_t& index)
     x2 = 2.0f * merand48(index) - 1.0f;
     temp = x1 * x1 + x2 * x2;
   } while ((temp >= 1.0) || (temp == 0.0));
-  temp = sqrtf((-2.0f * logf(temp)) / temp);
+  temp = std::sqrt((-2.0f * logf(temp)) / temp);
   return x1 * temp;
 }
