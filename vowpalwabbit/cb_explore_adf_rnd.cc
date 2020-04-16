@@ -85,7 +85,7 @@ void cb_explore_adf_rnd::zero_bonuses(multi_ex& examples)
 
 void cb_explore_adf_rnd::accumulate_bonuses(multi_ex& examples)
 {
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+const auto& preds = examples[0]->pred.a_s;
   for (const auto& p : preds)
   {
     float score = p.score - initials[p.action];
