@@ -30,9 +30,9 @@ float merand48_noadvance(uint64_t v) { return merand48(v); }
 
 float merand48_boxmuller(uint64_t& index)
 {
-  static float x1 = 0.0;
-  static float x2 = 0.0;
-  static float temp = 0.0;
+  float x1 = 0.0;
+  float x2 = 0.0;
+  float temp = 0.0;
   do
   {
     x1 = 2.0f * merand48(index) - 1.0f;
