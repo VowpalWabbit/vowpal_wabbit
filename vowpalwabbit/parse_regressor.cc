@@ -262,8 +262,9 @@ void save_load_header(
 
           if (!read)
           {
-            memcpy(pair, all.pairs[i].data(), 2);
-            msg << all.pairs[i].data() << " ";
+            std::string temp(all.pairs[i].begin(), all.pairs[i].end());
+            memcpy(pair, temp.c_str(), 2);
+            msg << temp.c_str() << " ";
           }
 
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
@@ -291,8 +292,9 @@ void save_load_header(
 
           if (!read)
           {
-            msg << all.triples[i].data() << " ";
-            memcpy(triple, all.triples[i].data(), 3);
+            std::string temp(all.triples[i].begin(), all.triples[i].end());
+            msg << temp.c_str() << " ";
+            memcpy(triple, temp.c_str(), 3);
           }
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
           if (read)
@@ -328,10 +330,11 @@ void save_load_header(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
             {
-              memcpy(buff2, all.interactions[i].data(), inter_len);
+              std::string temp(all.interactions[i].begin(), all.interactions[i].end());
+              memcpy(buff2, temp.c_str(), inter_len);
 
               msg << "interaction: ";
-              msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
+              msg.write(temp.c_str(), inter_len);
             }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
