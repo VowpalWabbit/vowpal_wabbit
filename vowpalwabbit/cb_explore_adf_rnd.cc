@@ -241,7 +241,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   restore_labels<is_learn>(examples);
   base_learn_or_predict<is_learn>(base, examples, 0);
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  auto& preds = examples[0]->pred.a_s;
   float maxbonus = std::max(1e-3f, *std::max_element(bonuses.begin(), bonuses.end()));
   compute_ci(preds, maxbonus);
   exploration::generate_softmax(
