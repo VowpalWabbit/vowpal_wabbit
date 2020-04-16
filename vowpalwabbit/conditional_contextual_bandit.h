@@ -10,11 +10,11 @@
 
 #include "reductions_fwd.h"
 #include "action_score.h"
+#include "example_predict.h"
 
 namespace CCB
 {
-void calculate_and_insert_interactions(
-    example* shared, std::vector<example*> actions, std::vector<std::vector<namespace_index>>& generated_interactions);
+void calculate_and_insert_interactions(example* shared, std::vector<example*> actions, std::vector<std::vector<namespace_index>>& generated_interactions);
 
 VW::LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
 bool ec_is_example_header(example const& ec);
