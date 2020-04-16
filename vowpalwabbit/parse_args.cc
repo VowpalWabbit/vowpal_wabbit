@@ -82,6 +82,7 @@
 #include "cb_sample.h"
 #include "warm_cb.h"
 #include "shared_feature_merger.h"
+#include "contcb.h"
 // #include "cntk.h"
 
 #include "options.h"
@@ -1248,6 +1249,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(lda_setup);
   all.reduction_stack.push(bfgs_setup);
   all.reduction_stack.push(OjaNewton_setup);
+  all.reduction_stack.push(CONTCB::setup);
   // all.reduction_stack.push(VW_CNTK::setup);
 
   // Score Users

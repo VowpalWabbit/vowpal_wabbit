@@ -1827,4 +1827,50 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.readable.txt
 
+# Test 211: contcb: learn and save constant template model
+{VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -f models/contcb_constant.model
+    train-sets/ref/contcb_constant.stderr
+    train-sets/ref/contcb_constant.stdout
+
+# Test 212: contcb: verify predictions of Test 211 model.
+# Also ends up testing if important cmd-line options (--contcb, --template_model) are saved with the model.
+{VW} -d train-sets/contcb_constant.dat --holdout_off -t --radius 0.1 -i models/contcb_constant.model -p contcb_constant.preds
+    pred-sets/ref/contcb_constant.preds
+
+# Test 213: contcb: verify predictions without the intervention of model saving
+# i.e Test 211, 212 are more for testing if save and load work, while this tests if the model is learning
+# and predicting correctly
+# Obtain data by concatenating the contents of train set with its own copy but the labels removed
+printf -- "$(cat train-sets/contcb_constant.dat)\n$(cut -s -d '|' -f 2 train-sets/contcb_constant.dat | sed 's/^/ |/')" \
+| {VW} --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -p contcb_constant.preds
+    pred-sets/ref/contcb_constant.preds
+
+# Test 214: contcb: verify readable model contents
+{VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 --readable_model contcb_constant_readable_model.txt
+    train-sets/ref/contcb_constant_readable_model.txt
+
+# Test 215: contcb: learn and save linear template model
+# Note: Changing hyperparameters (-l, --l1 etc.) will require preparing the dataset again. Simply giving any dataset to
+# learn from will not work as this algorithm is meant for library mode style operation.
+{VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -f models/contcb_linear.model
+    train-sets/ref/contcb_linear.stderr
+    train-sets/ref/contcb_linear.stdout
+
+# Test 216: contcb: verify predictions of Test 215 model.
+# Also ends up testing if important cmd-line options (--contcb, --template_model) are saved with the model.
+{VW} -d train-sets/contcb_linear.dat --holdout_off -t --radius 1 -i models/contcb_linear.model -p contcb_linear.preds
+    pred-sets/ref/contcb_linear.preds
+
+# Test 217: contcb: verify predictions without the intervention of model saving
+# i.e Test 215, 216 are more for testing if save and load work, while this tests if the model is learning
+# and predicting correctly
+# Obtain data by concatenating the contents of train set with its own copy but the labels removed
+printf -- "$(cat train-sets/contcb_linear.dat)\n$(cut -s -d '|' -f 2 train-sets/contcb_linear.dat | sed 's/^/ |/')" \
+| {VW} --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -p contcb_linear.preds
+    pred-sets/ref/contcb_linear.preds
+
+# Test 218: contcb: verify readable model contents
+{VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization --readable_model contcb_linear_readable_model.txt
+    train-sets/ref/contcb_linear_readable_model.txt
+
 # Do not delete this line or the empty line above it

@@ -56,6 +56,8 @@ set(vw_all_headers
   confidence.h
   config.h.in
   constant.h
+  contcb_label.h
+  contcb.h
   correctedMath.h
   cost_sensitive.h
   crossplat_compat.h
@@ -189,6 +191,8 @@ set(vw_all_sources
   comp_io.cc
   conditional_contextual_bandit.cc
   confidence.cc
+  contcb_label.cc
+  contcb.cc
   cost_sensitive.cc
   cs_active.cc
   csoaa.cc

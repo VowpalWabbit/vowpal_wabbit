@@ -20,6 +20,7 @@
 #include "ccb_label.h"
 #include "slates_label.h"
 #include "decision_scores.h"
+#include "contcb_label.h"
 #include <vector>
 
 typedef union
@@ -33,6 +34,7 @@ typedef union
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
+  CONTCB::label contcb;
 } polylabel;
 
 inline void delete_scalars(void* v)

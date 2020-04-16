@@ -17,6 +17,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 struct gd;
 
 float finalize_prediction(shared_data* sd, vw_logger& logger, float ret);
+void print_features(vw& all, example& ec);
 void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, double& total_weight,

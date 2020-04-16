@@ -328,8 +328,9 @@ enum class label_type_t
   cs,       // cost-sensitive
   multi,
   mc,
-  ccb,  // conditional contextual-bandit
-  slates
+  ccb,      // conditional contextual-bandit
+  slates,
+  contcb
 };
 
 struct rand_state

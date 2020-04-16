@@ -140,6 +140,8 @@
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
+    <ClInclude Include="contcb_label.h" />
+    <ClInclude Include="contcb.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="cost_sensitive.h" />
     <ClInclude Include="crossplat_compat.h" />
@@ -263,6 +265,8 @@
     <ClCompile Include="comp_io.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
+    <ClCompile Include="contcb_label.cc" />
+    <ClCompile Include="contcb.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />

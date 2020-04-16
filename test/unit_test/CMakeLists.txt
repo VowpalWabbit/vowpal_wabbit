@@ -2,6 +2,7 @@ add_executable(vw-unit-test.out
   cb_explore_adf_test.cc
   ccb_parser_test.cc
   ccb_test.cc
+  contcb_parser_test.cc
   dsjson_parser_test.cc
   example_header_test.cc
   explore_test.cc
