@@ -93,12 +93,12 @@ void cb_explore_adf_rnd::finish_bonuses()
   }
 }
 
-void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, float maxbonus)
+void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, float max_bonus)
 {
   constexpr float eulergamma = 0.57721566490153286;
   for (auto& p : preds)
   {
-    p.score -= eulergamma * (bonuses[p.action] - maxbonus);
+    p.score -= eulergamma * (bonuses[p.action] - max_bonus);
   }
 }
 
@@ -143,7 +143,7 @@ class LazyGaussianWeight
     return sigma * merand48_boxmuller(index);
   }
 
-  uint32_t get_fc() const { return std::max((uint32_t)1, count); }
+  uint32_t get_fc() const { return std::max(static_cast<uint32_t>(1), count); }
 };
 }  // namespace
 
@@ -234,10 +234,10 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   base_learn_or_predict<is_learn>(base, examples, 0);
 
   auto& preds = examples[0]->pred.a_s;
-  float maxbonus = std::max(1e-3f, *std::max_element(bonuses.begin(), bonuses.end()));
-  compute_ci(preds, maxbonus);
+  float max_bonus = std::max(1e-3f, *std::max_element(bonuses.begin(), bonuses.end()));
+  compute_ci(preds, max_bonus);
   exploration::generate_softmax(
-      -1.0 / maxbonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+      -1.0 / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
