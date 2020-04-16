@@ -15,6 +15,16 @@
 #include <algorithm>
 #include <cmath>
 
+// Random Network Distillation style exploration.  Basically predicts
+// something whose true expectation is zero and uses the MSE(prediction
+// error) as a confidence interval.
+//
+// Predicting a synthetic Gaussian target is equivalent to a randomized range
+// finder on the pseudoinverse and the prediction error concentrates around
+// the Fisher information matrix quadratic form of linucb.  So essentially
+// this is a randomized algorithm for approximating the linucb bonus.
+// Hopefully it works well when the expected reward is realizable.  YMMV.
+
 namespace VW
 {
 namespace cb_explore_adf
