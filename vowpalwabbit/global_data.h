@@ -522,6 +522,7 @@ struct vw
   void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
   loss_function* loss;
 
+  VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   bool stdin_off;
@@ -550,6 +551,7 @@ struct vw
   label_type_t label_type;
 
   vw();
+  ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
   vw(const vw&) = delete;

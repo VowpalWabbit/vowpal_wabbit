@@ -8,10 +8,10 @@
 
 #include "label_parser.h"
 #include "action_score.h"
-
+namespace VW
+{
 namespace slates
 {
-
 enum example_type : uint8_t
 {
   unset = 0,
@@ -35,7 +35,7 @@ struct label
   float cost;
 
   // For action examples
-  size_t slot_id;
+  uint32_t slot_id;
 
   // For slot examples
   // Only valid if labeled
@@ -44,3 +44,4 @@ struct label
 
 extern label_parser slates_label_parser;
 }  // namespace slates
+}  // namespace VW
