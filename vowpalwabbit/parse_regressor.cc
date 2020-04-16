@@ -263,7 +263,7 @@ void save_load_header(
           if (!read)
           {
             memcpy(pair, all.pairs[i].data(), sizeof(all.pairs[i])*2);
-            // 
+            // Use write because all.pairs[i] is vector of uint8_ts
             msg.write(reinterpret_cast<char*>(all.pairs[i].data()), sizeof(all.pairs[i]));
             msg << " ";
           }
@@ -293,9 +293,10 @@ void save_load_header(
 
           if (!read)
           {
+            // Use write because all.triples[i] is vector of uint8_ts
             msg.write(reinterpret_cast<char*>(all.triples[i].data()), sizeof(all.triples[i]));
             msg << " ";
-            memcpy(triple, all.triples[i].data(), 3);
+            memcpy(triple, all.triples[i].data(), sizeof(all.triples[i])*3);
           }
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
           if (read)
@@ -331,11 +332,11 @@ void save_load_header(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
             {
-              // std::string temp(all.interactions[i].begin(), all.interactions[i].end());
               memcpy(buff2, all.interactions[i].data(), inter_len);
 
               msg << "interaction: ";
-              msg.write(reinterpret_cast<char*>(all.interactions.data()), inter_len);
+              // Use write because all.interactions[i] is vector of uint8_ts
+              msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
             }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
