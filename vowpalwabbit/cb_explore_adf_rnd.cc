@@ -274,7 +274,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("invlambda", invlambda)
                .keep()
                .allow_override()
-               .default_value(0.125f)
+               .default_value(0.05f)
                .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
   options.add_and_parse(new_options);
 
