@@ -95,7 +95,7 @@ void cb_explore_adf_rnd::finish_bonuses()
 
 void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, float maxbonus)
 {
-  const float eulergamma = 0.57721566490153286;
+  constexpr float eulergamma = 0.57721566490153286;
   for (auto& p : preds)
   {
     p.score -= eulergamma * (bonuses[p.action] - maxbonus);
