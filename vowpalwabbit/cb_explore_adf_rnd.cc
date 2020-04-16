@@ -32,6 +32,30 @@ struct cb_explore_adf_rnd
   size_t increment;
   vw* all;
 
+  std::vector<float> bonuses;
+  std::vector<float> initials;
+
+  CB::cb_class save_class;
+
+  template <bool is_learn>
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+
+  float get_initial_prediction(example*);
+  void get_initial_predictions(multi_ex&, uint32_t);
+  void zero_bonuses(multi_ex&);
+  void accumulate_bonuses(multi_ex&);
+  void finish_bonuses();
+  void compute_ci(v_array<ACTION_SCORE::action_score>&, float);
+
+  template <bool>
+  void save_labels(multi_ex&);
+  template <bool>
+  void make_fake_rnd_labels(multi_ex&);
+  template <bool>
+  void restore_labels(multi_ex&);
+  template <bool>
+  void base_learn_or_predict(VW::LEARNER::multi_learner&, multi_ex&, uint32_t);
+
  public:
   cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, size_t _numrnd, size_t _increment, vw* _all)
       : epsilon(_epsilon)
@@ -47,45 +71,13 @@ struct cb_explore_adf_rnd
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-
- private:
-  template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
-
-  std::vector<float> bonuses;
-  std::vector<float> initials;
-  float get_initial_prediction(example*);
-  void get_initial_predictions(multi_ex&, uint32_t);
-  void zero_bonuses(multi_ex&);
-  void accumulate_bonuses(multi_ex&);
-  void finish_bonuses();
-  void compute_ci(v_array<ACTION_SCORE::action_score>&, float);
-
-  CB::cb_class save_class;
-  template <bool>
-  void save_labels(multi_ex&);
-  template <bool>
-  void make_fake_rnd_labels(multi_ex&);
-  template <bool>
-  void restore_labels(multi_ex&);
-  template <bool>
-  void base_learn_or_predict(VW::LEARNER::multi_learner&, multi_ex&, uint32_t);
 };
 
-void cb_explore_adf_rnd::zero_bonuses(multi_ex& examples)
-{
-  bonuses.clear();
-  bonuses.reserve(examples.size());
-  for (auto* ec : examples)
-  {
-    (void)ec;
-    bonuses.push_back(0.f);
-  }
-}
+void cb_explore_adf_rnd::zero_bonuses(multi_ex& examples) { bonuses.assign(examples.size(), 0.f); }
 
 void cb_explore_adf_rnd::accumulate_bonuses(multi_ex& examples)
 {
-const auto& preds = examples[0]->pred.a_s;
+  const auto& preds = examples[0]->pred.a_s;
   for (const auto& p : preds)
   {
     float score = p.score - initials[p.action];
