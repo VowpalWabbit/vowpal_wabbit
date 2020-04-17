@@ -3,7 +3,7 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -116,6 +116,7 @@ set(vw_all_headers
   parse_example.h
   parse_primitives.h
   parse_regressor.h
+  parse_slates_example_json.h
   parser.h
   print.h
   queue.h
@@ -259,7 +260,7 @@ set(vw_all_sources
   warm_cb.cc
 )
 
-add_library(vw ${vw_all_sources} ${vw_all_headers})
+add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
