@@ -120,7 +120,7 @@ uint64_t hash_file_contents(VW::io::io_adapter* f)
     for (ssize_t i = 0; i < n; i++)
     {
       v *= 341789041;
-      v += buf[i];
+      v += static_cast<uint64_t>(buf[i]);
     }
   }
   return v;

@@ -37,36 +37,36 @@ struct io_adapter
 
  private:
   bool _is_resettable;
-    };
+};
 
-    enum class file_mode
-    {
-      read,
-      write
-    };
+enum class file_mode
+{
+  read,
+  write
+};
 
-    struct vector_adapter : public io_adapter
-    {
-      vector_adapter(const char* data, size_t len);
-      vector_adapter();
-      ~vector_adapter() = default;
-      ssize_t read(char* buffer, size_t num_bytes) override;
-      ssize_t write(const char* buffer, size_t num_bytes) override;
-      void reset() override;
+struct vector_adapter : public io_adapter
+{
+  vector_adapter(const char* data, size_t len);
+  vector_adapter();
+  ~vector_adapter() = default;
+  ssize_t read(char* buffer, size_t num_bytes) override;
+  ssize_t write(const char* buffer, size_t num_bytes) override;
+  void reset() override;
 
-      const std::vector<char>& data() const;
+  const std::vector<char>& data() const;
 
-     private:
-      std::vector<char> _buffer;
-      std::vector<char>::iterator _iterator;
-    };
+ private:
+  std::vector<char> _buffer;
+  std::vector<char>::iterator _iterator;
+};
 
-    std::unique_ptr<io_adapter> open_file(const std::string& file_path, file_mode mode);
-    std::unique_ptr<io_adapter> open_compressed_file(const std::string& file_path, file_mode mode);
-    std::unique_ptr<io_adapter> open_compressed_stdio();
-    std::unique_ptr<io_adapter> open_stdio();
-    std::unique_ptr<io_adapter> take_ownership_of_socket(int fd);
-    std::unique_ptr<io_adapter> create_vector_buffer();
-    std::unique_ptr<io_adapter> create_vector_buffer(const char* data, size_t len);
-  }
-}
+std::unique_ptr<io_adapter> open_file(const std::string& file_path, file_mode mode);
+std::unique_ptr<io_adapter> open_compressed_file(const std::string& file_path, file_mode mode);
+std::unique_ptr<io_adapter> open_compressed_stdio();
+std::unique_ptr<io_adapter> open_stdio();
+std::unique_ptr<io_adapter> take_ownership_of_socket(int fd);
+std::unique_ptr<io_adapter> create_vector_buffer();
+std::unique_ptr<io_adapter> create_vector_buffer(const char* data, size_t len);
+}  // namespace io
+}  // namespace VW

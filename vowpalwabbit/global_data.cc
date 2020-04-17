@@ -64,7 +64,7 @@ void get_prediction(VW::io::io_adapter* f, float& res, float& weight)
 
 void send_prediction(VW::io::io_adapter* f, global_prediction p)
 {
-  if (f->write(reinterpret_cast<const char*>(&p), sizeof(p)) < (int)sizeof(p))
+  if (f->write(reinterpret_cast<const char*>(&p), sizeof(p)) < static_cast<int>(sizeof(p)))
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
@@ -104,7 +104,7 @@ void print_result(VW::io::io_adapter* f, float res, float unused, v_array<char> 
 
 void print_result_by_ref(VW::io::io_adapter* f, float res, float, const v_array<char>& tag)
 {
-  if (f)
+  if (f != nullptr)
   {
     std::stringstream ss;
     auto saved_precision = ss.precision();
@@ -124,7 +124,7 @@ void print_result_by_ref(VW::io::io_adapter* f, float res, float, const v_array<
 
 void print_raw_text(VW::io::io_adapter* f, std::string s, v_array<char> tag)
 {
-  if (!f)
+  if (f == nullptr)
     return;
 
   std::stringstream ss;
@@ -460,6 +460,10 @@ vw::~vw()
   for (auto* sink : final_prediction_sink)
   {
     delete sink;
+  }
+  if(raw_prediction != 0)
+  {
+    delete raw_prediction;
   }
   final_prediction_sink.delete_v();
 

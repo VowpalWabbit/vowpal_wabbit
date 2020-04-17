@@ -85,7 +85,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-void set_compressed(parser* par) {}
+void set_compressed(parser* /*par*/) {}
 
 uint32_t cache_numbits(io_buf* buf, VW::io::io_adapter* filepointer)
 {
@@ -126,30 +126,28 @@ void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.p->input;
   input->current = 0;
+
+  // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.p->write_cache)
   {
     all.p->output->flush();
+    // Turn off write_cache as we are now reading it instead of writing!
     all.p->write_cache = false;
     all.p->output->close_file();
 
-    // This deletes the file.
+    // This deletes the file from disk.
     remove(all.p->output->finalname.begin());
 
+    // Rename the cache file to the final name.
     if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
       THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
                                                                           << all.p->output->finalname);
-    while (input->num_files() > 0)
-    {
-      auto fd = input->files.pop();
-      const auto& fps = all.final_prediction_sink;
-
-      // If the current popped file is not in the list of final predictions sinks, close it.
-      if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
-        delete fd;
-    }
+    input->close_files();
+    // Now open the written cache as the new input file.
     input->add_file(VW::io::open_file(all.p->output->finalname.cbegin(), VW::io::file_mode::read).release());
     all.p->reader = read_cached_features;
   }
+
   if (all.p->resettable == true)
   {
     if (all.daemon)
@@ -160,10 +158,13 @@ void reset_source(vw& all, size_t numbits)
         all.p->output_done.wait(lock, [&] { return all.p->finished_examples == all.p->end_parsed_examples && all.p->ready_parsed_examples.size() == 0; });
       }
 
-      // close socket, erase final prediction sink and socket
-      delete all.p->input->files[0];
+      // Close all inputs and final_prediction_sink files.
+      for (auto* adapter : all.final_prediction_sink)
+      {
+        delete adapter;
+      }
       all.final_prediction_sink.clear();
-      all.p->input->files.clear();
+      all.p->input->close_files();
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
@@ -199,10 +200,10 @@ IGNORE_DEPRECATED_USAGE_END
     }
     else
     {
-      for (size_t i = 0; i < input->files.size(); i++)
+      for (auto* file : input->files)
       {
-        input->reset_file(input->files[i]);
-        if (cache_numbits(input, input->files[i]) < numbits)
+        input->reset_file(file);
+        if (cache_numbits(input, file) < numbits)
           THROW("argh, a bug in caching of some sort!");
       }
     }
