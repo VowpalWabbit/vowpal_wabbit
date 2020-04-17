@@ -263,7 +263,8 @@ void save_load_header(
           if (!read)
           {
             memcpy(pair, all.pairs[i].data(), sizeof(all.pairs[i])*2);
-            // Use write because all.pairs[i] is vector of uint8_ts
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
             msg.write(reinterpret_cast<char*>(all.pairs[i].data()), sizeof(all.pairs[i]));
             msg << " ";
           }
@@ -293,7 +294,8 @@ void save_load_header(
 
           if (!read)
           {
-            // Use write because all.triples[i] is vector of uint8_ts
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
             msg.write(reinterpret_cast<char*>(all.triples[i].data()), sizeof(all.triples[i]));
             msg << " ";
             memcpy(triple, all.triples[i].data(), sizeof(all.triples[i])*3);
@@ -335,7 +337,8 @@ void save_load_header(
               memcpy(buff2, all.interactions[i].data(), inter_len);
 
               msg << "interaction: ";
-              // Use write because all.interactions[i] is vector of uint8_ts
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
               msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
             }
 
