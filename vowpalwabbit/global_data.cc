@@ -440,9 +440,6 @@ vw::~vw()
   if (p != nullptr)
   {
     free_parser(*this);
-    finalize_source(p);
-    p->parse_name.clear();
-    p->parse_name.delete_v();
     delete p;
   }
 
@@ -461,11 +458,12 @@ vw::~vw()
   {
     delete sink;
   }
-  if(raw_prediction != 0)
+  final_prediction_sink.delete_v();
+
+  if(raw_prediction != nullptr)
   {
     delete raw_prediction;
   }
-  final_prediction_sink.delete_v();
 
   delete loss;
   delete all_reduce;

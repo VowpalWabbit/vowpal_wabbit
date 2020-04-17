@@ -178,8 +178,8 @@ void reset_source(vw& all, size_t numbits)
 
       // note: breaking cluster parallel online learning by dropping support for id
 
-      all.final_prediction_sink.push_back(VW::io::take_ownership_of_socket(f).release());
-      all.p->input->files.push_back(VW::io::take_ownership_of_socket(f).release());
+      all.final_prediction_sink.push_back(VW::io::wrap_socket_descriptor(f).release());
+      all.p->input->files.push_back(VW::io::wrap_socket_descriptor(f).release());
 
       if (isbinary(*(all.p->input)))
       {
@@ -488,15 +488,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int one = 1;
     setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
-    auto* f = VW::io::take_ownership_of_socket(f_a).release();
 IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
 IGNORE_DEPRECATED_USAGE_END
     all.print_by_ref = print_result_by_ref;
 
-    all.final_prediction_sink.push_back(f);
+    all.final_prediction_sink.push_back(VW::io::wrap_socket_descriptor(f_a).release());
 
-    all.p->input->files.push_back(f);
+    all.p->input->files.push_back(VW::io::wrap_socket_descriptor(f_a).release());
     if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
@@ -1041,18 +1040,6 @@ void cleanup_example(void(*delete_label)(void*), example& ec, void(*delete_predi
 
 void free_parser(vw& all)
 {
-  all.p->words.delete_v();
-
-  if (!all.ngram_strings.empty())
-    all.p->gram_mask.delete_v();
-
-  io_buf* output = all.p->output;
-  if (output != nullptr)
-  {
-    output->finalname.delete_v();
-    output->currentname.delete_v();
-  }
-
   while (!all.p->example_pool.empty())
   {
     example* temp = all.p->example_pool.get_object();
@@ -1064,7 +1051,6 @@ void free_parser(vw& all)
     example* temp = all.p->ready_parsed_examples.pop();
     cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
   }
-  all.p->counts.delete_v();
 }
 
 namespace VW

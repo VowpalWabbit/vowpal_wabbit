@@ -117,7 +117,7 @@ namespace VW {
       return std::unique_ptr<io_adapter>(new stdio_adapter);
     }
 
-    std::unique_ptr<io_adapter> take_ownership_of_socket(int fd)
+    std::unique_ptr<io_adapter> wrap_socket_descriptor(int fd)
     {
       return std::unique_ptr<io_adapter>(new socket_adapter(fd));
     }

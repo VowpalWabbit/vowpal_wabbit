@@ -65,7 +65,7 @@ std::unique_ptr<io_adapter> open_file(const std::string& file_path, file_mode mo
 std::unique_ptr<io_adapter> open_compressed_file(const std::string& file_path, file_mode mode);
 std::unique_ptr<io_adapter> open_compressed_stdio();
 std::unique_ptr<io_adapter> open_stdio();
-std::unique_ptr<io_adapter> take_ownership_of_socket(int fd);
+std::unique_ptr<io_adapter> wrap_socket_descriptor(int fd);
 std::unique_ptr<io_adapter> create_vector_buffer();
 std::unique_ptr<io_adapter> create_vector_buffer(const char* data, size_t len);
 }  // namespace io
