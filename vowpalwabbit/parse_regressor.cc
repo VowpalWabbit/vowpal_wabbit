@@ -538,7 +538,7 @@ void dump_regressor(vw& all, std::string reg_name, bool as_text)
     return;
   std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
-  io_temp.add_file(VW::io::open_file(start_name, file_mode::write).release());
+  io_temp.add_file(VW::io::open_file(start_name, VW::io::file_mode::write).release());
 
   dump_regressor(all, io_temp, as_text);
 
@@ -582,7 +582,7 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
 {
   if (all_intial.size() > 0)
   {
-    io_temp.add_file(VW::io::open_file(all_intial[0], file_mode::read).release());
+    io_temp.add_file(VW::io::open_file(all_intial[0], VW::io::file_mode::read).release());
 
     if (!all.logger.quiet)
     {
@@ -612,7 +612,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
 
     // all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
-    io_temp_mask.add_file(VW::io::open_file(feature_mask, file_mode::read).release());
+    io_temp_mask.add_file(VW::io::open_file(feature_mask, VW::io::file_mode::read).release());
 
     save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
     all.l->save_load(io_temp_mask, true, false);
@@ -623,7 +623,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
     {
       // Load original header again.
       io_buf io_temp;
-      io_temp.add_file(VW::io::open_file(initial_regressors[0], file_mode::read).release());
+      io_temp.add_file(VW::io::open_file(initial_regressors[0], VW::io::file_mode::read).release());
 
       save_load_header(all, io_temp, true, false, file_options, *all.options);
       io_temp.close_file();

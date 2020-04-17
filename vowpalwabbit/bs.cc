@@ -131,9 +131,9 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
-void print_result(io_adapter* f, float res, const v_array<char>& tag, float lb, float ub)
+void print_result(VW::io::io_adapter* f, float res, const v_array<char>& tag, float lb, float ub)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
     ss << std::fixed << res;
@@ -167,7 +167,7 @@ void output_example(vw& all, bs& d, example& ec)
     }
   }
 
-  for (int sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
+  for (auto* sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
 
   print_update(all, ec);
 }
@@ -176,7 +176,7 @@ template <bool is_learn>
 void predict_or_learn(bs& d, single_learner& base, example& ec)
 {
   vw& all = *d.all;
-  bool shouldOutput = all.raw_prediction > 0;
+  bool shouldOutput = all.raw_prediction != nullptr;
 
   float weight_temp = ec.weight;
 

@@ -160,7 +160,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 
   for (auto sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -184,7 +184,7 @@ void cb_explore_adf_base<ExploreType>::output_example_seq(vw& all, multi_ex& ec_
   if (ec_seq.size() > 0)
   {
     output_example(all, ec_seq);
-    if (all.raw_prediction > 0)
+    if (all.raw_prediction != nullptr)
       all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
   }
 }

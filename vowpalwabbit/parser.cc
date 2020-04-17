@@ -87,7 +87,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 void set_compressed(parser* par) {}
 
-uint32_t cache_numbits(io_buf* buf, io_adapter* filepointer)
+uint32_t cache_numbits(io_buf* buf, VW::io::io_adapter* filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
@@ -147,7 +147,7 @@ void reset_source(vw& all, size_t numbits)
       if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
         delete fd;
     }
-    input->add_file(VW::io::open_file(all.p->output->finalname.cbegin(), file_mode::read).release());
+    input->add_file(VW::io::open_file(all.p->output->finalname.cbegin(), VW::io::file_mode::read).release());
     all.p->reader = read_cached_features;
   }
   if (all.p->resettable == true)
@@ -223,10 +223,10 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   std::string temp = newname + std::string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
-  io_adapter* f;
+  VW::io::io_adapter* f;
   try
   {
-    f = VW::io::open_file(temp, file_mode::write).release();
+    f = VW::io::open_file(temp, VW::io::file_mode::write).release();
   }
   catch (const std::exception&)
   {
@@ -254,11 +254,11 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
   for (auto& file : cache_files)
   {
-    io_adapter* f = nullptr;
+    VW::io::io_adapter* f = nullptr;
     if (!kill_cache)
       try
       {
-        f = VW::io::open_file(file, file_mode::read).release();
+        f = VW::io::open_file(file, VW::io::file_mode::read).release();
         all.p->input->add_file(f);
       }
       catch (const std::exception&)
@@ -477,7 +477,6 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    all.p->max_fd = 0;
     if (!all.logger.quiet)
       all.trace_message << "calling accept" << endl;
     auto f_a = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
@@ -488,8 +487,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int one = 1;
     setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
-    io_adapter* f = VW::io::take_ownership_of_socket(f_a).release();
-    all.p->label_sock = f;
+    auto* f = VW::io::take_ownership_of_socket(f_a).release();
 IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
 IGNORE_DEPRECATED_USAGE_END
@@ -498,11 +496,9 @@ IGNORE_DEPRECATED_USAGE_END
     all.final_prediction_sink.push_back(f);
 
     all.p->input->files.push_back(f);
-    all.p->max_fd = std::max(f, all.p->max_fd);
     if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
-    all.p->max_fd++;
     if (all.active)
       all.p->reader = read_features_string;
     else
@@ -540,11 +536,11 @@ IGNORE_DEPRECATED_USAGE_END
 
       try
       {
-        io_adapter* adapter = nullptr;
+        VW::io::io_adapter* adapter = nullptr;
         if (temp != "")
         {
-          adapter = should_use_compressed ? VW::io::open_compressed_file(temp, file_mode::read).release()
-                                          : VW::io::open_file(temp, file_mode::read).release();
+          adapter = should_use_compressed ? VW::io::open_compressed_file(temp, VW::io::file_mode::read).release()
+                                          : VW::io::open_file(temp, VW::io::file_mode::read).release();
         }
         else if (!all.stdin_off)
         {

@@ -61,7 +61,7 @@ class io_buf
  public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
                         // the buffer.
-  v_array<io_adapter*> files;
+  v_array<VW::io::io_adapter*> files;
   size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
   char* head;
@@ -76,12 +76,17 @@ class io_buf
   io_buf(io_buf&& other) = delete;
   io_buf& operator=(io_buf&& other) = delete;
 
-  virtual ~io_buf()
+  ~io_buf()
   {
-    for(auto adapter : files)
+    for (auto* adapter : files)
     {
       delete adapter;
     }
+
+    files.delete_v();
+    space.delete_v();
+    currentname.delete_v();
+    finalname.delete_v();
   }
 
   void verify_hash(bool verify)
@@ -100,11 +105,9 @@ class io_buf
     return _hash;
   }
 
-  void add_file(io_adapter* file) {
-    files.push_back(file);
-  }
+  void add_file(VW::io::io_adapter* file) { files.push_back(file); }
 
-  void reset_file(io_adapter* f)
+  void reset_file(VW::io::io_adapter* f)
   {
     f->reset();
     space.end() = space.begin();
@@ -113,6 +116,10 @@ class io_buf
 
   io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
   {
+    space = v_init<char>();
+    files = v_init<VW::io::io_adapter*>();
+    currentname = v_init<char>();
+    finalname = v_init<char>();
     space.resize(INITIAL_BUFF_SIZE);
     head = space.begin();
   }
@@ -121,9 +128,9 @@ class io_buf
 
   size_t num_files() { return files.size(); }
 
-  ssize_t read_file(io_adapter* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
+  ssize_t read_file(VW::io::io_adapter* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
 
-  ssize_t fill(io_adapter* f)
+  ssize_t fill(VW::io::io_adapter* f)
   {  // if the loaded values have reached the allocated space
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
@@ -142,8 +149,14 @@ class io_buf
       return 0;
   }
 
-  ssize_t write_file(io_adapter* f, void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
-  ssize_t write_file(io_adapter* f, const void* buf, size_t nbytes) { return f->write(static_cast<const char*>(buf), nbytes); }
+  ssize_t write_file(VW::io::io_adapter* f, void* buf, size_t nbytes)
+  {
+    return f->write(static_cast<const char*>(buf), nbytes);
+  }
+  ssize_t write_file(VW::io::io_adapter* f, const void* buf, size_t nbytes)
+  {
+    return f->write(static_cast<const char*>(buf), nbytes);
+  }
 
   void flush()
   {

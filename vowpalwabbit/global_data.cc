@@ -30,7 +30,7 @@ struct global_prediction
   float weight;
 };
 
-size_t really_read(io_adapter* sock, void* in, size_t count)
+size_t really_read(VW::io::io_adapter* sock, void* in, size_t count)
 {
   char* buf = (char*)in;
   size_t done = 0;
@@ -54,7 +54,7 @@ size_t really_read(io_adapter* sock, void* in, size_t count)
   return done;
 }
 
-void get_prediction(io_adapter* f, float& res, float& weight)
+void get_prediction(VW::io::io_adapter* f, float& res, float& weight)
 {
   global_prediction p;
   really_read(f, &p, sizeof(p));
@@ -62,20 +62,20 @@ void get_prediction(io_adapter* f, float& res, float& weight)
   weight = p.weight;
 }
 
-void send_prediction(io_adapter* f, global_prediction p)
+void send_prediction(VW::io::io_adapter* f, global_prediction p)
 {
   if (f->write(reinterpret_cast<const char*>(&p), sizeof(p)) < (int)sizeof(p))
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result(io_adapter* f, float res, float weight, v_array<char> array)
+void binary_print_result(VW::io::io_adapter* f, float res, float weight, v_array<char> array)
 {
   binary_print_result_by_ref(f, res, weight, array);
 }
 
-void binary_print_result_by_ref(io_adapter* f, float res, float weight, const v_array<char>&)
+void binary_print_result_by_ref(VW::io::io_adapter* f, float res, float weight, const v_array<char>&)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     global_prediction ps = {res, weight};
     send_prediction(f, ps);
@@ -97,12 +97,12 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return print_tag_by_ref(ss, tag);
 }
 
-void print_result(io_adapter* f, float res, float unused, v_array<char> tag)
+void print_result(VW::io::io_adapter* f, float res, float unused, v_array<char> tag)
 {
   print_result_by_ref(f, res, unused, tag);
 }
 
-void print_result_by_ref(io_adapter* f, float res, float, const v_array<char>& tag)
+void print_result_by_ref(VW::io::io_adapter* f, float res, float, const v_array<char>& tag)
 {
   if (f)
   {
@@ -122,7 +122,7 @@ void print_result_by_ref(io_adapter* f, float res, float, const v_array<char>& t
   }
 }
 
-void print_raw_text(io_adapter* f, std::string s, v_array<char> tag)
+void print_raw_text(VW::io::io_adapter* f, std::string s, v_array<char> tag)
 {
   if (!f)
     return;
@@ -139,10 +139,9 @@ void print_raw_text(io_adapter* f, std::string s, v_array<char> tag)
   }
 }
 
-
-void print_raw_text_by_ref(io_adapter* f, const std::string& s, const v_array<char>& tag)
+void print_raw_text_by_ref(VW::io::io_adapter* f, const std::string& s, const v_array<char>& tag)
 {
-  if (f < 0)
+  if (f == nullptr)
     return;
 
   std::stringstream ss;
@@ -350,8 +349,8 @@ vw::vw()
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
-  raw_prediction = -1;
+  final_prediction_sink = v_init<VW::io::io_adapter*>();
+  raw_prediction = nullptr;
   print = print_result;
   print_text = print_raw_text;
   print_by_ref = print_result_by_ref;
@@ -458,13 +457,9 @@ vw::~vw()
     free(sd);
   }
 
-  for (auto& sink : final_prediction_sink)
+  for (auto* sink : final_prediction_sink)
   {
-    // This is checking if the sink corresponds to stdout. TODO: abstract this.
-    if (sink != 1)
-    {
-      io_buf::close_file_or_socket(sink);
-    }
+    delete sink;
   }
   final_prediction_sink.delete_v();
 

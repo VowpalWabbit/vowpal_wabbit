@@ -178,8 +178,9 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
-    if (sink >= 0)
+  for (auto* sink : all.final_prediction_sink)
+  {
+    if (sink != nullptr)
     {
       std::stringstream ss;
 
@@ -192,6 +193,7 @@ void output_example(vw& all, example& ec)
       ss << ' ';
       all.print_text_by_ref(sink, ss.str(), ec.tag);
     }
+  }
 
   print_update(all, test_label(&ec.l.multilabels), ec);
 }

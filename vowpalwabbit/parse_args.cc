@@ -108,7 +108,7 @@ bool ends_with(std::string const& fullString, std::string const& ending)
   }
 }
 
-uint64_t hash_file_contents(io_adapter* f)
+uint64_t hash_file_contents(VW::io::io_adapter* f)
 {
   uint64_t v = 5289374183516789128;
   char buf[1024];
@@ -174,26 +174,38 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
-  auto f_adapter = is_gzip ? VW::io::open_compressed_file(fname, VW::io::file_mode::read)
-                           : VW::io::open_file(fname, file_mode::read);
-  uint64_t fd_hash = hash_file_contents(f_adapter.get());   if (!all.logger.quiet)
+  std::unique_ptr<VW::io::io_adapter> file_adapter;
+  try
+  {
+    file_adapter = is_gzip ? VW::io::open_compressed_file(fname, VW::io::file_mode::read)
+                           : VW::io::open_file(fname, VW::io::file_mode::read);
+  }
+  catch (...)
+  {
+    THROW("error: cannot read dictionary from file '" << fname << "'"
+                                                      << ", opening failed");
+  }
+
+  uint64_t fd_hash = hash_file_contents(file_adapter.get());
+
   if (!all.logger.quiet)
     all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
                       << std::dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
+  {
     if (all.loaded_dictionaries[id].file_hash == fd_hash)
     {
       all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
       return;
     }
+  }
 
-
-  std::unique_ptr<io_adapter> fd;
+  std::unique_ptr<VW::io::io_adapter> fd;
   try
   {
-    fd = VW::io::open_file(fname, file_mode::read);
+    fd = VW::io::open_file(fname, VW::io::file_mode::read);
   }
   catch(...)
   {
@@ -270,8 +282,6 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  io->close_file();
-  delete io;
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
 
@@ -1112,10 +1122,15 @@ void parse_output_preds(options_i& options, vw& all)
     }
     else
     {
-      auto f = VW::io::open_file(predictions, file_mode::write).release();
-      // if (f < 0)
-      //   all.trace_message << "Error opening the predictions file: " << fstr << endl;
-      all.final_prediction_sink.push_back(f);
+      try
+      {
+        auto f = VW::io::open_file(predictions, VW::io::file_mode::write);
+        all.final_prediction_sink.push_back(f.release());
+      }
+      catch (...)
+      {
+        all.trace_message << "Error opening the predictions file: " << predictions << endl;
+      }
     }
   }
 
@@ -1123,14 +1138,22 @@ void parse_output_preds(options_i& options, vw& all)
   {
     if (!all.logger.quiet)
     {
-      all.final_prediction_sink.push_back(VW::io::open_stdio().release());  // stdout
+      all.trace_message << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
         all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
                           << endl;
-      auto f = VW::io::open_file(predictions, file_mode::write).release();
-      // if (f < 0)
-      //   all.trace_message << "Error opening the predictions file: " << fstr << endl;
-      all.final_prediction_sink.push_back(f);
+    }
+    if (raw_predictions == "stdout")
+    {
+      all.raw_prediction = VW::io::open_stdio().release();
+    }
+    else
+    {
+      auto f = VW::io::open_file(raw_predictions, VW::io::file_mode::write);
+      all.raw_prediction = f.release();
+    }
+  }
+}
 
 void parse_output_model(options_i& options, vw& all)
 {
@@ -1175,10 +1198,17 @@ void load_input_model(vw& all, io_buf& io_temp)
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
-    all.raw_prediction = VW::io::open_stdio().release();  // stdout
+    io_temp.close_file();
 
     parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
-        all.raw_prediction = VW::io::open_file(raw_predictions, file_mode::write).release();
+  }
+  else
+  {  // load mask first
+    parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
+
+    // load rest of regressor
+    all.l->save_load(io_temp, true, false);
+    io_temp.close_file();
   }
 }
 

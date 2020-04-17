@@ -488,7 +488,7 @@ bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
 {
   return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
       might_print_update(all) ||                    // if we have to print and update to stderr
-      (all.raw_prediction > 0) ||                   // we need raw predictions
+      (all.raw_prediction != nullptr) ||            // we need raw predictions
       ((!all.vw_is_main) && (is_test_ex)) ||        // library needs predictions
       // or:
       //   it's not quiet AND
@@ -1294,7 +1294,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
   }
 
   // generate raw predictions if necessary
-  if ((priv.state == INIT_TEST) && (all.raw_prediction > 0))
+  if ((priv.state == INIT_TEST) && (all.raw_prediction != nullptr))
   {
     priv.rawOutputStringStream->str("");
     for (size_t k = 0; k < cs_get_costs_size(priv.cb_learner, ec.l); k++)
@@ -2202,7 +2202,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     reset_search_structure(priv);
     priv.state = INIT_TEST;
     priv.should_produce_string =
-        might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
+        might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction != nullptr);
     priv.pred_string->str("");
     priv.test_action_sequence.clear();
     run_task(sch, ec_seq);
@@ -2212,9 +2212,12 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       all.sd->update(ec_seq[0]->test_only, !is_test_ex, priv.test_loss, 1.f, priv.num_features);
 
     // generate output
-    for (int sink : all.final_prediction_sink) all.print_text_by_ref((int)sink, priv.pred_string->str(), ec_seq[0]->tag);
+    for (auto* sink : all.final_prediction_sink)
+    {
+      all.print_text_by_ref(sink, priv.pred_string->str(), ec_seq[0]->tag);
+    }
 
-    if (all.raw_prediction > 0)
+    if (all.raw_prediction != nullptr)
       all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
   }
 

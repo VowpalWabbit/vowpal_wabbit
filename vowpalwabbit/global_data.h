@@ -33,7 +33,6 @@
 #include "array_parameters.h"
 #include "parse_primitives.h"
 #include "loss_functions.h"
-#include "comp_io.h"
 #include "example.h"
 #include "config.h"
 #include "learner.h"
@@ -425,7 +424,7 @@ struct vw
 
   uint32_t wpp;
 
-  int stdout_fileno;
+  std::unique_ptr<VW::io::io_adapter> stdout_adapter;
 
   std::vector<std::string> initial_regressors;
 
@@ -511,15 +510,15 @@ struct vw
   std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
-  v_array<int> final_prediction_sink;  // set to send global predictions to.
-  int raw_prediction;                  // file descriptors for text output.
+  v_array<VW::io::io_adapter*> final_prediction_sink;  // set to send global predictions to.
+  VW::io::io_adapter* raw_prediction;                  // file descriptors for text output.
 
   VW_DEPRECATED("print has been deprecated, use print_by_ref")
-  void (*print)(int, float, float, v_array<char>);
-  void (*print_by_ref)(int, float, float, const v_array<char>&);
+  void (*print)(VW::io::io_adapter*, float, float, v_array<char>);
+  void (*print_by_ref)(VW::io::io_adapter*, float, float, const v_array<char>&);
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
-  void (*print_text)(int, std::string, v_array<char>);
-  void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
+  void (*print_text)(VW::io::io_adapter*, std::string, v_array<char>);
+  void (*print_text_by_ref)(VW::io::io_adapter*, const std::string&, const v_array<char>&);
   loss_function* loss;
 
   VW_DEPRECATED("This is unused and will be removed")
@@ -564,15 +563,15 @@ struct vw
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")
-void print_result(int f, float res, float weight, v_array<char> tag);
-void print_result_by_ref(int f, float res, float weight, const v_array<char>& tag);
+void print_result(VW::io::io_adapter* f, float res, float weight, v_array<char> tag);
+void print_result_by_ref(VW::io::io_adapter* f, float res, float weight, const v_array<char>& tag);
 
 VW_DEPRECATED("Use binary_print_result_by_ref instead")
-void binary_print_result(int f, float res, float weight, v_array<char> tag);
-void binary_print_result_by_ref(int f, float res, float weight, const v_array<char>& tag);
+void binary_print_result(VW::io::io_adapter* f, float res, float weight, v_array<char> tag);
+void binary_print_result_by_ref(VW::io::io_adapter* f, float res, float weight, const v_array<char>& tag);
 
 void noop_mm(shared_data*, float label);
-void get_prediction(int sock, float& res, float& weight);
+void get_prediction(VW::io::io_adapter* f, float& res, float& weight);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);

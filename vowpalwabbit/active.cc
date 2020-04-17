@@ -89,9 +89,9 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(io_adapter* f, float res, float weight, v_array<char> tag)
+void active_print_result(VW::io::io_adapter* f, float res, float weight, v_array<char> tag)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
     ss << std::fixed << res;
@@ -121,7 +121,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
   all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (auto i : all.final_prediction_sink)
+  for (auto* i : all.final_prediction_sink)
   {
     active_print_result(i, ec.pred.scalar, ai, ec.tag);
   }

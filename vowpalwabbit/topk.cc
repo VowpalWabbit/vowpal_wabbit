@@ -76,7 +76,8 @@ std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> VW::topk::get_
 
 void VW::topk::clear_container() { _pr_queue.clear(); }
 
-void print_result(io_adapter* file_descriptor, std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view)
+void print_result(
+    VW::io::io_adapter* file_descriptor, std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view)
 {
   if (file_descriptor != nullptr)
   {

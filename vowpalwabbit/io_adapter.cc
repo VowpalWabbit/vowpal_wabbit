@@ -5,16 +5,18 @@
 #define ssize_t int64_t
 #include <winsock2.h>
 #include <io.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #else
 #include <sys/socket.h>
 #include <unistd.h>
 #endif
+
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
 
 #include <cstdio>
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -31,6 +33,8 @@ typedef struct gzFile_s* gzFile;
 #ifndef O_LARGEFILE  // for OSX
 #define O_LARGEFILE 0
 #endif
+
+using namespace VW::io;
 
 struct socket_adapter : public io_adapter
 {
@@ -55,6 +59,7 @@ struct file_adapter : public io_adapter
   // investigate whether not using the old flags affects perf. Old claim:
   // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
   file_adapter(const char* filename, file_mode mode);
+  file_adapter(int file_descriptor, file_mode mode);
   ~file_adapter();
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
@@ -88,19 +93,6 @@ struct gzip_stdio_adapter : public io_adapter
  private:
   gzFile _gz_stdin;
   gzFile _gz_stdout;
-};
-
-struct vector_adapter : public io_adapter
-{
-  vector_adapter(const char* data, size_t len);
-  vector_adapter();
-  ~vector_adapter() = default;
-  ssize_t read(char* buffer, size_t num_bytes) override;
-  ssize_t write(const char* buffer, size_t num_bytes) override;
-  void reset() override;
- private:
-  std::vector<char> _buffer;
-  std::vector<char>::iterator _iterator;
 };
 
 namespace VW {
@@ -171,7 +163,7 @@ socket_adapter::~socket_adapter()
 #else
   close(_socket_fd);
 #endif
-};
+}
 
 //
 // stdio_adapter
@@ -186,7 +178,7 @@ ssize_t stdio_adapter::read(char* buffer, size_t num_bytes)
 ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes)
 {
   std::cout.write(buffer, num_bytes);
-  // TODO is there a reliable way to do this.
+  // TODO is there a reliable way to do this?
   return num_bytes;
 }
 
@@ -224,13 +216,18 @@ file_adapter::file_adapter(const char* filename, file_mode mode) :
   }
 }
 
+file_adapter::file_adapter(int file_descriptor, file_mode mode)
+    : io_adapter(true /*is_resettable*/), _file_descriptor(file_descriptor), _mode(mode)
+{
+}
+
 ssize_t file_adapter::read(char* buffer, size_t num_bytes)
 {
   assert(_mode == file_mode::read);
 #ifdef _WIN32
-  return _read(_file_descriptor, buffer, (unsigned int)num_bytes);
+  return ::_read(_file_descriptor, buffer, (unsigned int)num_bytes);
 #else
-  return read(_file_descriptor, buffer, (unsigned int)num_bytes);
+  return ::read(_file_descriptor, buffer, (unsigned int)num_bytes);
 #endif
 }
 
@@ -238,27 +235,27 @@ ssize_t file_adapter::write(const char* buffer, size_t num_bytes)
 {
   assert(_mode == file_mode::write);
 #ifdef _WIN32
-  return _write(_file_descriptor, buffer, (unsigned int)num_bytes);
+  return ::_write(_file_descriptor, buffer, (unsigned int)num_bytes);
 #else
-  return write(_file_descriptor, buffer, (unsigned int)num_bytes);
+  return ::write(_file_descriptor, buffer, (unsigned int)num_bytes);
 #endif
 }
 
 void file_adapter::reset()
 {
 #ifdef _WIN32
-  _lseek(_file_descriptor, 0, SEEK_SET);
+  ::_lseek(_file_descriptor, 0, SEEK_SET);
 #else
-  lseek(_file_descriptor, 0, SEEK_SET);
+  ::lseek(_file_descriptor, 0, SEEK_SET);
 #endif
 }
 
 file_adapter::~file_adapter()
 {
 #ifdef _WIN32
-  _close(_file_descriptor);
+  ::_close(_file_descriptor);
 #else
-  close(_file_descriptor);
+  ::close(_file_descriptor);
 #endif
 }
 
@@ -266,8 +263,8 @@ file_adapter::~file_adapter()
 // gzip_file_adapter
 //
 
-gzip_file_adapter::gzip_file_adapter(const char* filename, file_mode mode) 
-  : io_adapter(true /*is_resettable*/), _mode(mode)
+gzip_file_adapter::gzip_file_adapter(const char* filename, file_mode mode)
+    : io_adapter(true /*is_resettable*/), _mode(mode)
 {
   auto file_mode_arg = _mode == file_mode::read ? "rb" : "wb";
   _gz_file = gzopen(filename, file_mode_arg);
@@ -339,16 +336,11 @@ ssize_t gzip_stdio_adapter::write(const char* buffer, size_t num_bytes)
 // vector_adapter
 //
 
-vector_adapter::vector_adapter(const char* data, size_t len) :
-  io_adapter(true /*is_resettable*/),
-  _buffer{data, data + len},
-  _iterator{_buffer.begin()} 
+vector_adapter::vector_adapter(const char* data, size_t len)
+    : io_adapter(true /*is_resettable*/), _buffer{data, data + len}, _iterator{_buffer.begin()}
 {}
 
-vector_adapter::vector_adapter() : 
-  io_adapter(true /*is_resettable*/),
-  _iterator{_buffer.begin()}
-{}
+vector_adapter::vector_adapter() : io_adapter(true /*is_resettable*/), _iterator{_buffer.begin()} {}
 
 ssize_t vector_adapter::read(char* buffer, size_t num_bytes)
 {
@@ -356,7 +348,7 @@ ssize_t vector_adapter::read(char* buffer, size_t num_bytes)
   if(num_bytes == 0)
     return 0;
 
-  memcpy_s(buffer, num_bytes, &*_iterator, num_bytes);
+  std::memcpy(buffer, &*_iterator, num_bytes);
   _iterator += num_bytes;
 
   return num_bytes;
@@ -370,3 +362,5 @@ ssize_t vector_adapter::write(const char* buffer, size_t num_bytes)
 }
 
 void vector_adapter::reset() { _iterator = _buffer.begin(); }
+
+const std::vector<char>& vector_adapter::data() const { return _buffer; }

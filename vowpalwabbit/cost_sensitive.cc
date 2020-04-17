@@ -266,7 +266,7 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, ec.weight, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
+  for (auto* sink : all.final_prediction_sink)
     if (!all.sd->ldict)
       all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
@@ -275,7 +275,7 @@ void output_example(vw& all, example& ec)
       all.print_text_by_ref(sink, sv_pred.to_string(), ec.tag);
     }
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)

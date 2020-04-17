@@ -336,7 +336,7 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(const v_array<io_adapter*>& final_prediction_sink)
+void global_print_newline(const v_array<VW::io::io_adapter*>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
@@ -380,10 +380,9 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (int sink : all.final_prediction_sink)
-    all.print_by_ref(sink, (float)action, 0, ec.tag);
+  for (auto* sink : all.final_prediction_sink) all.print_by_ref(sink, (float)action, 0, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -412,7 +411,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   for (auto sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -438,7 +437,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
     {
       output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
-      if (all.raw_prediction > 0)
+      if (all.raw_prediction != nullptr)
         all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
     }
   }

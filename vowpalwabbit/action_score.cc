@@ -10,9 +10,9 @@
 
 namespace ACTION_SCORE
 {
-void print_action_score(io_adapter*  f, const v_array<action_score>& a_s, const v_array<char>& tag)
+void print_action_score(VW::io::io_adapter* f, const v_array<action_score>& a_s, const v_array<char>& tag)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
 

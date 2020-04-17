@@ -104,9 +104,7 @@ struct parser
   v_array<size_t> ids;     // unique ids for sources
   v_array<size_t> counts;  // partial examples received from sources
   size_t finished_count;   // the number of finished examples;
-  int label_sock = 0;
   int bound_sock = 0;
-  int max_fd = 0;
 
   v_array<VW::string_view> parse_name;
 

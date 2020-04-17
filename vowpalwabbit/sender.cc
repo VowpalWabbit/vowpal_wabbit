@@ -30,7 +30,7 @@ using namespace VW::config;
 struct sender
 {
   io_buf* buf;
-  io_adapter* socket;
+  VW::io::io_adapter* socket;
   vw* all;  // loss ring_size others
   example** delay_ring;
   size_t sent_index;
