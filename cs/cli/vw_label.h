@@ -421,14 +421,14 @@ public:
 
   virtual void UpdateExample(vw* vw, example* ex)
   {
-    CONTCB::label* ld = (CONTCB::label*)&ex->l;
+    VW::continuous_cb::label* ld = (VW::continuous_cb::label*)&ex->l;
     ld->action = m_action;
     ld->cost = m_cost;
   }
 
   virtual void ReadFromExample(example* ex)
   {
-    CONTCB::label* ld = (CONTCB::label*)&ex->l;
+    VW::continuous_cb::label* ld = (VW::continuous_cb::label*)&ex->l;
     m_action = ld->action;
     m_cost = ld->cost;
   }

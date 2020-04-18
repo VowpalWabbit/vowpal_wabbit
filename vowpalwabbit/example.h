@@ -34,7 +34,7 @@ typedef union
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
-  CONTCB::label contcb;
+  VW::continuous_cb::label contcb;
 } polylabel;
 
 inline void delete_scalars(void* v)

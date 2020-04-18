@@ -2,8 +2,11 @@
 
 #include "reductions.h"
 
-namespace CONTCB
+namespace VW
+{
+namespace continuous_cb
 {
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
-} // namespace CONTCB
+} // namespace continuous_cb
+}

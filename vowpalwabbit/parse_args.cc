@@ -1249,7 +1249,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(lda_setup);
   all.reduction_stack.push(bfgs_setup);
   all.reduction_stack.push(OjaNewton_setup);
-  all.reduction_stack.push(CONTCB::setup);
+  all.reduction_stack.push(VW::continuous_cb::setup);
   // all.reduction_stack.push(VW_CNTK::setup);
 
   // Score Users

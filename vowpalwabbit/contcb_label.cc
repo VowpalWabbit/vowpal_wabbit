@@ -1,7 +1,9 @@
 #include "contcb_label.h"
 #include "vw.h"
 
-namespace CONTCB
+namespace VW
+{
+namespace continuous_cb
 {
 void default_label(void* v)
 {
@@ -72,4 +74,5 @@ bool test_label(void* v)
 label_parser contcb_label = { default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
     nullptr, test_label, sizeof(label) };
 
-}  // namespace CONTCB
+}  // namespace continuous_cb
+}

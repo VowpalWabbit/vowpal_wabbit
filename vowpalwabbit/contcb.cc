@@ -11,7 +11,9 @@ using namespace std;
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace CONTCB
+namespace VW
+{
+namespace continuous_cb
 {
 constexpr uint8_t tmodel_const = 0;
 constexpr uint8_t tmodel_lin = 1;
@@ -330,4 +332,5 @@ base_learner* setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-}  // namespace CONTCB
+}  // namespace continuous_cb
+}

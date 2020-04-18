@@ -76,7 +76,7 @@ ILabel^ VowpalWabbitExample::Label::get()
     label = gcnew SimpleLabel();
   else if (!memcmp(&lp, &COST_SENSITIVE::cs_label, sizeof(lp)))
     label = gcnew SimpleLabel();
-  else if (!memcmp(&lp, &CONTCB::contcb_label, sizeof(lp)))
+  else if (!memcmp(&lp, &VW::continuous_cb::contcb_label, sizeof(lp)))
     label = gcnew ContCBLabel();
   else
     return nullptr;

@@ -2,7 +2,9 @@
 
 #include "label_parser.h"
 
-namespace CONTCB
+namespace VW
+{
+namespace continuous_cb
 {
   struct label
   {
@@ -12,4 +14,5 @@ namespace CONTCB
 
   extern label_parser contcb_label;
 
-} // namespace CONTCB
+} // namespace continuous_cb
+}
