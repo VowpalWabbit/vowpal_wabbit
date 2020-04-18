@@ -21,7 +21,6 @@
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
-#include "contcb.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
