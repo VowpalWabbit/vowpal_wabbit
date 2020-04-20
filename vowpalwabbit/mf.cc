@@ -17,7 +17,7 @@ using namespace VW::config;
 
 struct mf
 {
-  std::vector<std::vector<namespace_index> > pairs;
+  std::vector<std::vector<namespace_index>> pairs;
 
   size_t rank;
 
