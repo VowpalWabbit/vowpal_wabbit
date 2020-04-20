@@ -62,7 +62,10 @@ struct writer
 
 struct socket
 {
-  socket(int fd) : _socket_fd(fd) {}
+  socket(int fd) : _socket_fd(fd)
+  {
+    _closer = std::make_shared<details::socket_closer>(fd);
+  }
   ~socket() = default;
   std::unique_ptr<reader> get_reader();
   std::unique_ptr<writer> get_writer();

@@ -11,7 +11,7 @@ using namespace System::Runtime::InteropServices;
 namespace VW
 {
   clr_stream_adapter::clr_stream_adapter(Stream^ stream) :
-    io_adapter(false), m_stream(stream), m_buffer(nullptr)
+    reader(false), m_stream(stream), m_buffer(nullptr)
   {
     if (stream == nullptr)
     {
@@ -19,19 +19,19 @@ namespace VW
     }
   }
 
-  size_t clr_stream_adapter::read(char* buffer, size_t num_bytes)
+  ssize_t clr_stream_adapter::read(char* buffer, size_t num_bytes)
   {
-    ensure_buffer_size(nbytes);
-    auto readBytes = m_stream->Read(m_buffer, 0, (int)nbytes);
-    Marshal::Copy(m_buffer, 0, IntPtr(buf), (int)nbytes);
-    return readBytes;
+    ensure_buffer_size(num_bytes);
+    auto readBytes = m_stream->Read(m_buffer, 0, (int)num_bytes);
+    Marshal::Copy(m_buffer, 0, IntPtr(buffer), (int)num_bytes);
+    return static_cast<ssize_t>(readBytes);
   }
-  size_t clr_stream_adapter::write(const char* buffer, size_t num_bytes)
+  ssize_t clr_stream_adapter::write(const char* buffer, size_t num_bytes)
   {
-    ensure_buffer_size(nbytes);
-    Marshal::Copy(IntPtr((void*)buf), m_buffer, 0, (int)nbytes);
-    m_stream->Write(m_buffer, 0, (int)nbytes);
-    return nbytes;
+    ensure_buffer_size(num_bytes);
+    Marshal::Copy(IntPtr((void*)buffer), m_buffer, 0, (int)num_bytes);
+    m_stream->Write(m_buffer, 0, (int)num_bytes);
+    return static_cast<ssize_t>(num_bytes);
   }
 
   void clr_stream_adapter::reset()
