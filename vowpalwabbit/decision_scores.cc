@@ -48,7 +48,7 @@ void print_update(vw& all, std::vector<example*>& slots, const VW::decision_scor
 
 namespace VW
 {
-void print_decision_scores(VW::io::io_adapter* f, const VW::decision_scores_t& decision_scores)
+void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores)
 {
   if (f != nullptr)
   {

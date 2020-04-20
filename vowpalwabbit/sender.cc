@@ -30,7 +30,8 @@ using namespace VW::config;
 struct sender
 {
   io_buf* buf;
-  VW::io::io_adapter* socket;
+  std::unique_ptr<VW::io::socket> _socket;
+  std::unique_ptr<VW::io::reader> _socket_reader;
   vw* all;  // loss ring_size others
   example** delay_ring;
   size_t sent_index;
@@ -45,9 +46,10 @@ struct sender
 
 void open_sockets(sender& s, std::string host)
 {
-  s.socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str())).release();
+  s._socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str()));
+  s._socket_reader = s._socket->get_reader();
   s.buf = new io_buf();
-  s.buf->add_file(s.socket);
+  s.buf->add_file(s._socket->get_writer().release());
 }
 
 void send_features(io_buf* b, example& ec, uint32_t mask)
@@ -68,7 +70,7 @@ void receive_result(sender& s)
 {
   float res, weight;
 
-  get_prediction(s.socket, res, weight);
+  get_prediction(s._socket_reader.get(), res, weight);
   example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
   ec.pred.scalar = res;
 

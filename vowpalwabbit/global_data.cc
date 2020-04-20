@@ -30,7 +30,7 @@ struct global_prediction
   float weight;
 };
 
-size_t really_read(VW::io::io_adapter* sock, void* in, size_t count)
+size_t really_read(VW::io::reader* sock, void* in, size_t count)
 {
   char* buf = (char*)in;
   size_t done = 0;
@@ -54,7 +54,7 @@ size_t really_read(VW::io::io_adapter* sock, void* in, size_t count)
   return done;
 }
 
-void get_prediction(VW::io::io_adapter* f, float& res, float& weight)
+void get_prediction(VW::io::reader* f, float& res, float& weight)
 {
   global_prediction p;
   really_read(f, &p, sizeof(p));
@@ -62,18 +62,18 @@ void get_prediction(VW::io::io_adapter* f, float& res, float& weight)
   weight = p.weight;
 }
 
-void send_prediction(VW::io::io_adapter* f, global_prediction p)
+void send_prediction(VW::io::writer* f, global_prediction p)
 {
   if (f->write(reinterpret_cast<const char*>(&p), sizeof(p)) < static_cast<int>(sizeof(p)))
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result(VW::io::io_adapter* f, float res, float weight, v_array<char> array)
+void binary_print_result(VW::io::writer* f, float res, float weight, v_array<char> array)
 {
   binary_print_result_by_ref(f, res, weight, array);
 }
 
-void binary_print_result_by_ref(VW::io::io_adapter* f, float res, float weight, const v_array<char>&)
+void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&)
 {
   if (f != nullptr)
   {
@@ -97,12 +97,12 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return print_tag_by_ref(ss, tag);
 }
 
-void print_result(VW::io::io_adapter* f, float res, float unused, v_array<char> tag)
+void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
 {
   print_result_by_ref(f, res, unused, tag);
 }
 
-void print_result_by_ref(VW::io::io_adapter* f, float res, float, const v_array<char>& tag)
+void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag)
 {
   if (f != nullptr)
   {
@@ -122,7 +122,7 @@ void print_result_by_ref(VW::io::io_adapter* f, float res, float, const v_array<
   }
 }
 
-void print_raw_text(VW::io::io_adapter* f, std::string s, v_array<char> tag)
+void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
 {
   if (f == nullptr)
     return;
@@ -139,7 +139,7 @@ void print_raw_text(VW::io::io_adapter* f, std::string s, v_array<char> tag)
   }
 }
 
-void print_raw_text_by_ref(VW::io::io_adapter* f, const std::string& s, const v_array<char>& tag)
+void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
 {
   if (f == nullptr)
     return;
@@ -349,7 +349,7 @@ vw::vw()
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink = v_init<VW::io::io_adapter*>();
+  final_prediction_sink = v_init<VW::io::writer*>();
   raw_prediction = nullptr;
   print = print_result;
   print_text = print_raw_text;
@@ -364,7 +364,7 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
-  stdout_adapter = VW::io::open_stdio();
+  stdout_adapter = VW::io::open_stdout();
 
   searchstr = nullptr;
 

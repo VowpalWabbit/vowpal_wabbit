@@ -143,7 +143,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(VW::io::io_adapter* f, v_array<float>& scalars, v_array<char>& tag)
+void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag)
 {
   if (f != nullptr)
   {
@@ -191,7 +191,7 @@ void finish_example(vw& all, mwt& c, example& ec)
 
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.empty())
+  if (model_file.num_files() != 0)
     return;
 
   std::stringstream msg;

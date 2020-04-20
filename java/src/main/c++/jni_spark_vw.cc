@@ -1,7 +1,6 @@
 #include "jni_spark_vw.h"
 #include "vw_exception.h"
 #include "best_constant.h"
-#include "vector_io_buf.h"
 #include "util.h"
 #include "options_serializer_boost_po.h"
 #include <algorithm>
@@ -68,10 +67,11 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   try
   {
     int size = env->GetArrayLength(model);
-    char* model0 = (char*)modelGuard.data();
+    auto* model0 = (const char*)modelGuard.data();
 
-    // wrap the model inside a vector
-    vector_io_buf buffer(model0, size);
+    auto wrapped_buffer = VW::io::create_in_memory_reader(model0, size);
+    io_buf buffer;
+    buffer.add_file(wrapped_buffer.release());
 
     return (jlong)VW::initialize(g_args.c_str(), &buffer);
   }
@@ -107,14 +107,16 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
 
   try
   {  // save in stl::vector
-    vector_io_buf buffer;
+    std::vector<char> model_buffer;
+    io_buf buffer;
+    buffer.add_file(VW::io::create_vector_writer(model_buffer).release());
     VW::save_predictor(*all, buffer);
 
     // copy to Java
-    jbyteArray ret = env->NewByteArray(buffer._buffer.size());
+    jbyteArray ret = env->NewByteArray(model_buffer.size());
     CHECK_JNI_EXCEPTION(nullptr);
 
-    env->SetByteArrayRegion(ret, 0, buffer._buffer.size(), (const jbyte*)&buffer._buffer[0]);
+    env->SetByteArrayRegion(ret, 0, model_buffer.size(), (const jbyte*)&model_buffer[0]);
     CHECK_JNI_EXCEPTION(nullptr);
 
     return ret;

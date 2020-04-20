@@ -108,7 +108,7 @@ bool ends_with(std::string const& fullString, std::string const& ending)
   }
 }
 
-uint64_t hash_file_contents(VW::io::io_adapter* f)
+uint64_t hash_file_contents(VW::io::reader* f)
 {
   uint64_t v = 5289374183516789128;
   char buf[1024];
@@ -174,11 +174,11 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
-  std::unique_ptr<VW::io::io_adapter> file_adapter;
+  std::unique_ptr<VW::io::reader> file_adapter;
   try
   {
-    file_adapter = is_gzip ? VW::io::open_compressed_file(fname, VW::io::file_mode::read)
-                           : VW::io::open_file(fname, VW::io::file_mode::read);
+    file_adapter = is_gzip ? VW::io::open_compressed_file_reader(fname)
+                           : VW::io::open_file_reader(fname);
   }
   catch (...)
   {
@@ -202,10 +202,10 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     }
   }
 
-  std::unique_ptr<VW::io::io_adapter> fd;
+  std::unique_ptr<VW::io::reader> fd;
   try
   {
-    fd = VW::io::open_file(fname, VW::io::file_mode::read);
+    fd = VW::io::open_file_reader(fname);
   }
   catch(...)
   {
@@ -1118,13 +1118,13 @@ void parse_output_preds(options_i& options, vw& all)
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back(VW::io::open_stdio().release());  // stdout
+      all.final_prediction_sink.push_back(VW::io::open_stdout().release());  // stdout
     }
     else
     {
       try
       {
-        auto f = VW::io::open_file(predictions, VW::io::file_mode::write);
+        auto f = VW::io::open_file_writer(predictions);
         all.final_prediction_sink.push_back(f.release());
       }
       catch (...)
@@ -1145,12 +1145,11 @@ void parse_output_preds(options_i& options, vw& all)
     }
     if (raw_predictions == "stdout")
     {
-      all.raw_prediction = VW::io::open_stdio().release();
+      all.raw_prediction = VW::io::open_stdout().release();
     }
     else
     {
-      auto f = VW::io::open_file(raw_predictions, VW::io::file_mode::write);
-      all.raw_prediction = f.release();
+      all.raw_prediction = VW::io::open_file_writer(raw_predictions).release();
     }
   }
 }

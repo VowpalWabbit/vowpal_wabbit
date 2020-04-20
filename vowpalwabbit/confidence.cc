@@ -46,7 +46,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
 
-void confidence_print_result(VW::io::io_adapter* f, float res, float confidence, v_array<char> tag)
+void confidence_print_result(VW::io::writer* f, float res, float confidence, v_array<char> tag)
 {
   if (f != nullptr)
   {

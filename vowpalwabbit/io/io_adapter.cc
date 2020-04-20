@@ -36,25 +36,31 @@ typedef struct gzFile_s* gzFile;
 
 using namespace VW::io;
 
-struct socket_adapter : public io_adapter
+enum class file_mode
 {
-  socket_adapter(int fd) : io_adapter(false /*is_resettable*/), _socket_fd{fd} {}
-  ~socket_adapter() override;
+  read,
+  write
+};
+
+struct socket_adapter : public writer, reader
+{
+  socket_adapter(int fd, const std::shared_ptr<details::socket_closer>& closer) : reader(false /*is_resettable*/), _socket_fd{fd}, _closer{closer} {}
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
  private:
   int _socket_fd;
+  std::shared_ptr<details::socket_closer> _closer;
 };
 
-struct stdio_adapter : public io_adapter
+struct stdio_adapter : public writer, reader
 {
-  stdio_adapter() : io_adapter(false /*is_resettable*/) {}
+  stdio_adapter() : reader(false /*is_resettable*/) {}
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
 };
 
 // TODO Migrate back to old file APIS
-struct file_adapter : public io_adapter
+struct file_adapter : public writer, reader
 {
   // investigate whether not using the old flags affects perf. Old claim:
   // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
@@ -69,7 +75,7 @@ struct file_adapter : public io_adapter
   file_mode _mode;
 };
 
-struct gzip_file_adapter : public io_adapter
+struct gzip_file_adapter : public writer, reader
 {
   gzip_file_adapter(const char* filename, file_mode mode);
   gzip_file_adapter(int file_descriptor, file_mode mode);
@@ -83,7 +89,7 @@ struct gzip_file_adapter : public io_adapter
   file_mode _mode;
 };
 
-struct gzip_stdio_adapter : public io_adapter
+struct gzip_stdio_adapter : public writer, reader
 {
   gzip_stdio_adapter();
   ~gzip_stdio_adapter();
@@ -95,41 +101,84 @@ struct gzip_stdio_adapter : public io_adapter
   gzFile _gz_stdout;
 };
 
+struct vector_writer : public writer
+{
+  vector_writer(std::vector<char>& buffer);
+  ~vector_writer() = default;
+  ssize_t write(const char* buffer, size_t num_bytes) override;
+
+ private:
+  std::vector<char>& _buffer;
+};
+
+struct in_memory_buffer_reader : public reader
+{
+  in_memory_buffer_reader(const char* data, size_t len);
+  ~in_memory_buffer_reader() = default;
+  ssize_t read(char* buffer, size_t num_bytes) override;
+  void reset() override;
+
+ private:
+  const char* _data;
+  const char* _read_head;
+  size_t _len;
+};
+
 namespace VW {
   namespace io {
-    std::unique_ptr<io_adapter> open_file(const std::string& file_path, file_mode mode)
+    std::unique_ptr<writer> open_file_writer(const std::string& file_path)
     {
-      return std::unique_ptr<io_adapter>(new file_adapter(file_path.c_str(), mode));
+      return std::unique_ptr<writer>(new file_adapter(file_path.c_str(), file_mode::write));
     }
 
-    std::unique_ptr<io_adapter> open_compressed_file(const std::string& file_path, file_mode mode)
+    std::unique_ptr<reader> open_file_reader(const std::string& file_path)
     {
-      return std::unique_ptr<io_adapter>(new gzip_file_adapter(file_path.c_str(), mode));
+      return std::unique_ptr<reader>(new file_adapter(file_path.c_str(), file_mode::read));
     }
 
-    std::unique_ptr<io_adapter> open_compressed_stdio()
+    std::unique_ptr<writer> open_compressed_file_writer(const std::string& file_path)
     {
-      return std::unique_ptr<io_adapter>(new gzip_stdio_adapter());
+      return std::unique_ptr<writer>(new gzip_file_adapter(file_path.c_str(), file_mode::write));
     }
 
-    std::unique_ptr<io_adapter> open_stdio()
+    std::unique_ptr<reader> open_compressed_file_reader(const std::string& file_path)
     {
-      return std::unique_ptr<io_adapter>(new stdio_adapter);
+      return std::unique_ptr<reader>(new gzip_file_adapter(file_path.c_str(), file_mode::read));
     }
 
-    std::unique_ptr<io_adapter> wrap_socket_descriptor(int fd)
+    std::unique_ptr<reader> open_compressed_stdin()
     {
-      return std::unique_ptr<io_adapter>(new socket_adapter(fd));
+      return std::unique_ptr<reader>(new gzip_stdio_adapter());
     }
 
-    std::unique_ptr<io_adapter> create_vector_buffer()
+    std::unique_ptr<writer> open_compressed_stdout()
     {
-      return std::unique_ptr<io_adapter>(new vector_adapter());
+      return std::unique_ptr<writer>(new gzip_stdio_adapter());
     }
 
-    std::unique_ptr<io_adapter> create_vector_buffer(const char* data, size_t len)
+    std::unique_ptr<reader> open_stdin()
     {
-      return std::unique_ptr<io_adapter>(new vector_adapter(data, len));
+      return std::unique_ptr<reader>(new stdio_adapter);
+    }
+
+    std::unique_ptr<writer> open_stdout()
+    {
+      return std::unique_ptr<writer>(new stdio_adapter);
+    }
+
+    std::unique_ptr<socket> wrap_socket_descriptor(int fd)
+    {
+      return std::unique_ptr<socket>(new socket(fd));
+    }
+
+    std::unique_ptr<writer> create_vector_writer(std::vector<char>& buffer)
+    {
+      return std::unique_ptr<writer>(new vector_writer(buffer));
+    }
+
+    std::unique_ptr<reader> create_in_memory_reader(const char* data, size_t len)
+    {
+      return std::unique_ptr<reader>(new in_memory_buffer_reader(data, len));
     }
   }
 }
@@ -156,13 +205,23 @@ ssize_t socket_adapter::write(const char* buffer, size_t num_bytes)
 #endif
 }
 
-socket_adapter::~socket_adapter()
+details::socket_closer::~socket_closer()
 {
 #ifdef _WIN32
   closesocket(_socket_fd);
 #else
   close(_socket_fd);
 #endif
+}
+
+std::unique_ptr<reader> socket::get_reader()
+{
+  return std::unique_ptr<reader>(new socket_adapter(_socket_fd, _closer));
+}
+
+std::unique_ptr<writer> socket::get_writer()
+{
+  return std::unique_ptr<writer>(new socket_adapter(_socket_fd, _closer));
 }
 
 //
@@ -187,7 +246,7 @@ ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes)
 //
 
 file_adapter::file_adapter(const char* filename, file_mode mode) :
-  io_adapter(true /*is_resettable*/), _mode(mode)
+  reader(true /*is_resettable*/), _mode(mode)
 {
 #ifdef _WIN32
   if(_mode == file_mode::read)
@@ -217,7 +276,7 @@ file_adapter::file_adapter(const char* filename, file_mode mode) :
 }
 
 file_adapter::file_adapter(int file_descriptor, file_mode mode)
-    : io_adapter(true /*is_resettable*/), _file_descriptor(file_descriptor), _mode(mode)
+    : reader(true /*is_resettable*/), _file_descriptor(file_descriptor), _mode(mode)
 {
 }
 
@@ -264,7 +323,7 @@ file_adapter::~file_adapter()
 //
 
 gzip_file_adapter::gzip_file_adapter(const char* filename, file_mode mode)
-    : io_adapter(true /*is_resettable*/), _mode(mode)
+    : reader(true /*is_resettable*/), _mode(mode)
 {
   auto file_mode_arg = _mode == file_mode::read ? "rb" : "wb";
   _gz_file = gzopen(filename, file_mode_arg);
@@ -272,7 +331,7 @@ gzip_file_adapter::gzip_file_adapter(const char* filename, file_mode mode)
 }
 
 gzip_file_adapter::gzip_file_adapter(int file_descriptor, file_mode mode)
-  : io_adapter(true /*is_resettable*/), _mode(mode)
+  : reader(true /*is_resettable*/), _mode(mode)
 {
   auto file_mode_arg = _mode == file_mode::read ? "rb" : "wb";
   _gz_file = gzdopen(file_descriptor, file_mode_arg);
@@ -303,7 +362,7 @@ void gzip_file_adapter::reset() { gzseek(_gz_file, 0, SEEK_SET); }
 // gzip_stdio_adapter
 //
 
-gzip_stdio_adapter::gzip_stdio_adapter() : io_adapter(false /*is_resettable*/)
+gzip_stdio_adapter::gzip_stdio_adapter() : reader(false /*is_resettable*/)
 {
 #ifdef _WIN32
   _gz_stdin = gzdopen(_fileno(stdin), "rb");
@@ -333,34 +392,41 @@ ssize_t gzip_stdio_adapter::write(const char* buffer, size_t num_bytes)
 }
 
 //
-// vector_adapter
+// vector_writer
 //
 
-vector_adapter::vector_adapter(const char* data, size_t len)
-    : io_adapter(true /*is_resettable*/), _buffer{data, data + len}, _iterator{_buffer.begin()}
-{}
 
-vector_adapter::vector_adapter() : io_adapter(true /*is_resettable*/), _iterator{_buffer.begin()} {}
-
-ssize_t vector_adapter::read(char* buffer, size_t num_bytes)
+vector_writer::vector_writer(std::vector<char>& buffer)
+    : _buffer(buffer)
 {
-  num_bytes = std::min(_buffer.end() - _iterator, static_cast<std::ptrdiff_t>(num_bytes));
-  if(num_bytes == 0)
-    return 0;
-
-  std::memcpy(buffer, &*_iterator, num_bytes);
-  _iterator += num_bytes;
-
-  return num_bytes;
 }
 
-ssize_t vector_adapter::write(const char* buffer, size_t num_bytes)
+
+ssize_t vector_writer::write(const char* buffer, size_t num_bytes)
 {
-  _buffer.reserve(num_bytes);
+  _buffer.reserve(_buffer.size() + num_bytes);
   _buffer.insert(std::end(_buffer), (const char*)buffer, (const char*)buffer + num_bytes);
   return num_bytes;
 }
 
-void vector_adapter::reset() { _iterator = _buffer.begin(); }
+//
+// in_memory_buffer_reader
+//
 
-const std::vector<char>& vector_adapter::data() const { return _buffer; }
+in_memory_buffer_reader::in_memory_buffer_reader(const char* data, size_t len)
+    : reader(true), _data(data), _read_head(data), _len(len)
+{
+}
+
+ssize_t in_memory_buffer_reader::read(char* buffer, size_t num_bytes)
+{
+  num_bytes = std::min((_data + _len) - _read_head, static_cast<std::ptrdiff_t>(num_bytes));
+  if(num_bytes == 0)
+    return 0;
+
+  std::memcpy(buffer, _read_head, num_bytes);
+  _read_head += num_bytes;
+
+  return num_bytes;
+}
+void in_memory_buffer_reader::reset() { _read_head = _data; }

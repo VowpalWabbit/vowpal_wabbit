@@ -799,7 +799,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     else
       all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
   }
-  if (!model_file.files.empty())
+  if (model_file.num_files() != 0)
   {
     uint64_t i = 0;
     std::stringstream msg;

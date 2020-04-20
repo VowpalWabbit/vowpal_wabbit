@@ -89,7 +89,7 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(VW::io::io_adapter* f, float res, float weight, v_array<char> tag)
+void active_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag)
 {
   if (f != nullptr)
   {

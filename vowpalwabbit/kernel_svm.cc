@@ -331,7 +331,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   // TODO: check about initialization
 
   // params.all->opts_n_args.trace_message<<"Save load svm "<<read<<" "<<text<< endl;
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream msg;
   bin_text_read_write_fixed(model_file, (char*)&(model->num_support), sizeof(model->num_support), "", read, msg, text);

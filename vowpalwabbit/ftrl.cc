@@ -296,7 +296,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   if (read)
     initialize_regressor(*all);
 
-  if (!model_file.files.empty())
+  if (model_file.num_files() != 0)
   {
     bool resume = all->save_resume;
     std::stringstream msg;

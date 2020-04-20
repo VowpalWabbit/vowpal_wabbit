@@ -17,56 +17,70 @@ namespace VW
 {
 namespace io
 {
-struct io_adapter
+namespace details
 {
-  io_adapter(bool is_resettable) : _is_resettable(is_resettable) {}
-  virtual ~io_adapter(){};
-  virtual ssize_t read(char* /*buffer*/, size_t /*num_bytes*/) = 0;
-  virtual ssize_t write(const char* /*buffer*/, size_t /*num_bytes*/) = 0;
-  // Flush is a noop, io_adapters can optionally implement this.
-  virtual void flush() {}
+struct socket_closer
+{
+  socket_closer(int fd) : _socket_fd(fd) {}
+  ~socket_closer();
+private:
+  int _socket_fd;
+};
+}
 
+struct reader
+{
+  reader(bool is_resettable) : _is_resettable(is_resettable) {}
+  virtual ~reader() = default;
+  virtual ssize_t read(char* /*buffer*/, size_t /*num_bytes*/) = 0;
   // Users should check if this io_adapter is resetable before trying to reset.
   virtual void reset() { THROW("Reset not supported for this io_adapter"); }
   bool is_resettable() const { return _is_resettable; }
 
-  io_adapter(io_adapter& other) = delete;
-  io_adapter& operator=(io_adapter& other) = delete;
-  io_adapter(io_adapter&& other) = delete;
-  io_adapter& operator=(io_adapter&& other) = delete;
+  reader(reader& other) = delete;
+  reader& operator=(reader& other) = delete;
+  reader(reader&& other) = delete;
+  reader& operator=(reader&& other) = delete;
 
- private:
+private:
   bool _is_resettable;
 };
 
-enum class file_mode
+struct writer
 {
-  read,
-  write
+  writer() = default;
+  virtual ~writer() = default;
+  virtual ssize_t write(const char* /*buffer*/, size_t /*num_bytes*/) = 0;
+  // Flush is a noop, writers can optionally implement this.
+  virtual void flush() {}
+
+  writer(writer& other) = delete;
+  writer& operator=(writer& other) = delete;
+  writer(writer&& other) = delete;
+  writer& operator=(writer&& other) = delete;
 };
 
-struct vector_adapter : public io_adapter
+struct socket
 {
-  vector_adapter(const char* data, size_t len);
-  vector_adapter();
-  ~vector_adapter() = default;
-  ssize_t read(char* buffer, size_t num_bytes) override;
-  ssize_t write(const char* buffer, size_t num_bytes) override;
-  void reset() override;
-
-  const std::vector<char>& data() const;
-
- private:
-  std::vector<char> _buffer;
-  std::vector<char>::iterator _iterator;
+  socket(int fd) : _socket_fd(fd) {}
+  ~socket() = default;
+  std::unique_ptr<reader> get_reader();
+  std::unique_ptr<writer> get_writer();
+private:
+  int _socket_fd;
+  std::shared_ptr<details::socket_closer> _closer;
 };
 
-std::unique_ptr<io_adapter> open_file(const std::string& file_path, file_mode mode);
-std::unique_ptr<io_adapter> open_compressed_file(const std::string& file_path, file_mode mode);
-std::unique_ptr<io_adapter> open_compressed_stdio();
-std::unique_ptr<io_adapter> open_stdio();
-std::unique_ptr<io_adapter> wrap_socket_descriptor(int fd);
-std::unique_ptr<io_adapter> create_vector_buffer();
-std::unique_ptr<io_adapter> create_vector_buffer(const char* data, size_t len);
+std::unique_ptr<writer> open_file_writer(const std::string& file_path);
+std::unique_ptr<reader> open_file_reader(const std::string& file_path);
+std::unique_ptr<writer> open_compressed_file_writer(const std::string& file_path);
+std::unique_ptr<reader> open_compressed_file_reader(const std::string& file_path);
+std::unique_ptr<reader> open_compressed_stdin();
+std::unique_ptr<writer> open_compressed_stdout();
+std::unique_ptr<reader> open_stdin();
+std::unique_ptr<writer> open_stdout();
+std::unique_ptr<socket> wrap_socket_descriptor(int fd);
+std::unique_ptr<writer> create_vector_writer(std::vector<char>& buffer);
+std::unique_ptr<reader> create_in_memory_reader(const char* data, size_t len);
 }  // namespace io
 }  // namespace VW

@@ -336,7 +336,7 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(const v_array<VW::io::io_adapter*>& final_prediction_sink)
+void global_print_newline(const v_array<VW::io::writer*>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';

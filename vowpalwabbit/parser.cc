@@ -87,7 +87,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 void set_compressed(parser* /*par*/) {}
 
-uint32_t cache_numbits(io_buf* buf, VW::io::io_adapter* filepointer)
+uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
@@ -144,7 +144,7 @@ void reset_source(vw& all, size_t numbits)
                                                                           << all.p->output->finalname);
     input->close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file(all.p->output->finalname.cbegin(), VW::io::file_mode::read).release());
+    input->add_file(VW::io::open_file_reader(all.p->output->finalname.cbegin()).release());
     all.p->reader = read_cached_features;
   }
 
@@ -178,8 +178,9 @@ void reset_source(vw& all, size_t numbits)
 
       // note: breaking cluster parallel online learning by dropping support for id
 
-      all.final_prediction_sink.push_back(VW::io::wrap_socket_descriptor(f).release());
-      all.p->input->files.push_back(VW::io::wrap_socket_descriptor(f).release());
+      auto socket = VW::io::wrap_socket_descriptor(f);
+      all.final_prediction_sink.push_back(socket->get_writer().release());
+      all.p->input->add_file(socket->get_reader().release());
 
       if (isbinary(*(all.p->input)))
       {
@@ -200,7 +201,7 @@ IGNORE_DEPRECATED_USAGE_END
     }
     else
     {
-      for (auto* file : input->files)
+      for (auto* file : input->input_files)
       {
         input->reset_file(file);
         if (cache_numbits(input, file) < numbits)
@@ -215,7 +216,7 @@ void finalize_source(parser*) {}
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
   io_buf* output = all.p->output;
-  if (output->files.size() != 0)
+  if (output->num_files() != 0)
   {
     all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
@@ -224,10 +225,10 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   std::string temp = newname + std::string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
-  VW::io::io_adapter* f;
+  VW::io::writer* f;
   try
   {
-    f = VW::io::open_file(temp, VW::io::file_mode::write).release();
+    f = VW::io::open_file_writer(temp).release();
   }
   catch (const std::exception&)
   {
@@ -255,11 +256,11 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
   for (auto& file : cache_files)
   {
-    VW::io::io_adapter* f = nullptr;
+    VW::io::reader* f = nullptr;
     if (!kill_cache)
       try
       {
-        f = VW::io::open_file(file, VW::io::file_mode::read).release();
+        f = VW::io::open_file_reader(file).release();
         all.p->input->add_file(f);
       }
       catch (const std::exception&)
@@ -493,9 +494,11 @@ IGNORE_DEPRECATED_USAGE_START
 IGNORE_DEPRECATED_USAGE_END
     all.print_by_ref = print_result_by_ref;
 
-    all.final_prediction_sink.push_back(VW::io::wrap_socket_descriptor(f_a).release());
+    auto socket = VW::io::wrap_socket_descriptor(f_a);
 
-    all.p->input->files.push_back(VW::io::wrap_socket_descriptor(f_a).release());
+    all.final_prediction_sink.push_back(socket->get_writer().release());
+
+    all.p->input->add_file(socket->get_reader().release());
     if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
@@ -521,7 +524,7 @@ IGNORE_DEPRECATED_USAGE_END
   }
   else
   {
-    if (!all.p->input->files.empty())
+    if (all.p->input->num_files() != 0)
     {
       if (!quiet)
         all.trace_message << "ignoring text input in favor of cache input" << endl;
@@ -536,28 +539,28 @@ IGNORE_DEPRECATED_USAGE_END
 
       try
       {
-        VW::io::io_adapter* adapter = nullptr;
+        VW::io::reader* adapter = nullptr;
         if (temp != "")
         {
-          adapter = should_use_compressed ? VW::io::open_compressed_file(temp, VW::io::file_mode::read).release()
-                                          : VW::io::open_file(temp, VW::io::file_mode::read).release();
+          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp).release()
+                                          : VW::io::open_file_reader(temp).release();
         }
         else if (!all.stdin_off)
         {
           // Should try and use stdin
           if (should_use_compressed)
           {
-            adapter = VW::io::open_compressed_stdio().release();
+            adapter = VW::io::open_compressed_stdin().release();
           }
           else
           {
-            adapter = VW::io::open_stdio().release();
+            adapter = VW::io::open_stdin().release();
           }
         }
 
         if (adapter)
         {
-          all.p->input->files.push_back(adapter);
+          all.p->input->add_file(adapter);
         }
       }
       catch (std::exception const&)
@@ -606,9 +609,9 @@ IGNORE_DEPRECATED_USAGE_END
   if (passes > 1 && !all.p->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  all.p->input->count = all.p->input->files.size();
+  all.p->input->count = all.p->input->num_files();
   if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.p->input->num_files() << endl;
 }
 
 void lock_done(parser& p)
