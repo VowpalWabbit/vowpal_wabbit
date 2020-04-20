@@ -374,5 +374,5 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
 // char* mismatch_error_string);
 
 // our interface within VW
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 }  // namespace Search

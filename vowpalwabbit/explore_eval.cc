@@ -14,7 +14,7 @@
 // input = contextual bandit label
 // output = chosen ranking
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 

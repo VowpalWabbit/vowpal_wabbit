@@ -3,7 +3,7 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -51,6 +51,7 @@ set(vw_all_headers
   ccb_label.h
   classweight.h
   comp_io.h
+  compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
@@ -60,6 +61,7 @@ set(vw_all_headers
   crossplat_compat.h
   cs_active.h
   csoaa.h
+  decision_scores.h
   distributionally_robust.h
   ect.h
   error_reporting.h
@@ -114,6 +116,7 @@ set(vw_all_headers
   parse_example.h
   parse_primitives.h
   parse_regressor.h
+  parse_slates_example_json.h
   parser.h
   print.h
   queue.h
@@ -133,6 +136,7 @@ set(vw_all_headers
   shared_feature_merger.h
   simple_label.h
   slates_label.h
+  slates.h
   spanning_tree.h
   stable_unique.h
   stagewise_poly.h
@@ -188,6 +192,7 @@ set(vw_all_sources
   cost_sensitive.cc
   cs_active.cc
   csoaa.cc
+  decision_scores.cc
   distributionally_robust.cc
   ect.cc
   example.cc
@@ -244,6 +249,7 @@ set(vw_all_sources
   shared_feature_merger.cc
   simple_label.cc
   slates_label.cc
+  slates.cc
   stagewise_poly.cc
   svrg.cc
   topk.cc
@@ -254,7 +260,7 @@ set(vw_all_sources
   warm_cb.cc
 )
 
-add_library(vw ${vw_all_sources} ${vw_all_headers})
+add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC

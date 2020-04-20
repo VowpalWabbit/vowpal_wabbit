@@ -22,7 +22,7 @@
 #include "label_dictionary.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 namespace CS = COST_SENSITIVE;
 namespace MC = MULTICLASS;
@@ -286,7 +286,7 @@ struct search_private
   bool active_csoaa;
   float active_csoaa_verify;
 
-  LEARNER::base_learner* base_learner;
+  VW::LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
