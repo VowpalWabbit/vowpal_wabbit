@@ -99,7 +99,7 @@ void cb_explore_adf_rnd::finish_bonuses()
 {
   for (auto& b : bonuses)
   {
-    b = sqrt(b / numrnd);
+    b = std::sqrt(b / numrnd);
   }
 }
 
@@ -162,7 +162,7 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
   LazyGaussianWeight w(sqrtinvlambda);
   float rv =
       GD::inline_predict(w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->permutations, *ec);
-  return rv / std::sqrt(w.get_fc());
+  return rv / std::sqrt(2.0f * w.get_fc());
 }
 
 void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id)
@@ -274,7 +274,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("invlambda", invlambda)
                .keep()
                .allow_override()
-               .default_value(0.05f)
+               .default_value(0.01f)
                .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
   options.add_and_parse(new_options);
 
