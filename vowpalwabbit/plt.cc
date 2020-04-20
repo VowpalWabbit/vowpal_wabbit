@@ -168,7 +168,7 @@ void predict(plt &p, base_learner &base, example &ec)
 
   // top-k predictions
   else
-  { vector <uint32_t> found_leaves;
+  { std::unordered_set<uint32_t> found_leaves;
     priority_queue <node> node_queue;
     node_queue.push({0, 1.0f});
 
@@ -176,7 +176,8 @@ void predict(plt &p, base_learner &base, example &ec)
     { node node = node_queue.top();
       node_queue.pop();
 
-      if (find(found_leaves.begin(), found_leaves.end(), node.n) != found_leaves.end())
+      auto found_leaves_it = found_leaves.find(node.n);
+      if (found_leaves_it != found_leaves.end())
       { uint32_t l = node.n - p.ti;
         preds.label_v.push_back(l);
         if (preds.label_v.size() >= p.top_k)
@@ -192,15 +193,13 @@ void predict(plt &p, base_learner &base, example &ec)
           }
         }
         else
-        { found_leaves.push_back(node.n);
+        { found_leaves.emplace_hint(found_leaves_it, node.n);
           node_queue.push({node.n, cp});
         }
       }
     }
 
-    vector<uint32_t> true_labels;
-    for (uint32_t i = 0; i < multilabels.label_v.size(); ++i)
-      true_labels.push_back(multilabels.label_v[i]);
+    std::unordered_set<uint32_t> true_labels(multilabels.label_v.begin(), multilabels.label_v.end());
 
     if (p.top_k > 0 && true_labels.size() > 0)
     { for (size_t i = 0; i < p.top_k; ++i)
