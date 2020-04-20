@@ -158,7 +158,7 @@
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="interactions.h" />
-    <ClInclude Include="io_adapter.h" />
+    <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="lda_core.h" />

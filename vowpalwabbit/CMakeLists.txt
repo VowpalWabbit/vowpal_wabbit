@@ -17,6 +17,9 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
+add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
+target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
+
 set(vw_all_headers
   accumulate.h
   action_score.h
@@ -80,7 +83,6 @@ set(vw_all_headers
   interact.h
   interactions_predict.h
   interactions.h
-  io_adapter.h
   io_buf.h
   kernel_svm.h
   label_dictionary.h
@@ -203,7 +205,6 @@ set(vw_all_sources
   global_data.cc
   interact.cc
   interactions.cc
-  io_adapter.cc
   io_buf.cc
   kernel_svm.cc
   label_dictionary.cc
@@ -266,7 +267,7 @@ target_link_libraries(vw
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} ZLIB::ZLIB
+    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -385,7 +386,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce
+    TARGETS vw vw-bin allreduce vw_io
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

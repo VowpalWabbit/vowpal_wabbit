@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vw_exception.h"
+#include "../vw_exception.h"
 
 #include <string>
 #include <memory>

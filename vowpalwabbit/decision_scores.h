@@ -6,7 +6,7 @@
 #pragma once
 
 #include "v_array.h"
-#include "io_adapter.h"
+#include "io/io_adapter.h"
 #include <iomanip>
 #include <iostream>
 #include <vector>

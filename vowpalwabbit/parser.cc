@@ -59,7 +59,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
-#include "io_adapter.h"
+#include "io/io_adapter.h"
 
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
