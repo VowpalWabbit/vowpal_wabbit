@@ -42,7 +42,7 @@ enum class file_mode
   write
 };
 
-struct socket_adapter : public writer, reader
+struct socket_adapter : public writer, public reader
 {
   socket_adapter(int fd, const std::shared_ptr<details::socket_closer>& closer) : reader(false /*is_resettable*/), _socket_fd{fd}, _closer{closer} {}
   ssize_t read(char* buffer, size_t num_bytes) override;
@@ -52,15 +52,13 @@ struct socket_adapter : public writer, reader
   std::shared_ptr<details::socket_closer> _closer;
 };
 
-struct stdio_adapter : public writer, reader
+struct stdio_adapter : public writer, public reader
 {
   stdio_adapter() : reader(false /*is_resettable*/) {}
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
 };
-
-// TODO Migrate back to old file APIS
-struct file_adapter : public writer, reader
+struct file_adapter : public writer, public reader
 {
   // investigate whether not using the old flags affects perf. Old claim:
   // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
@@ -75,7 +73,7 @@ struct file_adapter : public writer, reader
   file_mode _mode;
 };
 
-struct gzip_file_adapter : public writer, reader
+struct gzip_file_adapter : public writer, public reader
 {
   gzip_file_adapter(const char* filename, file_mode mode);
   gzip_file_adapter(int file_descriptor, file_mode mode);
@@ -89,7 +87,7 @@ struct gzip_file_adapter : public writer, reader
   file_mode _mode;
 };
 
-struct gzip_stdio_adapter : public writer, reader
+struct gzip_stdio_adapter : public writer, public reader
 {
   gzip_stdio_adapter();
   ~gzip_stdio_adapter();
@@ -400,7 +398,6 @@ vector_writer::vector_writer(std::vector<char>& buffer)
     : _buffer(buffer)
 {
 }
-
 
 ssize_t vector_writer::write(const char* buffer, size_t num_bytes)
 {
