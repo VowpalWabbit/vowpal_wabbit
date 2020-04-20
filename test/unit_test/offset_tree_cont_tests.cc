@@ -1,7 +1,7 @@
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
-#include "offset_tree_cont.h"
+#include "offset_tree_cont_prev.h"
 #include "offset_tree_cont_tests.h"
 
 using namespace LEARNER;

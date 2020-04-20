@@ -23,8 +23,8 @@ struct cb_triple
 
 namespace VW { namespace pmf_to_pdf {
 
-void learn(VW::pmf_to_pdf::learner& data, single_learner& base, example& ec);
-void predict(VW::pmf_to_pdf::learner& data, single_learner& base, example& ec);
+void learn(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
+void predict(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
 
 struct reduction_test_harness
 {
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
 
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::learner>();
+  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
   data->min_value = min_val;
