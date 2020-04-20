@@ -63,7 +63,8 @@ typedef union {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  VW::actions_pdf::pdf prob_dist;
+  VW::actions_pdf::pdf prob_dist; // todo remove
+  VW::actions_pdf::pdf_new prob_dist_new; // todo rename
   CCB::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;

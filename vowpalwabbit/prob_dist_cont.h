@@ -1,13 +1,23 @@
 #pragma once
 namespace VW { namespace actions_pdf
 {
-struct pdf_segment
+struct pdf_segment // todo: remove
 {
   float action;  //starting point
-  float value; //height
+  float value; // height
 };
 
-typedef v_array<pdf_segment> pdf;
+typedef v_array<pdf_segment> pdf; // todo: remove
+
+
+struct pdf_segment_new // todo: rename
+{
+  float left;  // starting point
+  float right;  // ending point
+  float pdf_value; // height
+};
+
+typedef v_array<pdf_segment_new> pdf_new; // todo: rename
 
 // TODO: below check
 
