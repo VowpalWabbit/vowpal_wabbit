@@ -279,9 +279,19 @@ class vw(pylibvw.vw):
         ec : list
             list of examples parsed
         """
+
+        #check if already parsed
+        if isinstance(str_ex, example) and getattr(str_ex, 'setup_done', None):
+            return str_ex
+
+        elif isinstance(str_ex, list):
+            if all([getattr(ex, 'setup_done', None) for ex in str_ex]):
+                return str_ex
+
         if not isinstance(str_ex, (list, str)):
             raise TypeError(
                 'Unsupported type. List or string object must be passed.')
+
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
         str_ex = str_ex.replace('\r', '')
@@ -366,12 +376,20 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
+        elif isinstance(ec, list):
+            if not self._is_multiline():
+                raise TypeError("Expecting a mutiline Learner.")
+            ec = self.parse(ec)
+            new_example = True
+
         if isinstance(ec, example):
-            if hasattr(ec, 'setup_done') and not ec.setup_done:
+            if not getattr(ec, 'setup_done', None):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
+
         elif isinstance(ec, list):
             pylibvw.vw.learn_multi(self, ec)
+
         else:
             raise TypeError(
                 'expecting string or example object as ec argument for learn, got %s'
@@ -406,7 +424,13 @@ class vw(pylibvw.vw):
             new_example = True
 
         # If a string was given, parse it before passing to learner.
-        if isinstance(ec, str):
+        elif isinstance(ec, str):
+            ec = self.parse(ec)
+            new_example = True
+
+        elif isinstance(ec, list):
+            if not self._is_multiline():
+                raise TypeError("Expecting a multiline Learner.")
             ec = self.parse(ec)
             new_example = True
 
@@ -422,6 +446,7 @@ class vw(pylibvw.vw):
             pylibvw.vw.predict(self, ec)
         else:
             pylibvw.vw.predict_multi(self, ec)
+
 
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
