@@ -727,7 +727,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   }
 
   // prepare namespace interactions
-  std::vector<std::vector<namespace_index> > expanded_interactions;
+  std::vector<std::vector<namespace_index>> expanded_interactions;
 
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
@@ -787,7 +787,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       new_cubics.emplace_back(i.begin(), i.end());
     }
 
-    std::vector<std::vector<namespace_index> > exp_cubic =
+    std::vector<std::vector<namespace_index>> exp_cubic =
         INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
@@ -807,7 +807,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::vector<namespace_index> > new_interactions;
+    std::vector<std::vector<namespace_index>> new_interactions;
     for (const auto& i : interactions){
       new_interactions.emplace_back(i.begin(), i.end());
     }

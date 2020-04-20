@@ -16,7 +16,7 @@ namespace INTERACTIONS
 // expand namespace interactions if contain wildcards
 // recursive function used internally in this module
 void expand_namespaces_with_recursion(
-    std::vector<namespace_index> const& ns, std::vector<std::vector<namespace_index> >& res, std::vector<namespace_index>& val, size_t pos)
+    std::vector<namespace_index> const& ns, std::vector<std::vector<namespace_index>>& res, std::vector<namespace_index>& val, size_t pos)
 {
   assert(pos <= ns.size());
 
@@ -57,10 +57,10 @@ void expand_namespaces_with_recursion(
 // called from parse_args.cc
 // process all interactions in a vector
 
-std::vector<std::vector<namespace_index> > expand_interactions(
+std::vector<std::vector<namespace_index>> expand_interactions(
     const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg)
 {
-  std::vector<std::vector<namespace_index> > res;
+  std::vector<std::vector<namespace_index>> res;
 
   for (auto const& i : vec)
   {
@@ -118,7 +118,7 @@ inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 
 void sort_and_filter_duplicate_interactions(
-    std::vector<std::vector<namespace_index> >& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
   // 2 out parameters
   removed_cnt = 0;
@@ -159,7 +159,7 @@ void sort_and_filter_duplicate_interactions(
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
   // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
   // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
-  std::vector<std::vector<namespace_index> > res;
+  std::vector<std::vector<namespace_index>> res;
   for (auto& i : vec_sorted)
   {
     if (must_be_left_sorted(i.first))
