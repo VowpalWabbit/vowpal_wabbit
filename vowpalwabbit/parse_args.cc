@@ -759,8 +759,8 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << i << " ";
     }
 
-    std::vector<std::vector<namespace_index> > new_quadratics;
-    for (const auto & i : quadratics){
+    std::vector<std::vector<namespace_index>> new_quadratics;
+    for (const auto& i : quadratics){
       new_quadratics.emplace_back(i.begin(), i.end());
     }
 
@@ -782,8 +782,8 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::vector<namespace_index> > new_cubics;
-    for (const auto & i : cubics){
+    std::vector<std::vector<namespace_index>> new_cubics;
+    for (const auto& i : cubics){
       new_cubics.emplace_back(i.begin(), i.end());
     }
 
@@ -808,7 +808,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     }
 
     std::vector<std::vector<namespace_index> > new_interactions;
-    for (const auto & i : interactions){
+    for (const auto& i : interactions){
       new_interactions.emplace_back(i.begin(), i.end());
     }
 
