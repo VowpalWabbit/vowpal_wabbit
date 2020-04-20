@@ -375,7 +375,9 @@ struct buffer_holder
   io_buf holding_buffer;
 };
 
-VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(VW_HANDLE handle, VW_IOBUF* outputBufferHandle, char** outputData, size_t* outputSize) {
+VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(
+    VW_HANDLE handle, VW_IOBUF* outputBufferHandle, char** outputData, size_t* outputSize)
+{
   vw* pointer = static_cast<vw*>(handle);
   auto* holder = new buffer_holder;
   holder->holding_buffer.add_file(VW::io::create_vector_writer(holder->data).release());
@@ -387,5 +389,8 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(VW_HANDLE handle, VW_IOBUF* 
   *outputData = const_cast<char*>(underlying_buffer.data());
 }
 
-VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle) { delete static_cast<buffer_holder*>(bufferHandle); }
+VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle)
+{
+  delete static_cast<buffer_holder*>(bufferHandle);
+}
 }

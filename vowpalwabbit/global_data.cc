@@ -460,7 +460,7 @@ vw::~vw()
   }
   final_prediction_sink.delete_v();
 
-  if(raw_prediction != nullptr)
+  if (raw_prediction != nullptr)
   {
     delete raw_prediction;
   }

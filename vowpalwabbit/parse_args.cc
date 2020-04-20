@@ -177,8 +177,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   std::unique_ptr<VW::io::reader> file_adapter;
   try
   {
-    file_adapter = is_gzip ? VW::io::open_compressed_file_reader(fname)
-                           : VW::io::open_file_reader(fname);
+    file_adapter = is_gzip ? VW::io::open_compressed_file_reader(fname) : VW::io::open_file_reader(fname);
   }
   catch (...)
   {
@@ -207,7 +206,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   {
     fd = VW::io::open_file_reader(fname);
   }
-  catch(...)
+  catch (...)
   {
     THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");
   }

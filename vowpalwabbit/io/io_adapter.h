@@ -23,10 +23,11 @@ struct socket_closer
 {
   socket_closer(int fd) : _socket_fd(fd) {}
   ~socket_closer();
+
 private:
   int _socket_fd;
 };
-}
+}  // namespace details
 
 struct reader
 {
@@ -62,13 +63,11 @@ struct writer
 
 struct socket
 {
-  socket(int fd) : _socket_fd(fd)
-  {
-    _closer = std::make_shared<details::socket_closer>(fd);
-  }
+  socket(int fd) : _socket_fd(fd) { _closer = std::make_shared<details::socket_closer>(fd); }
   ~socket() = default;
   std::unique_ptr<reader> get_reader();
   std::unique_ptr<writer> get_writer();
+
 private:
   int _socket_fd;
   std::shared_ptr<details::socket_closer> _closer;
