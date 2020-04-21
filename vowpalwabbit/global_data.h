@@ -393,7 +393,6 @@ public:
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
 
-  bool is_managed_by_unique;
   shared_data* sd;
 
   parser* p;

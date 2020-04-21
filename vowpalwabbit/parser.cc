@@ -470,9 +470,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         if (got_sigterm)
         {
           for (size_t i = 0; i < num_children; i++) kill(children[i], SIGTERM);
-IGNORE_DEPRECATED_USAGE_START
           VW::finish(all);
-IGNORE_DEPRECATED_USAGE_END
           exit(0);
         }
         if (pid < 0)

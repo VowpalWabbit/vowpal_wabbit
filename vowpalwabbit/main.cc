@@ -125,11 +125,11 @@ int main(int argc, char* argv[])
       if (alls.size() == 1)
         VW::LEARNER::generic_driver(all);
       else
-        VW::LEARNER::generic_driver(std::move(alls));
+        VW::LEARNER::generic_driver(alls);
       VW::end_parser(all);
     }
 
-    for (auto& vw_ptr : alls)
+    for (auto* vw_ptr : alls)
     {
       if (vw_ptr->p->exc_ptr)
       {

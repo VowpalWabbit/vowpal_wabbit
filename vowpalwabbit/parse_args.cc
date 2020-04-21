@@ -1321,93 +1321,83 @@ void parse_args(vw& all, options_i& options, trace_message_t trace_listener, voi
     all.trace_message.trace_context = trace_context;
   }
 
-  try
+  time(&all.init_time);
+
+  bool strict_parse = false;
+  int ring_size_tmp;
+  option_group_definition vw_args("VW options");
+  vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
+      .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
+  options.add_and_parse(vw_args);
+
+  if (ring_size_tmp <= 0)
   {
-    time(&all.init_time);
-
-    bool strict_parse = false;
-    int ring_size_tmp;
-    option_group_definition vw_args("VW options");
-    vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
-        .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
-    options.add_and_parse(vw_args);
-
-    if (ring_size_tmp <= 0)
-    {
-      THROW("ring_size should be positive");
-    }
-    size_t ring_size = static_cast<size_t>(ring_size_tmp);
-
-    all.p = new parser{ring_size, strict_parse};
-    all.p->_shared_data = all.sd;
-
-    option_group_definition update_args("Update options");
-    update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).help("t power value"))
-        .add(make_option("decay_learning_rate", all.eta_decay_rate)
-                 .help("Set Decay factor for learning_rate between passes"))
-        .add(make_option("initial_t", all.sd->t).help("initial t value"))
-        .add(make_option("feature_mask", all.feature_mask)
-                 .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
-                       "given, also used for initial weights."));
-    options.add_and_parse(update_args);
-
-    option_group_definition weight_args("Weight options");
-    weight_args
-        .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
-        .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
-        .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
-        .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
-        .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
-        .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
-        .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
-                 .help("Per feature regularization input file"));
-    options.add_and_parse(weight_args);
-
-    std::string span_server_arg;
-    int span_server_port_arg;
-    // bool threads_arg;
-    size_t unique_id_arg;
-    size_t total_arg;
-    size_t node_arg;
-    option_group_definition parallelization_args("Parallelization options");
-    parallelization_args
-        .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
-        //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
-        .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
-        .add(
-            make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
-        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"))
-        .add(make_option("span_server_port", span_server_port_arg)
-                 .default_value(26543)
-                 .help("Port of the server for setting up spanning tree"));
-    options.add_and_parse(parallelization_args);
-
-    // total, unique_id and node must be specified together.
-    if ((options.was_supplied("total") || options.was_supplied("node") || options.was_supplied("unique_id")) &&
-        !(options.was_supplied("total") && options.was_supplied("node") && options.was_supplied("unique_id")))
-    {
-      THROW("you must specificy unique_id, total, and node if you specify any");
-    }
-
-    if (options.was_supplied("span_server"))
-    {
-      all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(
-          span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
-    }
-
-    parse_diagnostics(options, all);
-
-    all.initial_t = (float)all.sd->t;
+    THROW("ring_size should be positive");
   }
-  catch (...)
+  size_t ring_size = static_cast<size_t>(ring_size_tmp);
+
+  all.p = new parser{ring_size, strict_parse};
+  all.p->_shared_data = all.sd;
+
+  option_group_definition update_args("Update options");
+  update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
+      .add(make_option("power_t", all.power_t).help("t power value"))
+      .add(make_option("decay_learning_rate", all.eta_decay_rate)
+                .help("Set Decay factor for learning_rate between passes"))
+      .add(make_option("initial_t", all.sd->t).help("initial t value"))
+      .add(make_option("feature_mask", all.feature_mask)
+                .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                      "given, also used for initial weights."));
+  options.add_and_parse(update_args);
+
+  option_group_definition weight_args("Weight options");
+  weight_args
+      .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
+      .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
+      .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
+      .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
+      .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
+      .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
+      .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
+                .help("Per feature regularization input file"));
+  options.add_and_parse(weight_args);
+
+  std::string span_server_arg;
+  int span_server_port_arg;
+  // bool threads_arg;
+  size_t unique_id_arg;
+  size_t total_arg;
+  size_t node_arg;
+  option_group_definition parallelization_args("Parallelization options");
+  parallelization_args
+      .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
+      //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
+      .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
+      .add(
+          make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
+      .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"))
+      .add(make_option("span_server_port", span_server_port_arg)
+                .default_value(26543)
+                .help("Port of the server for setting up spanning tree"));
+  options.add_and_parse(parallelization_args);
+
+  // total, unique_id and node must be specified together.
+  if ((options.was_supplied("total") || options.was_supplied("node") || options.was_supplied("unique_id")) &&
+      !(options.was_supplied("total") && options.was_supplied("node") && options.was_supplied("unique_id")))
   {
-IGNORE_DEPRECATED_USAGE_START
-    VW::finish(all);
-IGNORE_DEPRECATED_USAGE_END
-    throw;
+    THROW("you must specificy unique_id, total, and node if you specify any");
   }
+
+  if (options.was_supplied("span_server"))
+  {
+    all.all_reduce_type = AllReduceType::Socket;
+    all.all_reduce = new AllReduceSockets(
+        span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
+  }
+
+  parse_diagnostics(options, all);
+
+  all.initial_t = (float)all.sd->t;
 }
 
 bool check_interaction_settings_collision(options_i& options, std::string file_options)

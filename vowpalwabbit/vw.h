@@ -32,6 +32,7 @@
 #include "simple_label.h"
 #include "parser.h"
 #include "parse_example.h"
+
 #include "options.h"
 
 #include "compat.h"
@@ -51,8 +52,9 @@ void free_args(int argc, char* argv[]);
 
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
-
-// Call finish() after you are done with the vw instance.  This cleans up memory usage.
+/*
+  Call finish() after you are done with the vw instance.  This cleans up memory usage.
+ */
 void finish(vw& all, bool delete_all = true);
 void sync_stats(vw& all);
 
