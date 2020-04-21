@@ -370,18 +370,18 @@ public:
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
   */
-  static std::unique_ptr<vw> initialize(VW::config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
+  static vw* initialize(VW::config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
       trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-  static std::unique_ptr<vw> initialize(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+  static vw* initialize(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
       trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-  static std::unique_ptr<vw> initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
+  static vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
       trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
   /// Create a new VW instance while sharing the model with another instance
   /// The extra arguments will be appended to those of the other VW instance
-  static std::unique_ptr<vw> seed_vw_model(
+  static vw* seed_vw_model(
       vw* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
   /// Allows the input command line string to have spaces escaped by '\'
-  static std::unique_ptr<vw> initialize_escaped(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+  static vw* initialize_escaped(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
       trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
   ~vw();

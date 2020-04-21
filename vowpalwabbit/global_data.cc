@@ -492,7 +492,7 @@ vw::~vw()
   delete all_reduce;
 }
 
-std::unique_ptr<vw> vw::initialize(VW::config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
+vw* vw::initialize(VW::config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
     void* trace_context)
 {
   // Can't use make_unique here as it requires access to the constructor which is private.
@@ -536,27 +536,21 @@ std::unique_ptr<vw> vw::initialize(VW::config::options_i& options, io_buf* model
 
     all->l->init_driver();
 
-    return std::move(all);
+    return all.release();
   }
   catch (std::exception& e)
   {
-    all->trace_message << "Error: " << e.what() << std::endl;
-    VW::finish(std::move(all));
-    throw;
-  }
-  catch (...)
-  {
-    VW::finish(std::move(all));
+    std::cerr << "Error: " << e.what() << std::endl;
     throw;
   }
 }
 
-std::unique_ptr<vw> vw::initialize(
+vw* vw::initialize(
     const std::string& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = VW::to_argv(s, argc);
-  std::unique_ptr<vw> ret = nullptr;
+  vw* ret = nullptr;
 
   try
   {
@@ -572,7 +566,7 @@ std::unique_ptr<vw> vw::initialize(
   return ret;
 }
 
-std::unique_ptr<vw> vw::initialize(
+vw* vw::initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   VW::config::options_i* options = new VW::config::options_boost_po(argc, argv);
@@ -583,7 +577,7 @@ std::unique_ptr<vw> vw::initialize(
   return all;
 }
 
-std::unique_ptr<vw> vw::seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
+vw* vw::seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
   VW::config::options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())
@@ -617,12 +611,12 @@ std::unique_ptr<vw> vw::seed_vw_model(vw* vw_model, const std::string& extra_arg
 }
 
 // Allows the input command line string to have spaces escaped by '\'
-std::unique_ptr<vw> vw::initialize_escaped(
+vw* vw::initialize_escaped(
     const std::string& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = VW::to_argv_escaped(s, argc);
-  std::unique_ptr<vw> ret = nullptr;
+  vw* ret = nullptr;
 
   try
   {

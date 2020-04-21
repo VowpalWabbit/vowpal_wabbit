@@ -1685,14 +1685,6 @@ void sync_stats(vw& all)
   }
 }
 
-void finish(std::unique_ptr<vw>&& all)
-{
-  IGNORE_DEPRECATED_USAGE_START
-  // Do not delete as the unique_ptr will handle that.
-  finish(*all.get(), false);
-  IGNORE_DEPRECATED_USAGE_END
-}
-
 void finish(vw& all, bool delete_all)
 {
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
@@ -1764,7 +1756,7 @@ void finish(vw& all, bool delete_all)
 
   // If this object is managed with a unique pointer then we should not delete.
   // This can happen if a user calls the wrong API or an exception is thrown and the user is using the new api.
-  if (delete_all && !all.is_managed_by_unique)
+  if (delete_all)
   {
     delete &all;
   }

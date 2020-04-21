@@ -52,11 +52,7 @@ void free_args(int argc, char* argv[]);
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
 
-// This will effectively consume the vw object and cleanup.
-void finish(std::unique_ptr<vw>&& all);
-
 // Call finish() after you are done with the vw instance.  This cleans up memory usage.
-VW_DEPRECATED("Use the unique_ptr based api instead")
 void finish(vw& all, bool delete_all = true);
 void sync_stats(vw& all);
 

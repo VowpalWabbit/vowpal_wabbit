@@ -23,9 +23,9 @@
 
 using namespace VW::config;
 
-std::unique_ptr<vw> setup(options_i& options)
+vw* setup(options_i& options)
 {
-  std::unique_ptr<vw> all = nullptr;
+  vw* all = nullptr;
   try
   {
     all = vw::initialize(options);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   {
     // support multiple vw instances for training of the same datafile for the same instance
     std::vector<std::unique_ptr<options_boost_po>> arguments;
-    std::vector<std::unique_ptr<vw>> alls;
+    std::vector<vw*> alls;
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
       }
 
       VW::sync_stats(*vw_ptr);
-      VW::finish(std::move(vw_ptr));
+      VW::finish(*vw_ptr);
     }
   }
   catch (VW::vw_exception& e)
