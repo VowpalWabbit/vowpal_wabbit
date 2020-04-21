@@ -1,0 +1,15 @@
+table Feature {
+    name:string (key);
+    value:float;
+}
+
+table Datapoint {
+    label:int;
+    features:[Feature];
+}
+
+table Data {
+    examples:[Datapoint];
+}
+
+root_type Data;
