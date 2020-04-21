@@ -19,6 +19,11 @@ namespace VW
     }
   }
 
+  clr_stream_adapter::~clr_stream_adapter()
+  {
+    delete m_stream;
+  }
+
   ssize_t clr_stream_adapter::read(char* buffer, size_t num_bytes)
   {
     ensure_buffer_size(num_bytes);

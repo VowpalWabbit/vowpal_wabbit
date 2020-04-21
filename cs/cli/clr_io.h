@@ -22,6 +22,7 @@ private:
 
 public:
   clr_stream_adapter(Stream^ stream);
+  ~clr_stream_adapter();
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
   void reset() override;
