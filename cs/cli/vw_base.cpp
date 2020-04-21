@@ -75,7 +75,6 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
           auto* stream = new clr_stream_adapter(settings->ModelStream);
           model.add_file(static_cast<VW::io::reader*>(stream));
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
-          delete settings->ModelStream;
 		  settings->ModelStream = nullptr;
         }
       }
