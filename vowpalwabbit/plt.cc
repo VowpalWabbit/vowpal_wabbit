@@ -39,6 +39,7 @@ struct plt
 
   float* precision;
   uint32_t prediction_count;
+  v_array<polyprediction> preds;
 };
 
 inline void learn_node(plt &p, uint32_t n, base_learner &base, example &ec)
@@ -170,7 +171,19 @@ void predict(plt &p, base_learner &base, example &ec)
   else
   { std::unordered_set<uint32_t> found_leaves;
     priority_queue <node> node_queue;
-    node_queue.push({0, 1.0f});
+
+    node_queue.push({0, predict_node(p, 0, base, ec)}); // comment
+    // node_queue.push({0, 1.0f});
+
+    // split labels into true and skip (those > max. label num)
+    std::unordered_set<uint32_t> true_labels;
+    std::unordered_set<uint32_t> skip_labels;
+    for (auto label : multilabels.label_v)
+    { if (label < p.k)
+        true_labels.insert(label);
+      else
+        skip_labels.insert(label - p.k);
+    }
 
     while (!node_queue.empty())
     { node node = node_queue.top();
@@ -184,22 +197,37 @@ void predict(plt &p, base_learner &base, example &ec)
           break;
       }
       else
-      { float cp = node.p * predict_node(p, node.n, base, ec);
+      { 
+        // float cp = node.p * predict_node(p, node.n, base, ec); // comment
 
         if (node.n < p.ti)
-        { for (uint32_t i = 1; i <= p.kary; ++i) {
-            uint32_t n_child = p.kary * node.n + i;
-            node_queue.push({n_child, cp});
+        {
+          // comment
+          uint32_t n_child = p.kary * node.n + 1;
+          ec.l.simple = {FLT_MAX, 1.f, 0.f};
+          base.multipredict(ec, n_child, p.kary, p.preds.begin(), false);
+
+          for (uint32_t i = 0; i < p.kary; ++i, ++n_child) {
+            float cp_child = node.p * (1.0f / (1.0f + exp(-p.preds[i].scalar)));
+            node_queue.push({n_child, cp_child});
           }
+         
+          // for (uint32_t i = 1; i <= p.kary; ++i) {
+          //   uint32_t n_child = p.kary * node.n + i;
+          //   node_queue.push({n_child, cp});
+          // } 
         }
         else
-        { found_leaves.emplace_hint(found_leaves_it, node.n);
-          node_queue.push({node.n, cp});
+        { uint32_t l = node.n - p.ti;
+
+          if (skip_labels.find(l) == skip_labels.end())
+          { found_leaves.emplace_hint(found_leaves_it, node.n);
+            node_queue.push({node.n, node.p}); // comment
+            // node_queue.push({node.n, cp});
+          }
         }
       }
     }
-
-    std::unordered_set<uint32_t> true_labels(multilabels.label_v.begin(), multilabels.label_v.end());
 
     if (p.top_k > 0 && true_labels.size() > 0)
     { for (size_t i = 0; i < p.top_k; ++i)
@@ -242,6 +270,7 @@ void finish(plt &p)
 
   free(p.nodes_t);
   free(p.precision);
+  p.preds.delete_v();
 }
 
 void save_load_nodes(plt &p, io_buf &model_file, bool read, bool text)
@@ -290,6 +319,8 @@ LEARNER::base_learner* plt_setup(vw &all) //learner setup
   }
   data.ti = data.t - data.k;
   *(all.file_options) << " --kary_tree " << data.kary;
+
+  data.preds.resize(data.k);
 
   if (all.vm.count("top_k"))
     data.top_k = all.vm["top_k"].as<uint32_t>();
