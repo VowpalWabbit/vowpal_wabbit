@@ -1744,12 +1744,8 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception_thrown = true;
   }
 
-  // If this object is managed with a unique pointer then we should not delete.
-  // This can happen if a user calls the wrong API or an exception is thrown and the user is using the new api.
   if (delete_all)
-  {
-    delete &all;
-  }
+      delete &all;
 
   if (finalize_regressor_exception_thrown)
     throw finalize_regressor_exception;
