@@ -33,3 +33,10 @@ void check_collections_exact(const ContainerOneT<T>& lhs, const ContainerTwoT<T>
 {
   BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 }
+
+template <typename T>
+void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const std::vector<std::vector<T>>& rhs) {
+  for (size_t i=0; i < lhs.size(); i++){
+    BOOST_CHECK_EQUAL_COLLECTIONS(lhs[i].begin(), lhs[i].end(), rhs[i].begin(), rhs[i].end());
+  }
+}
