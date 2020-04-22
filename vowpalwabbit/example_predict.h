@@ -39,9 +39,9 @@ struct example_predict
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset;                                  // An offset for all feature values.
 
-  // Interactions are specified by this vector of strings, where each string is an interaction and each char is a
+  // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction and each char is a
   // namespace.
-  std::vector<std::string>* interactions;
+  std::vector<std::vector<namespace_index>>* interactions;
 
   iterator begin() { return iterator(feature_space.data(), indices.begin()); }
   iterator end() { return iterator(feature_space.data(), indices.end()); }
