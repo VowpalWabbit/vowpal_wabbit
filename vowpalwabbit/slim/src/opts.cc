@@ -5,9 +5,9 @@
 
 namespace vw_slim
 {
-// && used to avoid constant string copying
-void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values)
-{
+
+template<class T>
+void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<T>& out_values){
   // append space to search for '--quadratic '
   arg_name += ' ';
 
@@ -43,12 +43,17 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
       ;
 
     auto value_size = idx_after_value - idx_after_arg;
-    if (value_size > 0)
-      out_values.push_back(command_line_args.substr(idx_after_arg, value_size));
-
+    if (value_size > 0){
+      std::string args = command_line_args.substr(idx_after_arg, value_size);
+      out_values.emplace_back(args.begin(), args.end());
+    }
     start = idx_after_arg + 1;
   }
 }
+
+template void find_opt<std::string>(std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values);
+
+template void find_opt<std::vector<namespace_index>>(std::string const& command_line_args, std::string arg_name, std::vector<std::vector<namespace_index>>& out_values);
 
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name)
 {
