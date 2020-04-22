@@ -139,30 +139,40 @@ void cb_explore_adf_rnd::save_labels(multi_ex& examples)
 
 namespace
 {
-class LazyGaussianWeight
+struct LazyGaussian
 {
- private:
-  mutable uint32_t count;
-  float sigma;
-
- public:
-  LazyGaussianWeight(float _sigma) : count(0), sigma(_sigma) {}
-  float operator[](uint64_t index) const
+  inline float operator[](uint64_t index) const
   {
-    ++count;
-    return sigma * merand48_boxmuller(index);
+    return merand48_boxmuller(index);
   }
-
-  uint32_t get_fc() const { return std::max(static_cast<uint32_t>(1), count); }
 };
+
+
+inline void vec_add_with_norm(std::pair<float, float>& p,
+                              const float fx,
+                              const float& fw)
+{
+  p.first += fx * fx;
+  p.second += fx * fw;
+}
+
 }  // namespace
 
 float cb_explore_adf_rnd::get_initial_prediction(example* ec)
 {
-  LazyGaussianWeight w(sqrtinvlambda);
-  float rv =
-      GD::inline_predict(w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->permutations, *ec);
-  return rv / std::sqrt(2.0f * w.get_fc());
+  LazyGaussian w;
+
+  std::pair<float, float> dotwithnorm(0.f, 0.f);
+  GD::foreach_feature<std::pair<float, float>, const float&, vec_add_with_norm, LazyGaussian>(
+    w,
+    all->ignore_some_linear,
+    all->ignore_linear,
+    all->interactions,
+    all->permutations,
+    *ec,
+    dotwithnorm);
+
+  return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1.0f, dotwithnorm.first));
 }
 
 void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id)
