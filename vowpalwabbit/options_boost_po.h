@@ -94,7 +94,8 @@ struct options_boost_po : public options_i
     po::positional_options_description p;
     p.add("__positional__", -1);
     auto* found_opt = master_description.find_nothrow("__positional__", false);
-    if(found_opt == nullptr) {
+    if (found_opt == nullptr)
+    {
       master_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
     }
     po::parsed_options pos = po::command_line_parser(m_command_line)
@@ -106,7 +107,6 @@ struct options_boost_po : public options_i
 
     po::variables_map vm;
     po::store(pos, vm);
-    po::notify(vm);
 
     if (vm.count("__positional__") != 0)
     {

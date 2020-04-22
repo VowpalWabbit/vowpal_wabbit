@@ -444,7 +444,8 @@ input_options parse_source(vw& all, options_i& options)
 
   options.add_and_parse(input_options);
 
-  // Check if the options provider has any positional args. Only really makes sense for command line, others just return an empty list.
+  // Check if the options provider has any positional args. Only really makes sense for command line, others just return
+  // an empty list.
   const auto positional_tokens = options.get_positional_tokens();
   if (positional_tokens.size() == 1)
   {
