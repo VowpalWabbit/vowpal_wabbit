@@ -527,6 +527,8 @@ struct vw
 
   bool stdin_off;
 
+  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
+
   // runtime accounting variables.
   float initial_t;
   float eta;  // learning rate control.
