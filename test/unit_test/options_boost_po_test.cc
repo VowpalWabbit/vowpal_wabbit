@@ -186,8 +186,6 @@ BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
 }
 
 BOOST_AUTO_TEST_CASE(get_positional_tokens) {
-  std::string data;
-
   char command_line[] = "exe d1 --int_opt 1 d2 --int_opt 1 d3";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
