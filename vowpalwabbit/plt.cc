@@ -172,8 +172,7 @@ void predict(plt &p, base_learner &base, example &ec)
   { std::unordered_set<uint32_t> found_leaves;
     priority_queue <node> node_queue;
 
-    node_queue.push({0, predict_node(p, 0, base, ec)}); // comment
-    // node_queue.push({0, 1.0f});
+    node_queue.push({0, predict_node(p, 0, base, ec)});
 
     // split labels into true and skip (those > max. label num)
     std::unordered_set<uint32_t> true_labels;
@@ -198,12 +197,8 @@ void predict(plt &p, base_learner &base, example &ec)
       }
       else
       { 
-        // float cp = node.p * predict_node(p, node.n, base, ec); // comment
-
         if (node.n < p.ti)
-        {
-          // comment
-          uint32_t n_child = p.kary * node.n + 1;
+        { uint32_t n_child = p.kary * node.n + 1;
           ec.l.simple = {FLT_MAX, 1.f, 0.f};
           base.multipredict(ec, n_child, p.kary, p.preds.begin(), false);
 
@@ -211,19 +206,13 @@ void predict(plt &p, base_learner &base, example &ec)
             float cp_child = node.p * (1.0f / (1.0f + exp(-p.preds[i].scalar)));
             node_queue.push({n_child, cp_child});
           }
-         
-          // for (uint32_t i = 1; i <= p.kary; ++i) {
-          //   uint32_t n_child = p.kary * node.n + i;
-          //   node_queue.push({n_child, cp});
-          // } 
         }
         else
         { uint32_t l = node.n - p.ti;
 
           if (skip_labels.find(l) == skip_labels.end())
           { found_leaves.emplace_hint(found_leaves_it, node.n);
-            node_queue.push({node.n, node.p}); // comment
-            // node_queue.push({node.n, cp});
+            node_queue.push({node.n, node.p});
           }
         }
       }
