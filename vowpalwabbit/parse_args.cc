@@ -444,19 +444,15 @@ input_options parse_source(vw& all, options_i& options)
 
   options.add_and_parse(input_options);
 
-  // If the option provider is program_options try and retrieve data as a positional parameter.
-  options_i* options_ptr = &options;
-  auto boost_options = dynamic_cast<options_boost_po*>(options_ptr);
-  if (boost_options)
+  // Check if the options provider has any positional args. Only really makes sense for command line, others just return an empty list.
+  const auto positional_tokens = options.get_positional_tokens();
+  if (positional_tokens.size() == 1)
   {
-    std::string data;
-    if (boost_options->try_get_positional_option_token("data", data, -1))
-    {
-      if (all.data_filename != data)
-      {
-        all.data_filename = data;
-      }
-    }
+    all.data_filename = positional_tokens[0];
+  }
+  else if (positional_tokens.size() > 1)
+  {
+    THROW("Only a single positional parameter is supported. This is the data argument.");
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))

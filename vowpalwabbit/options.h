@@ -130,6 +130,10 @@ struct options_i
 
   virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
+  virtual std::vector<std::string> get_positional_tokens()
+  {
+    return std::vector<std::string>();
+  }
 
   template <typename T>
   typed_option<T>& get_typed_option(const std::string& key)
