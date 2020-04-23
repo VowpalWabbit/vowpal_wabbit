@@ -172,7 +172,7 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
     *ec,
     dotwithnorm);
 
-  return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1.0f, dotwithnorm.first));
+  return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
 
 void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id)
@@ -276,12 +276,12 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
       .add(make_option("rnd", numrnd).keep().help("rnd based exploration"))
-      .add(make_option("alpha", alpha)
+      .add(make_option("rnd_alpha", alpha)
                .keep()
                .allow_override()
                .default_value(0.01f)
                .help("ci width for rnd (bigger => more exploration on repeating features)"))
-      .add(make_option("invlambda", invlambda)
+      .add(make_option("rnd_invlambda", invlambda)
                .keep()
                .allow_override()
                .default_value(0.01f)
@@ -293,12 +293,12 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   if (alpha <= 0)
   {
-    THROW("The value of alpha must be positive.")
+    THROW("The value of rnd_alpha must be positive.")
   }
 
   if (invlambda <= 0)
   {
-    THROW("The value of invlambda must be positive.")
+    THROW("The value of rnd_invlambda must be positive.")
   }
 
   if (numrnd < 1)
