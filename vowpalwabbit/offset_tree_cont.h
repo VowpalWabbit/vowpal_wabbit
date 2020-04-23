@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "learner.h"
 #include "options.h"
 #include "error_reporting.h"
@@ -73,7 +73,7 @@ struct offset_tree
   node_cost _b;
   // Depth of reduction stack used to print debug statements with right indent
   uint32_t _dd = 0;
-  std::ostream* _trace_stream;
+  std::ostream* _trace_stream = nullptr;
 };
 }  // namespace offset_tree_cont
 }  // namespace VW

@@ -186,7 +186,7 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
 
 void offset_tree::init_node_costs(v_array<cb_class>& ac)
 {
-  assert(ac.size() == 0); 
+  assert(ac.size() > 0); 
   assert(ac[0].action > 0);
 
   _cost_star = ac[0].cost / ac[0].probability;
@@ -321,7 +321,11 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 
 void offset_tree::set_trace_message(std::ostream* vw_ostream) { _trace_stream = vw_ostream; }
 
-offset_tree::~offset_tree() { (*_trace_stream) << tree_stats_to_string() << std::endl; }
+offset_tree::~offset_tree()
+{
+  if(_trace_stream != nullptr)
+    (*_trace_stream) << tree_stats_to_string() << std::endl;
+}
 
 std::string offset_tree::tree_stats_to_string()
 {
