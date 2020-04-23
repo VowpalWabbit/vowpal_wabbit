@@ -80,29 +80,6 @@ struct reduction_test_harness
 test_learner_t* get_test_harness_reduction(
     const predictions_t& base_reduction_predictions, const cb_triple& action_triple);
 
-
-float get_pdf_value(VW::actions_pdf::pdf_new prob_dist_new, float chosen_action)
-{
-  int begin = -1;
-  int end = (int)prob_dist_new.size();
-  while (end - begin > 1)
-  {
-    int mid = (begin + end) / 2;
-    if (prob_dist_new[mid].left <= chosen_action)
-    {
-      begin = mid;
-    }
-    else
-    {
-      end = mid;
-    }
-  }
-  // // temporary fix for now
-  // if (begin == (int)prob_dist.size() - 1 && prob_dist[begin].value == 0)
-  //   return prob_dist[begin - 1].value;
-  return prob_dist_new[begin].pdf_value;
-}
-
 }  // namespace pmf_to_pdf
 }  // namespace VW
 
@@ -155,7 +132,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   // float chosen_action = action_triple.action
   float chosen_action = 1080; 
-  cout << "pdf value of " << chosen_action << " is = " << VW::pmf_to_pdf_new::get_pdf_value(ec.pred.prob_dist_new, chosen_action)
+  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value_new(ec.pred.prob_dist_new, chosen_action)
        << std::endl;
   cout << "here" << endl;
 }

@@ -55,6 +55,26 @@ float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
   return prob_dist[begin].value;
 }
 
+float get_pdf_value(VW::actions_pdf::pdf_new& prob_dist_new, float chosen_action)
+{
+  int begin = -1;
+  int end = (int)prob_dist_new.size();
+  while (end - begin > 1)
+  {
+    int mid = (begin + end) / 2;
+    if (prob_dist_new[mid].left <= chosen_action)
+    {
+      begin = mid;
+    }
+    else
+    {
+      end = mid;
+    }
+  }
+
+  return prob_dist_new[begin].pdf_value;
+}
+
 std::string to_string(const pdf_segment& seg)
 {
   std::stringstream strm;
