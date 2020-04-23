@@ -54,7 +54,7 @@ using predictions_t = vector<float>;
 using scores_t = int;
 
 void predict_test_helper(
-    const predictions_t& base_reduction_predictions, const scores_t& expected_action, uint32_t num_leaves);
+    const predictions_t& base_reduction_predictions, const scores_t& expected_action, uint32_t num_leaves, uint32_t bandwidth);
 
 template <typename T = reduction_test_harness>
 learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
