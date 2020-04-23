@@ -27,6 +27,8 @@ void delete_prob_dist(void* v);
 
 float get_pdf_value(pdf& prob_dist, float chosen_action);
 
+float get_pdf_value_new(pdf_new& prob_dist_new, float chosen_action);
+
 //TODO: do we need below?
 
 class prob_iterator : public virtual std::iterator<std::random_access_iterator_tag,  // iterator_cateogry
