@@ -10,7 +10,7 @@ using namespace VW::config;
 
 VW_DEBUG_ENABLE(false)
 
-namespace VW { namespace pmf_to_pdf
+namespace VW { namespace pmf_to_pdf_new
 {
 
   void reduction::transform_prediction(example& ec)
@@ -115,12 +115,12 @@ namespace VW { namespace pmf_to_pdf
     _p_base->learn(ec);
   }
 
-  void predict(pmf_to_pdf::reduction& data, single_learner&, example& ec)
+  void predict(pmf_to_pdf_new::reduction& data, single_learner&, example& ec)
   {
     data.predict(ec);
   }
 
-  void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec)
+  void learn(pmf_to_pdf_new::reduction& data, single_learner&, example& ec)
   {
     data.learn(ec);
   }
@@ -201,9 +201,9 @@ namespace VW { namespace pmf_to_pdf
     VW::finish_example(all, ec);
   }
 
-  base_learner* pmf_to_pdf_setup(options_i& options, vw& all)
+  base_learner* pmf_to_pdf_new_setup(options_i& options, vw& all)
   {
-    auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
+    auto data = scoped_calloc_or_throw<pmf_to_pdf_new::reduction>();
 
     option_group_definition new_options("CB Continuous");
     new_options
@@ -241,7 +241,7 @@ namespace VW { namespace pmf_to_pdf
     auto p_base = as_singleline(setup_base(options, all));
     data->_p_base = p_base;
 
-    learner<pmf_to_pdf::reduction, example>& l =
+    learner<pmf_to_pdf_new::reduction, example>& l =
         init_learner(data, p_base, learn, predict, 1, prediction_type::prob_dist);
 
     l.set_finish(finish);

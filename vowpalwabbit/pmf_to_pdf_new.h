@@ -4,9 +4,9 @@
 #include "cb.h"
 #include "action_score.h"
 
-namespace VW { namespace pmf_to_pdf
+namespace VW { namespace pmf_to_pdf_new
 {
-  LEARNER::base_learner* pmf_to_pdf_setup(VW::config::options_i& options, vw& all);
+  LEARNER::base_learner* pmf_to_pdf_new_setup(VW::config::options_i& options, vw& all);
   struct reduction
   {
     void predict(example& ec);
