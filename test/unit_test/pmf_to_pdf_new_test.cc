@@ -26,14 +26,12 @@ namespace VW { namespace pmf_to_pdf_new {
 void learn(VW::pmf_to_pdf_new::reduction& data, single_learner& base, example& ec);
 void predict(VW::pmf_to_pdf_new::reduction& data, single_learner& base, example& ec);
 
-using test_learner_t = learner<reduction_test_harness, example>;
-using predictions_t = vector<pair<int, float>>;
 
 struct reduction_test_harness
 {
   reduction_test_harness() : _curr_idx(0) {}
 
-  void set_predict_response(const predictions_t& predictions) { _predictions = predictions; }
+  void set_predict_response(const vector<pair<int, float>>& predictions) { _predictions = predictions; }
   void set_chosen_action(const cb_triple& chosen_action) { _action = chosen_action; }
 
   void test_predict(single_learner& base, example& ec)
@@ -76,6 +74,8 @@ struct reduction_test_harness
   int _curr_idx;
 };
 
+using test_learner_t = learner<reduction_test_harness, example>;
+using predictions_t = vector<pair<int, float>>;
 
 test_learner_t* get_test_harness_reduction(
     const predictions_t& base_reduction_predictions, const cb_triple& action_triple);
