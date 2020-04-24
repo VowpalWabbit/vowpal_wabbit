@@ -55,17 +55,7 @@ class polar_normal_weights_wrapper
  public:
   static void func(weight& w, uint64_t index)
   {
-    static float x1 = 0.0;
-    static float x2 = 0.0;
-    static float temp = 0.0;
-    do
-    {
-      x1 = 2.0f * merand48(index) - 1.0f;
-      x2 = 2.0f * merand48(index) - 1.0f;
-      temp = x1 * x1 + x2 * x2;
-    } while ((temp >= 1.0) || (temp == 0.0));
-    temp = sqrtf((-2.0f * logf(temp)) / temp);
-    w = x1 * temp;
+    w = merand48_boxmuller(index);
   }
 };
 // re-scaling to re-picking values outside the truncating boundary.
