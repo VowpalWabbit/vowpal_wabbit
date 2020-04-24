@@ -342,6 +342,7 @@ struct rand_state
   rand_state(uint64_t initial) : random_state(initial) {}
   constexpr uint64_t get_current_state() const noexcept { return random_state; }
   float get_and_update_random() { return merand48(random_state); }
+  float get_and_update_gaussian() { return merand48_boxmuller(random_state); }
   float get_random() const { return merand48_noadvance(random_state); }
   void set_random_state(uint64_t initial) noexcept { random_state = initial; }
 };
@@ -477,11 +478,11 @@ public:
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::string> interactions;
+  std::vector<std::vector<namespace_index> > interactions;
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> pairs;  // pairs of features to cross.
+  std::vector<std::vector<namespace_index> > pairs;  // pairs of features to cross.
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> triples;  // triples of features to cross.
+  std::vector<std::vector<namespace_index> > triples;  // triples of features to cross.
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -555,6 +556,8 @@ public:
   char* program_name;
 
   bool stdin_off;
+
+  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
 
   // runtime accounting variables.
   float initial_t;
