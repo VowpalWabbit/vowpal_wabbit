@@ -23,8 +23,8 @@ struct cb_triple
 
 namespace VW { namespace pmf_to_pdf {
 
-void learn(VW::pmf_to_pdf::learner& data, single_learner& base, example& ec);
-void predict(VW::pmf_to_pdf::learner& data, single_learner& base, example& ec);
+void learn(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
+void predict(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
 
 struct reduction_test_harness
 {
@@ -83,12 +83,12 @@ test_learner_t* get_test_harness_reduction(
 float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
 {
   if (prob_dist.size() == 1)
-    return prob_dist[0].value;
-  float h = prob_dist[1].action - prob_dist[0].action;
-  uint32_t idx = floor((chosen_action - prob_dist[0].action) / h);
+    return prob_dist[0].pdf_value;
+  float h = prob_dist[1].end - prob_dist[0].end;
+  uint32_t idx = floor((chosen_action - prob_dist[0].end) / h);
   if (idx < 0 || idx >= prob_dist.size())
     THROW("The chosen action is not in the domain of the pdf function");
-  return prob_dist[idx].value;
+  return prob_dist[idx].pdf_value;
 }
 
 }  // namespace pmf_to_pdf
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
 
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::learner>();
+  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
   data->min_value = min_val;
@@ -125,8 +125,8 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   cout << "ec.pred.p_d (PDF): " << endl;
   for (uint32_t i = 0; i < k; i++)
   {
-    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), " << endl;
-    sum += ec.pred.prob_dist[i].value;
+    cout << "(" << ec.pred.prob_dist[i].end << " : " << ec.pred.prob_dist[i].pdf_value << "), " << endl;
+    sum += ec.pred.prob_dist[i].end;
   }
   cout << "sum = " << sum << endl;
 

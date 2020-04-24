@@ -1,10 +1,17 @@
 #pragma once
 namespace VW { namespace actions_pdf
 {
+struct action_pdf_value
+{
+  float action;      //continuous action
+  float pdf_value;   //probability density value
+};
+
 struct pdf_segment
 {
-  float action;  //starting point
-  float value; //height
+  float begin;
+  float end;
+  float pdf_value;
 };
 
 typedef v_array<pdf_segment> pdf;
@@ -47,7 +54,7 @@ class prob_iterator : public virtual std::iterator<std::random_access_iterator_t
 
   size_t operator-(const prob_iterator& other) const { return _p - other._p; }
 
-  float& operator*() { return _p->value; }
+  float& operator*() { return _p->pdf_value; }
 };
 
 inline prob_iterator begin_probs(pdf& p_d) { return prob_iterator(p_d.begin()); }
@@ -70,9 +77,9 @@ inline int prob_comp(const void* p1, const void* p2)
   // Most sorting algos do not guarantee the output order of elements that compare equal.
   // Tie-breaking on the index ensures that the result is deterministic across platforms.
   // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
-  if (s2->value == s1->value)
-    return cmp(s1->action, s2->action);
-  else if (s2->value >= s1->value)
+  if (s2->pdf_value == s1->pdf_value)
+    return cmp(s1->pdf_value, s2->pdf_value);
+  else if (s2->pdf_value >= s1->pdf_value)
     return -1;
   else
     return 1;
@@ -80,6 +87,6 @@ inline int prob_comp(const void* p1, const void* p2)
 
 inline int reverse_order(const void* p1, const void* p2) { return prob_comp(p2, p1); }
 
-std::string to_string(const pdf_segment& seg);
-
+std::string to_string(const action_pdf_value& seg, bool print_newline = false);
+std::string to_string(const v_array<pdf_segment>& pdf, bool print_newline = false);
 }}  // namespace VW::actions

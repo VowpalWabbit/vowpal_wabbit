@@ -297,8 +297,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
         &random_seed,
         begin_probs(ec.pred.prob_dist),
         end_probs(ec.pred.prob_dist),
-        ec.pred.prob_dist[0].action,
-        ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].action,
+        ec.pred.prob_dist[0].begin,
+        ec.pred.prob_dist[ec.pred.prob_dist.size() - 1].end,
         chosen_action))
     THROW("Failed to sample from pdf");
 

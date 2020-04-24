@@ -18,13 +18,14 @@ enum prediction_type_t
   scalar,
   scalars,
   action_scores,
-  prob_dist,
+  pdf,
   action_probs,
   multiclass,
   multilabels,
   prob,
   multiclassprobs,
-  decision_probs
+  decision_probs,
+  action_pdf_value
 };
 
 const char* to_string(prediction_type_t prediction_type);

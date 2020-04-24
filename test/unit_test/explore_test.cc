@@ -9,6 +9,11 @@
 
 #include <vector>
 #include "../../explore/explore.h"
+
+#include "cb_explore_pdf.h"
+
+using namespace VW::actions_pdf;
+
 bool continuous_action_range_check(std::vector<float> scores, float range_min, float range_max)
 {
   float chosen_value;
@@ -22,6 +27,24 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action)
 {
   BOOST_CHECK(continuous_action_range_check({1.0f, 2.0f, 3.0f, 4.0f, 5.0f}, .0f, 100.f));
   BOOST_CHECK(continuous_action_range_check({1.0f, 2.0f, 3.0f, 4.0f, 5.0f}, 1000.0f, 1100.f));
+}
+
+BOOST_AUTO_TEST_CASE(new_sample_pdf)
+{
+  pdf the_pdf = v_init<::pdf_segment>();
+  the_pdf.push_back({2.f, 3.5f, 0.1f / 1.5f});
+  the_pdf.push_back({3.5f, 4.5f, 0.8f / 1.0f});
+  the_pdf.push_back({4.5f, 6.2f, 0.1f / 1.7f});
+  const auto str_pdf = to_string(the_pdf);
+  std::cout << str_pdf << std::endl;
+  uint64_t seed = 7791;
+  float chosen_action = 0.f;
+  float pdf_value = 0.f;
+
+  exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
+  BOOST_CHECK(chosen_action >= the_pdf[0].begin && chosen_action <= the_pdf.last().end && pdf_value > 0.f);
+  exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
+  BOOST_CHECK(chosen_action >= the_pdf[0].begin && chosen_action <= the_pdf.last().end && pdf_value > 0.f);
 }
 
 struct bins_calc
@@ -65,7 +88,7 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical)
   const float range_min = .0f;
   const float range_max = 100.0f;
   uint64_t random_seed = 7791;
-  bins_calc bins(0.f, 100.0f, (uint32_t)scores.size()-1);
+  bins_calc bins(0.f, 100.0f, (uint32_t)scores.size() - 1);
 
   const uint32_t iterate_count = 100000;
   for (auto idx = 0; idx < iterate_count; idx++)
@@ -86,7 +109,7 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical)
   const float total_scores = std::accumulate(std::begin(scores), std::end(scores), 0.f);
   for (uint32_t idx = 0; idx < bins._num_bins; ++idx)
   {
-    BOOST_CHECK_CLOSE(bins._counts[idx]/(float)bins._total_samples, scores[idx] / total_scores, 1.5f);
+    BOOST_CHECK_CLOSE(bins._counts[idx] / (float)bins._total_samples, scores[idx] / total_scores, 1.5f);
   }
 }
 
