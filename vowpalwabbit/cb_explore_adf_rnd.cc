@@ -279,12 +279,12 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("rnd_alpha", alpha)
                .keep()
                .allow_override()
-               .default_value(0.01f)
+               .default_value(0.1f)
                .help("ci width for rnd (bigger => more exploration on repeating features)"))
       .add(make_option("rnd_invlambda", invlambda)
                .keep()
                .allow_override()
-               .default_value(0.01f)
+               .default_value(0.1f)
                .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
   options.add_and_parse(new_options);
 
