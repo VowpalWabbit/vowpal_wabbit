@@ -221,7 +221,7 @@ class vw_predict
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  std::vector<std::string> _interactions;
+  std::vector<std::vector<namespace_index>> _interactions;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
@@ -297,10 +297,10 @@ class vw_predict
 
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
-    std::vector<std::string> vec_sorted;
-    for (const std::string& interaction : _interactions)
+    std::vector<std::vector<namespace_index>> vec_sorted;
+    for (auto &interaction : _interactions)
     {
-      std::string sorted_i(interaction);
+      std::vector<namespace_index> sorted_i(interaction);
       std::sort(std::begin(sorted_i), std::end(sorted_i));
       vec_sorted.push_back(sorted_i);
     }
