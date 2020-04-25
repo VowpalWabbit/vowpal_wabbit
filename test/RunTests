@@ -25,7 +25,7 @@ my $VW;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
-$ENV{'PATH'} .= ':test:../vowpalwabbit:vowpalwabbit:.';
+$ENV{'PATH'} = '../build/vowpalwabbit:test:../vowpalwabbit:vowpalwabbit:.:' . $ENV{'PATH'};
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
@@ -45,7 +45,7 @@ my $ErrorCount = 0;
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
-$WordSplit = "[ \t:]+";
+$WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
 # The intent is to make them easier to parse (and compare values) by a human
@@ -262,9 +262,15 @@ sub ref_file($) {
 
 sub next_paragraph {
     my $paragraph = '';
+    my $testid = '<unknown id>';
 
     while ($line = <DATA>) {
-        next if $line =~ /^\s*#/;       # skip comment lines
+        if ($line =~ /^\s*#/) {       # skip comment lines
+          if ($line =~ /^# Test (\d+)/) {
+            $testid = $1;
+          }
+          next;
+        }
         if ($line =~ /\\$/) {           # support line continuation
             $line =~ s/\\\n/ /;
         }
@@ -274,7 +280,7 @@ sub next_paragraph {
             # end of paragraph
             chomp $paragraph;
             $paragraph = trim_spaces($paragraph);
-            return $paragraph;
+            return ($testid, $paragraph);
         }
     }
     return;
@@ -283,8 +289,8 @@ sub next_paragraph {
 sub next_test() {
     my ($cmd, $out_ref, $err_ref, @other_ref);
 
-    $TestNo++;
-    my $paragraph = next_paragraph();
+    my $paragraph = '';
+    ($TestNo, $paragraph) = next_paragraph();
     return (undef, undef, undef, undef) if !defined $paragraph;
     my @lines = split("\n", $paragraph);
 
@@ -364,6 +370,10 @@ sub lenient_array_compare($$) {
         my ($word1, $word2) = ($w1[$i], $w2[$i]);
         # print STDERR "\t$word1 == $word2 ?\n";
         next if ($word1 eq $word2);
+
+        # Some output contains '...', remove this for comparison.
+        $word1 =~ s/\.\.\.//;
+        $word2 =~ s/\.\.\.//;
 
         # There's some difference, is it significant?
         unless (looks_like_number($word1)) {
@@ -647,8 +657,18 @@ sub run_tests() {
         if ($status) {
             $ErrorCount++;
             if ($opt_V && $status == 100) {
-                my $errfile = valgrind_errfile($TestNo);
-                warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                # If the failing test was a script or Python file, ignore the failure because Valgrind
+                # doesn't really work there.
+                if (index($cmd, ".sh") != -1 || index($cmd, ".py") != -1) {
+                    print "$0: test $TestNo: Valgrind failure in script ignored\n";
+                    # Undo the error count change, as this failure is okay.
+                    $ErrorCount--;
+                    next;
+                }
+                else {
+                    my $errfile = valgrind_errfile($TestNo);
+                    warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                }
             } elsif ($TimeOut && $status == 124) {
                 warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
             } else {
@@ -758,6 +778,7 @@ exit $ErrorCount;
 #   You may break very long lines using \ at EOL.
 #
 #   # -------------------------------------
+#   # Test <test_id>: ...
 #   shell command which may include {VW} ...
 #       reference/file1
 #       reference/file2
@@ -787,7 +808,7 @@ exit $ErrorCount;
 # For example:
 #
 #   #-------------------------------------------------------
-#   # Test 237
+#   # Test 237: readable_model
 #   {VW} ... -p test75.predict --readable_model test75.rmodel
 #       test/train-sets/ref/test75.stderr
 #       test/pred-sets/ref/test75.predict
@@ -819,14 +840,15 @@ exit $ErrorCount;
 #   and if any of them exists, we use it instead.
 #
 __DATA__
+
 # Test 1:
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
-    -f models/0001.model -c --passes 8 --invariant \
+    -f models/0001_1.model -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.stderr
 
 # Test 2: checking predictions as well
-{VW} -k -t -d train-sets/0001.dat -i models/0001.model -p 0001.predict --invariant
+{VW} -k -t -d train-sets/0001.dat -i models/0001_1.model -p 0001.predict --invariant
     test-sets/ref/0001.stderr
     pred-sets/ref/0001.predict
 
@@ -1012,7 +1034,7 @@ __DATA__
     train-sets/ref/rcv1_raw_cb_ips.stderr
 
 # Test 41: cb with dm
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
     train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
@@ -1102,14 +1124,13 @@ __DATA__
     train-sets/ref/library_train.stdout
     train-sets/ref/library_train.stderr
 
-# Test 59: library test, run ezexample_predict
-../library/ezexample_predict models/library_train.w
-    train-sets/ref/ezexample_predict.stdout
-    train-sets/ref/ezexample_predict.stderr
+# Test 59: cb_adf, sharedfeatures
+{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+    train-sets/ref/no_shared_features.stderr
 
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
-echo "" | {VW} 
+echo "" | {VW}
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
@@ -1219,7 +1240,7 @@ echo "" | {VW}
 
 # Test 84: check cb_adf
 {VW} --cb_adf -d train-sets/cb_test.ldf --noconstant
-    train-sets/ref/cb_adf.stderr
+    train-sets/ref/cb_adf_mtr.stderr
 
 # Test 85: check multilabel_oaa
 {VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel.predict
@@ -1263,14 +1284,14 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
 
-#Test 93:  check cb_adf with doubly robust option
+# Test 93:  check cb_adf with doubly robust option
 {VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr
     train-sets/ref/cb_adf_dr.stderr
     pred-sets/ref/cb_adf_dr.predict
 
 # Test 94: experience replay version of test 1
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
-    -f models/0001.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off --replay_b 100
         train-sets/ref/0001-replay.stderr
 
@@ -1310,7 +1331,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/active_cover.stderr
 
 # Test 102: active cover (predict)
-{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict
+{VW} -i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict
     test-sets/ref/active_cover.stderr
     pred-sets/ref/active_cover.predict
 
@@ -1362,7 +1383,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --confidence -d ./train-sets/rcv1_micro.dat --initial_t 0.1 -p confidence.preds
     train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
-     
+
 # Test 114: Over size example test
 {VW} -d train-sets/x.txt
     train-sets/ref/oversize.stderr
@@ -1370,7 +1391,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 115: Long Line test
 {VW} -d train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
-    
+
 # Test 116: MWT test
 {VW} -d train-sets/cb_eval --multiworld_test f -p cb_eval.preds
     train-sets/ref/cb_eval.stderr
@@ -1404,7 +1425,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 122: Predictions with confidences after training
 {VW} --confidence --confidence_after_training --initial_t 0.1 -d ./train-sets/rcv1_small.dat -p confidence_after_training.preds
     train-sets/ref/confidence_after_training.stderr
-    pred-sets/ref/confidence_after_training.preds   
+    pred-sets/ref/confidence_after_training.preds
 
 # Test 123: cb_eval save/load #1
 {VW} -d train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
@@ -1421,7 +1442,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/search_dep_parser_arceager.stderr
 
 # Test 126: recall tree hello world
-{VW} --quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic 
+{VW} --quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic
 
 # Test 127: recall_tree hello world predict-from-saved-model
 {VW} -t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model
@@ -1471,7 +1492,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t
     train-sets/ref/cb_adf_crash2.stderr
 
-# Test 137: Fix for regression introduced by badeedb.  
+# Test 137: Fix for regression introduced by badeedb.
 # Ensure audit output continues to work correctly in the presence of anon features.
 # Github issue 1038 (https://github.com/JohnLangford/vowpal_wabbit/issues/1038)
 {VW} --audit -d train-sets/audit.dat --noconstant
@@ -1493,7 +1514,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/marginal.stderr
 
 # Test 141: marginal features test
-{VW} -i marginal_model  -d train-sets/marginal_features --noconstant -t 
+{VW} -i marginal_model  -d train-sets/marginal_features --noconstant -t
     train-sets/ref/marginal_test.stderr
 
 # Test 142: Evaluate exploration on contextal bandit data
@@ -1503,7 +1524,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 143: Test 1 using JSON
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
-    -f models/0001.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.json.stderr
 
@@ -1533,7 +1554,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cb_adf_dm.predict
 
 # Test 149: initial_weight option is used
-echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 
+echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/initial_weight.stderr
     train-sets/ref/initial_weight.stdout
 
@@ -1541,7 +1562,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
     train-sets/ref/sparse.stderr
 
-# Test 151: lrqfa 
+# Test 151: lrqfa
 {VW} --lrqfa aa3 -d train-sets/0080.dat
     train-sets/ref/0151.stderr
 
@@ -1570,6 +1591,245 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/157.stderr
 
 # Test 158: test decision service json parsing
-{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT
-    train-sets/ref/decisionservice.stderr
+{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict
+    train-sets/ref/cbe_adf_dsjson.stderr
+    pred-sets/ref/cbe_adf_dsjson.predict
 
+# Test 159: test --bootstrap & --binary interaction
+{VW} -d train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
+    train-sets/ref/bootstrap_and_binary.stderr
+
+# Test 160: test --bootstrap & --oaa interaction
+# (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)
+{VW} -d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
+    train-sets/ref/bootstrap_and_oaa.stderr
+
+# Test 161: --classweight
+{VW} -d train-sets/0001.dat --classweight 1:2,0:3.1,-1:5
+    train-sets/ref/classweight.stderr
+
+# Test 162: --classweight with multiclass
+{VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10 --classweight 10:3
+    train-sets/ref/classweight_multiclass.stderr
+
+# Test 163: --classweight with multiclass
+{VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1 --classweight 2:10,10:3
+    train-sets/ref/classweight_recall_tree.stderr
+
+# Test 164: cs_active low mellowness
+{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax
+    train-sets/ref/cs_active_0.01.stderr
+
+# Test 165: cs_active high mellowness
+{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax
+    train-sets/ref/cs_active_1.0.stderr
+
+# Test 166: hash_seed train
+{VW} --hash_seed 5 -d train-sets/rcv1_mini.dat --holdout_off --passes 2 -f hash_seed5.model -c -k --ngram 2 -q ::
+    train-sets/ref/hash_seed_train.stderr
+
+# Test 167: hash_seed test
+{VW} -d train-sets/rcv1_mini.dat -i hash_seed5.model -t
+    train-sets/ref/hash_seed_test.stderr
+
+# Test 168: test cb with dm
+{VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
+    train-sets/ref/rcv1_raw_cb_dm_test.stderr
+
+# Test 169: test cbify large
+{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
+    train-sets/ref/rcv1_multiclass.stderr
+
+# Test 170: cbify adf, epsilon-greedy
+{VW} --cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass
+    train-sets/ref/cbify_epsilon_adf.stderr
+
+# Test 171: cbify cs, epsilon-greedy
+{VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb
+    train-sets/ref/cbify_epsilon_cs.stderr
+
+# Test 172: cbify adf cs, epsilon-greedy
+{VW} --cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d train-sets/cs_cb
+    train-sets/ref/cbify_epsilon_cs_adf.stderr
+
+# Test 173: cbify adf, regcb
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d train-sets/multiclass
+    train-sets/ref/cbify_regcb.stderr
+
+# Test 174: cbify adf, regcbopt
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass
+    train-sets/ref/cbify_regcbopt.stderr
+
+# Test 175: cbify ldf, regcbopt
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01
+    train-sets/ref/cbify_ldf_regcbopt.stderr
+
+# Test 176: same model on cluster mode
+./same-model-test.sh
+
+# Test 177: check --audit output is reproducible
+printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
+    train-sets/ref/audit2.stdout
+
+# Test 178 cb_adf, sharedfeatures
+{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+    train-sets/ref/no_shared_features.stderr
+
+# Test 179 warm_cb warm start
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb.stderr
+
+# Test 180 warm_cb warm start with lambda set containing 0/1
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_lambda_zeroone.stderr
+
+# Test 181 warm_cb warm start with warm start update turned off
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_no_ws_upd.stderr
+
+# Test 182 warm_cb warm start with interaction update turned off
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass
+    train-sets/ref/warm_cb_no_int_upd.stderr
+
+# Test 183 warm_cb warm start with bandit warm start type (Sim-Bandit)
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass
+    train-sets/ref/warm_cb_simbandit.stderr
+
+# Test 184 warm_cb warm start with CYC supervised corruption
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
+    train-sets/ref/warm_cb_cyc.stderr
+
+# Test 185 warm_cb warm start with input cost-sensitive examples
+{VW} --warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb
+    train-sets/ref/warm_cb_cs.stderr
+
+# Test 186 test counting examples with holdout_after option
+{VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat
+    train-sets/ref/holdout_after.stderr
+
+# Test 187 test counting examples with holdout_after option with 2 passes on the training set
+{VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2
+    train-sets/ref/holdout_after_2passes.stderr
+
+# Test 188 test cb_adf with softmax
+{VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_adf_sm.stderr
+    pred-sets/ref/cb_adf_sm.predict
+
+# Test 189 test dsjson parser correctly processes checkpoint and dangling observation lines
+{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --cb_explore_adf -P 1
+    train-sets/ref/b1848_dsjson_parser_regression.stderr
+
+# Test 190: one-against-all with subsampling
+{VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
+    train-sets/ref/oaa_subsample.stderr
+
+# Test 191: train coin betting
+{VW} -k -d train-sets/0001.dat -f models/ftrl_coin.model --passes 1 --coin
+    train-sets/ref/ftrl_coin.stderr
+
+# Test 192: test coin betting
+{VW} -k -t -d train-sets/0001.dat -i models/ftrl_coin.model -p ftrl_coin.predict
+    test-sets/ref/ftrl_coin.stderr
+    pred-sets/ref/ftrl_coin.predict
+
+# Test 193: malformed examples, onethread, strict_parse failure
+./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse
+    train-sets/ref/malformed-onethread-strict_parse.stderr
+
+# Test 194: malformed examples, strict_parse failure
+./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse
+    train-sets/ref/malformed-strict_parse.stderr
+
+# Test 195: malformed examples success
+{VW} -d train-sets/malformed.dat --onethread
+    train-sets/ref/malformed.stderr
+
+# Test 196: online contextual memory tree
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_online.stderr
+
+# Test 197: offline contextual memory tree
+{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off
+    train-sets/ref/cmt_rcv1_smaller_offline.stderr
+
+# Test 198: test cb_sample
+{VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234
+    pred-sets/ref/cb_sample_seed.predict
+
+# Test 199: CCB train then test
+{VW} -d train-sets/ccb_test.dat --ccb_explore_adf -p ccb_test.predict
+    train-sets/ref/ccb_test.stderr
+    train-sets/ref/ccb_test.predict
+
+# Test 200: cb_explore_adf with huge lambda softmax exploration
+{VW} --cb_explore_adf --softmax --lambda 100000 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax_biglambda.predict
+    train-sets/ref/cbe_adf_softmax_biglambda.stderr
+    pred-sets/ref/cbe_adf_softmax_biglambda.predict
+
+# Test 201: Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind
+{VW} --ccb_explore_adf --ring_size 7 -d train-sets/ccb_reuse_small.data
+    train-sets/ref/ccb_reuse_small.stderr
+
+# Test 202: Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind
+{VW} --ccb_explore_adf --ring_size 20 --dsjson -d train-sets/ccb_reuse_medium.dsjson
+    train-sets/ref/ccb_reuse_medium.stderr
+
+# Test 203: Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread
+python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree \
+    --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat \
+    --prediction_file cluster.predict
+        test-sets/ref/cluster.stderr
+        test-sets/ref/cluster.stdout
+        pred-sets/ref/cluster.predict
+
+# Test 204: Test if options that are negative numbers are handled correctly
+{VW} --classweight -1:0.5 --no_stdin
+    test-sets/ref/negative-num-option.stderr
+
+# Test 205: test cb_dro with softmax
+{VW} --cb_dro --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_dro_adf_sm.stderr
+    pred-sets/ref/cb_dro_adf_sm.predict
+
+# Test 206: Tests segfault that used to happen when audit, cache and interactions were combined.
+{VW} -c -k --passes 2 -d train-sets/cache_interaction_audit.txt -q st --audit
+    train-sets/ref/cache_interaction_audit.stdout
+    train-sets/ref/cache_interaction_audit.stderr
+
+# Test 207: Enable chain hash option for json example
+{VW} --audit --json -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash && \
+    tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new && \
+        rm chain_hash_json_result.cmp && \
+            mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp
+    test-sets/ref/chain_hash_json_test.stderr
+    test-sets/ref/chain_hash_json_test.stdout
+    test-sets/ref/chain_hash_json_result.cmp
+
+# Test 208: Enable chain hash option for text example
+{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash && \
+    tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new && \
+        rm chain_hash_text_result.cmp && \
+            mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp
+    test-sets/ref/chain_hash_text_result.stderr
+    test-sets/ref/chain_hash_text_result.stdout
+    test-sets/ref/chain_hash_text_result.cmp
+
+# Test 209: Test override epsilon value saved in a model
+{VW} -i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds
+    pred-sets/ref/override_epsilon.stderr
+    pred-sets/ref/override_epsilon.preds
+
+# Test 210: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
+# SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)
+{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
+    && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.readable.txt
+
+# Test 211: cb_explore_adf with rnd exploration
+{VW} --cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict
+    train-sets/ref/cbe_adf_rnd.stderr
+    pred-sets/ref/cbe_adf_rnd.predict
+
+# Do not delete this line or the empty line above it

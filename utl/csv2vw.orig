@@ -1,0 +1,140 @@
+#!/usr/bin/perl -w
+#
+# Convert TSV/CSV to VW training set format
+#
+# Supports:
+#   - Optionally use header line for feature names ('-h' option)
+#   - If no  '-h' is used, will number features as 1..k based on
+#     column number
+#   - Multiclass labels will be auto-converted to 1..k if they are
+#     non-numeric e.g. Species: {setosa, versicolor, virginica}
+#   - Categorical features are auto-converted to vw boolean name=value`
+#   - Numerical features will use name:value
+#   - Numeric command-line arg allows specifiying the label column
+#     number (also: negative numbers conveniently support the
+#     "from end of line" perl convention (e.g: -1 is last column)
+#   - By default, auto-splits columns on commas and/or tabs
+#   - Allows specifying (and overriding) the input separator as perl
+#     regexp ('-s <regexp>' option)
+
+#
+# Ariel Faigon, May 2015
+#
+use Getopt::Std;
+use Scalar::Util qw(looks_like_number);
+
+use vars qw($opt_v $opt_h $opt_s);
+
+my $FieldSep = qr{[,\t]};
+my $LabelColArg = 0;    # Specified by user
+my $LabelCol = 0;       # Final column to use
+
+my @FeatureNames = ();
+my $LineNo = 0;
+
+sub v {
+    return unless $opt_v;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+sub usage {
+    die "Usage: $0 [options] [<label_column>] files...
+    Options:
+        -v          verbose
+        -h          first line is header
+        -s<sep>     explicitly specify field separator (perl-regexp)
+                    the default is: '$FieldSep'
+
+    Args:
+        If a numeric arg <label_column> is specified, it will be
+        used as the index (1st index is 0) of the label (target
+        feature) column.
+
+        A negative value can be used to specify a column position
+        from the end (-1 is last column) but note that you would
+        have to pass '--' to mark the end of options in this case
+        because -1 is option/arg ambiguous.
+
+        If a label isn't numeric, it will be assumed to be a
+        multi-class label and be converted to an integer [1..k]
+        (vw multiclass-representation)
+
+    Examples:
+        csv2vw -h -- -1 iris.csv
+            Use 1st line as header, last column as label
+
+        csv2vw 2 data.tsv
+            Use 1..k as column/feature names, use 3rd column
+            as the label column (base index is 0) - no header
+            assumed in input
+";
+}
+
+sub init {
+    $0 =~ s{.*/}{};
+    getopts('vhs:');
+    usage() if (@ARGV == 0 && -t STDIN);
+
+    $FieldSep = $opt_s if ((defined $opt_s) && length($opt_s) > 0);
+
+    if (@ARGV and $ARGV[0] =~ /^-?\d+$/) {
+        $LabelColArg = shift @ARGV;
+        v("LabelColArg=%s \@ARGV=(@ARGV)\n", $LabelColArg);
+    }
+}
+
+my %Label2KMap;
+my $MaxK = 0;
+
+sub label2k($) {
+    my $label = shift;
+    return $Label2KMap{$label} if (exists $Label2KMap{$label});
+    $MaxK++;
+    $Label2KMap{$label} = $MaxK;
+    $MaxK;
+}
+
+#
+# -- main
+#
+init();
+
+while (<>) {
+    chomp;
+    my @f = split($FieldSep);
+    if ($. == 1) {
+        @feature_indexes = (0 .. $#f);
+        if ($LabelColArg < 0) {
+            $LabelCol = $#f + 1 + $LabelColArg;
+        } else {
+            $LabelCol = $LabelColArg;
+        }
+        unless (0 <= $LabelCol and $LabelCol <= $#f) {
+            die "Label Column: $LabelColArg is out of range for [0 .. $#f]\n";
+        }
+        if ($opt_h) {
+            @FeatureNames = @f[@feature_indexes];
+            next;
+        } else {
+            @FeatureNames = @feature_indexes;
+        }
+    }
+    $LineNo++;
+    my $label = $f[$LabelCol];
+    $label = label2k($label) unless (looks_like_number($label));
+
+    printf "%s %d|f", $label, $LineNo;
+    foreach my $i (@feature_indexes) {
+        next unless (defined $f[$i]);
+        next if ($i == $LabelCol);
+
+        my $sep = looks_like_number($f[$i]) ? ':' : '=';
+	printf " %s%s%s", $FeatureNames[$i], $sep, $f[$i];
+    }
+    print "\n";
+}
+

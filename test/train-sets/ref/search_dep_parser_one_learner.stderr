@@ -16,7 +16,7 @@ loss       last        counter           output prefix          output prefix  p
 
 finished run
 number of examples = 2
-weighted example sum = 2
-weighted label sum = 0
-average loss = 48.5
+weighted example sum = 2.000000
+weighted label sum = 0.000000
+average loss = 48.500000
 total feature number = 29203

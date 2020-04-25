@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,6 +55,7 @@ namespace cs_unittest
     public class TestSerializer
     {
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestCustomFeaturizer()
         {
             var context = new MyContext() { Feature = new CustomClass() { X = 5 }};
@@ -74,6 +75,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestCustomFeaturizerOverideMethod()
         {
             var context = new MyContext() { Feature = new CustomClass() { X = 5 } };
@@ -103,6 +105,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestDictify()
         {
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings { EnableStringExampleGeneration = true, EnableStringFloatCompact = true }))

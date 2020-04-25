@@ -1,54 +1,22 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "vw_exception.h"
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <Windows.h>
 #endif
 
 namespace VW
 {
 
-vw_exception::vw_exception(const char* pfile, int plineNumber, std::string pmessage)
-  : file(pfile), message(pmessage), lineNumber(plineNumber)
-{
-}
-
-vw_exception::vw_exception(const vw_exception& ex)
-  : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)
-{
-}
-
-vw_exception::~vw_exception() _NOEXCEPT
-{
-}
-
-const char* vw_exception::what() const _NOEXCEPT
-{ return message.c_str();
-}
-
-const char* vw_exception::Filename() const
-{ return file;
-}
-
-int vw_exception::LineNumber() const
-{ return lineNumber;
-}
-
-
-vw_argument_disagreement_exception::vw_argument_disagreement_exception(const char* file, int lineNumber, std::string message)
-	: vw_exception(file, lineNumber, message)
-{ } 
-
-vw_argument_disagreement_exception::vw_argument_disagreement_exception(const vw_argument_disagreement_exception& ex)
-	: vw_exception(ex)
-{ }
-
-vw_argument_disagreement_exception::~vw_argument_disagreement_exception() _NOEXCEPT
-{ }
-
 #ifdef _WIN32
 
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
-{ char buffer[4 * 1024];
+{
+  char buffer[4 * 1024];
   int offset = sprintf_s(buffer, sizeof(buffer), "%s:%d (%d): ", filename, linenumber, GetCurrentThreadId());
 
   va_list argptr;
@@ -62,31 +30,35 @@ void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
 }
 
 struct StopWatchData
-{ LARGE_INTEGER frequency_;
+{
+  LARGE_INTEGER frequency_;
   LARGE_INTEGER startTime_;
 };
 
 StopWatch::StopWatch() : data(new StopWatchData())
-{ if (!::QueryPerformanceFrequency(&data->frequency_)) throw "Error with QueryPerformanceFrequency";
+{
+  if (!::QueryPerformanceFrequency(&data->frequency_))
+    THROW("Error with QueryPerformanceFrequency");
   ::QueryPerformanceCounter(&data->startTime_);
 }
 
-StopWatch::~StopWatch()
-{ delete data;
-}
+StopWatch::~StopWatch() { delete data; }
 
 double StopWatch::MilliSeconds() const
-{ LARGE_INTEGER now;
+{
+  LARGE_INTEGER now;
   ::QueryPerformanceCounter(&now);
 
   return double(now.QuadPart - data->startTime_.QuadPart) / (double(data->frequency_.QuadPart) / 1000);
 }
 
 bool launchDebugger()
-{ // Get System directory, typically c:\windows\system32
+{
+  // Get System directory, typically c:\windows\system32
   std::wstring systemDir(MAX_PATH + 1, '\0');
   UINT nChars = GetSystemDirectoryW(&systemDir[0], (UINT)systemDir.length());
-  if (nChars == 0) return false; // failed to get system directory
+  if (nChars == 0)
+    return false;  // failed to get system directory
   systemDir.resize(nChars);
 
   // Get process ID and create the command line
@@ -103,7 +75,8 @@ bool launchDebugger()
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
 
-  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) return false;
+  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    return false;
 
   // Close debugger process handles to eliminate resource leak
   CloseHandle(pi.hThread);
@@ -117,4 +90,4 @@ bool launchDebugger()
   return true;
 }
 #endif
-}
+}  // namespace VW

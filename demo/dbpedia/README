@@ -1,0 +1,24 @@
+This directory contains a simple end-to-end example to use vowpal wabbit for
+multi-class classification. The task relates to DBpedia ontology classification
+where the labels are one of 14 ontology classes (e.g. Company, Film, Athlete)
+and the input data consists of the title and content associated with the entity
+in DBpedia.
+
+This is adapted from the classification-example.sh from fastText
+(https://github.com/facebookresearch/fastText).
+
+In order to run:
+
+1) Run `make` in the vowpal_wabbit root directory
+2) Make classification example executable: `chmod +x ./classification-example.sh`
+3) Run `./classification-example.sh` which will:
+  (a) Download and parse the data to convert it into the vw format
+  (b) Train a model
+  (c) Evaluate the model
+  (d) Output the predictions
+
+You can also evaluate the predictions (you'll need python and scikit-learn and
+its dependencies installed). After running the script above you can run the
+evaluation script (thanks to @Scott-Graham-Bose):
+
+  python eval.py --truth data/dbpedia.test --pred result/dbpedia.test.predict

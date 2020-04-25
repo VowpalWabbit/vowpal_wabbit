@@ -14,8 +14,9 @@ num sources = 1
  1 0.00000   	0.00000   	0.00000   	          	          	          	0.00000   	0.00000   	0.00000
 
 finished run
-number of examples = 10
-weighted example sum = 10
-weighted label sum = 0
-average loss = 0
+number of examples per pass = 5
+passes used = 2
+weighted example sum = 10.000000
+weighted label sum = 0.000000
+average loss = 0.000000
 total feature number = 6002

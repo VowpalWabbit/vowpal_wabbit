@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -18,7 +18,7 @@ namespace cs_test
     public class Test1and2Class : TestBase
     {
         [TestMethod]
-        [TestCategory("Command line through marshalling")]
+        [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         public void Test1and2()
         {
             var references = File.ReadAllLines(@"pred-sets\ref\0001.predict").Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();

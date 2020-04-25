@@ -1,25 +1,21 @@
-#set internal version number in configure.ac before tagging.
+#!/bin/bash
+set -e
+set -x
 
-#to install eclint on ubuntu:
-#sudo apt-get purge nodejs npm
-#curl -sL https://deb.nodesource.com/setup | sudo bash -
-#sudo apt-get install -y nodejs
-#sudo apt-get install npm
-#sudo npm install -g eclint
+if [ "$#" -ne 1 ]; then
+    echo "Must supply version number: $0 new_version_number"
+    exit 1
+fi
 
-#find -regextype posix-extended -regex '.*\.(cc|h|cpp)' | xargs eclint fix
-#find -regextype posix-extended -regex '.*\.(cc|h|cpp)' | grep -v vw_clr | xargs astyle -s2 --style=horstmann --lineend=linux --keep-one-line-blocks --keep-one-line-statements
-git commit -a -m "consistent indentation with astyle (before releasing $1)"
-git push
-git branch $1
-git checkout $1
-./autogen.sh
-make
-cp LICENSE COPYING
-git add -f ltmain.sh acinclude.d/* aclocal.m4 config.guess missing install-sh config.sub depcomp COPYING Makefile.in configure config.status libtool vowpalwabbit/config.h.in vowpalwabbit/Makefile.in cluster/Makefile.in library/Makefile.in
-rm Makefile vowpalwabbit/Makefile cluster/Makefile library/Makefile
-git commit -a -m "added autogen extra files"
-git tag $1
+# Clean working directory
+git clean -fd .
+git checkout -- .
 git checkout master
-git branch -D $1
-git push --tags
+
+# Run clang-format and commit
+./utl/clang-format fix
+git commit -a -m "Fix style with clang-format (before releasing $1)"
+
+# Update version number and commit
+echo "$1" > version.txt
+git commit -a -m "Update verson.txt for release $1"

@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +15,8 @@ namespace cs_unittest
     public class TestMarshalling
     {
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestEnumerize()
         {
             using(var vw = new VowpalWabbitExampleValidator<ExampleEnum>(string.Empty))
@@ -27,7 +28,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestString()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleString>(string.Empty))
@@ -45,7 +47,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestStringFeatureGroup()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleString2>(string.Empty))
@@ -55,7 +58,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestStringNamespace()
         {
             try
@@ -73,7 +77,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestStringEscape()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleStringEscape>(string.Empty))
@@ -84,7 +89,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestStringSplit()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleStringSplit>(string.Empty))
@@ -94,7 +100,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestStringIncludeName()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleStringInclude>(string.Empty))
@@ -104,7 +111,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestDictionary()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleDictionary>(string.Empty))
@@ -121,7 +129,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestCustomType()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleCustomType>(string.Empty))
@@ -131,7 +140,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestEnumerableString()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleEnumerable>(string.Empty))
@@ -143,7 +153,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestEnumerableKV()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleEnumerableKV>(string.Empty))
@@ -162,7 +173,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestComplexType()
         {
             using (var vw = new VowpalWabbitExampleValidator<UserContext>(string.Empty))
@@ -205,7 +217,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestEnumerizePosition()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleEnumerize>(string.Empty))
@@ -216,7 +229,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestBool()
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleBoolean>(string.Empty))
@@ -227,7 +241,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        
         public void TestFeatureDiscoveryAll()
         {
             using (var vw = new VowpalWabbitExampleValidator<POCO>(new VowpalWabbitSettings { TypeInspector = TypeInspector.All }))

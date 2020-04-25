@@ -1,4 +1,4 @@
-﻿<#@ output extension=".cs" #>
+<#@ output extension=".cs" #>
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -18,7 +18,7 @@ namespace cs_unittest
 	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumeric<#=t.Name#>()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExample<#=t.Name#>>(string.Empty))
@@ -28,7 +28,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumeric<#=t.Name#>Array()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExample<#=t.Name#>Array>(string.Empty))
@@ -39,7 +39,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumeric<#=t.Name#>ArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExample<#=t.Name#>ArrayAnchor>(string.Empty))
@@ -53,7 +53,7 @@ namespace cs_unittest
 
 	<# foreach(var t in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16) }) { #>
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionary<#=t.Name#>()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExample<#=t.Name#>>(string.Empty))
@@ -72,7 +72,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionary<#=t.Name#>String()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExample<#=t.Name#>String>(string.Empty))
@@ -92,7 +92,7 @@ namespace cs_unittest
 
 	<# foreach(var s in new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) }) { #>
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionary<#=t.Name#><#=s.Name#>()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExample<#=t.Name#><#=s.Name#>>(string.Empty))

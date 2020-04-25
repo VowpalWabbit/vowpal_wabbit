@@ -1,140 +1,375 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# vim: ts=4 sw=4 expandtab
 #
-# Convert TSV/CSV to VW training set format
+# pylint: disable=bad-continuation,len-as-condition
+# pylint: disable=global-statement,misplaced-comparison-constant
 #
-# Supports:
-#   - Optionally use header line for feature names ('-h' option)
-#   - If no  '-h' is used, will number features as 1..k based on
-#     column number
-#   - Multiclass labels will be auto-converted to 1..k if they are
-#     non-numeric e.g. Species: {setosa, versicolor, virginica}
-#   - Categorical features are auto-converted to vw boolean name=value`
-#   - Numerical features will use name:value
-#   - Numeric command-line arg allows specifiying the label column
-#     number (also: negative numbers conveniently support the
-#     "from end of line" perl convention (e.g: -1 is last column)
-#   - By default, auto-splits columns on commas and/or tabs
-#   - Allows specifying (and overriding) the input separator as perl
-#     regexp ('-s <regexp>' option)
+"""
+   Convert TSV/CSV to VW training set format
 
-#
-# Ariel Faigon, May 2015
-#
-use Getopt::Std;
-use Scalar::Util qw(looks_like_number);
+   Summary of features supported.
+   - Use header line for feature names (disable with '-H' option)
+   - If no header present will number features as 1..k based on column number
+   - Multiclass labels will be auto-converted to 1..k if they are
+     non-numeric e.g. Species: {setosa, versicolor, virginica} -> {1, 2, 3}
+   - Categorical features are auto-converted to vw boolean name=value
+     (a.k.a 'one-hot-encoding')
+   - Numerical features will use name:value
+   - -l <labelcol> and -i <idcol> command-line options allow specifiying
+     the label and id column numbers respectively.
+     Also: negative numbers support the "from end of line" convention
+     (e.g: -1 is last column, -2 is next-to-last, etc.)
+   - By default, auto-splits columns on commas and/or tabs
+   - Allows specifying/overriding the input separator: -s <sep>
+   - By default skips empty and zero values (-e to disable skips)
+   - Supports -b (binary label) option for auto converting 0 -> -1
+     for vw logistic regression.
+   - Additional numeric args on the command-line specify additional
+     column to ignore (not use as input features).
 
-use vars qw($opt_v $opt_h $opt_s);
+  Also see: usage()
 
-my $FieldSep = qr{[,\t]};
-my $LabelColArg = 0;    # Specified by user
-my $LabelCol = 0;       # Final column to use
+  Author: Ariel Faigon, 2016
+"""
+from __future__ import print_function
+import sys
+import errno
+import os
+import argparse
+import re
 
-my @FeatureNames = ();
-my $LineNo = 0;
+ARGV0 = os.path.basename(__file__)
 
-sub v {
-    return unless $opt_v;
-    if (@_ == 1) {
-        print STDERR @_;
-    } else {
-        printf STDERR @_;
-    }
-}
+Verbose = True
 
-sub usage {
-    die "Usage: $0 [options] [<label_column>] files...
+def err(msg):
+    """print message on stderr"""
+    sys.stderr.write(msg)
+    sys.stderr.flush()
+
+def die(msg):
+    """print error message & exit(1)"""
+    err(msg)
+    sys.exit(1)
+
+def v(fmt, *args):
+    """verbosity func (active when -v is in effect)"""
+    if not Verbose:
+        return
+    if len(args) == 0:
+        err(fmt)
+    else:
+        err(fmt % args)
+
+def is_number(s):
+    """return True if string-arg looks like a number"""
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+Usage = 'Usage: ' + ARGV0 + """ [options] [ignore columns] [file.csv...]
     Options:
         -v          verbose
-        -h          first line is header
-        -s<sep>     explicitly specify field separator (perl-regexp)
-                    the default is: '$FieldSep'
+        -s<sep>     Explicitly specify field separator (Perl-regex)
+                    Default: ',' (comma)
+        -H          First line is NOT a header. By default, csv files
+                    are assumed to have a header with feature names.
+        -n          Use numeric feature names instead of header feature-names
+                    This can make data much smaller especially if the csv
+                    feature-names are long strings.
+                    (This is the default if there's no header.)
+        -e          Do NOT drop input features with empty (or zero) values
+                    (By default, missing values or 0 values are dropped
+                     from the data-set). Note that this refers only
+                    to input features, not to labels.
+        -i <colno>  Use <colno> (integer index) as the Id column-number
+                    (i.e. example ID rather than an input feature)
+                    This moves its contents into the vw identifying tag
+                    and drops it from the input features.
+        -l <colno>  Use <colno> (integer index) as the label column-number
+                    The label (aka response) is always dropped from the
+                    input features.  Default: -1 (last column)
+        -b          Binary (logistic regression) map label: 0 -> -1
 
-    Args:
-        If a numeric arg <label_column> is specified, it will be
-        used as the index (1st index is 0) of the label (target
-        feature) column.
+    Optional args:
+        Additional integer (including negative: index from end) arguments
+        will be interpreted as additional columns to ignore (drop from input)
 
-        A negative value can be used to specify a column position
-        from the end (-1 is last column) but note that you would
-        have to pass '--' to mark the end of options in this case
-        because -1 is option/arg ambiguous.
+    Notes:
+        Column numbers start at 0 (zero)
 
-        If a label isn't numeric, it will be assumed to be a
-        multi-class label and be converted to an integer [1..k]
+        Column numbers from-end start at -1
+        (-1 is last column, -2 next to last column, etc.)
+
+        For any data-set with N columns, column 0 & column -N
+        both designate the 1st (leftmost) column, and are equivalent
+
+        If no file arguments are given, and stdin in not a terminal
+        will assume input comes from stdin.
+
+        If a label value in the data isn't numeric, it will be assumed
+        to be a multi-class label and be converted to an integer [1..k]
         (vw multiclass-representation)
 
     Examples:
-        csv2vw -h -- -1 iris.csv
+        csv2vw -l -1 iris.csv
             Use 1st line as header, last column as label
 
-        csv2vw 2 data.tsv
-            Use 1..k as column/feature names, use 3rd column
-            as the label column (base index is 0) - no header
-            assumed in input
-";
-}
+        csv2vw -H -l 1 data.tsv
+            No header assumed in input
+            Use 2nd field as the label column (base index is 0)
 
-sub init {
-    $0 =~ s{.*/}{};
-    getopts('vhs:');
-    usage() if (@ARGV == 0 && -t STDIN);
+        csv2vw -s' ' -n -i0 -l1 data.csv
+            Assume 1st line is header (no -H in options)
+            Force space as field separator
+            Convert all feature names (from header) to numeric (in order)
+            i.e 1..k as column (feature) names
+            Assume first (0 index) column is the ID (and drop it from inputs)
+            Assume 2nd (1 index) is the label (and drop it from inputs)
+"""
 
-    $FieldSep = $opt_s if ((defined $opt_s) && length($opt_s) > 0);
+def usage():
+    """Pring usage message and exit"""
+    die(Usage)
 
-    if (@ARGV and $ARGV[0] =~ /^-?\d+$/) {
-        $LabelColArg = shift @ARGV;
-        v("LabelColArg=%s \@ARGV=(@ARGV)\n", $LabelColArg);
-    }
-}
+def process_args():
+    """process args, options mostly"""
 
-my %Label2KMap;
-my $MaxK = 0;
+    # allow passing input via pipe/stdin
+    # only usage() if stdin is tty
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        usage()
 
-sub label2k($) {
-    my $label = shift;
-    return $Label2KMap{$label} if (exists $Label2KMap{$label});
-    $MaxK++;
-    $Label2KMap{$label} = $MaxK;
-    $MaxK;
-}
+    parser = argparse.ArgumentParser(usage=Usage)
+    parser.add_argument('-v', '--verbose',
+        dest='v',
+        action='store_true',
+        default=False,
+        help="verbose (default: %(default)s)"
+    )
+    parser.add_argument('-s', '--sep', '--separator',
+        type=str,
+        dest='s',
+        default=r',',
+        help="column separator (default: %(default)s)"
+    )
+    parser.add_argument('-H', '--hdr', '--header',
+        dest='header',
+        action='store_false',
+        default=True,
+        help="1st line is NOT a header (default assumes we DO have header)"
+    )
+    parser.add_argument('-e', '--empty',
+        dest='e',
+        action='store_false',
+        default=True,
+        help="do NOT drop zero/empty value features (default drops them)"
+    )
+    parser.add_argument('-n', '--num', '--numeric',
+        dest='n',
+        action='store_true',
+        default=False,
+        help="Convert features names to numeric (default: %(default)s)"
+    )
+    parser.add_argument('-b', '--binary',
+        dest='b',
+        action='store_true',
+        default=False,
+        help="Binary: map label 0 -> -1 (default: %(default)s)"
+    )
+    parser.add_argument('-i', '--id', '--idcol',
+        type=int,
+        dest='i',
+        default=None,
+        help="Id column-number (default: %(default)s)"
+    )
+    parser.add_argument('-l', '-L', '--label', '--labelcol',
+        type=int,
+        dest='l',
+        default=None,
+        help="Label (response) column-number (default: %(default)s)"
+    )
+
+    # parser.add_argument('input_file',
+    #    type=argparse.FileType('r'),
+    #    nargs='?',
+    #    default=sys.stdin
+    # )
+
+    try:
+        args, other_args = parser.parse_known_args()
+        # set_dbg_lvl(G.args.dbg_lvl)
+    except Exception as args_err:
+        err("Bad command line args: %s\n" % str(args_err))
+        usage()
+
+    global Verbose
+    Verbose = args.v
+
+    ignore_cols = []
+    for arg in other_args:
+        if os.path.exists(arg):
+            args.input_file = open(arg, 'r')
+        elif is_number(arg):
+            ignore_cols.append(int(arg))
+        else:
+            err("Unsupported arg: %s (must be filename or colno)\n" % arg)
+            usage()
+
+    if not args.input_file:
+        args.input_file = sys.stdin
+
+    v("args=%s\n", args)
+    v("other_args=%s\n", other_args)
+    v("ignore_cols=%s\n", ignore_cols)
+
+    return args, ignore_cols
+
+
+# Mapping from a string-label to 1..k (multiclass labels)
+Label2KMap = {}
+MaxK = 0
+
+def label2k(label):
+    """map a multi-class label into its [1..k] integer mapping"""
+    global Label2KMap, MaxK
+    if label in Label2KMap:
+        return Label2KMap[label]
+    # not yet in the dict, increment MaxK and store the mapping:
+    MaxK += 1
+    Label2KMap[label] = MaxK
+    return MaxK
+
+def col2idx(colno, maxcol, which):
+    """column to index mapping"""
+    if which is None:
+        which = 'Label'
+
+    if not is_number(colno):
+        die("%s column: colno='%s' must be an index\n" % (which, colno))
+    # index from end, map to non-negative
+    colidx = colno if colno >= 0 else maxcol + 1 + colno
+    if not (0 <= colidx and colidx <= maxcol):
+        die("%s column: colno: %s -> idx: %s: out of range [0 .. %s]\n" %
+            (which, colno, colidx, maxcol))
+    return colidx
+
+def list_diff(first, second):
+    """list asymmetrical difference A-B between two collections"""
+    second = set(second)
+    return [item for item in first if item not in second]
+
+
+def main():
+    """csv2vw main program"""
+    args, ignore_cols = process_args()
+
+    feature_names = []
+    feature_idxs = []
+    remove_indexes = []
+
+    for lineno, line in enumerate(args.input_file):
+        line = line.rstrip('\r\n')
+        f = re.split(args.s, line)
+
+        v('f: %s\n', f)
+        if lineno == 0:
+            # first line, may be a header: prepare column mappings
+            # for faster processing in the rest of the file
+            last_idx = len(f) - 1
+            feature_idxs = range(0, last_idx+1)
+            v("line 0: last_idx=%d feature_idxs=%s\n", last_idx, feature_idxs)
+            if args.l != None:
+                args.l = col2idx(args.l, last_idx, 'Label')
+                remove_indexes.append(args.l)
+            if args.i != None:
+                args.i = col2idx(args.i, last_idx, 'Id')
+                remove_indexes.append(args.i)
+            if ignore_cols != None:
+                # ignore_cols = [ args.I ]
+                # if re.search(r'[^-0-9]+', args.I):
+                #    ignore_cols = re.split(r'[^-0-9]+', args.I)
+                for ic in ignore_cols:
+                    if is_number(ic):
+                        ic_ix = col2idx(int(ic), last_idx, 'Ignore')
+                        remove_indexes.append(ic_ix)
+                    else:
+                        die("additional arg: %s is unsupported!" % ic)
+
+            if args.header and not args.n:
+                feature_names = [f[idx] for idx in feature_idxs]
+            else:
+                feature_names = feature_idxs
+
+            # Subtract list2 from list1 so we have less
+            # indexes to deal with in the input feature inner-loop
+            feature_idxs = list_diff(feature_idxs, remove_indexes)
+            v("args.l: %s\n", args.l)
+            v("args.i: %s\n", args.i)
+            v("ignore_cols: %s\n", ignore_cols)
+            v("remove_idxs: %s\n", remove_indexes)
+            v("feature_names: %s\n", feature_names)
+            v("subset: feature_idxs: %s\n", feature_idxs)
+
+            feature_idxs = [int(i) for i in feature_idxs]
+
+            if args.header:
+                # Done dealing with the header
+                # in vw there's no header, so we don't need to print
+                # anything on the 1st line, if it is a header.
+                continue
+
+        try:
+            label = ''
+            if args.l != None:
+                label = f[args.l]
+                if label == '':
+                    # Unlabeled example, leave label as is: empty-string
+                    pass
+                elif not is_number(label):
+                    label = label2k(label)
+                elif args.b and label == '0':
+                    label = -1
+            tag = lineno if args.i is None else f[args.i]
+
+            # (Getting about 5MB/sec processing bandwidth) in perl
+            # python optimization: combine the line with one join at the end
+            # (use only one print per line)
+            line_parts = ['%s %s|' % (label, tag)]
+
+            # v("Before feature loop: line_parts: %s\n", line_parts)
+            for i in feature_idxs:
+                # v("line %d: tag:%s: feature loop: f[%s] -> %s\n",
+                #                 lineno, tag, i, f[i])
+                if args.e:
+                    if not f[i] or f[i] == '0':
+                        continue
+
+                sep = ':' if is_number(f[i]) else '='
+                line_parts.append('%s%s%s' % (feature_names[i], sep, f[i]))
+                # v("bottom of feature loop: line_parts: %s\n", line_parts)
+
+        except IndexError as ierr:
+            die("Line %d: [%s]: "
+                "Bad input (expecting %d fields, found %d): %s\n" %
+                    (lineno, line,
+                     last_idx+1, len(f), ierr)
+            )
+
+        line = ' '.join(line_parts)
+
+        try:
+            print(line)
+        except IOError, e:
+            if e.errno == errno.EPIPE:
+                die("%s: SIGPIPE while writing to stdout: exiting\n" % ARGV0)
+
 
 #
 # -- main
 #
-init();
-
-while (<>) {
-    chomp;
-    my @f = split($FieldSep);
-    if ($. == 1) {
-        @feature_indexes = (0 .. $#f);
-        if ($LabelColArg < 0) {
-            $LabelCol = $#f + 1 + $LabelColArg;
-        } else {
-            $LabelCol = $LabelColArg;
-        }
-        unless (0 <= $LabelCol and $LabelCol <= $#f) {
-            die "Label Column: $LabelColArg is out of range for [0 .. $#f]\n";
-        }
-        if ($opt_h) {
-            @FeatureNames = @f[@feature_indexes];
-            next;
-        } else {
-            @FeatureNames = @feature_indexes;
-        }
-    }
-    $LineNo++;
-    my $label = $f[$LabelCol];
-    $label = label2k($label) unless (looks_like_number($label));
-
-    printf "%s %d|f", $label, $LineNo;
-    foreach my $i (@feature_indexes) {
-        next unless (defined $f[$i]);
-        next if ($i == $LabelCol);
-
-        my $sep = looks_like_number($f[$i]) ? ':' : '=';
-	printf " %s%s%s", $FeatureNames[$i], $sep, $f[$i];
-    }
-    print "\n";
-}
-
+if __name__ == '__main__':
+    sys.exit(main())

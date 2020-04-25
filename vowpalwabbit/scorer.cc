@@ -1,78 +1,94 @@
-#include <float.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
 #include "correctedMath.h"
 #include "reductions.h"
 #include "vw_exception.h"
 
-using namespace std;
-struct scorer { vw* all; }; // for set_minmax, loss
+using namespace VW::config;
+
+struct scorer
+{
+  vw* all;
+};  // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
-void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
-{ s.all->set_minmax(s.all->sd, ec.l.simple.label);
+void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
+{
+  s.all->set_minmax(s.all->sd, ec.l.simple.label);
   if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
     base.learn(ec);
   else
     base.predict(ec);
 
-  if(ec.weight > 0 && ec.l.simple.label != FLT_MAX)
+  if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
     ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   ec.pred.scalar = link(ec.pred.scalar);
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer&, LEARNER::base_learner& base, example& ec, size_t count, size_t, polyprediction*pred, bool finalize_predictions)
-{ base.multipredict(ec, 0, count, pred, finalize_predictions); // TODO: need to thread step through???
-  for (size_t c=0; c<count; c++)
-    pred[c].scalar = link(pred[c].scalar);
+inline void multipredict(scorer&, VW::LEARNER::single_learner& base, example& ec, size_t count, size_t,
+    polyprediction* pred, bool finalize_predictions)
+{
+  base.multipredict(ec, 0, count, pred, finalize_predictions);  // TODO: need to thread step through???
+  for (size_t c = 0; c < count; c++) pred[c].scalar = link(pred[c].scalar);
 }
 
-void update(scorer& s, LEARNER::base_learner& base, example& ec)
-{ s.all->set_minmax(s.all->sd, ec.l.simple.label);
+void update(scorer& s, VW::LEARNER::single_learner& base, example& ec)
+{
+  s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
 }
 
 // y = f(x) -> [0, 1]
-inline float logistic(float in) { return 1.f / (1.f + correctedExp(- in)); }
+inline float logistic(float in) { return 1.f / (1.f + correctedExp(-in)); }
 
 // http://en.wikipedia.org/wiki/Generalized_logistic_curve
 // where the lower & upper asymptotes are -1 & 1 respectively
 // 'glf1' stands for 'Generalized Logistic Function with [-1,1] range'
 //    y = f(x) -> [-1, 1]
-inline float glf1(float in) { return 2.f / (1.f + correctedExp(- in)) - 1.f; }
+inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
 
-LEARNER::base_learner* scorer_setup(vw& all)
-{ new_options(all)
-  ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic, glf1 or poisson");
-  add_options(all);
-  po::variables_map& vm = all.vm;
-  scorer& s = calloc_or_throw<scorer>();
-  s.all = &all;
+VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
+{
+  auto s = scoped_calloc_or_throw<scorer>();
+  std::string link;
+  option_group_definition new_options("scorer options");
+  new_options.add(make_option("link", link)
+                      .default_value("identity")
+                      .keep()
+                      .help("Specify the link function: identity, logistic, glf1 or poisson"));
+  options.add_and_parse(new_options);
 
-  LEARNER::base_learner* base = setup_base(all);
-  LEARNER::learner<scorer>* l;
-  void (*multipredict_f)(scorer&, LEARNER::base_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
+  // This always returns a base_learner.
 
-  string link = vm["link"].as<string>();
-  if (!vm.count("link") || link.compare("identity") == 0)
-    l = &init_learner(&s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
-  else if (link.compare("logistic") == 0)
-  { *all.file_options << " --link=logistic ";
-    l = &init_learner(&s, base, predict_or_learn<true, logistic>,
-                      predict_or_learn<false, logistic>);
+  s->all = &all;
+
+  auto base = as_singleline(setup_base(options, all));
+  VW::LEARNER::learner<scorer, example>* l;
+  void (*multipredict_f)(scorer&, VW::LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) =
+      multipredict<id>;
+
+  if (link == "identity")
+    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
+  else if (link == "logistic")
+  {
+    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>);
     multipredict_f = multipredict<logistic>;
   }
-  else if (link.compare("glf1") == 0)
-  { *all.file_options << " --link=glf1 ";
-    l = &init_learner(&s, base, predict_or_learn<true, glf1>,
-                      predict_or_learn<false, glf1>);
+  else if (link == "glf1")
+  {
+    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>);
     multipredict_f = multipredict<glf1>;
   }
-  else if (link.compare("poisson") == 0)
-  { *all.file_options << " --link=poisson ";
-    l = &init_learner(&s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
+  else if (link == "poisson")
+  {
+    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
     multipredict_f = multipredict<expf>;
   }
   else
@@ -80,7 +96,7 @@ LEARNER::base_learner* scorer_setup(vw& all)
 
   l->set_multipredict(multipredict_f);
   l->set_update(update);
-  all.scorer = make_base(*l);
+  all.scorer = VW::LEARNER::as_singleline(l);
 
-  return all.scorer;
+  return make_base(*all.scorer);
 }

@@ -1,0 +1,26 @@
+BootStrap: docker
+From: ${DOCKERARCHPREFIX}debian:$DEBRELEASE
+
+# so if image is executed we just enter the environment
+%runscript
+    echo "Welcome to the Debian $DEBRELEASE VW devel env. (Architecture: $ARCH)"
+    echo "Just cd to your vw sources or"
+    echo " git clone git://github.com/JohnLangford/vowpal_wabbit"
+    /bin/bash
+
+
+%post
+    echo "Configuring the environment"
+    sed -e  's,^deb ,deb-src ,g' /etc/apt/sources.list > /etc/apt/sources.list.d/sources.list
+    apt-get update
+    apt-get -y install eatmydata
+    # just useful little tools
+    eatmydata apt-get -y install vim wget strace time ncdu gnupg curl procps netcat
+    eatmydata apt-get -y build-dep vowpal-wabbit
+    # new dependencies which didn't make it into a Debian release yet
+    eatmydata apt-get -y install cmake
+    # some external depends might have not been needed then
+    eatmydata apt-get -y install markdown html2text rapidjson-dev libboost-python-dev  git
+    chmod a+rX -R /etc/apt/sources.list.d
+    rm -rf /var/lib/apt/lists/*
+    apt-get clean

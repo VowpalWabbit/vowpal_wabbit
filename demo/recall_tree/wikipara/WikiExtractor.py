@@ -2227,8 +2227,8 @@ def load_templates(file, output_file=None):
                 output.write('   <title>%s</title>\n' % title)
                 output.write('   <ns>10</ns>\n')
                 output.write('   <text>')
-                for line in page:
-                    output.write(line)
+                for page_line in page:
+                    output.write(page_line)
                 output.write('   </text>\n')
                 output.write('</page>\n')
             page = []

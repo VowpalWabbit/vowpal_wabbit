@@ -1,39 +1,38 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 #include "io_buf.h"
 #include "v_array.h"
 #include <vector>
-#include <stdio.h>
+#include <cstdio>
 
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
 #else
 struct gzFile_s;
-typedef struct gzFile_s *gzFile;
+typedef struct gzFile_s* gzFile;
 #endif
 
 class comp_io_buf : public io_buf
 {
-public:
+ public:
   std::vector<gzFile> gz_files;
 
-  virtual int open_file(const char* name, bool stdin_off, int flag = READ);
+  int open_file(const char* name, bool stdin_off, int flag) override;
 
-  virtual void reset_file(int f);
+  void reset_file(int f) override;
 
-  virtual ssize_t read_file(int f, void* buf, size_t nbytes);
+  ssize_t read_file(int f, void* buf, size_t nbytes) override;
 
-  virtual size_t num_files();
+  size_t num_files() override;
 
-  virtual ssize_t write_file(int file, const void* buf, size_t nbytes);
+  ssize_t write_file(int file, const void* buf, size_t nbytes) override;
 
-  virtual bool compressed();
+  bool compressed() override;
 
-  virtual void flush();
+  void flush() override;
 
-  virtual bool close_file();
+  bool close_file() override;
 };

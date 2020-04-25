@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +13,7 @@ namespace cs_unittest
     {
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestMultiClassProbabilitiesFactory()
         {
             using (var vw = SetupVW())

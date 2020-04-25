@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "vw_builder.h"
 #include "parser.h"
@@ -62,7 +60,7 @@ VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte feat
 { uint32_t index = featureGroup;
   example* ex = m_example->m_example;
 
-  return gcnew VowpalWabbitNamespaceBuilder(ex->feature_space + index, featureGroup, m_example->m_example);
+  return gcnew VowpalWabbitNamespaceBuilder(ex->feature_space.data() + index, featureGroup, m_example->m_example);
 }
 
 VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(features* features,

@@ -2,10 +2,12 @@ import os
 
 from collections import namedtuple
 import numpy as np
+import pandas as pd
 import pytest
 
-from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw
+from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw, VWMultiClassifier
 from sklearn import datasets
+from sklearn.model_selection import KFold
 from scipy.sparse import csr_matrix
 
 
@@ -133,7 +135,7 @@ class TestVW:
              '2 |user B |movie 2',
              '3 |user C |movie 3',
              '4 |user D |movie 4',
-             '5 |user D |movie 1']
+             '5 |user E |movie 1']
         model = VW(convert_to_vw=False, lrq='um4', lrqdropout=True, loss_function='quantile')
         assert model.params['lrq'] == 'um4'
         assert model.params['lrqdropout']
@@ -144,6 +146,7 @@ class TestVW:
     def test_bfgs(self):
         data_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources', 'train.dat')
         model = VW(convert_to_vw=False, oaa=3, passes=30, bfgs=True, data=data_file, cache=True, quiet=False)
+        assert model.passes_ == 30
         X = ['1 | feature1:2.5',
              '2 | feature1:0.11 feature2:-0.0741',
              '3 | feature3:2.33 feature4:0.8 feature5:-3.1',
@@ -184,6 +187,31 @@ class TestVWClassifier:
 
         assert np.allclose(expected, actual)
 
+    def test_shuffle_list(self):
+        # dummy data in vw format
+        X = ['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat']
+
+        # Classifier with multiple passes over the data
+        clf = VWClassifier(passes=3, convert_to_vw=False)
+        clf.fit(X)
+
+        # assert that the dummy data was not perturbed
+        assert X == ['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat']
+
+    def test_shuffle_pd_Series(self):
+        # dummy data in vw format
+        X = pd.Series(['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat'], name='catdog')
+
+        kfold = KFold(n_splits=3, random_state=314, shuffle=True)
+        for train_idx, valid_idx in kfold.split(X):
+            X_train = X[train_idx]
+            # Classifier with multiple passes over the data
+            clf = VWClassifier(passes=3, convert_to_vw=False)
+            # Test that there is no exception raised in the fit on folds
+            try:
+                clf.fit(X_train)
+            except KeyError:
+                pytest.fail("Failed the fit over sub-sampled DataFrame")
 
 class TestVWRegressor:
 
@@ -217,3 +245,80 @@ def test_tovw():
     assert tovw(x=x, y=y, sample_weight=w) == expected
 
     assert tovw(x=csr_matrix(x), y=y, sample_weight=w) == expected
+
+def test_save_load(tmp_path):
+    train_file = str(tmp_path / "train.model")
+
+    X = [[1, 2], [3, 4], [5, 6], [7, 8]]
+    y = [1, 2, 3, 4]
+
+    model_before = VWRegressor(l=100)
+    model_before.fit(X, y)
+    before_saving = model_before.predict(X)
+
+    model_before.save(train_file)
+
+    model_after = VWRegressor(l=100)
+    model_after.load(train_file)
+    after_loading = model_after.predict(X)
+
+    assert all([a == b for a, b in zip(before_saving, after_loading)])
+
+
+def test_repr():
+
+    model = VW()
+    expected = "VW('convert_labels:False', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VWClassifier()
+    expected = "VWClassifier('convert_labels:False', "\
+    "'loss_function:logistic', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VWRegressor()
+    expected = "VWRegressor('convert_labels:False', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+    model = VW(convert_to_vw=False, oaa=3, loss_function='logistic', probabilities=True)
+    expected = "VW('convert_labels:False', 'loss_function:logistic', "\
+    "'oaa:3', 'probabilities:True', 'quiet:True', 'sgd:False')"
+    assert expected == model.__repr__()
+
+
+def test_sgd_param():
+
+    model1 = VWRegressor(sgd=True)
+    model2 = VWClassifier(sgd = True)
+    assert model1.get_params()['sgd'] == True
+    assert model2.get_params()['sgd'] == True
+
+
+class TestVWClassifier:
+
+    def test_init(self):
+        assert isinstance(VWMultiClassifier(), VWMultiClassifier)
+
+    def test_predict_proba(self, data):
+        raw_model = VW(probabilities = True, oaa = 2,  loss_function = 'logistic')
+        raw_model.fit(data.x, data.y)
+
+        model = VWMultiClassifier(oaa = 2, loss_function = 'logistic')
+        model.fit(data.x, data.y)
+
+        assert np.allclose(raw_model.predict(data.x), model.predict_proba(data.x))
+        # ensure model can make multiple calls to predict
+        assert np.allclose(raw_model.predict(data.x), model.predict_proba(data.x))
+
+    def test_predict(self, data):
+        raw_model = VW(oaa = 2,  loss_function = 'logistic')
+        raw_model.fit(data.x, data.y)
+
+        model = VWMultiClassifier(oaa = 2, loss_function = 'logistic')
+        model.fit(data.x, data.y)
+
+        assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
+
+    def test_delete(self):
+        raw_model = VW()
+        del raw_model

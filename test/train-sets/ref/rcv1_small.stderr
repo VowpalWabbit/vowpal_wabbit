@@ -25,10 +25,11 @@ num sources = 1
 13 0.47691   	0.00000   	0.00168   	 0.593278  	0.185019  	          	          	0.00955   	1.00000
 
 finished run
-number of examples = 13000
-weighted example sum = 13000
-weighted label sum = -1066
-average loss = 0.4417
+number of examples per pass = 1000
+passes used = 13
+weighted example sum = 13000.000000
+weighted label sum = -1066.000000
+average loss = 0.441700
 best constant = -0.164369
 best constant's loss = 0.689781
 total feature number = 1023607

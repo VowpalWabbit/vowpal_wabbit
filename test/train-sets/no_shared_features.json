@@ -1,0 +1,2 @@
+{"_label_cost":0,"_label_probability":0.333333343,"_label_Action":2,"_labelIndex":1,"o":[{"EventId":"f5547244f88543d1bcad0e3416fbd592","v":{"reward":0.0,"value4":0.0,"value1":0.0,"value2":1400.0,"value3":0.0}}],"Timestamp":"2018-11-22T02:31:39.1440000Z","Version":"1","EventId":"f5547244f88543d1bcad0e3416fbd592","a":[2,1,3],"c":{"_multi":[{"name3":{"name4":4.65312243,"name2":1.0}},{"name3":{"name":4.65312243,"name2":1.0}},{"name3":{"name5":4.65312243}}]},"p":[0.333333343,0.333333343,0.333333343],"VWState":{"m":"N/A"}}
+

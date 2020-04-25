@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TrainSet0002Dat;
@@ -10,6 +10,7 @@ namespace cs_unittest
     public class TestAntlrClass
     {
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestAntlr()
         {
             var line1 = "0.521144 1 PFF/20091028|T PFF |f t1:-0.0236849 t5:-0.10215 r5:0.727735 t10:-0.0387662 r10:0.911208 t20:-0.00777943 r20:0.952668 t40:0.014542 r40:0.832479 t60:0.00395449 r60:0.724504 t90:0.0281418 r90:0.784653";

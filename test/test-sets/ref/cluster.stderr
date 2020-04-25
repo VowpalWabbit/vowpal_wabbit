@@ -1,0 +1,27 @@
+only testing
+predictions = cluster.predict
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = test-sets/0001.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.259898 0.259898            1            1.0   0.0000   0.5098       41
+0.151309 0.042720            2            2.0   1.0000   0.7933       75
+0.095969 0.040629            4            4.0   0.0000   0.1977       44
+0.091128 0.086287            8            8.0   0.0000   0.3779       42
+0.133105 0.175082           16           16.0   1.0000   0.7235       34
+0.136251 0.139396           32           32.0   0.0000   0.2836      210
+0.149682 0.163114           64           64.0   1.0000   0.4224       25
+
+finished run
+number of examples = 100
+weighted example sum = 100.000000
+weighted label sum = 57.000000
+average loss = 0.138126
+best constant = 0.570000
+best constant's loss = 0.245100
+total feature number = 5069

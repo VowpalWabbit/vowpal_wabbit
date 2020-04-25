@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="TestJsonDirectClass.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -21,7 +21,7 @@ namespace cs_unittest
     public class TestJsonDirectClass
     {
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonDirect()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -55,7 +55,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonDirectWithLabel()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -71,7 +71,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonOptIn()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContextOptIn>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -89,7 +89,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestLabelJsonSerialization()
         {
             Assert.AreEqual(
@@ -103,7 +103,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonArray()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContextArray>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -117,8 +117,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/JSON")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         public void TestJsonDictionaryStringFloat()
         {
             using (var vw = new VowpalWabbitExampleValidator<POCODict>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -134,7 +134,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonByte()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContextByte>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -144,7 +144,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonDirectText()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonText>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -163,7 +163,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonDirectMulti()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonShared>(new VowpalWabbitSettings("--cb_adf") { TypeInspector = JsonTypeInspector.Default }))
@@ -187,7 +187,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonDirectMultiList()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonSharedList>(new VowpalWabbitSettings("--cb_adf") { TypeInspector = JsonTypeInspector.Default }))
@@ -223,7 +223,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonDirectMultiEmpty()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonSharedEmpty>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
@@ -246,7 +246,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonConvertibleMulti()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonRawAdfString>(new VowpalWabbitSettings("--cb_adf") { TypeInspector = JsonTypeInspector.Default }))
@@ -305,7 +305,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonConvertible()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonRawString>(new VowpalWabbitSettings("") { TypeInspector = JsonTypeInspector.Default }))
@@ -327,7 +327,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("JSON")]
+        [TestCategory("Vowpal Wabbit/JSON")]
         public void TestJsonDictArray()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonDictArray>(new VowpalWabbitSettings(string.Empty) { TypeInspector = JsonTypeInspector.Default }))

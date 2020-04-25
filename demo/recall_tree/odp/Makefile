@@ -6,10 +6,10 @@ numlabels=105033
 bits?=31
 
 odp_train.vw.gz:
-	wget --tries=100 -c http://lowrank.net/nikos/odp_train.vw.gz
+	wget --tries=100 -c http://hunch.net/~vw/odp_train.vw.gz
 
 odp_test.vw.gz:
-	wget --tries=100 -c http://lowrank.net/nikos/odp_test.vw.gz
+	wget --tries=100 -c http://hunch.net/~vw/odp_test.vw.gz
 
 full_hyper%: full_hyper%.vw odp_test.vw.gz
 	time vw -t -i $(word 1,$^) <(zcat $(word 2,$^) | sed 's/|/|b/')

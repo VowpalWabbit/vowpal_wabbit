@@ -44,7 +44,7 @@ Deployment Process
 
     .. code-block:: bash
 
-        $ twine upload --repository-url https://testpypi.python.org/pypi -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
+        $ twine upload --repository-url https://test.pypi.org/legacy/ -u vowpalwabbit dist/vowpalwabbit-<VERSION>.tar.gz
         $ cd /tmp
         $ virtualenv test_vw_package
         $ source test_vw_package/bin/activate
@@ -57,7 +57,7 @@ Deployment Process
 
     .. code-block:: bash
 
-        $ twine upload --repository-url https://pypi.python.org/pypi -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
+        $ twine upload -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
 
 6) Cleanup build and packaging artifacts / directories
 

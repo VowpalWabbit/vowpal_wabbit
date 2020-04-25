@@ -4,21 +4,21 @@ Vowpal Wabbit Python Wrapper
 .. image:: https://badge.fury.io/py/vowpalwabbit.svg
     :alt: PyPI Package
     :target: https://pypi.python.org/pypi/vowpalwabbit
-.. image:: https://travis-ci.org/JohnLangford/vowpal_wabbit.png
+.. image:: https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master
     :alt: Build Status
-    :target: https://travis-ci.org/JohnLangford/vowpal_wabbit
-.. image:: https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true
+    :target: https://travis-ci.org/VowpalWabbit/vowpal_wabbit
+.. image:: https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true
     :alt: Windows Build Status
-    :target: https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit
-.. image:: https://coveralls.io/repos/github/JohnLangford/vowpal_wabbit/badge.svg
+    :target: https://ci.appveyor.com/project/VowpalWabbit/vowpal-wabbit
+.. image:: https://coveralls.io/repos/github/VowpalWabbit/vowpal_wabbit/badge.svg
     :alt: Coverage
-    :target: https://coveralls.io/r/JohnLangford/vowpal_wabbit
+    :target: https://coveralls.io/r/VowpalWabbit/vowpal_wabbit
 
 Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
 
 Installing this package builds Vowpal Wabbit locally for explicit use within python, it will not create the command-line version
 of the tool (or affect any previously existing command-line installations).
-To install the command-line version see the main project page: https://github.com/JohnLangford/vowpal_wabbit
+To install the command-line version see the main project page: https://github.com/VowpalWabbit/vowpal_wabbit
 
 The version of the PyPI vowpalwabbit package corresponds to the tagged version of the code in the github repo that will be used
 during building and installation.
@@ -28,18 +28,8 @@ using the local repo installation instructions below.
 Installation
 ------------
 
-From PyPI:
+See the `installation instructions`_
 
-.. code-block:: bash
-
-    $ pip install vowpalwabbit
-
-From local repo (useful when making modifications):
-
-.. code-block::
-
-    $ cd python
-    $ pip install -e .
 
 Usage
 -----
@@ -84,28 +74,7 @@ Or you can use the included scikit-learn interface like this:
 Troubleshooting
 ---------------
 
-Some common causes of failure for installation are due to missing or mis-matched dependencies when Vowpal Wabbit builds.
-Make sure you have boost and boost-python installed on your system.
-
-For Ubuntu/Debian/Mint
-
-.. code-block:: bash
-
-    $ apt-get install libboost-program-options-dev zlib1g-dev libboost-python-dev
-
-For Mac OSX
-
-.. code-block:: bash
-
-    $ brew install libtool autoconf automake
-    $ brew install boost
-    $ brew install boost-python
-    # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
-    $ brew install boost-python --with-python3
-
-Also, having Anaconda in your path can cause segmentation faults when importing the pyvw module. Providing Conda support
-is an open issue and efforts are welcome, but in the meantime it is suggested to remove any conda bin directory from your path
-prior to installing the vowpalwabbit package.
+See the `troubleshooting guide`_
 
 Development
 -----------
@@ -134,9 +103,9 @@ Directory Structure:
 
 **Note:** neither examples nor tests directories are included in the distributed package, they are only for development purposes.
 
-.. _issues: https://github.com/JohnLangford/vowpal_wabbit/issues
-.. _repo: https://github.com/JohnLangford/vowpal_wabbit
+.. _issues: https://github.com/VowpalWabbit/vowpal_wabbit/issues
+.. _repo: https://github.com/VowpalWabbit/vowpal_wabbit
 .. _pytest: http://pytest.org/latest/getting-started.html
 .. _tox: https://tox.readthedocs.io/en/latest/index.html
-
-
+.. _installation instructions: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Python#installing
+.. _troubleshooting guide: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Python#troubleshooting

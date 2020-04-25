@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;
 using System.Text;
@@ -103,6 +103,7 @@ namespace cs_unittest
         };
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestHash()
         {
             InternalTestHash("");
@@ -111,6 +112,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestHashSpace()
         {
             using (var vw = new VowpalWabbit(""))
@@ -121,6 +123,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestHashUnicodeSpace()
         {
             using (var vw = new VowpalWabbit(""))

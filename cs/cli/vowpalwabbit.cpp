@@ -1,8 +1,6 @@
-﻿/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "vw_clr.h"
 #include "vowpalwabbit.h"
@@ -64,8 +62,7 @@ void VowpalWabbit::Driver()
 void VowpalWabbit::RunMultiPass()
 { if (m_vw->numpasses > 1)
   { try
-    { adjust_used_index(*m_vw);
-      m_vw->do_reset_source = true;
+    { m_vw->do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
       VW::end_parser(*m_vw);
@@ -112,7 +109,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 }
 
 uint64_t VowpalWabbit::HashSpace(String^ s)
-{ auto newHash = m_hasher(s, hash_base);
+{ auto newHash = m_hasher(s, 0);
 
 #ifdef _DEBUG
   auto oldHash = HashSpaceNative(s);
@@ -159,6 +156,46 @@ uint64_t VowpalWabbit::HashFeatureNative(String^ s, uint64_t u)
   }
 }
 
+void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
+{
+  multi_ex ex_coll;
+  try
+  {
+    for each (auto ex in examples)
+    {
+      example* pex = ex->m_example;
+      ex_coll.push_back(pex);
+    }
+
+    m_vw->learn(ex_coll);
+
+    // as this is not a ring-based example it is not freed
+    as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
+  }
+  CATCHRETHROW
+  finally{ }
+}
+
+void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
+{
+  multi_ex ex_coll;
+  try
+  {
+    for each (auto ex in examples)
+    {
+      example* pex = ex->m_example;
+      ex_coll.push_back(pex);
+    }
+
+    as_multiline(m_vw->l)->predict(ex_coll);
+
+    // as this is not a ring-based example it is not freed
+    as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
+  }
+  CATCHRETHROW
+    finally{ }
+}
+
 void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 {
 #if _DEBUG
@@ -168,10 +205,10 @@ void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 #endif
 
   try
-  { m_vw->learn(ex->m_example);
+  { m_vw->learn(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -187,12 +224,12 @@ generic<typename T> T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbit
 #endif
 
   try
-  { m_vw->learn(ex->m_example);
+  { m_vw->learn(*ex->m_example);
 
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }
@@ -207,10 +244,10 @@ void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
 #endif
 
   try
-  { m_vw->l->predict(*ex->m_example);
+  { as_singleline(m_vw->l)->predict(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+  as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -223,12 +260,12 @@ generic<typename T> T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabb
 #endif
 
   try
-  { m_vw->l->predict(*ex->m_example);
+  { as_singleline(m_vw->l)->predict(*ex->m_example);
 
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }
@@ -288,18 +325,22 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			// finalize example
 			VW::setup_examples(*m_vw, examples);
 
+			// delete native array of pointers, keep examples
+			examples.delete_v();
+
 			header->EventId = gcnew String(interaction.eventId.c_str());
 			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());
 			int index = 0;
 			for (auto a : interaction.actions)
 				header->Actions[index++] = (int)a;
-			
+
 			header->Probabilities = gcnew cli::array<float>((int)interaction.probabilities.size());
 			index = 0;
 			for (auto p : interaction.probabilities)
 				header->Probabilities[index++] = p;
 
 			header->ProbabilityOfDrop = interaction.probabilityOfDrop;
+			header->SkipLearn = interaction.skipLearn;
 
 			return state->examples;
 		}
@@ -339,7 +380,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  examples.push_back(native_example);
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
-			  
+
 			  if (m_vw->audit)
 				VW::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
 			  else
@@ -474,6 +515,15 @@ generic<typename T> T VowpalWabbit::Predict(String^ line, IVowpalWabbitPredictio
   }
 }
 
+
+void VowpalWabbit::CacheEmptyLine()
+{
+	auto empty = GetOrCreateNativeExample();
+	empty->MakeEmpty(this);
+	ReturnExampleToPool(empty);
+}
+
+
 void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
 {
 #if _DEBUG
@@ -487,14 +537,12 @@ void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
   { for each (auto line in lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
-
-      Learn(ex);
     }
 
-    auto empty = GetOrCreateNativeExample();
-    examples->Add(empty);
-    empty->MakeEmpty(this);
-    Learn(empty);
+		// Need to add an empty line to cache file
+		CacheEmptyLine();
+
+    Learn(examples);
   }
   finally
   { for each (auto ex in examples)
@@ -516,14 +564,12 @@ void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
   { for each (auto line in lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
-
-      Predict(ex);
     }
 
-    auto empty = GetOrCreateNativeExample();
-    examples->Add(empty);
-    empty->MakeEmpty(this);
-    Predict(empty);
+    // Need to add an empty line to cache file
+    CacheEmptyLine();
+
+    Predict(examples);
   }
   finally
   { for each (auto ex in examples)
@@ -648,11 +694,11 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     k1 = (uint32_t)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
 
     k1 *= c1;
-    k1 = ROTL32(k1, 15);
+    k1 = rotl32(k1, 15);
     k1 *= c2;
 
     h1 ^= k1;
-    h1 = ROTL32(h1, 13);
+    h1 = rotl32(h1, 13);
     h1 = h1 * 5 + 0xe6546b64;
 
     i += 4;
@@ -668,7 +714,7 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     case 1:
       k1 ^= (uint32_t)(keys[tail]);
       k1 *= c1;
-      k1 = ROTL32(k1, 15);
+      k1 = rotl32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
       break;
@@ -714,9 +760,10 @@ size_t hashstring(String^ s, size_t u)
 
 Func<String^, size_t, size_t>^ VowpalWabbit::GetHasher()
 { //feature manipulation
-  string hash_function("strings");
-  if (m_vw->vm.count("hash"))
-  { hash_function = m_vw->vm["hash"].as<string>();
+  std::string hash_function("strings");
+  if (m_vw->options->was_supplied("hash"))
+  {
+    hash_function = m_vw->options->get_typed_option<std::string>("hash").value();
   }
 
   if (hash_function == "strings")
@@ -787,7 +834,7 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
   auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
 
   // TODO: better way of peaking into lda?
-  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+  auto lda_rho = m_vw->options->get_typed_option<float>("lda_rho").value();
 
   std::vector<feature> top_weights;
   // over topics
@@ -814,18 +861,19 @@ cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 		allocation[k] = gcnew cli::array<float>((int)length);
 
 	// TODO: better way of peaking into lda?
-	auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+  auto lda_rho = m_vw->options->get_typed_option<float>("lda_rho").value();
+
 
 	for (auto iter = weights.begin(); iter != weights.end(); ++iter)
 	{   // over topics
-		auto v = iter.begin();
-		for (uint64_t k = 0; k < K; k++, ++v)
-			allocation[(int)k][(int)iter.index()] = *v + lda_rho;
+		weight* wp = &(*iter);
+		for (uint64_t k = 0; k < K; k++)
+			allocation[(int)k][(int)iter.index()] = wp[k] + lda_rho;
 	}
 
 	return allocation;
 }
-  
+
 cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
 {
 	// over weights
@@ -835,4 +883,3 @@ cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
 		return FillTopicAllocation(m_vw->weights.dense_weights);
   }
 }
-

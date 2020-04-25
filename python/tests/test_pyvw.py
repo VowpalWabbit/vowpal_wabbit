@@ -1,7 +1,8 @@
 import os
 
+from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import vw
-
+import pytest
 
 BIT_SIZE = 18
 
@@ -19,6 +20,9 @@ class TestVW:
         assert init == 0
         self.model.learn(ex)
         assert self.model.predict(ex) > init
+        ex = ["| a", "| b"]
+        check_error_raises(TypeError, lambda: self.model.predict(ex))
+        check_error_raises(TypeError, lambda: self.model.learn(ex))
 
     def test_get_tag(self):
         ex = self.model.example("1 foo| a b c")
@@ -81,18 +85,22 @@ def test_multiclass_prediction_type():
 
 def test_prob_prediction_type():
     model = vw(loss_function='logistic', csoaa_ldf='mc', probabilities=True, quiet=True)
-    model.learn('1 | a b c')
+    multi_ex = [model.example('1:0.2 | a b c'), model.example('2:0.8  | a b c')]
+    model.learn(multi_ex)
     assert model.get_prediction_type() == model.pPROB
-    prediction = model.predict(' | a b c')
+    multi_ex = [model.example('1 | a b c'), model.example('2 | a b c')]
+    prediction = model.predict(multi_ex)
     assert isinstance(prediction, float)
     del model
 
 
 def test_action_scores_prediction_type():
     model = vw(loss_function='logistic', csoaa_ldf='m', quiet=True)
-    model.learn('1 | a b c')
+    multi_ex = [model.example('1:1 | a b c'), model.example('2:-1  | a b c')]
+    model.learn(multi_ex)
     assert model.get_prediction_type() == model.pMULTICLASS
-    prediction = model.predict(' | a b c')
+    multi_ex = [model.example('1 | a b c'), model.example('2 | a b c')]
+    prediction = model.predict(multi_ex)
     assert isinstance(prediction, int)
     del model
 
@@ -113,6 +121,39 @@ def test_multilabel_prediction_type():
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
     del model
+
+
+def test_cbandits_label():
+    model = vw(cb=4, quiet=True)
+    cbl = pyvw.cbandits_label(model.example('1:10:0.5 |'))
+    assert cbl.costs[0].action == 1
+    assert cbl.costs[0].probability == 0.5
+    assert cbl.costs[0].partial_prediction == 0
+    assert cbl.costs[0].cost == 10.0
+    assert str(cbl) == '1:10.0:0.5'
+    del model
+
+
+def test_cost_sensitive_label():
+    model = vw(csoaa=4, quiet=True)
+    csl = pyvw.cost_sensitive_label(model.example('2:5 |'))
+    assert csl.costs[0].label == 2
+    assert csl.costs[0].wap_value == 0.0
+    assert csl.costs[0].partial_prediction == 0.0
+    assert csl.costs[0].cost == 5.0
+    assert str(csl) == '2:5.0'
+    del model
+
+
+def test_multiclass_probabilities_label():
+    n = 4
+    model = pyvw.vw(loss_function='logistic', oaa=n, probabilities=True, quiet=True)
+    ex = model.example('1 | a b c d', 2)
+    model.learn(ex)
+    mpl = pyvw.multiclass_probabilities_label(ex)
+    assert str(mpl) == '1:0.25 2:0.25 3:0.25 4:0.25'
+    mpl = pyvw.multiclass_probabilities_label([1, 2, 3], [0.4, 0.3, 0.3])
+    assert str(mpl) == '1:0.4 2:0.3 3:0.3'
 
 
 def test_regressor_args():
@@ -138,3 +179,168 @@ def test_regressor_args():
     # clean up
     os.remove('{}.cache'.format(data_file))
     os.remove('tmp.model')
+
+
+def test_keys_with_list_of_values():
+    # No exception in creating and executing model with a key/list pair
+    model = vw(quiet=True, q=["fa", "fb"])
+    model.learn('1 | a b c')
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, float)
+    del model
+
+def test_parse():
+    model = vw(quiet=True, cb_adf=True)
+    ex = model.parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
+    assert len(ex) == 2
+
+    ex = model.parse("""| a:1 b:0.5
+    0:0.1:0.75 | a:0.5 b:1 c:2""")
+    assert len(ex) == 2
+
+    ex = model.parse("""
+    | a:1 b:0.5
+    0:0.1:0.75 | a:0.5 b:1 c:2
+    """)
+    assert len(ex) == 2
+
+    ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
+    assert len(ex) == 2
+    del model
+
+
+def test_learn_predict_multiline():
+    model = vw(quiet=True, cb_adf=True)
+    ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
+    finish = model.finish_example(ex)
+    assert model.predict(ex) == [0.0, 0.0]
+    ex = ["| a", "| b"]
+    model.learn(ex)
+    assert model.predict(ex) == [0.0, 0.0]
+
+
+def test_namespace_id():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    nm1 = pyvw.namespace_id(ex, 0)
+    nm2 = pyvw.namespace_id(ex, 1)
+    nm3 = pyvw.namespace_id(ex, 2)
+    assert nm1.id == 0
+    assert nm1.ord_ns == 97
+    assert nm1.ns == 'a'
+    assert nm2.id == 1
+    assert nm2.ord_ns == 98
+    assert nm2.ns == 'b'
+    assert nm3.id == 2
+    assert nm3.ord_ns == 128
+    assert nm3.ns == '\x80' # Represents string of ord_ns
+
+
+def test_example_namespace():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    ns_id = pyvw.namespace_id(ex, 1)
+    ex_nm = pyvw.example_namespace(ex, ns_id, ns_hash=vw_ex.hash_space(ns_id.ns))
+    assert isinstance(ex_nm.ex, pyvw.example)
+    assert isinstance(ex_nm.ns, pyvw.namespace_id)
+    assert ex_nm.ns_hash == 2514386435
+    assert ex_nm.num_features_in() == 3
+    assert ex_nm[2] == (11617, 1.0) # represents (feature, value)
+    iter_obj =  ex_nm.iter_features()
+    for i in range(ex_nm.num_features_in()):
+        assert ex_nm[i] == next(iter_obj)
+    assert ex_nm.pop_feature()
+    ex_nm.push_features(ns_id, ['c', 'd'])
+    assert ex_nm.num_features_in() == 4
+
+def test_simple_label():
+    sl = pyvw.simple_label(2.0, weight=0.5)
+    assert sl.label == 2.0
+    assert sl.weight == 0.5
+    assert sl.prediction == 0.0
+    assert sl.initial == 0.0
+    assert str(sl) == '2.0:0.5'
+
+def test_simple_label_example():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    sl2 = pyvw.simple_label(ex)
+    assert sl2.label == 1.0
+    assert sl2.weight == 1.0
+    assert sl2.prediction == 0.0
+    assert sl2.initial == 0.0
+    assert str(sl2) == '1.0'
+
+def test_multiclass_label():
+    ml = pyvw.multiclass_label(2, weight=0.2)
+    assert ml.label == 2
+    assert ml.weight == 0.2
+    assert ml.prediction == 1
+    assert str(ml) == '2:0.2'
+
+def test_multiclass_label_example():
+    n = 4
+    model = pyvw.vw(loss_function='logistic', oaa=n, quiet=True)
+    ex = model.example('1 | a b c d', 2)
+    ml2 = pyvw.multiclass_label(ex)
+    assert ml2.label == 1
+    assert ml2.weight == 1.0
+    assert ml2.prediction == 0
+    assert str(ml2) == '1'
+
+
+def test_example_namespace_id():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    ns = pyvw.namespace_id(ex, 1)
+    assert isinstance(ex.get_ns(1), pyvw.namespace_id)
+    assert isinstance(ex[2], pyvw.example_namespace)
+    assert ex.setup_done is True
+    assert ex.num_features_in(ns) == 3
+
+def test_example_learn():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    ex.learn()
+    assert ex.setup_done is True
+    ex.unsetup_example() # unsetup an example as it is already setup
+    assert ex.setup_done is False
+
+def test_example_label():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    ex.set_label_string('1.0')
+    assert isinstance(ex.get_label(), pyvw.simple_label)
+
+def test_example_features():
+    vw_ex = vw(quiet=True)
+    ex = vw_ex.example('1 |a two features |b more features here')
+    ns = pyvw.namespace_id(ex, 1)
+    assert ex.get_feature_id(ns, 'a') == 127530
+    ex.push_hashed_feature(ns, 1122)
+    ex.push_features('x', [('c', 1.), 'd'])
+    ex.push_feature(ns, 11000)
+    assert ex.num_features_in('x') == 2
+    assert ex.sum_feat_sq(ns) == 5.0
+    ns2 = pyvw.namespace_id(ex, 2)
+    ex.push_namespace(ns2)
+    assert ex.pop_namespace()
+
+def check_error_raises(type, argument):
+    """
+    This function is used to check whether the exception is raised or not.
+
+    Parameter
+    ---------
+
+    type: Type of Error raised
+    argument: lambda function with no parameters.
+
+    Example:
+    >>> ex = ["|a", "|b"]
+    >>> vw = pyvw.vw(quiet=True)
+    >>> check_error_raises(TypeError, lambda: vw.learn(ex))
+
+    """
+    with pytest.raises(type) as error:
+        argument()

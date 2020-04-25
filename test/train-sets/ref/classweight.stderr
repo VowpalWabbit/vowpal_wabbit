@@ -1,0 +1,27 @@
+parsed 3 class weights
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            2.0   1.0000   0.0000       51
+0.409461 0.028468            2            5.1   0.0000   0.1687      104
+0.192020 0.013157            4           11.3   0.0000   0.0578      135
+0.174328 0.156636            8           22.6   0.0000   0.2153      146
+0.196853 0.218516           17           46.1   1.0000   0.2846      143
+0.180051 0.163640           34           93.3   0.0000   0.3269      156
+0.195822 0.211443           69          187.5   0.0000   0.2286       88
+0.193540 0.191260          142          375.3   0.0000   0.1286       30
+
+finished run
+number of examples = 200
+weighted example sum = 519.899990
+weighted label sum = 182.000000
+average loss = 0.178875
+best constant = 0.350067
+best constant's loss = 0.227520
+total feature number = 15482

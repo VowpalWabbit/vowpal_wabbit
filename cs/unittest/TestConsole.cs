@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +13,7 @@ namespace cs_unittest
     public class TestConsoleClass : TestBase
     {
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestConsole()
         {
             var arrayModelPath = Path.GetTempFileName();

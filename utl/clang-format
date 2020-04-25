@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Usage (from repo root):
+# "./utl/clang-format fix" formats your code.
+# "./utl/clang-format check" exits with non-zero if your code isn't formatted correctly.
+# Intended to be used with clang-format 7.0.1.
+
+for VW_FILE in $(find vowpalwabbit -type f -name '*.cc' -o -name '*.h'); do
+
+    if [ "$1" = check ]; then
+       diff $VW_FILE <(clang-format $VW_FILE);
+       if [ $? -ne 0 ]; then
+       	  echo "Run \"./utl/clang-format fix\""
+       fi
+    fi
+
+    if [ "$1" = fix ]; then
+       clang-format -i $VW_FILE;
+    fi
+
+done

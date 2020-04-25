@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" InitialTarget="CheckAnalysisSKU" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="CheckAnalysisSKU">
+    <Error  Text="SDL code analysis cannot be run on the Visual Studio Express SKU, please use a different version of Visual Studio"
+            Condition="'$(CodeAnalysisVSSku)'!='Express' and '$(Language)'=='C++' and '$(RunCodeAnalysisOnThisProject)'=='true'" />
+  </Target>
+
+  <!-- To override the location of SDL plugins, set SDLPluginLocationx86 and SDLPluginLocationx64 -->
+  <!-- The default is the VC install path (where the compiler is found) -->
+  <PropertyGroup>
+    <SDLPluginLocationx86 Condition="'$(SDLPluginLocationx86)'=='' and '$(Language)'=='C++' and '$(RunCodeAnalysisOnThisProject)'=='true'">$(VCInstallDir)\bin\</SDLPluginLocationx86>
+    <SDLPluginLocationx64 Condition="'$(SDLPluginLocationx64)'=='' and '$(Language)'=='C++' and '$(RunCodeAnalysisOnThisProject)'=='true'">$(VCInstallDir)\bin\amd64\</SDLPluginLocationx64>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Language)'=='C++' and '$(RunCodeAnalysisOnThisProject)'=='true'">
+    <ClCompile>
+      <!-- Configure the location of EnumIndex -->
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'=='x64'and Exists('$(SDLPluginLocationx64)\EnumIndex.dll')">$(SDLPluginLocationx64)\EnumIndex.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'!='x64'and Exists('$(SDLPluginLocationx86)\EnumIndex.dll')">$(SDLPluginLocationx86)\EnumIndex.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+
+      <!-- Configure the location of HResult -->
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'=='x64'and Exists('$(SDLPluginLocationx64)\HResult.dll')">$(SDLPluginLocationx64)\HResult.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'!='x64'and Exists('$(SDLPluginLocationx86)\HResult.dll')">$(SDLPluginLocationx86)\HResult.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+
+      <!-- Configure the location of ThinCryptESP -->
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'=='x64'and Exists('$(SDLPluginLocationx64)\ThinCryptESP.dll')">$(SDLPluginLocationx64)\ThinCryptESP.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'!='x64'and Exists('$(SDLPluginLocationx86)\ThinCryptESP.dll')">$(SDLPluginLocationx86)\ThinCryptESP.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+
+      <!-- Configure the location of UnsafeXML -->
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'=='x64'and Exists('$(SDLPluginLocationx64)\UnsafeXML.dll')">$(SDLPluginLocationx64)\UnsafeXML.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'!='x64'and Exists('$(SDLPluginLocationx86)\UnsafeXML.dll')">$(SDLPluginLocationx86)\UnsafeXML.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+
+      <!-- Configure the location of VariantClear -->
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'=='x64'and Exists('$(SDLPluginLocationx64)\VariantClear.dll')">$(SDLPluginLocationx64)\VariantClear.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+      <PREfastAdditionalPlugins Condition="'$(PreferredToolArchitecture)'!='x64'and Exists('$(SDLPluginLocationx86)\VariantClear.dll')">$(SDLPluginLocationx86)\VariantClear.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+
+      <!-- Configure the location of KernelDoubleFetch -->
+      <PREfastAdditionalPlugins Condition="'$(SDLUseKernelDoubleFetch)'=='true' and '$(PreferredToolArchitecture)'=='x64'and Exists('$(SDLPluginLocationx64)\KernelDoubleFetch.dll')">$(SDLPluginLocationx64)\KernelDoubleFetch.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+      <PREfastAdditionalPlugins Condition="'$(SDLUseKernelDoubleFetch)'=='true' and '$(PreferredToolArchitecture)'!='x64'and Exists('$(SDLPluginLocationx86)\KernelDoubleFetch.dll')">$(SDLPluginLocationx86)\KernelDoubleFetch.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+
+      <!-- Configure the location of EspX -->
+      <PREfastAdditionalPlugins Condition="'$(SDLUseEspX)'=='true' and '$(PreferredToolArchitecture)'=='x64'and Exists('$(SDLPluginLocationx64)\EspX.dll')">$(SDLPluginLocationx64)\EspX.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+      <PREfastAdditionalPlugins Condition="'$(SDLUseEspX)'=='true' and '$(PreferredToolArchitecture)'!='x64'and Exists('$(SDLPluginLocationx86)\EspX.dll')">$(SDLPluginLocationx86)\EspX.dll;%(PREfastAdditionalPlugins)</PREfastAdditionalPlugins>
+
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

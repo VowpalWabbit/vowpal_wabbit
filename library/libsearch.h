@@ -12,8 +12,6 @@ license as described in the file LICENSE.
 #include "../vowpalwabbit/search.h"
 #include "../vowpalwabbit/search_hooktask.h"
 
-using namespace std;
-
 template<class INPUT, class OUTPUT> class SearchTask
 {
 public:
@@ -22,9 +20,7 @@ public:
     VW::read_line(vw_obj, bogus_example, (char*)"1 | x");
     VW::setup_example(vw_obj, bogus_example);
 
-    blank_line = VW::alloc_examples(vw_obj.p->lp.label_size, 1);
-    VW::read_line(vw_obj, blank_line, (char*)"");
-    VW::setup_example(vw_obj, blank_line);
+    trigger.push_back(bogus_example);
 
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     d->run_f = _search_run_fn;
@@ -34,9 +30,9 @@ public:
     d->extra_data  = NULL;
     d->extra_data2 = NULL;
   }
-  ~SearchTask()
-  { VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
-    VW::dealloc_example(vw_obj.p->lp.delete_label, *blank_line);    free(blank_line);
+  virtual ~SearchTask()
+  { trigger.clear(); // the individual examples get cleaned up below
+    VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
   }
 
   virtual void _run(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // YOU MUST DEFINE THIS FUNCTION!
@@ -51,21 +47,21 @@ protected:
   Search::search& sch;
 
 private:
-  example* bogus_example, *blank_line;
+  example* bogus_example;
+  multi_ex trigger;
 
   void call_vw(INPUT& input_example, OUTPUT& output)
   { HookTask::task_data* d = sch.template get_task_data<HookTask::task_data> (); // ugly calling convention :(
     d->extra_data  = (void*)&input_example;
     d->extra_data2 = (void*)&output;
-    vw_obj.learn(bogus_example);
-    vw_obj.learn(blank_line);   // this will cause our search_run_fn hook to get called
+    vw_obj.learn(trigger); // this will cause our search_run_fn hook to get called
   }
 
   static void _search_run_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    { cerr << "error: calling _search_run_fn without setting run object" << endl;
-      throw exception();
+    {
+      THROW("error: calling _search_run_fn without setting run object");
     }
     ((SearchTask*)d->run_object)->_run(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
@@ -73,8 +69,8 @@ private:
   static void _search_setup_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    { cerr << "error: calling _search_setup_fn without setting run object" << endl;
-      throw exception();
+    {
+      THROW("error: calling _search_setup_fn without setting run object");
     }
     ((SearchTask*)d->run_object)->_setup(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
@@ -82,8 +78,8 @@ private:
   static void _search_takedown_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    { cerr << "error: calling _search_takedown_fn without setting run object" << endl;
-      throw exception();
+    {
+      THROW("error: calling _search_takedown_fn without setting run object");
     }
     ((SearchTask*)d->run_object)->_takedown(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
   }
@@ -91,21 +87,21 @@ private:
 };
 
 
-class BuiltInTask : public SearchTask< vector<example*>, vector<uint32_t> >
+class BuiltInTask : public SearchTask< std::vector<example*>, std::vector<uint32_t> >
 {
 public:
   BuiltInTask(vw& vw_obj, Search::search_task* task)
-    : SearchTask< vector<example*>, vector<uint32_t> >(vw_obj)
+    : SearchTask< std::vector<example*>, std::vector<uint32_t> >(vw_obj)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     size_t num_actions = d->num_actions;
     my_task = task;
     if (my_task->initialize)
-      my_task->initialize(sch, num_actions, *d->var_map);
+      my_task->initialize(sch, num_actions, *d->arg);
   }
 
   ~BuiltInTask() { if (my_task->finish) my_task->finish(sch); }
 
-  void _run(Search::search& sch, vector<example*> & input_example, vector<uint32_t> & output)
+  void _run(Search::search& sch, std::vector<example*> & input_example, std::vector<uint32_t> & output)
   { my_task->run(sch, input_example);
     sch.get_test_action_sequence(output);
   }

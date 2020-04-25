@@ -16,12 +16,15 @@ libtool
 ltmain.sh
 missing
 vowpalwabbit/Makefile.in
-vowpalwabbit/config.h.in
+CMakeFiles
+CMakeCache.txt
+CTestCostData.txt
+CTestTestfile.cmake
+cmake_install.cmake
 config.h
 *.la
 *.lo
 vowpalwabbit/stamp-*
-Makefile
 config.status
 test/*.predict
 test/*.cmp
@@ -32,6 +35,7 @@ t_*
 bin
 vw
 .*
+!.pipelines
 vw.1
 *.cache
 *.tgz
@@ -109,6 +113,7 @@ python/dist/**
 python/src/**
 python/vowpalwabbit.egg-info/**
 python/.coverage
+python/docs/build
 
 /COPYING
 /README
@@ -121,3 +126,17 @@ vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
 /python/pylibvw.pyd
 /python/pylibvw.cp35-win_amd64.pyd
+reinforcement_learning/ds.VC.VC.opendb
+reinforcement_learning/ds.VC.db
+reinforcement_learning/rl.VC.VC.opendb
+reinforcement_learning/rl.VC.db
+index.html
+packages-microsoft-prod.deb
+reinforcement_learning/unit_test/rlclient-test.out
+cs/azure_service/azure_service.ccproj.user
+
+build
+dist/
+*.model
+python/examples/*.model
+doc/html

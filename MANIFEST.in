@@ -1,0 +1,15 @@
+include *.txt *.in CMakeSettings.json LICENSE
+include python/README.rst python/*.txt python/*.bat
+recursive-include python *
+recursive-include python/vowpalwabbit *
+recursive-include cluster *
+recursive-include cmake *
+recursive-include library *
+recursive-include rapidjson *
+recursive-include vowpalwabbit *
+recursive-include explore *
+recursive-include python/bin python/*.dll
+recursive-include python/windows* python/packages.config python/*.vcxproj*
+global-exclude *.o *.exe *.pyc
+recursive-exclude vowpalwabbit/.nuget *
+recursive-exclude vowpalwabbit/slim *
