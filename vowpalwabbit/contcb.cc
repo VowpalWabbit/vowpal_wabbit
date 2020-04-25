@@ -202,10 +202,7 @@ void print_audit_features(vw& all, example& ec)
 template <uint8_t tmodel, bool audit_or_hash_inv>
 void predict(contcb& data, base_learner&, example& ec)
 {
-  if (!ec.pred.scalars.empty())
-  {
-    ec.pred.scalars.clear();
-  }
+  ec.pred.scalars.clear();
   ec.pred.scalars.push_back(inference<tmodel>(*data.all, ec));
   ec.pred.scalars.push_back(data.radius);
 
@@ -243,12 +240,9 @@ void save_load(contcb& data, io_buf& model_file, bool read, bool text)
 
 void output_prediction(vw& all, example& ec)
 {
-  if (!ec.pred.scalars.empty())
-  {
-    std::string pred_repr = get_pred_repr(ec);
-    for (int sink : all.final_prediction_sink)
-      all.print_text_by_ref(sink, pred_repr, ec.tag);
-  }
+  std::string pred_repr = get_pred_repr(ec);
+  for (int sink : all.final_prediction_sink)
+    all.print_text_by_ref(sink, pred_repr, ec.tag);
 }
 
 void finish_example(vw& all, contcb&, example& ec)
