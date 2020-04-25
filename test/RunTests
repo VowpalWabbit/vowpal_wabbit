@@ -1841,28 +1841,36 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -p contcb_constant_online.preds
     pred-sets/ref/contcb_constant_online.preds
 
-# Test 214: contcb: verify readable model contents
+# Test 214: contcb: verify --readable_model file contents
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 --readable_model contcb_constant_readable_model.txt
     train-sets/ref/contcb_constant_readable_model.txt
 
-# Test 215: contcb: learn and save linear template model
+# Test 215: contcb: verify --invert_hash file contents
+{VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 --invert_hash contcb_constant_invert_hash.txt
+    train-sets/ref/contcb_constant_invert_hash.txt
+
+# Test 216: contcb: learn and save linear template model
 # Note: Changing hyperparameters (-l, --l1 etc.) will require preparing the dataset again. Simply giving any dataset to
 # learn from will not work as this algorithm is meant for library mode style operation.
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -f models/contcb_linear.model
     train-sets/ref/contcb_linear.stderr
     train-sets/ref/contcb_linear.stdout
 
-# Test 216: contcb: verify predictions of Test 215 model.
+# Test 217: contcb: verify predictions of Test 216 model.
 # Also ends up testing if important cmd-line options (--contcb, --template_model) are saved with the model.
 {VW} -d train-sets/contcb_linear.dat --holdout_off -t --radius 1 -i models/contcb_linear.model -p contcb_linear.preds
     pred-sets/ref/contcb_linear.preds
 
-# Test 217: contcb: verify predictions without the intervention of model saving
+# Test 218: contcb: verify predictions without the intervention of model saving
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -p contcb_linear_online.preds
     pred-sets/ref/contcb_linear_online.preds
 
-# Test 218: contcb: verify readable model contents
+# Test 219: contcb: verify --readable_model file contents
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization --readable_model contcb_linear_readable_model.txt
     train-sets/ref/contcb_linear_readable_model.txt
+
+# Test 220: contcb: verify --invert_hash file contents
+{VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization --invert_hash contcb_linear_invert_hash.txt
+    train-sets/ref/contcb_linear_invert_hash.txt
 
 # Do not delete this line or the empty line above it

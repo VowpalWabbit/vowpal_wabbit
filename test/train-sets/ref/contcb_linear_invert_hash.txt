@@ -1,0 +1,15 @@
+Version 8.8.1
+Id
+Min label:-7.20272
+Max label:1.47697
+bits:18
+lda:0
+0 ngram:
+0 skip:
+options: --contcb --template_model linear
+Checksum: 1386181507
+ns^b:50664:-0.179567
+Constant:116060:-0.0380903
+ns^d:130684:0.144768
+ns^a:180474:0.0261085
+ns^c:256306:-0.44771

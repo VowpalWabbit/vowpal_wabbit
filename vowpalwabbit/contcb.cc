@@ -190,7 +190,8 @@ std::string get_pred_repr(example& ec)
 
 void print_audit_features(vw& all, example& ec)
 {
-  all.print_text_by_ref(all.stdout_fileno, get_pred_repr(ec), ec.tag);
+  if (all.audit)
+    all.print_text_by_ref(all.stdout_fileno, get_pred_repr(ec), ec.tag);
   fflush(stdout);
   // TODO: Favor duplication instead of sharing code?
   // Note: print_features() declaration was brought to gd.h so it can be used here. If it's
@@ -198,7 +199,7 @@ void print_audit_features(vw& all, example& ec)
   GD::print_features(all, ec);
 }
 
-template <uint8_t tmodel>
+template <uint8_t tmodel, bool audit_or_hash_inv>
 void predict(contcb& data, base_learner&, example& ec)
 {
   if (!ec.pred.scalars.empty())
@@ -208,17 +209,16 @@ void predict(contcb& data, base_learner&, example& ec)
   ec.pred.scalars.push_back(inference<tmodel>(*data.all, ec));
   ec.pred.scalars.push_back(data.radius);
 
-  if (data.all->audit)
+  if (audit_or_hash_inv)
     print_audit_features(*data.all, ec);
 }
 
-template <uint8_t tmodel, bool feature_mask_off>
+template <uint8_t tmodel, bool feature_mask_off, bool audit_or_hash_inv>
 void learn(contcb& data, base_learner& base, example& ec)
 {
   // TODO: predict() is only needed in some cases, for instance when
-  // --predictions is supplied. If costly, then call only in those
-  // cases.
-  predict<tmodel>(data, base, ec);
+  // --predictions is supplied. If costly, then call only in those cases.
+  predict<tmodel, audit_or_hash_inv>(data, base, ec);
   update_weights<tmodel, feature_mask_off>(data, ec);
 }
 
@@ -257,31 +257,51 @@ void finish_example(vw& all, contcb&, example& ec)
   VW::finish_example(all, ec);
 }
 
-void (*get_learn(uint8_t tmodel, bool feature_mask_off))(contcb&, base_learner&, example&)
+void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(contcb&, base_learner&, example&)
 {
   if (tmodel == tmodel_const)
     if (feature_mask_off)
-      return learn<tmodel_const, true>;
+      if (all.audit || all.hash_inv)
+        return learn<tmodel_const, true, true>;
+      else
+        return learn<tmodel_const, true, false>;
+
     else
-      return learn<tmodel_const, false>;
+      if (all.audit || all.hash_inv)
+        return learn<tmodel_const, false, true>;
+      else
+        return learn<tmodel_const, false, false>;
 
   else if (tmodel == tmodel_lin)
     if (feature_mask_off)
-      return learn<tmodel_lin, true>;
+      if (all.audit || all.hash_inv)
+        return learn<tmodel_lin, true, true>;
+      else
+        return learn<tmodel_lin, true, false>;
+
     else
-      return learn<tmodel_lin, false>;
+      if (all.audit || all.hash_inv)
+        return learn<tmodel_lin, false, true>;
+      else
+        return learn<tmodel_lin, false, false>;
 
   else
     THROW("Unknown template model encountered: " << tmodel)
 }
 
-void (*get_predict(uint8_t tmodel))(contcb&, base_learner&, example&)
+void (*get_predict(vw& all, uint8_t tmodel))(contcb&, base_learner&, example&)
 {
   if (tmodel == tmodel_const)
-    return predict<tmodel_const>;
+     if (all.audit || all.hash_inv)
+        return predict<tmodel_const, true>;
+      else
+        return predict<tmodel_const, false>;
 
   else if (tmodel == tmodel_lin)
-    return predict<tmodel_lin>;
+     if (all.audit || all.hash_inv)
+        return predict<tmodel_lin, true>;
+      else
+        return predict<tmodel_lin, false>;
 
   else
     THROW("Unknown template model encountered: " << tmodel)
@@ -331,7 +351,7 @@ base_learner* setup(options_i& options, vw& all)
   data->all = &all;
 
   learner<contcb, example>& l =
-    init_learner(data, get_learn(tmodel, feature_mask_off), get_predict(tmodel), 0, prediction_type_t::scalars);
+    init_learner(data, get_learn(all, tmodel, feature_mask_off), get_predict(all, tmodel), 0, prediction_type_t::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
