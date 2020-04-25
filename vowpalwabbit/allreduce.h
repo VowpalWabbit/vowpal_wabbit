@@ -73,7 +73,7 @@ void addbufs(T* buf1, const T* buf2, const size_t n)
   for (size_t i = 0; i < n; i++) f(buf1[i], buf2[i]);
 }
 
-class VW_DEFAULT_VIS AllReduce
+class AllReduce
 {
  public:
   const size_t total;  // total number of nodes
