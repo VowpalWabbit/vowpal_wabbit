@@ -348,6 +348,7 @@ base_learner* setup(options_i& options, vw& all)
 
   all.p->lp = contcb_label;
   all.label_type = label_type_t::contcb;
+  all.delete_prediction = delete_scalars;
   data->all = &all;
 
   learner<contcb, example>& l =
