@@ -199,11 +199,10 @@ void print_audit_features(vw& all, example& ec)
 }
 
 template <uint8_t tmodel>
-void predict(contcb& data, single_learner&, example& ec)
+void predict(contcb& data, base_learner&, example& ec)
 {
   if (!ec.pred.scalars.empty())
   {
-    data.all->trace_message << "warning: clearing predictions object to make room for new predictions." << std::endl;
     ec.pred.scalars.clear();
   }
   ec.pred.scalars.push_back(inference<tmodel>(*data.all, ec));
@@ -214,8 +213,12 @@ void predict(contcb& data, single_learner&, example& ec)
 }
 
 template <uint8_t tmodel, bool feature_mask_off>
-void learn(contcb& data, single_learner&, example& ec)
+void learn(contcb& data, base_learner& base, example& ec)
 {
+  // TODO: predict() is only needed in some cases, for instance when
+  // --predictions is supplied. If costly, then call only in those
+  // cases.
+  predict<tmodel>(data, base, ec);
   update_weights<tmodel, feature_mask_off>(data, ec);
 }
 
@@ -240,7 +243,7 @@ void save_load(contcb& data, io_buf& model_file, bool read, bool text)
 
 void output_prediction(vw& all, example& ec)
 {
-  if (!ec.pred.scalars.empty()) // i.e. it is a test example and hence would have a prediction
+  if (!ec.pred.scalars.empty())
   {
     std::string pred_repr = get_pred_repr(ec);
     for (int sink : all.final_prediction_sink)
@@ -254,7 +257,7 @@ void finish_example(vw& all, contcb&, example& ec)
   VW::finish_example(all, ec);
 }
 
-void (*get_learn(uint8_t tmodel, bool feature_mask_off))(contcb&, single_learner&, example&)
+void (*get_learn(uint8_t tmodel, bool feature_mask_off))(contcb&, base_learner&, example&)
 {
   if (tmodel == tmodel_const)
     if (feature_mask_off)
@@ -272,7 +275,7 @@ void (*get_learn(uint8_t tmodel, bool feature_mask_off))(contcb&, single_learner
     THROW("Unknown template model encountered: " << tmodel)
 }
 
-void (*get_predict(uint8_t tmodel))(contcb&, single_learner&, example&)
+void (*get_predict(uint8_t tmodel))(contcb&, base_learner&, example&)
 {
   if (tmodel == tmodel_const)
     return predict<tmodel_const>;

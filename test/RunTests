@@ -1838,12 +1838,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/contcb_constant.preds
 
 # Test 213: contcb: verify predictions without the intervention of model saving
-# i.e Test 211, 212 are more for testing if save and load work, while this tests if the model is learning
-# and predicting correctly
-# Obtain data by concatenating the contents of train set with its own copy but the labels removed
-printf -- "$(cat train-sets/contcb_constant.dat)\n$(cut -s -d '|' -f 2 train-sets/contcb_constant.dat | sed 's/^/ |/')" \
-| {VW} --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -p contcb_constant.preds
-    pred-sets/ref/contcb_constant.preds
+{VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -p contcb_constant_online.preds
+    pred-sets/ref/contcb_constant_online.preds
 
 # Test 214: contcb: verify readable model contents
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 --readable_model contcb_constant_readable_model.txt
@@ -1862,12 +1858,8 @@ printf -- "$(cat train-sets/contcb_constant.dat)\n$(cut -s -d '|' -f 2 train-set
     pred-sets/ref/contcb_linear.preds
 
 # Test 217: contcb: verify predictions without the intervention of model saving
-# i.e Test 215, 216 are more for testing if save and load work, while this tests if the model is learning
-# and predicting correctly
-# Obtain data by concatenating the contents of train set with its own copy but the labels removed
-printf -- "$(cat train-sets/contcb_linear.dat)\n$(cut -s -d '|' -f 2 train-sets/contcb_linear.dat | sed 's/^/ |/')" \
-| {VW} --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -p contcb_linear.preds
-    pred-sets/ref/contcb_linear.preds
+{VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -p contcb_linear_online.preds
+    pred-sets/ref/contcb_linear_online.preds
 
 # Test 218: contcb: verify readable model contents
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization --readable_model contcb_linear_readable_model.txt
