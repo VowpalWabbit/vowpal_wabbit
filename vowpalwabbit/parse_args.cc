@@ -37,6 +37,7 @@
 #include "cb_explore_adf_first.h"
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_squarecb.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
 #include "mwt.h"
@@ -1290,6 +1291,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
   all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
   all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::squarecb::setup);
   all.reduction_stack.push(VW::cb_explore_adf::first::setup);
   all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
   all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
