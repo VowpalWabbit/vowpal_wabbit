@@ -16,6 +16,9 @@
 #include <algorithm>
 #include <cmath>
 
+/* Debugging */
+#include <iostream>
+
 // This file implements the SquareCB algorithm/reduction (Foster and Rakhlin, 2020, https://arxiv.org/abs/2002.04926), with the VW learner as the base algorithm.
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
@@ -180,6 +183,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
 
     VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
     ++_counter;
+    /* std::cout << "learning: " << _counter << std::endl; */
   }
   else
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
@@ -188,18 +192,24 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
   uint32_t num_actions = (uint32_t)preds.size();
   const float multiplier = _gamma*pow(_counter, .25f);
 
+  /* std::cout << "multiplier: " << multiplier << std::endl; */
+
   if (!is_learn)
     {
+      /* std::cout << "reached main part" << std::endl; */
+      std::cout << "input score ";
       size_t a_min = 0;
       float min_cost = preds[0].score;
       for(size_t a = 0; a < num_actions; ++a)
 	{
+	  std::cout << preds[a].score << ", ";
 	  if(preds[a].score < min_cost)
 	    {
 	      a_min = a;
 	      min_cost = preds[a].score;
 	    }
 	}
+      std::cout << "a_min: " << a_min << std::endl;
       float total_weight = 0;
       float pa = 0;
       for(size_t a = 0; a < num_actions; ++a)
@@ -211,6 +221,13 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
 	  total_weight += pa;
 	}
       preds[a_min].score = 1.f-total_weight;
+
+      std::cout << "final score: ";
+      for(size_t a = 0; a < num_actions; ++a)
+	{
+	  std::cout << preds[a].score << ", ";
+	}
+      std::cout << std::endl;
     }
 
   /* const float max_range = _max_cb_cost - _min_cb_cost; */
