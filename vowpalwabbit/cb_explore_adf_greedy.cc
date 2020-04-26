@@ -86,7 +86,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // NOTE: epsilon-greedy is the default explore type. This basically runs if none of the other explore strategies are
   // used
   bool use_greedy = !(options.was_supplied("first") || options.was_supplied("bag") || options.was_supplied("cover") ||
-      options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("softmax"));
+		      options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("softmax") || options.was_supplied("squarecb"));
 
   if (!cb_explore_adf_option || !use_greedy)
     return nullptr;
