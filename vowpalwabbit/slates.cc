@@ -70,6 +70,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
     else if (slates_label.type == slates::example_type::slot)
     {
       ccb_label.type = CCB::example_type::slot;
+      ccb_label.explicit_included_actions = v_init<uint32_t>();
       for (const auto index : slot_action_pools[slot_index])
       {
         ccb_label.explicit_included_actions.push_back(index);
@@ -80,7 +81,6 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
         ccb_label.outcome = new CCB::conditional_contextual_bandit_outcome();
         ccb_label.outcome->cost = global_cost;
         ccb_label.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
-        ccb_label.explicit_included_actions = v_init<uint32_t>();
 
         for (const auto& action_score : slates_label.probabilities)
         {
