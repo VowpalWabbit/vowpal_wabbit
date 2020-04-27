@@ -28,9 +28,11 @@ BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
 
   VW::string_view expected{"test_seed"};
 
-  auto seed = VW::extract_random_seed(*example);
-  BOOST_CHECK(seed);
-  BOOST_CHECK_EQUAL(expected, *seed);
+  VW::string_view seed;
+
+  auto extracted = VW::try_extract_random_seed(*example, seed);
+  BOOST_CHECK(true, extracted);
+  BOOST_CHECK_EQUAL(expected, seed);
 
   VW::finish_example(*vw, examples);
 }
@@ -50,10 +52,10 @@ BOOST_AUTO_TEST_CASE(tag_without_seed__seed_extraction)
   auto examples = parse_json(*vw, json);
   auto example = examples[0];
 
-  VW::string_view expected{"test_seed"};
+  VW::string_view seed;
 
-  auto seed = VW::extract_random_seed(*example);
-  BOOST_CHECK_EQUAL(false, static_cast<bool>(seed));
+  auto extracted = VW::try_extract_random_seed(*example, seed);
+  BOOST_CHECK(false, extracted);
 
   VW::finish_example(*vw, examples);
 }
@@ -72,10 +74,10 @@ BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
   auto examples = parse_json(*vw, json);
   auto example = examples[0];
 
-  VW::string_view expected{"test_seed"};
+  VW::string_view seed;
 
-  auto seed = VW::extract_random_seed(*example);
-  BOOST_CHECK_EQUAL(false, static_cast<bool>(seed));
+  auto extracted = VW::try_extract_random_seed(*example, seed);
+  BOOST_CHECK(false, extracted);
 
   VW::finish_example(*vw, examples);
 }

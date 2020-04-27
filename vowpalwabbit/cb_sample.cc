@@ -60,10 +60,10 @@ struct cb_sample_data
       bool tag_provided_seed = false;
       uint64_t seed = _random_state->get_current_state();
 
-      const std::unique_ptr<VW::string_view> tag_seed(extract_random_seed(*examples[0]));
-      if (tag_seed)
+      VW::string_view tag_seed;
+      if (try_extract_random_seed(*examples[0], tag_seed))
       {
-        seed = uniform_hash(tag_seed->begin(), tag_seed->size(), 0);
+        seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
         tag_provided_seed = true;
       }
 
