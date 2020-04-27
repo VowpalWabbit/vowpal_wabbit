@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
   VW::string_view seed;
 
   auto extracted = VW::try_extract_random_seed(*example, seed);
-  BOOST_CHECK(true, extracted);
+  BOOST_CHECK_EQUAL(true, extracted);
   BOOST_CHECK_EQUAL(expected, seed);
 
   VW::finish_example(*vw, examples);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(tag_without_seed__seed_extraction)
   VW::string_view seed;
 
   auto extracted = VW::try_extract_random_seed(*example, seed);
-  BOOST_CHECK(false, extracted);
+  BOOST_CHECK_EQUAL(false, extracted);
 
   VW::finish_example(*vw, examples);
 }
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
   VW::string_view seed;
 
   auto extracted = VW::try_extract_random_seed(*example, seed);
-  BOOST_CHECK(false, extracted);
+  BOOST_CHECK_EQUAL(false, extracted);
 
   VW::finish_example(*vw, examples);
 }
