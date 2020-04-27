@@ -213,6 +213,11 @@ namespace cats_pdf
 
     options.add_and_parse(new_options);
 
+  // If cats reduction was not invoked, don't add anything
+    // to the reduction stack;
+    if (!options.was_supplied("cats_pdf"))
+      return nullptr;
+
     if (num_actions <= 0)
       THROW(error_code::num_actions_gt_zero_s);
 
