@@ -274,7 +274,42 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
   ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
   ec.l.cb.costs.push_back({3.5f, 6, 0.5f, 0.0f});
 
-  predictions_t preds_to_return = {1.f, 1.f, -1.f, -1.f};
+  predictions_t preds_to_return = {-1.f, -1.f, -1.f};
+
+  reduction_test_harness* pharness = nullptr;
+  auto& base = *as_singleline(get_test_harness_reduction(preds_to_return, pharness));
+  offset_tree tree;
+  tree.init(8, 0);
+
+  tree.learn(base, ec);
+
+  // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
+  vector<label_data> expected_labels = {
+    {-1, 3.5f / .5f, 0},
+    {1, 3.5f / .5f, 0},
+    {-1, 3.5f / .5f, 0}};
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+
+  // verify id of learners that were trained
+  vector<uint64_t> expected_learners = {1, 2, 0};
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+      expected_learners.begin(), expected_learners.end());
+
+  destroy_free<test_learner_t>(&base);
+}
+
+
+BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
+{
+  example ec;
+  ec.ft_offset = 0;
+  ec.stack_depth = 0;
+  ec.l.cb = CB::label();
+  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back({3.5f, 7, 0.5f, 0.0f});
+
+  predictions_t preds_to_return = {1.f, 1.f, 1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
   auto& base = *as_singleline(get_test_harness_reduction(preds_to_return, pharness));
@@ -288,12 +323,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
     {1, 3.5f / .5f, 0},
     {-1, 3.5f / .5f, 0},
     {1, 3.5f / .5f, 0},
-    {-1, 3.5f / .5f, 0}};
+    {1, 3.5f / .5f, 0}};
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
 
   // verify id of learners that were trained
-  vector<uint64_t> expected_learners = {4, 5, 2, 0};
+  vector<uint64_t> expected_learners = {6, 1, 2, 0};
   BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
@@ -309,7 +344,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
   ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
   ec.l.cb.costs.push_back({3.5f, 6, 0.5f, 0.0f});
  
-  predictions_t preds_to_return = {1.f, 1.f, 1.f};
+  predictions_t preds_to_return = {};
 
   reduction_test_harness* pharness = nullptr;
   auto& base = *as_singleline(get_test_harness_reduction(preds_to_return, pharness));
@@ -319,17 +354,50 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
   tree.learn(base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
+  vector<label_data> expected_labels = {};
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+
+  // verify id of learners that were trained
+  vector<uint64_t> expected_learners = {};
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+      expected_learners.begin(), expected_learners.end());
+
+  destroy_free<test_learner_t>(&base);
+}
+
+
+BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
+{
+  example ec;
+  ec.ft_offset = 0;
+  ec.stack_depth = 0;
+  ec.l.cb = CB::label();
+  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back({3.5f, 11, 0.5f, 0.0f});
+ 
+  predictions_t preds_to_return = {1, 1, -1};
+
+  reduction_test_harness* pharness = nullptr;
+  auto& base = *as_singleline(get_test_harness_reduction(preds_to_return, pharness));
+  offset_tree tree;
+  tree.init(16, 2);
+
+  tree.learn(base, ec);
+
+  // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {
     {1, 3.5f / .5f, 0},
-    {-1, 3.5f / .5f, 0},
-    {-1, 3.5f / .5f, 0}
+    {1, 3.5f / .5f, 0},
+    {1, 3.5f / .5f, 0}
   };
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
 
   // verify id of learners that were trained
-  vector<uint64_t> expected_learners = {4, 5, 0};
+  vector<uint64_t> expected_learners = {12, 5, 0};
   BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
@@ -345,7 +413,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
   ec.l.cb.costs.push_back({3.5f, 2, 0.5f, 0.0f});
   ec.l.cb.costs.push_back({3.5f, 5, 0.5f, 0.0f});
 
-  predictions_t preds_to_return = {-1.f, 1.f, -1.f, 1.f};
+  predictions_t preds_to_return = {-1.f, 1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
   auto& base = *as_singleline(get_test_harness_reduction(preds_to_return, pharness));
@@ -359,12 +427,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
     {1, 3.5f / .5f, 0},
     {1, 3.5f / .5f, 0},
     {1, 3.5f / .5f, 0},
-    {-1, 3.5f / .5f, 0}};
+   };
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
 
   // verify id of learners that were trained
-  vector<uint64_t> expected_learners = {5, 1, 2, 0};
+  vector<uint64_t> expected_learners = {5, 2, 0};
   BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
