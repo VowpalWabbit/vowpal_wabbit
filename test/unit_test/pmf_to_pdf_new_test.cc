@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_new_basic)
 
   float sum = 0;
   cout << "ec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < k; i++)
+  for (uint32_t i = 0; i < ec.pred.prob_dist_new.size(); i++)
   {
     cout << "(" << ec.pred.prob_dist_new[i].left << " , " << ec.pred.prob_dist_new[i].right << 
     ": " << ec.pred.prob_dist_new[i].pdf_value << ")" << endl;
