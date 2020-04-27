@@ -237,3 +237,86 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
+
+
+BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
+{
+  std::string json_text = R"(
+{
+    "GUser": {
+        "id": "mk",
+        "major": "psychology",
+        "hobby": "kids",
+        "favorite_character": "7of9"
+    },
+    "_multi": [
+        {
+            "_slot_id": 0,
+            "TAction": {
+                "topic": "SkiConditions-VT"
+            }
+        },
+        {
+            "_slot_id": 0,
+            "TAction": {
+                "topic": "HerbGarden"
+            }
+        },
+        {
+            "_slot_id": 1,
+            "TAction": {
+                "topic": "BeyBlades"
+            }
+        },
+        {
+            "_slot_id": 1,
+            "TAction": {
+                "topic": "NYCLiving"
+            }
+        },
+        {
+            "_slot_id": 1,
+            "TAction": {
+                "topic": "MachineLearning"
+            }
+        }
+    ],
+    "_slots": [
+        {
+            "slot_id": "__0"
+        },
+        {
+            "slot_id": "__2"
+        }
+    ]
+}
+)";
+
+  // Assert parsed values against what they should be
+  auto slates_vw = VW::initialize("--slates --dsjson --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto examples = parse_json(*slates_vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 8);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::slot);
+
+  const auto& label0 = examples[0]->l.slates;
+  BOOST_CHECK_EQUAL(label0.labeled, false);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.slot_id, 0);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.slot_id, 0);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.slot_id, 1);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.slot_id, 1);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
+  
+  check_collections_exact(examples[0]->indices, std::vector<namespace_index>{'G'});
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].indicies.size(), 4);
+
+  VW::finish_example(*slates_vw, examples);
+  VW::finish(*slates_vw);
+}
