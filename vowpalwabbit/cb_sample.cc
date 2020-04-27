@@ -57,14 +57,13 @@ struct cb_sample_data
     }
     else
     {
-      bool tag_provided_seed = false;
       uint64_t seed = _random_state->get_current_state();
 
       VW::string_view tag_seed;
-      if (try_extract_random_seed(*examples[0], tag_seed))
+      const bool tag_provided_seed = try_extract_random_seed(*examples[0], tag_seed);
+      if (tag_provided_seed)
       {
         seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
-        tag_provided_seed = true;
       }
 
       // Sampling is done after the base learner has generated a pdf.
