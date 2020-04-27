@@ -63,7 +63,8 @@ typedef union {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  VW::actions_pdf::pdf prob_dist;
+  VW::actions_pdf::pdf prob_dist; // todo remove
+  VW::actions_pdf::pdf_new prob_dist_new; // todo rename
   CCB::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
@@ -170,13 +171,13 @@ struct swap_restore_action_scores_prediction
 
 struct swap_restore_pdf_prediction
 {
-  swap_restore_pdf_prediction(example& ec, actions_pdf::pdf& base_prediction);
+  swap_restore_pdf_prediction(example& ec, actions_pdf::pdf_new& base_prediction);
   ~swap_restore_pdf_prediction();
 
  private:
   const polyprediction _prediction;
   example& _ec;
-  actions_pdf::pdf& _base_prediction;
+  actions_pdf::pdf_new& _base_prediction;
 };
 
 struct swap_restore_cb_label

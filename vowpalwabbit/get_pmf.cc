@@ -1,6 +1,7 @@
 #include "get_pmf.h"
 #include "err_constants.h"
 #include "api_status.h"
+#include "debug_log.h"
 #include "parse_args.h"
 
 // Aliases
@@ -85,7 +86,7 @@ LEARNER::base_learner* get_pdf_setup(config::options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous actions");
   bool invoked = false;
-  float epsilon;
+  float epsilon = 0.0f;
   new_options.add(make_option("get_pmf", invoked).keep().help("Convert a single multiclass prediction to a pmf"));
 
   options.add_and_parse(new_options);

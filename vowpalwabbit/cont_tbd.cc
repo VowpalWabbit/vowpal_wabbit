@@ -14,8 +14,8 @@ namespace VW { namespace continuous_action {
 
   namespace lbl_parser {
 
-    void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
-    {
+    //void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+    //{
       //auto ld = static_cast<continuous_label*>(v);
       //ld->costs.clear();
       //for (auto word : words)
@@ -54,7 +54,7 @@ namespace VW { namespace continuous_action {
 
       //  ld->costs.push_back(f);
       //}
-    }
+    //}
 
     //label_parser cont_tbd_label_parser = {
     //  CB::default_label<continuous_label>,

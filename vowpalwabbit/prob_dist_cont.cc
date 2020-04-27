@@ -8,14 +8,14 @@ using namespace std;
 namespace VW { namespace actions_pdf
 {
   // Convert pdf to string of form 'begin-end:pdf_value, ... '
-  std::string to_string(const v_array<pdf_segment>& p_d, bool newline)
+  std::string to_string(const v_array<pdf_segment_new>& p_d, bool newline)
   {
     std::stringstream ss;
     for (size_t i = 0; i < p_d.size(); i++)
     {
       if (i > 0)
         ss << ',';
-      ss << p_d[i].begin << '-' << p_d[i].end << ':' << p_d[i].pdf_value;
+      ss << p_d[i].left << '-' << p_d[i].right << ':' << p_d[i].pdf_value;
     }
 
     if (newline) ss << endl;
@@ -24,7 +24,7 @@ namespace VW { namespace actions_pdf
   }
 
   // Print out to_string(pdf) to given file descriptor
-  void print_prob_dist(int f, v_array<pdf_segment>& p_d, v_array<char>&)
+  void print_prob_dist(int f, v_array<pdf_segment_new>& p_d, v_array<char>&)
   {
     if (f >= 0)
     {
@@ -51,7 +51,7 @@ namespace VW { namespace actions_pdf
     while (end - begin > 1)
     {
       int mid = (begin + end) / 2;
-      if (prob_dist[mid].end <= chosen_action)
+      if (prob_dist[mid].action <= chosen_action)
       {
         begin = mid;
       }
@@ -62,9 +62,9 @@ namespace VW { namespace actions_pdf
     }
 
     // temporary fix for now
-    if (begin == (int)prob_dist.size() - 1 && prob_dist[begin].pdf_value == 0)
-      return prob_dist[begin - 1].pdf_value;
-    return prob_dist[begin].pdf_value;
+    if (begin == (int)prob_dist.size() - 1 && prob_dist[begin].value == 0)
+      return prob_dist[begin - 1].value;
+    return prob_dist[begin].value;
   }
 
   std::string to_string(const action_pdf_value& a_p, bool newline)
@@ -73,6 +73,34 @@ namespace VW { namespace actions_pdf
     strm << a_p.action << "," << a_p.pdf_value;
     if (newline)
       strm << endl;
+    return strm.str();
+  }
+
+  float get_pdf_value(VW::actions_pdf::pdf_new& prob_dist_new, float chosen_action)
+  {
+    int begin = -1;
+    int end = (int)prob_dist_new.size();
+    while (end - begin > 1)
+    {
+      int mid = (begin + end) / 2;
+      if (prob_dist_new[mid].left <= chosen_action)
+      {
+        begin = mid;
+      }
+      else
+      {
+        end = mid;
+      }
+    }
+
+    return prob_dist_new[begin].pdf_value;
+  }
+
+  std::string to_string(const pdf_segment_new& seg)
+  {
+    std::stringstream strm;
+    strm << "{" << seg.left << "-" << seg.right
+         << "," << seg.pdf_value << "}";
     return strm.str();
   }
 }} // namespace vw::pdf

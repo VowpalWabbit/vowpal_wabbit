@@ -3,6 +3,7 @@
 #include "err_constants.h"
 #include "api_status.h"
 #include "cb_label_parser.h"
+#include "debug_log.h"
 
 // Aliases
 using LEARNER::single_learner;
@@ -25,6 +26,8 @@ namespace VW
 namespace VW
 {
 namespace continuous_action
+{
+namespace cats_pdf
 {
   ////////////////////////////////////////////////////
   // BEGIN cats_pdf reduction and reduction methods
@@ -84,7 +87,7 @@ namespace continuous_action
   {
    public:
     static void report_progress(vw& all, cats_pdf&, example& ec);
-    static void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::pdf& prediction);
+    static void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::pdf_new& prediction);
 
    private:
     static inline bool does_example_have_label(example& ec);
@@ -96,12 +99,12 @@ namespace continuous_action
   {
     // add output example
     reduction_output::report_progress(all, data, ec);
-    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.prob_dist);
+    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.prob_dist_new);
     VW::finish_example(all, ec);
   }
 
   void reduction_output::output_predictions(
-      v_array<int>& predict_file_descriptors, actions_pdf::pdf& prediction)
+      v_array<int>& predict_file_descriptors, actions_pdf::pdf_new& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
@@ -132,7 +135,7 @@ namespace continuous_action
     {
       all.sd->print_update(all.holdout_set_off, all.current_pass,
           to_string(ec.l.cb_cont.costs[0]),  // Label
-          to_string(ec.pred.prob_dist),      // Prediction
+          to_string(ec.pred.prob_dist_new),      // Prediction
           ec.num_features, all.progress_add, all.progress_arg);
     }
   }
@@ -202,7 +205,7 @@ namespace continuous_action
   ////////////////////////////////////////////////////
   
   // Setup reduction in stack
-  LEARNER::base_learner* cats_pdf_setup(config::options_i& options, vw& all)
+  LEARNER::base_learner* setup(config::options_i& options, vw& all)
   {
     option_group_definition new_options("Continuous action tree with smoothing");
     int num_actions = 0, pdf_num_actions = 0;
@@ -236,5 +239,6 @@ namespace continuous_action
 
     return make_base(l);
   }
-}  // namespace continuous_action
+}  
+} 
 }  // namespace VW

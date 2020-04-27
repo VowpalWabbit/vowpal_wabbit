@@ -79,6 +79,7 @@ license as described in the file LICENSE.
 #include "shared_feature_merger.h"
 // #include "cntk.h"
 
+#include "cats.h"
 #include "cats_pdf.h"
 #include "cb_explore_pdf.h"
 #include "options.h"
@@ -88,8 +89,9 @@ license as described in the file LICENSE.
 #include "pmf_to_pdf.h"
 #include "offset_tree_cont.h"
 #include "cont_tbd.h"
-#include "get_pdf.h"
+#include "get_pmf.h"
 #include "sample_pdf.h"
+
 using namespace std;
 using namespace VW::config;
 
@@ -1293,9 +1295,9 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(VW::continuous_action::get_pdf_setup);
   all.reduction_stack.push(VW::pmf_to_pdf::pmf_to_pdf_setup);
   all.reduction_stack.push(VW::continuous_action::cb_explore_pdf_setup);
-  all.reduction_stack.push(VW::continuous_action::cats_pdf_setup);
+  all.reduction_stack.push(VW::continuous_action::cats_pdf::setup);
   all.reduction_stack.push(VW::continuous_action::sample_pdf_setup);
-  all.reduction_stack.push(VW::continuous_action::cats_setup);
+  all.reduction_stack.push(VW::continuous_action::cats::setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
   all.reduction_stack.push(VW::offset_tree::offset_tree_setup);

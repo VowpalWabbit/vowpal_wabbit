@@ -353,7 +353,7 @@ int swap_chosen(ActionsIt action_first, ActionsIt action_last, uint32_t chosen_i
 // 3) Scores need not add up to one.
 template <typename It>
 int sample_scores(uint64_t* p_seed, It scores_first, It scores_last, uint32_t& chosen_index,
-    std::random_access_iterator_tag scores_category)
+    std::random_access_iterator_tag)
 {
   if (scores_first == scores_last || scores_last < scores_first)
     return E_EXPLORATION_BAD_RANGE;
@@ -472,7 +472,7 @@ int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value,
   float pdf_mass = 0.f;
   for (It pdf_it = pdf_first; pdf_it != pdf_last; ++pdf_it)
   {
-    pdf_mass += (pdf_it->end - pdf_it->begin) * pdf_it->pdf_value;
+    pdf_mass += (pdf_it->right - pdf_it->left) * pdf_it->pdf_value;
   }
 
   const float edge_avoid_factor = 1.0001f;
@@ -484,16 +484,16 @@ int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value,
 
   float acc_mass = 0.f;
 
-  chosen_value = pdf_first->begin;
+  chosen_value = pdf_first->left;
   pdf_value = pdf_first->pdf_value;
 
   for (It pdf_it = pdf_first; pdf_it != pdf_last; ++pdf_it)
   {
-    float seg_mass = pdf_it->pdf_value * (pdf_it->end - pdf_it->begin);
+    float seg_mass = pdf_it->pdf_value * (pdf_it->right - pdf_it->left);
     if (draw <= seg_mass + acc_mass)
     {
       float mass_in_region = draw - acc_mass;
-      chosen_value = pdf_it->begin + mass_in_region / pdf_it->pdf_value;
+      chosen_value = pdf_it->left + mass_in_region / pdf_it->pdf_value;
       pdf_value = pdf_it->pdf_value;
       return S_EXPLORATION_OK;
     }

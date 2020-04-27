@@ -2,7 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include "learner.h"
-#include "pmf_to_pdf.h"
+#include "pmf_to_pdf_new.h"
 #include "parse_args.h"  // setup_base()
 #include "action_score.h"
 
@@ -21,16 +21,19 @@ struct cb_triple
   }
 };
 
-namespace VW { namespace pmf_to_pdf {
+namespace VW { namespace pmf_to_pdf_new {
 
-void learn(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
-void predict(VW::pmf_to_pdf::reduction& data, single_learner& base, example& ec);
+void learn(VW::pmf_to_pdf_new::reduction& data, single_learner& base, example& ec);
+void predict(VW::pmf_to_pdf_new::reduction& data, single_learner& base, example& ec);
+
+using test_learner_t = learner<reduction_test_harness, example>;
+using predictions_t = vector<pair<int, float>>;
 
 struct reduction_test_harness
 {
   reduction_test_harness() : _curr_idx(0) {}
 
-  void set_predict_response(const vector<float>& predictions) { _predictions = predictions; }
+  void set_predict_response(const predictions_t& predictions) { _predictions = predictions; }
   void set_chosen_action(const cb_triple& chosen_action) { _action = chosen_action; }
 
   void test_predict(single_learner& base, example& ec)
@@ -38,7 +41,7 @@ struct reduction_test_harness
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
     {
-      ec.pred.a_s.push_back(ACTION_SCORE::action_score{i, _predictions[i]});
+      ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second});
     }
 
     cout << "\nec.pred.a_s (PMF): " << endl;
@@ -68,28 +71,14 @@ struct reduction_test_harness
   };
 
  private:
-  vector<float> _predictions;
+  vector<pair<int, float>> _predictions;
   cb_triple _action;
   int _curr_idx;
 };
 
-using test_learner_t = learner<reduction_test_harness, example>;
-using predictions_t = vector<float>;
 
 test_learner_t* get_test_harness_reduction(
     const predictions_t& base_reduction_predictions, const cb_triple& action_triple);
-
-
-float get_pdf_value(VW::actions_pdf::pdf prob_dist, float chosen_action)
-{
-  if (prob_dist.size() == 1)
-    return prob_dist[0].value;
-  float h = prob_dist[1].action - prob_dist[0].action;
-  uint32_t idx = floor((chosen_action - prob_dist[0].action) / h);
-  if (idx < 0 || idx >= prob_dist.size())
-    THROW("The chosen action is not in the domain of the pdf function");
-  return prob_dist[idx].value;
-}
 
 }  // namespace pmf_to_pdf
 }  // namespace VW
@@ -103,16 +92,16 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   cb_triple action_triple;
   action_triple.set_action(1010.17f, 0.5f, 0.1f);
-  VW::pmf_to_pdf::predictions_t prediction_scores;
-  prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
+  VW::pmf_to_pdf_new::predictions_t prediction_scores;
+  prediction_scores = {{2, 1}};
 
-  const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores, action_triple);
+  const auto test_harness = VW::pmf_to_pdf_new::get_test_harness_reduction(prediction_scores, action_triple);
 
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
 
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
+  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf_new::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
   data->min_value = min_val;
@@ -123,10 +112,11 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   float sum = 0;
   cout << "ec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < k; i++)
+  for (uint32_t i = 0; i < ec.pred.prob_dist_new.size(); i++)
   {
-    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), " << endl;
-    sum += ec.pred.prob_dist[i].action;
+    cout << "(" << ec.pred.prob_dist_new[i].left << ", " << ec.pred.prob_dist_new[i].right << ", " <<
+    ec.pred.prob_dist_new[i].pdf_value << ")" << endl;
+    sum += ec.pred.prob_dist_new[i].pdf_value * (ec.pred.prob_dist_new[i].right - ec.pred.prob_dist_new[i].left);
   }
   cout << "sum = " << sum << endl;
 
@@ -142,12 +132,12 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   // float chosen_action = action_triple.action
   float chosen_action = 1080; 
-  cout << "pdf value of " << chosen_action << " is = " << VW::pmf_to_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
+  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value_new(ec.pred.prob_dist_new, chosen_action)
        << std::endl;
   cout << "here" << endl;
 }
 
-namespace VW { namespace pmf_to_pdf {
+namespace VW { namespace pmf_to_pdf_new {
 test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions, const cb_triple& action_triple)
 {
   // Setup a test harness base reduction

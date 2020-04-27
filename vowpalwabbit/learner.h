@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
-#include "debug_log.h"
+
 namespace prediction_type
 {
 enum prediction_type_t
@@ -115,7 +115,8 @@ inline void increment_offset(example& ex, const size_t increment, const size_t i
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  ++ec_seq[0]->stack_depth;
+  if (ec_seq.size() > 0)
+    ++ec_seq[0]->stack_depth;
   for (auto& ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
 }
 
@@ -128,7 +129,8 @@ inline void decrement_offset(example& ex, const size_t increment, const size_t i
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  --ec_seq[0]->stack_depth;
+  if (ec_seq.size() > 0)
+    --ec_seq[0]->stack_depth;
   for (auto ec : ec_seq)
   {
     assert(ec->ft_offset >= increment * i);

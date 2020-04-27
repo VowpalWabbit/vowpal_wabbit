@@ -1,6 +1,7 @@
 #include "cb_explore_pdf.h"
 #include "err_constants.h"
 #include "api_status.h"
+#include "debug_log.h"
 #include "parse_args.h"
 
 // Aliases
@@ -30,7 +31,7 @@ namespace continuous_action
     ~cb_explore_pdf();
 
     private:
-      actions_pdf::pdf _pred_pdf;
+      actions_pdf::pdf_new _pred_pdf;
       single_learner* _base = nullptr;
   };
 
@@ -55,7 +56,7 @@ namespace continuous_action
   void cb_explore_pdf::init(single_learner* p_base)
   {
     _base = p_base;
-    _pred_pdf = v_init<actions_pdf::pdf_segment>();
+    _pred_pdf = v_init<actions_pdf::pdf_segment_new>();
   }
 
   cb_explore_pdf::~cb_explore_pdf()

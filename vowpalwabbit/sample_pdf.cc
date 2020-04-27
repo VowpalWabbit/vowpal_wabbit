@@ -1,6 +1,7 @@
 #include "sample_pdf.h"
 #include "err_constants.h"
 #include "api_status.h"
+#include "debug_log.h"
 #include "parse_args.h"
 #include "../explore/explore.h"
 
@@ -32,7 +33,7 @@ namespace continuous_action
 
     private:
       uint64_t* _p_random_state;
-      actions_pdf::pdf _pred_pdf;
+      actions_pdf::pdf_new _pred_pdf;
       single_learner* _base = nullptr;
   };
 
@@ -52,7 +53,7 @@ namespace continuous_action
     exploration::sample_pdf(
       _p_random_state,
       std::begin(_pred_pdf),
-      std::end(ec.pred.prob_dist),
+      std::end(ec.pred.prob_dist_new),
       ec.pred.a_pdf.action,
       ec.pred.a_pdf.pdf_value);
     return error_code::success;
@@ -62,7 +63,7 @@ namespace continuous_action
   {
     _base = p_base;
     _p_random_state = p_random_seed;
-    _pred_pdf = v_init<actions_pdf::pdf_segment>();
+    _pred_pdf = v_init<actions_pdf::pdf_segment_new>();
   }
 
   sample_pdf::~sample_pdf()
