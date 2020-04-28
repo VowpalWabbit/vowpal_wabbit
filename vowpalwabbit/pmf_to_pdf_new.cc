@@ -41,7 +41,7 @@ namespace VW { namespace pmf_to_pdf_new
       }      
     }
 
-    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1)
+    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1) // todo: check k vs k -1
       pdf_lim.push_back(num_actions - 1);
 
     auto& p_dist = ec.pred.prob_dist_new;
@@ -50,7 +50,7 @@ namespace VW { namespace pmf_to_pdf_new
     size_t m = pdf_lim.size();
     l = 0; r = 0;
     float p = 0;
-    for (uint32_t i = 0; i < m - 2; i++)
+    for (uint32_t i = 0; i < m - 1; i++)
     {
       if (l < n && pdf_lim[i] == temp_pred_a_s[l].action - bandwidth)
         p += temp_pred_a_s[l++].score / (2 * h);
