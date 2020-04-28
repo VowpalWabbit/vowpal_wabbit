@@ -203,6 +203,11 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
     }
   }
 
+  if (document.HasMember("EventId"))
+  {
+    data->eventId = document["EventId"].GetString();
+  }
+
   if (document.HasMember("_outcomes"))
   {
     const auto& outcomes = document["_outcomes"].GetArray();
