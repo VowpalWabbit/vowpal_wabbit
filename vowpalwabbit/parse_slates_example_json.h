@@ -240,7 +240,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
         const auto& probs_array = probs.GetArray();
         for (size_t i = 0; i < probs_array.Size(); i++)
         {
-          destination[i].score = probs_array[i].GetUint();
+          destination[i].score = probs_array[i].GetFloat();
         }
       }
       else
