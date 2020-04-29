@@ -41,7 +41,7 @@ namespace VW { namespace pmf_to_pdf_new
       }      
     }
 
-    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1) // todo: check k vs k -1
+    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1) 
       pdf_lim.push_back(num_actions - 1);
 
     auto& p_dist = ec.pred.prob_dist_new;

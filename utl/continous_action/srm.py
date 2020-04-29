@@ -20,8 +20,6 @@ class SRM:
     _loss_acc = 0.
     _loss_max = float("-inf")
 
-    count = 0
-
     for (data_line, predict_line) in zip(data_file, predict_file):
       # Get data
       pred = self.get_predict_action(predict_line)
@@ -29,18 +27,15 @@ class SRM:
 #       L_s = 1
       # Compute losses
       if(math.isclose(pred,logd,abs_tol=self.hh)):
-        count = count + 1
         H_new = min(self.max_val, logd + self.hh) - max(self.min_val, logd - self.hh)
         _loss_acc += (L_s / (P_s * H_new))
       N += 1
-      if(N%10000 == 0):
-        print('.',end='',flush=True)
 
     _loss = _loss_acc / float(N)
 
-    print('.')
-    print("_loss=",_loss,", _loss_acc=",_loss_acc,", N=",N,)
-    print("count = ", count)
+    # print("_loss=",_loss,", _loss_acc=",_loss_acc,", N=",N,)
+
+    return _loss, N
 
   def get_logged_data(self, data_line):
     sep1 = data_line.find(':')
@@ -93,7 +88,8 @@ if __name__ == "__main__":
 
   srm_ = SRM(data_file, predict_file, min_val, max_val, k, h)
   try:
-    srm_.calc()
+    l, n = srm_.calc()
+    print("srm =", l)
   except Exception as err:
     print(usage)
     print()

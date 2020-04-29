@@ -37,23 +37,27 @@ run_offline(){
   printf "." > $filename1
   printf "." > $filename2
 
-  for n in 256 #4 8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 4 8 16 32 #64 128 256 512 1024 2048 4096 8192
   do
-  for h in 8 #1 2 4 8 16 32 64 128
+  for h in 1 2 4 #8 16 32 64 128
   do
   if (( $n > 2*$h ));
   then
+  printf "\nCATS-offline" >> $filename1
+  printf "\nn = $n" >> $filename1
+  printf "\nh = $h" >> $filename1
   printf "\ntime -p timeout $timee build/vowpalwabbit/vw --cont_tbd $n --min_value=$min --max_value=$max --bandwidth $h \
   -d results/$sdata\_$ll.acpx --passes $pass -b $bb --coin --loss_option $ll -f results/$sdata.m -p results/$sdata\_$ll\_$n\_$h.ap \n" >> $filename1
   time -p timeout $timee build/vowpalwabbit/vw --cont_tbd $n --min_value=$min --max_value=$max --bandwidth $h \
   -d results/$sdata\_$ll.acpx --passes $pass -b $bb --coin --loss_option $ll -f results/$sdata.m -p results/$sdata\_$ll\_$n\_$h.ap
-  printf "\n($n, $h)\n" >> $filename1
   python3 utl/continous_action/srm.py --p results/$sdata\_$ll\_$n\_$h.ap --d results/$sdata\_$ll.acp -m $max -i $min -k $n --bandwidth $h >> $filename1
+  printf "\nCATS-offline" >> $filename2
+  printf "\nn = $n" >> $filename2
+  printf "\nh = $h" >> $filename2
   printf "\ntime -p timeout $timee build/vowpalwabbit/vw --cont_tbd $n --min_value=$min --max_value=$max --bandwidth $h \
   -d test/train-sets/regression/$datatest --passes $pass -b $bb --coin --loss_option $ll -i results/$sdata.m -p results/$sdata.ap -t \n" >> $filename2
   time -p timeout $timee build/vowpalwabbit/vw --cont_tbd $n --min_value=$min --max_value=$max --bandwidth $h \
   -d test/train-sets/regression/$datatest --passes $pass -b $bb --coin --loss_option $ll -i results/$sdata.m -p results/$sdata.ap -t
-  printf "\n($n, $h)\n" >> $filename2
   python3 utl/continous_action/ap_regression_data_join.py --p results/$sdata.ap --d test/train-sets/regression/$datatest -m $max -i $min >> $filename2
 
   fi;
@@ -89,9 +93,9 @@ run_online(){
 
   echo "." > $filename3
 
-  for n in 256 4 8 16 #32 64 128 256 512 1024 2048 4096 8192
+  for n in 4 8 16 #32 64 128 256 512 1024 2048 4096 8192
   do
-  for h in 16 1 2 #4 8 16 32 64 128
+  for h in 1 2 4 #4 8 16 32 64 128
   do
   if (( $n > 2*$h ));
   then
@@ -108,7 +112,7 @@ run_online(){
 
 
   printf "\n\n-----------------------------------------------------------------------------" >> $filename3
-  for n in 4 2 4 8 #16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 2 4 8 #16 32 64 128 256 512 1024 2048 4096 8192
   do
   printf "\n\nDiscretized-Tree-online" >> $filename3
   printf "\nn = $n" >> $filename3
@@ -120,7 +124,7 @@ run_online(){
 
 
   printf "\n\n----------------------------------------------------------------------------" >> $filename3
-  for n in 16 2 4 8 #16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 2 4 8 #16 32 64 128 256 512 1024 2048 4096 8192
   do
   printf "\n\nDiscretized-Linear-online" >> $filename3
   printf "\nn = $n" >> $filename3
