@@ -55,7 +55,7 @@ float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
   return prob_dist[begin].value;
 }
 
-float get_pdf_value_new(VW::actions_pdf::pdf_new& prob_dist_new, float chosen_action)
+float get_pdf_value(VW::actions_pdf::pdf_new& prob_dist_new, float chosen_action)
 {
   int begin = -1;
   int end = (int)prob_dist_new.size();
