@@ -464,4 +464,52 @@ int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float min_value, flo
   return sample_pdf(p_seed, pdf_first, pdf_last, min_value, max_value, chosen_value, pdf_category());
 }
 
+// Sample one action from the given probability density function.
+template <typename It>
+int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value,
+    std::random_access_iterator_tag pdf_category)
+{
+  float pdf_mass = 0.f;
+  for (It pdf_it = pdf_first; pdf_it != pdf_last; ++pdf_it)
+  {
+    pdf_mass += (pdf_it->right - pdf_it->left) * pdf_it->pdf_value;
+  }
+
+  const float edge_avoid_factor = 1.0001f;
+  float draw = 0.f;
+  do
+  {
+    draw = edge_avoid_factor * pdf_mass * exploration::uniform_random_merand48_advance(*p_seed);
+  } while (draw >= pdf_mass);
+
+  float acc_mass = 0.f;
+
+  chosen_value = pdf_first->left;
+  pdf_value = pdf_first->pdf_value;
+
+  for (It pdf_it = pdf_first; pdf_it != pdf_last; ++pdf_it)
+  {
+    float seg_mass = pdf_it->pdf_value * (pdf_it->right - pdf_it->left);
+    if (draw <= seg_mass + acc_mass)
+    {
+      float mass_in_region = draw - acc_mass;
+      chosen_value = pdf_it->left + mass_in_region / pdf_it->pdf_value;
+      pdf_value = pdf_it->pdf_value;
+      return S_EXPLORATION_OK;
+    }
+    acc_mass += seg_mass;
+  }
+  return S_EXPLORATION_OK;
+}
+
+// Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
+// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
+// be used to inplace mutate it.
+template <typename It>
+int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
+{
+  typedef typename std::iterator_traits<It>::iterator_category pdf_category;
+  return sample_pdf(p_seed, pdf_first, pdf_last, chosen_value, pdf_value, pdf_category());
+}
+
 }  // namespace exploration

@@ -1,13 +1,20 @@
 #pragma once
 namespace VW { namespace actions_pdf
 {
-struct pdf_segment // todo: remove
+
+struct pdf_segment  // todo: remove
 {
-  float action;  //starting point
-  float value; // height
+  float action;  // starting point
+  float value;   // height
 };
 
-typedef v_array<pdf_segment> pdf; // todo: remove
+struct action_pdf_value  
+{
+  float action;  // continuous action
+  float pdf_value;   // pdf value
+};
+
+typedef v_array<pdf_segment> pdf;  // todo: remove
 
 
 struct pdf_segment_new // todo: rename
@@ -83,7 +90,7 @@ inline int prob_comp(const void* p1, const void* p2)
   // Tie-breaking on the index ensures that the result is deterministic across platforms.
   // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
   if (s2->value == s1->value)
-    return cmp(s1->action, s2->action);
+    return cmp(s1->value, s2->value);
   else if (s2->value >= s1->value)
     return -1;
   else
@@ -92,6 +99,6 @@ inline int prob_comp(const void* p1, const void* p2)
 
 inline int reverse_order(const void* p1, const void* p2) { return prob_comp(p2, p1); }
 
-std::string to_string(const pdf_segment& seg);
-
+std::string to_string(const action_pdf_value& seg, bool print_newline = false);
+std::string to_string(const v_array<pdf_segment_new>& pdf, bool print_newline = false);
 }}  // namespace VW::actions

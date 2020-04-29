@@ -220,8 +220,8 @@ namespace VW { namespace pmf_to_pdf
     auto p_base = as_singleline(setup_base(options, all));
     data->_p_base = p_base;
 
-    learner<pmf_to_pdf::reduction, example>& l =
-        init_learner(data, p_base, learn, predict, 1, prediction_type::prob_dist);
+    learner<reduction, example>& l =
+        init_learner(data, p_base, learn, predict, 1, prediction_type::pdf);
 
     l.set_finish(finish);
 

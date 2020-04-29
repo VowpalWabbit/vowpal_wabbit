@@ -20,7 +20,7 @@ struct reduction_test_harness
   reduction_test_harness() : _curr_idx(0) {}
 
   void set_predict_response(const vector<float>& predictions) { _predictions = predictions; }
-  
+
   void test_predict(single_learner& base, example& ec)
   {
     ec.pred.a_s.clear();
@@ -39,7 +39,7 @@ struct reduction_test_harness
   void test_learn(single_learner& base, example& ec)
   {
     cout << "ec.l.cb.costs after:" << endl;
-    for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++) 
+    for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
     {
       cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " << ec.l.cb.costs[i].probability
          << " , " << ec.l.cb.costs[i].partial_prediction << ") " << endl;
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_1)
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
   example ec;
-  
+
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_1)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  float chosen_action = 1080; 
+  float chosen_action = 1080;
   cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
        << std::endl;
 }
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_2)
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
   example ec;
-  
+
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_2)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  float chosen_action = 1080; 
+  float chosen_action = 1080;
   cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
        << std::endl;
 }
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_3)
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
   example ec;
-  
+
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_3)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  float chosen_action = 1080; 
+  float chosen_action = 1080;
   cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
        << std::endl;
 }
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_4)
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
   example ec;
-  
+
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_4)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  float chosen_action = 1080; 
+  float chosen_action = 1080;
   cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
        << std::endl;
 }
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_5)
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
   example ec;
-  
+
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_5)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  float chosen_action = 1080; 
+  float chosen_action = 1080;
   cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
        << std::endl;
 }

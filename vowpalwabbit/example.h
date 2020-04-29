@@ -69,7 +69,7 @@ typedef union {
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc
-  VW::actions_pdf::pdf_segment action_pdf;
+  VW::actions_pdf::action_pdf_value a_pdf;
 } polyprediction;
 
 struct example : public example_predict  // core example datatype.
@@ -148,15 +148,36 @@ void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);
 
 void return_multiple_example(vw& all, v_array<example*>& examples);
 
+struct restore_prediction
+{
+  restore_prediction(example& ec);
+  ~restore_prediction();
+
+ private:
+  const polyprediction _prediction;
+  example& _ec;
+};
+
 struct swap_restore_action_scores_prediction
 {
   swap_restore_action_scores_prediction(example& ec, ACTION_SCORE::action_scores& base_prediction);
   ~swap_restore_action_scores_prediction();
 
-  private:
-    const polyprediction _prediction;
-    example& _ec;
-    ACTION_SCORE::action_scores& _base_prediction;
+ private:
+  const polyprediction _prediction;
+  example& _ec;
+  ACTION_SCORE::action_scores& _base_prediction;
+};
+
+struct swap_restore_pdf_prediction
+{
+  swap_restore_pdf_prediction(example& ec, actions_pdf::pdf_new& base_prediction);
+  ~swap_restore_pdf_prediction();
+
+ private:
+  const polyprediction _prediction;
+  example& _ec;
+  actions_pdf::pdf_new& _base_prediction;
 };
 
 struct swap_restore_cb_label
