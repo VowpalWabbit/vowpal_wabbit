@@ -1471,6 +1471,12 @@ template <bool audit>
 void read_line_json(
     vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
 {
+  if (all.label_type == label_type_t::slates)
+  {
+    parse_slates_example_json<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context);
+    return;
+  }
+
   // string line_copy(line);
   // destructive parsing
   InsituStringStream ss(line);
@@ -1523,7 +1529,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   if(all.label_type == label_type_t::slates)
   {
-    parse_slates_example<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
+    parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
     apply_pdrop(all, data->probabilityOfDrop, examples);
     return;
   }
