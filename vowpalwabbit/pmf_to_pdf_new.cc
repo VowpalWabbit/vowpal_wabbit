@@ -242,7 +242,7 @@ namespace VW { namespace pmf_to_pdf_new
     data->_p_base = p_base;
 
     learner<pmf_to_pdf_new::reduction, example>& l =
-        init_learner(data, p_base, learn, predict, 1, prediction_type::prob_dist);
+        init_learner(data, p_base, learn, predict, 1, prediction_type::pdf);
 
     l.set_finish(finish);
 
