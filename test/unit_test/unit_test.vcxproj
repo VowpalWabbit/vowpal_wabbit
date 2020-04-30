@@ -35,6 +35,8 @@
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
+    <ClCompile Include="tag_utils_test.cc" />
+    <ClCompile Include="test_common.cc" />
     <ClCompile Include="vwdll_test.cc" />
   </ItemGroup>
   <ItemGroup>

@@ -142,6 +142,7 @@ set(vw_all_headers
   stable_unique.h
   stagewise_poly.h
   svrg.h
+  tag_utils.h
   topk.h
   unique_sort.h
   v_array.h
@@ -254,6 +255,7 @@ set(vw_all_sources
   slates.cc
   stagewise_poly.cc
   svrg.cc
+  tag_utils.cc
   topk.cc
   unique_sort.cc
   version.cc
