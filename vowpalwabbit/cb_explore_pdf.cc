@@ -30,6 +30,10 @@ namespace continuous_action
     void init(single_learner* p_base);
     ~cb_explore_pdf();
 
+    float epsilon;
+    float min_value;
+    float max_value;
+
     private:
       actions_pdf::pdf_new _pred_pdf;
       single_learner* _base = nullptr;
@@ -49,6 +53,13 @@ namespace continuous_action
       _base->predict(ec);
     }
 
+    _pred_pdf = ec.pred.prob_dist_new;
+    for (uint32_t i = 0; i < _pred_pdf.size(); i++)
+    {
+      _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);
+    }
+    ec.pred.prob_dist_new = _pred_pdf;
+    
     // TODO:  create egreedy exploration pdf from base.predict() pdf stored in pred_pdf
     return error_code::success;
   }
@@ -89,9 +100,13 @@ namespace continuous_action
     option_group_definition new_options("Continuous actions");
     bool invoked = false;
     float epsilon;
+    float min_;
+    float max_;
     new_options
         .add(make_option("cb_explore_pdf", invoked).keep().help("Sample a pdf and pick a continuous valued action"))
-        .add(make_option("epsilon", epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"));
+        .add(make_option("epsilon", epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"))
+        .add(make_option("min_", min_).keep().default_value(0.0f).help("min value for continuous range"))
+        .add(make_option("max_", max_).keep().default_value(1.0f).help("max value for continuous range"));
 
     options.add_and_parse(new_options);
 
@@ -103,6 +118,9 @@ namespace continuous_action
     LEARNER::base_learner* p_base = setup_base(options, all);
     auto p_reduction = scoped_calloc_or_throw<cb_explore_pdf>();
     p_reduction->init(as_singleline(p_base));
+    p_reduction->epsilon = epsilon;
+    p_reduction->min_value = min_;
+     p_reduction->max_value = max_;
 
     LEARNER::learner<cb_explore_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base),
         predict_or_learn<true>,

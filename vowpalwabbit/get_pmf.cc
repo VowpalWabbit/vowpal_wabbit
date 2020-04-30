@@ -47,7 +47,7 @@ int get_pmf::predict(example& ec, api_status* status)
   {  // predict & restore prediction
     restore_prediction restore(ec);
     _base->predict(ec);
-    base_prediction = ec.pred.multiclass;
+    base_prediction = ec.pred.multiclass - 1;
   }
 
   // Assume ec.pred.a_s allocated by the caller (probably pmf_to_pdf);
