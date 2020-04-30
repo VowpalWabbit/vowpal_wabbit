@@ -363,8 +363,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
             "_p": 0.8
         },
         {
-            "_a": 0,
-            "_p": 0.6
+            "_a": [0, 1],
+            "_p": [0.6, 0.4]
         }
     ],
     "EventId":"test_id",
@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
       label6.probabilities, std::vector<ACTION_SCORE::action_score>{{1, 0.8f}}, FLOAT_TOL);
   const auto& label7 = examples[7]->l.slates;
   check_collections_with_float_tolerance(
-      label7.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.6f}}, FLOAT_TOL);
+      label7.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.6f}, {1, 0.4f}}, FLOAT_TOL);
 
   // Check values in DecisionServiceInteraction
   BOOST_CHECK_EQUAL(ds_interaction.eventId, "test_id");
