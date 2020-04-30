@@ -9,14 +9,20 @@
 #include "conditional_contextual_bandit.h"
 #include "parse_example_json.h"
 
-multi_ex parse_dsjson(vw& all, std::string line)
+multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* interaction = nullptr)
 {
   auto examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(&all));
-  DecisionServiceInteraction interaction;
+
+  DecisionServiceInteraction local_interaction;
+  if (interaction == nullptr)
+  {
+    interaction = &local_interaction;
+  }
+
 
   VW::read_line_decision_service_json<true>(all, examples, (char*)line.c_str(), line.size(), false,
-      (VW::example_factory_t)&VW::get_unused_example, (void*)&all, &interaction);
+      (VW::example_factory_t)&VW::get_unused_example, (void*)&all, interaction);
 
   multi_ex result;
   for (const auto& ex : examples)
@@ -120,6 +126,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
 {
   "Timestamp":"timestamp_utc",
   "Version": "1",
+  "EventId": "test_id",
   "c":{
       "_multi": [
         {
@@ -360,6 +367,9 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
             "_p": [0.6, 0.4]
         }
     ],
+    "EventId":"test_id",
+    "pdrop":0.1,
+    "_skipLearn":true,
     "c": {
         "shared_feature": 1.0,
         "_multi": [
@@ -413,7 +423,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
 })";
 
   auto vw = VW::initialize("--slates --dsjson --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  DecisionServiceInteraction ds_interaction;
+  auto examples = parse_dsjson(*vw, json_text, &ds_interaction);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
   BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
@@ -441,6 +452,13 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
   const auto& label7 = examples[7]->l.slates;
   check_collections_with_float_tolerance(
       label7.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.6f}, {1, 0.4f}}, FLOAT_TOL);
+
+  // Check values in DecisionServiceInteraction
+  BOOST_CHECK_EQUAL(ds_interaction.eventId, "test_id");
+  BOOST_CHECK_CLOSE(ds_interaction.probabilityOfDrop, 0.1, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(ds_interaction.skipLearn, true);
+  check_collections_exact(ds_interaction.actions, std::vector<unsigned int>{1,0});
+  check_collections_with_float_tolerance(ds_interaction.probabilities, std::vector<float>{0.8f, 0.6f}, FLOAT_TOL);
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
