@@ -44,29 +44,6 @@ namespace VW { namespace actions_pdf
     cs->delete_v();
   }
 
-  float get_pdf_value(VW::actions_pdf::pdf& prob_dist, float chosen_action)
-  {
-    int begin = -1;
-    int end = (int)prob_dist.size();
-    while (end - begin > 1)
-    {
-      int mid = (begin + end) / 2;
-      if (prob_dist[mid].action <= chosen_action)
-      {
-        begin = mid;
-      }
-      else
-      {
-        end = mid;
-      }
-    }
-
-    // temporary fix for now
-    if (begin == (int)prob_dist.size() - 1 && prob_dist[begin].value == 0)
-      return prob_dist[begin - 1].value;
-    return prob_dist[begin].value;
-  }
-
   std::string to_string(const action_pdf_value& a_p, bool newline)
   {
     std::stringstream strm;

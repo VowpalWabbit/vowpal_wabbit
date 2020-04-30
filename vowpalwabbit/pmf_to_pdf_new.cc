@@ -16,7 +16,7 @@ namespace VW { namespace pmf_to_pdf_new
   void reduction::transform_prediction(example& ec)
   {
     const float continuous_range = max_value - min_value;
-    const float unit_range = continuous_range / (num_actions - 1);    
+    const float unit_range = continuous_range / (num_actions - 1);
     const float h = unit_range * bandwidth;
 
     size_t n = temp_pred_a_s.size();
@@ -25,20 +25,20 @@ namespace VW { namespace pmf_to_pdf_new
     pdf_lim.clear();
     if (temp_pred_a_s[0].action - bandwidth != 0)
       pdf_lim.push_back(0);
-    
+
     uint32_t l = 0;
     uint32_t r = 0;
     while (l < n || r < n)
     {
       if (l == n || temp_pred_a_s[r].action + bandwidth < temp_pred_a_s[l].action - bandwidth)
-        pdf_lim.push_back(temp_pred_a_s[r++].action + bandwidth); 
+        pdf_lim.push_back(temp_pred_a_s[r++].action + bandwidth);
       else if (r == n || temp_pred_a_s[l].action - bandwidth < temp_pred_a_s[r].action + bandwidth)
-        pdf_lim.push_back(temp_pred_a_s[l++].action - bandwidth); 
+        pdf_lim.push_back(temp_pred_a_s[l++].action - bandwidth);
       else if (temp_pred_a_s[l].action - bandwidth == temp_pred_a_s[r].action + bandwidth)
       {
-        pdf_lim.push_back(temp_pred_a_s[l].action - bandwidth); 
+        pdf_lim.push_back(temp_pred_a_s[l].action - bandwidth);
         l++; r++;
-      }      
+      }
     }
 
     if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1)
@@ -85,7 +85,7 @@ namespace VW { namespace pmf_to_pdf_new
     const float action_cont = ec.l.cb_cont.costs[0].action;
 
     const float continuous_range = max_value - min_value;
-    const float unit_range = continuous_range / (num_actions - 1);    
+    const float unit_range = continuous_range / (num_actions - 1);
     const float h = unit_range * bandwidth;
 
     const float ac = (action_cont - min_value) / unit_range;
@@ -205,9 +205,9 @@ namespace VW { namespace pmf_to_pdf_new
   {
     auto data = scoped_calloc_or_throw<pmf_to_pdf_new::reduction>();
 
-    option_group_definition new_options("CB Continuous");
+    option_group_definition new_options("PMF to PDF");
     new_options
-        .add(make_option("cb_continuous", data->num_actions)
+        .add(make_option("pmf_to_pdf", data->num_actions)
                  .default_value(0)
                  .keep()
                  .help("Convert discrete PDF into continuous PDF."))
@@ -221,7 +221,7 @@ namespace VW { namespace pmf_to_pdf_new
 
     if (data->num_actions == 0)
       return nullptr;
-    if (!options.was_supplied("cb_continuous"))
+    if (!options.was_supplied("pmf_to_pdf"))
       return nullptr;
     if (!options.was_supplied("cb_explore"))
     {

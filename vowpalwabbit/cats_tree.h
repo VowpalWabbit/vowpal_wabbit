@@ -4,9 +4,9 @@
 #include "error_reporting.h"
 namespace VW
 {
-namespace offset_tree_cont
+namespace cats_tree
 {
-LEARNER::base_learner* offset_tree_cont_setup(config::options_i& options, vw& all);
+LEARNER::base_learner* setup(config::options_i& options, vw& all);
 
 struct tree_node
 {
@@ -52,7 +52,7 @@ struct node_cost
   float cost;
 };
 
-struct offset_tree
+struct cats_tree
 {
   void init(uint32_t num_actions, uint32_t bandwidth);
   int32_t learner_count() const;
@@ -62,7 +62,7 @@ struct offset_tree
   float return_cost(const tree_node& w);
   void learn(LEARNER::single_learner& base, example& ec);
   void set_trace_message(std::ostream* ostrm);
-  ~offset_tree();
+  ~cats_tree();
 
  private:
   uint64_t app_seed = uniform_hash("vw", 2, 0);
@@ -75,5 +75,5 @@ struct offset_tree
   uint32_t _dd = 0;
   std::ostream* _trace_stream = nullptr;
 };
-}  // namespace offset_tree_cont
+}  // namespace cats_tree
 }  // namespace VW

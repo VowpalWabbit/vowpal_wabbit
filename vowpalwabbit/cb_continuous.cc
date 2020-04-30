@@ -16,7 +16,7 @@ using namespace std;
 
 namespace VW { namespace cb_continuous
 {
-  char* bufread_label(cb_continuous::continuous_label* ld, char* c, io_buf& cache)
+  char* bufread_label(continuous_label* ld, char* c, io_buf& cache)
   {
     size_t num = *(size_t*)c;
     ld->costs.clear();
@@ -39,7 +39,7 @@ namespace VW { namespace cb_continuous
 
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
-    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
+    continuous_label* ld = (continuous_label*)v;
     ld->costs.clear();
     char* c;
     size_t total = sizeof(size_t);
@@ -52,7 +52,7 @@ namespace VW { namespace cb_continuous
 
   float weight(void*) { return 1.; }
 
-  char* bufcache_label(cb_continuous::continuous_label* ld, char* c)
+  char* bufcache_label(continuous_label* ld, char* c)
   {
     *(size_t*)c = ld->costs.size();
     c += sizeof(size_t);
@@ -67,20 +67,20 @@ namespace VW { namespace cb_continuous
   void cache_label(void* v, io_buf& cache)
   {
     char* c;
-    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
+    continuous_label* ld = (continuous_label*)v;
     cache.buf_write(c, sizeof(size_t) + sizeof(continuous_label_elm) * ld->costs.size());
     bufcache_label(ld, c);
   }
 
   void default_label(void* v)
   {
-    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
+    continuous_label* ld = (continuous_label*)v;
     ld->costs.clear();
   }
 
   bool test_label(void* v)
   {
-    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
+    continuous_label* ld = (continuous_label*)v;
     if (ld->costs.size() == 0)
       return true;
     for (size_t i = 0; i < ld->costs.size(); i++)
@@ -91,20 +91,20 @@ namespace VW { namespace cb_continuous
 
   void delete_label(void* v)
   {
-    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
+    continuous_label* ld = (continuous_label*)v;
     ld->costs.delete_v();
   }
 
   void copy_label(void* dst, void* src)
   {
-    cb_continuous::continuous_label* ldD = (cb_continuous::continuous_label*)dst;
-    cb_continuous::continuous_label* ldS = (cb_continuous::continuous_label*)src;
+    continuous_label* ldD = (continuous_label*)dst;
+    continuous_label* ldS = (continuous_label*)src;
     copy_array(ldD->costs, ldS->costs);
   }
 
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
-    cb_continuous::continuous_label* ld = (cb_continuous::continuous_label*)v;
+    continuous_label* ld = (continuous_label*)v;
     ld->costs.clear();
     for (size_t i = 0; i < words.size(); i++)
     {
@@ -160,7 +160,7 @@ namespace VW { namespace cb_continuous
 
   bool ec_is_example_header(example& ec)  // example headers just have "shared"
   {
-    v_array<cb_continuous::continuous_label_elm> costs = ec.l.cb_cont.costs;
+    v_array<continuous_label_elm> costs = ec.l.cb_cont.costs;
     if (costs.size() != 1)
       return false;
     if (costs[0].probability == -1.f)
@@ -180,7 +180,7 @@ namespace VW { namespace cb_continuous
         num_features = 0;
         // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
         for (size_t i = 0; i < (*ec_seq).size(); i++)
-          if (!cb_continuous::ec_is_example_header(*(*ec_seq)[i]))
+          if (!ec_is_example_header(*(*ec_seq)[i]))
             num_features += (*ec_seq)[i]->num_features;
       }
       std::string label_buf;
@@ -213,74 +213,3 @@ namespace VW { namespace cb_continuous
     return strm.str();
   }
 }}  // namespace VW::cb_continuous
-
-//namespace VW { namespace cb_continuous_eval
-//{
-//  size_t read_cached_label(shared_data* sd, void* v, io_buf& cache)
-//  {
-//    cb_continuous_eval::label* ld = (cb_continuous_eval::label*)v;
-//    char* c;
-//    size_t total = sizeof(uint32_t);
-//    if (cache.buf_read(c, total) < total)
-//      return 0;
-//    ld->action = *(uint32_t*)c; //todo
-//
-//    return total + cb_continuous::read_cached_label(sd, &(ld->event), cache);
-//  }
-//
-//  void cache_label(void* v, io_buf& cache)
-//  {
-//    char* c;
-//    cb_continuous_eval::label* ld = (cb_continuous_eval::label*)v;
-//    cache.buf_write(c, sizeof(uint32_t));
-//    *(uint32_t*)c = ld->action; //todo
-//
-//    cb_continuous::cache_label(&(ld->event), cache);
-//  }
-//
-//  void default_label(void* v)
-//  {
-//    cb_continuous_eval::label* ld = (cb_continuous_eval::label*)v;
-//    cb_continuous::default_label(&(ld->event));
-//    ld->action = 0;
-//  }
-//
-//  bool test_label(void* v)
-//  {
-//    cb_continuous_eval::label* ld = (cb_continuous_eval::label*)v;
-//    return cb_continuous::test_label(&ld->event);
-//  }
-//
-//  void delete_label(void* v)
-//  {
-//    cb_continuous_eval::label* ld = (cb_continuous_eval::label*)v;
-//    cb_continuous::delete_label(&(ld->event));
-//  }
-//
-//  void copy_label(void* dst, void* src)
-//  {
-//    cb_continuous_eval::label* ldD = (cb_continuous_eval::label*)dst;
-//    cb_continuous_eval::label* ldS = (cb_continuous_eval::label*)src;
-//    cb_continuous::copy_label(&(ldD->event), &(ldS)->event);
-//    ldD->action = ldS->action;
-//  }
-//
-//  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
-//  {
-//    cb_continuous_eval::label* ld = (cb_continuous_eval::label*)v;
-//
-//    if (words.size() < 2)
-//      THROW("Evaluation can not happen without an action and an exploration");
-//
-//    ld->action = (uint32_t)hashstring(words[0], 0); //todo
-//
-//    words.begin()++;
-//
-//    cb_continuous::parse_label(p, sd, &(ld->event), words);
-//
-//    words.begin()--;
-//  }
-//
-//  label_parser cb_cont_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, cb_continuous::weight,
-//      copy_label, test_label, sizeof(cb_continuous_eval::label)};
-//}}  // namespace VW::cb_continuous_eval

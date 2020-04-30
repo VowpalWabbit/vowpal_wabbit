@@ -1,2 +1,2 @@
-namespace VW { namespace offset_tree_cont {
+namespace VW { namespace cats_tree {
 }}

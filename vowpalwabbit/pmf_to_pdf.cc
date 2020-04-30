@@ -6,7 +6,7 @@
 
 using namespace LEARNER;
 using namespace VW;
-using namespace VW::config;
+using namespace config;
 
 VW_DEBUG_ENABLE(false)
 
@@ -184,9 +184,9 @@ namespace VW { namespace pmf_to_pdf
   {
     auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
-    option_group_definition new_options("CB Continuous");
+    option_group_definition new_options("PMF to PDF");
     new_options
-        .add(make_option("cb_continuous", data->num_actions)
+        .add(make_option("pmf_to_pdf", data->num_actions)
                  .default_value(0)
                  .keep()
                  .help("Convert discrete PDF into continuous PDF."))
@@ -200,17 +200,11 @@ namespace VW { namespace pmf_to_pdf
 
     if (data->num_actions == 0)
       return nullptr;
-    if (!options.was_supplied("cb_continuous"))
+    if (!options.was_supplied("pmf_to_pdf"))
       return nullptr;
-    if (!options.was_supplied("cb_explore"))
-    {
-      std::stringstream ss;
-      ss << data->num_actions;
-      options.insert("cb_explore", ss.str());
-    }
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     {
-      THROW("error: min and max values must be supplied with cb_continuous");
+      THROW("error: min and max values must be supplied with pmf_to_pdf");
     }
     if (data->bandwidth <= 0)
     {
