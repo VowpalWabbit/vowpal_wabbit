@@ -1365,7 +1365,7 @@ class DataFrameToVW:
         Parameters
         ----------
         df : pandas.DataFrame
-            The dataframe to convert
+            The DataFrame to convert
         formula : str
             The formula specifying the desired vowpal wabbit input format
 
@@ -1399,13 +1399,13 @@ class DataFrameToVW:
         Raises
         ------
         ValueError
-            If the column specified in the formula does not exist in the dataframe.
+            If the column specified in the formula does not exist in the dataframe
 
 
         Returns
         -------
         out : pd.Series
-            The pd.Series of the lines of the feature space
+            The pd.Series of the lines of the target space
 
         """
         no_tag = target_space.endswith(" ")
@@ -1436,13 +1436,12 @@ class DataFrameToVW:
         Parameters
         ----------
         features_space : str
-            The formula that contains the features. A
-        namespace can optionally be added.
+            The formula that contains the features. A namespace can optionally be added
 
         Raises
         ------
         ValueError
-            If the column specified in the formula does not exist in the dataframe.
+            If the column specified in the formula does not exist in the dataframe
 
         Returns
         -------
@@ -1477,7 +1476,7 @@ class DataFrameToVW:
 
     def process_df(self):
         """
-        Convert pandas.DataFrame to a suitable Vowpal Wabbit format
+        Convert pandas.DataFrame to a suitable vowpal wabbit input format
 
         Parameters
         ----------
