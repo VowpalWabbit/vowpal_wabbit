@@ -1359,6 +1359,7 @@ class example(pylibvw.example):
 
 
 class DataFrameToVW:
+    """DataFrameToVW class"""
     def __init__(self, df, formula):
         """
         Parameters
@@ -1366,7 +1367,7 @@ class DataFrameToVW:
         df : pandas.DataFrame
             The dataframe to convert
         formula : str
-            The formula specifying the VW ouput needed
+            The formula specifying the desired vowpal wabbit input format
 
         Examples
         --------
@@ -1483,8 +1484,8 @@ class DataFrameToVW:
 
         Returns
         -------
-        list
-            The list of the VW lines
+        out
+            The list of the lines of the DataFrame in vowpal wabbit input format
 
         """
         splitted_formula = self.formula.split("|")
