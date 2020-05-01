@@ -350,7 +350,7 @@ def check_error_raises(type, argument):
 
 def test_oneline_simple_conversion():
     df = pd.DataFrame({"y": [1], "x": [2]})	
-    conv = DataFrameToVW(df, "y | a")
+    conv = DataFrameToVW(df, "y | x")
     lines_list = conv.process_df()
     first_line = lines_list[0]
     assert first_line == "1 | 2"
