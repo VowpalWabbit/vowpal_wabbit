@@ -438,7 +438,8 @@ input_options parse_source(vw& all, options_i& options)
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
-               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
+               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"))
+      .add(make_option("flatbuffer", parsed_options.flatbuffer).short_name("fb").help("Input a FlatBuffer File"));
 
 
   options.add_and_parse(input_options);
