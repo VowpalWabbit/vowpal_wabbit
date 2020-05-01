@@ -349,30 +349,36 @@ def check_error_raises(type, argument):
 
 
 def test_oneline_simple_conversion():
-    df = pd.DataFrame({"y": [1], "x": [2]})	
+    df = pd.DataFrame({"y": [1], "x": [2]})
     conv = DataFrameToVW(df, "y | x")
     lines_list = conv.process_df()
     first_line = lines_list[0]
     assert first_line == "1 | 2"
 
 def test_oneline_with_column_renaming_and_tag():
-    df = pd.DataFrame({"idx":["id_1"], "y":[1], "x":[2]})
+    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
     conv = DataFrameToVW(df, "y idx| col_x:x")
     lines_list = conv.process_df()
     first_line = lines_list[0]
     assert first_line == "1 id_1| col_x:2"
 
 def test_multiple_lines_conversion():
-    df = pd.DataFrame({"y": [1, -1], "x":[1, 2]})
+    df = pd.DataFrame({"y": [1, -1], "x": [1, 2]})
     conv = DataFrameToVW(df, "y | x")
     lines_list = conv.process_df()
     assert lines_list == ["1 | 1", "-1 | 2"]
 
 def test_oneline_with_multiple_namespaces():
-    df = pd.DataFrame({"y":[1], "a":[2], "b":[3]})
+    df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
     conv = DataFrameToVW(df, "y |FirstNameSpace a |DoubleIt:2 b")
     lines_list = conv.process_df()
     first_line = lines_list[0]
     assert first_line == "1 |FirstNameSpace 2 |DoubleIt:2 3"
 
+def test_oneline_without_target():
+    df = pd.DataFrame({"a": [2], "b": [3]})
+    conv = DataFrameToVW(df, "| a b")
+    lines_list = conv.process_df()
+    first_line = lines_list[0]
+    assert first_line == "| 2 3"
 
