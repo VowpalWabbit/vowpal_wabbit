@@ -22,17 +22,3 @@ BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
 }
 
 
-BOOST_AUTO_TEST_CASE(fix_max_boundary_issue)
-{
-  uint64_t random_state = 2244123448;
-
-  const float range_max = 7190.0f;
-  const float range_min = -121830.0f;
-
-  const float interval_start = range_min + (range_max - range_min) * 31.0f / 32.0f;
-  const float interval_end = range_max;
-
-  const float chosen_value = exploration::uniform_draw(&random_state, interval_start, interval_end);
-  BOOST_TEST(chosen_value != range_max, test::tolerance(0.000000001f));
-}
-

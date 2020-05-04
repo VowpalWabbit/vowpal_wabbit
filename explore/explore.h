@@ -90,34 +90,6 @@ namespace exploration {
   int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index);
 
   /**
-   * @brief Sample an index from the provided pdf. If the pdf is not normalized it will be updated in-place.
-   *
-   * @tparam InputIt Iterator type of the pdf. Must be a RandomAccessIterator.
-   * @param p_seed The seed for the pseudo-random generator.  Seed is advanced after usage
-   * @param pdf_first Iterator pointing to the beginning of the pdf.
-   * @param pdf_last Iterator pointing to the end of the pdf.
-   * @param chosen_index returns the chosen index.
-   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
-   */
-  template<typename It>
-  int sample_pdf(
-      uint64_t* p_seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value);
-
-  /**
-   * @brief Sample an index from the provided pdf.  If the pdf is not normalized it will be updated in-place.
-   *
-   * @tparam It Iterator type of the pdf. Must be a RandomAccessIterator.
-   * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
-   * @param pdf_first Iterator pointing to the beginning of the pdf.
-   * @param pdf_last Iterator pointing to the end of the pdf.
-   * @param chosen_index returns the chosen index.
-   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
-   */
-  template<typename It>
-  int sample_pdf(
-      const char* seed, It pdf_first, It pdf_last, float range_min, float range_max, float& chosen_value);
-
-  /**
   * @brief Swap the first value with the chosen index.
   *
   * @tparam ActionIt Iterator type of the action. Must be a forward_iterator.
@@ -128,4 +100,11 @@ namespace exploration {
   */
   template<typename ActionIt>
   int swap_chosen(ActionIt action_first, ActionIt action_last, uint32_t chosen_index);
+
+  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
+  // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
+  // be used to inplace mutate it.
+  template <typename It>
+  int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value);
+
 }

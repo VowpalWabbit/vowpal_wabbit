@@ -116,7 +116,6 @@
     <ClInclude Include="errors_data.h" />
     <ClInclude Include="err_constants.h" />
     <ClInclude Include="get_pmf.h" />
-    <ClInclude Include="pmf_to_pdf.h" />
     <ClInclude Include="offset_tree.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="action_score.h" />
@@ -195,6 +194,7 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="pmf_to_pdf.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="prob_dist_cont.h" />
@@ -237,7 +237,6 @@
     <ClCompile Include="cb_explore_pdf.cc" />
     <ClCompile Include="cb_continuous.cc" />
     <ClCompile Include="nullstream.cc" />
-    <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />
@@ -309,6 +308,7 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
+    <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="prob_dist_cont.cc" />
