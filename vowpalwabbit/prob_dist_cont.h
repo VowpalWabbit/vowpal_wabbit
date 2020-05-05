@@ -32,7 +32,7 @@ void print_prob_dist(int f, v_array<pdf_segment>& a_s, v_array<char>&);
 
 void delete_prob_dist(void* v);
 
-float get_pdf_value_new(pdf_new& prob_dist_new, float chosen_action);
+float get_pdf_value(pdf_new& prob_dist_new, float chosen_action);
 
 //TODO: do we need below?
 

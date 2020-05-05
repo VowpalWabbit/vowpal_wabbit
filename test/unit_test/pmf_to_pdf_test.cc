@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   learn(*data, *as_singleline(test_harness), ec);
 
   float chosen_action = 1080; 
-  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value_new(ec.pred.prob_dist_new, chosen_action)
+  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist_new, chosen_action)
        << std::endl;
   cout << "here" << endl;
 }
