@@ -44,7 +44,8 @@ my $ErrorCount = 0;
 # word by word:
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
-my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
+# 160 used to sufficient but there are new tests with VERY wide outputs - so it needs to be huge...
+my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 1500';
 $WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
