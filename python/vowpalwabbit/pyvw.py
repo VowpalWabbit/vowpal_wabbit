@@ -1401,8 +1401,8 @@ class DataFrameToVW:
         >>> vw_lines = conv.process_df()
         
         >>> df2 = pd.DataFrame({"y": [0], "x": [1], "z": [2]})
-        >>> conv2 = DataFrameToVW(df, '{y} |AllFeatures {x} {z}')
-        >>> vw_lines2 = conv.process_df()
+        >>> conv2 = DataFrameToVW(df2, '{y} |AllFeatures {x} {z}')
+        >>> vw_lines2 = conv2.process_df()
 
         Returns
         -------
