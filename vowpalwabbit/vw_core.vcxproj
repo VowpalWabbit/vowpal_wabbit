@@ -216,6 +216,7 @@
     <ClInclude Include="spanning_tree.h" />
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
+    <ClInclude Include="tag_utils.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
@@ -329,6 +330,7 @@
     <ClCompile Include="spanning_tree.cc" />
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
+    <ClCompile Include="tag_utils.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="version.cc" />
