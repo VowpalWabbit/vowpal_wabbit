@@ -1365,12 +1365,7 @@ class DataFrameToVW:
 
     feature_name_pattern = "(?:\w+[:*])"
     feature_value_pattern = "{[^{}]+}"
-    const_value_pattern = "\w+"
-    before_words, words, after_words = (
-        "\s*\|?\s*",
-        "(?:{[^{}]+}|[\w:*]+)",
-        "\s*",
-    )
+    const_value_pattern = "[\w.]+"
     re_check_formula = re.compile(
         "(?:\s*\|?\s*{}?(?:{}|{})\s*)*".format(
             feature_name_pattern, feature_value_pattern, const_value_pattern
