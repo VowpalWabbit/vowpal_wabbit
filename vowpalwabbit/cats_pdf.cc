@@ -87,7 +87,7 @@ namespace cats_pdf
   {
    public:
     static void report_progress(vw& all, cats_pdf&, example& ec);
-    static void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::pdf_new& prediction);
+    static void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::pdf& prediction);
 
    private:
     static inline bool does_example_have_label(example& ec);
@@ -99,12 +99,12 @@ namespace cats_pdf
   {
     // add output example
     reduction_output::report_progress(all, data, ec);
-    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.prob_dist_new);
+    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.prob_dist);
     VW::finish_example(all, ec);
   }
 
   void reduction_output::output_predictions(
-      v_array<int>& predict_file_descriptors, actions_pdf::pdf_new& prediction)
+      v_array<int>& predict_file_descriptors, actions_pdf::pdf& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
@@ -135,7 +135,7 @@ namespace cats_pdf
     {
       all.sd->print_update(all.holdout_set_off, all.current_pass,
           to_string(ec.l.cb_cont.costs[0]),  // Label
-          to_string(ec.pred.prob_dist_new),      // Prediction
+          to_string(ec.pred.prob_dist),      // Prediction
           ec.num_features, all.progress_add, all.progress_arg);
     }
   }

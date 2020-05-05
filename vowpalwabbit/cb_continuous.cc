@@ -194,7 +194,7 @@ namespace VW { namespace cb_continuous
         std::ostringstream pred_buf;
         pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
         if (ec.pred.prob_dist.size() > 0)
-          pred_buf << ec.pred.prob_dist[0].action << ":" << ec.pred.prob_dist[0].value << "..."; //TODO: changed a_s to p_d, correct?!
+          pred_buf << ec.pred.prob_dist[0].left << "-" << ec.pred.prob_dist[0].right << ":" << ec.pred.prob_dist[0].pdf_value << "..."; 
         else
           pred_buf << "no action";
         all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features,

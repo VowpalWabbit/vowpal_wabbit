@@ -35,7 +35,7 @@ namespace continuous_action
     float max_value;
 
     private:
-      actions_pdf::pdf_new _pred_pdf;
+      actions_pdf::pdf _pred_pdf;
       single_learner* _base = nullptr;
   };
 
@@ -53,12 +53,12 @@ namespace continuous_action
       _base->predict(ec);
     }
 
-    _pred_pdf = ec.pred.prob_dist_new;
+    _pred_pdf = ec.pred.prob_dist;
     for (uint32_t i = 0; i < _pred_pdf.size(); i++)
     {
       _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);
     }
-    ec.pred.prob_dist_new = _pred_pdf;
+    ec.pred.prob_dist = _pred_pdf;
     
     // TODO:  create egreedy exploration pdf from base.predict() pdf stored in pred_pdf
     return error_code::success;
@@ -67,7 +67,7 @@ namespace continuous_action
   void cb_explore_pdf::init(single_learner* p_base)
   {
     _base = p_base;
-    _pred_pdf = v_init<actions_pdf::pdf_segment_new>();
+    _pred_pdf = v_init<actions_pdf::pdf_segment>();
   }
 
   cb_explore_pdf::~cb_explore_pdf()

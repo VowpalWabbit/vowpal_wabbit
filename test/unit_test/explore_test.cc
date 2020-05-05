@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action)
 
 BOOST_AUTO_TEST_CASE(new_sample_pdf)
 {
-  pdf_new the_pdf = v_init<::pdf_segment_new>();
+  pdf the_pdf = v_init<::pdf_segment>();
   the_pdf.push_back({2.f, 3.5f, 0.1f / 1.5f});
   the_pdf.push_back({3.5f, 4.5f, 0.8f / 1.0f});
   the_pdf.push_back({4.5f, 6.2f, 0.1f / 1.7f});

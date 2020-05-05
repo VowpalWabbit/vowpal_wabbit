@@ -295,10 +295,10 @@ std::string prob_dist_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "ec.pred.prob_dist[";
-  for (uint32_t i = 0; i < ec.pred.prob_dist_new.size(); i++)
+  for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
   {
-    strstream << "(" << i << " = " << ec.pred.prob_dist_new[i].left << "-" << ec.pred.prob_dist_new[i].right << ", "
-              << ec.pred.prob_dist_new[i].pdf_value << ")";
+    strstream << "(" << i << " = " << ec.pred.prob_dist[i].left << "-" << ec.pred.prob_dist[i].right << ", "
+              << ec.pred.prob_dist[i].pdf_value << ")";
   }
   strstream << "]";
   return strstream.str();
@@ -383,15 +383,15 @@ swap_restore_action_scores_prediction::~swap_restore_action_scores_prediction()
   _ec.pred = _prediction;
 }
 
-swap_restore_pdf_prediction::swap_restore_pdf_prediction(example& ec, actions_pdf::pdf_new& base_prediction)
+swap_restore_pdf_prediction::swap_restore_pdf_prediction(example& ec, actions_pdf::pdf& base_prediction)
     : _prediction(ec.pred), _ec(ec), _base_prediction(base_prediction)
 {
-  _ec.pred.prob_dist_new = _base_prediction;
+  _ec.pred.prob_dist = _base_prediction;
 }
 
 swap_restore_pdf_prediction::~swap_restore_pdf_prediction()
 {
-  _base_prediction = _ec.pred.prob_dist_new;
+  _base_prediction = _ec.pred.prob_dist;
   _ec.pred = _prediction;
 }
 

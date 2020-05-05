@@ -35,7 +35,7 @@ set(vw_all_headers
   classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
   config.h.in primitives.h lda_core.h print.h vw_versions.h offset_tree.h shared_feature_merger.h conditional_contextual_bandit.h
   ccb_label.h pmf_to_pdf.h offset_tree_cont.h api_status.h cb_label_parser.h cont_tbd.h errors_data.h
-  err_constants.h prob_dist_cont.h cb_continuous.h pmf_to_pdf_new.h cats.h cats_pdf.h cb_explore_pdf.h get_pmf.h sample_pdf.h
+  err_constants.h prob_dist_cont.h cb_continuous.h cats.h cats_pdf.h cb_explore_pdf.h get_pmf.h sample_pdf.h
 )
 
 set(vw_all_sources
@@ -53,7 +53,7 @@ set(vw_all_sources
   action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc
   offset_tree.cc vw_exception.cc no_label.cc shared_feature_merger.cc conditional_contextual_bandit.cc
   cb_sample.cc ccb_label.cc version.cc pmf_to_pdf.cc offset_tree_cont.cc api_status.cc
-  cont_tbd.cc prob_dist_cont.cc cb_continuous.cc pmf_to_pdf_new.cc cats.cc cats_pdf.cc cb_explore_pdf.cc get_pmf.cc sample_pdf.cc
+  cont_tbd.cc prob_dist_cont.cc cb_continuous.cc cats.cc cats_pdf.cc cb_explore_pdf.cc get_pmf.cc sample_pdf.cc
 )
 
 set(explore_all_headers

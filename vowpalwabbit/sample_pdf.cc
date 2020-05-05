@@ -33,7 +33,7 @@ namespace continuous_action
 
     private:
       uint64_t* _p_random_state;
-      actions_pdf::pdf_new _pred_pdf;
+      actions_pdf::pdf _pred_pdf;
       single_learner* _base = nullptr;
   };
 
@@ -55,7 +55,7 @@ namespace continuous_action
     const int ret_code = exploration::sample_pdf(
       _p_random_state,
       std::begin(_pred_pdf),
-      std::end(ec.pred.prob_dist_new),
+      std::end(ec.pred.prob_dist),
       ec.pred.a_pdf.action,
       ec.pred.a_pdf.pdf_value);
 
@@ -69,7 +69,7 @@ namespace continuous_action
   {
     _base = p_base;
     _p_random_state = p_random_seed;
-    _pred_pdf = v_init<actions_pdf::pdf_segment_new>();
+    _pred_pdf = v_init<actions_pdf::pdf_segment>();
   }
 
   sample_pdf::~sample_pdf()
