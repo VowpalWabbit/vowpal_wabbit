@@ -91,19 +91,29 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
 
 void active_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag)
 {
-  if (f != nullptr)
+  if (f == nullptr)
   {
-    std::stringstream ss;
-    ss << std::fixed << res;
-    if (!print_tag_by_ref(ss, tag))
-      ss << ' ';
-    if (weight >= 0)
-      ss << " " << std::fixed << weight;
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+    return;
+  }
+  
+  std::stringstream ss;
+  ss << std::fixed << res;
+  if (!print_tag_by_ref(ss, tag))
+  {
+    ss << ' ';
+  }
+
+  if (weight >= 0)
+  {
+    ss << " " << std::fixed << weight;
+  }
+  ss << '\n';
+  const auto ss_str = ss.str();
+  ssize_t len = ss_str.size();
+  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 

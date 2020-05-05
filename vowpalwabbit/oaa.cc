@@ -179,7 +179,8 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
       outputStringStream << i + 1;
     outputStringStream << ':' << ec.pred.scalars[i];
   }
-  for (auto* sink : all.final_prediction_sink) all.print_text_by_ref(sink, outputStringStream.str(), ec.tag);
+  const auto ss_str = outputStringStream.str();
+  for (auto* sink : all.final_prediction_sink) all.print_text_by_ref(sink, ss_str, ec.tag);
 
   // === Report updates using zero-one loss
   all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);

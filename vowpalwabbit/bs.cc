@@ -133,16 +133,21 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
 
 void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float lb, float ub)
 {
-  if (f != nullptr)
+  if (f == nullptr)
   {
-    std::stringstream ss;
-    ss << std::fixed << res;
-    print_tag_by_ref(ss, tag);
-    ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+    return;
+  }
+
+  std::stringstream ss;
+  ss << std::fixed << res;
+  print_tag_by_ref(ss, tag);
+  ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
+  const auto ss_str = ss.str();
+  ssize_t len = ss_str.size();
+  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 

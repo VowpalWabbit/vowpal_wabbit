@@ -340,7 +340,7 @@ void global_print_newline(const v_array<VW::io::writer*>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
-  for (auto sink : final_prediction_sink)
+  for (auto* sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
     if (t != 1)

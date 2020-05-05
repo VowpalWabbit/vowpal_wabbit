@@ -67,7 +67,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   try
   {
     int size = env->GetArrayLength(model);
-    auto* model0 = (const char*)modelGuard.data();
+    auto* model0 = reinterpret_cast<const char*>(modelGuard.data());
 
     auto wrapped_buffer = VW::io::create_in_memory_reader(model0, size);
     io_buf buffer;
