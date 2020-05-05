@@ -2,29 +2,21 @@
 namespace VW { namespace actions_pdf
 {
 
-struct pdf_segment  // todo: remove
-{
-  float action;  // starting point
-  float value;   // height
-};
-
 struct action_pdf_value  
 {
   float action;  // continuous action
   float pdf_value;   // pdf value
 };
 
-typedef v_array<pdf_segment> pdf;  // todo: remove
 
-
-struct pdf_segment_new // todo: rename
+struct pdf_segment 
 {
   float left;  // starting point
   float right;  // ending point
   float pdf_value; // height
 };
 
-typedef v_array<pdf_segment_new> pdf_new; // todo: rename
+typedef v_array<pdf_segment> pdf; 
 
 // TODO: below check
 
@@ -32,9 +24,9 @@ void print_prob_dist(int f, v_array<pdf_segment>& a_s, v_array<char>&);
 
 void delete_prob_dist(void* v);
 
-float get_pdf_value(pdf_new& prob_dist_new, float chosen_action);
+float get_pdf_value(pdf& prob_dist, float chosen_action);
 
-//TODO: do we need below?
+//TODO: PLEASE CHECK BELOW
 
 class prob_iterator : public virtual std::iterator<std::random_access_iterator_tag,  // iterator_cateogry
                            float,                                                     // value_type
@@ -64,7 +56,7 @@ class prob_iterator : public virtual std::iterator<std::random_access_iterator_t
 
   size_t operator-(const prob_iterator& other) const { return _p - other._p; }
 
-  float& operator*() { return _p->value; }
+  float& operator*() { return _p->pdf_value; }
 };
 
 inline prob_iterator begin_probs(pdf& p_d) { return prob_iterator(p_d.begin()); }
@@ -87,9 +79,9 @@ inline int prob_comp(const void* p1, const void* p2)
   // Most sorting algos do not guarantee the output order of elements that compare equal.
   // Tie-breaking on the index ensures that the result is deterministic across platforms.
   // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
-  if (s2->value == s1->value)
-    return cmp(s1->value, s2->value);
-  else if (s2->value >= s1->value)
+  if (s2->pdf_value == s1->pdf_value)
+    return cmp(s1->pdf_value, s2->pdf_value);
+  else if (s2->pdf_value >= s1->pdf_value)
     return -1;
   else
     return 1;
@@ -98,5 +90,5 @@ inline int prob_comp(const void* p1, const void* p2)
 inline int reverse_order(const void* p1, const void* p2) { return prob_comp(p2, p1); }
 
 std::string to_string(const action_pdf_value& seg, bool print_newline = false);
-std::string to_string(const v_array<pdf_segment_new>& pdf, bool print_newline = false);
+std::string to_string(const v_array<pdf_segment>& pdf, bool print_newline = false);
 }}  // namespace VW::actions

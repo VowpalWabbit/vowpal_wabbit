@@ -95,11 +95,11 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   float sum = 0;
   cout << "ec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < ec.pred.prob_dist_new.size(); i++)
+  for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
   {
-    cout << "(" << ec.pred.prob_dist_new[i].left << " , " << ec.pred.prob_dist_new[i].right << 
-    ": " << ec.pred.prob_dist_new[i].pdf_value << ")" << endl;
-    sum += ec.pred.prob_dist_new[i].pdf_value * (ec.pred.prob_dist_new[i].right - ec.pred.prob_dist_new[i].left);
+    cout << "(" << ec.pred.prob_dist[i].left << " , " << ec.pred.prob_dist[i].right << 
+    ": " << ec.pred.prob_dist[i].pdf_value << ")" << endl;
+    sum += ec.pred.prob_dist[i].pdf_value * (ec.pred.prob_dist[i].right - ec.pred.prob_dist[i].left);
   }
   cout << "sum = " << sum << endl;
 
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   learn(*data, *as_singleline(test_harness), ec);
 
   float chosen_action = 1080; 
-  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist_new, chosen_action)
+  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
        << std::endl;
   cout << "here" << endl;
 }
