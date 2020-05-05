@@ -163,7 +163,8 @@ class EvaluatorOnline:
     
   
 if __name__ == "__main__":
-  data_file = "../../results/black_friday_online_validation.txt"
+  namee = "BNG_cpu_act"
+  data_file = "../../results/" + namee + "_online_validation.txt"
   alpha = 0.05
   model = "cats"
   quiet = False
