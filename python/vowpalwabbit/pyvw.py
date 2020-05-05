@@ -5,6 +5,7 @@ from __future__ import division
 import pylibvw
 import warnings
 import pandas as pd
+import re
 
 class SearchTask():
     """Search task class"""
@@ -1357,9 +1358,11 @@ class example(pylibvw.example):
         return label_class(self)
 
 
-
 class DataFrameToVW:
     """DataFrameToVW class"""
+
+    re_parse_col = re.compile(pattern="{([^{}]*)}")
+
     def __init__(self, df, formula):
         """
         Parameters
@@ -1385,94 +1388,29 @@ class DataFrameToVW:
         self.df = df
         self.n_rows = df.shape[0]
         self.column_names = set(df.columns)
-        self.formula = formula
+        self.formula = re.sub("\s+", " ", formula).strip()
+        self.check_absent_cols()
 
-    def process_target_space(self, target_space):
+    def check_absent_cols(self):
         """
-        Helper function that process the target space.
-
-        Parameters
-        ----------
-        target_space : str
-            A formula representing the target space : [label] [importance] [base] [tag]
-
+        Helper function that check if any of the column specified in the formula is missing.
+        The function raises value error if any of the column is absent.
+        
         Raises
         ------
         ValueError
             If the column specified in the formula does not exist in the dataframe
 
-
-        Returns
-        -------
-        out : pd.Series
-            The pd.Series of the lines of the target space
-
         """
-        no_tag = target_space.endswith(" ")
 
-        splitted = target_space.split()
-        absent_cols = [col not in self.column_names for col in splitted]
+        all_cols = self.re_parse_col.findall(self.formula)
+        absent_cols = [col for col in all_cols if col not in self.column_names]
         if any(absent_cols):
             raise ValueError(
-                "Column(s) '{}' not in data.frame 'df'".format(absent_cols)
-            )
-
-        out = pd.Series([""] * self.n_rows)
-        for (i, col) in enumerate(splitted):
-            if i == 0:
-                out += self.df[col].apply(str)
-            else:
-                out += " " + self.df[col].apply(str)
-
-        if no_tag:
-            out += " "
-
-        return out
-
-    def process_feature_space(self, features_space):
-        """
-        Helper function that process the formula for a given features space.
-
-        Parameters
-        ----------
-        features_space : str
-            The formula that contains the features. A namespace can optionally be added
-
-        Raises
-        ------
-        ValueError
-            If the column specified in the formula does not exist in the dataframe
-
-        Returns
-        -------
-        out : pd.Series
-            The pd.Series of the lines of the feature space
-
-        """
-
-        has_namespace = not features_space.startswith(" ")
-        if has_namespace:
-            splitted = features_space.rstrip().split()
-            namespace, features = splitted[0], splitted[1:]
-            out = pd.Series([namespace] * self.n_rows)
-        else:
-            features = features_space.strip().split()
-            out = pd.Series([""] * self.n_rows)
-
-        for feature in features:
-            if ":" in feature:
-                feature_name, col_name = feature.split(":")
-                feature_name += ":"
-            else:
-                feature_name, col_name = "", feature
-            if col_name not in self.column_names:
-                raise ValueError(
-                    "Column '{}' not in data.frame 'df'".format(col_name)
+                "Column(s) {} not in the DataFrame".format(
+                    str(absent_cols)[1:-1]
                 )
-            col_str = self.df[col_name].apply(str)
-            out += " " + feature_name + col_str
-        out += " "
-        return out
+            )
 
     def process_df(self):
         """
@@ -1487,15 +1425,19 @@ class DataFrameToVW:
             The list of the lines of the DataFrame in vowpal wabbit input format
 
         """
-        splitted_formula = self.formula.split("|")
-        target_space, features_spaces = splitted_formula[0], splitted_formula[1:]
-        out = self.process_target_space(target_space)
-        features_list = [
-            self.process_feature_space(features_space)
-            for features_space in features_spaces
-        ]
-        for f in features_list:
-            out += "|"+ f
-        return out.str.rstrip().to_list()
+        matches = list(self.re_parse_col.finditer(self.formula))
+        out = pd.Series([""] * self.n_rows)
+
+        current_pos = 0
+        for match in matches:
+            col_name = match.group()[1:-1]
+            start_pos, end_pos = match.span()
+            str_part = self.formula[current_pos:start_pos]
+            value_part = self.df[col_name].apply(str)
+            out += str_part + value_part
+            current_pos = end_pos
+        out += self.formula[current_pos : len(self.formula)]
+
+        return out.to_list()
 
 
