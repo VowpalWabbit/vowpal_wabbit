@@ -19,31 +19,31 @@ struct reduction_test_harness
 {
   reduction_test_harness() : _curr_idx(0) {}
 
-  void set_predict_response(const vector<float>& predictions) { _predictions = predictions; }
-
+  void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
+  
   void test_predict(single_learner& base, example& ec)
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
     {
-      ec.pred.a_s.push_back(ACTION_SCORE::action_score{i, _predictions[i]});
+      ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second});
     }
 
     cout << "\nec.pred.a_s (PMF): " << endl;
     for (uint32_t i = 0; i < _predictions.size(); i++)
     {
-      cout << "(" << ec.pred.a_s[i].action << " : " << ec.pred.a_s[i].score << "), ";
+      cout << "(" << ec.pred.a_s[i].action << " : " << ec.pred.a_s[i].score << "), " << endl;
     }
   }
 
   void test_learn(single_learner& base, example& ec)
   {
     cout << "ec.l.cb.costs after:" << endl;
-    for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
+    for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++) 
     {
       cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " << ec.l.cb.costs[i].probability
-         << " , " << ec.l.cb.costs[i].partial_prediction << ") " << endl;
-    }
+         << " , " << ec.l.cb.costs[i].partial_prediction << "), " << endl;
+    }    
   }
 
   static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec)
@@ -57,32 +57,31 @@ struct reduction_test_harness
   };
 
  private:
-  vector<float> _predictions;
+  vector<pair<uint32_t, float>> _predictions;
   int _curr_idx;
 };
 
 using test_learner_t = learner<reduction_test_harness, example>;
-using predictions_t = vector<float>;
+using predictions_t = vector<pair<uint32_t, float>>;
 
 test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions);
 
 }  // namespace pmf_to_pdf
 }  // namespace VW
 
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_1)
+BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 {
   uint32_t k = 4;
   uint32_t h = 1;
   float min_val = 1000;
   float max_val = 1100;
 
-  VW::pmf_to_pdf::predictions_t prediction_scores;
-  prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
+  const VW::pmf_to_pdf::predictions_t prediction_scores {{2,1.f}};
 
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
   example ec;
-
+  
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
   data->num_actions = k;
   data->bandwidth = h;
@@ -96,10 +95,11 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_1)
 
   float sum = 0;
   cout << "ec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < k; i++)
+  for (uint32_t i = 0; i < ec.pred.prob_dist_new.size(); i++)
   {
-    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), ";
-    sum += ec.pred.prob_dist[i].value;
+    cout << "(" << ec.pred.prob_dist_new[i].left << " , " << ec.pred.prob_dist_new[i].right << 
+    ": " << ec.pred.prob_dist_new[i].pdf_value << ")" << endl;
+    sum += ec.pred.prob_dist_new[i].pdf_value * (ec.pred.prob_dist_new[i].right - ec.pred.prob_dist_new[i].left);
   }
   cout << "sum = " << sum << endl;
 
@@ -110,213 +110,14 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_1)
 
   cout << "ec.l.cb_cont.costs after:" << endl;
   cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
-    << " , " << ec.l.cb_cont.costs[0].partial_prediction << ") " << endl;
+    << " , " << ec.l.cb_cont.costs[0].partial_prediction << "), " << endl;
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  float chosen_action = 1080;
-  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
+  float chosen_action = 1080; 
+  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value_new(ec.pred.prob_dist_new, chosen_action)
        << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_2)
-{
-  uint32_t k = 4;
-  uint32_t h = 1;
-  float min_val = 1000;
-  float max_val = 1100;
-
-  VW::pmf_to_pdf::predictions_t prediction_scores;
-  prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
-
-  const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
-
-  example ec;
-
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  data->num_actions = k;
-  data->bandwidth = h;
-  data->min_value = min_val;
-  data->max_value = max_val;
-  data->_p_base = as_singleline(test_harness);
-
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-
-  predict(*data, *data->_p_base, ec);
-
-  float sum = 0;
-  cout << "ec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < k; i++)
-  {
-    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), ";
-    sum += ec.pred.prob_dist[i].value;
-  }
-  cout << "sum = " << sum << endl;
-
-  ec.l.cb_cont = VW::cb_continuous::continuous_label();
-  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
-  ec.l.cb_cont.costs.clear();
-  ec.l.cb_cont.costs.push_back({1000.0f, .5f, .05f, 0.f}); // action, cost, prob, partial
-
-  cout << "ec.l.cb_cont.costs after:" << endl;
-  cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
-    << " , " << ec.l.cb_cont.costs[0].partial_prediction << ") " << endl;
-
-  learn(*data, *as_singleline(test_harness), ec);
-
-  float chosen_action = 1080;
-  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
-       << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_3)
-{
-  uint32_t k = 4;
-  uint32_t h = 1;
-  float min_val = 1000;
-  float max_val = 1100;
-
-  VW::pmf_to_pdf::predictions_t prediction_scores;
-  prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
-
-  const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
-
-  example ec;
-
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  data->num_actions = k;
-  data->bandwidth = h;
-  data->min_value = min_val;
-  data->max_value = max_val;
-  data->_p_base = as_singleline(test_harness);
-
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-
-  predict(*data, *data->_p_base, ec);
-
-  float sum = 0;
-  cout << "ec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < k; i++)
-  {
-    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), ";
-    sum += ec.pred.prob_dist[i].value;
-  }
-  cout << "sum = " << sum << endl;
-
-  ec.l.cb_cont = VW::cb_continuous::continuous_label();
-  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
-  ec.l.cb_cont.costs.clear();
-  ec.l.cb_cont.costs.push_back({1075.0f, .5f, .05f, 0.f}); // action, cost, prob, partial
-
-  cout << "ec.l.cb_cont.costs after:" << endl;
-  cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
-    << " , " << ec.l.cb_cont.costs[0].partial_prediction << ") " << endl;
-
-  learn(*data, *as_singleline(test_harness), ec);
-
-  float chosen_action = 1080;
-  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
-       << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_4)
-{
-  uint32_t k = 4;
-  uint32_t h = 1;
-  float min_val = 1000;
-  float max_val = 1100;
-
-  VW::pmf_to_pdf::predictions_t prediction_scores;
-  prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
-
-  const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
-
-  example ec;
-
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  data->num_actions = k;
-  data->bandwidth = h;
-  data->min_value = min_val;
-  data->max_value = max_val;
-  data->_p_base = as_singleline(test_harness);
-
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-
-  predict(*data, *data->_p_base, ec);
-
-  float sum = 0;
-  cout << "ec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < k; i++)
-  {
-    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), ";
-    sum += ec.pred.prob_dist[i].value;
-  }
-  cout << "sum = " << sum << endl;
-
-  ec.l.cb_cont = VW::cb_continuous::continuous_label();
-  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
-  ec.l.cb_cont.costs.clear();
-  ec.l.cb_cont.costs.push_back({1080.17f, .5f, .05f, 0.f}); // action, cost, prob, partial
-
-  cout << "ec.l.cb_cont.costs after:" << endl;
-  cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
-    << " , " << ec.l.cb_cont.costs[0].partial_prediction << ") " << endl;
-
-  learn(*data, *as_singleline(test_harness), ec);
-
-  float chosen_action = 1080;
-  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
-       << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic_5)
-{
-  uint32_t k = 4;
-  uint32_t h = 1;
-  float min_val = 1000;
-  float max_val = 1100;
-
-  VW::pmf_to_pdf::predictions_t prediction_scores;
-  prediction_scores = {0.25f, 0.25f, 0.25f, 0.25f};
-
-  const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
-
-  example ec;
-
-  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  data->num_actions = k;
-  data->bandwidth = h;
-  data->min_value = min_val;
-  data->max_value = max_val;
-  data->_p_base = as_singleline(test_harness);
-
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-
-  predict(*data, *data->_p_base, ec);
-
-  float sum = 0;
-  cout << "\nec.pred.p_d (PDF): " << endl;
-  for (uint32_t i = 0; i < k; i++)
-  {
-    cout << "(" << ec.pred.prob_dist[i].action << " : " << ec.pred.prob_dist[i].value << "), ";
-    sum += ec.pred.prob_dist[i].value;
-  }
-  cout << "sum = " << sum << endl;
-
-  ec.l.cb_cont = VW::cb_continuous::continuous_label();
-  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
-  ec.l.cb_cont.costs.clear();
-  ec.l.cb_cont.costs.push_back({1100.0f, .5f, .05f, 0.f}); // action, cost, prob, partial
-
-  cout << "ec.l.cb_cont.costs before:" << endl;
-  cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
-    << " , " << ec.l.cb_cont.costs[0].partial_prediction << ") " << endl;
-
-  learn(*data, *as_singleline(test_harness), ec);
-
-  float chosen_action = 1080;
-  cout << "pdf value of " << chosen_action << " is = " << VW::actions_pdf::get_pdf_value(ec.pred.prob_dist, chosen_action)
-       << std::endl;
+  cout << "here" << endl;
 }
 
 namespace VW { namespace pmf_to_pdf {

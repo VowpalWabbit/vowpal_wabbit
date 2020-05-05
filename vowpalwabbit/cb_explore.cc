@@ -1,4 +1,4 @@
-﻿#include "reductions.h"
+#include "reductions.h"
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
@@ -307,32 +307,13 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   data->all = &all;
   uint32_t num_actions = data->cbcs.num_actions;
 
-  // options sanity checking
-  bool cb_opt = options.was_supplied("cb");
-  bool cb_cont_opt = options.was_supplied("cb_continuous");
-  bool offset_tree_cont_opt = options.was_supplied("otc");
-
-  if (cb_opt && (cb_cont_opt || offset_tree_cont_opt))
-  {
-    THROW("error: incompatible options: cb and either cb_continuous or otc");
-  }
-
-  // By this point, cb_continuous will be set if its going to be used
-  if (!cb_opt && !cb_cont_opt && !offset_tree_cont_opt)
+  if (!options.was_supplied("cb"))
   {
     // none of the relevant options are set, default to cb
     stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
   }
-  else if (cb_cont_opt && !offset_tree_cont_opt)
-  {
-    // using cb_continuous, use otc
-    stringstream ss;
-    ss << data->cbcs.num_actions;
-    options.insert("otc", ss.str());
-  }
-
 
   all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
