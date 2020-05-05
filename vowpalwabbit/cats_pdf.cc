@@ -208,8 +208,10 @@ namespace cats_pdf
   LEARNER::base_learner* setup(config::options_i& options, vw& all)
   {
     option_group_definition new_options("Continuous action tree with smoothing");
-    int num_actions = 0, pdf_num_actions = 0;
-    new_options.add(make_option("cats_pdf", num_actions).keep().help("Continuous action tree with smoothing (pdf)"));
+    int num_actions = 0, pdf_num_actions = 0, cats_tree_actions = 0;
+    new_options.add(make_option("cats_pdf", num_actions).keep().help("Continuous action tree with smoothing (pdf)"))
+        .add(make_option("pmf_to_pdf", pdf_num_actions).keep().help("Convert pmf to pdf"))
+        .add(make_option("cats_tree", cats_tree_actions).keep().help("Continuous action tree"));
 
     options.add_and_parse(new_options);
 
@@ -224,12 +226,12 @@ namespace cats_pdf
     // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree ... rest specified by cats_tree]
     if (!options.was_supplied("cb_explore_pdf"))
       options.insert("cb_explore_pdf", "");
-    if (!options.was_supplied("pmf_to_pdf"))
-      options.insert("pmf_to_pdf", "");
+    if (!options.add_or_check_options("pmf_to_pdf", pdf_num_actions, num_actions))
+      THROW(error_code::options_disagree_s);
     if (!options.was_supplied("get_pmf"))
       options.insert("get_pmf", "");
-    if (!options.was_supplied("cats_tree"))
-      options.insert("cats_tree", "");
+    if (!options.add_or_check_options("cats_tree", cats_tree_actions, num_actions))
+      THROW(error_code::options_disagree_s);
 
     LEARNER::base_learner* p_base = setup_base(options, all);
     auto p_reduction = scoped_calloc_or_throw<cats_pdf>();

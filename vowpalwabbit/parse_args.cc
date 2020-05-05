@@ -86,10 +86,9 @@ license as described in the file LICENSE.
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 #include "offset_tree.h"
-#include "pmf_to_pdf.h"
-#include "offset_tree_cont.h"
-#include "cont_tbd.h"
+#include "cats_tree.h"
 #include "get_pmf.h"
+#include "pmf_to_pdf.h"
 #include "sample_pdf.h"
 
 using namespace std;
@@ -1284,7 +1283,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_algs_setup);
   all.reduction_stack.push(cb_adf_setup);
   all.reduction_stack.push(mwt_setup);
-  all.reduction_stack.push(VW::offset_tree_cont::offset_tree_cont_setup);
+  all.reduction_stack.push(VW::cats_tree::setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(cb_explore_adf_setup);
   all.reduction_stack.push(cb_sample_setup);
@@ -1293,7 +1292,7 @@ void parse_reductions(options_i& options, vw& all)
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(VW::continuous_action::get_pdf_setup);
-  all.reduction_stack.push(VW::pmf_to_pdf::pmf_to_pdf_setup);
+  all.reduction_stack.push(VW::pmf_to_pdf::setup);
   all.reduction_stack.push(VW::continuous_action::cb_explore_pdf_setup);
   all.reduction_stack.push(VW::continuous_action::cats_pdf::setup);
   all.reduction_stack.push(VW::continuous_action::sample_pdf_setup);

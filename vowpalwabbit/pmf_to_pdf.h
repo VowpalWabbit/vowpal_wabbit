@@ -6,14 +6,14 @@
 
 namespace VW { namespace pmf_to_pdf
 {
-  LEARNER::base_learner* pmf_to_pdf_setup(VW::config::options_i& options, vw& all);
+  LEARNER::base_learner* setup(config::options_i& options, vw& all);
   struct reduction
   {
     void predict(example& ec);
     void learn(example& ec);
 
     ~reduction();
-    std::vector<float> scores;
+    std::vector<uint32_t> pdf_lim;
     uint32_t num_actions;
     uint32_t bandwidth;  // radius
     float min_value;
@@ -26,4 +26,4 @@ namespace VW { namespace pmf_to_pdf
       CB::label temp_lbl_cb;
       ACTION_SCORE::action_scores temp_pred_a_s;
   };
-  }}  // namespace VW::pmf_to_pdf
+}}  // namespace VW::pmf_to_pdf

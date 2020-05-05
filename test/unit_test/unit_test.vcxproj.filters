@@ -36,9 +36,6 @@
     <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pmf_to_pdf_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="offset_tree_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -61,6 +58,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="random_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pmf_to_pdf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

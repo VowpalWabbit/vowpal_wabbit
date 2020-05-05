@@ -31,7 +31,6 @@ struct cbify_adf_data
 
 struct cbify_reg
 {
-  VW::actions_pdf::pdf prob_dist;
   float min_value;
   float max_value;
   float bandwidth;
@@ -112,7 +111,6 @@ void finish_cbify_reg(cbify_reg& data, ostream* trace_stream)
     (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 
   data.cb_cont_label.costs.delete_v();  // todo: instead of above
-  data.prob_dist.delete_v();
 }
 
 void finish(cbify& data)
@@ -279,49 +277,29 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   const label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
-  ec.pred.prob_dist = data.regression_data.prob_dist;
+  ec.pred.a_pdf = {0.f, 0.f};
 
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
-
-  float chosen_action;
-
-  // Seed should be same for multiple passes through the data
-  // but different for each example
-  uint64_t random_seed = data.app_seed + ec.example_counter;
-
-  // Sample the pdf and get back a value for continuous action
-  if (S_EXPLORATION_OK !=
-      sample_pdf(
-        &random_seed,
-        begin_probs(ec.pred.prob_dist),
-        end_probs(ec.pred.prob_dist),
-        ec.pred.prob_dist_new[0].left,
-        ec.pred.prob_dist_new[ec.pred.prob_dist.size() - 1].right,
-        chosen_action))
-    THROW("Failed to sample from pdf");
-
-  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << chosen_action << endl;
-
-  const float pdf_value = get_pdf_value(ec.pred.prob_dist, chosen_action);
+  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.a_pdf.action << endl;
 
   continuous_label_elm cb_cont_lbl;
 
-  cb_cont_lbl.action = chosen_action;
-  cb_cont_lbl.probability = pdf_value;
+  cb_cont_lbl.action = ec.pred.a_pdf.action;
+  cb_cont_lbl.probability = ec.pred.a_pdf.pdf_value;
 
   if (data.regression_data.loss_option == 0)
   {
-    cb_cont_lbl.cost = get_squared_loss(data, chosen_action, regression_label.label);
+    cb_cont_lbl.cost = get_squared_loss(data, ec.pred.a_pdf.action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 1)
   {
-    cb_cont_lbl.cost = get_absolute_loss(data, chosen_action, regression_label.label);
+    cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.a_pdf.action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 2)
   {
-    cb_cont_lbl.cost = get_01_loss(data, chosen_action, regression_label.label);
+    cb_cont_lbl.cost = get_01_loss(data, ec.pred.a_pdf.action, regression_label.label);
   }
 
   data.regression_data.cb_cont_label.costs.push_back(cb_cont_lbl);
@@ -347,9 +325,6 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
       data.regression_data.cb_cont_label.costs[cost_size - 1].cost = cb_cont_lbl.cost * continuous_range;
     }
   }
-
-  data.regression_data.prob_dist = ec.pred.prob_dist;
-  data.regression_data.prob_dist.clear();
 
   ec.l.simple = regression_label;  // recovering regression label
   ec.pred.scalar = cb_cont_lbl.action;
@@ -708,10 +683,10 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("cbify_cs", use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("cbify_reg", use_reg)
                .help("Consume regression examples instead of multiclass and cost sensitive"))
-      .add(make_option("cb_continuous", cb_continuous_num_actions)
+      .add(make_option("cats", cb_continuous_num_actions)
                .default_value(0)
                .keep()
-               .help("Convert PMF (discrete) into PDF (continuous)."))
+               .help("Continuous action tree with smoothing"))
       .add(make_option("cb_discrete", use_discrete)
                .keep()
                .help("Discretizes continuous space and adds cb_explore as option"))
@@ -758,9 +733,9 @@ base_learner* cbify_setup(options_i& options, vw& all)
       THROW("error: min and max values must be supplied with cbify_reg");
     }
 
-    if (use_discrete && options.was_supplied("cb_continuous"))
+    if (use_discrete && options.was_supplied("cats"))
     {
-      THROW("error: incompatible options: cb_discrete and cb_continuous");
+      THROW("error: incompatible options: cb_discrete and cats");
     }
     else if (use_discrete)
     {
@@ -768,7 +743,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
       ss << num_actions;
       options.insert("cb_explore", ss.str());
     }
-    else if (options.was_supplied("cb_continuous"))
+    else if (options.was_supplied("cats"))
     {
       if (cb_continuous_num_actions != num_actions)
         THROW("error: different number of actions specified for cbify and cb_continuous");
@@ -777,7 +752,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
     {
       stringstream ss;
       ss << num_actions;
-      options.insert("cb_continuous", ss.str());
+      options.insert("cats", ss.str());
     }
   }
   else

@@ -1,13 +1,13 @@
-#include "offset_tree_cont.h"
+#include "cats_tree.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()
 #include <algorithm>
 #include "reductions.h"
 #include "debug_log.h"
 #include <cassert>
+#include <explore_internal.h>
+
 #include "hash.h"
-#include "explore.h"
-#include "explore_internal.h"
 
 
 using namespace VW::config;
@@ -20,7 +20,7 @@ VW_DEBUG_ENABLE(false)
 
 namespace VW
 {
-namespace offset_tree_cont
+namespace cats_tree
 {
 tree_node::tree_node(
     uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth, 
@@ -110,7 +110,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
   }
   catch (std::bad_alloc& e)
   {
-    THROW("Unable to allocate memory for offset tree.  Label count:" << _num_leaf_nodes << " bad_alloc:" << e.what());
+    THROW("Unable to allocate memory for cats_tree.  Label count:" << _num_leaf_nodes << " bad_alloc:" << e.what());
   }
 }
 
@@ -141,11 +141,11 @@ std::string min_depth_binary_tree::tree_stats_to_string()
   return treestats.str();
 }
 
-void offset_tree::init(uint32_t num_actions, uint32_t bandwidth) { _binary_tree.build_tree(num_actions, bandwidth); }
+void cats_tree::init(uint32_t num_actions, uint32_t bandwidth) { _binary_tree.build_tree(num_actions, bandwidth); }
 
-int32_t offset_tree::learner_count() const { return _binary_tree.internal_node_count(); }
+int32_t cats_tree::learner_count() const { return _binary_tree.internal_node_count(); }
 
-uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
+uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
 {
   const vector<tree_node>& nodes = _binary_tree.nodes;
 
@@ -184,7 +184,7 @@ uint32_t offset_tree::predict(LEARNER::single_learner& base, example& ec)
   return (cur_node.id - _binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
-void offset_tree::init_node_costs(v_array<cb_class>& ac)
+void cats_tree::init_node_costs(v_array<cb_class>& ac)
 {
   assert(ac.size() > 0); 
   assert(ac[0].action > 0);
@@ -206,7 +206,7 @@ constexpr float RIGHT = 1.0f;
 constexpr float LEFT = -1.0f;
 
 
-float offset_tree::return_cost(const tree_node& w)
+float cats_tree::return_cost(const tree_node& w)
 {
   if (w.id < _a.node_id)
     return 0;
@@ -220,7 +220,7 @@ float offset_tree::return_cost(const tree_node& w)
     return 0;
 }
 
-void offset_tree::learn(LEARNER::single_learner& base, example& ec)
+void cats_tree::learn(LEARNER::single_learner& base, example& ec)
 {
   const polylabel saved_label = ec.l;
   const float saved_weight = ec.weight;
@@ -319,20 +319,20 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   ec.pred = saved_pred;
 }
 
-void offset_tree::set_trace_message(std::ostream* vw_ostream) { _trace_stream = vw_ostream; }
+void cats_tree::set_trace_message(std::ostream* vw_ostream) { _trace_stream = vw_ostream; }
 
-offset_tree::~offset_tree()
+cats_tree::~cats_tree()
 {
   if(_trace_stream != nullptr)
     (*_trace_stream) << tree_stats_to_string() << std::endl;
 }
 
-std::string offset_tree::tree_stats_to_string()
+std::string cats_tree::tree_stats_to_string()
 {
   return _binary_tree.tree_stats_to_string();
 }
 
-void predict(offset_tree& ot, single_learner& base, example& ec)
+void predict(cats_tree& ot, single_learner& base, example& ec)
 {
   VW_DBG(ec) << "otree_c: before tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec)
              << std::endl;
@@ -341,26 +341,26 @@ void predict(offset_tree& ot, single_learner& base, example& ec)
              << std::endl;
 }
 
-void learn(offset_tree& tree, single_learner& base, example& ec)
+void learn(cats_tree& tree, single_learner& base, example& ec)
 {
   VW_DBG(ec) << "otree_c: before tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
   tree.learn(base, ec);
   VW_DBG(ec) << "otree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
 }
 
-void finish(offset_tree& t) { t.~offset_tree(); }
+void finish(cats_tree& t) { t.~cats_tree(); }
 
-base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
+base_learner* setup(options_i& options, vw& all)
 {
-  option_group_definition new_options("Offset tree continuous Options");
+  option_group_definition new_options("CATS Tree Options");
   uint32_t num_actions; // = K = 2^D
   uint32_t bandwidth; // = 2^h#
   uint32_t scorer_flag;
-  new_options.add(make_option("otc", num_actions).keep().help("Offset tree continuous with <k> labels")) // TODO: D or K
+  new_options.add(make_option("cats_tree", num_actions).keep().help("CATS Tree with <k> labels")) // TODO: D or K
       .add(make_option("scorer_option", scorer_flag)
                .default_value(0)
                .keep()
-               .help("Offset tree continuous reduction to scorer [-1, 1] versus binary -1/+1"))  // TODO: oct
+               .help("CATS Tree reduction to scorer [-1, 1] versus binary -1/+1"))  // TODO: oct
       .add(make_option("bandwidth", bandwidth)
                .default_value(0)
                .keep()
@@ -368,7 +368,7 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
 
   options.add_and_parse(new_options);
 
-  if (!options.was_supplied("otc"))  // todo: if num_actions = 0 throw error
+  if (!options.was_supplied("cats_tree"))  // todo: if num_actions = 0 throw error
     return nullptr;
 
   if (scorer_flag)
@@ -380,7 +380,7 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
     options.insert("binary", "");
   }
 
-  auto otree = scoped_calloc_or_throw<offset_tree>();
+  auto otree = scoped_calloc_or_throw<cats_tree>();
   otree->init(num_actions, bandwidth);
   otree->set_trace_message(&all.trace_message);
 
@@ -388,7 +388,7 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
 
   // all.delete_prediction = ACTION_SCORE::delete_action_scores; //TODO: commented
 
-  learner<offset_tree, example>& l =
+  learner<cats_tree, example>& l =
       init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type::multiclass);
   // TODO: changed to prediction_type::multiclass
 
@@ -397,5 +397,5 @@ base_learner* offset_tree_cont_setup(VW::config::options_i& options, vw& all)
   return make_base(l);
 }
 
-}  // namespace offset_tree_cont
+}  // namespace cats_tree
 }  // namespace VW

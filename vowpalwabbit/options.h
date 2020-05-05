@@ -127,6 +127,22 @@ struct options_i
     return dynamic_cast<typed_option<T>&>(base);
   }
 
+  template <typename T>
+  bool add_or_check_options(const std::string& key, const T& found_val, const T& expected_val)
+  {
+    if (was_supplied(key))
+    {
+      if (found_val != expected_val)
+        return false;
+      return true;
+    }
+
+    std::stringstream strm;
+    strm << expected_val;
+    insert(key, strm.str());
+    return true;
+  }
+
   // Will throw if any options were supplied that do not having a matching argument specification.
   virtual void check_unregistered() = 0;
 

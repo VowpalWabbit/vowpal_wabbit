@@ -45,17 +45,23 @@ namespace continuous_action
 
   int sample_pdf::predict(example& ec, api_status* status)
   {
-    { // predict & restore prediction
-      _pred_pdf.clear();
+    _pred_pdf.clear();
+
+    {  // scope to predict & restore prediction
       swap_restore_pdf_prediction restore(ec, _pred_pdf);
       _base->predict(ec);
     }
-    exploration::sample_pdf(
+
+    const int ret_code = exploration::sample_pdf(
       _p_random_state,
       std::begin(_pred_pdf),
       std::end(ec.pred.prob_dist_new),
       ec.pred.a_pdf.action,
       ec.pred.a_pdf.pdf_value);
+
+    if (ret_code != S_EXPLORATION_OK)
+      return error_code::sample_pdf_failed;
+
     return error_code::success;
   }
 
@@ -78,8 +84,11 @@ namespace continuous_action
     api_status status;
     if (is_learn)
       reduction.learn(ec, &status);
-    else
+    else {
+      //if (error_code::success != reduction.predict(ec, &status))
+      //  THROW(error_code::sample_pdf_failed_s);
       reduction.predict(ec, &status);
+    }
 
     if (status.get_error_code() != error_code::success)
     {
