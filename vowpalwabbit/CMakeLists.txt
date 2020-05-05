@@ -119,6 +119,7 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
+  plt.h
   print.h
   queue.h
   rand48.h
@@ -235,6 +236,7 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
+  plt.cc
   print.cc
   rand48.cc
   recall_tree.cc
