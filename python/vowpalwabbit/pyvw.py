@@ -1363,14 +1363,38 @@ class DataFrameToVW:
 
     re_parse_col = re.compile(pattern="{([^{}]*)}")
 
+    feature_name_pattern = "(?:\w+[:*])"
+    feature_value_pattern = "{[^{}]+}"
+    const_value_pattern = "\w+"
+    before_words, words, after_words = (
+        "\s*\|?\s*",
+        "(?:{[^{}]+}|[\w:*]+)",
+        "\s*",
+    )
+    re_check_formula = re.compile(
+        "(?:\s*\|?\s*{}?(?:{}|{})\s*)*".format(
+            feature_name_pattern, feature_value_pattern, const_value_pattern
+        )
+    )
+
     def __init__(self, df, formula):
         """
+        Convert a pandas DataFrame to the vowpal wabbit format defined by the user in formula parameter.
+        Formula is a string where the feature value of a given column is specified using 
+        the curly braces syntax (e.g: {name_of_the_column}). The part of the formula not specified
+        in curly braces will be considered constant and repeated on each line. See examples 
+        for more details.
+
+        The following column names cannot be used in the formula :
+            - column names that contain the character '{' or '}' 
+            - the empty string ''
+        
         Parameters
         ----------
         df : pandas.DataFrame
             The DataFrame to convert
         formula : str
-            The formula specifying the desired vowpal wabbit input format
+            The formula specifying the desired vowpal wabbit input format. 
 
         Examples
         --------
@@ -1378,8 +1402,12 @@ class DataFrameToVW:
         >>> from vowpalwabbit import DataFrameToVW
         >>> from pandas as pd
         >>> df = pd.DataFrame({"y": [0], "x": [1]})
-        >>> conv = DataFrameToVW(df, "y | x")
+        >>> conv = DataFrameToVW(df, "{y} | {x}")
         >>> vw_lines = conv.process_df()
+        
+        >>> df2 = pd.DataFrame({"y": [0], "x": [1], "z": [2]})
+        >>> conv2 = DataFrameToVW(df, '{y} |AllFeatures {x} {z}')
+        >>> vw_lines2 = conv.process_df()
 
         Returns
         -------
@@ -1389,7 +1417,23 @@ class DataFrameToVW:
         self.n_rows = df.shape[0]
         self.column_names = set(df.columns)
         self.formula = re.sub("\s+", " ", formula).strip()
+        self.check_formula()
         self.check_absent_cols()
+
+    def check_formula(self):
+        """
+        Check if formula is of appropriate format
+        """
+        match = self.re_check_formula.match(self.formula)
+        valid_formula = match.group() == self.formula
+        if not valid_formula:
+            valid_part = self.formula[: match.end()]
+            invalid_part = self.formula[match.end() :]
+            raise ValueError(
+                "Error parsing formula.\nValid: '{}'\nNot valid: '{}'".format(
+                    valid_part, invalid_part
+                )
+            )
 
     def check_absent_cols(self):
         """
@@ -1406,18 +1450,14 @@ class DataFrameToVW:
         all_cols = self.re_parse_col.findall(self.formula)
         absent_cols = [col for col in all_cols if col not in self.column_names]
         if any(absent_cols):
+            absent_cols_str = str(absent_cols)[1:-1]
             raise ValueError(
-                "Column(s) {} not in the DataFrame".format(
-                    str(absent_cols)[1:-1]
-                )
+                "Column(s) {} not in the DataFrame".format(absent_cols_str)
             )
 
     def process_df(self):
         """
         Convert pandas.DataFrame to a suitable vowpal wabbit input format
-
-        Parameters
-        ----------
 
         Returns
         -------

@@ -386,3 +386,9 @@ def test_oneline_without_target():
     first_line = lines_list[0]
     assert first_line == "| 2 3"
 
+
+def test_absent_col_error():
+    with pytest.raises(ValueError) as value_error:
+        df = pd.DataFrame({"a": [1]})
+        conv = DataFrameToVW(df, "{a} | {b} {c}")
+    assert "Column(s) 'b', 'c' not in the DataFrame" == str(value_error.value)
