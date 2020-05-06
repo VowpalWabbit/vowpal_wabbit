@@ -39,7 +39,13 @@ namespace continuous_action
 
   int sample_pdf::learn(example& ec, api_status* status)
   {
-    _base->learn(ec);
+    // one of the base reductions will call predict so we need a valid
+    // predict buffer
+    _pred_pdf.clear();
+    {  // scope to predict & restore prediction
+      swap_restore_pdf_prediction restore(ec, _pred_pdf);
+      _base->learn(ec);
+    }
     return error_code::success;
   }
 
@@ -55,7 +61,7 @@ namespace continuous_action
     const int ret_code = exploration::sample_pdf(
       _p_random_state,
       std::begin(_pred_pdf),
-      std::end(ec.pred.prob_dist),
+      std::end(_pred_pdf),
       ec.pred.a_pdf.action,
       ec.pred.a_pdf.pdf_value);
 

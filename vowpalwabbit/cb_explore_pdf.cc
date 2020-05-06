@@ -26,14 +26,12 @@ namespace continuous_action
     int predict(example& ec, api_status* status);
 
     void init(single_learner* p_base);
-    ~cb_explore_pdf();
 
     float epsilon;
     float min_value;
     float max_value;
 
     private:
-      actions_pdf::pdf _pred_pdf;
       single_learner* _base = nullptr;
   };
 
@@ -45,31 +43,19 @@ namespace continuous_action
 
   int cb_explore_pdf::predict(example& ec, api_status* status)
   {
-    {  // predict & restore prediction
-      _pred_pdf.clear();
-      swap_restore_pdf_prediction restore(ec, _pred_pdf);
-      _base->predict(ec);
-    }
+    _base->predict(ec);
 
-    _pred_pdf = ec.pred.prob_dist;
+    actions_pdf::pdf _pred_pdf = ec.pred.prob_dist;
     for (uint32_t i = 0; i < _pred_pdf.size(); i++)
     {
       _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);
     }
-    ec.pred.prob_dist = _pred_pdf;
-    // TODO:  create egreedy exploration pdf from base.predict() pdf stored in pred_pdf
     return error_code::success;
   }
 
   void cb_explore_pdf::init(single_learner* p_base)
   {
     _base = p_base;
-    _pred_pdf = v_init<actions_pdf::pdf_segment>();
-  }
-
-  cb_explore_pdf::~cb_explore_pdf()
-  {
-    _pred_pdf.delete_v();
   }
 
   // Free function to tie function pointers to reduction class methods
