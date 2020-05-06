@@ -144,7 +144,7 @@ void reset_source(vw& all, size_t numbits)
                                                                           << all.p->output->finalname);
     input->close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file_reader(all.p->output->finalname.cbegin()).release());
+    input->add_file(VW::io::open_file_reader(all.p->output->finalname.cbegin()));
     all.p->reader = read_cached_features;
   }
 
@@ -158,11 +158,6 @@ void reset_source(vw& all, size_t numbits)
         all.p->output_done.wait(lock, [&] { return all.p->finished_examples == all.p->end_parsed_examples && all.p->ready_parsed_examples.size() == 0; });
       }
 
-      // Close all inputs and final_prediction_sink files.
-      for (auto* adapter : all.final_prediction_sink)
-      {
-        delete adapter;
-      }
       all.final_prediction_sink.clear();
       all.p->input->close_files();
 
@@ -179,8 +174,8 @@ void reset_source(vw& all, size_t numbits)
       // note: breaking cluster parallel online learning by dropping support for id
 
       auto socket = VW::io::wrap_socket_descriptor(f);
-      all.final_prediction_sink.push_back(socket->get_writer().release());
-      all.p->input->add_file(socket->get_reader().release());
+      all.final_prediction_sink.push_back(socket->get_writer());
+      all.p->input->add_file(socket->get_reader());
 
       if (isbinary(*(all.p->input)))
       {
@@ -201,10 +196,10 @@ IGNORE_DEPRECATED_USAGE_END
     }
     else
     {
-      for (auto* file : input->input_files)
+      for (auto& file : input->input_files)
       {
-        input->reset_file(file);
-        if (cache_numbits(input, file) < numbits)
+        input->reset_file(file.get());
+        if (cache_numbits(input, file.get()) < numbits)
           THROW("argh, a bug in caching of some sort!");
       }
     }
@@ -225,24 +220,23 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   std::string temp = newname + std::string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
-  VW::io::writer* f;
   try
   {
-    f = VW::io::open_file_writer(temp).release();
+    output->add_file(VW::io::open_file_writer(temp));
   }
   catch (const std::exception&)
   {
     all.trace_message << "can't create cache file !" << temp << endl;
     return;
   }
-  output->add_file(f);
-
+  
   size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
-  output->write_file(f, &v_length, sizeof(v_length));
-  output->write_file(f, VW::version.to_string().c_str(), v_length);
-  output->write_file(f, "c", 1);
-  output->write_file(f, &all.num_bits, sizeof(all.num_bits));
+  output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
+  output->bin_write_fixed(VW::version.to_string().c_str(), v_length);
+  output->bin_write_fixed("c", 1);
+  output->bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
+  output->flush();
 
   push_many(output->finalname, newname.c_str(), newname.length() + 1);
   all.p->write_cache = true;
@@ -256,22 +250,22 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
   for (auto& file : cache_files)
   {
-    VW::io::reader* f = nullptr;
+    bool cache_file_opened = false;
     if (!kill_cache)
       try
       {
-        f = VW::io::open_file_reader(file).release();
-        all.p->input->add_file(f);
+        all.p->input->add_file(VW::io::open_file_reader(file));
+        cache_file_opened = true;
       }
       catch (const std::exception&)
       {
-        f = nullptr;
+        cache_file_opened = false;
       }
-    if (f == nullptr)
+    if (cache_file_opened == false)
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.p->input, f);
+      uint64_t c = cache_numbits(all.p->input, all.p->input->input_files.back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -496,9 +490,9 @@ IGNORE_DEPRECATED_USAGE_END
 
     auto socket = VW::io::wrap_socket_descriptor(f_a);
 
-    all.final_prediction_sink.push_back(socket->get_writer().release());
+    all.final_prediction_sink.push_back(socket->get_writer());
 
-    all.p->input->add_file(socket->get_reader().release());
+    all.p->input->add_file(socket->get_reader());
     if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
@@ -539,28 +533,28 @@ IGNORE_DEPRECATED_USAGE_END
 
       try
       {
-        VW::io::reader* adapter = nullptr;
+        std::unique_ptr<VW::io::reader> adapter;
         if (temp != "")
         {
-          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp).release()
-                                          : VW::io::open_file_reader(temp).release();
+          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp)
+                                          : VW::io::open_file_reader(temp);
         }
         else if (!all.stdin_off)
         {
           // Should try and use stdin
           if (should_use_compressed)
           {
-            adapter = VW::io::open_compressed_stdin().release();
+            adapter = VW::io::open_compressed_stdin();
           }
           else
           {
-            adapter = VW::io::open_stdin().release();
+            adapter = VW::io::open_stdin();
           }
         }
 
         if (adapter)
         {
-          all.p->input->add_file(adapter);
+          all.p->input->add_file(std::move(adapter));
         }
       }
       catch (std::exception const&)

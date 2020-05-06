@@ -130,10 +130,10 @@ void output_and_account_example(vw& all, active& a, example& ec)
   if (ld.label == FLT_MAX)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
-  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (auto* i : all.final_prediction_sink)
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
+  for (auto& i : all.final_prediction_sink)
   {
-    active_print_result(i, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i.get(), ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);

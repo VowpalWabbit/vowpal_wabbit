@@ -573,9 +573,9 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   // TODO what does weight mean here?
   all.sd->update(holdout_example, num_labelled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
-  for (auto sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
   {
-    VW::print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
+    VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
   }
 
   VW::print_update_ccb(all, slots, preds, num_features);

@@ -527,7 +527,7 @@ void global_print_newline(vw& all)
 {
   char temp[1];
   temp[0] = '\n';
-  for (auto* sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
   {
     ssize_t t;
     t = sink->write(temp, 1);
@@ -589,8 +589,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (auto* sink : all.final_prediction_sink)
-    all.print_by_ref(sink, data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+    all.print_by_ref(sink.get(), data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction != nullptr)
   {
@@ -603,7 +603,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
@@ -642,7 +642,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     assert(loss >= 0);
   }
 
-  for (auto* sink : all.final_prediction_sink) print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag);
 
   if (all.raw_prediction != nullptr)
   {
@@ -655,7 +655,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), head_ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), head_ec.tag);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&head_ec.l), head_ec, ec_seq, true, 0);
@@ -681,7 +681,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
     if (all.raw_prediction != nullptr)
     {
       v_array<char> empty = {nullptr, nullptr, nullptr, 0};
-      all.print_text_by_ref(all.raw_prediction, "", empty);
+      all.print_text_by_ref(all.raw_prediction.get(), "", empty);
     }
 
     if (data.is_probabilities)

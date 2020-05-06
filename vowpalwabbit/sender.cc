@@ -49,7 +49,7 @@ void open_sockets(sender& s, std::string host)
   s._socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str()));
   s._socket_reader = s._socket->get_reader();
   s.buf = new io_buf();
-  s.buf->add_file(s._socket->get_writer().release());
+  s.buf->add_file(s._socket->get_writer());
 }
 
 void send_features(io_buf* b, example& ec, uint32_t mask)

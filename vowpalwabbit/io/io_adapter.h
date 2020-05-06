@@ -82,7 +82,7 @@ std::unique_ptr<writer> open_compressed_stdout();
 std::unique_ptr<reader> open_stdin();
 std::unique_ptr<writer> open_stdout();
 std::unique_ptr<socket> wrap_socket_descriptor(int fd);
-std::unique_ptr<writer> create_vector_writer(std::vector<char>& buffer);
+std::unique_ptr<writer> create_vector_writer(std::shared_ptr<std::vector<char>>& buffer);
 std::unique_ptr<reader> create_in_memory_reader(const char* data, size_t len);
 }  // namespace io
 }  // namespace VW

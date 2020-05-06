@@ -187,10 +187,10 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
   try
   { reset_source(*m_vw, m_vw->num_bits);
 
-    std::vector<char> buffer;
+    auto buffer = std::make_shared<std::vector<char>>();
     {
       io_buf write_buffer;
-      write_buffer.add_file(VW::io::create_vector_writer(buffer).release());
+      write_buffer.add_file(VW::io::create_vector_writer(buffer));
       VW::save_predictor(*m_vw, write_buffer);
     }
 
@@ -202,7 +202,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
     // reload from model
     // seek to beginning
     io_buf reader_view_of_buffer;
-    reader_view_of_buffer.add_file(VW::io::create_in_memory_reader(buffer.data(), buffer.size()).release());
+    reader_view_of_buffer.add_file(VW::io::create_in_memory_reader(buffer->data(), buffer->size()));
     m_vw = VW::initialize(stringArgs.c_str(), &reader_view_of_buffer);
   }
   CATCHRETHROW

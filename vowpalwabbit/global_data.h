@@ -510,8 +510,8 @@ struct vw
   std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
-  v_array<VW::io::writer*> final_prediction_sink;  // set to send global predictions to.
-  VW::io::writer* raw_prediction;                  // file descriptors for text output.
+  std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
+  std::unique_ptr<VW::io::writer> raw_prediction;                  // file descriptors for text output.
 
   VW_DEPRECATED("print has been deprecated, use print_by_ref")
   void (*print)(VW::io::writer*, float, float, v_array<char>);

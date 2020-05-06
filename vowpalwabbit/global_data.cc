@@ -349,8 +349,6 @@ vw::vw()
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink = v_init<VW::io::writer*>();
-  raw_prediction = nullptr;
   print = print_result;
   print_text = print_raw_text;
   print_by_ref = print_result_by_ref;
@@ -452,17 +450,6 @@ vw::~vw()
       free(sd->ldict);
     }
     free(sd);
-  }
-
-  for (auto* sink : final_prediction_sink)
-  {
-    delete sink;
-  }
-  final_prediction_sink.delete_v();
-
-  if (raw_prediction != nullptr)
-  {
-    delete raw_prediction;
   }
 
   delete loss;

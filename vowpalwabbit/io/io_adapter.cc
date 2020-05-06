@@ -107,12 +107,12 @@ private:
 
 struct vector_writer : public writer
 {
-  vector_writer(std::vector<char>& buffer);
+  vector_writer(std::shared_ptr<std::vector<char>>& buffer);
   ~vector_writer() = default;
   ssize_t write(const char* buffer, size_t num_bytes) override;
 
 private:
-  std::vector<char>& _buffer;
+  std::shared_ptr<std::vector<char>> _buffer;
 };
 
 struct in_memory_buffer_reader : public reader
@@ -162,7 +162,7 @@ std::unique_ptr<writer> open_stdout() { return std::unique_ptr<writer>(new stdio
 
 std::unique_ptr<socket> wrap_socket_descriptor(int fd) { return std::unique_ptr<socket>(new socket(fd)); }
 
-std::unique_ptr<writer> create_vector_writer(std::vector<char>& buffer)
+std::unique_ptr<writer> create_vector_writer(std::shared_ptr<std::vector<char>>& buffer)
 {
   return std::unique_ptr<writer>(new vector_writer(buffer));
 }
@@ -383,12 +383,12 @@ ssize_t gzip_stdio_adapter::write(const char* buffer, size_t num_bytes)
 // vector_writer
 //
 
-vector_writer::vector_writer(std::vector<char>& buffer) : _buffer(buffer) {}
+vector_writer::vector_writer(std::shared_ptr<std::vector<char>>& buffer) : _buffer(buffer) {}
 
 ssize_t vector_writer::write(const char* buffer, size_t num_bytes)
 {
-  _buffer.reserve(_buffer.size() + num_bytes);
-  _buffer.insert(std::end(_buffer), (const char*)buffer, (const char*)buffer + num_bytes);
+  _buffer->reserve(_buffer->size() + num_bytes);
+  _buffer->insert(std::end(*_buffer), buffer, buffer + num_bytes);
   return num_bytes;
 }
 

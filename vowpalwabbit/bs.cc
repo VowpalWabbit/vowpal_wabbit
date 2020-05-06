@@ -172,7 +172,7 @@ void output_example(vw& all, bs& d, example& ec)
     }
   }
 
-  for (auto* sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
+  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub);
 
   print_update(all, ec);
 }
@@ -222,7 +222,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
   }
 
   if (shouldOutput)
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
 }
 
 void finish_example(vw& all, bs& d, example& ec)

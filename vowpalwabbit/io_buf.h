@@ -61,8 +61,8 @@ class io_buf
  public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
                         // the buffer.
-  v_array<VW::io::reader*> input_files;
-  v_array<VW::io::writer*> output_files;
+  std::vector<std::unique_ptr<VW::io::reader>> input_files;
+  std::vector<std::unique_ptr<VW::io::writer>> output_files;
   size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
   char* head;
@@ -79,17 +79,6 @@ class io_buf
 
   ~io_buf()
   {
-    for (auto* adapter : input_files)
-    {
-      delete adapter;
-    }
-    for (auto* adapter : output_files)
-    {
-      delete adapter;
-    }
-
-    input_files.delete_v();
-    output_files.delete_v();
     space.delete_v();
     currentname.delete_v();
     finalname.delete_v();
@@ -111,8 +100,8 @@ class io_buf
     return _hash;
   }
 
-  void add_file(VW::io::reader* file) { input_files.push_back(file); }
-  void add_file(VW::io::writer* file) { output_files.push_back(file); }
+  void add_file(std::unique_ptr<VW::io::reader>&& file) { input_files.push_back(std::move(file)); }
+  void add_file(std::unique_ptr<VW::io::writer>&& file) { output_files.push_back(std::move(file)); }
 
   void reset_file(VW::io::reader* f)
   {
@@ -124,8 +113,6 @@ class io_buf
   io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
   {
     space = v_init<char>();
-    input_files = v_init<VW::io::reader*>();
-    output_files = v_init<VW::io::writer*>();
     currentname = v_init<char>();
     finalname = v_init<char>();
     space.resize(INITIAL_BUFF_SIZE);
@@ -172,7 +159,7 @@ class io_buf
   {
     if (!output_files.empty())
     {
-      if (write_file(output_files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
+      if (write_file(output_files[0].get(), space.begin(), head - space.begin()) != (int)(head - space.begin()))
         std::cerr << "error, failed to write example\n";
       head = space.begin();
       output_files[0]->flush();
@@ -183,14 +170,12 @@ class io_buf
   {
     if (!input_files.empty())
     {
-      auto adapter = input_files.pop();
-      delete adapter;
+      input_files.pop_back();
       return true;
     }
     else if (!output_files.empty())
     {
-      auto adapter = output_files.pop();
-      delete adapter;
+      output_files.pop_back();
       return true;
     }
 

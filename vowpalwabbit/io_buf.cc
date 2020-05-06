@@ -26,7 +26,7 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
       head = space.begin();
       space.end() = space.begin() + left;
     }
-    if (current < input_files.size() && fill(input_files[current]) > 0)  // read more bytes from current file if present
+    if (current < input_files.size() && fill(input_files[current].get()) > 0)  // read more bytes from current file if present
       return buf_read(pointer, n);  // more bytes are read.
     else if (++current < input_files.size())
       return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
@@ -43,7 +43,7 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
 bool isbinary(io_buf& i)
 {
   if (i.space.end() == i.head)
-    if (i.fill(i.input_files[i.current]) <= 0)
+    if (i.fill(i.input_files[i.current].get()) <= 0)
       return false;
 
   bool ret = (*i.head == 0);
@@ -75,7 +75,7 @@ size_t readto(io_buf& i, char*& pointer, char terminal)
       i.space.end() = i.space.begin() + left;
       pointer = i.space.end();
     }
-    if (i.current < i.input_files.size() && i.fill(i.input_files[i.current]) > 0)  // more bytes are read.
+    if (i.current < i.input_files.size() && i.fill(i.input_files[i.current].get()) > 0)  // more bytes are read.
       return readto(i, pointer, terminal);
     else if (++i.current < i.input_files.size())  // no more bytes, so go to next file.
       return readto(i, pointer, terminal);

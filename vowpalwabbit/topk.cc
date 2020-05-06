@@ -119,7 +119,7 @@ void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& 
 void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) output_example(all, *ec);
-  for (auto sink : all.final_prediction_sink) print_result(sink, d.get_container_view());
+  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view());
   d.clear_container();
   VW::finish_example(all, ec_seq);
 }

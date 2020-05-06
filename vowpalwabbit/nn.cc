@@ -335,7 +335,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     if (shouldOutput)
     {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction, outputStringStream.str(), ec.tag);
+      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
     }
 
     if (is_learn && n.all->training && ld.label != FLT_MAX)
@@ -430,10 +430,10 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  auto* save_raw_prediction = all.raw_prediction;
+  auto save_raw_prediction = std::move(all.raw_prediction);
   all.raw_prediction = nullptr;
   return_simple_example(all, nullptr, ec);
-  all.raw_prediction = save_raw_prediction;
+  all.raw_prediction = std::move(save_raw_prediction);
 }
 
 base_learner* nn_setup(options_i& options, vw& all)

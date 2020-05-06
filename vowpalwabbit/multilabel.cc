@@ -178,7 +178,7 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (auto* sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
   {
     if (sink != nullptr)
     {
@@ -191,7 +191,7 @@ void output_example(vw& all, example& ec)
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text_by_ref(sink, ss.str(), ec.tag);
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
     }
   }
 

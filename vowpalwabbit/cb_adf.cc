@@ -336,11 +336,11 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(const v_array<VW::io::writer*>& final_prediction_sink)
+void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
-  for (auto* sink : final_prediction_sink)
+  for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
     if (t != 1)
@@ -380,7 +380,10 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (auto* sink : all.final_prediction_sink) all.print_by_ref(sink, (float)action, 0, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    all.print_by_ref(sink.get(), (float)action, 0, ec.tag);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -394,7 +397,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -409,7 +412,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (auto sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag);
 
   if (all.raw_prediction != nullptr)
   {
@@ -421,7 +424,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -438,7 +441,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
       output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
       if (all.raw_prediction != nullptr)
-        all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
+        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
     }
   }
 }

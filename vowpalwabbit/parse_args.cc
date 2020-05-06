@@ -1117,14 +1117,13 @@ void parse_output_preds(options_i& options, vw& all)
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back(VW::io::open_stdout().release());  // stdout
+      all.final_prediction_sink.push_back(VW::io::open_stdout());  // stdout
     }
     else
     {
       try
       {
-        auto f = VW::io::open_file_writer(predictions);
-        all.final_prediction_sink.push_back(f.release());
+        all.final_prediction_sink.push_back(VW::io::open_file_writer(predictions));
       }
       catch (...)
       {
@@ -1144,11 +1143,11 @@ void parse_output_preds(options_i& options, vw& all)
     }
     if (raw_predictions == "stdout")
     {
-      all.raw_prediction = VW::io::open_stdout().release();
+      all.raw_prediction = VW::io::open_stdout();
     }
     else
     {
-      all.raw_prediction = VW::io::open_file_writer(raw_predictions).release();
+      all.raw_prediction = VW::io::open_file_writer(raw_predictions);
     }
   }
 }

@@ -352,18 +352,16 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle)
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstrArgs, const char * modelData, size_t modelDataSize)
 {
-  auto vec_adapter = VW::io::create_in_memory_reader(modelData, modelDataSize);
   io_buf buf;
-  buf.add_file(vec_adapter.release());
+  buf.add_file(VW::io::create_in_memory_reader(modelData, modelDataSize));
   vw* all = VW::initialize(string(pstrArgs), &buf);
   return static_cast<VW_HANDLE>(all);
 }
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(const char * pstrArgs, const char * modelData, size_t modelDataSize)
 {
-  auto vec_adapter = VW::io::create_in_memory_reader(modelData, modelDataSize);
   io_buf buf;
-  buf.add_file(vec_adapter.release());
+  buf.add_file(VW::io::create_in_memory_reader(modelData, modelDataSize));
 
   auto all = VW::initialize_escaped(std::string(pstrArgs), &buf);
   return static_cast<VW_HANDLE>(all);
@@ -371,7 +369,7 @@ VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(const char
 
 struct buffer_holder
 {
-  std::vector<char> data;
+  std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>();
   io_buf holding_buffer;
 };
 
@@ -380,13 +378,13 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(
 {
   vw* pointer = static_cast<vw*>(handle);
   auto* holder = new buffer_holder;
-  holder->holding_buffer.add_file(VW::io::create_vector_writer(holder->data).release());
+  holder->holding_buffer.add_file(VW::io::create_vector_writer(holder->data));
   VW::save_predictor(*pointer, holder->holding_buffer);
 
   *outputBufferHandle = holder;
   const auto& underlying_buffer = holder->data;
-  *outputSize = underlying_buffer.size();
-  *outputData = const_cast<char*>(underlying_buffer.data());
+  *outputSize = underlying_buffer->size();
+  *outputData = const_cast<char*>(underlying_buffer->data());
 }
 
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle)
