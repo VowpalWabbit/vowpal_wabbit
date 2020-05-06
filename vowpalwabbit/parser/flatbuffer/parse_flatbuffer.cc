@@ -33,6 +33,7 @@ int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
 
   // Parse examples
   // all->trace_message << index << "\n";
+  all->max_examples = data->examples()->size();
   parse_flatbuf_examples(all, examples, data);
   // std::cout << "Example indices " << examples[0]->indices.size();
   // std::cout << "Feature indices " << examples[0]->feature_space[(unsigned char)' '].indicies.size() << " values " << examples[0]->feature_space[(unsigned char)' '].values.size() << std::endl;
