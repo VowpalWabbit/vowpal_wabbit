@@ -305,10 +305,10 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   data.regression_data.cb_cont_label.costs.push_back(cb_cont_lbl);
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
-  VW_DBG(ec) << "cbify-reg: before base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: before base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
   if (is_learn)
     base.learn(ec);
-  VW_DBG(ec) << "cbify-reg: after base.learn() = " << cont_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: after base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
 
   if (data.regression_data.loss_report == 1)
   {

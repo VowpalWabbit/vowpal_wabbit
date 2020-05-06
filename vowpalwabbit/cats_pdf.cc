@@ -2,7 +2,7 @@
 #include "parse_args.h"
 #include "err_constants.h"
 #include "api_status.h"
-#include "cb_label_parser.h"
+#include "cb_continuous_label.h"
 #include "debug_log.h"
 
 // Aliases
@@ -56,7 +56,7 @@ namespace cats_pdf
   {
     assert(!ec.test_only);
     predict(ec, status);
-    VW_DBG(ec) << "cats_pdf::learn(), " << cont_label_to_string(ec) << features_to_string(ec) << endl;
+    VW_DBG(ec) << "cats_pdf::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
     _base->learn(ec);
     return error_code::success;
   }
@@ -143,67 +143,6 @@ namespace cats_pdf
   // END: functions to output progress
   ////////////////////////////////////////////////////
 
-  ////////////////////////////////////////////////////
-  // Begin: parse a,c,p,x file format
-  namespace lbl_parser
-  {
-    void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
-    {
-      auto ld = static_cast<continuous_label*>(v);
-      ld->costs.clear();
-      for (auto word : words)
-      {
-        continuous_label_elm f{0.f, FLT_MAX, 0.f, 0.f};
-        tokenize(':', word, p->parse_name);
-
-        if (p->parse_name.empty() || p->parse_name.size() > 3)
-          THROW("malformed cost specification: " << p->parse_name);
-
-        f.action = float_of_substring(p->parse_name[0]);
-
-        if (p->parse_name.size() > 1)
-          f.cost = float_of_substring(p->parse_name[1]);
-
-        if (nanpattern(f.cost))
-          THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
-
-        f.probability = .0;
-        if (p->parse_name.size() > 2)
-          f.probability = float_of_substring(p->parse_name[2]);
-
-        if (nanpattern(f.probability))
-          THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
-
-        if (f.probability > 1.0)
-        {
-          std::cerr << "invalid probability > 1 specified for an action, resetting to 1." << endl;
-          f.probability = 1.0;
-        }
-        if (f.probability < 0.0)
-        {
-          std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
-          f.probability = .0;
-        }
-
-        ld->costs.push_back(f);
-      }
-    }
-
-    label_parser cont_tbd_label_parser = {
-        CB::default_label<continuous_label>,
-        parse_label,
-        CB::cache_label<continuous_label, continuous_label_elm>,
-        CB::read_cached_label<continuous_label, continuous_label_elm>,
-        CB::delete_label<continuous_label>,
-        CB::weight,
-        CB::copy_label<continuous_label>,
-        CB::is_test_label<continuous_label>,
-      sizeof(continuous_label)};
-  }
-
-  // End: parse a,c,p,x file format
-  ////////////////////////////////////////////////////
-  
   // Setup reduction in stack
   LEARNER::base_learner* setup(config::options_i& options, vw& all)
   {
@@ -241,11 +180,11 @@ namespace cats_pdf
         predict_or_learn<false>, 1, prediction_type::action_pdf_value);
 
     l.set_finish_example(finish_example);
-    all.p->lp = lbl_parser::cont_tbd_label_parser;
+    all.p->lp = cb_continuous::the_label_parser;
     all.delete_prediction = nullptr;
 
     return make_base(l);
   }
-}  
-} 
+}
+}
 }  // namespace VW

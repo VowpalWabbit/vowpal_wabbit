@@ -223,12 +223,6 @@ namespace VW { namespace pmf_to_pdf
       return nullptr;
     if (!options.was_supplied("pmf_to_pdf"))
       return nullptr;
-    if (!options.was_supplied("cb_explore"))
-    {
-      std::stringstream ss;
-      ss << data->num_actions;
-      options.insert("cb_explore", ss.str());
-    }
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     {
       THROW("error: min and max values must be supplied with cb_continuous");

@@ -55,7 +55,7 @@ int cats::learn(example& ec, api_status* status = nullptr)
 {
   assert(!ec.test_only);
   predict(ec, status);
-  VW_DBG(ec) << "cats::learn(), " << cont_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cats::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
   _base->learn(ec);
   return error_code::success;
 }
