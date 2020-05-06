@@ -85,9 +85,8 @@ namespace continuous_action
     if (is_learn)
       reduction.learn(ec, &status);
     else {
-      //if (error_code::success != reduction.predict(ec, &status))
-      //  THROW(error_code::sample_pdf_failed_s);
-      reduction.predict(ec, &status);
+      if (error_code::success != reduction.predict(ec, &status))
+        THROW(error_code::sample_pdf_failed_s);
     }
 
     if (status.get_error_code() != error_code::success)

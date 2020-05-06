@@ -228,20 +228,6 @@ std::string cb_label_to_string(const example& ec) {
   return strstream.str();
 }
 
-std::string cont_label_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[l.cb_cont={";
-  auto& costs = ec.l.cb_cont.costs;
-  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
-  {
-    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability
-              << ",pp=" << c->partial_prediction << "}";
-  }
-  strstream << "}]";
-  return strstream.str();
-}
-
 std::string simple_label_to_string(const example& ec)
 {
   std::stringstream strstream;

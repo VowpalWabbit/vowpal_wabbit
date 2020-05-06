@@ -7,8 +7,6 @@
 // Aliases
 using LEARNER::single_learner;
 using std::endl;
-using VW::cb_continuous::continuous_label;
-using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
@@ -59,7 +57,7 @@ namespace continuous_action
       _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);
     }
     ec.pred.prob_dist = _pred_pdf;
-    
+
     // TODO:  create egreedy exploration pdf from base.predict() pdf stored in pred_pdf
     return error_code::success;
   }
@@ -100,13 +98,13 @@ namespace continuous_action
     option_group_definition new_options("Continuous actions");
     bool invoked = false;
     float epsilon;
-    float min_;
-    float max_;
+    float min;
+    float max;
     new_options
         .add(make_option("cb_explore_pdf", invoked).keep().help("Sample a pdf and pick a continuous valued action"))
         .add(make_option("epsilon", epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"))
-        .add(make_option("min_", min_).keep().default_value(0.0f).help("min value for continuous range"))
-        .add(make_option("max_", max_).keep().default_value(1.0f).help("max value for continuous range"));
+        .add(make_option("min_value", min).keep().default_value(0.0f).help("min value for continuous range"))
+        .add(make_option("max_value", max).keep().default_value(1.0f).help("max value for continuous range"));
 
     options.add_and_parse(new_options);
 
@@ -115,12 +113,15 @@ namespace continuous_action
     if (!options.was_supplied("cb_explore_pdf"))
       return nullptr;
 
+    if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
+      THROW("error: min and max values must be supplied with cb_explore_pdf");
+
     LEARNER::base_learner* p_base = setup_base(options, all);
     auto p_reduction = scoped_calloc_or_throw<cb_explore_pdf>();
     p_reduction->init(as_singleline(p_base));
     p_reduction->epsilon = epsilon;
-    p_reduction->min_value = min_;
-     p_reduction->max_value = max_;
+    p_reduction->min_value = min;
+    p_reduction->max_value = max;
 
     LEARNER::learner<cb_explore_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base),
         predict_or_learn<true>,

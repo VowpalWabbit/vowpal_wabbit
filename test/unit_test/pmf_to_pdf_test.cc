@@ -106,11 +106,10 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   ec.l.cb_cont = VW::cb_continuous::continuous_label();
   ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.cb_cont.costs.clear();
-  ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f, 0.f}); // action, cost, prob, partial
+  ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f}); // action, cost, prob
 
   cout << "ec.l.cb_cont.costs after:" << endl;
-  cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability
-    << " , " << ec.l.cb_cont.costs[0].partial_prediction << "), " << endl;
+  cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability << "), " << endl;
 
   learn(*data, *as_singleline(test_harness), ec);
 }

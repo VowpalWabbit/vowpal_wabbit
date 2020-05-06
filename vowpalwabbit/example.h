@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include "multilabel.h"
 #include "cost_sensitive.h"
 #include "cb.h"
-#include "cb_continuous.h"
 #include "constant.h"
 #include "feature_group.h"
 #include "action_score.h"
@@ -22,6 +21,8 @@ license as described in the file LICENSE.
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
 #include <vector>
+
+#include "cb_continuous_label.h"
 #include "prob_dist_cont.h"
 
 const unsigned char default_namespace = 32;
@@ -199,5 +200,4 @@ std::string prob_dist_pred_to_string(const example& ec);
 std::string multiclass_pred_to_string(const example& ec);
 std::string depth_indent_string(const example& ec);
 std::string depth_indent_string(int32_t stack_depth);
-std::string cont_label_to_string(const example& ec);
 std::string cb_label_to_string(const example& ec);
