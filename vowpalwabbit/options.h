@@ -4,6 +4,7 @@
 #include <vector>
 #include <typeinfo>
 #include <memory>
+#include <sstream>
 
 namespace VW
 {

@@ -2,7 +2,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "cats_tree.h"
-#include "offset_tree_cont_tests.h"
+#include "cats_tree_tests.h"
 
 using namespace LEARNER;
 using namespace std;

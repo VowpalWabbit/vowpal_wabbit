@@ -57,7 +57,6 @@ namespace continuous_action
       _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);
     }
     ec.pred.prob_dist = _pred_pdf;
-
     // TODO:  create egreedy exploration pdf from base.predict() pdf stored in pred_pdf
     return error_code::success;
   }

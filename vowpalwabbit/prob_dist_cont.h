@@ -2,7 +2,7 @@
 namespace VW { namespace actions_pdf
 {
 
-struct action_pdf_value  
+struct action_pdf_value
 {
   float action;     // continuous action
   float pdf_value;  // pdf value
@@ -21,4 +21,4 @@ void delete_prob_dist(void* v);
 
 std::string to_string(const action_pdf_value& seg, bool print_newline = false);
 std::string to_string(const v_array<pdf_segment>& pdf, bool print_newline = false);
-}}  // namespace VW::actions
+}}  // namespace VW::actions_pdf
