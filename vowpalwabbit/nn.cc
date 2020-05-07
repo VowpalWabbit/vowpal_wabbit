@@ -230,7 +230,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_final_prediction = 0;
     float save_ec_loss = 0;
 
-  CONVERSE:  // That's right, I'm using goto.  So sue me.
+CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     n.output_layer.total_sum_feat_sq = 1;
     n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
