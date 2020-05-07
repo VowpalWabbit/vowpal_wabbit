@@ -14,7 +14,8 @@ template <typename T>
 class swap_guard_impl
 {
  public:
-  swap_guard_impl(T* original_location, T* value_to_swap) noexcept : _original_location(original_location), _value_to_swap(value_to_swap)
+  swap_guard_impl(T* original_location, T* value_to_swap) noexcept
+      : _original_location(original_location), _value_to_swap(value_to_swap)
   {
     std::swap(*_original_location, *_value_to_swap);
   }
@@ -24,7 +25,9 @@ class swap_guard_impl
   swap_guard_impl& operator=(swap_guard_impl&& other) = delete;
 
   swap_guard_impl(swap_guard_impl&& other) noexcept
-      : _original_location(other._original_location), _value_to_swap(other._value_to_swap), _will_swap_back(other._will_swap_back)
+      : _original_location(other._original_location)
+      , _value_to_swap(other._value_to_swap)
+      , _will_swap_back(other._will_swap_back)
   {
     other._will_swap_back = false;
     other._original_location = nullptr;
@@ -49,12 +52,12 @@ class swap_guard_impl
   bool _will_swap_back = true;
 };
 
-
 template <typename T>
 class swap_guard_impl_rvalue
 {
  public:
-  swap_guard_impl_rvalue(T* original_location, T&& value_to_swap) noexcept : _original_location(original_location), _value_to_swap(std::move(value_to_swap))
+  swap_guard_impl_rvalue(T* original_location, T&& value_to_swap) noexcept
+      : _original_location(original_location), _value_to_swap(std::move(value_to_swap))
   {
     std::swap(*_original_location, _value_to_swap);
   }
@@ -64,7 +67,9 @@ class swap_guard_impl_rvalue
   swap_guard_impl_rvalue& operator=(swap_guard_impl_rvalue&& other) = delete;
 
   swap_guard_impl_rvalue(swap_guard_impl_rvalue&& other) noexcept
-      : _original_location(other._original_location), _value_to_swap(std::move(other._value_to_swap)), _will_swap_back(other._will_swap_back)
+      : _original_location(other._original_location)
+      , _value_to_swap(std::move(other._value_to_swap))
+      , _will_swap_back(other._will_swap_back)
   {
     other._will_swap_back = false;
     other._original_location = nullptr;
