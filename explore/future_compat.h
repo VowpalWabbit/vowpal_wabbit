@@ -2,11 +2,11 @@
 
 #if __cplusplus >= 201103L || defined(_MSC_VER) && (_MSC_VER >= 1900)
 
-#if __cplusplus >= 201402L || defined(_MSC_VER) && (_MSC_VER >= 1910)
+#if __cplusplus >= 201402L || defined(_MSC_VER) && (_MSC_VER >= 1910) && (_MSVC_LANG >= 201402L)
 #define HAS_STD14
 #endif
 
-#if __cplusplus >= 201703L  || defined(_MSC_VER) && (_MSC_VER >= 1914)
+#if __cplusplus >= 201703L  || defined(_MSC_VER) && (_MSC_VER >= 1914) && (_MSVC_LANG >= 201703L)
 #define HAS_STD17
 #endif
 
