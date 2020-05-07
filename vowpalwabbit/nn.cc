@@ -414,7 +414,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  auto sd_guard = VW::swap_guard(all.raw_prediction, -1);
+  auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, -1);
   return_simple_example(all, nullptr, ec);
 }
 
