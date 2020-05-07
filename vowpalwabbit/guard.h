@@ -14,32 +14,21 @@ template <typename T>
 class swap_guard_impl
 {
  public:
-  swap_guard_impl(T& original_location, T& value_to_swap) noexcept : _original_location(original_location), _value_to_swap(value_to_swap)
+  swap_guard_impl(T* original_location, T* value_to_swap) noexcept : _original_location(original_location), _value_to_swap(value_to_swap)
   {
-    std::swap(_original_location, _value_to_swap);
+    std::swap(*_original_location, *_value_to_swap);
   }
 
   swap_guard_impl(const swap_guard_impl&) = delete;
   swap_guard_impl& operator=(const swap_guard_impl&) = delete;
+  swap_guard_impl& operator=(swap_guard_impl&& other) = delete;
 
   swap_guard_impl(swap_guard_impl&& other) noexcept
       : _original_location(other._original_location), _value_to_swap(other._value_to_swap), _will_swap_back(other._will_swap_back)
   {
     other._will_swap_back = false;
-  }
-
-  swap_guard_impl& operator=(swap_guard_impl&& other) noexcept
-  {
-    if (this == &other)
-    {
-      return *this;
-    }
-
-    _original_location = other._original_location;
-    _value_to_swap = other._value_to_swap;
-    _will_swap_back = other._will_swap_back;
-    other._will_swap_back = false;
-    return *this;
+    other._original_location = nullptr;
+    other._value_to_swap = nullptr;
   }
 
   ~swap_guard_impl() noexcept { force_swap(); }
@@ -49,14 +38,14 @@ class swap_guard_impl
   {
     if (_will_swap_back == true)
     {
-      std::swap(_original_location, _value_to_swap);
+      std::swap(*_original_location, *_value_to_swap);
       _will_swap_back = false;
     }
   }
 
  private:
-  T& _original_location;
-  T& _value_to_swap;
+  T* _original_location;
+  T* _value_to_swap;
   bool _will_swap_back = true;
 };
 
@@ -65,9 +54,9 @@ template <typename T>
 class swap_guard_impl_rvalue
 {
  public:
-  swap_guard_impl_rvalue(T& original_location, T&& value_to_swap) noexcept : _original_location(original_location), _value_to_swap(std::move(value_to_swap))
+  swap_guard_impl_rvalue(T* original_location, T&& value_to_swap) noexcept : _original_location(original_location), _value_to_swap(std::move(value_to_swap))
   {
-    std::swap(_original_location, _value_to_swap);
+    std::swap(*_original_location, _value_to_swap);
   }
 
   swap_guard_impl_rvalue(const swap_guard_impl_rvalue&) = delete;
@@ -78,8 +67,8 @@ class swap_guard_impl_rvalue
       : _original_location(other._original_location), _value_to_swap(std::move(other._value_to_swap)), _will_swap_back(other._will_swap_back)
   {
     other._will_swap_back = false;
+    other._original_location = nullptr;
   }
-
 
   ~swap_guard_impl_rvalue() noexcept { force_swap(); }
 
@@ -88,13 +77,13 @@ class swap_guard_impl_rvalue
   {
     if (_will_swap_back == true)
     {
-      std::swap(_original_location, _value_to_swap);
+      std::swap(*_original_location, _value_to_swap);
       _will_swap_back = false;
     }
   }
 
  private:
-  T& _original_location;
+  T* _original_location;
   T _value_to_swap;
   bool _will_swap_back = true;
 };
@@ -106,7 +95,7 @@ template <typename T>
 VW_ATTR(nodiscard)
 inline details::swap_guard_impl<T> swap_guard(T& original_location, T& value_to_swap) noexcept
 {
-  return details::swap_guard_impl<T>(original_location, value_to_swap);
+  return details::swap_guard_impl<T>(&original_location, &value_to_swap);
 }
 
 /// This guard will swap the two locations on creation and upon deletion swap them back.
@@ -115,7 +104,7 @@ template <typename T>
 VW_ATTR(nodiscard)
 inline details::swap_guard_impl_rvalue<T> swap_guard(T& original_location, T&& value_to_swap) noexcept
 {
-  return details::swap_guard_impl_rvalue<T>(original_location, std::forward<T>(value_to_swap));
+  return details::swap_guard_impl_rvalue<T>(&original_location, std::forward<T>(value_to_swap));
 }
 
 }  // namespace VW
