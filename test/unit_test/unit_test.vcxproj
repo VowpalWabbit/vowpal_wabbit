@@ -32,6 +32,7 @@
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
     <ClCompile Include="prediction_test.cc" />
+    <ClCompile Include="scope_guard_test.cc" />
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />

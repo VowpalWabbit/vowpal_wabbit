@@ -18,6 +18,9 @@
     <ClCompile Include="main.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="scope_guard_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="stable_unique_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

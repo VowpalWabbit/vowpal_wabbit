@@ -11,9 +11,9 @@
 #endif
 
 #ifdef HAS_STD17
-#define ATTR(name) [[ name ]]
+#define VW_ATTR(name) [[ name ]]
 #else
-#define ATTR(name)
+#define VW_ATTR(name)
 #endif
 
 #ifdef HAS_STD14

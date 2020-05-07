@@ -11,6 +11,7 @@
 #include "rand48.h"
 #include "gd.h"
 #include "vw.h"
+#include "scope_guard.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -55,24 +56,6 @@ struct nn
     VW::dealloc_example(nullptr, hiddenbias);
     VW::dealloc_example(nullptr, outputweight);
   }
-};
-
-// guard for all.sd, which is swapped out in predict_or_learn_multi
-class sd_guard
-{
- private:
-  vw* saved_all = nullptr;
-  shared_data* saved_sd = nullptr;
- public:
-   sd_guard(vw* all, shared_data* sd) :
-     saved_all(all), saved_sd(saved_all->sd)
-   {
-     saved_all->sd = sd;
-   }
-   ~sd_guard()
-   {
-     saved_all->sd = saved_sd;
-   }
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -169,7 +152,11 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   shared_data sd;
   memcpy(&sd, n.all->sd, sizeof(shared_data));
   {
-    sd_guard(n.all, &sd);
+    auto* saved_all = n.all;
+    auto* saved_sd = n.all->sd;
+    // guard for all.sd as it is modified - this will restore the state at the end of the scope.
+    auto sd_guard = VW::scope_guard([saved_all, saved_sd]() { saved_all->sd = saved_sd; });
+    n.all->sd = &sd;
 
     label_data ld = ec.l.simple;
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
@@ -243,7 +230,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_final_prediction = 0;
     float save_ec_loss = 0;
 
-CONVERSE:  // That's right, I'm using goto.  So sue me.
+  CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     n.output_layer.total_sum_feat_sq = 1;
     n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
@@ -430,10 +417,10 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  int save_raw_prediction = all.raw_prediction;
+  int saved_raw_prediction = all.raw_prediction;
+  auto sd_guard = VW::scope_guard([&all, saved_raw_prediction]() { all.raw_prediction = saved_raw_prediction; });
   all.raw_prediction = -1;
   return_simple_example(all, nullptr, ec);
-  all.raw_prediction = save_raw_prediction;
 }
 
 base_learner* nn_setup(options_i& options, vw& all)
