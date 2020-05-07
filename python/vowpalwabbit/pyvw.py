@@ -22,6 +22,10 @@ class Copperhead():
     def _learn(self):
         pass
 
+    def _call_base_learn(self, ec):
+        self.redpy.call_base_learn(ec)
+
+
 class SearchTask():
     """Search task class"""
     def __init__(self, vw, sch, num_actions):

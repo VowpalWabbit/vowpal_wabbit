@@ -55,6 +55,8 @@ void red_python::do_actual_learning(LEARNER::single_learner& base, example& ec)
 
 void learn(red_python& c, single_learner& base, example& ec)
 { 
+    c.ch->base_learn = &base;
+
   //c.ch->exc = &ec;
   if (c.ch->run_f)
     c.ch->run_f(*c.ch, &ec);
@@ -85,6 +87,7 @@ VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
 
   chead->random_number = 4;
   all.copperhead = chead.get();
+  chead.release();
 
 //   auto ld = scoped_calloc_or_throw<red_python>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
 
