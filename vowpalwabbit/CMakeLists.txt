@@ -78,6 +78,7 @@ set(vw_all_headers
   gd.h
   gen_cs_example.h
   global_data.h
+  guard.h
   hashstring.h
   interact.h
   interactions_predict.h

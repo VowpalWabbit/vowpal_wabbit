@@ -11,7 +11,7 @@
 #include "rand48.h"
 #include "gd.h"
 #include "vw.h"
-#include "scope_exit.h"
+#include "guard.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -152,11 +152,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   shared_data sd;
   memcpy(&sd, n.all->sd, sizeof(shared_data));
   {
-    auto* saved_all = n.all;
-    auto* saved_sd = n.all->sd;
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
-    auto sd_guard = VW::scope_exit([saved_all, saved_sd]() { saved_all->sd = saved_sd; });
-    n.all->sd = &sd;
+    auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
     label_data ld = ec.l.simple;
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
@@ -417,9 +414,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  int saved_raw_prediction = all.raw_prediction;
-  auto sd_guard = VW::scope_exit([&all, saved_raw_prediction]() { all.raw_prediction = saved_raw_prediction; });
-  all.raw_prediction = -1;
+  auto sd_guard = VW::swap_guard(all.raw_prediction, -1);
   return_simple_example(all, nullptr, ec);
 }
 
