@@ -3,32 +3,32 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-#include "scope_guard.h"
+#include "scope_exit.h"
 
-BOOST_AUTO_TEST_CASE(scope_guard_execute_on_scope_end)
+BOOST_AUTO_TEST_CASE(scope_exit_execute_on_scope_end)
 {
   int calls = 0;
   {
-    auto guard = VW::scope_guard([&calls]() { calls++; });
+    auto guard = VW::scope_exit([&calls]() { calls++; });
   }
   BOOST_CHECK_EQUAL(calls, 1);
 }
 
-BOOST_AUTO_TEST_CASE(scope_guard_cancel)
+BOOST_AUTO_TEST_CASE(scope_exit_cancel)
 {
   int calls = 0;
   {
-    auto guard = VW::scope_guard([&calls]() { calls++; });
+    auto guard = VW::scope_exit([&calls]() { calls++; });
     guard.cancel();
   }
   BOOST_CHECK_EQUAL(calls, 0);
 }
 
-BOOST_AUTO_TEST_CASE(scope_guard_explicit_call)
+BOOST_AUTO_TEST_CASE(scope_exit_explicit_call)
 {
   int calls = 0;
   {
-    auto guard = VW::scope_guard([&calls]() { calls++; });
+    auto guard = VW::scope_exit([&calls]() { calls++; });
     BOOST_CHECK_EQUAL(calls, 0);
 
     guard.call();

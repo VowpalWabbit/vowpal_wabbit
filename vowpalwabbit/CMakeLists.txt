@@ -124,7 +124,7 @@ set(vw_all_headers
   rand48.h
   recall_tree.h
   reductions.h
-  scope_guard.h
+  scope_exit.h
   scorer.h
   search_dep_parser.h
   search_entityrelationtask.h
