@@ -34,16 +34,20 @@ class swap_guard_impl
     other._value_to_swap = nullptr;
   }
 
-  ~swap_guard_impl() noexcept { force_swap(); }
+  ~swap_guard_impl() noexcept { do_swap(); }
 
   void cancel() noexcept { _will_swap_back = false; }
-  void force_swap() noexcept
+
+  /// Returns true if the swap occurred, otherwise false.
+  bool do_swap() noexcept
   {
     if (_will_swap_back == true)
     {
       std::swap(*_original_location, *_value_to_swap);
       _will_swap_back = false;
+      return true;
     }
+    return false;
   }
 
  private:
@@ -75,16 +79,20 @@ class swap_guard_impl_rvalue
     other._original_location = nullptr;
   }
 
-  ~swap_guard_impl_rvalue() noexcept { force_swap(); }
+  ~swap_guard_impl_rvalue() noexcept { do_swap(); }
 
   void cancel() noexcept { _will_swap_back = false; }
-  void force_swap() noexcept
+
+  /// Returns true if the swap occurred, otherwise false.
+  bool do_swap() noexcept
   {
     if (_will_swap_back == true)
     {
       std::swap(*_original_location, _value_to_swap);
       _will_swap_back = false;
+      return true;
     }
+    return false;
   }
 
  private:

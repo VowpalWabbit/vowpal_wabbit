@@ -79,7 +79,10 @@ BOOST_AUTO_TEST_CASE(swap_guard_explicit_force_swap)
     auto guard = VW::swap_guard(original_location, location_to_swap);
     BOOST_CHECK_EQUAL(original_location, 99999);
     BOOST_CHECK_EQUAL(location_to_swap, 1);
-    guard.force_swap();
+    BOOST_CHECK_EQUAL(guard.do_swap(), true);
+    BOOST_CHECK_EQUAL(original_location, 1);
+    BOOST_CHECK_EQUAL(location_to_swap, 99999);
+    BOOST_CHECK_EQUAL(guard.do_swap(), false);
     BOOST_CHECK_EQUAL(original_location, 1);
     BOOST_CHECK_EQUAL(location_to_swap, 99999);
   }
