@@ -1606,7 +1606,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
   return true;
 }
 
-inline void prepare_for_learner(vw* all, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1636,8 +1636,6 @@ void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<exampl
     examples.push_back(&VW::get_unused_example(all));
     return;
   }
-
-  prepare_for_learner(all, examples);
 }
 
 template <bool audit>
@@ -1661,7 +1659,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
     reread = !parse_line_json<audit>(all, line, num_chars, examples);
   } while (reread);
 
-  prepare_for_learner(all, examples);
+  append_empty_newline_example_for_driver(all, examples);
 
   return 1;
 }
