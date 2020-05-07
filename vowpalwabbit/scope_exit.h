@@ -24,24 +24,12 @@ class scope_exit_caller
 
   scope_exit_caller(const scope_exit_caller&) = delete;
   scope_exit_caller& operator=(const scope_exit_caller&) = delete;
+  scope_exit_caller& operator=(scope_exit_caller&& other) = delete;
 
   scope_exit_caller(scope_exit_caller&& other) noexcept
       : _scope_exit_lambda(std::move(other._scope_exit_lambda)), _will_call(other._will_call)
   {
     other._will_call = false;
-  }
-
-  scope_exit_caller& operator=(scope_exit_caller&& other) noexcept
-  {
-    if (this == &other)
-    {
-      return *this;
-    }
-
-    _scope_exit_lambda = std::move(other._scope_exit_lambda);
-    _will_call = other._will_call;
-    other._will_call = false;
-    return *this;
   }
 
   ~scope_exit_caller() noexcept { call(); }
