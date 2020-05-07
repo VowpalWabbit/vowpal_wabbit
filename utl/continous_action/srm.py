@@ -46,7 +46,7 @@ class SRM:
     return (float(a), float(l), float(p))
 
   def get_predict_action(self, pred_line):
-    separator_position = pred_line.find(':')
+    separator_position = pred_line.find(',')
     return float(pred_line[:separator_position])
 
 if __name__ == "__main__":

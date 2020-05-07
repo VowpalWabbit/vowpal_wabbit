@@ -45,7 +45,7 @@ namespace continuous_action
   {
     _base->predict(ec);
 
-    actions_pdf::pdf _pred_pdf = ec.pred.prob_dist;
+    actions_pdf::pdf& _pred_pdf = ec.pred.prob_dist;
     for (uint32_t i = 0; i < _pred_pdf.size(); i++)
     {
       _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);

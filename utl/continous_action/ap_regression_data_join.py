@@ -76,7 +76,7 @@ class PredictDataJoiner_ap:
     return float(data_line[:separator_position])
 
   def get_action(self, pred_line):
-    separator_position = pred_line.find(':')
+    separator_position = pred_line.find(',')
     #print(pred_line[:separator_position - 1 ])
     return float(pred_line[:separator_position])
 
