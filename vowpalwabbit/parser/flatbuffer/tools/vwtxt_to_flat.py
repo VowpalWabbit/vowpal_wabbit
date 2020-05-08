@@ -27,6 +27,8 @@ def main():
             labels, namesfeatures = line.split('|')[0], line.split('|')[1:]
             LabelStart(builder)
             for i, label in enumerate(labels.split(' ')):
+                if label == '':
+                    continue
                 if i==0:
                     LabelAddLabel(builder, int(label))
                 if i==1:
@@ -39,12 +41,17 @@ def main():
             if '|' in namesfeatures:
                 namesfeatures = namesfeatures.split('|')
             else:
-                namesfeatures = [namesfeatures]
+                if isinstance(namesfeatures, list):
+                    pass
+                elif isinstance(namesfeatures, str):
+                    namesfeatures = [namesfeatures]
+                else:
+                    raise NotImplementedError("Type {} not supported for {}".format(type(namesfeatures), namesfeatures))
 
             ns_flats = []
             for i, namespace in enumerate(namesfeatures):
+                features = []
                 for j, nsfeature in enumerate(namespace.split(' ')):
-                    FeatureStart(builder)
                     if j==0:
                         if nsfeature == '':
                             ns = ' '
@@ -53,22 +60,25 @@ def main():
                     else:
                         if ':' in nsfeature:
                             name, value = nsfeature.split(':')  
+                            name = builder.CreateString(name)
                         else:
-                            name = nsfeature
-                            value = 1.0 
+                            name = builder.CreateString(nsfeature)
+                            value = 1.0
+                        FeatureStart(builder)
                         FeatureAddName(builder, name)
-                        FeatureAddValue(builder, value)
+                        FeatureAddValue(builder, float(value))
                         features.append(FeatureEnd(builder))
-                    NamespaceStart(builder)
-                    NamespaceAddName(builder, ns)
-                    for ft in features:
-                        NamespaceAddFeatures(builder, ft)
-                ns_flats.append(NamespaceEnd)
+                ns = builder.CreateString(ns)
+                NamespaceStart(builder)
+                NamespaceAddName(builder, ns)
+                for ft in features:
+                    NamespaceAddFeatures(builder, ft)
+                ns_flats.append(NamespaceEnd(builder))
 
             ExampleStart(builder)
             ExampleAddLabel(builder, label)
             for ns in ns_flats:
-                ExampleAddNamespace(builder, ns)
+                ExampleAddNamespaces(builder, ns)
             
             examples.append(ExampleEnd(builder))
         
@@ -78,10 +88,12 @@ def main():
         
         egcollection = ExampleCollectionEnd(builder)
 
-        egcollection.Finish()
+        builder.Finish(egcollection)
+
+        buffer = builder.Output()
+        with open('test.dat','wb') as file:
+            file.write(buffer)
 
                 
-
-
 if __name__ == "__main__":
     main()
