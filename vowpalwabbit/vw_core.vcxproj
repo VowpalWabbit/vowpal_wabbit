@@ -131,6 +131,7 @@
     <ClInclude Include="cb_explore_adf_first.h" />
     <ClInclude Include="cb_explore_adf_greedy.h" />
     <ClInclude Include="cb_explore_adf_regcb.h" />
+    <ClInclude Include="cb_explore_adf_rnd.h" />
     <ClInclude Include="cb_explore_adf_softmax.h" />
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="gd.h" />
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="global_data.h" />
+    <ClInclude Include="guard.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="interactions.h" />
@@ -215,6 +217,7 @@
     <ClInclude Include="spanning_tree.h" />
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
+    <ClInclude Include="tag_utils.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
@@ -253,6 +256,7 @@
     <ClCompile Include="cb_explore_adf_first.cc" />
     <ClCompile Include="cb_explore_adf_greedy.cc" />
     <ClCompile Include="cb_explore_adf_regcb.cc" />
+    <ClCompile Include="cb_explore_adf_rnd.cc" />
     <ClCompile Include="cb_explore_adf_softmax.cc" />
     <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="cb_sample.cc" />
@@ -327,6 +331,7 @@
     <ClCompile Include="spanning_tree.cc" />
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
+    <ClCompile Include="tag_utils.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="version.cc" />

@@ -37,6 +37,7 @@
 #include "cb_explore_adf_first.h"
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_rnd.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
 #include "mwt.h"
@@ -439,25 +440,23 @@ input_options parse_source(vw& all, options_i& options)
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
+      .add(make_option("no_daemon", all.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
                .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
 
 
   options.add_and_parse(input_options);
 
-  // If the option provider is program_options try and retrieve data as a positional parameter.
-  options_i* options_ptr = &options;
-  auto boost_options = dynamic_cast<options_boost_po*>(options_ptr);
-  if (boost_options)
+  // Check if the options provider has any positional args. Only really makes sense for command line, others just return
+  // an empty list.
+  const auto positional_tokens = options.get_positional_tokens();
+  if (positional_tokens.size() == 1)
   {
-    std::string data;
-    if (boost_options->try_get_positional_option_token("data", data, -1))
-    {
-      if (all.data_filename != data)
-      {
-        all.data_filename = data;
-      }
-    }
+    all.data_filename = positional_tokens[0];
+  }
+  else if (positional_tokens.size() > 1)
+  {
+    THROW("Only a single positional parameter is supported. This is the data argument.");
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
@@ -722,7 +721,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   }
 
   // prepare namespace interactions
-  std::vector<std::string> expanded_interactions;
+  std::vector<std::vector<namespace_index>> expanded_interactions;
 
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
@@ -754,8 +753,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << i << " ";
     }
 
+    std::vector<std::vector<namespace_index>> new_quadratics;
+    for (const auto& i : quadratics){
+      new_quadratics.emplace_back(i.begin(), i.end());
+    }
+
     expanded_interactions =
-        INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
+        INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.logger.quiet)
       all.trace_message << endl;
@@ -772,8 +776,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_cubic =
-        INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
+    std::vector<std::vector<namespace_index>> new_cubics;
+    for (const auto& i : cubics){
+      new_cubics.emplace_back(i.begin(), i.end());
+    }
+
+    std::vector<std::vector<namespace_index>> exp_cubic =
+        INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!all.logger.quiet)
@@ -784,6 +793,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     if (!all.logger.quiet)
       all.trace_message << "creating features for following interactions: ";
+    
     for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
@@ -791,7 +801,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
+    std::vector<std::vector<namespace_index>> new_interactions;
+    for (const auto& i : interactions){
+      new_interactions.emplace_back(i.begin(), i.end());
+    }
+
+    std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!all.logger.quiet)
@@ -1276,6 +1291,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
   all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::rnd::setup);
   all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
   all.reduction_stack.push(VW::cb_explore_adf::first::setup);
   all.reduction_stack.push(VW::cb_explore_adf::cover::setup);

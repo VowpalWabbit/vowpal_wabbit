@@ -153,15 +153,10 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 }
 
 template <bool audit>
-void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+void parse_context(const Value& context, vw& all, v_array<example*>& examples, VW::example_factory_t example_factory,
+    void* ex_factory_context, std::vector<example*>& slot_examples)
 {
-  Document document;
-  document.ParseInsitu(line);
-
   std::vector<Namespace<audit>> namespaces;
-  // Build shared example
-  const Value& context = document["c"].GetObject();
   handle_features_value(" ", context, examples[0], namespaces, all);
   all.p->lp.default_label(&examples[0]->l);
   examples[0]->l.slates.type = VW::slates::example_type::shared;
@@ -182,7 +177,6 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
   }
 
   const auto& slots = context["_slots"].GetArray();
-  std::vector<example*> slot_examples;
   for (const Value& slot_object : slots)
   {
     auto ex = &(*example_factory)(ex_factory_context);
@@ -193,6 +187,32 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
     handle_features_value(" ", slot_object, ex, namespaces, all);
     assert(namespaces.size() == 0);
   }
+}
+
+template <bool audit>
+void parse_slates_example_json(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
+    VW::example_factory_t example_factory, void* ex_factory_context)
+{
+  Document document;
+  document.ParseInsitu(line);
+
+  // Build shared example
+  const Value& context = document.GetObject();
+  std::vector<example*> slot_examples;
+  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples);
+}
+
+template <bool audit>
+void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
+    VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+{
+  Document document;
+  document.ParseInsitu(line);
+
+  // Build shared example
+  const Value& context = document["c"].GetObject();
+  std::vector<example*> slot_examples;
+  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples);
 
   if (document.HasMember("_label_cost"))
   {
@@ -201,6 +221,21 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
     {
       ex->l.slates.labeled = true;
     }
+  }
+
+  if (document.HasMember("EventId"))
+  {
+    data->eventId = document["EventId"].GetString();
+  }
+
+  if (document.HasMember("_skipLearn"))
+  {
+    data->skipLearn = document["_skipLearn"].GetBool();
+  }
+
+  if (document.HasMember("pdrop"))
+  {
+    data->probabilityOfDrop = document["pdrop"].GetFloat();
   }
 
   if (document.HasMember("_outcomes"))
@@ -240,7 +275,7 @@ void parse_slates_example(vw& all, v_array<example*>& examples, char* line, size
         const auto& probs_array = probs.GetArray();
         for (size_t i = 0; i < probs_array.Size(); i++)
         {
-          destination[i].score = probs_array[i].GetUint();
+          destination[i].score = probs_array[i].GetFloat();
         }
       }
       else

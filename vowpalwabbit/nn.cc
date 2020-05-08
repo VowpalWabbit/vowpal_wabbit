@@ -11,6 +11,7 @@
 #include "rand48.h"
 #include "gd.h"
 #include "vw.h"
+#include "guard.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -55,24 +56,6 @@ struct nn
     VW::dealloc_example(nullptr, hiddenbias);
     VW::dealloc_example(nullptr, outputweight);
   }
-};
-
-// guard for all.sd, which is swapped out in predict_or_learn_multi
-class sd_guard
-{
- private:
-  vw* saved_all = nullptr;
-  shared_data* saved_sd = nullptr;
- public:
-   sd_guard(vw* all, shared_data* sd) :
-     saved_all(all), saved_sd(saved_all->sd)
-   {
-     saved_all->sd = sd;
-   }
-   ~sd_guard()
-   {
-     saved_all->sd = saved_sd;
-   }
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -169,7 +152,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   shared_data sd;
   memcpy(&sd, n.all->sd, sizeof(shared_data));
   {
-    sd_guard(n.all, &sd);
+    // guard for all.sd as it is modified - this will restore the state at the end of the scope.
+    auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
     label_data ld = ec.l.simple;
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
@@ -430,10 +414,9 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  auto save_raw_prediction = std::move(all.raw_prediction);
-  all.raw_prediction = nullptr;
+  std::unique_ptr<VW::io::writer> temp(nullptr);
+  auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
   return_simple_example(all, nullptr, ec);
-  all.raw_prediction = std::move(save_raw_prediction);
 }
 
 base_learner* nn_setup(options_i& options, vw& all)

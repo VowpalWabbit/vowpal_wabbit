@@ -310,7 +310,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   // default text reader
   all.p->text_reader = VW::read_lines;
 
-  if (all.daemon || all.active)
+  if (!all.no_daemon && (all.daemon || all.active))
   {
 #ifdef _WIN32
     WSAData wsaData;

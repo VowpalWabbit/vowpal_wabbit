@@ -55,17 +55,7 @@ class polar_normal_weights_wrapper
  public:
   static void func(weight& w, uint64_t index)
   {
-    static float x1 = 0.0;
-    static float x2 = 0.0;
-    static float temp = 0.0;
-    do
-    {
-      x1 = 2.0f * merand48(index) - 1.0f;
-      x2 = 2.0f * merand48(index) - 1.0f;
-      temp = x1 * x1 + x2 * x2;
-    } while ((temp >= 1.0) || (temp == 0.0));
-    temp = sqrtf((-2.0f * logf(temp)) / temp);
-    w = x1 * temp;
+    w = merand48_boxmuller(index);
   }
 };
 // re-scaling to re-picking values outside the truncating boundary.
@@ -262,16 +252,19 @@ void save_load_header(
 
           if (!read)
           {
-            memcpy(pair, all.pairs[i].c_str(), 2);
-            msg << all.pairs[i] << " ";
+            memcpy(pair, all.pairs[i].data(), sizeof(all.pairs[i])*2);
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
+            msg.write(reinterpret_cast<char*>(all.pairs[i].data()), sizeof(all.pairs[i]));
+            msg << " ";
           }
 
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
           if (read)
           {
-            std::string temp(pair);
+            std::vector<namespace_index> temp(pair, pair+std::strlen(pair));
             if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-              all.pairs.push_back(temp);
+              all.pairs.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -291,15 +284,18 @@ void save_load_header(
 
           if (!read)
           {
-            msg << all.triples[i] << " ";
-            memcpy(triple, all.triples[i].c_str(), 3);
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
+            msg.write(reinterpret_cast<char*>(all.triples[i].data()), sizeof(all.triples[i]));
+            msg << " ";
+            memcpy(triple, all.triples[i].data(), sizeof(all.triples[i])*3);
           }
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
           if (read)
           {
-            std::string temp(triple);
+            std::vector<namespace_index> temp(triple, triple + std::strlen(triple));
             if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-              all.triples.push_back(temp);
+              all.triples.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -328,18 +324,19 @@ void save_load_header(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
             {
-              memcpy(buff2, all.interactions[i].c_str(), inter_len);
+              memcpy(buff2, all.interactions[i].data(), inter_len);
 
               msg << "interaction: ";
-              msg.write(all.interactions[i].c_str(), inter_len);
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
+              msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
             }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
 
             if (read)
             {
-              std::string temp(buff2, inter_len);
-              all.interactions.push_back(temp);
+              all.interactions.emplace_back(buff2, buff2 + inter_len);
             }
           }
 
