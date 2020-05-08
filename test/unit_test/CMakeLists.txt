@@ -5,18 +5,20 @@ add_executable(vw-unit-test.out
   dsjson_parser_test.cc
   example_header_test.cc
   explore_test.cc
+  guard_test.cc
   json_parser_test.cc
   main.cc
   object_pool_test.cc
   options_boost_po_test.cc
   options_test.cc
   prediction_test.cc
+  scope_exit_test.cc
   slates_parser_test.cc
   slates_test.cc
   stable_unique_tests.cc
   tag_utils_test.cc
-  test_common.h
   test_common.cc
+  test_common.h
   tokenize_tests.cc
 )
 
