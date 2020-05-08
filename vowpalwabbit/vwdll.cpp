@@ -353,7 +353,7 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle)
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstrArgs, const char * modelData, size_t modelDataSize)
 {
   io_buf buf;
-  buf.add_file(VW::io::create_in_memory_reader(modelData, modelDataSize));
+  buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
   vw* all = VW::initialize(string(pstrArgs), &buf);
   return static_cast<VW_HANDLE>(all);
 }
@@ -361,7 +361,7 @@ VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstr
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(const char * pstrArgs, const char * modelData, size_t modelDataSize)
 {
   io_buf buf;
-  buf.add_file(VW::io::create_in_memory_reader(modelData, modelDataSize));
+  buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
 
   auto all = VW::initialize_escaped(std::string(pstrArgs), &buf);
   return static_cast<VW_HANDLE>(all);

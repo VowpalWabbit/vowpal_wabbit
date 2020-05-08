@@ -21,7 +21,7 @@ namespace details
 {
 struct socket_closer
 {
-  socket_closer(int fd) : _socket_fd(fd) {}
+  socket_closer(int fd);
   ~socket_closer();
 
 private:
@@ -33,9 +33,19 @@ struct reader
 {
   reader(bool is_resettable) : _is_resettable(is_resettable) {}
   virtual ~reader() = default;
-  virtual ssize_t read(char* /*buffer*/, size_t /*num_bytes*/) = 0;
-  // Users should check if this io_adapter is resetable before trying to reset.
+
+  /// Read num_bytes into buffer from this reader
+  /// \param buffer buffer to read into, must be at least num_bytes in size otherwise this is undefined behavior
+  /// \param num_bytes the number of bytes to read
+  /// \returns the number of bytes successfully read into buffer
+  virtual ssize_t read(char* buffer, size_t num_bytes) = 0;
+
+  /// This function will throw if the reader does not support reseting. Users
+  /// should check if this io_adapter is resetable before trying to reset.
+  /// \throw VW::vw_exception if reader does not support resetting.
   virtual void reset() { THROW("Reset not supported for this io_adapter"); }
+
+  /// \returns true if this reader can be reset, otherwise false
   bool is_resettable() const { return _is_resettable; }
 
   reader(reader& other) = delete;
@@ -51,8 +61,14 @@ struct writer
 {
   writer() = default;
   virtual ~writer() = default;
-  virtual ssize_t write(const char* /*buffer*/, size_t /*num_bytes*/) = 0;
-  // Flush is a noop, writers can optionally implement this.
+
+  /// Write num_bytes of bytes from buffer into this writer
+  /// \param buffer buffer to write from
+  /// \param num_bytes number of bytes of buffer to write. buffer must be at least this large otherwise this is
+  /// undefined behavior. \returns the number of bytes successfully written
+  virtual ssize_t write(const char* buffer, size_t num_bytes) = 0;
+
+  /// Writers may implement flush - by default is a noop
   virtual void flush() {}
 
   writer(writer& other) = delete;
@@ -81,8 +97,22 @@ std::unique_ptr<reader> open_compressed_stdin();
 std::unique_ptr<writer> open_compressed_stdout();
 std::unique_ptr<reader> open_stdin();
 std::unique_ptr<writer> open_stdout();
+
+/// \param fd the file descriptor of the socket. Will take ownership of the resource.
+/// \returns socket object which allows creation of readers or writers from this socket
 std::unique_ptr<socket> wrap_socket_descriptor(int fd);
+
+/// \param buffer a shared pointer is required to ensure the buffer remains
+/// alive while in use. Passing this in allows callers to retrieve the results
+/// of the write operations taken on this buffer.
 std::unique_ptr<writer> create_vector_writer(std::shared_ptr<std::vector<char>>& buffer);
-std::unique_ptr<reader> create_in_memory_reader(const char* data, size_t len);
+
+/// Creates a view over a buffer. This does **not** take ownership of or copy
+/// the buffer. Therefore it is very important the buffer itself outlives this
+/// reader object.
+/// \param data beginning of buffer
+/// \param len length of buffer
+std::unique_ptr<reader> create_buffer_view(const char* data, size_t len);
+
 }  // namespace io
 }  // namespace VW

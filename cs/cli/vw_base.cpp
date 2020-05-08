@@ -202,7 +202,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
     // reload from model
     // seek to beginning
     io_buf reader_view_of_buffer;
-    reader_view_of_buffer.add_file(VW::io::create_in_memory_reader(buffer->data(), buffer->size()));
+    reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
     m_vw = VW::initialize(stringArgs.c_str(), &reader_view_of_buffer);
   }
   CATCHRETHROW

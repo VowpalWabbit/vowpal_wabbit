@@ -115,10 +115,10 @@ private:
   std::shared_ptr<std::vector<char>> _buffer;
 };
 
-struct in_memory_buffer_reader : public reader
+struct buffer_view : public reader
 {
-  in_memory_buffer_reader(const char* data, size_t len);
-  ~in_memory_buffer_reader() = default;
+  buffer_view(const char* data, size_t len);
+  ~buffer_view() = default;
   ssize_t read(char* buffer, size_t num_bytes) override;
   void reset() override;
 
@@ -167,9 +167,9 @@ std::unique_ptr<writer> create_vector_writer(std::shared_ptr<std::vector<char>>&
   return std::unique_ptr<writer>(new vector_writer(buffer));
 }
 
-std::unique_ptr<reader> create_in_memory_reader(const char* data, size_t len)
+std::unique_ptr<reader> create_buffer_view(const char* data, size_t len)
 {
-  return std::unique_ptr<reader>(new in_memory_buffer_reader(data, len));
+  return std::unique_ptr<reader>(new buffer_view(data, len));
 }
 }  // namespace io
 }  // namespace VW
@@ -195,6 +195,8 @@ ssize_t socket_adapter::write(const char* buffer, size_t num_bytes)
   return ::write(_socket_fd, buffer, (unsigned int)num_bytes);
 #endif
 }
+
+details::socket_closer::socket_closer(int fd) : _socket_fd(fd) {}
 
 details::socket_closer::~socket_closer()
 {
@@ -393,15 +395,12 @@ ssize_t vector_writer::write(const char* buffer, size_t num_bytes)
 }
 
 //
-// in_memory_buffer_reader
+// buffer_view
 //
 
-in_memory_buffer_reader::in_memory_buffer_reader(const char* data, size_t len)
-    : reader(true), _data(data), _read_head(data), _len(len)
-{
-}
+buffer_view::buffer_view(const char* data, size_t len) : reader(true), _data(data), _read_head(data), _len(len) {}
 
-ssize_t in_memory_buffer_reader::read(char* buffer, size_t num_bytes)
+ssize_t buffer_view::read(char* buffer, size_t num_bytes)
 {
   num_bytes = std::min((_data + _len) - _read_head, static_cast<std::ptrdiff_t>(num_bytes));
   if (num_bytes == 0)
@@ -412,4 +411,4 @@ ssize_t in_memory_buffer_reader::read(char* buffer, size_t num_bytes)
 
   return num_bytes;
 }
-void in_memory_buffer_reader::reset() { _read_head = _data; }
+void buffer_view::reset() { _read_head = _data; }

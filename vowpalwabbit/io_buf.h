@@ -58,7 +58,7 @@ class io_buf
   uint32_t _hash;
   static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
 
- public:
+public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
                         // the buffer.
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
@@ -100,8 +100,17 @@ class io_buf
     return _hash;
   }
 
-  void add_file(std::unique_ptr<VW::io::reader>&& file) { input_files.push_back(std::move(file)); }
-  void add_file(std::unique_ptr<VW::io::writer>&& file) { output_files.push_back(std::move(file)); }
+  void add_file(std::unique_ptr<VW::io::reader>&& file)
+  {
+    assert(output_files.size() == 0);
+    input_files.push_back(std::move(file));
+  }
+
+  void add_file(std::unique_ptr<VW::io::writer>&& file)
+  {
+    assert(input_files.size() == 0);
+    output_files.push_back(std::move(file));
+  }
 
   void reset_file(VW::io::reader* f)
   {
@@ -121,11 +130,14 @@ class io_buf
 
   void set(char* p) { head = p; }
 
+  /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
   size_t num_files() const { return input_files.size() + output_files.size(); }
   size_t num_input_files() const { return input_files.size(); }
   size_t num_output_files() const { return output_files.size(); }
 
-  ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
+  // You can definitely call read directly on the reader object. This function hasn't been changed yet to reduce churn
+  // in the refactor.
+  static ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
 
   ssize_t fill(VW::io::reader* f)
   {  // if the loaded values have reached the allocated space
@@ -146,11 +158,15 @@ class io_buf
       return 0;
   }
 
-  ssize_t write_file(VW::io::writer* f, void* buf, size_t nbytes)
+  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
+  // in the refactor.
+  static ssize_t write_file(VW::io::writer* f, void* buf, size_t nbytes)
   {
     return f->write(static_cast<const char*>(buf), nbytes);
   }
-  ssize_t write_file(VW::io::writer* f, const void* buf, size_t nbytes)
+  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
+  // in the refactor.
+  static ssize_t write_file(VW::io::writer* f, const void* buf, size_t nbytes)
   {
     return f->write(static_cast<const char*>(buf), nbytes);
   }
