@@ -25,15 +25,17 @@ class LossStructOff:
 
 class EvaluatorOffline:
 
-  def __init__(self, srm_file_name, test_file_name, alpha, quiet):
+  def __init__(self, srm_file_name, test_file_name, delta, alpha, quiet):
     self.srm_file_name = srm_file_name
     self.test_file_name = test_file_name
     self.costs = []
     self.initial = LossStructOff(0, 0, 0, sys.float_info.max, 0, 0, 0, 0, 0)
     self.optimized = LossStructOff(0, 0, 0, sys.float_info.max, 0, 0, 0, 0, 0)
+    self.delta = delta
     self.conf_alpha = alpha
     self.quiet = quiet
-
+    self.pmin = 0.05 #epsilon = 5%
+    
   def eval(self):
 
     data_file = open(self.srm_file_name,"r")
@@ -120,7 +122,7 @@ class EvaluatorOffline:
 
   def calc_srm_penalty(self):
     for c in self.costs:
-      c.srm_penalty = c.srm + 0 # todo: fix
+      c.srm_penalty = c.srm + math.sqrt(c.n * self.delta /(c.h * self.pmin * c.nb_examples)) # todo: fix
 
   
   def get_optimized(self):
@@ -152,18 +154,21 @@ class EvaluatorOffline:
 if __name__ == "__main__":
   srm_file = "../../results/black_friday_offline_srm.txt"
   test_file = "../../results/black_friday_offline_test.txt"
+  delta = 1
   alpha = 0.05
   model = "init"
   quiet = False
 
   # Parse options - get predict and data file names
   args = sys.argv[1:]
-  opts, args = getopt.getopt(args, "d:p:a:r:q",["srm_file=", "test_file", "alpha=", "return_model=", "quiet"])
+  opts, args = getopt.getopt(args, "d:p:c:a:r:q",["srm_file=", "test_file", "delta=", "alpha=", "return_model=", "quiet"])
   for opt, arg in opts:
     if opt in ('-d', '--srm_file'):
       srm_file = arg
     if opt in ('-p', '--test_file'):
       test_file = arg
+    elif opt in ('-c', '--delta'):
+      delta = float(arg)
     elif opt in ('-a', '--alpha'):
       alpha = float(arg)
     elif opt in ('-r', '--return_model'):
@@ -173,6 +178,6 @@ if __name__ == "__main__":
     
   
   # Print join lines to stdout
-  fileJoiner = EvaluatorOffline(srm_file, test_file, alpha, quiet)
+  fileJoiner = EvaluatorOffline(srm_file, test_file, delta, alpha, quiet)
   returnValue = fileJoiner.eval()
   print(fileJoiner.return_loss(model))
