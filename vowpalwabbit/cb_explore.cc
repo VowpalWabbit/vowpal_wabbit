@@ -309,7 +309,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
 
   // If neither cb nor cats_tree are present on the reduction stack then
   // add cb to the reduction stack as the default reduction for cb_explore.
-  if (!options.was_supplied("cats_tree") && (!options.was_supplied("cb")))  
+  if (!options.was_supplied("cats_tree") && !options.was_supplied("cb"))
   {
     // none of the relevant options are set, default to cb
     stringstream ss;
