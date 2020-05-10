@@ -122,7 +122,9 @@ class EvaluatorOffline:
 
   def calc_srm_penalty(self):
     for c in self.costs:
-      c.srm_penalty = c.srm + math.sqrt(c.n * self.delta /(c.h * self.pmin * c.nb_examples)) # todo: fix
+      # c.srm_penalty = c.srm + math.sqrt(c.n * self.delta /(c.h * self.pmin * c.nb_examples)) # todo: fix
+      c.srm_penalty = c.srm + math.sqrt(c.n * self.delta * c.srm /(c.h * self.pmin * c.nb_examples)) \
+       + (c.n * self.delta /(c.h * self.pmin * c.nb_examples)) # todo: fix
 
   
   def get_optimized(self):
