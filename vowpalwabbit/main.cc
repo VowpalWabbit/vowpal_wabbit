@@ -20,6 +20,7 @@
 #include "vw.h"
 #include "options.h"
 #include "options_boost_po.h"
+#include "parser/flatbuffer/hashed/vwtxt_to_flatbuf.h"
 
 using namespace VW::config;
 
@@ -122,6 +123,12 @@ int main(int argc, char* argv[])
     else
     {
       VW::start_parser(all);
+      if (all.options->was_supplied("txt_to_flat")) 
+      {
+        std::cout << "Converting txt data to flatbuffer because "<< all.options->was_supplied("txt_to_flat") << "\n"; 
+        VW::convert_txt_to_flat(all); 
+        return 0;
+      }
       if (alls.size() == 1)
         LEARNER::generic_driver(all);
       else

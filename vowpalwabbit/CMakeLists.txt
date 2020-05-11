@@ -115,7 +115,8 @@ set(vw_all_headers
   parse_primitives.h
   parse_regressor.h
   parser.h
-  parser/flatbuffer/parse_flatbuffer.h
+  parser/flatbuffer/hashed/parse_flatbuffer_complete.h
+  parser/flatbuffer/hashed/vwtxt_to_flatbuf.h
   print.h
   queue.h
   rand48.h
@@ -226,7 +227,8 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  parser/flatbuffer/parse_flatbuffer.cc
+  parser/flatbuffer/hashed/parse_flatbuffer_complete.cc
+  parser/flatbuffer/hashed/vwtxt_to_flatbuf.cc
   print.cc
   rand48.cc
   recall_tree.cc

@@ -439,7 +439,8 @@ input_options parse_source(vw& all, options_i& options)
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
                .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"))
-      .add(make_option("flatbuffer", parsed_options.flatbuffer).short_name("fb").help("Input a FlatBuffer File"));
+      .add(make_option("flatbuffer", parsed_options.flatbuffer).short_name("fb").help("Input a FlatBuffer File"))
+      .add(make_option("txt_to_flat", parsed_options.txt_to_flat).help("Convert txt input to flatbuffer"));
 
 
   options.add_and_parse(input_options);
