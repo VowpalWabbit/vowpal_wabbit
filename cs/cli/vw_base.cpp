@@ -16,7 +16,6 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
-#include "memory.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -73,8 +72,8 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         else
         {
           io_buf model;
-          std::unique_ptr<VW::io::reader> stream = VW::make_unique<clr_stream_adapter>(settings->ModelStream);
-          model.add_file(std::move(stream));
+          auto* stream = new clr_stream_adapter(settings->ModelStream);
+          model.add_file(std::unique_ptr<VW::io::reader>(stream));
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
           settings->ModelStream = nullptr;
         }
@@ -258,8 +257,8 @@ void VowpalWabbitBase::SaveModel(Stream^ stream)
   try
   {
     io_buf buf;
-    std::unique_ptr<VW::io::writer> stream = VW::make_unique<clr_stream_adapter>(stream);
-    buf.add_file(std::move(stream));
+    auto* stream_adapter = new clr_stream_adapter(stream);
+    buf.add_file(std::unique_ptr<VW::io::reader>(stream_adapter));
     VW::save_predictor(*m_vw, buf);
   }
   CATCHRETHROW
