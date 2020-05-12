@@ -5,6 +5,9 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include <memory>
+#include <array>
+
 #include "io/io_adapter.h"
 
 BOOST_AUTO_TEST_CASE(io_adapter_vector_writer)
