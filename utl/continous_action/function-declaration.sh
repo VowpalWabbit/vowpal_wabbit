@@ -37,9 +37,9 @@ run_offline(){
   printf "." > $filename1
   printf "." > $filename2
 
-  for n in 4 #8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 4 8 16 32 64 128 256 512 1024 2048 4096 8192 #16384
   do
-  for h in 1 #2 4 8 16 32 64 128
+  for h in 1 2 4 8 16 32 64 128 256 512 1024 2048 #4096
   do
   if (( $n > 2*$h ));
   then
@@ -93,9 +93,9 @@ run_online(){
 
   echo "." > $filename3
 
-  for n in 4 #8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 4 8 16 32 64 128 256 512 1024 2048 4096 8192 #16384
   do
-  for h in 1 #2 4 8 16 32 64 128
+  for h in 1 2 4 8 16 32 64 128 256 512 1024 2048 #4096
   do
   if (( $n > 2*$h ));
   then
@@ -112,7 +112,7 @@ run_online(){
 
 
   printf "\n\n-----------------------------------------------------------------------------" >> $filename3
-  for n in 2 #4 8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192
   do
   printf "\n\nDiscretized-Tree-online" >> $filename3
   printf "\nn = $n" >> $filename3
@@ -124,7 +124,7 @@ run_online(){
 
 
   printf "\n\n----------------------------------------------------------------------------" >> $filename3
-  for n in 2 #4 8 16 32 64 128 256 512 1024 2048 4096 8192
+  for n in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192
   do
   printf "\n\nDiscretized-Linear-online" >> $filename3
   printf "\nn = $n" >> $filename3
