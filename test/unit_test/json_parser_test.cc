@@ -1,4 +1,6 @@
+#ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -297,7 +299,7 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
   BOOST_CHECK_EQUAL(examples[3]->l.slates.slot_id, 1);
   BOOST_CHECK_EQUAL(examples[4]->l.slates.slot_id, 1);
   BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
-  
+
   check_collections_exact(examples[0]->indices, std::vector<namespace_index>{'G'});
   BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].indicies.size(), 4);
 

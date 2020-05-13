@@ -78,6 +78,7 @@ set(vw_all_headers
   gd.h
   gen_cs_example.h
   global_data.h
+  guard.h
   hashstring.h
   interact.h
   interactions_predict.h
@@ -124,6 +125,7 @@ set(vw_all_headers
   rand48.h
   recall_tree.h
   reductions.h
+  scope_exit.h
   scorer.h
   search_dep_parser.h
   search_entityrelationtask.h
