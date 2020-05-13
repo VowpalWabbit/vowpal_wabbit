@@ -258,7 +258,7 @@ void VowpalWabbitBase::SaveModel(Stream^ stream)
   {
     io_buf buf;
     auto* stream_adapter = new clr_stream_adapter(stream);
-    buf.add_file(std::unique_ptr<VW::io::reader>(stream_adapter));
+    buf.add_file(std::unique_ptr<VW::io::writer>(stream_adapter));
     VW::save_predictor(*m_vw, buf);
   }
   CATCHRETHROW

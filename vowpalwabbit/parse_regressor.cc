@@ -520,6 +520,10 @@ void save_load_header(
 
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
+  if (buf.num_output_files() == 0)
+  {
+    THROW("Cannot dump regressor with an io buffer that has no output files.");
+  }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr)
