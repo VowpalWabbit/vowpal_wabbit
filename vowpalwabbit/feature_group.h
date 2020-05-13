@@ -23,11 +23,11 @@ struct features_value_index_audit_range;
 // sparse feature definition for the library interface
 struct feature
 {
-  float x;
-  uint64_t weight_index;
+  float x{0.f};
+  uint64_t weight_index{0};
 
+  feature() = default;
   feature(float _x, uint64_t _index) : x(_x), weight_index(_index) {}
-  feature() : x(0.f), weight_index(0) {}
 
   feature(const feature&) = default;
   feature& operator=(const feature&) = default;
@@ -116,7 +116,7 @@ class features_value_index_iterator : public features_value_iterator
 
   inline features_value_index_iterator operator+(std::ptrdiff_t index)
   {
-    return features_value_index_iterator(_begin + index, _begin_index + index);
+    return {_begin + index, _begin_index + index};
   }
 
   inline features_value_index_iterator& operator-=(std::ptrdiff_t index)
@@ -177,7 +177,7 @@ class features_value_index_audit_iterator : public features_value_index_iterator
 
   inline features_value_index_audit_iterator operator+(std::ptrdiff_t index)
   {
-    return features_value_index_audit_iterator(_begin + index, _begin_index + index, _begin_audit + index);
+    return {_begin + index, _begin_index + index, _begin_audit + index};
   }
 
   inline features_value_index_audit_iterator& operator-=(std::ptrdiff_t index)
@@ -220,13 +220,11 @@ struct features
 
     inline features_value_index_audit_iterator begin()
     {
-      return features_value_index_audit_iterator(
-          _outer->values.begin(), _outer->indicies.begin(), _outer->space_names.begin());
+      return {_outer->values.begin(), _outer->indicies.begin(), _outer->space_names.begin()};
     }
     inline features_value_index_audit_iterator end()
     {
-      return features_value_index_audit_iterator(
-          _outer->values.end(), _outer->indicies.end(), _outer->space_names.end());
+      return {_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()};
     }
   };
 
@@ -237,8 +235,8 @@ struct features
 
   // custom move operators required since we need to leave the old value in
   // a null state to prevent freeing of shallow copied v_arrays
-  features(features&& other);
-  features& operator=(features&& other);
+  features(features&& other) noexcept;
+  features& operator=(features&& other) noexcept;
 
   inline size_t size() const { return values.size(); }
 
@@ -248,8 +246,8 @@ struct features
 
   inline features_value_index_audit_range values_indices_audit() { return features_value_index_audit_range{this}; }
   // default iterator for values & features
-  inline iterator begin() { return iterator(values.begin(), indicies.begin()); }
-  inline iterator end() { return iterator(values.end(), indicies.end()); }
+  inline iterator begin() { return {values.begin(), indicies.begin()}; }
+  inline iterator end() { return {values.end(), indicies.end()}; }
 
   void clear();
   void truncate_to(const features_value_iterator& pos);
