@@ -273,6 +273,7 @@
     <ClCompile Include="decision_scores.cc" />
     <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="ect.cc" />
+    <ClCompile Include="example_predict.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
     <ClCompile Include="ftrl.cc" />

@@ -1014,26 +1014,6 @@ namespace VW
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
 
-// a copy of dealloc_example except that this does not call the example destructor
-// Work to remove this is currently in progress
-void cleanup_example(void(*delete_label)(void*), example& ec, void(*delete_prediction)(void*))
-{
-  if (delete_label)
-    delete_label(&ec.l);
-
-  if (delete_prediction)
-    delete_prediction(&ec.pred);
-
-  ec.tag.delete_v();
-
-  if (ec.passthrough)
-  {
-    delete ec.passthrough;
-  }
-
-  ec.indices.delete_v();
-}
-
 void free_parser(vw& all)
 {
   all.p->words.delete_v();
@@ -1048,17 +1028,21 @@ void free_parser(vw& all)
     output->currentname.delete_v();
   }
 
+  std::vector<example*> drain_pool;
+  drain_pool.reserve(all.p->example_pool.size());
   while (!all.p->example_pool.empty())
   {
     example* temp = all.p->example_pool.get_object();
-    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    temp->delete_unions(all.p->lp.delete_label, all.delete_prediction);
+    drain_pool.push_back(temp);
+  }
+  for(auto* example_ptr : drain_pool)
+  {
+    all.p->example_pool.return_object(example_ptr);
   }
 
-  while (all.p->ready_parsed_examples.size() != 0)
-  {
-    example* temp = all.p->ready_parsed_examples.pop();
-    cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-  }
+  // There should be no examples in flight at this point.
+  assert(all.p->ready_parsed_examples.size() == 0);
   all.p->counts.delete_v();
 }
 

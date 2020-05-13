@@ -4,7 +4,38 @@
 #include <cstdint>
 #include <algorithm>
 
+#include "example.h"
 #include "gd.h"
+
+example::example()
+{
+  memset(&l, 0, sizeof(polylabel));
+  memset(&pred, 0, sizeof(polyprediction));
+  tag = v_init<char>();
+}
+
+example::~example()
+{
+  tag.delete_v();
+  if (passthrough)
+  {
+    delete passthrough;
+    passthrough = nullptr;
+  }
+}
+
+void example::delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*))
+{
+  if (delete_label)
+  {
+    delete_label(&l);
+  }
+
+  if (delete_prediction)
+  {
+    delete_prediction(&pred);
+  }
+}
 
 float collision_cleanup(features& fs)
 {
@@ -214,20 +245,7 @@ example* alloc_examples(size_t, size_t count = 1)
 
 void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
 {
-  if (delete_label)
-    delete_label(&ec.l);
-
-  if (delete_prediction)
-    delete_prediction(&ec.pred);
-
-  ec.tag.delete_v();
-
-  if (ec.passthrough)
-  {
-    delete ec.passthrough;
-  }
-
-  ec.indices.delete_v();
+  ec.delete_unions(delete_label, delete_prediction);
   ec.~example();
 }
 
@@ -236,8 +254,7 @@ void clean_example(vw&, example&, bool rewind);
 
 void finish_example(vw& all, multi_ex& ec_seq)
 {
-  for (example* ecc : ec_seq)
-    VW::finish_example(all, *ecc);
+  for (example* ecc : ec_seq) VW::finish_example(all, *ecc);
 }
 
 void return_multiple_example(vw& all, v_array<example*>& examples)

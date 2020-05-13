@@ -294,7 +294,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
               ++order_of_inter;
 
           // namespace is same for whole block
-          features& fs = ec.feature_space[(const int)*ns];
+          features& fs = ec.feature_space[static_cast<int>(*ns)];
 
           // count number of features with value != 1.;
           size_t cnt_ft_value_non_1 = 0;
