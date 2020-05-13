@@ -2,7 +2,7 @@ import os
 
 from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import vw
-from vowpalwabbit.pyvw import DataFrameToVW
+from vowpalwabbit.pyvw import DataFrameToVW, SimpleLabel, Feature, Namespace, Col
 import pytest
 import pandas as pd
 
@@ -347,48 +347,95 @@ def check_error_raises(type, argument):
     with pytest.raises(type) as error:
         argument()
 
-
-def test_oneline_simple_conversion():
+def test_from_colnames_constructor():
     df = pd.DataFrame({"y": [1], "x": [2]})
-    conv = DataFrameToVW(df, "{y} | {x}")
+    conv = DFtoVW.from_colnames(y="y", x=["x"], df=df)
     lines_list = conv.process_df()
     first_line = lines_list[0]
     assert first_line == "1 | 2"
 
 
-def test_oneline_with_column_renaming_and_tag():
+def test_feature_column_renaming_and_tag():
     df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
-    conv = DataFrameToVW(df, "{y} {idx}| col_x:{x}")
-    lines_list = conv.process_df()
-    first_line = lines_list[0]
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        tag=SimpleLabel(Col("idx")),
+        namespaces=Namespace([Feature(name="col_x", value=Col("x"))]),
+        df=df,
+    )
+    first_line = conv.process_df()[0]
     assert first_line == "1 id_1| col_x:2"
+
+
+def test_feature_constant_column_with_empty_name():
+    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        tag=SimpleLabel(Col("idx")),
+        namespaces=Namespace([Feature(name="", value=2)]),
+        df=df,
+    )
+    first_line = conv.process_df()[0]
+    assert first_line == "1 id_1| :2"
+
+
+def test_feature_variable_column_name():
+    df = pd.DataFrame({"y": [1], "x": [2], "a": ["col_x"]})
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        namespaces=Namespace(Feature(name=Col("a"), value=Col("x"))),
+        df=df,
+    )
+    first_line = conv.process_df()[0]
+    assert first_line == "1 | col_x:2"
 
 
 def test_multiple_lines_conversion():
     df = pd.DataFrame({"y": [1, -1], "x": [1, 2]})
-    conv = DataFrameToVW(df, "{y} | {x}")
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        namespaces=Namespace(Feature(value=Col("x"))),
+        df=df,
+    )
     lines_list = conv.process_df()
     assert lines_list == ["1 | 1", "-1 | 2"]
 
 
-def test_oneline_with_multiple_namespaces():
+def test_multiple_namespaces():
     df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
-    conv = DataFrameToVW(df, "{y} |FirstNameSpace {a} |DoubleIt:2 {b}")
-    lines_list = conv.process_df()
-    first_line = lines_list[0]
+    conv = DFtoVW(
+        df=df,
+        label=SimpleLabel(Col("y")),
+        namespaces=[
+            Namespace(name="FirstNameSpace", features=Feature(Col("a"))),
+            Namespace(name="DoubleIt", value=2, features=Feature(Col("b"))),
+        ],
+    )
+    first_line = conv.process_df()[0]
     assert first_line == "1 |FirstNameSpace 2 |DoubleIt:2 3"
 
 
-def test_oneline_without_target():
+def test_without_target():
     df = pd.DataFrame({"a": [2], "b": [3]})
-    conv = DataFrameToVW(df, "| {a} {b}")
-    lines_list = conv.process_df()
-    first_line = lines_list[0]
+    conv = DFtoVW(
+        df=df, namespaces=Namespace([Feature(Col("a")), Feature(Col("b"))])
+    )
+    first_line = conv.process_df()[0]
     assert first_line == "| 2 3"
 
 
 def test_absent_col_error():
     with pytest.raises(ValueError) as value_error:
         df = pd.DataFrame({"a": [1]})
-        conv = DataFrameToVW(df, "{a} | {b} {c}")
-    assert "Column(s) 'b', 'c' not in the DataFrame" == str(value_error.value)
+        conv = DFtoVW(
+            df=df,
+            label=SimpleLabel(Col("b")),
+            namespaces=Namespace(
+                [Feature(Col("b")), Feature(Col("c")), Feature("d")]
+            ),
+        )
+    expected = "The following columns do not exist in the dataframe: '{}', '{}'".format(
+        "b", "c"
+    )
+    assert expected == str(value_error.value)
+
