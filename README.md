@@ -1,11 +1,10 @@
 <img src="/logo_assets/vowpal-wabbits-github-logo@3x.png" height="auto" width="100%" alt="Vowpal Wabbit">
 
-[![Build Status](https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master)](https://travis-ci.org/VowpalWabbit/vowpal_wabbit)
 [![Linux build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/23?label=Linux%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=23&branchName=master)
 [![Windows build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/14?label=Windows%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=14&branchName=master)
 [![MacOS build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/22?label=MacOS%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=22&branchName=master)
 
-[![Coverage Status](https://coveralls.io/repos/github/VowpalWabbit/vowpal_wabbit/badge.svg?branch=master)](https://coveralls.io/github/VowpalWabbit/vowpal_wabbit?branch=master)
+[![codecov](https://codecov.io/gh/VowpalWabbit/vowpal_wabbit/branch/master/graph/badge.svg)](https://codecov.io/gh/VowpalWabbit/vowpal_wabbit)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/JohnLangford/vowpal_wabbit.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/JohnLangford/vowpal_wabbit/alerts/)
 [![Gitter chat](https://badges.gitter.im/VowpalWabbit.svg)](https://gitter.im/VowpalWabbit)
 
@@ -28,4 +27,3 @@ For the most up to date instructions for getting started on Windows, MacOS or Li
 - [Dependencies](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Dependencies)
 - [Building](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building)
 - [Tutorial](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Tutorial)
-

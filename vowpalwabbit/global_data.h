@@ -342,6 +342,7 @@ struct rand_state
   rand_state(uint64_t initial) : random_state(initial) {}
   constexpr uint64_t get_current_state() const noexcept { return random_state; }
   float get_and_update_random() { return merand48(random_state); }
+  float get_and_update_gaussian() { return merand48_boxmuller(random_state); }
   float get_random() const { return merand48_noadvance(random_state); }
   void set_random_state(uint64_t initial) noexcept { random_state = initial; }
 };
@@ -374,9 +375,9 @@ struct vw
 
   bool chain_hash = false;
 
-  LEARNER::base_learner* l;               // the top level learner
-  LEARNER::single_learner* scorer;        // a scoring function
-  LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  VW::LEARNER::base_learner* l;               // the top level learner
+  VW::LEARNER::single_learner* scorer;        // a scoring function
+  VW::LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -448,11 +449,11 @@ struct vw
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::string> interactions;
+  std::vector<std::vector<namespace_index> > interactions;
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> pairs;  // pairs of features to cross.
+  std::vector<std::vector<namespace_index> > pairs;  // pairs of features to cross.
   // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> triples;  // triples of features to cross.
+  std::vector<std::vector<namespace_index> > triples;  // triples of features to cross.
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -508,7 +509,7 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
   v_array<int> final_prediction_sink;  // set to send global predictions to.
@@ -522,9 +523,12 @@ struct vw
   void (*print_text_by_ref)(int, const std::string&, const v_array<char>&);
   loss_function* loss;
 
+  VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   bool stdin_off;
+
+  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
 
   // runtime accounting variables.
   float initial_t;
@@ -550,6 +554,7 @@ struct vw
   label_type_t label_type;
 
   vw();
+  ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
   vw(const vw&) = delete;

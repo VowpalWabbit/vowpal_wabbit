@@ -14,6 +14,7 @@
 #include "gd.h"
 #include "vw_exception.h"
 #include "future_compat.h"
+#include "vw_allreduce.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -182,9 +183,9 @@ void vw::learn(example& ec)
     THROW("This reduction does not support single-line examples.");
 
   if (ec.test_only || !training)
-    LEARNER::as_singleline(l)->predict(ec);
+    VW::LEARNER::as_singleline(l)->predict(ec);
   else
-    LEARNER::as_singleline(l)->learn(ec);
+    VW::LEARNER::as_singleline(l)->learn(ec);
 }
 
 void vw::learn(multi_ex& ec)
@@ -193,9 +194,9 @@ void vw::learn(multi_ex& ec)
     THROW("This reduction does not support multi-line example.");
 
   if (!training)
-    LEARNER::as_multiline(l)->predict(ec);
+    VW::LEARNER::as_multiline(l)->predict(ec);
   else
-    LEARNER::as_multiline(l)->learn(ec);
+    VW::LEARNER::as_multiline(l)->learn(ec);
 }
 
 void vw::predict(example& ec)
@@ -207,7 +208,7 @@ void vw::predict(example& ec)
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   ec.test_only = true;
 
-  LEARNER::as_singleline(l)->predict(ec);
+  VW::LEARNER::as_singleline(l)->predict(ec);
 }
 
 void vw::predict(multi_ex& ec)
@@ -222,7 +223,7 @@ void vw::predict(multi_ex& ec)
     ex->test_only = true;
   }
 
-  LEARNER::as_multiline(l)->predict(ec);
+  VW::LEARNER::as_multiline(l)->predict(ec);
 }
 
 void vw::finish_example(example& ec)
@@ -230,7 +231,7 @@ void vw::finish_example(example& ec)
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
-  LEARNER::as_singleline(l)->finish_example(*this, ec);
+  VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
 void vw::finish_example(multi_ex& ec)
@@ -238,7 +239,7 @@ void vw::finish_example(multi_ex& ec)
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
-  LEARNER::as_multiline(l)->finish_example(*this, ec);
+  VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
 void compile_gram(
@@ -438,3 +439,50 @@ vw::vw()
   sd->holdout_multiclass_log_loss = 0;
 }
 IGNORE_DEPRECATED_USAGE_END
+
+vw::~vw()
+{
+  if (l != nullptr)
+  {
+    l->finish();
+    free(l);
+  }
+
+  // Check if options object lifetime is managed internally.
+  if (should_delete_options)
+    delete options;
+
+  // TODO: migrate all finalization into parser destructor
+  if (p != nullptr)
+  {
+    free_parser(*this);
+    finalize_source(p);
+    p->parse_name.clear();
+    p->parse_name.delete_v();
+    delete p;
+  }
+
+  const bool seeded = weights.seeded() > 0;
+  if (!seeded)
+  {
+    if (sd->ldict)
+    {
+      sd->ldict->~namedlabels();
+      free(sd->ldict);
+    }
+    free(sd);
+  }
+
+  for (auto& sink : final_prediction_sink)
+  {
+    // This is checking if the sink corresponds to stdout. TODO: abstract this.
+    if (sink != 1)
+    {
+      io_buf::close_file_or_socket(sink);
+    }
+  }
+  final_prediction_sink.delete_v();
+
+  delete loss;
+  delete all_reduce;
+}

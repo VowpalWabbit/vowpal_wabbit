@@ -8,7 +8,7 @@
 #include "vw_exception.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQstate

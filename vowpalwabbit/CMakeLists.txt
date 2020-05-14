@@ -3,7 +3,7 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -44,6 +44,7 @@ set(vw_all_headers
   cb_explore_adf_first.h
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
+  cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
   cb_explore.h
   cb.h
@@ -51,6 +52,7 @@ set(vw_all_headers
   ccb_label.h
   classweight.h
   comp_io.h
+  compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
@@ -76,6 +78,7 @@ set(vw_all_headers
   gd.h
   gen_cs_example.h
   global_data.h
+  guard.h
   hashstring.h
   interact.h
   interactions_predict.h
@@ -115,12 +118,14 @@ set(vw_all_headers
   parse_example.h
   parse_primitives.h
   parse_regressor.h
+  parse_slates_example_json.h
   parser.h
   print.h
   queue.h
   rand48.h
   recall_tree.h
   reductions.h
+  scope_exit.h
   scorer.h
   search_dep_parser.h
   search_entityrelationtask.h
@@ -139,6 +144,7 @@ set(vw_all_headers
   stable_unique.h
   stagewise_poly.h
   svrg.h
+  tag_utils.h
   topk.h
   unique_sort.h
   v_array.h
@@ -177,6 +183,7 @@ set(vw_all_sources
   cb_explore_adf_first.cc
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
+  cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
   cb_explore.cc
   cb_sample.cc
@@ -250,6 +257,7 @@ set(vw_all_sources
   slates.cc
   stagewise_poly.cc
   svrg.cc
+  tag_utils.cc
   topk.cc
   unique_sort.cc
   version.cc
@@ -258,7 +266,7 @@ set(vw_all_sources
   warm_cb.cc
 )
 
-add_library(vw ${vw_all_sources} ${vw_all_headers})
+add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC

@@ -10,7 +10,8 @@
 #include "constant.h"
 #include "vw_math.h"
 #include <numeric>
-
+namespace VW
+{
 namespace slates
 {
 void default_label(void* v);
@@ -22,8 +23,8 @@ void default_label(void* v);
   DEST = *(TYPE*)read_ptr;                                       \
   read_count += sizeof(TYPE);
 
-#define WRITE_CACHED_VALUE(VALUE, TYPE)           \
-  *(TYPE*)c = VALUE; \
+#define WRITE_CACHED_VALUE(VALUE, TYPE) \
+  *(TYPE*)c = VALUE;                    \
   c += sizeof(TYPE);
 
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
@@ -58,12 +59,8 @@ void cache_label(void* v, io_buf& cache)
 {
   char* c;
   slates::label* ld = static_cast<slates::label*>(v);
-  size_t size = sizeof(ld->type)
-      + sizeof(ld->weight)
-      + sizeof(ld->labeled)
-      + sizeof(ld->cost)
-      + sizeof(ld->slot_id)
-      + sizeof(uint32_t) // Size of probabilities
+  size_t size = sizeof(ld->type) + sizeof(ld->weight) + sizeof(ld->labeled) + sizeof(ld->cost) + sizeof(ld->slot_id) +
+      sizeof(uint32_t)  // Size of probabilities
       + sizeof(ACTION_SCORE::action_score) * ld->probabilities.size();
 
   cache.buf_write(c, size);
@@ -79,10 +76,7 @@ void cache_label(void* v, io_buf& cache)
   }
 }
 
-float weight(void* v)
-{
-  return static_cast<polylabel*>(v)->slates.weight;
-}
+float weight(void* v) { return static_cast<polylabel*>(v)->slates.weight; }
 
 void default_label(void* v)
 {
@@ -225,4 +219,5 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
 // Export the definition of this label parser.
 label_parser slates_label_parser = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
     copy_label, test_label, sizeof(slates::label)};
-}  // namespace CCB
+}  // namespace slates
+}  // namespace VW

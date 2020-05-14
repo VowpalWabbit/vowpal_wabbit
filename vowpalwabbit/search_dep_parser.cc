@@ -85,17 +85,16 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   else
     sch.set_num_learners(3);
 
-  const char *pair[] = {
-      "BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
-  const char *triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BEJ", "BEH", "BJK", "BEN"};
-  std::vector<std::string> newpairs(pair, pair + 19);
-  std::vector<std::string> newtriples(triple, triple + 12);
+  std::vector<std::vector<namespace_index>> newpairs {
+      {'B','C'}, {'B','E'}, {'B','B'}, {'C','C'}, {'D','D'}, {'E','E'}, {'F','F'}, {'G','G'}, {'E','F'}, {'B','H'}, {'B','J'}, {'E','L'}, {'d','B'}, {'d','C'}, {'d','D'}, {'d','E'}, {'d','F'}, {'d','G'}, {'d','d'}};
+  std::vector<std::vector<namespace_index>> newtriples {{'E','F','G'}, {'B','E','F'}, {'B','C','E'}, {'B','C','D'}, {'B','E','L'}, {'E','L','M'}, {'B','H','I'}, {'B','C','C'}, {'B','E','J'}, {'B','E','H'}, {'B','J','K'}, {'B','E','N'}};
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
   all.interactions.clear();
   all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
   all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
+
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
   else

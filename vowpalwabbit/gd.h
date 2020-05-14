@@ -12,7 +12,7 @@
 
 namespace GD
 {
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
 struct gd;
 

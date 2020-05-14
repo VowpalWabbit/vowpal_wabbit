@@ -5,7 +5,7 @@
 #include "correctedMath.h"
 #include "gd.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 #define W_XT 0  // current parameter
