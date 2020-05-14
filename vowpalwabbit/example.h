@@ -59,6 +59,11 @@ struct example : public example_predict  // core example datatype.
   example();
   ~example();
 
+  example(const example&) = delete;
+  example& operator=(const example&) = delete;
+  example(example&& other) noexcept;
+  example& operator=(example&& other) noexcept;
+
   /// Example contains unions for label and prediction. These do not get cleaned
   /// up by the constructor because the type is not known at that time. To
   /// ensure correct cleanup delete_unions must be explicitly called.

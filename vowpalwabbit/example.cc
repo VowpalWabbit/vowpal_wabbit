@@ -24,6 +24,87 @@ example::~example()
   }
 }
 
+example::example(example&& other) noexcept
+    : example_predict(std::move(other))
+    , l(other.l)
+    , pred(other.pred)
+    , weight(other.weight)
+    , tag(std::move(other.tag))
+    , example_counter(other.example_counter)
+    , num_features(other.num_features)
+    , partial_prediction(other.partial_prediction)
+    , updated_prediction(other.updated_prediction)
+    , loss(other.loss)
+    , total_sum_feat_sq(other.total_sum_feat_sq)
+    , confidence(other.confidence)
+    , passthrough(other.passthrough)
+    , test_only(other.test_only)
+    , end_pass(other.end_pass)
+    , sorted(other.sorted)
+    , in_use(other.in_use)
+{
+  other.weight = 1.f;
+  auto& other_tag = other.tag;
+  other_tag._begin = nullptr;
+  other_tag._end = nullptr;
+  other_tag.end_array = nullptr;
+  other.example_counter = 0;
+  other.num_features = 0;
+  other.partial_prediction = 0.f;
+  other.updated_prediction = 0.f;
+  other.loss = 0.f;
+  other.total_sum_feat_sq = 0.f;
+  other.confidence = 0.f;
+  other.passthrough = nullptr;
+  other.test_only = false;
+  other.end_pass = false;
+  other.sorted = false;
+  other.in_use = false;
+}
+
+example& example::operator=(example&& other) noexcept
+{
+  example_predict::operator=(std::move(other));
+  l = other.l;
+  pred = other.pred;
+  weight = other.weight;
+  tag = std::move(other.tag);
+  example_counter = other.example_counter;
+  num_features = other.num_features;
+  partial_prediction = other.partial_prediction;
+  updated_prediction = other.updated_prediction;
+  loss = other.loss;
+  total_sum_feat_sq = other.total_sum_feat_sq;
+  confidence = other.confidence;
+  passthrough = other.passthrough;
+  test_only = other.test_only;
+  end_pass = other.end_pass;
+  sorted = other.sorted;
+  in_use = other.in_use;
+
+  other.weight = 1.f;
+
+  // We need to null out all the v_arrays to prevent double freeing during moves
+  auto& other_tag = other.tag;
+  other_tag._begin = nullptr;
+  other_tag._end = nullptr;
+  other_tag.end_array = nullptr;
+
+  other.example_counter = 0;
+  other.num_features = 0;
+  other.partial_prediction = 0.f;
+  other.updated_prediction = 0.f;
+  other.loss = 0.f;
+  other.total_sum_feat_sq = 0.f;
+  other.confidence = 0.f;
+  other.passthrough = nullptr;
+  other.test_only = false;
+  other.end_pass = false;
+  other.sorted = false;
+  other.in_use = false;
+  return *this;
+}
+
 void example::delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*))
 {
   if (delete_label)

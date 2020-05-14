@@ -29,9 +29,37 @@ example_predict::example_predict()
   interactions = nullptr;
 }
 
-example_predict::~example_predict()
+example_predict::~example_predict() { indices.delete_v(); }
+
+example_predict::example_predict(example_predict&& other) noexcept
+    : indices(std::move(other.indices))
+    , feature_space(std::move(other.feature_space))
+    , ft_offset(other.ft_offset)
+    , interactions(other.interactions)
 {
-  indices.delete_v();
+  // We need to null out all the v_arrays to prevent double freeing during moves
+  auto& v = other.indices;
+  v._begin = nullptr;
+  v._end = nullptr;
+  v.end_array = nullptr;
+  other.ft_offset = 0;
+  other.interactions = nullptr;
+}
+
+example_predict& example_predict::operator=(example_predict&& other) noexcept
+{
+  indices = std::move(other.indices);
+  feature_space = std::move(other.feature_space);
+  interactions = other.interactions;
+  // We need to null out all the v_arrays to prevent double freeing during moves
+
+  auto& v = other.indices;
+  v._begin = nullptr;
+  v._end = nullptr;
+  v.end_array = nullptr;
+  other.ft_offset = 0;
+  other.interactions = nullptr;
+  return *this;
 }
 
 example_predict::iterator example_predict::begin() { return {feature_space.data(), indices.begin()}; }

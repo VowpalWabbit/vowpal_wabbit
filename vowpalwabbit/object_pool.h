@@ -113,7 +113,6 @@ struct no_lock_object_pool
 
     for (size_t i = 0; i < size; i++)
     {
-      new (&chunk[i]) T{};
       m_pool.push(m_initializer(&chunk[i]));
     }
   }

@@ -17,7 +17,7 @@ struct example_predict
   class iterator
   {
     features* _feature_space;
-    namespace_index* _index;
+    v_array<namespace_index>::iterator _index;
 
    public:
     iterator(features* feature_space, namespace_index* index);
@@ -30,6 +30,15 @@ struct example_predict
 
   example_predict();
   ~example_predict();
+  example_predict(const example_predict&) = delete;
+  example_predict& operator=(const example_predict&) = delete;
+  example_predict(example_predict&& other) noexcept;
+  example_predict& operator=(example_predict&& other) noexcept;
+
+  /// If indices is modified this iterator is invalidated.
+  iterator begin();
+  /// If indices is modified this iterator is invalidated.
+  iterator end();
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
@@ -38,15 +47,12 @@ struct example_predict
   // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
   // and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions;
-
-  iterator begin();
-  iterator end();
 };
 
 // make sure we have an exception safe version of example_predict
 
-class VW_DEPRECATED("example_predict is now RAII based. That class can be used instead.")
-safe_example_predict : public example_predict
+class VW_DEPRECATED("example_predict is now RAII based. That class can be used instead.") safe_example_predict
+    : public example_predict
 {
  public:
   safe_example_predict();
