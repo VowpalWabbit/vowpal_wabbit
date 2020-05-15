@@ -10,6 +10,7 @@
 #include "global_data.h"
 #include "constant.h"
 #include "vw_string_view.h"
+#include "io_to_queue.h"
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {

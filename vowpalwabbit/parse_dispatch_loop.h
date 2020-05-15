@@ -5,6 +5,7 @@
 #pragma once
 
 #include <functional>
+#include "io_to_queue.h"
 
 using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
 
