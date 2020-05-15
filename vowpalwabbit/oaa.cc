@@ -102,7 +102,7 @@ void predict_or_learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   {
     outputStringStream << "1:" << o.pred[0].scalar;
     for (uint32_t i = 2; i <= o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar;
-    o.all->print_text_by_ref(o.all->raw_prediction, outputStringStream.str(), ec.tag);
+    o.all->print_text_by_ref(o.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   if (scores)
@@ -179,7 +179,8 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
       outputStringStream << i + 1;
     outputStringStream << ':' << ec.pred.scalars[i];
   }
-  for (int sink : all.final_prediction_sink) all.print_text_by_ref(sink, outputStringStream.str(), ec.tag);
+  const auto ss_str = outputStringStream.str();
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag);
 
   // === Report updates using zero-one loss
   all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
@@ -265,7 +266,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
       l->set_finish_example(finish_example_scores<false>);
     }
   }
-  else if (all.raw_prediction > 0)
+  else if (all.raw_prediction != nullptr)
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
         predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type_t::multiclass);
   else

@@ -165,7 +165,7 @@ void save_load_header(
 
   try
   {
-    if (model_file.files.size() > 0)
+    if (model_file.num_files() > 0)
     {
       size_t bytes_read_write = 0;
 
@@ -520,6 +520,10 @@ void save_load_header(
 
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
+  if (buf.num_output_files() == 0)
+  {
+    THROW("Cannot dump regressor with an io buffer that has no output files.");
+  }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr)
@@ -535,8 +539,7 @@ void dump_regressor(vw& all, std::string reg_name, bool as_text)
     return;
   std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
-
-  io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
+  io_temp.add_file(VW::io::open_file_writer(start_name));
 
   dump_regressor(all, io_temp, as_text);
 
@@ -580,7 +583,8 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
 {
   if (all_intial.size() > 0)
   {
-    io_temp.open_file(all_intial[0].c_str(), all.stdin_off, io_buf::READ);
+    io_temp.add_file(VW::io::open_file_reader(all_intial[0]));
+
     if (!all.logger.quiet)
     {
       // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
@@ -609,7 +613,8 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
 
     // all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
-    io_temp_mask.open_file(feature_mask.c_str(), false, io_buf::READ);
+    io_temp_mask.add_file(VW::io::open_file_reader(feature_mask));
+
     save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
@@ -619,7 +624,8 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
     {
       // Load original header again.
       io_buf io_temp;
-      io_temp.open_file(initial_regressors[0].c_str(), false, io_buf::READ);
+      io_temp.add_file(VW::io::open_file_reader(initial_regressors[0]));
+
       save_load_header(all, io_temp, true, false, file_options, *all.options);
       io_temp.close_file();
 

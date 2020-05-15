@@ -641,7 +641,7 @@ void finish_example(vw &all, stagewise_poly &poly, example &ec)
 
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     bin_text_read_write_fixed(

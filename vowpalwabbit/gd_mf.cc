@@ -77,7 +77,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
+  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -259,7 +259,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     }
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     uint64_t i = 0;
     size_t brw = 1;

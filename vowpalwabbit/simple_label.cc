@@ -129,11 +129,10 @@ void output_and_account_example(vw& all, example& ec)
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
-  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
+  for (auto& f : all.final_prediction_sink)
   {
-    int f = (int)all.final_prediction_sink[i];
-    all.print_by_ref(f, ec.pred.scalar, 0, ec.tag);
+    all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag);
   }
 
   print_update(all, ec);
