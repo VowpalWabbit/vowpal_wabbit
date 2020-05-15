@@ -62,6 +62,11 @@ struct parser
   {
     delete input;
     delete output;
+    words.delete_v();
+    parse_name.delete_v();
+    gram_mask.delete_v();
+    ids.delete_v();
+    counts.delete_v();
   }
 
   //delete copy constructor
@@ -106,9 +111,7 @@ struct parser
   v_array<size_t> ids;     // unique ids for sources
   v_array<size_t> counts;  // partial examples received from sources
   size_t finished_count;   // the number of finished examples;
-  int label_sock = 0;
   int bound_sock = 0;
-  int max_fd = 0;
 
   v_array<VW::string_view> parse_name;
 
@@ -132,6 +135,8 @@ void set_done(vw& all);
 
 // source control functions
 void reset_source(vw& all, size_t numbits);
+VW_DEPRECATED("Function is no longer used")
 void finalize_source(parser* source);
+VW_DEPRECATED("Function is no longer used")
 void set_compressed(parser* par);
 void free_parser(vw& all);

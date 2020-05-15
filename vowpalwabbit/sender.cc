@@ -30,7 +30,8 @@ using namespace VW::config;
 struct sender
 {
   io_buf* buf;
-  int sd;
+  std::unique_ptr<VW::io::socket> _socket;
+  std::unique_ptr<VW::io::reader> _socket_reader;
   vw* all;  // loss ring_size others
   example** delay_ring;
   size_t sent_index;
@@ -38,8 +39,6 @@ struct sender
 
   ~sender()
   {
-    buf->files.delete_v();
-    buf->space.delete_v();
     free(delay_ring);
     delete buf;
   }
@@ -47,9 +46,10 @@ struct sender
 
 void open_sockets(sender& s, std::string host)
 {
-  s.sd = open_socket(host.c_str());
+  s._socket = VW::io::wrap_socket_descriptor(open_socket(host.c_str()));
+  s._socket_reader = s._socket->get_reader();
   s.buf = new io_buf();
-  s.buf->files.push_back(s.sd);
+  s.buf->add_file(s._socket->get_writer());
 }
 
 void send_features(io_buf* b, example& ec, uint32_t mask)
@@ -70,7 +70,7 @@ void receive_result(sender& s)
 {
   float res, weight;
 
-  get_prediction(s.sd, res, weight);
+  get_prediction(s._socket_reader.get(), res, weight);
   example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
   ec.pred.scalar = res;
 
@@ -98,7 +98,7 @@ void end_examples(sender& s)
 {
   // close our outputs to signal finishing.
   while (s.received_index != s.sent_index) receive_result(s);
-  shutdown(s.buf->files[0], SHUT_WR);
+  s.buf->close_files();
 }
 
 VW::LEARNER::base_learner* sender_setup(options_i& options, vw& all)
@@ -115,7 +115,6 @@ VW::LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   }
 
   auto s = scoped_calloc_or_throw<sender>();
-  s->sd = -1;
   open_sockets(*s.get(), host);
 
   s->all = &all;

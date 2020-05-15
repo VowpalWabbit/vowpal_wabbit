@@ -109,19 +109,19 @@ bool ends_with(std::string const& fullString, std::string const& ending)
   }
 }
 
-uint64_t hash_file_contents(io_buf* io, int f)
+uint64_t hash_file_contents(VW::io::reader* f)
 {
   uint64_t v = 5289374183516789128;
-  unsigned char buf[1024];
+  char buf[1024];
   while (true)
   {
-    ssize_t n = io->read_file(f, buf, 1024);
+    ssize_t n = f->read(buf, 1024);
     if (n <= 0)
       break;
     for (ssize_t i = 0; i < n; i++)
     {
       v *= 341789041;
-      v += buf[i];
+      v += static_cast<uint64_t>(buf[i]);
     }
   }
   return v;
@@ -155,7 +155,7 @@ std::string find_in_path(std::vector<std::string> paths, std::string fname)
   return "";
 }
 
-void parse_dictionary_argument(vw& all, std::string str)
+void parse_dictionary_argument(vw& all, const std::string& str)
 {
   if (str.length() == 0)
     return;
@@ -175,14 +175,18 @@ void parse_dictionary_argument(vw& all, std::string str)
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
-  io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
-  int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0)
+  std::unique_ptr<VW::io::reader> file_adapter;
+  try
+  {
+    file_adapter = is_gzip ? VW::io::open_compressed_file_reader(fname) : VW::io::open_file_reader(fname);
+  }
+  catch (...)
+  {
     THROW("error: cannot read dictionary from file '" << fname << "'"
                                                       << ", opening failed");
+  }
 
-  uint64_t fd_hash = hash_file_contents(io, fd);
-  io->close_file();
+  uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
   if (!all.logger.quiet)
     all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
@@ -190,23 +194,24 @@ void parse_dictionary_argument(vw& all, std::string str)
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
+  {
     if (all.loaded_dictionaries[id].file_hash == fd_hash)
     {
       all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
-      io->close_file();
-      delete io;
       return;
     }
-
-  fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0)
-  {
-    delete io;
-    THROW("error: cannot re-read dictionary from file '" << fname << "'"
-                                                         << ", opening failed");
   }
 
-  std::shared_ptr<feature_dict> map = std::make_shared<feature_dict>();
+  std::unique_ptr<VW::io::reader> fd;
+  try
+  {
+    fd = VW::io::open_file_reader(fname);
+  }
+  catch (...)
+  {
+    THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");
+  }
+  auto map = std::make_shared<feature_dict>();
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
@@ -222,7 +227,7 @@ void parse_dictionary_argument(vw& all, std::string str)
     pos = 0;
     do
     {
-      nread = io->read_file(fd, &rc, 1);
+      nread = fd->read(&rc, 1);
       if ((rc != EOF) && (nread > 0))
         buffer[pos++] = rc;
       if (pos >= size - 1)
@@ -234,8 +239,6 @@ void parse_dictionary_argument(vw& all, std::string str)
           free(buffer);
           VW::dealloc_example(all.p->lp.delete_label, *ec);
           free(ec);
-          io->close_file();
-          delete io;
           THROW("error: memory allocation failed in reading dictionary");
         }
         else
@@ -279,8 +282,6 @@ void parse_dictionary_argument(vw& all, std::string str)
     }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  io->close_file();
-  delete io;
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
 
@@ -470,12 +471,6 @@ input_options parse_source(vw& all, options_i& options)
   {
     parsed_options.cache_files.push_back(all.data_filename + ".cache");
   }
-
-  if (parsed_options.compressed)
-    set_compressed(all.p);
-
-  if (ends_with(all.data_filename, ".gz"))
-    set_compressed(all.p);
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
@@ -1137,21 +1132,18 @@ void parse_output_preds(options_i& options, vw& all)
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back((size_t)1);  // stdout
+      all.final_prediction_sink.push_back(VW::io::open_stdout());  // stdout
     }
     else
     {
-      const char* fstr = predictions.c_str();
-      int f;
-      // TODO can we migrate files to fstreams?
-#ifdef _WIN32
-      _sopen_s(&f, fstr, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-      f = open(fstr, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-      if (f < 0)
-        all.trace_message << "Error opening the predictions file: " << fstr << endl;
-      all.final_prediction_sink.push_back((size_t)f);
+      try
+      {
+        all.final_prediction_sink.push_back(VW::io::open_file_writer(predictions));
+      }
+      catch (...)
+      {
+        all.trace_message << "Error opening the predictions file: " << predictions << endl;
+      }
     }
   }
 
@@ -1165,17 +1157,12 @@ void parse_output_preds(options_i& options, vw& all)
                           << endl;
     }
     if (raw_predictions == "stdout")
-      all.raw_prediction = 1;  // stdout
+    {
+      all.raw_prediction = VW::io::open_stdout();
+    }
     else
     {
-      const char* t = raw_predictions.c_str();
-      int f;
-#ifdef _WIN32
-      _sopen_s(&f, t, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-      f = open(t, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-      all.raw_prediction = f;
+      all.raw_prediction = VW::io::open_file_writer(raw_predictions);
     }
   }
 }
