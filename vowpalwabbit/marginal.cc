@@ -244,7 +244,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
 {
   uint64_t stride_shift = sm.all->weights.stride_shift();
 
-  if (io.files.size() == 0)
+  if (io.num_files() == 0)
     return;
   std::stringstream msg;
   uint64_t total_size;

@@ -12,6 +12,7 @@
 #include "simple_label.h"
 #include "parse_args.h"
 #include "vw.h"
+#include "memory.h"
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to
@@ -349,79 +350,45 @@ VW_DLL_PUBLIC void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle)
   return VW::save_predictor(*pointer, name);
 }
 
-
-class memory_io_buf : public io_buf
-{
-public:
-    memory_io_buf() : readOffset(0) {
-        files.push_back(-1); // this is a hack because buf will do nothing if files is empty
-    }
-
-    virtual ssize_t write_file(int file, const void* buf, size_t nbytes) {
-        auto byteBuf = reinterpret_cast<const char*>(buf);
-        data.insert(data.end(), &byteBuf[0], &byteBuf[nbytes]);
-        return nbytes;
-    }
-
-    virtual ssize_t read_file(int f, void* buf, size_t nbytes) {
-        nbytes = min(nbytes, data.size()-readOffset);
-        copy(data.data()+readOffset, data.data()+readOffset+nbytes, reinterpret_cast<char *>(buf));
-        readOffset += nbytes;
-        return nbytes;
-    }
-
-    virtual bool close_file() {
-       if (files.size() > 0) {
-            files.pop();
-            return true;
-        }
-        return false;
-    }
-
-    char* GetDataPointer() {
-        return data.data();
-    }
-
-    size_t GetDataSize() const {
-        return data.size();
-    }
-
-private:
-    vector<char> data;
-    size_t readOffset;
-};
-
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstrArgs, const char * modelData, size_t modelDataSize)
 {
-    unique_ptr<memory_io_buf> buf(new memory_io_buf);
-    buf->write_file(-1, modelData, modelDataSize);
-
-    vw* all = VW::initialize(string(pstrArgs), buf.get());
-    return static_cast<VW_HANDLE>(all);
+  io_buf buf;
+  buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
+  vw* all = VW::initialize(string(pstrArgs), &buf);
+  return static_cast<VW_HANDLE>(all);
 }
 
 VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(const char * pstrArgs, const char * modelData, size_t modelDataSize)
 {
-  std::unique_ptr<memory_io_buf> buf(new memory_io_buf());
-  buf->write_file(-1, modelData, modelDataSize);
+  io_buf buf;
+  buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
 
-  auto all = VW::initialize_escaped(std::string(pstrArgs), buf.get());
+  auto all = VW::initialize_escaped(std::string(pstrArgs), &buf);
   return static_cast<VW_HANDLE>(all);
 }
 
-VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(VW_HANDLE handle, VW_IOBUF* outputBufferHandle, char** outputData, size_t* outputSize) {
-    vw* pointer = static_cast<vw*>(handle);
+struct buffer_holder
+{
+  std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>();
+  io_buf holding_buffer;
+};
 
-    memory_io_buf* buf = new(memory_io_buf);
-    VW::save_predictor(*pointer, *buf);
+VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(
+    VW_HANDLE handle, VW_IOBUF* outputBufferHandle, char** outputData, size_t* outputSize)
+{
+  vw* pointer = static_cast<vw*>(handle);
+  auto* holder = new buffer_holder;
+  holder->holding_buffer.add_file(VW::io::create_vector_writer(holder->data));
+  VW::save_predictor(*pointer, holder->holding_buffer);
 
-    *outputBufferHandle = buf;
-    *outputSize = buf->GetDataSize();
-    *outputData = buf->GetDataPointer();
+  *outputBufferHandle = holder;
+  const auto& underlying_buffer = holder->data;
+  *outputSize = underlying_buffer->size();
+  *outputData = const_cast<char*>(underlying_buffer->data());
 }
 
-VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle) {
-    delete static_cast<memory_io_buf*>(bufferHandle);
+VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle)
+{
+  delete static_cast<buffer_holder*>(bufferHandle);
 }
-
 }

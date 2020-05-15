@@ -1173,7 +1173,7 @@ void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::s
 void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     if (read)
       b.test_mode = true;
