@@ -88,8 +88,6 @@
       </DelayLoadDLLs>
       <Profile>true</Profile>
       <AdditionalOptions>/VERBOSE</AdditionalOptions>
-      <!--TODO: remove line below when this bug is fixed: https://developercommunity.visualstudio.com/content/problem/831275/dynamic-library-project-native-lib-dependency-link.html -->
-      <AdditionalDependencies>"$(SolutionDir)packages\boost_program_options-vc142.1.71.0.0\lib\native\libboost_program_options-vc142-mt-gd-x64-1_71.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -110,8 +108,6 @@
       </DelayLoadDLLs>
       <Profile>true</Profile>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <!--TODO: remove line below when this bug is fixed: https://developercommunity.visualstudio.com/content/problem/831275/dynamic-library-project-native-lib-dependency-link.html -->
-      <AdditionalDependencies>"$(SolutionDir)packages\boost_program_options-vc142.1.71.0.0\lib\native\libboost_program_options-vc142-mt-x64-1_71.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -161,7 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\vowpalwabbit\packages\Newtonsoft.Json.12.0.1\lib\netstandard2.0\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\Newtonsoft.Json.12.0.1\lib\netstandard2.0\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
