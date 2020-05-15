@@ -11,7 +11,7 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <io.h>
-#include <Windowws.h>
+#include <Windows.h>
 #include <WinSock.h>
 #include <WS2tcpip.h>
 typedef unsigned int uint32_t;
