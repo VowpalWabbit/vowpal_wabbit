@@ -513,7 +513,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
     ON.initialize_Z(all.weights);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = all.save_resume;
     std::stringstream msg;
