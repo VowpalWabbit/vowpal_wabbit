@@ -8,35 +8,95 @@
 
 static std::mutex _mutex_io;
 
-#ifndef _IO_Q_COPY_
-#define _IO_Q_COPY_
-static std::queue<std::string> *input_lines_copy = new std::queue<std::string>;
+
+/*namespace io_item {
+    class IO_Item;
+}*/
+
+#ifndef _IO_ITEM_
+#define _IO_ITEM_
+class IO_Item {
+
+    public:
+
+        IO_Item(){
+            message = "";
+            numCharsInit = 0;
+        }
+
+        IO_Item(std::string myMsg, int myNumCharsInit){
+            message = myMsg;
+            numCharsInit = myNumCharsInit;
+        }
+
+        //add const string?
+
+        IO_Item operator=(IO_Item toCopy){
+            message = toCopy.getString();
+            numCharsInit = toCopy.getNumCharsInit();
+            return *this;
+        }
+
+        ~IO_Item() {}
+
+        inline std::string getString(){
+            return message;
+        }
+
+        inline int getNumCharsInit(){
+        return numCharsInit;
+        }
+
+        inline void setString(std::string newMsg){
+            message = newMsg;
+        }
+
+        inline void setNumCharsInit(int newNum){
+            numCharsInit = newNum;
+        }
+    
+    private:
+        std::string message;
+        int numCharsInit;
+
+};
+//}
+#endif
+
+/*#ifndef _IO_Q_COPY_
+#define _IO_Q_COPY_*/
+static std::queue<IO_Item> *input_lines_copy = new std::queue<IO_Item>;
 static bool called_i_l_t = false;
 static bool have_added_io = false;
 
-#endif
+//#endif
 
-inline void io_lines_toqueue(vw *all, std::queue<std::string> *input_lines){
+inline void io_lines_toqueue(vw *all, std::queue<IO_Item> *input_lines){
 
   std::lock_guard<std::mutex> lck(_mutex_io);
 
   parser *original_p = all->p;
   
   char* line = nullptr;
+
   while(true)
   {
 
     size_t num_chars_initial = readto(*(all->p->input), line, '\n');
- 
-    if(num_chars_initial < 1 || strlen(line) < 1){break;}
+   
+    if(num_chars_initial < 1 || strlen(line) < 1){
+        called_i_l_t = true;
+        have_added_io = true;
+        break;
+    }
 
-    input_lines->push(std::string(line));
-    input_lines_copy->push(std::string(line));
+    IO_Item *line_item = new IO_Item(std::string(line), num_chars_initial);
 
+    input_lines->push(*line_item);
+    input_lines_copy->push(*line_item);
 
     called_i_l_t = true;
     have_added_io = true;
-
 
   }
 
@@ -48,24 +108,27 @@ inline bool added_io(){
   return have_added_io;
 }
 
-inline std::string pop_io_queue(bool should_pop){
-
-    std::cout << "pop_io_queue" << std::endl;
-    std::cout << "called_i_l_t: " << called_i_l_t << std::endl;
+//will hopefully be called after io_lines_to_queue called.
+inline IO_Item pop_io_queue(bool should_pop){
 
     if(should_pop && input_lines_copy->size() > 0)
     {
 
-      std::string front = input_lines_copy->front();
+      IO_Item front = input_lines_copy->front();
 
       input_lines_copy->pop();
 
       return front;
       
+    }else if(input_lines_copy->size() == 0 && have_added_io){
+      return IO_Item(std::string("empty"), 0);
     }
 
-    return std::string("");
+    return IO_Item(std::string("bad"), 0);
 
 }
+
+//namespace IO {
+
 
 #endif
