@@ -2,7 +2,7 @@ import os
 
 from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import vw
-from vowpalwabbit.pyvw import DataFrameToVW, SimpleLabel, Feature, Namespace, Col
+from vowpalwabbit.pyvw import DFtoVW, SimpleLabel, Feature, Namespace, Col
 import pytest
 import pandas as pd
 
