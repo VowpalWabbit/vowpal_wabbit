@@ -1752,9 +1752,10 @@ class DFtoVW:
         """
         self.df = df
         self.n_rows = df.shape[0]
-        self.targets = collections.OrderedDict(
-            label=label, importance=importance, base=base, tag=tag
-        )
+        self.targets = collections.OrderedDict()
+        for (key, value) in zip(["label", "importance", "base", "tag"],
+                                [label, importance, base, tag]):
+            self.targets[key] = value
         self.no_tag = tag is not None
         self.namespaces = (
             list(namespaces)
@@ -1832,6 +1833,7 @@ class DFtoVW:
 
         Raises
         ------
+
         TypeError
             If any of the targets element is not of type SimpleLabel
 
@@ -1967,11 +1969,13 @@ class DFtoVW:
 
         Parameters
         ----------
+
         features : list of Feature
             The list of Feature objects
 
         Returns
         -------
+
         out : pandas.series
             The column of the processed features
 
@@ -1987,6 +1991,7 @@ class DFtoVW:
 
         Returns
         -------
+
         list
             The list of parsed lines in VW format
         """
