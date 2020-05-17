@@ -17,6 +17,9 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
+add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
+target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
+
 set(vw_all_headers
   accumulate.h
   action_score.h
@@ -51,7 +54,6 @@ set(vw_all_headers
   cbify.h
   ccb_label.h
   classweight.h
-  comp_io.h
   compat.h
   conditional_contextual_bandit.h
   confidence.h
@@ -78,6 +80,7 @@ set(vw_all_headers
   gd.h
   gen_cs_example.h
   global_data.h
+  guard.h
   hashstring.h
   interact.h
   interactions_predict.h
@@ -125,6 +128,7 @@ set(vw_all_headers
   rand48.h
   recall_tree.h
   reductions.h
+  scope_exit.h
   scorer.h
   search_dep_parser.h
   search_entityrelationtask.h
@@ -143,6 +147,7 @@ set(vw_all_headers
   stable_unique.h
   stagewise_poly.h
   svrg.h
+  tag_utils.h
   topk.h
   unique_sort.h
   v_array.h
@@ -189,7 +194,6 @@ set(vw_all_sources
   cbify.cc
   ccb_label.cc
   classweight.cc
-  comp_io.cc
   conditional_contextual_bandit.cc
   confidence.cc
   cost_sensitive.cc
@@ -256,6 +260,7 @@ set(vw_all_sources
   slates.cc
   stagewise_poly.cc
   svrg.cc
+  tag_utils.cc
   topk.cc
   unique_sort.cc
   version.cc
@@ -270,7 +275,7 @@ target_link_libraries(vw
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} ZLIB::ZLIB
+    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -389,7 +394,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce
+    TARGETS vw vw-bin allreduce vw_io
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

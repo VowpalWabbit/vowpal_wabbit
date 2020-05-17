@@ -402,7 +402,7 @@ struct learner
     });
 
     ret.learn_fd.data = dat;
-    ret.learn_fd.learn_f = (learn_data::fn)learn;
+    ret.learn_fd.learn_f = reinterpret_cast<learn_data::fn>(learn);
     ret.learn_fd.update_f = (learn_data::fn)learn;
     ret.learn_fd.predict_f = (learn_data::fn)predict;
     ret.learn_fd.multipredict_f = nullptr;

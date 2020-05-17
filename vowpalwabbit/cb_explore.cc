@@ -260,7 +260,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
       maxid = i + 1;
     }
   }
-  for (int sink : all.final_prediction_sink) all.print_text_by_ref(sink, ss.str(), ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;

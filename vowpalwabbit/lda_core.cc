@@ -799,7 +799,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     else
       all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
   }
-  if (!model_file.files.empty())
+  if (model_file.num_files() != 0)
   {
     uint64_t i = 0;
     std::stringstream msg;
@@ -848,7 +848,10 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 void return_example(vw &all, example &ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
-  for (int f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag);
+  }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
     all.sd->print_update(
