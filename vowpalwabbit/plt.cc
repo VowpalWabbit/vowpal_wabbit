@@ -31,7 +31,7 @@ struct plt
   uint32_t k; // number of labels
   uint32_t t; // number of tree nodes
   uint32_t ti; // number of internal nodes
-  uint32_t kary; //
+  uint32_t kary; // kary tree
 
   v_array<float> nodes_t; // in case of sgd, this keeps stores individual t for each node
 
@@ -39,13 +39,13 @@ struct plt
   uint32_t top_k;
   v_array<polyprediction> preds; // for storing results of base.multipredict
 
-  // for measuring performance
-  v_array<uint32_t> tp_at;
+  // for measuring predictive performance
+  v_array<uint32_t> tp_at; // true positives at (for precision and recall at)
   uint32_t tp;
   uint32_t fp;
   uint32_t fn;
-  uint32_t t_count;
-  uint32_t ec_count;
+  uint32_t t_count; // number of all true labels (for recall at)
+  uint32_t ec_count; // number of examples
 
   plt()
   {
@@ -72,7 +72,6 @@ inline void learn_node(plt &p, uint32_t n, single_learner &base, example &ec)
   if(!p.all->weights.adaptive)
   { p.all->sd->t = p.nodes_t[n];
     p.nodes_t[n] += ec.weight;
-    std::cerr << ec.weight << "\n";
   }
   base.learn(ec, n);
 }
@@ -219,6 +218,7 @@ void predict(plt &p, single_learner &base, example &ec)
       }
     }
 
+    // calculate p@
     if (true_labels.size() > 0)
     { for (size_t i = 0; i < p.top_k; ++i)
       { if (true_labels.count(preds.label_v[i]))
@@ -229,8 +229,8 @@ void predict(plt &p, single_learner &base, example &ec)
     }
   }
 
-  ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;
+  ec.pred.multilabels = preds;
 }
 
 void finish_example(vw& all, plt &p, example& ec)
@@ -240,6 +240,7 @@ void finish_example(vw& all, plt &p, example& ec)
 
 void finish(plt &p)
 {
+  // print results in test mode
   if(!p.all->training && p.ec_count > 0)
   {
     // top-k predictions
@@ -285,7 +286,7 @@ LEARNER::base_learner* plt_setup(options_i& options, vw& all)
   option_group_definition new_options("Probabilistic Label Tree ");
   new_options.add(make_option("plt", tree->k).keep().help("Probabilistic Label Tree with <k> labels"))
     .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("use <k>-ary tree"))
-    .add(make_option("threshold", tree->threshold).default_value(0.5).help("predict labels with conditional probability greater than <thr> threshold"))
+    .add(make_option("threshold", tree->threshold).default_value(0.5).help("predict labels with conditional marginal probability greater than <thr> threshold"))
     .add(make_option("top_k", tree->top_k).default_value(0).help("predict top-<k> labels instead of labels above threshold"));
   options.add_and_parse(new_options);
 
@@ -305,8 +306,7 @@ LEARNER::base_learner* plt_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "plt:"
-                      << " k = " << tree->k << " kary_tree = " << tree->kary << std::endl;
+    all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if(!all.training)
       if(tree->top_k > 0) all.trace_message << "top_k = " << tree->top_k << std::endl;
       else all.trace_message << "threshold = " << tree->threshold << std::endl;
