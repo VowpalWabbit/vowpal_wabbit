@@ -295,7 +295,7 @@ void finish(plt &p)
 
 void save_load_tree(plt &p, io_buf &model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = p.all->save_resume;
     std::stringstream msg;
