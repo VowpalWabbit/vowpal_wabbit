@@ -88,7 +88,7 @@ class EvaluatorOnline:
     self.saveConfidenceIntervals(self.best_disc_linear)
 
     if (not self.quiet):
-      self.printAllResults()
+      # self.printAllResults()
 
       print("max_time = ", self.max_time)
     
@@ -107,6 +107,21 @@ class EvaluatorOnline:
     elif (model == "disc_linear"):
       return self.best_disc_linear.loss, self.best_disc_linear.ci_lower, self.best_disc_linear.ci_upper
 
+
+  def return_all(self, model):
+    n_ = []
+    h_ = []
+    loss_ = []
+    time_ = []
+    for c in self.costs:
+      if (c.model == model):
+        if (c.loss < 1):
+          loss_.append(c.loss)
+          time_.append(c.time)
+          n_.append(c.n)
+          h_.append(c.h)
+    return loss_, time_, n_, h_
+      
   
   def get_best_loss(self):
     for c in self.costs:
@@ -121,27 +136,39 @@ class EvaluatorOnline:
           self.best_disc_linear = c
   
   def saveConfidenceIntervals(self, cost):
-    cost.ci_lower, cost.ci_upper = ConfidenceInterval.calculate(cost.nb_examples, cost.loss, 
-      cost.max_cost, self.conf_alpha)
+    if (cost.max_cost != 0):
+      cost.ci_lower, cost.ci_upper = ConfidenceInterval.calculate(cost.nb_examples, cost.loss, \
+        cost.max_cost, self.conf_alpha)
 
 
-  def getTime(self, model, n, h): # assumes costs is soreted wrt h and n
+  def getTime(self, model, n, hp, h, mode): # assumes costs is soreted wrt hp and n
     times = []
-    n_ = []
-    if (n == 0):
+    if (mode == "hp"):
+      n_ = []
       for c in self.costs:
         if (c.model == model):
-          if (c.h == h):
+          if (c.h == hp):
             times.append(c.time)
             n_.append(c.n)
       return times, n_
-    h_ = []
-    for c in self.costs:
-      if (c.model == model):
-        if (c.n == n):
-          times.append(c.time) 
-          h_.append(c.h)
-    return times, h_  
+
+    elif (mode == "h"):
+      n_ = []
+      for c in self.costs:
+        if (c.model == model):
+          if ( (c.h/c.n) == h):
+            times.append(c.time)
+            n_.append(c.n)
+      return times, n_
+
+    elif (mode == "n"):
+      h_ = []
+      for c in self.costs:
+        if (c.model == model):
+          if (c.n == n):
+            times.append(c.time) 
+            h_.append(c.h)
+      return times, h_  
 
 
   def printAllResults(self):
@@ -151,7 +178,7 @@ class EvaluatorOnline:
 
 
   def printBestResults(self, cost):
-    print ("model, n, h, loss = {0}, {1}, {2}, {3}".format(cost.model, cost.n, cost.h, cost.loss))
+    print ("model, n, h, loss, time = {0}, {1}, {2}, {3}, {4}".format(cost.model, cost.n, cost.h, cost.loss, cost.time))
     print("C.I. = {0}, {1}".format(cost.ci_lower, cost.ci_upper))
 
     
@@ -187,4 +214,4 @@ if __name__ == "__main__":
   fileJoiner = EvaluatorOnline(data_file, alpha, quiet)
   returnValue = fileJoiner.eval()
   print(fileJoiner.return_loss(model))
-  print(fileJoiner.getTime("disc_linear", 0, 0))
+  print(fileJoiner.getTime("disc_linear", 0, 0, 0, "hp"))
