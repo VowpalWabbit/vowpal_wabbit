@@ -256,6 +256,8 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   }
   finish_bonuses();
   
+  // Labels need to be restored before calling base_learn_or_predict
+  restore_guard.call();
   base_learn_or_predict<is_learn>(base, examples, 0);
 
   auto& preds = examples[0]->pred.a_s;
