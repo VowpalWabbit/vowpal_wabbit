@@ -111,6 +111,8 @@ inline bool added_io(){
 //will hopefully be called after io_lines_to_queue called.
 inline IO_Item pop_io_queue(bool should_pop){
 
+    std::lock_guard<std::mutex> lck(_mutex_io);
+
     if(should_pop && input_lines_copy->size() > 0)
     {
 
