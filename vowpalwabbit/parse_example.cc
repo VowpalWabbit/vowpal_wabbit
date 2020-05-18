@@ -19,16 +19,25 @@ class IO_Item;
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
  
-  IO_Item result;
+  IO_Item result("hi", 0);
 
   //wait for something to be initially added to the queue
   //if "bad" is in the file, will have num chars init > 0, so if is "bad" and num chars init == 0, know to wait
-  while(!added_io() && (result = pop_io_queue(true)).getString().compare("bad") == 0 && result.getNumCharsInit() == 0){}
+  /*while((result = pop_io_queue(true)).getString().compare("bad") == 0 && result.getNumCharsInit() == 0 && !added_io()){
+    //std::cout << "result getstring: " << *(result.getString()) << std::endl;
+    result.getString();
+  }*/
 
-  std::string result_string = result.getString();
 
-  line = new char[result_string.size()];
-  strcpy(line, result_string.c_str());
+  while((result = pop_io_queue(true)).getString().compare("bad") == 0 && result.getNumCharsInit() == 0 && !added_io()){}
+
+
+  std::string *result_string =  new std::string(result.getString());
+
+  //std::cout << "result_string: " << *result_string << std::endl;
+
+  line = new char[result_string->size()];
+  strcpy(line, result_string->c_str());
 
   size_t num_chars_initial = result.getNumCharsInit();
 
@@ -53,6 +62,8 @@ int read_features_string(vw* all, v_array<example*>& examples)
   size_t num_chars;
 
   size_t num_chars_initial = read_features(all, line, num_chars);
+
+  //std::cout << "Line: " << line << std::endl;
   
   if (num_chars_initial < 1)
     return (int)num_chars_initial;
