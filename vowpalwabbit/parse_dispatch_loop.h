@@ -29,7 +29,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         });
 
     //fix s.t. don't need true and false -- temporary fix, s.t. i_f_s = true, queue nonempty in p_e.cc -- why empty otherwise though?
-    std::string res(pop_io_queue(false).getString());
+   // std::string res((*pop_io_queue(false)).getString());
+   pop_io_queue(false);
 
     while (!all.p->done)
     {
