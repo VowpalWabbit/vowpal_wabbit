@@ -8,33 +8,34 @@
 
 static std::mutex _mutex_io;
 
-
-/*namespace io_item {
-    class IO_Item;
-}*/
-
 #ifndef _IO_ITEM_
 #define _IO_ITEM_
 class IO_Item {
 
     public:
 
+        std::string message;
+        int numCharsInit;
+
         IO_Item(){
-            message = "";
             numCharsInit = 0;
         }
 
         IO_Item(std::string myMsg, int myNumCharsInit){
-            message = myMsg;
+
+            message.assign(myMsg);
             numCharsInit = myNumCharsInit;
         }
 
-        //add const string?
-
-        IO_Item operator=(IO_Item toCopy){
-            message = toCopy.getString();
-            numCharsInit = toCopy.getNumCharsInit();
+        IO_Item operator=(const IO_Item &toCopy){
+            message.assign(toCopy.message);
+            numCharsInit = toCopy.numCharsInit;
             return *this;
+        }
+
+        IO_Item(const IO_Item &toCopy){
+           message.assign(toCopy.message);
+           numCharsInit = toCopy.numCharsInit;
         }
 
         ~IO_Item() {}
@@ -48,71 +49,20 @@ class IO_Item {
         }
 
         inline void setString(std::string newMsg){
-            message = newMsg;
+            message.assign(newMsg);
         }
 
         inline void setNumCharsInit(int newNum){
             numCharsInit = newNum;
         }
-    
-    private:
-        std::string message;
-        int numCharsInit;
-
-    /*public:
-
-        IO_Item(){
-            message = new std::string("");;
-            numCharsInit = 0;
-        }
-
-        IO_Item(std::string myMsg, int myNumCharsInit){
-            message = new std::string(myMsg);
-            numCharsInit = myNumCharsInit;
-        }
-
-        //add const string?
-
-        IO_Item operator=(IO_Item toCopy){
-            message = new std::string(*toCopy.getString());
-            numCharsInit = toCopy.getNumCharsInit();
-            return *this;
-        }
-
-        ~IO_Item() {}
-
-        inline std::string * getString(){
-          std::string *copymsg = new std::string(*message);
-          return copymsg;
-        }
-
-        inline int getNumCharsInit(){
-          return numCharsInit;
-        }
-
-        inline void setString(std::string newMsg){
-            message = new std::string(newMsg);
-        }
-
-        inline void setNumCharsInit(int newNum){
-            numCharsInit = newNum;
-        }
-    
-    private:
-        std::string *message;
-        int numCharsInit;*/
 
 };
-//}
+
 #endif
 
-/*#ifndef _IO_Q_COPY_
-#define _IO_Q_COPY_*/
 static std::queue<IO_Item> *input_lines_copy = new std::queue<IO_Item>;
 static bool called_i_l_t = false;
 static bool have_added_io = false;
-
-//#endif
 
 inline void io_lines_toqueue(vw *all, std::queue<IO_Item> *input_lines){
 
@@ -133,10 +83,10 @@ inline void io_lines_toqueue(vw *all, std::queue<IO_Item> *input_lines){
         break;
     }
 
-    IO_Item *line_item = new IO_Item(std::string(line), num_chars_initial);
+    IO_Item line_item(std::string(line), num_chars_initial);
 
-    input_lines->push(*line_item);
-    input_lines_copy->push(*line_item);
+    input_lines->push(line_item);
+    input_lines_copy->push(line_item);
 
     called_i_l_t = true;
     have_added_io = true;
@@ -158,10 +108,7 @@ inline IO_Item pop_io_queue(bool should_pop){
 
     if(should_pop && input_lines_copy->size() > 0)
     {
-
-      //IO_Item *front = new IO_Item(input_lines_copy->front());
       IO_Item front = input_lines_copy->front();
-      //std::cout << "front string: " << front.getString();
 
       input_lines_copy->pop();
 
@@ -184,8 +131,6 @@ inline IO_Item * pop_io_queue2(bool should_pop){
     {
 
       IO_Item *front = new IO_Item(input_lines_copy->front());
-      //IO_Item front = input_lines_copy->front();
-      //std::cout << "front string: " << front.getString();
 
       input_lines_copy->pop();
 
@@ -202,8 +147,5 @@ inline IO_Item * pop_io_queue2(bool should_pop){
     return front; 
 
 }
-
-//namespace IO {
-
 
 #endif
