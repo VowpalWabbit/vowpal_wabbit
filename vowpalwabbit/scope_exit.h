@@ -27,7 +27,7 @@ class scope_exit_caller
   scope_exit_caller& operator=(scope_exit_caller&& other) = delete;
 
   scope_exit_caller(scope_exit_caller&& other) noexcept
-      : _scope_exit_lambda(std::move(other._scope_exit_lambda)), _will_call(other._will_call)
+      : _will_call(other._will_call), _scope_exit_lambda(std::move(other._scope_exit_lambda))
   {
     other._will_call = false;
   }
