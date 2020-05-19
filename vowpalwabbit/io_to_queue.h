@@ -122,30 +122,4 @@ inline IO_Item pop_io_queue(bool should_pop){
 
 }
 
-
-inline IO_Item * pop_io_queue2(bool should_pop){
-
-    std::lock_guard<std::mutex> lck(_mutex_io);
-
-    if(should_pop && input_lines_copy->size() > 0)
-    {
-
-      IO_Item *front = new IO_Item(input_lines_copy->front());
-
-      input_lines_copy->pop();
-
-      return front;
-      
-    }else if(input_lines_copy->size() == 0 && have_added_io){
-      IO_Item *front = new IO_Item(std::string("empty"), 0);
-
-      return front; 
-    }
-
-    IO_Item *front = new IO_Item(std::string("bad"), 0);
-
-    return front; 
-
-}
-
 #endif
