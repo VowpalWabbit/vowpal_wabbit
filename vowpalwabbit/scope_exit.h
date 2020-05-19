@@ -53,6 +53,15 @@ class scope_exit_caller
 
 /// Created an RAII object which executes the provided lambda when the scope exits.
 /// The primary use case is to handle cleanup in code where exceptions are possible but the code is not exception safe.
+///
+/// #### Example:
+/// \code
+/// {
+///   auto* resource = /* some_resource_that_needs_cleanup */;
+///   auto guard = VW::scope_exit([resource]() { /* cleanup_resource(resource); */ });
+/// }
+/// // Lambda has executed at this point.
+/// \endcode
 template <typename TScopeExitLambda>
 VW_ATTR(nodiscard)
 inline details::scope_exit_caller<TScopeExitLambda> scope_exit(TScopeExitLambda&& lambda) noexcept
