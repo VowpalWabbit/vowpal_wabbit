@@ -352,19 +352,13 @@ LEARNER::base_learner *plt_setup(options_i &options, vw &all)
   }
 
   // resize v_arrays
-  if (all.training)
+  if (!all.weights.adaptive)
   {
-    if (!all.weights.adaptive)
-    {
-      tree->nodes_t.resize(tree->t);
-      std::fill(tree->nodes_t.begin(), tree->nodes_t.end(), all.initial_t);
-    }
+    tree->nodes_t.resize(tree->t);
+    std::fill(tree->nodes_t.begin(), tree->nodes_t.end(), all.initial_t);
   }
-  else
-  {
-    tree->preds.resize(tree->kary);
-    tree->tp_at.resize(tree->top_k);
-  }
+  tree->preds.resize(tree->kary);
+  tree->tp_at.resize(tree->top_k);
 
   learner<plt, example> *l;
   if (tree->top_k > 0)
@@ -378,16 +372,13 @@ LEARNER::base_learner *plt_setup(options_i &options, vw &all)
   all.label_type = label_type_t::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
-  // force logistic loss for base classifier
+  // force logistic loss for base classifiers
   delete (all.loss);
   all.loss = getLossFunction(all, "logistic");
 
   l->set_finish_example(finish_example);
   l->set_finish(finish);
   l->set_save_load(save_load_tree);
-
-  // turn off stop based on holdout loss
-  all.holdout_set_off = true;
 
   return make_base(*l);
 }

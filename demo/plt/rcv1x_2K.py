@@ -26,22 +26,19 @@ if not os.path.exists(test_data):
 print("\nTraining\n")
 
 start = time.time()
-#os.system("vw {} -c --plt {} --kary_tree {} -l {} --passes {} -b {} -f {}".format(
-#   train_data, k, kary_tree, l, passes, b, output_model))
+os.system("vw {} -c --plt {} --kary_tree {} -l {} --passes {} -b {} -f {} --holdout_off".format(
+    train_data, k, kary_tree, l, passes, b, output_model))
 train_time = time.time() - start
 
 print("\nTesting with probability threshold = 0.5 (default prediction mode)\n")
 start = time.time()
-#os.system("vw {} -i {} --threshold 0.5 -t".format(test_data, output_model))
+os.system("vw {} -i {} --threshold 0.5 -t".format(test_data, output_model))
 thr_test_time = time.time() - start
 
 print("\nTesting with top-5 prediction\n")
 start = time.time()
-#os.system("vw {} -i {} --top_k 5 -t".format(test_data, output_model))
+os.system("vw {} -i {} --top_k 5 -t".format(test_data, output_model))
 topk_test_time = time.time() - start
-
-print("\nPredict\n")
-os.system("vw {} -i {} --top_k 5 -t -p pred.txt".format(test_data, output_model))
 
 print("\ntrain time (s) = {:.3f}".format(train_time))
 print("threshold test time (s) = {:.3f}".format(thr_test_time))

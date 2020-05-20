@@ -26,7 +26,7 @@ if not os.path.exists(test_data):
 print("\nTraining\n")
 
 start = time.time()
-os.system("vw {} -c --plt {} --kary_tree {} -l {} --passes {} -b {} -f {}".format(
+os.system("vw {} -c --plt {} --kary_tree {} -l {} --passes {} -b {} -f {} --holdout_off".format(
     train_data, k, kary_tree, l, passes, b, output_model))
 train_time = time.time() - start
 

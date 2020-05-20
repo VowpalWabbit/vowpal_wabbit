@@ -26,7 +26,7 @@ if not os.path.exists(test_data):
 print("\nTraining\n")
 
 start = time.time()
-os.system("vw {} -c --plt {} --kary_tree {} -l {} --passes {} -b {} -f {}".format(
+os.system("vw {} -c --plt {} --kary_tree {} -l {} --passes {} -b {} -f {} --holdout_off".format(
     train_data, k, kary_tree, l, passes, b, output_model))
 train_time = time.time() - start
 
@@ -37,7 +37,7 @@ thr_test_time = time.time() - start
 
 print("\nTesting with top-5 prediction\n")
 start = time.time()
-os.system("vw {} -i {} --threshold 0.5 -t".format(test_data, output_model))
+os.system("vw {} -i {} --top_k 5 -t".format(test_data, output_model))
 topk_test_time = time.time() - start
 
 print("\ntrain time (s) = {:.3f}".format(train_time))

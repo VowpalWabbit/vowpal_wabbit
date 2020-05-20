@@ -20,13 +20,14 @@ python wiki10_13K.py
 --top_k                     predict top-<k> labels instead of labels above threshold                 
 ```
 
-## Tips for using PLT:
+## Tips for using PLT
 PLT accelerates training and prediction for a large number of classes, 
 if you have less than 10000 classes, you should probably use OAA.
 If you have a huge number of labels and features at the same time, 
 you will need as many bits (`-b`) as can afford computationally for the best performance.
 You may also consider using `--sgd` instead of default adaptive, normalized, and invariant updates to 
 gain more memory for feature weights what may lead to better performance.
+You may also consider using `--holdout_off` if you have many rare labels in your data. 
 
 ## References
 
