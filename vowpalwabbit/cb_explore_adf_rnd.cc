@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include "scope_exit.h"
 
 // Random Network Distillation style exploration.  Basically predicts
 // something whose true expectation is zero and uses the MSE(prediction
@@ -241,6 +242,10 @@ template <bool is_learn>
 void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   save_labels<is_learn>(examples);
+
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([this, &examples] { this->restore_labels<is_learn>(examples); });
+
   zero_bonuses(examples);
   for (uint32_t id = 0; id < numrnd; ++id)
   {
@@ -250,7 +255,9 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     accumulate_bonuses(examples);
   }
   finish_bonuses();
-  restore_labels<is_learn>(examples);
+  
+  // Labels need to be restored before calling base_learn_or_predict
+  restore_guard.call();
   base_learn_or_predict<is_learn>(base, examples, 0);
 
   auto& preds = examples[0]->pred.a_s;

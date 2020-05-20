@@ -11,6 +11,7 @@
 #include "hash.h"
 #include "explore.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 #include <vector>
 #include <memory>
@@ -423,14 +424,23 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&old_weights, &data]
+    {
+      for (size_t a = 0; a < data.num_actions; ++a) 
+      {
+        data.ecs[a]->weight = old_weights[a];
+      }
+    }
+  );
+
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
     for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a] * weight_multiplier;
     base.learn(data.ecs, i);
   }
-
-  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 }
 
 template <bool use_cs>
