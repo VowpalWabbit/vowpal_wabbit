@@ -146,7 +146,7 @@ void end_pass(nn& n)
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
-  bool shouldOutput = n.all->raw_prediction > 0;
+  bool shouldOutput = n.all->raw_prediction != nullptr;
   if (!n.finished_setup)
     finish_setup(n, *(n.all));
   shared_data sd;
@@ -319,7 +319,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     if (shouldOutput)
     {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction, outputStringStream.str(), ec.tag);
+      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
     }
 
     if (is_learn && n.all->training && ld.label != FLT_MAX)
@@ -414,7 +414,8 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, -1);
+  std::unique_ptr<VW::io::writer> temp(nullptr);
+  auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
   return_simple_example(all, nullptr, ec);
 }
 

@@ -229,9 +229,9 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
 
   all.sd->update(holdout_example, is_labelled, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
-  for (auto sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
   {
-    VW::print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
+    VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
   }
 
   VW::print_update_slates(all, slots, predictions, num_features);

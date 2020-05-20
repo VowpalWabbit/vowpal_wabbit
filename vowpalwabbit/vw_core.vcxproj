@@ -138,7 +138,6 @@
     <ClInclude Include="cbify.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="classweight.h" />
-    <ClInclude Include="comp_io.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -161,6 +160,7 @@
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="interactions.h" />
+    <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="lda_core.h" />
@@ -264,7 +264,6 @@
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="classweight.cc" />
-    <ClCompile Include="comp_io.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="cost_sensitive.cc" />
@@ -282,6 +281,7 @@
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interactions.cc" />
+    <ClCompile Include="io/io_adapter.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="label_dictionary.cc" />

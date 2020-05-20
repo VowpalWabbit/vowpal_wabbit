@@ -59,6 +59,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
+#include "io/io_adapter.h"
 
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
@@ -84,16 +85,9 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-void set_compressed(parser* par)
-{
-  finalize_source(par);
-  delete par->input;
-  par->input = new comp_io_buf;
-  delete par->output;
-  par->output = new comp_io_buf;
-}
+void set_compressed(parser* /*par*/) {}
 
-uint32_t cache_numbits(io_buf* buf, int filepointer)
+uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
@@ -132,33 +126,28 @@ void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.p->input;
   input->current = 0;
+
+  // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.p->write_cache)
   {
     all.p->output->flush();
+    // Turn off write_cache as we are now reading it instead of writing!
     all.p->write_cache = false;
     all.p->output->close_file();
+
+    // This deletes the file from disk.
     remove(all.p->output->finalname.begin());
 
+    // Rename the cache file to the final name.
     if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
       THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
                                                                           << all.p->output->finalname);
-
-    while (input->num_files() > 0)
-      if (input->compressed())
-        input->close_file();
-      else
-      {
-        int fd = input->files.pop();
-        const auto& fps = all.final_prediction_sink;
-
-        // If the current popped file is not in the list of final predictions sinks, close it.
-        if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
-          io_buf::close_file_or_socket(fd);
-      }
-    input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
-                                                                                      // open_file
+    input->close_files();
+    // Now open the written cache as the new input file.
+    input->add_file(VW::io::open_file_reader(all.p->output->finalname.cbegin()));
     all.p->reader = read_cached_features;
   }
+
   if (all.p->resettable == true)
   {
     if (all.daemon)
@@ -169,10 +158,8 @@ void reset_source(vw& all, size_t numbits)
         all.p->output_done.wait(lock, [&] { return all.p->finished_examples == all.p->end_parsed_examples && all.p->ready_parsed_examples.size() == 0; });
       }
 
-      // close socket, erase final prediction sink and socket
-      io_buf::close_file_or_socket(all.p->input->files[0]);
       all.final_prediction_sink.clear();
-      all.p->input->files.clear();
+      all.p->input->close_files();
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
@@ -186,8 +173,9 @@ void reset_source(vw& all, size_t numbits)
 
       // note: breaking cluster parallel online learning by dropping support for id
 
-      all.final_prediction_sink.push_back((size_t)f);
-      all.p->input->files.push_back(f);
+      auto socket = VW::io::wrap_socket_descriptor(f);
+      all.final_prediction_sink.push_back(socket->get_writer());
+      all.p->input->add_file(socket->get_reader());
 
       if (isbinary(*(all.p->input)))
       {
@@ -208,37 +196,22 @@ IGNORE_DEPRECATED_USAGE_END
     }
     else
     {
-      for (size_t i = 0; i < input->files.size(); i++)
+      for (auto& file : input->input_files)
       {
-        input->reset_file(input->files[i]);
-        if (cache_numbits(input, input->files[i]) < numbits)
+        input->reset_file(file.get());
+        if (cache_numbits(input, file.get()) < numbits)
           THROW("argh, a bug in caching of some sort!");
       }
     }
   }
 }
 
-void finalize_source(parser* p)
-{
-#ifdef _WIN32
-  int f = _fileno(stdin);
-#else
-  int f = fileno(stdin);
-#endif
-  while (!p->input->files.empty() && p->input->files.last() == f) p->input->files.pop();
-  p->input->close_files();
-
-  delete p->input;
-  p->input = nullptr;
-  p->output->close_files();
-  delete p->output;
-  p->output = nullptr;
-}
+void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
   io_buf* output = all.p->output;
-  if (output->files.size() != 0)
+  if (output->num_files() != 0)
   {
     all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
@@ -247,19 +220,23 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   std::string temp = newname + std::string(".writing");
   push_many(output->currentname, temp.c_str(), temp.length() + 1);
 
-  int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
-  if (f == -1)
+  try
   {
-    all.trace_message << "can't create cache file !" << endl;
+    output->add_file(VW::io::open_file_writer(temp));
+  }
+  catch (const std::exception&)
+  {
+    all.trace_message << "can't create cache file !" << temp << endl;
     return;
   }
-
+  
   size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
-  output->write_file(f, &v_length, sizeof(v_length));
-  output->write_file(f, VW::version.to_string().c_str(), v_length);
-  output->write_file(f, "c", 1);
-  output->write_file(f, &all.num_bits, sizeof(all.num_bits));
+  output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
+  output->bin_write_fixed(VW::version.to_string().c_str(), v_length);
+  output->bin_write_fixed("c", 1);
+  output->bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
+  output->flush();
 
   push_many(output->finalname, newname.c_str(), newname.length() + 1);
   all.p->write_cache = true;
@@ -273,21 +250,22 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
   for (auto& file : cache_files)
   {
-    int f = -1;
+    bool cache_file_opened = false;
     if (!kill_cache)
       try
       {
-        f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
+        all.p->input->add_file(VW::io::open_file_reader(file));
+        cache_file_opened = true;
       }
       catch (const std::exception&)
       {
-        f = -1;
+        cache_file_opened = false;
       }
-    if (f == -1)
+    if (cache_file_opened == false)
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.p->input, f);
+      uint64_t c = cache_numbits(all.p->input, all.p->input->input_files.back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -495,31 +473,29 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    all.p->max_fd = 0;
     if (!all.logger.quiet)
       all.trace_message << "calling accept" << endl;
-    int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
-    if (f < 0)
+    auto f_a = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
+    if (f_a < 0)
       THROWERRNO("accept");
 
     // Disable Nagle delay algorithm due to daemon mode's interactive workload
     int one = 1;
-    setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
+    setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
-    all.p->label_sock = f;
 IGNORE_DEPRECATED_USAGE_START
     all.print = print_result;
 IGNORE_DEPRECATED_USAGE_END
     all.print_by_ref = print_result_by_ref;
 
-    all.final_prediction_sink.push_back((size_t)f);
+    auto socket = VW::io::wrap_socket_descriptor(f_a);
 
-    all.p->input->files.push_back(f);
-    all.p->max_fd = std::max(f, all.p->max_fd);
+    all.final_prediction_sink.push_back(socket->get_writer());
+
+    all.p->input->add_file(socket->get_reader());
     if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
-    all.p->max_fd++;
     if (all.active)
       all.p->reader = read_features_string;
     else
@@ -542,7 +518,7 @@ IGNORE_DEPRECATED_USAGE_END
   }
   else
   {
-    if (!all.p->input->files.empty())
+    if (all.p->input->num_files() != 0)
     {
       if (!quiet)
         all.trace_message << "ignoring text input in favor of cache input" << endl;
@@ -552,9 +528,34 @@ IGNORE_DEPRECATED_USAGE_END
       std::string temp = all.data_filename;
       if (!quiet)
         all.trace_message << "Reading datafile = " << temp << endl;
+
+      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+
       try
       {
-        all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+        std::unique_ptr<VW::io::reader> adapter;
+        if (temp != "")
+        {
+          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp)
+                                          : VW::io::open_file_reader(temp);
+        }
+        else if (!all.stdin_off)
+        {
+          // Should try and use stdin
+          if (should_use_compressed)
+          {
+            adapter = VW::io::open_compressed_stdin();
+          }
+          else
+          {
+            adapter = VW::io::open_stdin();
+          }
+        }
+
+        if (adapter)
+        {
+          all.p->input->add_file(std::move(adapter));
+        }
       }
       catch (std::exception const&)
       {
@@ -602,9 +603,9 @@ IGNORE_DEPRECATED_USAGE_END
   if (passes > 1 && !all.p->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  all.p->input->count = all.p->input->files.size();
+  all.p->input->count = all.p->input->num_files();
   if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.p->input->num_files() << endl;
 }
 
 void lock_done(parser& p)
@@ -1036,18 +1037,6 @@ void cleanup_example(void(*delete_label)(void*), example& ec, void(*delete_predi
 
 void free_parser(vw& all)
 {
-  all.p->words.delete_v();
-
-  if (!all.ngram_strings.empty())
-    all.p->gram_mask.delete_v();
-
-  io_buf* output = all.p->output;
-  if (output != nullptr)
-  {
-    output->finalname.delete_v();
-    output->currentname.delete_v();
-  }
-
   while (!all.p->example_pool.empty())
   {
     example* temp = all.p->example_pool.get_object();
@@ -1059,7 +1048,6 @@ void free_parser(vw& all)
     example* temp = all.p->ready_parsed_examples.pop();
     cleanup_example(all.p->lp.delete_label, *temp, all.delete_prediction);
   }
-  all.p->counts.delete_v();
 }
 
 namespace VW

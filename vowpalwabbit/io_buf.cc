@@ -26,9 +26,9 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
       head = space.begin();
       space.end() = space.begin() + left;
     }
-    if (fill(files[current]) > 0)   // read more bytes from current file if present
+    if (current < input_files.size() && fill(input_files[current].get()) > 0)  // read more bytes from current file if present
       return buf_read(pointer, n);  // more bytes are read.
-    else if (++current < files.size())
+    else if (++current < input_files.size())
       return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
     else
     {
@@ -43,7 +43,7 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
 bool isbinary(io_buf& i)
 {
   if (i.space.end() == i.head)
-    if (i.fill(i.files[i.current]) <= 0)
+    if (i.fill(i.input_files[i.current].get()) <= 0)
       return false;
 
   bool ret = (*i.head == 0);
@@ -75,9 +75,9 @@ size_t readto(io_buf& i, char*& pointer, char terminal)
       i.space.end() = i.space.begin() + left;
       pointer = i.space.end();
     }
-    if (i.current < i.files.size() && i.fill(i.files[i.current]) > 0)  // more bytes are read.
+    if (i.current < i.input_files.size() && i.fill(i.input_files[i.current].get()) > 0)  // more bytes are read.
       return readto(i, pointer, terminal);
-    else if (++i.current < i.files.size())  // no more bytes, so go to next file.
+    else if (++i.current < i.input_files.size())  // no more bytes, so go to next file.
       return readto(i, pointer, terminal);
     else  // no more bytes to read, return everything we have.
     {
@@ -109,52 +109,4 @@ void io_buf::buf_write(char*& pointer, size_t n)
     }
     buf_write(pointer, n);
   }
-}
-
-bool io_buf::is_socket(int f)
-{
-  // this appears to work in practice, but could probably be done in a cleaner fashion
-#ifdef _WIN32
-  const int _nhandle = _getmaxstdio() / 2;
-  return f >= _nhandle;
-#else
-  const int _nhandle = 32;
-  return f >= _nhandle;
-#endif
-}
-
-ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes)
-{
-#ifdef _WIN32
-  if (is_socket(f))
-    return recv(f, reinterpret_cast<char*>(buf), static_cast<int>(nbytes), 0);
-  else
-    return _read(f, buf, (unsigned int)nbytes);
-#else
-  return read(f, buf, (unsigned int)nbytes);
-#endif
-}
-
-ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
-{
-#ifdef _WIN32
-  if (is_socket(f))
-    return send(f, reinterpret_cast<const char*>(buf), static_cast<int>(nbytes), 0);
-  else
-    return _write(f, buf, (unsigned int)nbytes);
-#else
-  return write(f, buf, (unsigned int)nbytes);
-#endif
-}
-
-void io_buf::close_file_or_socket(int f)
-{
-#ifdef _WIN32
-  if (io_buf::is_socket(f))
-    closesocket(f);
-  else
-    _close(f);
-#else
-  close(f);
-#endif
 }

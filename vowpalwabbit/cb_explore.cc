@@ -9,6 +9,7 @@
 #include "gen_cs_example.h"
 #include "explore.h"
 #include <memory>
+#include "scope_exit.h"
 
 using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
@@ -178,6 +179,9 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   data.cb_label = ec.l.cb;
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([&data, &ec] { ec.l.cb = data.cb_label; });
+
   ec.l.cs = data.cs_label;
   get_cover_probabilities(data, base, ec, probs);
 
@@ -218,7 +222,6 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     }
   }
 
-  ec.l.cb = data.cb_label;
   ec.pred.a_s = probs;
 }
 
@@ -260,7 +263,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
       maxid = i + 1;
     }
   }
-  for (int sink : all.final_prediction_sink) all.print_text_by_ref(sink, ss.str(), ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;

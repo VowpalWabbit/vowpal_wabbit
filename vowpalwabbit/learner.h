@@ -10,6 +10,7 @@
 #include "parser.h"
 #include "future_compat.h"
 #include <memory>
+#include "scope_exit.h"
 
 
 enum class prediction_type_t
@@ -402,7 +403,7 @@ struct learner
     });
 
     ret.learn_fd.data = dat;
-    ret.learn_fd.learn_f = (learn_data::fn)learn;
+    ret.learn_fd.learn_f = reinterpret_cast<learn_data::fn>(learn);
     ret.learn_fd.update_f = (learn_data::fn)learn;
     ret.learn_fd.predict_f = (learn_data::fn)predict;
     ret.learn_fd.multipredict_f = nullptr;
@@ -539,12 +540,21 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
     ec->ft_offset = offset;
   }
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&saved_offsets, &examples]
+    {
+      for (size_t i = 0; i < examples.size(); i++) 
+      {
+        examples[i]->ft_offset = saved_offsets[i];
+      }
+    });
+
   if (is_learn)
     base.learn(examples, id);
   else
     base.predict(examples, id);
 
-  for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
 }  // namespace LEARNER
 }  // namespace VW

@@ -27,6 +27,7 @@
     <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="guard_test.cc" />
+    <ClCompile Include="io_adapter_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="object_pool_test.cc" />
