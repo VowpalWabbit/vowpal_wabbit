@@ -104,6 +104,30 @@ class swap_guard_impl_rvalue
 }  // namespace details
 
 /// This guard will swap the two locations on creation and upon deletion swap them back.
+///
+/// #### Example:
+/// \code
+/// void use_widget(widget& my_widget)
+/// {
+///   auto new_widget_value = ::get_new_widget_value();
+///   auto temp = std::move(my_widget.value);
+///   my_widget.value = std::move(new_widget_value);
+///
+///   do_thing_with_widget(my_widget);
+///
+///   new_widget_value = std::move(my_widget.value);
+///   my_widget.value = std::move(temp);
+/// }
+///
+/// // Can be replaced with:
+///
+/// void use_widget(widget& my_widget)
+/// {
+///   auto new_widget_value = ::get_new_widget_value();
+///   auto guard = VW::swap_guard(my_widget.value, new_widget_value);
+///   do_thing_with_widget(my_widget);
+/// }
+/// \endcode
 template <typename T>
 VW_ATTR(nodiscard)
 inline details::swap_guard_impl<T> swap_guard(T& original_location, T& value_to_swap) noexcept
@@ -113,6 +137,29 @@ inline details::swap_guard_impl<T> swap_guard(T& original_location, T& value_to_
 
 /// This guard will swap the two locations on creation and upon deletion swap them back.
 /// Note: This overload allows for a temporary value to be passed in.
+///
+/// #### Example:
+/// \code
+/// void use_widget(widget& my_widget)
+/// {
+///   auto new_widget_value = ::get_new_widget_value();
+///   auto temp = std::move(my_widget.value);
+///   my_widget.value = std::move(new_widget_value);
+///
+///   do_thing_with_widget(my_widget);
+///
+///   new_widget_value = std::move(my_widget.value);
+///   my_widget.value = std::move(temp);
+/// }
+///
+/// // Can be replaced with:
+///
+/// void use_widget(widget& my_widget)
+/// {
+///   auto guard = VW::swap_guard(my_widget.value, ::get_new_widget_value(););
+///   do_thing_with_widget(my_widget);
+/// }
+/// \endcode
 template <typename T>
 VW_ATTR(nodiscard)
 inline details::swap_guard_impl_rvalue<T> swap_guard(T& original_location, T&& value_to_swap) noexcept
