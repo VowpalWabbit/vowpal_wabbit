@@ -60,6 +60,9 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   {
     ec.l.cs = data.cb_cs_ld;
 
+    // Guard example state restore against throws
+    auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cb = ld; });
+
     if (is_learn)
       base.learn(ec);
     else
@@ -67,7 +70,6 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
     for (size_t i = 0; i < ld.costs.size(); i++)
       ld.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
-    ec.l.cb = ld;
   }
 }
 
