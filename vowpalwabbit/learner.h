@@ -3,15 +3,18 @@
 // license as described in the file LICENSE.
 #pragma once
 // This is the interface for a learning algorithm
+
 #include <iostream>
+#include <memory>
+
 #include "memory.h"
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
 #include "future_compat.h"
+#include "example.h"
 #include <memory>
 #include "scope_exit.h"
-
 
 enum class prediction_type_t
 {

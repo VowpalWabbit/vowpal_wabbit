@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
+
 #include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
@@ -20,7 +22,6 @@
 #include "ccb_label.h"
 #include "slates_label.h"
 #include "decision_scores.h"
-#include <vector>
 
 typedef union
 {
