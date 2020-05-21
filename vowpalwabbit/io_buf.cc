@@ -2,10 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "io_buf.h"
-#include <cstdio>
-#ifdef _WIN32
-#include <winsock2.h>
-#endif
 
 size_t io_buf::buf_read(char*& pointer, size_t n)
 {

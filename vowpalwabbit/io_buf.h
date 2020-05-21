@@ -4,32 +4,16 @@
 
 #pragma once
 
-#ifdef _WIN32
-#define NOMINMAX
-#define ssize_t int64_t
-#include <io.h>
-#include <sys/stat.h>
-#else
-#include <unistd.h>
-#endif
-
-#include <cstdio>
-#include <cstdint>
-#include <fcntl.h>
-#include "v_array.h"
+#include <cstddef>
 #include <iostream>
 #include <sstream>
-#include <cerrno>
-#include <stdexcept>
+#include <vector>
+#include <memory>
+
+#include "v_array.h"
 #include "hash.h"
 #include "vw_exception.h"
-#include "vw_validate.h"
-
 #include "io/io_adapter.h"
-
-#ifndef O_LARGEFILE  // for OSX
-#define O_LARGEFILE 0
-#endif
 
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
@@ -140,7 +124,8 @@ public:
   static ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
 
   ssize_t fill(VW::io::reader* f)
-  {  // if the loaded values have reached the allocated space
+  {
+    // if the loaded values have reached the allocated space
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
       size_t head_loc = head - space.begin();
@@ -150,7 +135,8 @@ public:
     // read more bytes from file up to the remaining allocated space
     ssize_t num_read = read_file(f, space.end(), space.end_array - space.end());
     if (num_read >= 0)
-    {  // if some bytes were actually loaded, update the end of loaded values
+    {
+      // if some bytes were actually loaded, update the end of loaded values
       space.end() = space.end() + num_read;
       return num_read;
     }
@@ -164,6 +150,7 @@ public:
   {
     return f->write(static_cast<const char*>(buf), nbytes);
   }
+
   // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
   // in the refactor.
   static ssize_t write_file(VW::io::writer* f, const void* buf, size_t nbytes)

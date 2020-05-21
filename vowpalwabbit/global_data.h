@@ -44,6 +44,7 @@
 #include "rand48.h"
 #include "hashstring.h"
 #include "decision_scores.h"
+#include "feature_group.h"
 
 #include "options.h"
 #include "version.h"
