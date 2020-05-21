@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
+
 #include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
