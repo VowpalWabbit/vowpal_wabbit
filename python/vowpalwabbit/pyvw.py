@@ -1359,33 +1359,31 @@ class example(pylibvw.example):
 
 
 class Col:
-    """Col is a convenience class to refer to a column of a dataframe.
-    Its methods can:
+    """Refer to a column of a dataframe.
+    The methods of this class are used to:
         - check if the column is in a specified dataframe
         - extract the column from the specified dataframe
     """
 
     def __init__(self, colname):
-        """
-        Initialize a Col object
+        """Initialize a Col object.
 
         Parameters
         ----------
 
         colname : str
-            The colname that refers to a column
+            The colname that refers to a column.
 
         Raises
         ------
 
         TypeError
-            If attribute 'colname' is not a string
+            If attribute 'colname' is not a string.
 
         Returns
         -------
 
         self : Col
-
         """
         if isinstance(colname, str):
             self.colname = colname
@@ -1393,33 +1391,30 @@ class Col:
             raise TypeError("'colname' must be a string")
 
     def col_exist(self, df):
-        """
-        Check if the column 'colname' is in a dataframe 'df'
+        """Check if the column 'colname' is in a dataframe 'df'.
 
         Parameters
         ----------
 
         df : pandas.DataFrame
-            The dataframe in which to look for the column
+            The dataframe in which to look for the column.
 
         Returns
         -------
 
         bool
             True if the column is in the dataframe, False otherwise.
-
         """
         return self.colname in df
 
     def get_col(self, df):
-        """
-        Extract the column 'colname' from the dataframe 'df'
+        """Extract the column 'colname' from the dataframe 'df'.
 
         Parameters
         ----------
 
         df : pandas.DataFrame
-            The dataframe from which to extract the column 'colname'
+            The dataframe from which to extract the column 'colname'.
 
         Raises
         ------
@@ -1432,7 +1427,6 @@ class Col:
 
         out : pandas.Series
             The column extracted from the dataframe.
-
         """
         try:
             out = df[self.colname].fillna("").apply(str)
@@ -1444,9 +1438,9 @@ class Col:
             return out
 
 
-def get_col_or_value(x, df):
+def _get_col_or_value(x, df):
     """Returns the column 'colname' from dataframe 'df' if x is a Col
-    object else returns the value of x convert to string.
+    object else returns the value of x converted to string.
 
     Parameters
     ----------
@@ -1458,8 +1452,9 @@ def get_col_or_value(x, df):
 
     Returns
     -------
+
     out : str or pandas.Series
-        A pandas.Series if x is of type 'Col' and a string.
+        A pandas.Series if x is of type 'Col' or a string otherwise.
     """
     try:
         out = x.get_col(df)
@@ -1468,35 +1463,32 @@ def get_col_or_value(x, df):
     return out
 
 
-def get_all_cols(obj):
-    """
-    Returns attributes of an instance that are of type Col. Note that this
-    method search for Col just in the attributes of the instances and will
-    not search in the attributes of the attributes (no recursive search).
+def _get_all_cols(obj):
+    """Returns the attributes of type Col of a given instance. Note that this
+    method won't search for Col types in the attributes of the attributes
+    (no recursive search).
 
     Returns
     -------
 
-    out : list of Col
-        The list of Col objects in the instance
-
+    out : list (of Col)
+        The list of Col objects in the instance.
     """
     attr_values = list(vars(obj).values())
     out = [x for x in attr_values if isinstance(x, Col)]
     return out
 
 
-def check_type(obj, expected_type):
-    """
-    Check if an object is of valid type.
+def _check_type(obj, expected_type):
+    """Check if the type of an object is valid.
 
     Parameters
     ----------
 
-    arg : obj
-        The object to check
-    expected_type: type or tuple of types
-        The types to check against
+    obj : object
+        The object to check.
+    expected_type : type or tuple of types
+        The type(s) to check against.
 
     Raises
     ------
@@ -1504,53 +1496,48 @@ def check_type(obj, expected_type):
     TypeError
         If the argument is not of a valid type.
     """
-    expected_type_str = str(
-        [x.__name__ for x in expected_type]
-    )
+    expected_type_str = str([x.__name__ for x in expected_type])
     if obj is not None:
         if not isinstance(obj, expected_type):
             raise TypeError(
-                "Parameter {} shoud be of class {}".format(
+                "Parameter {} should be of type(s) {}".format(
                     obj, expected_type_str[1:-1]
                 )
             )
 
 
 class SimpleLabel:
-    """The SimpleLabel class is used to build a simple label that will be plug
-    to build the parameters of the DFtoVW class.
+    """The SimpleLabel class is used to build a simple label for the
+    constructor of DFtoVW.
     """
 
     expected_type = dict(name=(Col, str, int, float))
 
     def __init__(self, name):
-        """
-        Initialize a SimpleLabel instance.
+        """Initialize a SimpleLabel instance.
 
         Parameters
         ----------
 
-        name : Col/int/float/str
+        name : Col/str/int/float
             A Col object specifying the column to extract from a dataframe or a
-            constant value of type int/float/str.
+            constant value of type str/int/float.
 
         Returns
         -------
 
         self : SimpleLabel
-
         """
-        check_type(name, self.expected_type["name"])
+        _check_type(name, self.expected_type["name"])
         self.name = name
 
     def process(self, df):
-        """
-        Returns the SimpleLabel string representation.
+        """Returns the SimpleLabel string representation.
 
         Parameters
         ----------
 
-        df: pandas.DataFrame
+        df : pandas.DataFrame
             The dataframe from which to extract a column.
 
         Returns
@@ -1559,15 +1546,14 @@ class SimpleLabel:
         str or pandas.Series
             The SimpleLabel string representation.
         """
-        return get_col_or_value(self.name, df)
+        return _get_col_or_value(self.name, df)
 
 
 class Feature:
-    """The Feature class is used to build a feature for the DFtoVW class"""
+    """A feature for the constructor of DFtoVW"""
 
     expected_type = dict(
-        name=(Col, str, float, int),
-        value=(Col, str, float, int)
+        name=(Col, str, float, int), value=(Col, str, float, int)
     )
 
     def __init__(self, value, name=None):
@@ -1586,62 +1572,56 @@ class Feature:
         -------
 
         self : Feature
-
         """
-        for (arg, name_arg) in zip([name, value], ["name", "value"]) :
-            check_type(arg, self.expected_type[name_arg])
+        for (arg, name_arg) in zip([name, value], ["name", "value"]):
+            _check_type(arg, self.expected_type[name_arg])
         self.name = name
         self.value = value
 
     def process(self, df):
-        """
-        Returns the Feature string representation.
+        """Returns the Feature string representation.
 
         Parameters
         ----------
 
         df : pandas.DataFrame
-            The dataframe from which to extract a column
+            The dataframe from which to extract a column.
 
         Returns
         -------
 
         out : str or pandas.Series
-            The Feature string representation
-
+            The Feature string representation.
         """
-        value_col = get_col_or_value(self.value, df)
+        value_col = _get_col_or_value(self.value, df)
         if self.name is None:
             out = value_col
         else:
-            name_col = get_col_or_value(self.name, df)
+            name_col = _get_col_or_value(self.name, df)
             out = name_col + ":" + value_col
         return out
 
 
 class Namespace:
-    """The Namespace class is used to build a namespace for the DFtoVW class.
-    The Namespace is a container for Feature object(s). Hence, it must
+    """A namespace for the constructor of DFtoVW.
+    The Namespace is a container for Feature object(s), and thus must
     be composed of a Feature object or a list of Feature objects.
     """
 
     expected_type = dict(
-        name=(str, int, float),
-        value=(int, float),
-        features=(list, Feature),
+        name=(str, int, float), value=(int, float), features=(list, Feature),
     )
 
     def __init__(self, features, name=None, value=None):
-        """
-        Initialize a Namespace instance.
+        """Initialize a Namespace instance.
 
         Parameters
         ----------
 
         features : Feature or list of Feature
-            A (list of) Feature object(s) that will form the namespace
+            A (list of) Feature object(s) that form the namespace.
         name : str/int/float, optional
-            The name of the namespace
+            The name of the namespace.
         value : int/float, optional
             A constant that specify the scaling factor for the features of this
             namespace.
@@ -1658,18 +1638,18 @@ class Namespace:
         Returns
         -------
 
-        self: Namespace
-
+        self : Namespace
         """
-        for (arg, name_arg) in zip([name, value, features], ["name", "value", "features"]) :
-            check_type(arg, self.expected_type[name_arg])
+        for (arg, name_arg) in zip([name, value, features],
+                                   ["name", "value", "features"]):
+            _check_type(arg, self.expected_type[name_arg])
 
         self.features = (
             list(features) if isinstance(features, (list, set)) else [features]
         )
         if (value is not None) and (name is None):
             raise ValueError(
-                "Namespace cannot have a 'value' argument without a 'name' argument"
+                "Namespace can't have a 'value' argument without a 'name' argument"
             )
         self.name = name
         if value is not None:
@@ -1677,9 +1657,7 @@ class Namespace:
         self.value = value
 
     def process(self, df=None):
-        """
-        Returns the Namespace string representation
-        """
+        """Returns the Namespace string representation"""
         out = ["|"]
         if self.name is not None:
             out += str(self.name)
@@ -1690,18 +1668,15 @@ class Namespace:
 
 
 class DFtoVW:
-    """
-    The DFtoVW is used to convert a pandas DataFrame to a suitable VW format.
-    Instances of this class are build using Col object(s) and classes such as
-    SimpleLabel, Feature or Namespace.
+    """Convert a pandas DataFrame to a suitable VW format.
+    Instances of this class are built with classes such as SimpleLabel, Feature
+    or Namespace (that can themselves be built on Col object(s)).
     The class also provided a convenience constructor to initialize the class
-    based on the target/features columns names only.
+    based on the target/features column names only.
     """
 
-    def __init__(self, df, namespaces,
-                 label=None, tag=None, base=None, importance=None):
-        """
-        Initialize a DFtoVW instance
+    def __init__(self, df, namespaces, label=None, tag=None):
+        """Initialize a DFtoVW instance.
 
         Parameters
         ----------
@@ -1713,13 +1688,8 @@ class DFtoVW:
             more Feature object(s).
         label : SimpleLabel
             The label is the real numbers to be predicted for the examples.
-        importance : SimpleLabel
-            The importance (weight) indicating the relative importance of the
-            examples.
-        tag :  SimpleLabel
+        tag :  str
             The tag that is used as identifiers for the examples.
-        base : SimpleLabel
-            The base added to the prediction before computing an update.
 
         Examples
         --------
@@ -1753,8 +1723,7 @@ class DFtoVW:
         self.df = df
         self.n_rows = df.shape[0]
         self.targets = collections.OrderedDict()
-        for (key, value) in zip(["label", "importance", "base", "tag"],
-                                [label, importance, base, tag]):
+        for (key, value) in zip(["label", "tag"], [label, tag]):
             self.targets[key] = value
         self.no_tag = tag is not None
         self.namespaces = (
@@ -1769,25 +1738,19 @@ class DFtoVW:
         self.out = self.empty_col()
 
     @classmethod
-    def from_colnames(cls, y, x, df, cbb_label=False):
-        """Simple interface to building formula.
+    def from_colnames(cls, y, x, df):
+        """Build DFtoVW instance using column names only.
 
 
         Parameters
         ----------
-        cls : DFtoVW
-            DFtoVW will be initialized using the arguments of this simpler
-            interface
+
         y : str/list
-            The column(s) for the label(s)
+            The column for the label.
         x : str/list
-            The column(s) for the feature(s)
+            The column(s) for the feature(s).
         df : pandas.DataFrame
-            The dataframe used
-        cbb_label : bool, optional
-            Should be set to True if the label represent contextual bandit
-            label.
-            The default is False.
+            The dataframe used.
 
         Raises
         ------
@@ -1809,10 +1772,9 @@ class DFtoVW:
 
         DFtoVW
             A initialized DFtoVW instance.
-
         """
 
-        if isinstance(y, list) and not cbb_label:
+        if isinstance(y, list):
             if len(y) == 1:
                 y = y[0]
             else:
@@ -1828,15 +1790,13 @@ class DFtoVW:
         return cls(namespaces=namespaces, label=label, df=df)
 
     def check_targets_type(self):
-        """
-        Check targets arguments (label, tag, importance, base) conformity
+        """Check targets arguments (label, tag) conformity.
 
         Raises
         ------
 
         TypeError
-            If any of the targets element is not of type SimpleLabel
-
+            If any of the targets element is not of type SimpleLabel.
         """
         wrong_type_targets = [
             key
@@ -1851,14 +1811,13 @@ class DFtoVW:
             )
 
     def check_namespaces_type(self):
-        """
-        Check namespaces arguments conformity
+        """Check if namespaces arguments are of type Namespace.
 
         Raises
         ------
 
         TypeError
-            If parameters namespaces is not of type Namespace
+            If namespaces are not of type Namespace.
         """
         wrong_type_namespaces = [
             not isinstance(namespace, Namespace)
@@ -1866,20 +1825,19 @@ class DFtoVW:
         ]
         if any(wrong_type_namespaces):
             raise TypeError(
-                "Parameter namespaces must be a (list of) Namespace object(s)"
+                "Argument `namespaces` should be "
+                "a Namespace object or a list of Namespace objects"
             )
 
     def check_features_type(self):
-        """
-        Check if elements of namespaces are of type features
+        """Check if 'features' attribute of namespaces are of type Feature.
 
         Raises
         ------
 
         TypeError
             If parameters any of the element in a 'Namespace' is not of type
-            'Feature'
-
+            'Feature'.
         """
         for ns in self.namespaces:
             features = ns.features
@@ -1888,19 +1846,19 @@ class DFtoVW:
             ]
             if any(wrong_type_features):
                 raise TypeError(
-                    "Elements of 'Namespace' object must be of type 'Feature'"
+                    "Argument 'features' of Namespace should be "
+                    "a Feature object or a list of Feature objects"
                 )
 
     def check_if_cols_exist(self):
-        """
-        Check if some columns specified are not in dataframe.
+        """Check if the columns specified in the constructor are in the
+        dataframe.
 
         Raises
         ------
 
         ValueError
-            If some columns are not in the dataframe.
-
+            If one or more columns are not in the dataframe.
         """
         absent_cols = []
 
@@ -1910,7 +1868,7 @@ class DFtoVW:
         for target in targets_not_none:
             absent_cols += [
                 x.colname
-                for x in get_all_cols(target)
+                for x in _get_all_cols(target)
                 if not x.col_exist(self.df)
             ]
 
@@ -1918,7 +1876,7 @@ class DFtoVW:
             for feature in ns.features:
                 absent_cols += [
                     x.colname
-                    for x in get_all_cols(feature)
+                    for x in _get_all_cols(feature)
                     if not x.col_exist(self.df)
                 ]
 
@@ -1930,28 +1888,24 @@ class DFtoVW:
             raise ValueError(msg_error)
 
     def empty_col(self):
-        """
-        Create an empty string pandas column.
+        """Create an empty string column.
 
         Returns
         -------
 
         pandas.Series
             A column of empty string with as much rows as the input dataframe.
-
         """
         return pd.Series([""] * self.n_rows)
 
     def process_targets(self):
-        """
-        Process the targets into a unique pandas column
+        """Process the targets into a unique column.
 
         Returns
         -------
 
         out : pandas.Series
-            A column where each row is the processed targets
-
+            A column where each row is the processed targets.
         """
         out = self.empty_col()
 
@@ -1964,21 +1918,19 @@ class DFtoVW:
         return out
 
     def process_features(self, features):
-        """
-        Process the features (of a namespace) into a unique pandas column
+        """Process the features (of a namespace) into a unique column.
 
         Parameters
         ----------
 
         features : list of Feature
-            The list of Feature objects
+            The list of Feature objects.
 
         Returns
         -------
 
-        out : pandas.series
-            The column of the processed features
-
+        out : pandas.Series
+            The column of the processed features.
         """
         out = self.empty_col()
         for feature in features:
@@ -1986,14 +1938,13 @@ class DFtoVW:
         return out
 
     def process_df(self):
-        """
-        Main method that do the conversion of the dataframe to the VW format
+        """Main method that converts the pandas dataframe to the VW format.
 
         Returns
         -------
 
         list
-            The list of parsed lines in VW format
+            The list of parsed lines in VW format.
         """
         if not all(x is None for x in self.targets.values()):
             self.out += self.process_targets()
@@ -2007,5 +1958,4 @@ class DFtoVW:
             )
 
         return self.out.to_list()
-
 
