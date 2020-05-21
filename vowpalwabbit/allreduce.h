@@ -11,7 +11,9 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <WinSock2.h>
+#include <Windows.h>
 #include <WS2tcpip.h>
+#include <io.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
