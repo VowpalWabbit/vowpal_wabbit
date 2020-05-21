@@ -24,7 +24,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 
     std::thread io_queue_th([&all, &io_lines]() 
         {
-            io_lines_toqueue(&all, io_lines);
+            io_lines_toqueue(all, io_lines);
 
         });
 
