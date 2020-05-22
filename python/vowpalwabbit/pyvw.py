@@ -5,7 +5,6 @@ from __future__ import division
 import pylibvw
 import warnings
 import pandas as pd
-import collections
 
 class SearchTask():
     """Search task class"""
@@ -1927,15 +1926,19 @@ class DFtoVW:
                 raise ValueError(
                     "Parameter should a list of one string (or a string)"
                 )
-        if not isinstance(x, str):
-            raise TypeError("Argument 'x' should be a string")
-        if not isinstance(x, str):
+        if not isinstance(y, str):
             raise TypeError(
                 "Argument 'y' should be a string or a list of one string"
             )
 
         label = SimpleLabel(Col(y))
+
         x = list(x) if isinstance(x, (list, set)) else [x]
+        if not all(isinstance(xi, str) for xi in x):
+            raise TypeError(
+                "Argument 'x' should be a string or a list of string"
+            )
+
         namespaces = Namespace(
             features=[Feature(value=Col(colname)) for colname in x]
         )
