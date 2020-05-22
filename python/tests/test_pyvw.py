@@ -359,7 +359,7 @@ def test_feature_column_renaming_and_tag():
     df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
     conv = DFtoVW(
         label=SimpleLabel(Col("y")),
-        tag=SimpleLabel(Col("idx")),
+        tag=Col("idx"),
         namespaces=Namespace([Feature(name="col_x", value=Col("x"))]),
         df=df,
     )
@@ -371,7 +371,7 @@ def test_feature_constant_column_with_empty_name():
     df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
     conv = DFtoVW(
         label=SimpleLabel(Col("y")),
-        tag=SimpleLabel(Col("idx")),
+        tag=Col("idx"),
         namespaces=Namespace([Feature(name="", value=2)]),
         df=df,
     )
@@ -429,13 +429,12 @@ def test_absent_col_error():
         df = pd.DataFrame({"a": [1]})
         conv = DFtoVW(
             df=df,
-            label=SimpleLabel(Col("b")),
+            label=SimpleLabel(Col("a")),
             namespaces=Namespace(
-                [Feature(Col("b")), Feature(Col("c")), Feature("d")]
+                [Feature(Col("a")), Feature(Col("c")), Feature("d")]
             ),
         )
-    expected = "The following columns do not exist in the dataframe: '{}', '{}'".format(
-        "b", "c"
-    )
+    expected = "In argument 'features', column(s) 'c' not found in dataframe"
     assert expected == str(value_error.value)
+
 

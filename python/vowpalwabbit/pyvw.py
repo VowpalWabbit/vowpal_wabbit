@@ -1506,6 +1506,154 @@ def _check_type(obj, expected_type):
             )
 
 
+class Col:
+    """Refer to a column of a dataframe.
+    The methods of this class are used to:
+        - check if the column is in a specified dataframe
+        - extract the column from the specified dataframe
+    """
+
+    def __init__(self, colname):
+        """Initialize a Col object.
+
+        Parameters
+        ----------
+
+        colname : str
+            The colname that refers to a column.
+
+        Raises
+        ------
+
+        TypeError
+            If attribute 'colname' is not a string.
+
+        Returns
+        -------
+
+        self : Col
+        """
+        if isinstance(colname, str):
+            self.colname = colname
+        else:
+            raise TypeError("'colname' must be a string")
+
+    def col_exist(self, df):
+        """Check if the column 'colname' is in a dataframe 'df'.
+
+        Parameters
+        ----------
+
+        df : pandas.DataFrame
+            The dataframe in which to look for the column.
+
+        Returns
+        -------
+
+        bool
+            True if the column is in the dataframe, False otherwise.
+        """
+        return self.colname in df
+
+    def get_col(self, df):
+        """Extract the column 'colname' from the dataframe 'df'.
+
+        Parameters
+        ----------
+
+        df : pandas.DataFrame
+            The dataframe from which to extract the column 'colname'.
+
+        Raises
+        ------
+
+        KeyError
+            If the column is not found in the dataframe.
+
+        Returns
+        -------
+
+        out : pandas.Series
+            The column extracted from the dataframe.
+        """
+        try:
+            out = df[self.colname].fillna("").apply(str)
+        except KeyError:
+            raise KeyError(
+                "Column '{}' not found in dataframe".format(self.colname)
+            )
+        else:
+            return out
+
+
+def _get_col_or_value(x, df):
+    """Returns the column 'colname' from dataframe 'df' if x is a Col
+    object else returns the value of x converted to string.
+
+    Parameters
+    ----------
+
+    x : Col/str/int/float
+        The Col object or a literal value (str/int/float).
+    df : pandas.DataFrame
+        The dataframe in which to extract the column.
+
+    Returns
+    -------
+
+    out : str or pandas.Series
+        A pandas.Series if x is of type 'Col' or a string otherwise.
+    """
+    try:
+        out = x.get_col(df)
+    except AttributeError:
+        out = str(x)
+    return out
+
+
+def _get_all_cols(obj):
+    """Returns the attributes of type Col of a given instance. Note that this
+    method won't search for Col types in the attributes of the attributes
+    (no recursive search).
+
+    Returns
+    -------
+
+    out : list (of Col)
+        The list of Col objects in the instance.
+    """
+    attr_values = list(vars(obj).values())
+    out = [x for x in attr_values if isinstance(x, Col)]
+    return out
+
+
+def _check_type(obj, expected_type):
+    """Check if the type of an object is valid.
+
+    Parameters
+    ----------
+
+    obj : object
+        The object to check.
+    expected_type : type or tuple of types
+        The type(s) to check against.
+
+    Raises
+    ------
+
+    TypeError
+        If the argument is not of a valid type.
+    """
+    expected_type_str = str([x.__name__ for x in expected_type])
+    if obj is not None:
+        if not isinstance(obj, expected_type):
+            raise TypeError(
+                "Parameter {} should be of type(s) {}".format(
+                    obj, expected_type_str[1:-1]
+                )
+            )
+
+
 class SimpleLabel:
     """The SimpleLabel class is used to build a simple label for the
     constructor of DFtoVW.
@@ -1688,7 +1836,7 @@ class DFtoVW:
             more Feature object(s).
         label : SimpleLabel
             The label is the real numbers to be predicted for the examples.
-        tag :  str
+        tag :  Col or str
             The tag that is used as identifiers for the examples.
 
         Examples
@@ -1722,16 +1870,14 @@ class DFtoVW:
         """
         self.df = df
         self.n_rows = df.shape[0]
-        self.targets = collections.OrderedDict()
-        for (key, value) in zip(["label", "tag"], [label, tag]):
-            self.targets[key] = value
-        self.no_tag = tag is not None
+        self.label = label
+        self.tag = tag
         self.namespaces = (
             list(namespaces)
             if isinstance(namespaces, (list, set))
             else [namespaces]
         )
-        self.check_targets_type()
+        self.check_label_type()
         self.check_namespaces_type()
         self.check_features_type()
         self.check_if_cols_exist()
@@ -1756,7 +1902,7 @@ class DFtoVW:
         ------
 
         TypeError
-            DESCRIPTION.
+            If argument label is a list of multiple strings
 
         Examples
         --------
@@ -1779,8 +1925,14 @@ class DFtoVW:
                 y = y[0]
             else:
                 raise ValueError(
-                    "Parameter should be a string or a list of one string"
+                    "Parameter should a list of one string (or a string)"
                 )
+        if not isinstance(x, str):
+            raise TypeError("Argument 'x' should be a string")
+        if not isinstance(x, str):
+            raise TypeError(
+                "Argument 'y' should be a string or a list of one string"
+            )
 
         label = SimpleLabel(Col(y))
         x = list(x) if isinstance(x, (list, set)) else [x]
@@ -1789,26 +1941,17 @@ class DFtoVW:
         )
         return cls(namespaces=namespaces, label=label, df=df)
 
-    def check_targets_type(self):
-        """Check targets arguments (label, tag) conformity.
+    def check_label_type(self):
+        """Check label argument conformity.
 
         Raises
         ------
 
         TypeError
-            If any of the targets element is not of type SimpleLabel.
+            If label is not of type SimpleLabel.
         """
-        wrong_type_targets = [
-            key
-            for (key, value) in self.targets.items()
-            if not isinstance(value, SimpleLabel) and value is not None
-        ]
-        if wrong_type_targets:
-            raise TypeError(
-                "Parameter(s) {} must be of type 'SimpleLabel'".format(
-                    str(wrong_type_targets)[1:-1]
-                )
-            )
+        if not isinstance(self.label, SimpleLabel) and self.label is not None:
+            raise TypeError("Argument 'label' must be of type 'SimpleLabel'")
 
     def check_namespaces_type(self):
         """Check if namespaces arguments are of type Namespace.
@@ -1860,31 +2003,46 @@ class DFtoVW:
         ValueError
             If one or more columns are not in the dataframe.
         """
-        absent_cols = []
+        absent_cols = {}
 
-        targets_not_none = [
-            target for target in self.targets.values() if target is not None
-        ]
-        for target in targets_not_none:
-            absent_cols += [
+        if self.label is not None:
+            absent_cols["label"] = [
                 x.colname
-                for x in _get_all_cols(target)
+                for x in _get_all_cols(self.label)
                 if not x.col_exist(self.df)
             ]
 
+        if self.tag is not None:
+            if isinstance(self.tag, Col) and not self.tag.col_exist(self.df):
+                absent_cols["tag"] = repr(self.tag.colname)
+
+        missing_features_cols = []
         for ns in self.namespaces:
             for feature in ns.features:
-                absent_cols += [
+                missing_features_cols += [
                     x.colname
                     for x in _get_all_cols(feature)
                     if not x.col_exist(self.df)
                 ]
+        absent_cols["features"] = sorted(list(set(missing_features_cols)))
 
-        unique_absent_cols = sorted(list(set(absent_cols)))
-        if len(absent_cols) > 0:
-            msg_error = "The following columns do not exist in the dataframe: {}".format(
-                str(unique_absent_cols)[1:-1]
+        absent_cols = {
+            key: value for (key, value) in absent_cols.items() if len(value) > 0
+        }
+        msg_error = ""
+        for arg_name, missing_cols in absent_cols.items():
+            missing_cols = (
+                repr(missing_cols)[1:-1]
+                if isinstance(missing_cols, list)
+                else missing_cols
             )
+            if len(msg_error) > 0:
+                msg_error += "\n"
+            msg_error += "In argument '{}', column(s) {} not found in dataframe".format(
+                arg_name, missing_cols
+            )
+
+        if absent_cols:
             raise ValueError(msg_error)
 
     def empty_col(self):
@@ -1898,23 +2056,20 @@ class DFtoVW:
         """
         return pd.Series([""] * self.n_rows)
 
-    def process_targets(self):
-        """Process the targets into a unique column.
+    def process_label_and_value(self):
+        """Process the label and value into a unique column.
 
         Returns
         -------
 
         out : pandas.Series
-            A column where each row is the processed targets.
+            A column where each row is the processed label and value.
         """
         out = self.empty_col()
-
-        for name, value in self.targets.items():
-            if value is not None:
-                to_add = value.process(self.df)
-                out += to_add if (name == "label") else (" " + to_add)
-            elif (value is None) and (name == "tag"):
-                out += " "
+        if self.label is not None:
+            out += self.label.process(self.df) + " "
+        if self.tag is not None:
+            out += _get_col_or_value(self.tag, self.df)
         return out
 
     def process_features(self, features):
@@ -1946,8 +2101,8 @@ class DFtoVW:
         list
             The list of parsed lines in VW format.
         """
-        if not all(x is None for x in self.targets.values()):
-            self.out += self.process_targets()
+        if not all(x is None for x in [self.label, self.tag]):
+            self.out += self.process_label_and_value()
 
         for (num_ns, ns_obj) in enumerate(self.namespaces):
             to_add = ns_obj.process() + self.process_features(ns_obj.features)
