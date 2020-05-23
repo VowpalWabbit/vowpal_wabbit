@@ -11,6 +11,7 @@
 #include "io_to_queue.h"
 
 using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
+struct IO_State;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
@@ -21,15 +22,20 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   {
 
     std::queue<IO_Item> *io_lines = new std::queue<IO_Item>;
+    IO_State io_state(io_lines);
+
+    all.p->_io_state = io_state;
 
     std::thread io_queue_th([&all, &io_lines]() 
         {
-            io_lines_toqueue(all, io_lines);
+          io_lines_toqueue(all, io_lines);
 
         });
 
+    io_queue_th.join();
+
     //fix s.t. don't need true and false -- temporary fix, s.t. i_f_s = true, queue nonempty in p_e.cc -- why empty otherwise though?
-    pop_io_queue(false);
+    pop_io_queue(&all, false);
 
     while (!all.p->done)
     {
@@ -68,7 +74,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       examples.clear();
     }
 
-    io_queue_th.join();
+    //io_queue_th.join();
 
   }
   
