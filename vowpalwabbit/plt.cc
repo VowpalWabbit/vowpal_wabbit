@@ -28,43 +28,43 @@ struct node
 
 struct plt
 {
-  vw *all;
+  vw* all;
 
   uint32_t k;     // number of labels
   uint32_t t;     // number of tree nodes
   uint32_t ti;    // number of internal nodes
   uint32_t kary;  // kary tree
 
-  v_array<float> nodes_t;  // in case of sgd, this keeps stores individual t for each node
+  v_array<float> nodes_time;  // in case of sgd, this stores individual t for each node
 
   float threshold;
   uint32_t top_k;
-  v_array<polyprediction> preds;  // for storing results of base.multipredict
+  v_array<polyprediction> node_preds;  // for storing results of base.multipredict
 
   // for measuring predictive performance
   v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
   uint32_t tp;
   uint32_t fp;
   uint32_t fn;
-  uint32_t t_count;   // number of all true labels (for recall at)
-  uint32_t ec_count;  // number of examples
+  uint32_t true_count;  // number of all true labels (for recall at)
+  uint32_t ec_count;    // number of examples
 
   plt()
   {
-    nodes_t = v_init<float>();
-    preds = v_init<polyprediction>();
+    nodes_time = v_init<float>();
+    node_preds = v_init<polyprediction>();
     tp_at = v_init<uint32_t>();
     tp = 0;
     fp = 0;
     fn = 0;
     ec_count = 0;
-    t_count = 0;
+    true_count = 0;
   }
 
   ~plt()
   {
-    nodes_t.delete_v();
-    preds.delete_v();
+    nodes_time.delete_v();
+    node_preds.delete_v();
     tp_at.delete_v();
   }
 };
@@ -73,8 +73,8 @@ inline void learn_node(plt &p, uint32_t n, single_learner &base, example &ec)
 {
   if (!p.all->weights.adaptive)
   {
-    p.all->sd->t = p.nodes_t[n];
-    p.nodes_t[n] += ec.weight;
+    p.all->sd->t = p.nodes_time[n];
+    p.nodes_time[n] += ec.weight;
   }
   base.learn(ec, n);
 }
@@ -93,9 +93,9 @@ void learn(plt &p, single_learner &base, example &ec)
 
   if (multilabels.label_v.size() > 0)
   {
-    for (uint32_t i = 0; i < multilabels.label_v.size(); ++i)
+    for (auto label : multilabels.label_v)
     {
-      uint32_t tn = multilabels.label_v[i] + p.ti;
+      uint32_t tn = label + p.ti;
       if (tn < p.t)
       {
         n_positive.insert(tn);
@@ -106,8 +106,8 @@ void learn(plt &p, single_learner &base, example &ec)
         }
       }
     }
-    if (multilabels.label_v[multilabels.label_v.size() - 1] >= p.k)
-      std::cout << "label " << multilabels.label_v[multilabels.label_v.size() - 1] << " is not in {0," << p.k - 1
+    if (ec.l.multilabels.label_v.last() >= p.k)
+      std::cout << "label " << ec.l.multilabels.label_v.last() << " is not in {0," << p.k - 1
                 << "} This won't work right." << std::endl;
 
     for (auto &n : n_positive)
@@ -179,11 +179,11 @@ void predict(plt &p, single_learner &base, example &ec)
 
       uint32_t n_child = p.kary * node.n + 1;
       ec.l.simple = {FLT_MAX, 1.f, 0.f};
-      base.multipredict(ec, n_child, p.kary, p.preds.begin(), false);
+      base.multipredict(ec, n_child, p.kary, p.node_preds.begin(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
       {
-        float cp_child = node.p * (1.f / (1.f + exp(-p.preds[i].scalar)));
+        float cp_child = node.p * (1.f / (1.f + exp(-p.node_preds[i].scalar)));
         if (cp_child > p.threshold)
         {
           if (n_child < p.ti)
@@ -200,9 +200,9 @@ void predict(plt &p, single_learner &base, example &ec)
     if (true_labels.size() > 0)
     {
       uint32_t tp = 0;
-      for (size_t i = 0; i < preds.label_v.size(); ++i)
+      for (auto pred_label : preds.label_v)
       {
-        if (true_labels.count(preds.label_v[i]))
+        if (true_labels.count(pred_label))
           ++tp;
       }
       p.tp += tp;
@@ -227,11 +227,11 @@ void predict(plt &p, single_learner &base, example &ec)
       {
         uint32_t n_child = p.kary * node.n + 1;
         ec.l.simple = {FLT_MAX, 1.f, 0.f};
-        base.multipredict(ec, n_child, p.kary, p.preds.begin(), false);
+        base.multipredict(ec, n_child, p.kary, p.node_preds.begin(), false);
 
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
         {
-          float cp_child = node.p * (1.0f / (1.0f + exp(-p.preds[i].scalar)));
+          float cp_child = node.p * (1.0f / (1.0f + exp(-p.node_preds[i].scalar)));
           node_queue.push({n_child, cp_child});
         }
       }
@@ -253,12 +253,12 @@ void predict(plt &p, single_learner &base, example &ec)
           ++p.tp_at[i];
       }
       ++p.ec_count;
-      p.t_count += true_labels.size();
+      p.true_count += true_labels.size();
     }
   }
 
-  ec.l.multilabels = multilabels;
   ec.pred.multilabels = preds;
+  ec.l.multilabels = multilabels;
 }
 
 void finish_example(vw &all, plt &p, example &ec)
@@ -280,7 +280,7 @@ void finish(plt &p)
       {
         correct += p.tp_at[i];
         std::cerr << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
-        std::cerr << "r@" << i + 1 << " = " << correct / p.t_count << std::endl;
+        std::cerr << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
       }
     }
 
@@ -305,7 +305,7 @@ void save_load_tree(plt &p, io_buf &model_file, bool read, bool text)
     if (resume && !p.all->weights.adaptive)
     {
       for (size_t i = 0; i < p.t; ++i)
-        bin_text_read_write_fixed(model_file, (char *)&p.nodes_t[i], sizeof(p.nodes_t[0]), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char *)&p.nodes_time[i], sizeof(p.nodes_time[0]), "", read, msg, text);
     }
   }
 }
@@ -313,7 +313,7 @@ void save_load_tree(plt &p, io_buf &model_file, bool read, bool text)
 
 using namespace plt_ns;
 
-LEARNER::base_learner *plt_setup(options_i &options, vw &all)
+base_learner* plt_setup(options_i &options, vw &all)
 {
   auto tree = scoped_calloc_or_throw<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
@@ -352,9 +352,9 @@ LEARNER::base_learner *plt_setup(options_i &options, vw &all)
   }
 
   // resize v_arrays
-  tree->nodes_t.resize(tree->t);
-  std::fill(tree->nodes_t.begin(), tree->nodes_t.end(), all.initial_t);
-  tree->preds.resize(tree->kary);
+  tree->nodes_time.resize(tree->t);
+  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
+  tree->node_preds.resize(tree->kary);
   if (tree->top_k > 0)
     tree->tp_at.resize(tree->top_k);
 
