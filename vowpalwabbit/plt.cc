@@ -23,7 +23,7 @@ struct node
   uint32_t n;  // node number
   float p;     // node probability
 
-  bool operator<(const node &r) const { return p < r.p; }
+  bool operator<(const node& r) const { return p < r.p; }
 };
 
 struct plt
@@ -69,7 +69,7 @@ struct plt
   }
 };
 
-inline void learn_node(plt &p, uint32_t n, single_learner &base, example &ec)
+inline void learn_node(plt& p, uint32_t n, single_learner& base, example& ec)
 {
   if (!p.all->weights.adaptive)
   {
@@ -79,7 +79,7 @@ inline void learn_node(plt &p, uint32_t n, single_learner &base, example &ec)
   base.learn(ec, n);
 }
 
-void learn(plt &p, single_learner &base, example &ec)
+void learn(plt& p, single_learner& base, example& ec)
 {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -110,7 +110,7 @@ void learn(plt &p, single_learner &base, example &ec)
       std::cout << "label " << ec.l.multilabels.label_v.last() << " is not in {0," << p.k - 1
                 << "} This won't work right." << std::endl;
 
-    for (auto &n : n_positive)
+    for (auto& n : n_positive)
     {
       if (n < p.ti)
       {
@@ -127,10 +127,10 @@ void learn(plt &p, single_learner &base, example &ec)
     n_negative.insert(0);
 
   ec.l.simple = {1.f, 1.f, 0.f};
-  for (auto &n : n_positive) learn_node(p, n, base, ec);
+  for (auto& n : n_positive) learn_node(p, n, base, ec);
 
   ec.l.simple.label = -1.f;
-  for (auto &n : n_negative) learn_node(p, n, base, ec);
+  for (auto& n : n_negative) learn_node(p, n, base, ec);
 
   p.all->sd->t = t;
   p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
@@ -139,7 +139,7 @@ void learn(plt &p, single_learner &base, example &ec)
   ec.l.multilabels = multilabels;
 }
 
-inline float predict_node(uint32_t n, single_learner &base, example &ec)
+inline float predict_node(uint32_t n, single_learner& base, example& ec)
 {
   ec.l.simple = {FLT_MAX, 1.f, 0.f};
   base.predict(ec, n);
@@ -147,7 +147,7 @@ inline float predict_node(uint32_t n, single_learner &base, example &ec)
 }
 
 template <bool threshold>
-void predict(plt &p, single_learner &base, example &ec)
+void predict(plt& p, single_learner& base, example& ec)
 {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -261,13 +261,13 @@ void predict(plt &p, single_learner &base, example &ec)
   ec.l.multilabels = multilabels;
 }
 
-void finish_example(vw &all, plt &p, example &ec)
+void finish_example(vw& all, plt& p, example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
 }
 
-void finish(plt &p)
+void finish(plt& p)
 {
   // print results in test mode
   if (!p.all->training && p.ec_count > 0)
@@ -293,19 +293,19 @@ void finish(plt &p)
   }
 }
 
-void save_load_tree(plt &p, io_buf &model_file, bool read, bool text)
+void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() > 0)
   {
     bool resume = p.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char *)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
     if (resume && !p.all->weights.adaptive)
     {
       for (size_t i = 0; i < p.t; ++i)
-        bin_text_read_write_fixed(model_file, (char *)&p.nodes_time[i], sizeof(p.nodes_time[0]), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&p.nodes_time[i], sizeof(p.nodes_time[0]), "", read, msg, text);
     }
   }
 }
@@ -313,7 +313,7 @@ void save_load_tree(plt &p, io_buf &model_file, bool read, bool text)
 
 using namespace plt_ns;
 
-base_learner* plt_setup(options_i &options, vw &all)
+base_learner* plt_setup(options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
@@ -358,7 +358,7 @@ base_learner* plt_setup(options_i &options, vw &all)
   if (tree->top_k > 0)
     tree->tp_at.resize(tree->top_k);
 
-  learner<plt, example> *l;
+  learner<plt, example>* l;
   if (tree->top_k > 0)
     l = &init_learner(
         tree, as_singleline(setup_base(options, all)), learn, predict<false>, tree->t, prediction_type_t::multilabels);
