@@ -27,12 +27,75 @@
 #include "queue.h"
 #include "object_pool.h"
 
+#include "io_item.h"
+
 struct vw;
 struct input_options;
 
 struct example_initializer
 {
   example* operator()(example* ex);
+};
+
+struct IO_State {
+
+      std::queue<IO_Item> *io_lines = nullptr;
+      bool called_i_l_t = false;
+      bool have_added_io = false;
+      bool done_with_io = false;
+
+      IO_State(){
+        io_lines = new std::queue<IO_Item>;
+        //IO_Item item("hi", 0);
+        //io_lines->push(item);
+
+        called_i_l_t = false;
+        have_added_io = false;
+        done_with_io = false;
+      }
+
+      IO_State(std::queue<IO_Item> *new_input_lines){
+          //input_lines_copy now points to new_input_lines
+          io_lines = new_input_lines;
+          called_i_l_t = false;
+          have_added_io = false;
+          done_with_io = false;
+      }
+
+      IO_State operator=(const IO_State &toCopy){
+          io_lines = toCopy.io_lines;
+          called_i_l_t = toCopy.called_i_l_t;
+          have_added_io = toCopy.have_added_io;
+          done_with_io = toCopy.done_with_io;
+          return *this;
+      }
+
+      IO_State(const IO_State &toCopy){
+          io_lines = toCopy.io_lines;
+          called_i_l_t = toCopy.called_i_l_t;
+          have_added_io = toCopy.have_added_io;
+          done_with_io = toCopy.done_with_io;
+      }
+
+      inline void set_added_io(bool added_io){
+        have_added_io = added_io;
+      }
+
+      inline void set_done_io(bool done_io){
+        done_with_io = done_io;
+      }
+
+      inline bool get_added_io(){
+        return have_added_io;
+      }
+
+      inline bool get_done_io(){
+        return have_added_io;
+      }
+
+
+      ~IO_State() {}
+
 };
 
 struct parser
@@ -117,6 +180,11 @@ struct parser
 
   bool strict_parse;
   std::exception_ptr exc_ptr;
+
+  IO_State _io_state;
+
+  IO_State* io_state() { return &_io_state; }
+
 };
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
