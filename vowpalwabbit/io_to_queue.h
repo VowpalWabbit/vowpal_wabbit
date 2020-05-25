@@ -14,7 +14,7 @@ inline bool add_to_queue(vw& all, char *& line){
 
  // std::cout << "add_to_queue" << std::endl;
 
-  std::lock_guard<std::mutex> lck(_mutex_io);
+  //std::lock_guard<std::mutex> lck(_mutex_io);
 
   bool finish = false;
 
@@ -39,13 +39,9 @@ inline bool add_to_queue(vw& all, char *& line){
 
 }
 
-//inline void io_lines_toqueue(vw& all, IO_State *iostate){
-inline void io_lines_toqueue(vw& all, std::queue<IO_Item> *io_to_set){
+inline void io_lines_toqueue(vw& all){
 
- // std::lock_guard<std::mutex> lck(_mutex_io);
-
-  all.p->_io_state.io_lines = io_to_set;
-  //std::cout << "io_lines_toqueue" << std::endl;
+  std::lock_guard<std::mutex> lck(_mutex_io);
   
   parser *original_p = all.p;
   
@@ -54,12 +50,7 @@ inline void io_lines_toqueue(vw& all, std::queue<IO_Item> *io_to_set){
   bool should_finish = false;
 
   while(!should_finish)
-  {
-
-    //std::this_thread::sleep_for (std::chrono::seconds(1));
-    //std::cout << "readto" << std::endl;
-    //size_t num_chars_initial = readto(*(all->p->input), line, '\n');
-    
+  {    
     should_finish = add_to_queue(all, line);
 
   }
@@ -68,8 +59,6 @@ inline void io_lines_toqueue(vw& all, std::queue<IO_Item> *io_to_set){
 
   //std::cout << "done with io" << std::endl;
   all.p->_io_state.done_with_io = true;
- /* std::cout << "input_lines_copy->size(): " << input_lines_copy->size() << std::endl;
-  std::cout << "input_lines->size(): " << input_lines->size() << std::endl;*/
 
 }
 
