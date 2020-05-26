@@ -8,13 +8,13 @@
 
 #include "io_item.h"
 
-static std::mutex _mutex_io;
+//static std::mutex _mutex_io;
 
 //Adds a line of input to the input queue
 inline bool add_to_queue(vw& all, char *& line){
 
+  std::lock_guard<std::mutex> lck(all.p->io_queue_lock);
   //std::lock_guard<std::mutex> lck(_mutex_io);
-
   bool finish = false;
 
   size_t num_chars_initial = readto(*(all.p->input), line, '\n');
@@ -41,7 +41,7 @@ inline bool add_to_queue(vw& all, char *& line){
 //Adds all lines of input to the input queue
 inline void io_lines_toqueue(vw& all){
 
-  std::lock_guard<std::mutex> lck(_mutex_io);
+  //std::lock_guard<std::mutex> lck(_mutex_io);
   
   parser *original_p = all.p;
   
@@ -63,13 +63,13 @@ inline void io_lines_toqueue(vw& all){
 }
 
 //Pops a line of input from the input queue
-inline IO_Item pop_io_queue(vw *all, bool should_pop){
+inline IO_Item pop_io_queue(vw *all){
   
-  std::lock_guard<std::mutex> lck(_mutex_io);
-
+  std::lock_guard<std::mutex> lck((*all).p->io_queue_lock);
+  //std::lock_guard<std::mutex> lck(_mutex_io);
   IO_Item front;
   
-  if(should_pop && (*all).p->_io_state.io_lines->size() > 0)
+  if((*all).p->_io_state.io_lines->size() > 0)
   {
 
     front = (*all).p->_io_state.io_lines->front();
@@ -78,8 +78,19 @@ inline IO_Item pop_io_queue(vw *all, bool should_pop){
    
   }
 
+ /* {
+      std::unique_lock<std::mutex> lock((*all).p->input_lock);
+      //return 1 or something true??
+      //(*all).p->input_done.wait(lock, [&] { return should_pop; });
+      (*all).p->input_done.notify_one();
+  }*/
+  
   return front;
+
+  
 
 }
 
 #endif
+
+
