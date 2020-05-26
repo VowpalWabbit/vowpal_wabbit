@@ -1880,7 +1880,6 @@ class DFtoVW:
         self.check_namespaces_type()
         self.check_features_type()
         self.check_if_cols_exist()
-        self.out = self.empty_col()
 
     @classmethod
     def from_colnames(cls, y, x, df):
@@ -2104,6 +2103,8 @@ class DFtoVW:
         list
             The list of parsed lines in VW format.
         """
+        self.out = self.empty_col()
+
         if not all(x is None for x in [self.label, self.tag]):
             self.out += self.process_label_and_tag()
 
