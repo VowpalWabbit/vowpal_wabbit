@@ -29,6 +29,9 @@
 
 #include "io_item.h"
 
+//for error reporting (vw_ostream trace_message)
+#include "error_reporting.h"
+
 struct vw;
 struct input_options;
 
@@ -43,6 +46,7 @@ struct IO_State {
       bool called_i_l_t = false;
       bool have_added_io = false;
       bool done_with_io = false;
+      //std::mutex _mutex_io;
 
       IO_State(){
         io_lines = new std::queue<IO_Item>;
@@ -161,6 +165,12 @@ struct parser
   std::mutex output_lock;
   std::condition_variable output_done;
 
+  //for io_to_queue
+  std::mutex input_lock;
+  std::condition_variable input_done;
+
+  std::mutex io_queue_lock;
+
   bool done = false;
   v_array<size_t> gram_mask;
 
@@ -185,6 +195,12 @@ struct parser
 
   IO_State* io_state() { return &_io_state; }
 
+  //trace message for parser (part of extracting parser to standalone component)
+  vw_ostream trace_message;
+  //Would it _make sense_ to put delete_prediction here? Unsure...
+  //void (*delete_prediction)(void*);
+  bool stdin_off = false;
+
 };
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
@@ -198,6 +214,9 @@ void set_done(vw& all);
 
 // source control functions
 void reset_source(vw& all, size_t numbits);
+//void reset_source(vw& all, parser* p, size_t numbits);
 void finalize_source(parser* source);
 void set_compressed(parser* par);
+
 void free_parser(vw& all);
+//void free_parser(parser* p);
