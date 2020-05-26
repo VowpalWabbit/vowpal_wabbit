@@ -15,6 +15,7 @@ add_executable(vw-unit-test.out
   stable_unique_tests.cc
   test_common.h
   tokenize_tests.cc
+  io_thread_test.cc
 )
 
 # Add the include directories from vw target for testing
