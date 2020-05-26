@@ -2059,14 +2059,14 @@ class DFtoVW:
         """
         return pd.Series([""] * self.n_rows)
 
-    def process_label_and_value(self):
-        """Process the label and value into a unique column.
+    def process_label_and_tag(self):
+        """Process the label and tag into a unique column.
 
         Returns
         -------
 
         out : pandas.Series
-            A column where each row is the processed label and value.
+            A column where each row is the processed label and tag.
         """
         out = self.empty_col()
         if self.label is not None:
@@ -2105,7 +2105,7 @@ class DFtoVW:
             The list of parsed lines in VW format.
         """
         if not all(x is None for x in [self.label, self.tag]):
-            self.out += self.process_label_and_value()
+            self.out += self.process_label_and_tag()
 
         for (num_ns, ns_obj) in enumerate(self.namespaces):
             to_add = ns_obj.process() + self.process_features(ns_obj.features)
