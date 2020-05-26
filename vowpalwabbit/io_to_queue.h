@@ -10,9 +10,8 @@
 
 static std::mutex _mutex_io;
 
+//Adds a line of input to the input queue
 inline bool add_to_queue(vw& all, char *& line){
-
- // std::cout << "add_to_queue" << std::endl;
 
   //std::lock_guard<std::mutex> lck(_mutex_io);
 
@@ -39,6 +38,7 @@ inline bool add_to_queue(vw& all, char *& line){
 
 }
 
+//Adds all lines of input to the input queue
 inline void io_lines_toqueue(vw& all){
 
   std::lock_guard<std::mutex> lck(_mutex_io);
@@ -62,6 +62,7 @@ inline void io_lines_toqueue(vw& all){
 
 }
 
+//Pops a line of input from the input queue
 inline IO_Item pop_io_queue(vw *all, bool should_pop){
   
   std::lock_guard<std::mutex> lck(_mutex_io);
