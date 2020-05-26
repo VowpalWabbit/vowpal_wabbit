@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(mock_out_pop_io)
     BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines, mock_input_lines);
 
     while(vw->p->_io_state.io_lines->size() > 0){
-        BOOST_CHECK_EQUAL(pop_io_queue(vw, true).message, "0 | price:.23 sqft:.25 age:.05 2006");
+        BOOST_CHECK_EQUAL(pop_io_queue(vw).message, "0 | price:.23 sqft:.25 age:.05 2006");
     }
 
    BOOST_CHECK_EQUAL(mock_iostate.io_lines->size(), 0);
