@@ -13,7 +13,7 @@
 #include "parse_dispatch_loop.h"
 #include "io_to_queue.h"
 
-#include <time.h>       /* time */
+#include <time.h> 
 
 
 void sleep_random_amt_of_time(){
@@ -145,16 +145,11 @@ BOOST_AUTO_TEST_CASE(sleep_parser)
 
     mock_io_lines(vw, io_lines);
 
-    //io_lines_toqueue(*vw);
-
     std::thread io_queue_th([&vw]() 
     {
         io_lines_toqueue(*vw);
 
     });
-
-    //where to put the join? in test and in the code (pase_dispatch_loop.h)
-    io_queue_th.join();
 
     BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines, io_lines);
     BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size() , io_lines->size());
@@ -173,6 +168,8 @@ BOOST_AUTO_TEST_CASE(sleep_parser)
 
    BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size(), 0); 
 
+   io_queue_th.join();
+
    VW::finish(*vw);
 
 }
@@ -188,13 +185,11 @@ BOOST_AUTO_TEST_CASE(sleep_io)
 
     std::thread io_queue_th([&vw]() 
     {
-         sleep_random_amt_of_time();
+        sleep_random_amt_of_time();
         io_lines_toqueue(*vw);
 
     });
 
-    //where to put the join?
-    io_queue_th.join();
 
     BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines, io_lines);
     BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size() , io_lines->size());
@@ -209,9 +204,12 @@ BOOST_AUTO_TEST_CASE(sleep_io)
 
     }
 
-   BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size(), 0); 
+    BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size(), 0); 
+
+    io_queue_th.join();
 
     VW::finish(*vw);
+
 
 }
 
@@ -232,9 +230,6 @@ BOOST_AUTO_TEST_CASE(sleep_io_and_parser)
 
     });
 
-    //where to put the join?
-    io_queue_th.join();
-
     BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines, io_lines);
     BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size() , io_lines->size());
 
@@ -250,9 +245,55 @@ BOOST_AUTO_TEST_CASE(sleep_io_and_parser)
 
     }
 
-   BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size(), 0); 
+    BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size(), 0); 
 
-   VW::finish(*vw);
+    io_queue_th.join();
 
+    VW::finish(*vw);
+
+
+}
+
+BOOST_AUTO_TEST_CASE(sleep_io_and_parser_twothread)
+{
+
+    auto vw = VW::initialize("--no_stdin --quiet", nullptr , false, nullptr, nullptr);
+    std::queue<IO_Item> *io_lines = new std::queue<IO_Item>;
+
+    mock_io_lines(vw, io_lines);
+
+    std::thread io_queue_th([&vw]() 
+    {
+         sleep_random_amt_of_time();
+        io_lines_toqueue(*vw);
+
+    });
+
+    BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines, io_lines);
+    BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size() , io_lines->size());
+
+    std::thread parse_th([&vw]() 
+    {
+
+        //examples is unused in read_features_string, set empty
+        auto examples = v_init<example*>();
+        examples.push_back(&VW::get_unused_example(vw));
+
+        while(vw->p->_io_state.io_lines->size() > 0){
+
+            sleep_random_amt_of_time();
+            read_features_string(vw, examples);
+
+        }
+
+
+        BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size(), 0); 
+
+    });
+
+    io_queue_th.join();
+    parse_th.join();
+
+    VW::finish(*vw);
 
 }
