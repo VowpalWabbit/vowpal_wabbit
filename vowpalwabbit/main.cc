@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
     if (should_use_onethread)
     {
       if (alls.size() == 1)
-        LEARNER::generic_driver_onethread(all);
+        VW::LEARNER::generic_driver_onethread(all);
       else
         THROW("--onethread doesn't make sense with multiple learners");
     }
@@ -123,9 +123,9 @@ int main(int argc, char* argv[])
     {
       VW::start_parser(all);
       if (alls.size() == 1)
-        LEARNER::generic_driver(all);
+        VW::LEARNER::generic_driver(all);
       else
-        LEARNER::generic_driver(alls);
+        VW::LEARNER::generic_driver(alls);
       VW::end_parser(all);
     }
 

@@ -18,7 +18,19 @@
     <ClCompile Include="main.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="scope_exit_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="guard_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="stable_unique_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="io_adapter_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="slates_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="slates_parser_test.cc">
@@ -62,6 +74,12 @@
     </ClCompile>
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tag_utils_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_common.cc">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

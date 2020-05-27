@@ -2,7 +2,9 @@ import os
 
 from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import vw
-
+from vowpalwabbit.pyvw import DFtoVW, SimpleLabel, Feature, Namespace, Col
+import pytest
+import pandas as pd
 
 BIT_SIZE = 18
 
@@ -20,6 +22,9 @@ class TestVW:
         assert init == 0
         self.model.learn(ex)
         assert self.model.predict(ex) > init
+        ex = ["| a", "| b"]
+        check_error_raises(TypeError, lambda: self.model.predict(ex))
+        check_error_raises(TypeError, lambda: self.model.learn(ex))
 
     def test_get_tag(self):
         ex = self.model.example("1 foo| a b c")
@@ -206,12 +211,14 @@ def test_parse():
     del model
 
 
-def test_predict_multiline():
+def test_learn_predict_multiline():
     model = vw(quiet=True, cb_adf=True)
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
     finish = model.finish_example(ex)
     assert model.predict(ex) == [0.0, 0.0]
-    del model
+    ex = ["| a", "| b"]
+    model.learn(ex)
+    assert model.predict(ex) == [0.0, 0.0]
 
 
 def test_namespace_id():
@@ -320,3 +327,114 @@ def test_example_features():
     ns2 = pyvw.namespace_id(ex, 2)
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
+
+def check_error_raises(type, argument):
+    """
+    This function is used to check whether the exception is raised or not.
+
+    Parameter
+    ---------
+
+    type: Type of Error raised
+    argument: lambda function with no parameters.
+
+    Example:
+    >>> ex = ["|a", "|b"]
+    >>> vw = pyvw.vw(quiet=True)
+    >>> check_error_raises(TypeError, lambda: vw.learn(ex))
+
+    """
+    with pytest.raises(type) as error:
+        argument()
+
+def test_from_colnames_constructor():
+    df = pd.DataFrame({"y": [1], "x": [2]})
+    conv = DFtoVW.from_colnames(y="y", x=["x"], df=df)
+    lines_list = conv.process_df()
+    first_line = lines_list[0]
+    assert first_line == "1 | 2"
+
+
+def test_feature_column_renaming_and_tag():
+    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        tag=Col("idx"),
+        namespaces=Namespace([Feature(name="col_x", value=Col("x"))]),
+        df=df,
+    )
+    first_line = conv.process_df()[0]
+    assert first_line == "1 id_1| col_x:2"
+
+
+def test_feature_constant_column_with_empty_name():
+    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        tag=Col("idx"),
+        namespaces=Namespace([Feature(name="", value=2)]),
+        df=df,
+    )
+    first_line = conv.process_df()[0]
+    assert first_line == "1 id_1| :2"
+
+
+def test_feature_variable_column_name():
+    df = pd.DataFrame({"y": [1], "x": [2], "a": ["col_x"]})
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        namespaces=Namespace(Feature(name=Col("a"), value=Col("x"))),
+        df=df,
+    )
+    first_line = conv.process_df()[0]
+    assert first_line == "1 | col_x:2"
+
+
+def test_multiple_lines_conversion():
+    df = pd.DataFrame({"y": [1, -1], "x": [1, 2]})
+    conv = DFtoVW(
+        label=SimpleLabel(Col("y")),
+        namespaces=Namespace(Feature(value=Col("x"))),
+        df=df,
+    )
+    lines_list = conv.process_df()
+    assert lines_list == ["1 | 1", "-1 | 2"]
+
+
+def test_multiple_namespaces():
+    df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
+    conv = DFtoVW(
+        df=df,
+        label=SimpleLabel(Col("y")),
+        namespaces=[
+            Namespace(name="FirstNameSpace", features=Feature(Col("a"))),
+            Namespace(name="DoubleIt", value=2, features=Feature(Col("b"))),
+        ],
+    )
+    first_line = conv.process_df()[0]
+    assert first_line == "1 |FirstNameSpace 2 |DoubleIt:2 3"
+
+
+def test_without_target():
+    df = pd.DataFrame({"a": [2], "b": [3]})
+    conv = DFtoVW(
+        df=df, namespaces=Namespace([Feature(Col("a")), Feature(Col("b"))])
+    )
+    first_line = conv.process_df()[0]
+    assert first_line == "| 2 3"
+
+
+def test_absent_col_error():
+    with pytest.raises(ValueError) as value_error:
+        df = pd.DataFrame({"a": [1]})
+        conv = DFtoVW(
+            df=df,
+            label=SimpleLabel(Col("a")),
+            namespaces=Namespace(
+                [Feature(Col("a")), Feature(Col("c")), Feature("d")]
+            ),
+        )
+    expected = "In argument 'features', column(s) 'c' not found in dataframe"
+    assert expected == str(value_error.value)
+
+
