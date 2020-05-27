@@ -1,7 +1,9 @@
 #pragma once
 #include <cstdint>
 
-namespace VW { 
+namespace VW {
+namespace parsers {
+namespace flatbuffer { 
   struct endian {
     static bool is_big_endian(void);
     static std::uint32_t htonl(uint32_t host_l);
@@ -9,4 +11,6 @@ namespace VW {
     static std::uint32_t ntohl(uint32_t net_l);
     static std::uint16_t ntohs(uint16_t net_s);
   };
+}
+}
 }

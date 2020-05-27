@@ -1,6 +1,8 @@
 #include "endian.h"
 
 namespace VW {
+namespace parsers {
+namespace flatbuffer {
 
     bool endian::is_big_endian(void)
     {
@@ -70,5 +72,6 @@ namespace VW {
         p_ret_raw[1] = p_raw[0];
         return ret_val;
     }
-
-} // namespace reinforcement_learning
+}
+}
+} // namespace VW

@@ -26,15 +26,25 @@ def main():
         for line in data:
             labels, namesfeatures = line.split('|')[0], line.split('|')[1:]
             LabelStart(builder)
-            for i, label in enumerate(labels.split(' ')):
-                if label == '':
-                    continue
-                if i==0:
-                    LabelAddLabel(builder, int(label))
-                if i==1:
-                    if label == "":
-                        break
-                    LabelAddWeight(builder, float(label))
+            temp = labels.split(' ')
+            temp = [i for i in temp if i is not '']
+            if len(temp) == 1:
+                LabelAddLabel(builder, float(temp[0]))
+                print("Adding label {}".format(float(temp[0])))
+                LabelAddWeight(builder, 1.0)
+                print("Adding Weight {}".format(1.0))
+            elif len(temp) == 2:
+                LabelAddLabel(builder, float(temp[0]))
+                print("Adding label {}".format(float(temp[0])))
+                LabelAddWeight(builder, float(temp[1]))
+                print("Adding Weight {}".format(float(temp[1])))
+            # for i, label in enumerate(temp):
+            #     if label == '':
+            #         continue
+            #     if i==0:
+            #         LabelAddLabel(builder, float(label))
+            #     if i==1:
+            #         LabelAddWeight(builder, float(label))
 
             label = LabelEnd(builder)
 
@@ -88,11 +98,25 @@ def main():
         
         egcollection = ExampleCollectionEnd(builder)
 
-        builder.Finish(egcollection)
+        size = builder.Finish(egcollection)
 
         buffer = builder.Output()
+
+
+        new = ExampleCollection.GetRootAsExampleCollection(buffer, 0)
+
+        if new.ExamplesIsNone():
+            print("Nothing in here")
+
+        print(new.Examples(0).Label().Label())
+
+
         with open('test.dat','wb') as file:
             file.write(buffer)
+
+        examples = ExampleCollection.GetRootAsExampleCollection(buffer, 0)
+
+        print(size)
 
                 
 if __name__ == "__main__":

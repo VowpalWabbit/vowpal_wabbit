@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
 #include <map>
@@ -29,6 +30,7 @@
 #include <thread>
 #endif
 
+#include "parser/flatbuffer/example_generated.h"
 #include "v_array.h"
 #include "array_parameters.h"
 #include "parse_primitives.h"
@@ -393,6 +395,13 @@ struct vw
   uint32_t hash_seed;
 
   std::string data_filename;  // was vm["data"]
+  std::ifstream infile;
+  const VW::parsers::flatbuffer::ExampleCollection* data;
+  char* flatbuffer_pointer;
+  std::string flatout;
+  bool add_names_to_flat;
+  bool hash_from_names;
+  std::string lp_flat;
 
   bool daemon;
   size_t num_children;

@@ -115,8 +115,10 @@ set(vw_all_headers
   parse_primitives.h
   parse_regressor.h
   parser.h
-  parser/flatbuffer/hashed/parse_flatbuffer_complete.h
-  parser/flatbuffer/hashed/vwtxt_to_flatbuf.h
+  parser/flatbuffer/endian.h
+  parser/flatbuffer/preamble.h
+  parser/flatbuffer/parse_flat_example.h
+  parser/flatbuffer/vw_to_flat.h
   print.h
   queue.h
   rand48.h
@@ -227,8 +229,10 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  parser/flatbuffer/hashed/parse_flatbuffer_complete.cc
-  parser/flatbuffer/hashed/vwtxt_to_flatbuf.cc
+  parser/flatbuffer/endian.cc
+  parser/flatbuffer/preamble.cc
+  parser/flatbuffer/parse_flat_example.cc
+  parser/flatbuffer/vw_to_flat.cc
   print.cc
   rand48.cc
   recall_tree.cc
@@ -350,6 +354,9 @@ endif()
 add_executable(vw-bin main.cc)
 target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw Boost::program_options)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
+
+#add_executable(vwtxt_to_flatbuf txt_to_flat.cc ${vw_all_sources} ${vw_all_headers})
+#target_link_libraries(vwtxt_to_flatbuf VowpalWabbit::vw VowpalWabbit::explore)
 
 if(STATIC_LINK_VW)
   target_link_libraries(vw-bin PRIVATE ${unix_static_flag})
