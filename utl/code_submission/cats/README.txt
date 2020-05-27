@@ -16,7 +16,18 @@ A) Use scripts:
 
 B) Manually go through all the steps:
 
-1) First, in order to create the data sets please download them from the following URL's and save them with the suggested names:
+1) Untar file using the following:
+tar -xvf cats.source.tar cats
+
+2) Get vw dependencies and build vw:
+cd cats
+mkdir build
+cd build
+cmake ..
+make -j vw-bin
+
+3) In order to create the data sets please download them from the following URL's 
+and save them with the suggested names in the path vowpal_wabbit/test/train-sets/regression:
 
   https://www.openml.org/data/get_csv/150677/BNG_wisconsin.arff       --> BNG_wisconsin.csv
   https://www.openml.org/data/get_csv/150680/BNG_cpu_act.arff         --> BNG_cpu_act.csv
@@ -24,19 +35,21 @@ B) Manually go through all the steps:
   https://www.openml.org/data/get_csv/21230845/file639340bd9ca9.arff  --> black_friday.csv
   https://www.openml.org/data/get_csv/5698591/file62a9329beed2.arff   --> zurich.csv
 
-2) Please use the vowpal_wabbit/utl/continous_action/preprocess_data.py to create preprocessed data.
+4) Please use the following for each data set to create the preprocessed data.
 
-  Note: for the synethic data "ds" you just need to run vowpal_wabbit/utl/continous_action/create_synthetic_data.ipynb instead of the above two steps.
+  sed '/^$/d' -i vowpal_wabbit/test/train-sets/regression/$data &
+  python3 vowpal_wabbit/utl/continous_action/preprocess_data.py -c vowpal_wabbit/test/train-sets/regression/$data &
 
-  You then need to put the created data sets in the following path:
-  vowpal_wabbit/test/train-sets/regression
+  Note: for the synethic data "ds" instead of the above two steps you need to run the following:
 
-3) In order to save the results please create a folder: "vowpal_wabbit/results"
+  python3 vowpal_wabbit/utl/continous_action/create_synthetic_data.py &
+  
+5) In order to save the results please create a folder: "vowpal_wabbit/results"
 
-4) For running the online algorithms for CATS as well as the comparators and saving the progressive validation results for each data set you can run:
-  vowpal_wabbit/scripts/online_$name.sh
+6) For running the online algorithm for CATS as well as the comparators and saving the progressive validation results for each data set you can run:
+  run-manual.sh $name on
 
   for running the CATS offline algorithm and saving the loss estimation in SRM and test error results for each data set you can run:
-  vowpal_wabbit/offline_$name.sh
+  run-manual.sh $name off
 
-  where name = BNG_wisconsin or BNG_cpu_act or BNG_auto_price or black_friday or zurich or ds_5
+  where $name = friday, cpu, price, wis, zurich, or ds for different data sets.

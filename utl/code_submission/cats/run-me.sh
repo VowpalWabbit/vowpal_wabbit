@@ -55,9 +55,19 @@ ds_max=$(cat ./test/train-sets/regression/ds_1000000.max)
 # Run experiments
 mkdir results
 
-run_experiment "black_friday" 185 23959
-run_experiment "BNG_auto_price" 379.36 43392.42
-run_experiment "BNG_cpu_act" -64.9 187.54
-run_experiment "BNG_wisconsin" -10.87 168.12
-run_experiment "zurich" -121830 7190
-run_experiment "ds_1000000" $ds_min $ds_max
+# Online: 
+run_online "black_friday" 185 23959
+run_online "BNG_auto_price" 379.36 43392.42
+run_online "BNG_cpu_act" -64.9 187.54
+run_online "BNG_wisconsin" -10.87 168.12
+run_online "zurich" -121830 7190
+run_online "ds_1000000" $ds_min $ds_max
+
+# Offline:
+run_offline "black_friday" 185 23959
+run_offline "BNG_auto_price" 379.36 43392.42
+run_offline "BNG_cpu_act" -64.9 187.54
+run_offline "BNG_wisconsin" -10.87 168.12
+run_offline "zurich" -121830 7190
+run_offline "ds_1000000" $ds_min $ds_max
+
