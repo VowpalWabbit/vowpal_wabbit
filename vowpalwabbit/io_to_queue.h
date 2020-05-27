@@ -13,7 +13,10 @@
 //Adds a line of input to the input queue
 inline bool add_to_queue(vw& all, char *& line){
 
-  std::lock_guard<std::mutex> lck(all.p->io_queue_lock);
+  //std::lock_guard<std::mutex> lck(all.p->io_queue_lock);
+  //std::cout << "push line to io queue" << std::endl;
+  //std::this_thread::sleep_for (std::chrono::seconds(1));
+
   //std::lock_guard<std::mutex> lck(_mutex_io);
   bool finish = false;
 
@@ -28,11 +31,12 @@ inline bool add_to_queue(vw& all, char *& line){
 
   IO_Item line_item(std::string(line), num_chars_initial);
 
-  //std::cout << "push line to io queue" << std::endl;
+  {
+    std::lock_guard<std::mutex> lck(all.p->io_queue_lock);
+    all.p->_io_state.io_lines->push(line_item);
+    all.p->_io_state.have_added_io.store(true);
+  }
 
-  all.p->_io_state.io_lines->push(line_item);
-
-  all.p->_io_state.have_added_io = true;
 
   return finish;
 
@@ -41,7 +45,9 @@ inline bool add_to_queue(vw& all, char *& line){
 //Adds all lines of input to the input queue
 inline void io_lines_toqueue(vw& all){
 
-  //std::lock_guard<std::mutex> lck(_mutex_io);
+  //std::lock_guard<std::mutex> lck(all.p->io_queue_lock);
+
+  //std::cout << "io lines to queue" << std::endl;
   
   parser *original_p = all.p;
   
@@ -58,7 +64,7 @@ inline void io_lines_toqueue(vw& all){
   all.p = original_p;
 
   //std::cout << "done with io" << std::endl;
-  all.p->_io_state.done_with_io = true;
+  all.p->_io_state.done_with_io.store(true);
 
 }
 
