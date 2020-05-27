@@ -29,9 +29,6 @@
 
 #include "io_item.h"
 
-//for error reporting (vw_ostream trace_message)
-#include "error_reporting.h"
-
 struct vw;
 struct input_options;
 
@@ -43,58 +40,36 @@ struct example_initializer
 struct IO_State {
 
       std::queue<IO_Item> *io_lines = nullptr;
-      //std::atomic<bool> called_i_l_t(false);
-      std::atomic<bool>have_added_io;
       std::atomic<bool> done_with_io;
-      //std::mutex _mutex_io;
 
       IO_State(){
         io_lines = new std::queue<IO_Item>;
-        //IO_Item item("hi", 0);
-        //io_lines->push(item);
-
-        //called_i_l_t = false;
-         have_added_io.store(false);
          done_with_io.store(false);
       }
 
       IO_State(std::queue<IO_Item> *new_input_lines){
           //input_lines_copy now points to new_input_lines
           io_lines = new_input_lines;
-          //called_i_l_t = false;
-          have_added_io.store(false);
           done_with_io.store(false);
       }
 
       IO_State operator=(const IO_State &toCopy){
           io_lines = toCopy.io_lines;
-         // called_i_l_t = toCopy.called_i_l_t;
-          have_added_io.store(toCopy.have_added_io);
           done_with_io.store(toCopy.done_with_io);
           return *this;
       }
 
       IO_State(const IO_State &toCopy){
           io_lines = toCopy.io_lines;
-          //called_i_l_t = toCopy.called_i_l_t;
-          have_added_io.store(toCopy.have_added_io);
           done_with_io.store(toCopy.done_with_io);
-      }
-
-      inline void set_added_io(bool added_io){
-        have_added_io.store(added_io);
       }
 
       inline void set_done_io(bool done_io){
         done_with_io.store(done_io);
       }
 
-      inline bool get_added_io(){
-        return have_added_io;
-      }
-
       inline bool get_done_io(){
-        return have_added_io;
+        return done_with_io;
       }
 
 
@@ -166,9 +141,6 @@ struct parser
   std::condition_variable output_done;
 
   //for io_to_queue
-  std::mutex input_lock;
-  std::condition_variable input_done;
-
   std::mutex io_queue_lock;
 
   bool done = false;
@@ -194,12 +166,6 @@ struct parser
   IO_State _io_state;
 
   IO_State* io_state() { return &_io_state; }
-
-  //trace message for parser (part of extracting parser to standalone component)
-  vw_ostream trace_message;
-  //Would it _make sense_ to put delete_prediction here? Unsure...
-  //void (*delete_prediction)(void*);
-  bool stdin_off = false;
 
 };
 
