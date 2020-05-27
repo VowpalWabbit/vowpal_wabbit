@@ -20,30 +20,21 @@ class IO_Item;
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
  
-  //std::cout << "read_features" << std::endl;
   IO_Item result;
 
   while(true){
 
-    /*std::cout << "(*all).p->_io_state.have_added_io: " << (*all).p->_io_state.have_added_io << std::endl;
-    std::cout << "(*all).p->_io_state.done_with_io: " << (*all).p->_io_state.done_with_io << std::endl;
-
-    std::cout << "(*all).p->_io_state.io_lines->size()" << (*all).p->_io_state.io_lines->size() << std::endl;*/
-
-    if((*all).p->_io_state.have_added_io && (*all).p->_io_state.done_with_io && (*all).p->_io_state.io_lines->size() == 0){
+    if((*all).p->_io_state.done_with_io && (*all).p->_io_state.io_lines->size() == 0){
       break;
     }
 
-    result = pop_io_queue(all, true);
+    result = pop_io_queue(all);
 
     if(result.numCharsInit > 0){
       break;
     }
 
-
   }
-
-  //std::cout << "result.message: " << result.message << std::endl;
 
   std::string result_string =  result.message;
 
@@ -439,6 +430,7 @@ class TC_parser
     if (!(_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
     {
       // syntax error
+      //CAUSING ERRORS!!!
       parserWarning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
   }
