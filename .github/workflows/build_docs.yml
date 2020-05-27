@@ -47,7 +47,8 @@ jobs:
         run: |
           /usr/local/miniconda/bin/activate test-python36
           cd python/docs
-          pip install sphinx numpy sklearn scipy numpydoc
+          pip install sphinx numpydoc
+          pip install -r requirements.txt
           make html
           /usr/local/miniconda/bin/deactivate
       - name: Upload built docs
