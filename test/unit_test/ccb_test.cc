@@ -83,11 +83,20 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
 
   std::vector<uint32_t> previous;
   const size_t iterations = 10;
+  const std::vector<std::string> event_ids = {"slot1", "slot2"};
+  const std::string SEED_TAG = "seed=";
   for (size_t iteration = 0; iteration < iterations; ++iteration)
   {
     const std::string json =
         R"({"GUser":{"shared_feature":"feature"},"_multi":[{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}}],"_slots":[{"_id":"slot1"},{"_id":"slot2"}]})";
     auto examples = parse_json(*vw, json);
+    for (int i = 0; i < event_ids.size(); i++)
+    {
+      const size_t slot_example_indx = examples.size() - event_ids.size() + i;
+      push_many(examples[slot_example_indx]->tag, SEED_TAG.c_str(), SEED_TAG.size());
+      push_many(examples[slot_example_indx]->tag, event_ids[i].c_str(), event_ids[i].size());
+    }
+
     vw->predict(examples);
     auto& decision_scores = examples[0]->pred.decision_scores;
     std::vector<uint32_t> current;
