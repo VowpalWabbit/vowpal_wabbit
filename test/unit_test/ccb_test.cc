@@ -76,3 +76,34 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
   vw.finish_example(examples);
   VW::finish(vw);
 }
+
+BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
+{
+  auto vw =  VW::initialize("--ccb_explore_adf --epsilon 0.2 --dsjson --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+
+  std::vector<uint32_t> previous;
+  const size_t iterations = 10;
+  for (size_t iteration = 0; iteration < iterations; ++iteration)
+  {
+    const std::string json =
+        R"({"GUser":{"shared_feature":"feature"},"_multi":[{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}}],"_slots":[{"_id":"slot1"},{"_id":"slot2"}]})";
+    auto examples = parse_json(*vw, json);
+    vw->predict(examples);
+    auto& decision_scores = examples[0]->pred.decision_scores;
+    std::vector<uint32_t> current;
+    for (size_t i = 0; i < decision_scores.size(); ++i)
+    {
+      current.push_back(decision_scores[i][0].action);
+    }
+    if (!previous.empty())
+    {
+      BOOST_CHECK_EQUAL(current.size(), previous.size());
+      for (size_t i = 0; i < current.size(); ++i)
+      {
+        BOOST_CHECK_EQUAL(current[i], previous[i]);
+      }
+    }
+    previous = current;
+    VW::finish_example(*vw, examples);
+  }
+}
