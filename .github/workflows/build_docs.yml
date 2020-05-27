@@ -46,9 +46,9 @@ jobs:
       - name: Build docs
         run: |
           /usr/local/miniconda/bin/activate test-python36
-          cd python/docs
           pip install sphinx numpydoc
           pip install -r requirements.txt
+          cd python/docs
           make html
           /usr/local/miniconda/bin/deactivate
       - name: Upload built docs
