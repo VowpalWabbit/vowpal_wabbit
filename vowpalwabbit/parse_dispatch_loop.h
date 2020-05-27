@@ -32,8 +32,6 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   try
   {
 
-    //io_queue_th.join();
-
     while (!all.p->done)
     {
 
@@ -70,8 +68,6 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 
       examples.clear();
     }
-
-    //io_queue_th.join();
 
   }
   
