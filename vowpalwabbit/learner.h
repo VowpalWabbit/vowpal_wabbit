@@ -3,14 +3,18 @@
 // license as described in the file LICENSE.
 #pragma once
 // This is the interface for a learning algorithm
+
 #include <iostream>
+#include <memory>
+
 #include "memory.h"
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
 #include "future_compat.h"
+#include "example.h"
 #include <memory>
-
+#include "scope_exit.h"
 
 enum class prediction_type_t
 {
@@ -539,12 +543,21 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
     ec->ft_offset = offset;
   }
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&saved_offsets, &examples]
+    {
+      for (size_t i = 0; i < examples.size(); i++) 
+      {
+        examples[i]->ft_offset = saved_offsets[i];
+      }
+    });
+
   if (is_learn)
     base.learn(examples, id);
   else
     base.predict(examples, id);
 
-  for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
 }  // namespace LEARNER
 }  // namespace VW

@@ -16,14 +16,6 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#include <Windows.h>
-#else
-#include <sys/socket.h>
-#endif
-
 struct global_prediction
 {
   float p;

@@ -64,4 +64,6 @@ BOOST_AUTO_TEST_CASE(object_pool_test)
   obj other_obj;
   BOOST_CHECK_EQUAL(pool.is_from_pool(o2), true);
   BOOST_CHECK_EQUAL(pool.is_from_pool(&other_obj), false);
+
+  pool.return_object(o2);
 }
