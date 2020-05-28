@@ -373,6 +373,10 @@ struct vw
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
+  /*
+   * Set once on; part of input_options
+   * Setting for features
+   */
   bool chain_hash = false;
 
   VW::LEARNER::base_learner* l;               // the top level learner
@@ -388,74 +392,205 @@ struct vw
 
   void (*set_minmax)(shared_data* sd, float label);
 
+  /*
+   * Should be part of learner?
+   * not input, used as state
+   */
   uint64_t current_pass;
 
+  /*
+   * Bit precision related
+   * feature related
+   */
   uint32_t num_bits;  // log_2 of the number of features.
+  /*
+   * do we need this?
+   */
   bool default_bits;
 
+  /*
+   * Set once on; on parse_args
+   * Setting for features
+   */
   uint32_t hash_seed;
 
+  /*
+   * Set once on; on parse_args
+   * Input file
+   */
   std::string data_filename;  // was vm["data"]
 
+  /*
+   * Set once on; on parse_args
+   * runtime configuration
+   * also applies to num_children
+   */
   bool daemon;
   size_t num_children;
 
+  /*
+   * Set once on; on parse_args
+   * weight configuration
+   */
   bool save_per_pass;
   float initial_weight;
   float initial_constant;
 
+  /*
+   * reduction stack configuration
+   */
   bool bfgs;
+  /*
+   * bfgs specific config
+   */
   bool hessian_on;
 
+  /*
+   * output related config
+   */
   bool save_resume;
+  /*
+   * GD specific config
+   */
   bool preserve_performance_counters;
+  /*
+   * output related config
+   */
   std::string id;
 
+  /*
+   * versioning related
+   * input/output file related?
+   */
   VW::version_struct model_file_ver;
+  /*
+   * updated only by ftrl.cc, gd.cc
+   */
   double normalized_sum_norm_x;
+  /*
+   * runtime configuration
+   */
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
+  /*
+   * output configuration
+   */
   // error reporting
   vw_ostream trace_message;
 
+  /*
+   * runtime configuration
+   */
   // Flag used when VW internally manages lifetime of options object.
   bool should_delete_options = false;
+
   VW::config::options_i* options;
 
+  /*
+   * search.cc specific config
+   */
   void* /*Search::search*/ searchstr;
 
+  /*
+   * wpp = weights per problem
+   * feature related?
+   * parameters related? (see array_parameters.h)
+   */
   uint32_t wpp;
 
+  /*
+   * output related
+   */
   std::unique_ptr<VW::io::writer> stdout_adapter;
 
+  /*
+   * input related
+   */
   std::vector<std::string> initial_regressors;
 
+  /*
+   * input related
+   * might be mostly gd.cc related?
+   */
   std::string feature_mask;
 
+  /*
+   * input related
+   * might be mostly bfgs.cc related?
+   */
   std::string per_feature_regularizer_input;
+  /*
+   * output related
+   * might be mostly bfgs.cc related?
+   * applies to both
+   */
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
 
+  /*
+   * input related
+   * used only by gd.cc and ftrl.cc
+   */
   float l1_lambda;  // the level of l_1 regularization to impose.
+  /*
+   * input related
+   * used only by bfgs, gd, gd_mf, kernel_svm and ftrl
+   */
   float l2_lambda;  // the level of l_2 regularization to impose.
+  /*
+   * bfgs setting
+   */
   bool no_bias;     // no bias in regularization
+  /*
+   * input config, used by gd, gd_mf, lda_core, search
+   */
   float power_t;    // the power on learning rate decay.
+  /*
+   * gd setting
+   */
   int reg_mode;
 
+  /*
+   * runtime behaviour setting
+   */
   size_t pass_length;
+  /*
+   * runtime behaviour setting, used by multiple reductions
+   */
   size_t numpasses;
+  /*
+   * not input, used as state
+   */
   size_t passes_complete;
+  /*
+   * not input, set once based on num_bits
+   * feature related setting?
+   */
   uint64_t parse_mask;  // 1 << num_bits -1
+  /*
+   * input, set once based on num_bits
+   * feature related setting?
+   */
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
+  /*
+   * following 7 are feature related settings?
+   */
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::vector<namespace_index>> interactions;
   bool ignore_some;
+  /* input
+   */
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
+  /* input
+   */
   std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
 
   bool redefine_some;                                  // --redefine param was used
+  /* input, example related
+   * applies to the next 9
+   */
   std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
   std::vector<std::string> ngram_strings;
   std::vector<std::string> skip_strings;
@@ -466,8 +601,11 @@ struct vw
   std::array<uint64_t, NUM_NAMESPACES>
       affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
   std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
-  std::vector<std::string> dictionary_path;            // where to look for dictionaries
 
+  /* input, example related
+   * feature dictionary stuff, applies to the next 3
+   */
+  std::vector<std::string> dictionary_path;            // where to look for dictionaries
   // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
   // use shared pointers to avoid the question of ownership
   std::vector<dictionary_info> loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
@@ -476,9 +614,18 @@ struct vw
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
   void (*delete_prediction)(void*);
+  /* output related
+   */
   vw_logger logger;
+  /* flag for runtime behaviour, input setting, for output
+   */
   bool audit;     // should I print lots of debugging information?
+  /* flag for behaviour, example related
+   */
   bool training;  // Should I train if lable data is available?
+  /* input, see active.cc
+   * not sure where used
+   */
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
   uint64_t random_seed;
