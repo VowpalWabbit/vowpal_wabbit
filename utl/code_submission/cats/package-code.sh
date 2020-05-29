@@ -6,7 +6,7 @@
 rm -rf cats
 git clone https://github.com/SoftwareBuildingBlocks/vowpal_wabbit.git cats
 cd cats
-git checkout icml_push2
+git checkout icml_push
 rm -rf cs
 rm -rf cluster
 rm -rf demo
