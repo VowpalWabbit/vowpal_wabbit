@@ -2,6 +2,8 @@
 
 . function-declaration.sh
 
+cd cats
+
 ds_min=$(cat ./test/train-sets/regression/ds_1000000.min)
 ds_max=$(cat ./test/train-sets/regression/ds_1000000.max)
 

@@ -27,7 +27,7 @@ cmake ..
 make -j vw-bin
 
 3) In order to create the data sets please download them from the following URL's 
-and save them with the suggested names in the path vowpal_wabbit/test/train-sets/regression:
+and save them with the suggested names in the path cats/test/train-sets/regression:
 
   https://www.openml.org/data/get_csv/150677/BNG_wisconsin.arff       --> BNG_wisconsin.csv
   https://www.openml.org/data/get_csv/150680/BNG_cpu_act.arff         --> BNG_cpu_act.csv
@@ -37,14 +37,14 @@ and save them with the suggested names in the path vowpal_wabbit/test/train-sets
 
 4) Please use the following for each data set to create the preprocessed data.
 
-  sed '/^$/d' -i vowpal_wabbit/test/train-sets/regression/$data &
-  python3 vowpal_wabbit/utl/continous_action/preprocess_data.py -c vowpal_wabbit/test/train-sets/regression/$data &
+  sed '/^$/d' -i cats/test/train-sets/regression/$data &
+  python3 cats/utl/continous_action/preprocess_data.py -c cats/test/train-sets/regression/$data &
 
   Note: for the synethic data "ds" instead of the above two steps you need to run the following:
 
-  python3 vowpal_wabbit/utl/continous_action/create_synthetic_data.py &
+  python3 cats/utl/continous_action/create_synthetic_data.py &
   
-5) In order to save the results please create a folder: "vowpal_wabbit/results"
+5) In order to save the results please create a folder: "cats/results"
 
 6) For running the online algorithm for CATS as well as the comparators and saving the progressive validation results for each data set you can run:
   run-manual.sh $name on
