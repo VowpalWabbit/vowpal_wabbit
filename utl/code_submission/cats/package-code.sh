@@ -37,14 +37,16 @@ git submodule update --init --recursive
 rm -rf .git
 cd ..
 cp ${PAPER}/utl/code_submission/${PAPER}/run-me.sh .
+cp ${PAPER}/utl/code_submission/${PAPER}/run-manual.sh .
 cp ${PAPER}/utl/code_submission/${PAPER}/function-declaration.sh .
 cp ${PAPER}/utl/code_submission/${PAPER}/README.txt .
 rm -rf ${PAPER}/utl/code_submission
 tar -cvf ${PAPER}.source.tar ${PAPER}
-zip source.zip ${PAPER}.source.tar run-me.sh function-declaration.sh README.txt
+zip source-code.zip ${PAPER}.source.tar run-me.sh run-manual.sh function-declaration.sh README.txt
 
 # Clean up temporaries
 rm run-me.sh
+rm run-manual.sh
 rm function-declaration.sh
 rm ${PAPER}.source.tar
 rm README.txt
