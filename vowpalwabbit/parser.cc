@@ -622,7 +622,6 @@ IGNORE_DEPRECATED_USAGE_END
         all.flatbuffer_pointer = buffer_pointer;
 
         all.data = VW::parsers::flatbuffer::GetExampleCollection(all.flatbuffer_pointer);
-        std::cout << "Got pointer to main collections\n";
 
         all.p->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
         all.p->text_reader = VW::parsers::flatbuffer::read_flatbuffer;
