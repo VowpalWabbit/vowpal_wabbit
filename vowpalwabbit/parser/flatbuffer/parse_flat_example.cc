@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <cfloat>
 
 #include "parse_flat_example.h"
 #include "example_generated.h"
@@ -8,6 +9,7 @@
 #include "constant.h"
 #include "cb.h"
 #include "action_score.h"
+#include "best_constant.h"
 
 namespace VW {
 namespace parsers {
@@ -66,7 +68,7 @@ void parse_features(vw* all, example* ae, features& fs, const Feature* feature)
   else fs.push_back(feature->value(), feature->hash());
 }
 
-void parse_flat_label(vw*all, example* ae, const Example* eg)
+void parse_flat_label(vw* all, example* ae, const Example* eg)
 {
   auto label_type = eg->label_type();
 
@@ -74,6 +76,7 @@ void parse_flat_label(vw*all, example* ae, const Example* eg)
     auto simple_label = static_cast<const VW::parsers::flatbuffer::SimpleLabel*>(eg->label());
     ae->l.simple.label = simple_label->label();
     ae->l.simple.weight = simple_label->weight();
+    count_label(all->sd, simple_label->label());
   }
 
   else if (label_type == Label_CBLabel){
