@@ -97,6 +97,10 @@ void convert_txt_to_flat(vw& all)
       label_type = VW::parsers::flatbuffer::Label_CB_EVAL_Label;
     }
     //Iterate through namespaces to first create features
+    uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+    if (multiplier != 1)  
+      for (features& fs : *v)
+        for (auto& j : fs.indicies) j /= multiplier;
     std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
     for (namespace_index& ns : v->indices)
     {
@@ -104,9 +108,9 @@ void convert_txt_to_flat(vw& all)
       if (ns==128) continue;
 
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
-      for (size_t i=0; i<v->feature_space[ns].values.size(); i++)
-      {
-        fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, nullptr, v->feature_space[ns].values[i], v->feature_space[ns].indicies[i]));
+
+      for (features::iterator& f : v->feature_space[ns]){
+        fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, nullptr, f.value(), f.index()));
       }
       namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, ns, &fts));
     }

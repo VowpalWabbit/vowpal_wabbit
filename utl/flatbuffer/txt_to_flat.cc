@@ -122,13 +122,9 @@ int main(int argc, char* argv[])
   else
   {
     VW::start_parser(all);
-    VW::convert_txt_to_flat(all); 
+    VW::convert_txt_to_flat(all);
+    VW::end_parser(all); 
     return 0;
-    // if (alls.size() == 1)
-    //   LEARNER::generic_driver(all);
-    // else
-    //   LEARNER::generic_driver(alls);
-    VW::end_parser(all);
   }
   // }
 }
