@@ -1,4 +1,3 @@
-
 #ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
 #endif
