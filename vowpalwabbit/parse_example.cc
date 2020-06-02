@@ -15,14 +15,14 @@
 #include "vw_string_view.h"
 #include "io_to_queue.h"
 
-class IO_Item;
+class io_item;
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
  
-  IO_Item result;
+  io_item result;
 
-  while(true){
+  /*while(true){
 
     if((*all).p->_io_state.done_with_io && (*all).p->_io_state.io_lines->size() == 0){
       break;
@@ -30,18 +30,29 @@ size_t read_features(vw* all, char*& line, size_t& num_chars)
 
     result = pop_io_queue(all);
 
-    if(result.numCharsInit > 0){
+    if(result.num_chars_init > 0){
       break;
     }
 
+  }*/
+
+  std::unique_lock<std::mutex> cv_lock((*all).p->_io_state.cv_mutex);
+  
+  while(!(*all).p->_io_state.done_with_io && (*all).p->_io_state.io_lines->size() == 0){
+    
+    (*all).p->_io_state.has_input_cv.wait(cv_lock);
+  
   }
 
-  std::string result_string =  result.message;
+  //result = pop_io_queue(all);
+  result = (*all).p->_io_state.pop_io_queue();
+
+  const auto& result_string =  result.message;
 
   line = new char[result_string.size() + 1];
   strcpy(line, result_string.c_str());
 
-  size_t num_chars_initial = result.numCharsInit;
+  size_t num_chars_initial = result.num_chars_init;
 
   if (num_chars_initial < 1)
     return num_chars_initial;
