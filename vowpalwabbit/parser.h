@@ -37,46 +37,6 @@ struct example_initializer
   example* operator()(example* ex);
 };
 
-struct IO_State {
-
-      std::queue<IO_Item> *io_lines = nullptr;
-      std::atomic<bool> done_with_io;
-
-      IO_State(){
-        io_lines = new std::queue<IO_Item>;
-         done_with_io.store(false);
-      }
-
-      IO_State(std::queue<IO_Item> *new_input_lines){
-          //input_lines_copy now points to new_input_lines
-          io_lines = new_input_lines;
-          done_with_io.store(false);
-      }
-
-      IO_State operator=(const IO_State &toCopy){
-          io_lines = toCopy.io_lines;
-          done_with_io.store(toCopy.done_with_io);
-          return *this;
-      }
-
-      IO_State(const IO_State &toCopy){
-          io_lines = toCopy.io_lines;
-          done_with_io.store(toCopy.done_with_io);
-      }
-
-      inline void set_done_io(bool done_io){
-        done_with_io.store(done_io);
-      }
-
-      inline bool get_done_io(){
-        return done_with_io;
-      }
-
-
-      ~IO_State() {}
-
-};
-
 struct parser
 {
   parser(size_t ring_size, bool strict_parse_)
@@ -141,7 +101,7 @@ struct parser
   std::condition_variable output_done;
 
   //for io_to_queue
-  std::mutex io_queue_lock;
+  //std::mutex io_queue_lock;
 
   bool done = false;
   v_array<size_t> gram_mask;
@@ -163,9 +123,9 @@ struct parser
   bool strict_parse;
   std::exception_ptr exc_ptr;
 
-  IO_State _io_state;
+  io_state _io_state;
 
-  IO_State* io_state() { return &_io_state; }
+  io_state* io_state() { return &_io_state; }
 
 };
 
