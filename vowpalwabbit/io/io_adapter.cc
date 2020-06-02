@@ -24,7 +24,7 @@
 
 #include <zlib.h>
 #if (ZLIB_VERNUM < 0x1252)
-using void* gzFile;
+typedef void* gzFile;
 #else
 struct gzFile_s;
 typedef struct gzFile_s* gzFile;
