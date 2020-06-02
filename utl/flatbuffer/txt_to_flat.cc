@@ -20,7 +20,7 @@
 #include "../../vowpalwabbit/vw.h"
 #include "../../vowpalwabbit/options.h"
 #include "../../vowpalwabbit/options_boost_po.h"
-#include "../../vowpalwabbit/parser/flatbuffer/vw_to_flat.h"
+#include "vw_to_flat.h"
 
 using namespace VW::config;
 
@@ -71,60 +71,15 @@ int main(int argc, char* argv[])
   driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
   std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;
-  if (argc == 3 && !std::strcmp(argv[1], "--args"))
-  {
-    std::fstream arg_file(argv[2]);
-    if (!arg_file)
-    {
-      THROW("Could not open file: " << argv[2]);
-    }
-
-    int line_count = 1;
-    std::string line;
-    while (std::getline(arg_file, line))
-    {
-      std::stringstream sstr;
-      sstr << line << " -f model." << (line_count++);
-      sstr << " --no_stdin";  // can't use stdin with multiple models
-
-      const std::string new_args = sstr.str();
-      std::cout << new_args << std::endl;
-
-      int l_argc;
-      char** l_argv = VW::to_argv(new_args, l_argc);
-
-      std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
-      ptr->add_and_parse(driver_config);
-      alls.push_back(setup(*ptr));
-      arguments.push_back(std::move(ptr));
-    }
-  }
-  else
-  {
-    std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
-    ptr->add_and_parse(driver_config);
-    alls.push_back(setup(*ptr));
-    arguments.push_back(std::move(ptr));
-  }
+  std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+  ptr->add_and_parse(driver_config);
+  alls.push_back(setup(*ptr));
+  arguments.push_back(std::move(ptr));
 
   vw& all = *alls[0];
 
-  if (should_use_onethread)
-  {
-    if (alls.size() == 1){
-      LEARNER::generic_driver_onethread(all);
-      std::cout << "Examples number " << all.p->ready_parsed_examples.size() << "\n";
-      VW::convert_txt_to_flat(all); 
-    }
-    else
-      THROW("--onethread doesn't make sense with multiple learners");
-  }
-  else
-  {
-    VW::start_parser(all);
-    VW::convert_txt_to_flat(all);
-    VW::end_parser(all); 
-    return 0;
-  }
-  // }
+  VW::start_parser(all);
+  convert_txt_to_flat(all);
+  VW::end_parser(all); 
+  return 0;
 }

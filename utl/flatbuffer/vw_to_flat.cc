@@ -1,19 +1,17 @@
 #include <sys/timeb.h>
-#include "parse_args.h"
-#include "parse_regressor.h"
-#include "accumulate.h"
-#include "best_constant.h"
-#include "vw_exception.h"
 #include <fstream>
 
-#include "vw.h"
-#include "options.h"
-#include "options_boost_po.h"
-#include "generated/example_generated.h"
-#include "preamble.h"
 #include "vw_to_flat.h"
-namespace VW
-{
+#include "../../vowpalwabbit/vw.h"
+#include "../../vowpalwabbit/options.h"
+#include "../../vowpalwabbit/parse_args.h"
+#include "../../vowpalwabbit/parse_regressor.h"
+#include "../../vowpalwabbit/accumulate.h"
+#include "../../vowpalwabbit/best_constant.h"
+#include "../../vowpalwabbit/vw_exception.h"
+#include "../../vowpalwabbit/options_boost_po.h"
+#include "../../vowpalwabbit/parser/flatbuffer/preamble.h"
+#include "../../vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
 
 void convert_txt_to_flat(vw& all)
 {
@@ -131,16 +129,4 @@ void convert_txt_to_flat(vw& all)
 
   // std::cout << *(buf-4) << pre.msg_size <<  "\n";
   outfile.write(reinterpret_cast<char*>(buf), size);
-}
-
-namespace parsers {
-namespace flatbuffer {
-
-// Specify label type through command line while saving
-flatbuffers::Offset<VW::parsers::flatbuffer::Label>
-parse_flat_label(vw& all, flatbuffers::FlatBufferBuilder builder, example* v){
-  // How do I assign the label?
-}
-}
-}
 }
