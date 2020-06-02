@@ -158,7 +158,8 @@ BOOST_AUTO_TEST_CASE(mock_out_pop_io)
         are called on the input lines, so the input lines are pushed in reverse to the io queue in vw's 
         io_state's io_lines. This is a trivial component of the checking, and still shows us
         that the io queue is being popped as desired.*/
-        BOOST_CHECK_EQUAL(pop_io_queue(vw).message, global_input.at(curr_num_lines));
+        BOOST_CHECK_EQUAL(vw->p->_io_state.pop_io_queue().message, global_input.at(curr_num_lines));
+        //BOOST_CHECK_EQUAL(pop_io_queue(vw).message, global_input.at(curr_num_lines));
         BOOST_CHECK_EQUAL(vw->p->_io_state.io_lines->size(), curr_num_lines);
 
     }
