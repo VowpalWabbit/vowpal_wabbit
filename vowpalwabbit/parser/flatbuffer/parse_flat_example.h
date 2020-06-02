@@ -2,7 +2,7 @@
 
 #include "vw.h"
 #include "example.h"
-#include "example_generated.h"
+#include "generated/example_generated.h"
 
 namespace VW {
 namespace parsers {

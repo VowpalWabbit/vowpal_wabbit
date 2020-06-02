@@ -9,7 +9,7 @@
 #include "vw.h"
 #include "options.h"
 #include "options_boost_po.h"
-#include "example_generated.h"
+#include "generated/example_generated.h"
 #include "preamble.h"
 #include "vw_to_flat.h"
 namespace VW

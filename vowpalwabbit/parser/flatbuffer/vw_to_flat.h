@@ -3,7 +3,7 @@
 #include "vw.h"
 #include "example_predict.h"
 #include "flatbuffers/flatbuffers.h"
-#include "example_generated.h"
+#include "generated/example_generated.h"
 
 namespace VW{
   void convert_txt_to_flat(vw& all);

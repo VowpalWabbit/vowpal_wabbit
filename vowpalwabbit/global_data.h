@@ -30,7 +30,7 @@
 #include <thread>
 #endif
 
-#include "parser/flatbuffer/example_generated.h"
+#include "parser/flatbuffer/generated/example_generated.h"
 #include "v_array.h"
 #include "array_parameters.h"
 #include "parse_primitives.h"

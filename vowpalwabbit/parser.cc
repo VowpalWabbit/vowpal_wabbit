@@ -49,7 +49,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <cstdio>
 #include <cassert>
 
-#include "parser/flatbuffer/example_generated.h"
+#include "parser/flatbuffer/generated/example_generated.h"
 #include "parser/flatbuffer/preamble.h"
 #include "parse_example.h"
 #include "cache.h"

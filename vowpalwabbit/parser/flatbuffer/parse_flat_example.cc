@@ -3,7 +3,7 @@
 #include <cfloat>
 
 #include "parse_flat_example.h"
-#include "example_generated.h"
+#include "generated/example_generated.h"
 #include "global_data.h"
 #include "example.h"
 #include "constant.h"
