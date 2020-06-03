@@ -442,7 +442,13 @@ input_options parse_source(vw& all, options_i& options)
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
       .add(make_option("no_daemon", all.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
-               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
+               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"))
+      .add(make_option("flatbuffer", parsed_options.flatbuffer).short_name("fb").help("Input a FlatBuffer File"))
+      .add(make_option("txt_to_flat", parsed_options.txt_to_flat).help("Convert txt input to flatbuffer"))
+      .add(make_option("flatout", all.flatout).help("Output Flatbuffer name. Only used when converting txt input to flatbuffer"))
+      .add(make_option("add_names_to_flat", all.add_names_to_flat).help("Add string names of features and namespaces to flatbuffer during conversion"))
+      .add(make_option("hash_names_from_flat", all.hash_from_names).help("Hash Features read from flatbuffers instead of directly reading hashes"))
+      .add(make_option("lp_flat", all.lp_flat).help("Specify Label parser for helping conversion of txt to flatbufs"));
 
 
   options.add_and_parse(input_options);

@@ -1,0 +1,91 @@
+namespace VW.parsers.flatbuffer;
+
+table Feature {
+  name:string;
+  value:float;
+  hash:uint64;
+}
+
+table Namespace {
+  name:string;
+  hash:uint64;
+  features:[Feature];
+}
+
+table SimpleLabel {
+  label:float;
+  weight:float;
+}
+
+table CB_class {
+  cost:float;
+  action:uint32;
+  probability:float;
+  partial_pred:float;
+}
+
+table CBLabel {
+  weight:float;
+  costs:[CB_class];
+}
+
+table CB_EVAL_Label {
+  action:uint32;
+  event:CBLabel;
+}
+
+table MultiLabel {
+  labels:[uint32];
+}
+
+table MultiClass {
+  label:uint32;
+  weight:float;
+}
+
+enum CCB_example_type : byte {unset=0, shared=1, action=2, slot=3}
+
+table action_score {
+  action:uint32;
+  score:float;
+}
+
+table CCB_outcome {
+  cost:float;
+  probabilities:[action_score];
+}
+
+table CCBLabel {
+  example_type:CCB_example_type;
+  outcome:CCB_outcome;
+  explicit_included_actions:[uint32];
+  weight:float;
+}
+
+table wclass {
+  x:float;
+  partial_pred:float;
+  wap_value:float;
+  class_index:uint32;
+}
+
+table CS_Label {
+  costs:[wclass];
+}
+
+table no_label {
+  label:ubyte;
+}
+
+union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Label, CS_Label, no_label}
+
+table Example {
+  namespaces:[Namespace];
+  label:Label;
+}
+
+table ExampleCollection {
+  examples:[Example];
+}
+
+root_type ExampleCollection;

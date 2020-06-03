@@ -226,6 +226,7 @@ else()
   endif()
 endif()
 
+add_subdirectory(vowpalwabbit/parser/flatbuffer)
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)

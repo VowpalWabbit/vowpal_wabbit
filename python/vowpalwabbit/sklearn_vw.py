@@ -749,9 +749,6 @@ class VWMultiClassifier(ClassifierMixin, VW):
 
         return VW.predict(self, X=X)
 
-
-
-
 def tovw(x, y=None, sample_weight=None, convert_labels=False):
     """Convert array or sparse matrix to Vowpal Wabbit format
 
