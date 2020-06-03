@@ -16,7 +16,7 @@
 #include "vw.h"
 #include "v_array.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace memory_tree_ns
@@ -1034,7 +1034,7 @@ void learn(memory_tree& b, single_learner& base, example& ec)
     {
       if (b.oas == false)
         std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
-                  << ", total num queires so far: " << b.total_num_queries << ", max depth: " << b.max_depth
+                  << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
                   << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       else
         std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
@@ -1173,7 +1173,7 @@ void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::s
 void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     if (read)
       b.test_mode = true;
@@ -1248,7 +1248,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .default_value(1)
                .help("number of dream operations per example (default = 1)"))
       .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
-      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (defualt = True)"))
+      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (default = True)"))
       .add(make_option("oas", tree->oas).help("use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)

@@ -8,8 +8,9 @@
 
 #include "rand48.h"
 #include "vw_string_view.h"
+#include "tag_utils.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
@@ -56,18 +57,13 @@ struct cb_sample_data
     }
     else
     {
-      bool tag_provided_seed = false;
       uint64_t seed = _random_state->get_current_state();
-      if (!examples[0]->tag.empty())
+
+      VW::string_view tag_seed;
+      const bool tag_provided_seed = try_extract_random_seed(*examples[0], tag_seed);
+      if (tag_provided_seed)
       {
-        const std::string SEED_IDENTIFIER = "seed=";
-        if (strncmp(examples[0]->tag.begin(), SEED_IDENTIFIER.c_str(), SEED_IDENTIFIER.size()) == 0 &&
-            examples[0]->tag.size() > SEED_IDENTIFIER.size())
-        {
-          VW::string_view tag_seed(examples[0]->tag.begin() + 5, examples[0]->tag.size());
-          seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
-          tag_provided_seed = true;
-        }
+        seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
       }
 
       // Sampling is done after the base learner has generated a pdf.
