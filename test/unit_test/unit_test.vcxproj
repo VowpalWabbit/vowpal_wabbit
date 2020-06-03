@@ -26,15 +26,21 @@
     <ClCompile Include="dsjson_parser_test.cc" />
     <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="explore_test.cc" />
+    <ClCompile Include="guard_test.cc" />
+    <ClCompile Include="initialize_test.cc" />
+    <ClCompile Include="io_adapter_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
     <ClCompile Include="prediction_test.cc" />
+    <ClCompile Include="scope_exit_test.cc" />
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
+    <ClCompile Include="tag_utils_test.cc" />
+    <ClCompile Include="test_common.cc" />
     <ClCompile Include="vwdll_test.cc" />
   </ItemGroup>
   <ItemGroup>

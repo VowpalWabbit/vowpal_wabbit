@@ -2,21 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+
 #include <cmath>
 #include <string>
 #include <vector>
 #include <iostream>
 #include <cstdint>
 #include <cmath>
+
 #include "v_array.h"
 #include "hashstring.h"
 #include "vw_string_view.h"
-
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#include <Windows.h>
-#endif
 
 std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss);
 
@@ -130,7 +126,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
     }
     return ret;
   }
-    
+
 }
 
 inline float float_of_string(VW::string_view s)
