@@ -81,8 +81,8 @@ inline void learn_node(plt& p, uint32_t n, single_learner& base, example& ec)
 
 void learn(plt& p, single_learner& base, example& ec)
 {
-  MULTILABEL::labels multilabels = ec.l.multilabels;
-  MULTILABEL::labels preds = ec.pred.multilabels;
+  MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
+  MULTILABEL::labels preds = std::move(ec.pred.multilabels);
 
   double t = p.all->sd->t;
   double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
@@ -135,8 +135,8 @@ void learn(plt& p, single_learner& base, example& ec)
   p.all->sd->t = t;
   p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
 
-  ec.pred.multilabels = preds;
-  ec.l.multilabels = multilabels;
+  ec.pred.multilabels = std::move(preds);
+  ec.l.multilabels = std::move(multilabels);
 }
 
 inline float predict_node(uint32_t n, single_learner& base, example& ec)
@@ -149,8 +149,8 @@ inline float predict_node(uint32_t n, single_learner& base, example& ec)
 template <bool threshold>
 void predict(plt& p, single_learner& base, example& ec)
 {
-  MULTILABEL::labels multilabels = ec.l.multilabels;
-  MULTILABEL::labels preds = ec.pred.multilabels;
+  MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
+  MULTILABEL::labels preds = std::move(ec.pred.multilabels);
   preds.label_v.clear();
 
   // split labels into true and skip (those > max. label num)
@@ -257,8 +257,8 @@ void predict(plt& p, single_learner& base, example& ec)
     }
   }
 
-  ec.pred.multilabels = preds;
-  ec.l.multilabels = multilabels;
+  ec.pred.multilabels = std::move(preds);
+  ec.l.multilabels = std::move(multilabels);
 }
 
 void finish_example(vw& all, plt& p, example& ec)
