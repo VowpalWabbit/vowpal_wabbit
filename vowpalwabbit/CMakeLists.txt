@@ -257,6 +257,7 @@ set(vw_all_sources
 )
 
 add_library(vw ${vw_all_sources} ${vw_all_headers})
+add_dependencies(vw fbschemas)
 
 target_link_libraries(vw
   PUBLIC
