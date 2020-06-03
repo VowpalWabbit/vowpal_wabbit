@@ -229,7 +229,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
     all.trace_message << "can't create cache file !" << temp << endl;
     return;
   }
-  
+
   size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
   output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
@@ -1017,6 +1017,18 @@ void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &al
 
 void free_parser(vw& all)
 {
+  // It is possible to exit early when the queue is not yet empty.
+
+  while(all.p->ready_parsed_examples.size() > 0)
+  {
+    auto* current  = all.p->ready_parsed_examples.pop();
+    // this function also handles examples that were not from the pool.
+    VW::finish_example(all, *current);
+  }
+
+  // There should be no examples in flight at this point.
+  assert(all.p->ready_parsed_examples.size() == 0);
+
   std::vector<example*> drain_pool;
   drain_pool.reserve(all.p->example_pool.size());
   while (!all.p->example_pool.empty())
@@ -1030,8 +1042,6 @@ void free_parser(vw& all)
     all.p->example_pool.return_object(example_ptr);
   }
 
-  // There should be no examples in flight at this point.
-  assert(all.p->ready_parsed_examples.size() == 0);
 }
 
 namespace VW
