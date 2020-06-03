@@ -10,5 +10,4 @@ AllowShortLoopsOnASingleLine: false
 BreakBeforeBraces: Allman
 BreakConstructorInitializersBeforeComma: true
 ColumnLimit: 120
-InsertTrailingCommas: true
 SortIncludes: false
