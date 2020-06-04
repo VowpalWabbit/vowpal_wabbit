@@ -2,10 +2,10 @@ BasedOnStyle: Google
 AccessModifierOffset: -2
 AlignAfterOpenBracket: DontAlign
 AlignOperands: false
-AllowShortBlocksOnASingleLine: false
+AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Always
 AllowShortLoopsOnASingleLine: true
 BreakBeforeBraces: Allman
 BreakConstructorInitializersBeforeComma: true
