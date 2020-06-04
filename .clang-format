@@ -5,7 +5,7 @@ AlignOperands: false
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
 BreakBeforeBraces: Allman
 BreakConstructorInitializersBeforeComma: true
