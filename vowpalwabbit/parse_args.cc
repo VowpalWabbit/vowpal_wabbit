@@ -456,7 +456,7 @@ input_options parse_source(vw& all, options_i& options)
   }
   else if (positional_tokens.size() > 1)
   {
-    THROW("Only a single positional parameter is supported. This is the data argument.");
+    all.trace_message << "Warning: Multiple data files passed as positional parameters, only the first one will be read and the rest will be ignored." << endl;
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
@@ -793,7 +793,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     if (!all.logger.quiet)
       all.trace_message << "creating features for following interactions: ";
-    
+
     for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
