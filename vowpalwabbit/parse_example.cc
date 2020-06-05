@@ -17,7 +17,9 @@
 
 class io_item;
 
-size_t read_features(vw *all, std::vector<char>& line, size_t& num_chars)
+
+//size_t read_features(vw *all, std::vector<char>& line, size_t& num_chars)
+size_t read_features(vw *all, std::vector<char>& line, size_t&)
 {
  
   io_item result;
@@ -61,19 +63,39 @@ size_t read_features(vw *all, std::vector<char>& line, size_t& num_chars)
 
 }
 
+//will need to change read_features_string.
+//1) pop line off queue
+//2) reserve slot in r_ex_queue
+//3) parsing
+//1 and 2 in lock, 3 out of lock.
 int read_features_string(vw* all, v_array<example*>& examples)
 {
   std::vector<char> line;
   size_t num_chars;
   size_t num_chars_initial;
 
-  num_chars_initial = read_features(all, line, num_chars);
+  //{
+    //std::unique_lock<std::mutex> lck((*all).p->parser_mutex);
+
+    //a line is popped off of the io queue in read_features
+
+   // std::cout << "before read_features" << std::endl;
+    num_chars_initial = read_features(all, line, num_chars);
+
+    //std::cout << "afterread_features" << std::endl;
+
+    //reserve a slot in the ready_examples_queue
+
+    //(*all).p->example_parsed.notify_one();
+
+  //}
 
   char *stripped_line = line.data();
   num_chars = strip_features_string(stripped_line, num_chars_initial);
 
   VW::string_view example(stripped_line, num_chars);
   substring_to_example(all, examples[0], example);
+  //NT change the done flag of example after parsing example
 
   return (int)num_chars_initial;
 }
@@ -514,12 +536,20 @@ class TC_parser
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
+
+  //need to make this thread-safe...
+
+  //store a local copy of words per thread
+  v_array<VW::string_view> words_localcpy = all->p->words;
+  //store a local copy of parse_name per thread
+  v_array<VW::string_view> parse_name_localcpy = all->p->parse_name;
   
   all->p->lp.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
 
-  all->p->words.clear();
+  words_localcpy.clear();
+
   if (bar_idx != 0)
   {
     VW::string_view label_space(example);
@@ -536,20 +566,20 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
     }
 
     std::vector<VW::string_view> tokenized;
-    tokenize(' ', label_space, all->p->words);
-    if (all->p->words.size() > 0 &&
-        (all->p->words.last().end() == label_space.end() ||
-        all->p->words.last().front() == '\''))  // The last field is a tag, so record and strip it off
+    tokenize(' ', label_space, words_localcpy);
+    if (words_localcpy.size() > 0 &&
+        (words_localcpy.last().end() == label_space.end() ||
+        words_localcpy.last().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->p->words.pop();
+      VW::string_view tag = words_localcpy.pop();
       if (tag.front() == '\'')
         tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());
     }
   }
 
-  if (!all->p->words.empty())
-    all->p->lp.parse_label(all->p, all->p->_shared_data, &ae->l, all->p->words);
+  if (!words_localcpy.empty())
+    all->p->lp.parse_label(all->p, all->p->_shared_data, &ae->l, words_localcpy, parse_name_localcpy);
 
   if (bar_idx != VW::string_view::npos)
   {
