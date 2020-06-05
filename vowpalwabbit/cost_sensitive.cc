@@ -121,7 +121,8 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
+
+void parse_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -130,19 +131,19 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
   if (words.size() == 1)
   {
     float fx;
-    name_value(words[0], p->parse_name, fx);
-    bool eq_shared = p->parse_name[0] == "***shared***";
-    bool eq_label = p->parse_name[0] == "***label***";
+    name_value(words[0], parse_name_localcpy, fx);
+    bool eq_shared = parse_name_localcpy[0] == "***shared***";
+    bool eq_label = parse_name_localcpy[0] == "***label***";
     if (!sd->ldict)
     {
-      eq_shared |= p->parse_name[0] == "shared";
-      eq_label |= p->parse_name[0] == "label";
+      eq_shared |= parse_name_localcpy[0] == "shared";
+      eq_label |= parse_name_localcpy[0] == "label";
     }
     if (eq_shared || eq_label)
     {
       if (eq_shared)
       {
-        if (p->parse_name.size() != 1)
+        if (parse_name_localcpy.size() != 1)
           std::cerr << "shared feature vectors should not have costs on: " << words[0] << std::endl;
         else
         {
@@ -152,11 +153,11 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
       }
       if (eq_label)
       {
-        if (p->parse_name.size() != 2)
+        if (parse_name_localcpy.size() != 2)
           std::cerr << "label feature vectors should have exactly one cost on: " << words[0] << std::endl;
         else
         {
-          wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
+          wclass f = {float_of_string(parse_name_localcpy[1]), 0, 0., 0.};
           ld->costs.push_back(f);
         }
       }
@@ -168,20 +169,20 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
   for (unsigned int i = 0; i < words.size(); i++)
   {
     wclass f = {0., 0, 0., 0.};
-    name_value(words[i], p->parse_name, f.x);
+    name_value(words[i], parse_name_localcpy, f.x);
 
-    if (p->parse_name.size() == 0)
+    if (parse_name_localcpy.size() == 0)
       THROW(" invalid cost: specification -- no names on: " << words[i]);
 
-    if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
+    if (parse_name_localcpy.size() == 1 || parse_name_localcpy.size() == 2 || parse_name_localcpy.size() == 3)
     {
-      f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0])
-                                : (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
-      if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
+      f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(parse_name_localcpy[0])
+                                : (uint32_t)hashstring(parse_name_localcpy[0].begin(), parse_name_localcpy[0].length(), 0);
+      if (parse_name_localcpy.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
     else
-      THROW("malformed cost specification on '" << (p->parse_name[0]) << "'");
+      THROW("malformed cost specification on '" << (parse_name_localcpy[0]) << "'");
 
     ld->costs.push_back(f);
   }
