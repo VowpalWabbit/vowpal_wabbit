@@ -32,27 +32,3 @@ inline void io_lines_toqueue(vw& all){
 
 }
 
-//try to encapsulate start io thread and end io thread, so it can be moved out of parse dispatch loop.
-namespace VW {
-
-inline void start_io_thread(vw& all){
-
-  /*io_state curr_io_state;
-
-  all.p->_io_state = curr_io_state ;*/
-
-  all.io_thread = std::thread([&all]() 
-  {
-    io_lines_toqueue(all);
-  });
-
-}
-
-inline void end_io_thread(vw& all){
-
-  all.io_thread.join();
-
-}
-
-}
-
