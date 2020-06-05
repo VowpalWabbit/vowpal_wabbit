@@ -15,7 +15,7 @@ void parse_label(label_parser& lp, parser* p, VW::string_view label, VW::slates:
 {
   tokenize(' ', label, p->words);
   lp.default_label(&l);
-  lp.parse_label(p, nullptr, &l, p->words);
+  lp.parse_label(p, nullptr, &l, p->words, p->parse_name);
 }
 
 BOOST_AUTO_TEST_CASE(slates_parse_label)
