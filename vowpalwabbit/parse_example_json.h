@@ -1603,16 +1603,20 @@ int read_features_json(vw* all, v_array<example*>& examples)
   {
     reread = false;
 
-    char* line;
+    std::vector<char> line;
     size_t num_chars;
     size_t num_chars_initial = read_features(all, line, num_chars);
-    if (num_chars_initial < 1)
-      return (int)num_chars_initial;
 
     // Ensure there is a null terminator.
-    line[num_chars] = '\0';
+    line.push_back('\0'); 
 
-    reread = !parse_line_json<audit>(all, line, num_chars, examples);
+    char *stripped_line = line.data();
+    num_chars = strip_features_string(stripped_line, num_chars_initial);
+
+    if(num_chars < 1)
+      return (int)num_chars;
+
+    reread = !parse_line_json<audit>(all, stripped_line, num_chars, examples);
   } while (reread);
 
   prepare_for_learner(all, examples);
