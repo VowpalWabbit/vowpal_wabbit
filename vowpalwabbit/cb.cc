@@ -108,7 +108,7 @@ void copy_label(void* dst, void* src)
   ldD->weight = ldS->weight;
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser*, shared_data*, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
@@ -117,27 +117,27 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
   for (auto const& word : words)
   {
     cb_class f;
-    tokenize(':', word, p->parse_name);
+    tokenize(':', word, parse_name_localcpy);
 
-    if (p->parse_name.empty() || p->parse_name.size() > 3)
-      THROW("malformed cost specification: " << p->parse_name);
+    if (parse_name_localcpy.empty() || parse_name_localcpy.size() > 3)
+      THROW("malformed cost specification: " << parse_name_localcpy);
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
+    f.action = (uint32_t)hashstring(parse_name_localcpy[0].begin(), parse_name_localcpy[0].length(), 0);
     f.cost = FLT_MAX;
 
-    if (p->parse_name.size() > 1)
-      f.cost = float_of_string(p->parse_name[1]);
+    if (parse_name_localcpy.size() > 1)
+      f.cost = float_of_string(parse_name_localcpy[1]);
 
     if (std::isnan(f.cost))
-      THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
+      THROW("error NaN cost (" << parse_name_localcpy[1] << " for action: " << parse_name_localcpy[0]);
 
     f.probability = .0;
-    if (p->parse_name.size() > 2)
-      f.probability = float_of_string(p->parse_name[2]);
+    if (parse_name_localcpy.size() > 2)
+      f.probability = float_of_string(parse_name_localcpy[2]);
 
     if (std::isnan(f.probability))
-      THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
+      THROW("error NaN probability (" << parse_name_localcpy[2] << " for action: " << parse_name_localcpy[0]);
 
     if (f.probability > 1.0)
     {
@@ -149,9 +149,9 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
       std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << std::endl;
       f.probability = .0;
     }
-    if (p->parse_name[0] == "shared")
+    if (parse_name_localcpy[0] == "shared")
     {
-      if (p->parse_name.size() == 1)
+      if (parse_name_localcpy.size() == 1)
       {
         f.probability = -1.f;
       }
@@ -272,7 +272,7 @@ void copy_label(void* dst, void* src)
   ldD->action = ldS->action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 
@@ -283,7 +283,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
 
   words.begin()++;
 
-  CB::parse_label(p, sd, &(ld->event), words);
+  CB::parse_label(p, sd, &(ld->event), words, parse_name_localcpy);
 
   words.begin()--;
 }
