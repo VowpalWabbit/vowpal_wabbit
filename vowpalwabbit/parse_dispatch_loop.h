@@ -11,17 +11,16 @@
 #include "io_to_queue.h"
 
 using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
-struct IO_State;
+struct io_state;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
   v_array<example*> examples = v_init<example*>();
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
-  std::queue<IO_Item> *io_lines = new std::queue<IO_Item>;
-  IO_State io_state(io_lines);
+  io_state curr_io_state;
 
-  all.p->_io_state = io_state;
+  all.p->_io_state = curr_io_state ;
 
   std::thread io_queue_th([&all]() 
   {
@@ -40,6 +39,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
           all.p->reader(&all, examples) > 0)
       {
+
         VW::setup_examples(all, examples);
         example_number += examples.size();
         dispatch(all, examples);
@@ -88,7 +88,9 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     all.p->exc_ptr = std::current_exception();
   }
 
+  //move to end_io_thread function
   io_queue_th.join();
+
   lock_done(*all.p);
   examples.delete_v();
 
