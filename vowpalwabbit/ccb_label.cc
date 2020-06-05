@@ -288,7 +288,7 @@ void parse_explicit_inclusions(CCB::label* ld, v_array<VW::string_view>& split_i
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser*, shared_data*, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
 {
   CCB::label* ld = static_cast<CCB::label*>(v);
   ld->weight = 1.0;
@@ -334,8 +334,8 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
       }
       else
       {
-        tokenize(',', words[i], p->parse_name);
-        parse_explicit_inclusions(ld, p->parse_name);
+        tokenize(',', words[i], parse_name_localcpy);
+        parse_explicit_inclusions(ld, parse_name_localcpy);
       }
     }
 
