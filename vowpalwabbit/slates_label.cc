@@ -121,7 +121,7 @@ void copy_label(void* dst, void* src)
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser*, shared_data*, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
 {
   auto& ld = static_cast<polylabel*>(v)->slates;
   ld.weight = 1;
@@ -170,10 +170,10 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
     if (words.size() == 3)
     {
       ld.labeled = true;
-      tokenize(',', words[2], p->parse_name);
+      tokenize(',', words[2], parse_name_localcpy);
 
       auto split_colons = v_init<VW::string_view>();
-      for (auto& token : p->parse_name)
+      for (auto& token : parse_name_localcpy)
       {
         tokenize(':', token, split_colons);
         if (split_colons.size() != 2)
