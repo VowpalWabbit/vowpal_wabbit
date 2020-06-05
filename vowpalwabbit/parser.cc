@@ -887,9 +887,12 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 void parse_example_label(vw& all, example& ec, std::string label)
 {
   v_array<VW::string_view> words = v_init<VW::string_view>();
+  v_array<VW::string_view> parse_name = v_init<VW::string_view>();
 
   tokenize(' ', label, words);
-  all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
+
+
+  all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words, parse_name);
   words.clear();
   words.delete_v();
 }
@@ -934,9 +937,13 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
+
   all.p->end_parsed_examples += examples.size();
+
   for (auto example : examples)
   {
+    
+
     all.p->ready_parsed_examples.push(example);
   }
 }
@@ -1012,7 +1019,10 @@ void adjust_used_index(vw&)
 
 namespace VW
 {
+
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
+
+
 }  // namespace VW
 
 void free_parser(vw& all)
@@ -1036,7 +1046,12 @@ void free_parser(vw& all)
 
 namespace VW
 {
-void end_parser(vw& all) { all.parse_thread.join(); }
+void end_parser(vw& all) { 
+
+  all.parse_thread.join();
+
+
+}
 
 bool is_ring_example(vw& all, example* ae) { return all.p->example_pool.is_from_pool(ae); }
 }  // namespace VW
