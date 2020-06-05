@@ -93,7 +93,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
 {
   labels* ld = (labels*)v;
 
@@ -103,9 +103,9 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
     case 0:
       break;
     case 1:
-      tokenize(',', words[0], p->parse_name);
+      tokenize(',', words[0], parse_name_localcpy);
 
-      for (const auto & parse_name : p->parse_name)
+      for (const auto & parse_name : parse_name_localcpy)
       {
         uint32_t n = int_of_string(parse_name);
         ld->label_v.push_back(n);
