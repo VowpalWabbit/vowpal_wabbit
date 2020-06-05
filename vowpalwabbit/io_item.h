@@ -8,51 +8,19 @@ class io_item {
 
   public:
 
-      std::string message;
+      std::vector<char> message;
       int num_chars_init;
 
       io_item(){
           num_chars_init = 0;
       }
 
-      io_item(std::string myMsg, int myNumCharsInit){
-          message.assign(myMsg);
+      io_item(std::vector<char> myMsg, int myNumCharsInit){
+          message = myMsg;
           num_chars_init = myNumCharsInit;
       }
 
-     /* io_item operator=(const io_item &toCopy){
-          message.assign(toCopy.message);
-          num_chars_init = toCopy.num_chars_init;
-          return *this;
-      }
-
-      io_item(const io_item &toCopy){
-          message.assign(toCopy.message);
-          num_chars_init = toCopy.num_chars_init;
-      }*/
-
       ~io_item() {}
-
-      /*inline const std::string& getString(){
-          //return std::string(message);
-          return message;
-      }*/
-
-      inline std::string getString(){
-          return std::string(message);
-      }
-
-      inline int getNumCharsInit(){
-        return num_chars_init;
-      }
-
-      inline void setString(std::string newMsg){
-          message.assign(newMsg);
-      }
-
-      inline void setNumCharsInit(int newNum){
-          num_chars_init = newNum;
-      }
 
 };
 
@@ -68,21 +36,12 @@ struct io_state {
 
     //mutex for io queue access
     std::mutex mut;
-    //question: replace io_lines queue with ptr_queue to make it thread-safe?
 
     io_state()
       : io_lines{new std::queue<io_item>}
       , done_with_io{false}
     {
-      /*io_lines = new std::queue<io_item>;
-      done_with_io.store(false);*/
     }
-
-    /*io_state(std::queue<io_item> *new_input_lines){
-        //input_lines_copy now points to new_input_lines
-        io_lines = new_input_lines;
-        done_with_io.store(false);
-    }*/
 
     io_state operator=(const io_state &toCopy){
         io_lines = toCopy.io_lines;
@@ -90,8 +49,6 @@ struct io_state {
         return *this;
     }
 
-    //move constructor -- implement or delete? (ask mentor)
-    //how about if reassign? leak memory?
     io_state(io_state&& iostate_to_move)
     {
       //if io_lines is not the null pointer, delete the memory it pointed to before reassigning
@@ -118,25 +75,25 @@ struct io_state {
 
     ~io_state() {}
 
-    inline bool add_to_queue(char *& line, io_buf *input){
+    inline bool add_to_queue(char *line, io_buf *input){
 
       std::unique_lock<std::mutex> cv_lock(cv_mutex);
 
       bool finish = false;
 
       size_t num_chars_initial = readto(*input, line, '\n');
-      
-      if(num_chars_initial < 1 || strlen(line) < 1){
+
+      std::vector<char> byte_array;
+      byte_array.resize(num_chars_initial); // Note: This byte_array is NOT null terminated!
+
+      if(num_chars_initial < 1){
           finish = true;
       }
 
-      io_item line_item(std::string(line), num_chars_initial);
-
+      memcpy(byte_array.data(), line, num_chars_initial);
       {
         std::lock_guard<std::mutex> lck(io_queue_lock);
-
-        io_lines->push(line_item);
-        
+        io_lines->emplace(std::move(byte_array), num_chars_initial); // in-place construction and no copying. very efficient!
       }
 
       has_input_cv.notify_all();
