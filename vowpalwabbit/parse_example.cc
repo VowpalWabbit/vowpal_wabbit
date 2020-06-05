@@ -17,24 +17,10 @@
 
 class io_item;
 
-size_t read_features(vw* all, char*& line, size_t& num_chars)
+size_t read_features(vw *all, std::vector<char>& line, size_t& num_chars)
 {
  
   io_item result;
-
-  /*while(true){
-
-    if((*all).p->_io_state.done_with_io && (*all).p->_io_state.io_lines->size() == 0){
-      break;
-    }
-
-    result = pop_io_queue(all);
-
-    if(result.num_chars_init > 0){
-      break;
-    }
-
-  }*/
 
   std::unique_lock<std::mutex> cv_lock((*all).p->_io_state.cv_mutex);
   
@@ -43,20 +29,24 @@ size_t read_features(vw* all, char*& line, size_t& num_chars)
     (*all).p->_io_state.has_input_cv.wait(cv_lock);
   
   }
-
-  //result = pop_io_queue(all);
+ 
   result = (*all).p->_io_state.pop_io_queue();
 
-  const auto& result_string =  result.message;
+  line = std::move(result.message);
 
-  line = new char[result_string.size() + 1];
-  strcpy(line, result_string.c_str());
+  line.push_back('\0');  // null terminate the string!
+  
+  return result.num_chars_init;  // no post-processing here because its expensive on a vector
 
-  size_t num_chars_initial = result.num_chars_init;
+}
 
-  if (num_chars_initial < 1)
-    return num_chars_initial;
-  num_chars = num_chars_initial;
+ size_t strip_features_string(char*& line, size_t num_chars_init){
+
+  if (num_chars_init < 1)
+    return num_chars_init;
+
+  size_t num_chars = num_chars_init;
+
   if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
   {
     line += 3;
@@ -66,20 +56,23 @@ size_t read_features(vw* all, char*& line, size_t& num_chars)
     num_chars--;
   if (num_chars > 0 && line[num_chars - 1] == '\r')
     num_chars--;
-  return num_chars_initial;
+
+  return num_chars;
+
 }
 
 int read_features_string(vw* all, v_array<example*>& examples)
 {
-  char* line;
+  std::vector<char> line;
   size_t num_chars;
+  size_t num_chars_initial;
 
-  size_t num_chars_initial = read_features(all, line, num_chars);
+  num_chars_initial = read_features(all, line, num_chars);
 
-  if (num_chars_initial < 1)
-    return (int)num_chars_initial;
+  char *stripped_line = line.data();
+  num_chars = strip_features_string(stripped_line, num_chars_initial);
 
-  VW::string_view example(line, num_chars);
+  VW::string_view example(stripped_line, num_chars);
   substring_to_example(all, examples[0], example);
 
   return (int)num_chars_initial;
@@ -521,6 +514,7 @@ class TC_parser
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
+  
   all->p->lp.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
