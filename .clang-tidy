@@ -1,2 +1,2 @@
 Checks: '-*,readability-*,modernize-*,performance-*,-modernize-use-trailing-return-type,-readability-uppercase-literal-suffix'
-FormatStyle: 'file'
+FormatStyle: file
