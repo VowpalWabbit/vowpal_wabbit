@@ -799,7 +799,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     else
       all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
   }
-  if (!model_file.files.empty())
+  if (model_file.num_files() != 0)
   {
     uint64_t i = 0;
     std::stringstream msg;
@@ -848,7 +848,10 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 void return_example(vw &all, example &ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
-  for (int f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag);
+  }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
     all.sd->print_update(
@@ -1004,7 +1007,7 @@ void learn_batch(lda &l)
   l.doc_lengths.clear();
 }
 
-void learn(lda &l, LEARNER::single_learner &, example &ec)
+void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
 {
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
@@ -1022,7 +1025,7 @@ void learn(lda &l, LEARNER::single_learner &, example &ec)
     learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
+void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1045,8 +1048,8 @@ void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1321,7 +1324,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-LEARNER::base_learner *lda_setup(options_i &options, vw &all)
+VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 {
   auto ld = scoped_calloc_or_throw<lda>();
   option_group_definition new_options("Latent Dirichlet Allocation");
@@ -1389,7 +1392,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   all.p->lp = no_label::no_label_parser;
 
-  LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
+  VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
       prediction_type_t::scalars);
 

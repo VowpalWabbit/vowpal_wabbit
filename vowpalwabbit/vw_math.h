@@ -7,7 +7,7 @@ namespace VW
 namespace math
 {
 #define DEFAULT_TOLERANCE 0.0001
-constexpr float DEFAULT_FLOAT_TOLERANCE = DEFAULT_TOLERANCE;
+constexpr float DEFAULT_FLOAT_TOLERANCE = static_cast<float>(DEFAULT_TOLERANCE);
 
 // Float/double comparison of arguments.
 // Returns true if lhs and rhs are within tolerance of each other.

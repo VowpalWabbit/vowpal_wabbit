@@ -89,11 +89,15 @@ struct options_boost_po : public options_i
     *(it + 1) = value;
   }
 
-  // key must reference an option previously defined.
-  bool try_get_positional_option_token(const std::string& key, std::string& token, int position)
+  std::vector<std::string> get_positional_tokens() override
   {
     po::positional_options_description p;
-    p.add(key.c_str(), position);
+    p.add("__positional__", -1);
+    auto* found_opt = master_description.find_nothrow("__positional__", false);
+    if (found_opt == nullptr)
+    {
+      master_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
+    }
     po::parsed_options pos = po::command_line_parser(m_command_line)
                                  .style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
                                  .options(master_description)
@@ -101,16 +105,14 @@ struct options_boost_po : public options_i
                                  .positional(p)
                                  .run();
 
-    auto it = std::find_if(pos.options.begin(), pos.options.end(),
-        [&key](boost::program_options::option& option) { return option.string_key == key; });
+    po::variables_map vm;
+    po::store(pos, vm);
 
-    if (it != pos.options.end() && (*it).value.size() > 0)
+    if (vm.count("__positional__") != 0)
     {
-      token = (*it).value.at(0);
-      return true;
+      return vm["__positional__"].as<std::vector<std::string>>();
     }
-
-    return false;
+    return std::vector<std::string>();
   }
 
  private:
@@ -220,7 +222,7 @@ po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
 {
   return po_value->notifier([opt](std::vector<T> final_arguments) {
     T result = final_arguments[0];
-    
+
     // Due to the way options get added to the vector, the model options are at the end, and the
     // command-line options are at the front. To allow override from command-line over model file,
     // simply keep the first item, and suppress the error.

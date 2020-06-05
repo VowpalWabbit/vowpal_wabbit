@@ -26,6 +26,7 @@ class Distribution(_distribution):
     global_options += [
         ('enable-boost-cmake', None, 'Enable boost-cmake'),
         ('cmake-options=', None, 'Additional semicolon-separated cmake setup options list'),
+        ('debug', None, 'Debug build'),
     ]
 
     if system == 'Windows':
@@ -37,6 +38,7 @@ class Distribution(_distribution):
         self.vcpkg_root = None
         self.enable_boost_cmake = None
         self.cmake_options = None
+        self.debug = False
         _distribution.__init__(self, attrs)
 
 class CMakeExtension(Extension):
@@ -85,7 +87,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         distutils.dir_util.mkpath(lib_output_dir)
 
         # example of cmake args
-        config = 'Debug' if self.debug else 'Release'
+        config = 'Debug' if self.distribution.debug else 'Release'
 
         cmake_args = [
             '-DCMAKE_BUILD_TYPE=' + config,
