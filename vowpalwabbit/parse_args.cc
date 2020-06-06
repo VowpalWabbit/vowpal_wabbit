@@ -443,8 +443,8 @@ input_options parse_source(vw& all, options_i& options)
       .add(make_option("txt_to_flat", parsed_options.txt_to_flat).help("Convert txt input to flatbuffer"))
       .add(make_option("flatout", all.flatout).help("Output Flatbuffer name. Only used when converting txt input to flatbuffer"))
       .add(make_option("add_names_to_flat", all.add_names_to_flat).help("Add string names of features and namespaces to flatbuffer during conversion"))
-      .add(make_option("hash_names_from_flat", all.hash_from_names).help("Hash Features read from flatbuffers instead of directly reading hashes"))
-      .add(make_option("lp_flat", all.lp_flat).help("Specify Label parser for helping conversion of txt to flatbufs"));
+      .add(make_option("hash_names_from_flat", all.hash_from_names).help("Hash Features read from flatbuffers instead of directly reading hashes"));
+      // .add(make_option("label_type", all.label_type).help("Specify Label parser for helping conversion of txt to flatbufs"));
 
 
   options.add_and_parse(input_options);

@@ -398,10 +398,11 @@ struct vw
   std::ifstream infile;
   const VW::parsers::flatbuffer::ExampleCollection* data;
   char* flatbuffer_pointer;
+  bool to_flat;
   std::string flatout;
   bool add_names_to_flat;
   bool hash_from_names;
-  std::string lp_flat;
+  // std::string label_type;
 
   bool daemon;
   size_t num_children;

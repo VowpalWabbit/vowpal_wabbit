@@ -23,12 +23,13 @@ void convert_txt_to_flat(vw& all)
     // Create Label for current example
     flatbuffers::Offset<void> label;
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-    if (all.lp_flat.compare("simple") == 0){
+    // if (all.label_type.compare("simple") == 0){
+    if (all.label_type == label_type_t::simple){
       label = VW::parsers::flatbuffer::CreateSimpleLabel(builder, v->l.simple.label, v->l.simple.weight).Union();
       label_type = VW::parsers::flatbuffer::Label_SimpleLabel;
     }
     // TODO : Change for loop iteration from using int to pointers.
-    else if (all.lp_flat.compare("cb") == 0){
+    else if (all.label_type == label_type_t::cb){
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
       for (auto i=0; i<v->l.cb.costs.size(); i++){
         costs.push_back(VW::parsers::flatbuffer::CreateCB_class(builder, v->l.cb.costs[i].cost, v->l.cb.costs[i].action, v->l.cb.costs[i].probability, v->l.cb.costs[i].partial_prediction));
@@ -36,7 +37,7 @@ void convert_txt_to_flat(vw& all)
       label = VW::parsers::flatbuffer::CreateCBLabelDirect(builder, v->l.cb.weight, &costs).Union();
       label_type = VW::parsers::flatbuffer::Label_CBLabel;
     }
-    else if (all.lp_flat.compare("ccb") == 0){
+    else if (all.label_type == label_type_t::ccb){
       std::vector<uint32_t> explicit_included_actions;
       for (auto i=0; i<v->l.conditional_contextual_bandit.explicit_included_actions.size(); i++) 
         explicit_included_actions.push_back(v->l.conditional_contextual_bandit.explicit_included_actions[i]);
@@ -60,7 +61,7 @@ void convert_txt_to_flat(vw& all)
       label = VW::parsers::flatbuffer::CreateCCBLabelDirect(builder, type, outcome, &explicit_included_actions, v->l.conditional_contextual_bandit.weight).Union();
       label_type = VW::parsers::flatbuffer::Label_CCBLabel;
     }
-    else if (all.lp_flat.compare("multilabel"))
+    else if (all.label_type == label_type_t::multi)
     {
       std::vector<uint32_t> labels;
       for (auto i=0; i<v->l.multilabels.label_v.size(); i++) labels.push_back(v->l.multilabels.label_v[i]);
@@ -68,12 +69,13 @@ void convert_txt_to_flat(vw& all)
       label = VW::parsers::flatbuffer::CreateMultiLabelDirect(builder, &labels).Union();
       label_type = VW::parsers::flatbuffer::Label_MultiLabel;
     }
-    else if (all.lp_flat.compare("mutliclass"))
+    else if (all.label_type == label_type_t::mc)
     {
       label = VW::parsers::flatbuffer::CreateMultiClass(builder, v->l.multi.label, v->l.multi.weight).Union();
       label_type = VW::parsers::flatbuffer::Label_MultiClass;
     }
-    else if (all.lp_flat.compare("cs"))
+    // else if (all.label_type.compare("cs") == 0)
+    else if (all.label_type == label_type_t::cs)
     {
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::wclass>> costs;
       for (auto const& wc : v->l.cs.costs)
@@ -83,7 +85,7 @@ void convert_txt_to_flat(vw& all)
       label = VW::parsers::flatbuffer::CreateCS_LabelDirect(builder, &costs).Union();
       label_type = VW::parsers::flatbuffer::Label_CS_Label;
     }
-    // TODO : Keep else condition for error.
+    // TODO : Keep else condition for Simple Label and add no label
     else {
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
       for (auto i=0; i<v->l.cb_eval.event.costs.size(); i++){
