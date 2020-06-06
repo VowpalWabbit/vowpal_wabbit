@@ -1817,4 +1817,15 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.readable.txt
 
+# Test 211: Flatbuffer Simple Label Test
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb \
+    -f models/0001_1.model --invariant --flatbuffer\
+    --ngram 3 --skips 1 --holdout_off
+        train-sets/ref/0001_fb.stderr
+
+# Test 212: Flatbuffer CB Label Test
+{VW} --cb 2 -d train-sets/cb.fb \
+     --flatbuffer
+        train-sets/ref/cb_fb.stderr
+        
 # Do not delete this line or the empty line above it
