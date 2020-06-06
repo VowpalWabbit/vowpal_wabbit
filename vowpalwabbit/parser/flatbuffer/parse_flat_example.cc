@@ -24,7 +24,7 @@ int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
   all->max_examples = all->data->examples()->size() - 1;
   parse_examples(all, examples, all->data);
 
-  return 31; // Get rid of this
+  return 1; // Get rid of this
 }
 
 void parse_examples(vw* all, v_array<example*>& examples, const ExampleCollection* ec)
@@ -70,7 +70,7 @@ void parse_features(vw* all, example* ae, features& fs, const Feature* feature)
 
 void parse_flat_label(vw* all, example* ae, const Example* eg)
 {
-  auto label_type = eg->label_type();
+  VW::parsers::flatbuffer::Label label_type = eg->label_type();
 
   if (label_type == Label_SimpleLabel){
     auto simple_label = static_cast<const VW::parsers::flatbuffer::SimpleLabel*>(eg->label());
@@ -84,10 +84,12 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
     ae->l.cb.weight = label->weight();
     for (auto i=0;i<label->costs()->Length();i++){
 
-      ae->l.cb.costs[i].cost = label->costs()->Get(i)->cost();
-      ae->l.cb.costs[i].action = label->costs()->Get(i)->action();
-      ae->l.cb.costs[i].probability = label->costs()->Get(i)->probability();
-      ae->l.cb.costs[i].partial_prediction = label->costs()->Get(i)->partial_pred();
+      CB::cb_class f;
+      f.cost = label->costs()->Get(i)->cost();
+      f.action = label->costs()->Get(i)->action();
+      f.probability = label->costs()->Get(i)->probability();
+      f.partial_prediction = label->costs()->Get(i)->partial_pred();
+      ae->l.cb.costs.push_back(f);
     }
     
   }
@@ -113,18 +115,17 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
     for (auto i=0;i<label->labels()->Length();i++){
       ae->l.multilabels.label_v.push_back(label->labels()->Get(i));
     }
-    //
   }
   else if (label_type == Label_CS_Label){
     auto label = static_cast<const VW::parsers::flatbuffer::CS_Label*>(eg->label());
 
     for (auto i=0;i<label->costs()->Length();i++){
-      auto to_push = COST_SENSITIVE::wclass();
-      to_push.x = label->costs()->Get(i)->x();
-      to_push.partial_prediction = label->costs()->Get(i)->partial_pred();
-      to_push.wap_value = label->costs()->Get(i)->wap_value();
-      to_push.class_index = label->costs()->Get(i)->class_index();
-      ae->l.cs.costs.push_back(to_push); // This wont work.
+      COST_SENSITIVE::wclass f;
+      f.x = label->costs()->Get(i)->x();
+      f.partial_prediction = label->costs()->Get(i)->partial_pred();
+      f.wap_value = label->costs()->Get(i)->wap_value();
+      f.class_index = label->costs()->Get(i)->class_index();
+      ae->l.cs.costs.push_back(f); 
     }
   }  
   else {
@@ -134,12 +135,12 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
 
     ae->l.cb_eval.event.weight = label->event()->weight();
     for (auto i=0;i<label->event()->costs()->Length();i++){
-      auto to_push = CB::cb_class();
-      to_push.cost = label->event()->costs()->Get(i)->cost();
-      to_push.action = label->event()->costs()->Get(i)->action();
-      to_push.probability = label->event()->costs()->Get(i)->probability();
-      to_push.partial_prediction = label->event()->costs()->Get(i)->partial_pred();
-      ae->l.cb_eval.event.costs.push_back(to_push);
+      CB::cb_class f;
+      f.cost = label->event()->costs()->Get(i)->cost();
+      f.action = label->event()->costs()->Get(i)->action();
+      f.probability = label->event()->costs()->Get(i)->probability();
+      f.partial_prediction = label->event()->costs()->Get(i)->partial_pred();
+      ae->l.cb_eval.event.costs.push_back(f);
     }
   }
 }
