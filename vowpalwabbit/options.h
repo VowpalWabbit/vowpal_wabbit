@@ -130,6 +130,10 @@ struct options_i
 
   virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
+  virtual std::vector<std::string> get_positional_tokens()
+  {
+    return std::vector<std::string>();
+  }
 
   template <typename T>
   typed_option<T>& get_typed_option(const std::string& key)
@@ -153,7 +157,6 @@ struct options_serializer_i
 {
   virtual void add(base_option& argument) = 0;
   virtual std::string str() = 0;
-  virtual const char* data() = 0;
   virtual size_t size() = 0;
 };
 

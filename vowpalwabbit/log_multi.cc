@@ -9,7 +9,7 @@
 
 #include "reductions.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 class node_pred
@@ -395,7 +395,7 @@ void save_node_stats(log_multi& d)
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     msg << "k = " << b.k;

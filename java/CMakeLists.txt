@@ -19,7 +19,6 @@ set(vw_jni_headers
   ${src_base}/vowpalWabbit_VW.h
   ${src_base}/jni_spark_vw.h
   ${src_base}/jni_spark_vw_generated.h
-  ${src_base}/vector_io_buf.h
   ${src_base}/util.h
 )
 
@@ -35,7 +34,6 @@ set(vw_jni_sources
   ${src_base}/vowpalWabbit_learner_VWScalarsLearner.cc
   ${src_base}/vowpalWabbit_VW.cc
   ${src_base}/jni_spark_vw.cc
-  ${src_base}/vector_io_buf.cc
   ${src_base}/jni_spark_cluster.cc
   ${src_base}/util.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit/spanning_tree.cc
@@ -106,7 +104,7 @@ if(NOT WIN32)
   add_custom_command(TARGET vw_jni POST_BUILD
       COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
       COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
-      # -B is batch mode and avoids the massive download progress print out       
+      # -B is batch mode and avoids the massive download progress print out
       COMMAND mvn -B verify
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Copying shared libary dependencies to output directory")

@@ -137,3 +137,7 @@ cs/azure_service/azure_service.ccproj.user
 
 build
 *_generated.h
+dist/
+*.model
+python/examples/*.model
+doc/html

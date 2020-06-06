@@ -13,6 +13,7 @@
 #include "cb_adf.h"
 #include "cb_algs.h"
 #include "constant.h"
+#include "vw_math.h"
 
 #include <numeric>
 #include <algorithm>
@@ -20,7 +21,7 @@
 #include <cmath>
 #include "vw_string_view.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
@@ -294,25 +295,25 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
 
   if (words.size() < 2)
     THROW("ccb labels may not be empty");
-  if (!(words[0] == "ccb"))
+  if (!(words[0] == CCB_LABEL))
   {
     THROW("ccb labels require the first word to be ccb");
   }
 
   auto type = words[1];
-  if (type == "shared")
+  if (type == SHARED_TYPE)
   {
     if (words.size() > 2)
       THROW("shared labels may not have a cost");
     ld->type = CCB::example_type::shared;
   }
-  else if (type == "action")
+  else if (type == ACTION_TYPE)
   {
     if (words.size() > 2)
       THROW("action labels may not have a cost");
     ld->type = CCB::example_type::action;
   }
-  else if (type == "slot")
+  else if (type == SLOT_TYPE)
   {
     if (words.size() > 4)
       THROW("ccb slot label can only have a type cost and exclude list");
@@ -347,9 +348,9 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
           });
 
       // TODO do a proper comparison here.
-      if (total_pred > 1.1f || total_pred < 0.9f)
+      if (!VW::math::are_same(total_pred, 1.f))
       {
-        THROW("When providing all predicition probabilties they must add up to 1.f");
+        THROW("When providing all prediction probabilities they must add up to 1.f, instead summed to " << total_pred);
       }
     }
   }

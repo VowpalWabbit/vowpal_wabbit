@@ -11,8 +11,9 @@
 #include "rand48.h"
 #include "gd.h"
 #include "vw.h"
+#include "guard.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 constexpr float hidden_min_activation = -3;
@@ -55,24 +56,6 @@ struct nn
     VW::dealloc_example(nullptr, hiddenbias);
     VW::dealloc_example(nullptr, outputweight);
   }
-};
-
-// guard for all.sd, which is swapped out in predict_or_learn_multi
-class sd_guard
-{
- private:
-  vw* saved_all = nullptr;
-  shared_data* saved_sd = nullptr;
- public:
-   sd_guard(vw* all, shared_data* sd) :
-     saved_all(all), saved_sd(saved_all->sd)
-   {
-     saved_all->sd = sd;
-   }
-   ~sd_guard()
-   {
-     saved_all->sd = saved_sd;
-   }
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -163,13 +146,14 @@ void end_pass(nn& n)
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
-  bool shouldOutput = n.all->raw_prediction > 0;
+  bool shouldOutput = n.all->raw_prediction != nullptr;
   if (!n.finished_setup)
     finish_setup(n, *(n.all));
   shared_data sd;
   memcpy(&sd, n.all->sd, sizeof(shared_data));
   {
-    sd_guard(n.all, &sd);
+    // guard for all.sd as it is modified - this will restore the state at the end of the scope.
+    auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
     label_data ld = ec.l.simple;
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
@@ -300,7 +284,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
        * ec.feature_space[] is reverted to its original value
        * save_nn_output_namespace contains the COPIED value
        * save_nn_output_namespace is destroyed
-       */ 
+       */
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
       auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
       ec.feature_space[nn_output_namespace].deep_copy_from(n.output_layer.feature_space[nn_output_namespace]);
@@ -335,7 +319,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     if (shouldOutput)
     {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction, outputStringStream.str(), ec.tag);
+      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
     }
 
     if (is_learn && n.all->training && ld.label != FLT_MAX)
@@ -430,10 +414,9 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
 
 void finish_example(vw& all, nn&, example& ec)
 {
-  int save_raw_prediction = all.raw_prediction;
-  all.raw_prediction = -1;
+  std::unique_ptr<VW::io::writer> temp(nullptr);
+  auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
   return_simple_example(all, nullptr, ec);
-  all.raw_prediction = save_raw_prediction;
 }
 
 base_learner* nn_setup(options_i& options, vw& all)

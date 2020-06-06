@@ -22,7 +22,7 @@
 #include "vw.h"
 #include "rand48.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 using std::cerr;
@@ -72,7 +72,7 @@ struct boosting
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -140,7 +140,7 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -198,7 +198,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -292,7 +292,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
 
 void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
@@ -356,7 +356,7 @@ void return_example(vw& all, boosting& /* a */, example& ec)
 
 void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
@@ -391,7 +391,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   }
 }
 
-LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 {
   free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
   option_group_definition new_options("Boosting");
