@@ -27,11 +27,11 @@ void default_label(void* v);
   *(TYPE*)c = VALUE;                    \
   c += sizeof(TYPE);
 
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
+size_t read_cached_label(shared_data* /*sd*/, void* v, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(v);
-  slates::label* ld = static_cast<slates::label*>(v);
+  auto* ld = static_cast<slates::label*>(v);
 
   size_t read_count = 0;
   char* read_ptr;
@@ -58,7 +58,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 void cache_label(void* v, io_buf& cache)
 {
   char* c;
-  slates::label* ld = static_cast<slates::label*>(v);
+  auto* ld = static_cast<slates::label*>(v);
   size_t size = sizeof(ld->type) + sizeof(ld->weight) + sizeof(ld->labeled) + sizeof(ld->cost) + sizeof(ld->slot_id) +
       sizeof(uint32_t)  // Size of probabilities
       + sizeof(ACTION_SCORE::action_score) * ld->probabilities.size();
@@ -121,12 +121,12 @@ void copy_label(void* dst, void* src)
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* /*sd*/, void* v, v_array<VW::string_view>& words)
 {
   auto& ld = static_cast<polylabel*>(v)->slates;
   ld.weight = 1;
 
-  if (words.size() == 0)
+  if (words.empty())
   {
     THROW("Slates labels may not be empty");
   }

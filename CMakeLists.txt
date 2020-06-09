@@ -8,6 +8,9 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
+# Set this to on so that tooling can make use of the outputted compile commands (such as clang-tidy)
+set(CMAKE_EXPORT_COMPILE_COMMANDS On)
+
 if(MSVC)
   # Do nothing as the default compile flags for MSVC are okay.
 else()
@@ -104,7 +107,7 @@ if((NOT PROFILE) AND (NOT GCOV))
 endif()
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
+set(linux_flags -Wno-cast-function-type -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
 
 if(LTO)
 	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

@@ -201,8 +201,10 @@ set(vw_all_sources
   decision_scores.cc
   distributionally_robust.cc
   ect.cc
+  example_predict.cc
   example.cc
   explore_eval.cc
+  feature_group.cc
   ftrl.cc
   gd_mf.cc
   gd.cc

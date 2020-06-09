@@ -42,6 +42,7 @@ struct no_lock_object_pool
 
   ~no_lock_object_pool()
   {
+    assert(m_pool.size() == size());
     while (!m_pool.empty())
     {
       auto front = m_pool.front();
@@ -112,8 +113,6 @@ struct no_lock_object_pool
 
     for (size_t i = 0; i < size; i++)
     {
-      memset(&chunk[i], 0, sizeof(T));
-      new (&chunk[i]) T{};
       m_pool.push(m_initializer(&chunk[i]));
     }
   }
