@@ -23,6 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>vw</RootNamespace>
     <ProjectName>vw_core</ProjectName>
+    <flatcPath Condition="'$(flatcPath)'==''">flatc.exe</flatcPath>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
@@ -100,6 +101,10 @@
     </Link>
     <PreBuildEvent>
       <Command>win32\make_config_h.exe</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate FlatBuffer</Message>
+      <Command>$(flatcPath) -o $(SolutionDir)parser\flatbuffer\generated\ --cpp $(SolutionDir)parser\flatbuffer\schema\example.fbs </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup>
@@ -188,6 +193,9 @@
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="options.h" />
+    <ClInclude Include="parser\flatbuffer\endian.h" />
+    <ClInclude Include="parser\flatbuffer\parse_flat_example.h" />
+    <ClInclude Include="parser\flatbuffer\preamble.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example_json.h" />
@@ -231,6 +239,7 @@
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="vw.h" />
     <ClInclude Include="warm_cb.h" />
+    <ClInclude Include="parser\flatbuffer\generated\Example_generated.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="accumulate.cc" />
@@ -307,6 +316,9 @@
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
+    <ClCompile Include="parser\flatbuffer\endian.cc" />
+    <ClCompile Include="parser\flatbuffer\parse_flat_example.cc" />
+    <ClCompile Include="parser\flatbuffer\preamble.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
@@ -346,12 +358,18 @@
   <ItemGroup>
     <Natvis Include="vw_types.natvis" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="parser\flatbuffer\schema\example.fbs" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
     <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
+    <Import Project="packages\boost.1.72.0.0\build\boost.targets" Condition="Exists('packages\boost.1.72.0.0\build\boost.targets')" />
+    <Import Project="packages\boost_program_options-vc141.1.72.0.0\build\boost_program_options-vc141.targets" Condition="Exists('packages\boost_program_options-vc141.1.72.0.0\build\boost_program_options-vc141.targets')" />
+    <Import Project="packages\boost_unit_test_framework-vc141.1.72.0.0\build\boost_unit_test_framework-vc141.targets" Condition="Exists('packages\boost_unit_test_framework-vc141.1.72.0.0\build\boost_unit_test_framework-vc141.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -361,6 +379,12 @@
     <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
+    <Error Condition="!Exists('packages\boost.1.72.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost.1.72.0.0\build\boost.targets'))" />
+    <Error Condition="!Exists('packages\boost_program_options-vc141.1.72.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_program_options-vc141.1.72.0.0\build\boost_program_options-vc141.targets'))" />
+    <Error Condition="!Exists('packages\boost_unit_test_framework-vc141.1.72.0.0\build\boost_unit_test_framework-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_unit_test_framework-vc141.1.72.0.0\build\boost_unit_test_framework-vc141.targets'))" />
+  </Target>
+  <Target Name="AfterClean">
+    <RemoveDir Directories="$(SolutionDir)parser\flatbuffer\generated" />
   </Target>
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
