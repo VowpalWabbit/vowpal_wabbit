@@ -298,6 +298,7 @@
     <ClCompile Include="example_predict.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
+    <ClCompile Include="feature_group.cc" />
     <ClCompile Include="ftrl.cc" />
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="gd.cc" />

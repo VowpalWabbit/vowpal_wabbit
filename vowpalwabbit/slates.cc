@@ -58,7 +58,6 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
     }
     else if (slates_label.type == slates::example_type::action)
     {
-
       if (slates_label.slot_id >= num_slots)
       {
         THROW("slot_id cannot be larger than or equal to the number of slots");
@@ -104,9 +103,9 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   uint32_t size_so_far = 0;
   for (auto& action_scores : examples[0]->pred.decision_scores)
   {
-    for (size_t i = 0; i < action_scores.size(); i++)
+    for (auto& action_score : action_scores)
     {
-      action_scores[i].action = action_scores[i].action - size_so_far;
+      action_score.action = action_score.action - size_so_far;
     }
     size_so_far += static_cast<uint32_t>(action_scores.size());
   }
@@ -139,13 +138,14 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
   {
     counter++;
     const auto& label = slot->l.slates;
-    if (label.labeled )
+    if (label.labeled)
     {
       label_ss << delim << label.probabilities[0].action;
     }
     else
     {
-      label_ss << delim << "?";    }
+      label_ss << delim << "?";
+    }
 
     delim = ",";
 
@@ -164,15 +164,16 @@ std::string generate_slates_label_printout(const std::vector<example*>& slots)
 // the case for a Cartesian product when the logging policy is a product
 // distribution. This can be seen in example 4 of the paper.
 // https://arxiv.org/abs/1605.04812
-float get_estimate(const ACTION_SCORE::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
+float get_estimate(
+    const ACTION_SCORE::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
 {
-  assert(label_probs.size() != 0);
-  assert(prediction_probs.size() != 0);
+  assert(!label_probs.empty());
+  assert(!prediction_probs.empty());
   assert(label_probs.size() == prediction_probs.size());
 
   float p_over_ps = 0.f;
   const size_t number_of_slots = label_probs.size();
-  for(size_t slot_index = 0; slot_index < number_of_slots; slot_index++)
+  for (size_t slot_index = 0; slot_index < number_of_slots; slot_index++)
   {
     p_over_ps += (prediction_probs[slot_index][0].score / label_probs[slot_index].score);
   }
@@ -190,14 +191,14 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
   auto label_probs = v_init<ACTION_SCORE::action_score>();
 
-  for (auto ec : ec_seq)
+  for (auto *ec : ec_seq)
   {
     num_features += ec->num_features;
 
     if (ec->l.slates.type == slates::example_type::slot)
     {
       slots.push_back(ec);
-      if(is_labelled)
+      if (is_labelled)
       {
         const auto& this_example_label_probs = ec->l.slates.probabilities;
         if (this_example_label_probs.empty())
@@ -280,7 +281,7 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  auto base = as_multiline(setup_base(options, all));
+  auto *base = as_multiline(setup_base(options, all));
   all.p->lp = slates_label_parser;
   all.label_type = label_type_t::slates;
   all.delete_prediction = VW::delete_decision_scores;
@@ -290,4 +291,4 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   return VW::LEARNER::make_base(l);
 }
 }  // namespace slates
-}
+}  // namespace VW
