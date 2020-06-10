@@ -13,6 +13,7 @@ from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.test import test as _test
 from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import rmtree
+import multiprocessing
 
 system = platform.system()
 version_info = sys.version_info
@@ -20,20 +21,31 @@ here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, 'python')
 
 class Distribution(_distribution):
-    if system == 'Windows':
-        global_options = _distribution.global_options + [
-            ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only.'),
-        ]
+    global_options = _distribution.global_options
 
+    global_options += [
+        ('enable-boost-cmake', None, 'Enable boost-cmake'),
+        ('cmake-options=', None, 'Additional semicolon-separated cmake setup options list'),
+        ('debug', None, 'Debug build'),
+    ]
+
+    if system == 'Windows':
+        global_options += [
+            ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only'),
+        ]
+ 
     def __init__(self, attrs=None):
         self.vcpkg_root = None
+        self.enable_boost_cmake = None
+        self.cmake_options = None
+        self.debug = False
         _distribution.__init__(self, attrs)
-        
+
 class CMakeExtension(Extension):
     def __init__(self, name):
         # don't invoke the original build_ext for this special extension
         Extension.__init__(self, name, sources=[])
-        
+
 def get_ext_filename_without_platform_suffix(filename):
     from distutils.sysconfig import get_config_var
     ext_suffix = get_config_var('EXT_SUFFIX')
@@ -75,8 +87,8 @@ class BuildPyLibVWBindingsModule(_build_ext):
         distutils.dir_util.mkpath(lib_output_dir)
 
         # example of cmake args
-        config = 'Debug' if self.debug else 'Release'
-        
+        config = 'Debug' if self.distribution.debug else 'Release'
+
         cmake_args = [
             '-DCMAKE_BUILD_TYPE=' + config,
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
@@ -84,9 +96,20 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DBUILD_TESTS=Off',
             '-DWARNINGS=Off'
         ]
+        if self.distribution.enable_boost_cmake is None:
+            # Add this flag as default since testing indicates its safe.
+            # But add a way to disable it in case it becomes a problem
+            cmake_args += [
+                '-DBoost_NO_BOOST_CMAKE=ON'
+            ]
+            
+        if self.distribution.cmake_options is not None:
+            argslist = self.distribution.cmake_options.split(';')
+            cmake_args += argslist
+        
         if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
             cmake_args.append('-DBOOST_ROOT={}'.format(os.environ['CONDA_PREFIX']))
-    
+
         # example of build args
         build_args = [
             '--config', config
@@ -96,7 +119,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
-                '-G', "Visual Studio 14 2015 Win64"
+                '-G', "Visual Studio 15 2017 Win64"
             ]
             build_args += [
                 '--target', 'pylibvw'
@@ -118,7 +141,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(lib_output_dir),
             ]
             build_args += [
-                '--', '-j8',
+                '--', '-j{}'.format(multiprocessing.cpu_count()),
                 # Build the pylibvw target
                 "pylibvw"
             ]

@@ -1,7 +1,31 @@
 add_executable(vw-unit-test.out
-  main.cc options_test.cc options_boost_po_test.cc cb_explore_adf_test.cc explore_test.cc
-  stable_unique_tests.cc test_common.h object_pool_test.cc ccb_parser_test.cc json_parser_test.cc
-  dsjson_parser_test.cc ccb_test.cc offset_tree_tests.cc random_test.cc cats_tree_tests.cc pmf_to_pdf_test.cc
+  cb_explore_adf_test.cc
+  ccb_parser_test.cc
+  ccb_test.cc
+  dsjson_parser_test.cc
+  example_header_test.cc
+  explore_test.cc
+  guard_test.cc
+  io_adapter_test.cc
+  json_parser_test.cc
+  main.cc
+  object_pool_test.cc
+  options_boost_po_test.cc
+  options_test.cc
+  prediction_test.cc
+  initialize_test.cc
+  scope_exit_test.cc
+  slates_parser_test.cc
+  slates_test.cc
+  stable_unique_tests.cc
+  tag_utils_test.cc
+  test_common.cc
+  test_common.h
+  tokenize_tests.cc
+  offset_tree_tests.cc
+  random_test.cc
+  cats_tree_tests.cc
+  pmf_to_pdf_test.cc
 )
 
 # Add the include directories from vw target for testing
@@ -11,6 +35,12 @@ target_link_libraries(vw-unit-test.out PRIVATE vw allreduce Boost::unit_test_fra
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   target_sources(vw-unit-test.out PUBLIC vwdll_test.cc)
   target_link_libraries(vw-unit-test.out PRIVATE vw_c_wrapper)
+
+  add_custom_command(TARGET vw-unit-test.out POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:vw_c_wrapper>
+      $<TARGET_FILE_DIR:vw-unit-test.out>
+  )
 endif()
 
 # Communicate that Boost Unit Test is being statically linked

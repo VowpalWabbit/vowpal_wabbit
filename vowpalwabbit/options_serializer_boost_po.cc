@@ -1,10 +1,12 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "options_serializer_boost_po.h"
 
 using namespace VW::config;
 
 std::string options_serializer_boost_po::str() { return m_output_stream.str(); }
-
-const char* options_serializer_boost_po::data() { return m_output_stream.str().c_str(); }
 
 size_t options_serializer_boost_po::size() { return m_output_stream.str().size(); }
 

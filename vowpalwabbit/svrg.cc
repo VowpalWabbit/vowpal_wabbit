@@ -1,13 +1,16 @@
 
-#include <assert.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cassert>
 #include <iostream>
 
 #include "gd.h"
 #include "vw.h"
 #include "reductions.h"
 
-using namespace std;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace SVRG
@@ -50,13 +53,13 @@ inline float inline_predict(vw& all, example& ec)
 
 float predict_stable(const svrg& s, example& ec)
 {
-  return GD::finalize_prediction(s.all->sd, inline_predict<W_STABLE>(*s.all, ec));
+  return GD::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
 void predict(svrg& s, single_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
 }
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
@@ -105,17 +108,15 @@ void update_stable(const svrg& s, example& ec)
 
 void learn(svrg& s, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   predict(s, base, ec);
 
   const int pass = (int)s.all->passes_complete;
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
-    if (s.prev_pass != pass && !s.all->quiet)
+    if (s.prev_pass != pass && !s.all->logger.quiet)
     {
-      cout << "svrg pass " << pass << ": committing stable point" << endl;
+      std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -123,16 +124,16 @@ void learn(svrg& s, single_learner& base, example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      cout << "svrg pass " << pass << ": computing exact gradient" << endl;
+      std::cout << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
   }
   else  // Perform updates
   {
-    if (s.prev_pass != pass && !s.all->quiet)
+    if (s.prev_pass != pass && !s.all->logger.quiet)
     {
-      cout << "svrg pass " << pass << ": taking steps" << endl;
+      std::cout << "svrg pass " << pass << ": taking steps" << std::endl;
     }
     update_inner(s, ec);
   }
@@ -147,10 +148,10 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     initialize_regressor(*s.all);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() != 0)
   {
     bool resume = s.all->save_resume;
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 

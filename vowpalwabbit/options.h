@@ -1,26 +1,35 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <typeinfo>
 #include <memory>
 #include <sstream>
 
+#include "options_types.h"
+
 namespace VW
 {
 namespace config
 {
+
 struct base_option
 {
-  base_option(std::string name, size_t type_hash) : m_name(name), m_type_hash(type_hash) {}
+  base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
 
   std::string m_name;
   size_t m_type_hash;
   std::string m_help = "";
   std::string m_short_name = "";
   bool m_keep = false;
+  bool m_allow_override = false;
 
-  virtual ~base_option() {}
+  virtual ~base_option() = default;
 };
 
 template <typename T>
@@ -58,6 +67,13 @@ struct typed_option : base_option
     return *this;
   }
 
+  typed_option& allow_override(bool allow_override = true)
+  {
+    static_assert(is_scalar_option_type<T>::value, "allow_override can only apply to scalar option types.");
+    m_allow_override = allow_override;
+    return *this;
+  }
+
   bool value_supplied() { return m_value.get() != nullptr; }
 
   typed_option& value(T value)
@@ -84,7 +100,7 @@ typed_option<T> make_option(std::string name, T& location)
 
 struct option_group_definition
 {
-  option_group_definition(std::string name) : m_name(name) {}
+  option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>
   option_group_definition& add(T&& op)
@@ -115,6 +131,10 @@ struct options_i
 
   virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
+  virtual std::vector<std::string> get_positional_tokens()
+  {
+    return std::vector<std::string>();
+  }
 
   template <typename T>
   typed_option<T>& get_typed_option(const std::string& key)
@@ -147,14 +167,13 @@ struct options_i
   // Will throw if any options were supplied that do not having a matching argument specification.
   virtual void check_unregistered() = 0;
 
-  virtual ~options_i() {}
+  virtual ~options_i() = default;
 };
 
 struct options_serializer_i
 {
   virtual void add(base_option& argument) = 0;
   virtual std::string str() = 0;
-  virtual const char* data() = 0;
   virtual size_t size() = 0;
 };
 

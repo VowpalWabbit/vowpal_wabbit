@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <float.h>
 #include <errno.h>
 
@@ -10,7 +8,6 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "search.h"
 
-using namespace std;
 using namespace VW::config;
 
 namespace DebugMT
@@ -23,16 +20,17 @@ void run(Search::search& sch, multi_ex& ec)
   sch.base_task(ec)
       .foreach_action(
           [](Search::search& /*sch*/, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
-            cerr << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a
-                 << ", taken=" << taken << ", a_cost=" << a_cost << ")" << endl;
+            std::cerr << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a
+                      << ", taken=" << taken << ", a_cost=" << a_cost << ")" << std::endl;
           })
 
       .post_prediction([](Search::search& /*sch*/, size_t t, action a, float a_cost) -> void {
-        cerr << "==DebugMT== post_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
+        std::cerr << "==DebugMT== post_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << std::endl;
       })
 
       .maybe_override_prediction([](Search::search& /*sch*/, size_t t, action& a, float& a_cost) -> bool {
-        cerr << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << endl;
+        std::cerr << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")"
+                  << std::endl;
         return false;
       })
 
@@ -49,9 +47,9 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options);
 void finish(Search::search& sch);
 Search::search_metatask metatask = {"selective_branching", run, initialize, finish, nullptr, nullptr};
 
-typedef pair<action, float> act_score;
+typedef std::pair<action, float> act_score;
 typedef v_array<act_score> path;
-typedef pair<float, path> branch;
+typedef std::pair<float, path> branch;
 
 std::ostream& operator<<(std::ostream& os, const std::pair<unsigned int, float>& v)
 {
@@ -63,16 +61,16 @@ struct task_data
 {
   size_t max_branches, kbest;
   v_array<branch> branches;
-  v_array<pair<branch, string*> > final;
+  v_array<std::pair<branch, std::string*> > final;
   path trajectory;
   float total_cost;
   size_t cur_branch;
-  string* output_string;
-  stringstream* kbest_out;
+  std::string* output_string;
+  std::stringstream* kbest_out;
   task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb)
   {
     branches = v_init<branch>();
-    final = v_init<pair<branch, string*> >();
+    final = v_init<std::pair<branch, std::string*> >();
     trajectory = v_init<act_score>();
     output_string = nullptr;
     kbest_out = nullptr;
@@ -82,10 +80,8 @@ struct task_data
     branches.delete_v();
     final.delete_v();
     trajectory.delete_v();
-    if (output_string)
-      delete output_string;
-    if (kbest_out)
-      delete kbest_out;
+    delete output_string;
+    delete kbest_out;
   }
 };
 
@@ -120,28 +116,28 @@ void run(Search::search& sch, multi_ex& ec)
   d.total_cost = 0.;
   d.output_string = nullptr;
 
-  cdbg << "*** INITIAL PASS ***" << endl;
+  cdbg << "*** INITIAL PASS ***" << std::endl;
   sch.base_task(ec)
       .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
         cdbg << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken
-             << ", a_cost=" << a_cost << ")" << endl;
+             << ", a_cost=" << a_cost << ")" << std::endl;
         if (taken)
           return;  // ignore the taken action
         task_data& d = *sch.get_metatask_data<task_data>();
         float delta = a_cost - min_cost;
         path branch = v_init<act_score>();
         push_many<act_score>(branch, d.trajectory.begin(), d.trajectory.size());
-        branch.push_back(make_pair(a, a_cost));
-        d.branches.push_back(make_pair(delta, branch));
-        cdbg << "adding branch: " << delta << " -> " << branch << endl;
+        branch.push_back(std::make_pair(a, a_cost));
+        d.branches.push_back(std::make_pair(delta, branch));
+        cdbg << "adding branch: " << delta << " -> " << branch << std::endl;
       })
       .post_prediction([](Search::search& sch, size_t /*t*/, action a, float a_cost) -> void {
         task_data& d = *sch.get_metatask_data<task_data>();
-        d.trajectory.push_back(make_pair(a, a_cost));
+        d.trajectory.push_back(std::make_pair(a, a_cost));
         d.total_cost += a_cost;
       })
-      .with_output_string([](Search::search& sch, stringstream& output) -> void {
-        sch.get_metatask_data<task_data>()->output_string = new string(output.str());
+      .with_output_string([](Search::search& sch, std::stringstream& output) -> void {
+        sch.get_metatask_data<task_data>()->output_string = new std::string(output.str());
       })
       .Run();
 
@@ -153,7 +149,7 @@ void run(Search::search& sch, multi_ex& ec)
     // construct the final trajectory
     path original_final = v_init<act_score>();
     copy_array(original_final, d.trajectory);
-    d.final.push_back(make_pair(make_pair(d.total_cost, original_final), d.output_string));
+    d.final.push_back(std::make_pair(std::make_pair(d.total_cost, original_final), d.output_string));
   }
 
   // sort the branches by cost
@@ -161,14 +157,14 @@ void run(Search::search& sch, multi_ex& ec)
       d.branches.begin(), d.branches.end(), [](const branch& a, const branch& b) -> bool { return a.first < b.first; });
 
   // make new predictions
-  for (size_t i = 0; i < min(d.max_branches, d.branches.size()); i++)
+  for (size_t i = 0; i < std::min(d.max_branches, d.branches.size()); i++)
   {
     d.cur_branch = i;
     d.trajectory.clear();
     d.total_cost = 0.;
     d.output_string = nullptr;
 
-    cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << endl;
+    cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << std::endl;
     sch.base_task(ec)
         .foreach_action([](Search::search& /*sch*/, size_t /*t*/, float /*min_cost*/, action /*a*/, bool /*taken*/,
                             float /*a_cost*/) -> void {})
@@ -183,11 +179,11 @@ void run(Search::search& sch, multi_ex& ec)
         })
         .post_prediction([](Search::search& sch, size_t /*t*/, action a, float a_cost) -> void {
           task_data& d = *sch.get_metatask_data<task_data>();
-          d.trajectory.push_back(make_pair(a, a_cost));
+          d.trajectory.push_back(std::make_pair(a, a_cost));
           d.total_cost += a_cost;
         })
-        .with_output_string([](Search::search& sch, stringstream& output) -> void {
-          sch.get_metatask_data<task_data>()->output_string = new string(output.str());
+        .with_output_string([](Search::search& sch, std::stringstream& output) -> void {
+          sch.get_metatask_data<task_data>()->output_string = new std::string(output.str());
         })
         .Run();
 
@@ -195,26 +191,26 @@ void run(Search::search& sch, multi_ex& ec)
       // construct the final trajectory
       path this_final = v_init<act_score>();
       copy_array(this_final, d.trajectory);
-      d.final.push_back(make_pair(make_pair(d.total_cost, this_final), d.output_string));
+      d.final.push_back(std::make_pair(std::make_pair(d.total_cost, this_final), d.output_string));
     }
   }
 
   // sort the finals by cost
-  stable_sort(
-      d.final.begin(), d.final.end(), [](const pair<branch, string*>& a, const pair<branch, string*>& b) -> bool {
+  stable_sort(d.final.begin(), d.final.end(),
+      [](const std::pair<branch, std::string*>& a, const std::pair<branch, std::string*>& b) -> bool {
         return a.first.first < b.first.first;
       });
 
   d.kbest_out = nullptr;
   if (d.output_string && (d.kbest > 0))
   {
-    d.kbest_out = new stringstream();
-    for (size_t i = 0; i < min(d.final.size(), d.kbest); i++)
-      (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << endl;
+    d.kbest_out = new std::stringstream();
+    for (size_t i = 0; i < std::min(d.final.size(), d.kbest); i++)
+      (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << std::endl;
   }
 
   // run the final selected trajectory
-  cdbg << "*** FINAL ***" << endl;
+  cdbg << "*** FINAL ***" << std::endl;
   d.cur_branch = 0;
   d.output_string = nullptr;
   sch.base_task(ec)
@@ -229,7 +225,7 @@ void run(Search::search& sch, multi_ex& ec)
         a_cost = path[t].second;
         return true;
       })
-      .with_output_string([](Search::search& sch, stringstream& output) -> void {
+      .with_output_string([](Search::search& sch, std::stringstream& output) -> void {
         task_data& d = *sch.get_metatask_data<task_data>();
         if (d.kbest_out)
         {
@@ -249,8 +245,7 @@ void run(Search::search& sch, multi_ex& ec)
     delete d.final[i].second;
   }
   d.final.clear();
-  if (d.kbest_out)
-    delete d.kbest_out;
+  delete d.kbest_out;
   d.kbest_out = nullptr;
 }
 }  // namespace SelectiveBranchingMT

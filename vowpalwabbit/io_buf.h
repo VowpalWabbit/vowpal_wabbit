@@ -1,34 +1,19 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
-#pragma once
-#ifndef _WIN32
-#include <sys/types.h>
-#include <unistd.h>
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
-#include <stdio.h>
-#include <fcntl.h>
-#include "v_array.h"
+#pragma once
+
+#include <cstddef>
 #include <iostream>
 #include <sstream>
-#include <errno.h>
-#include <stdexcept>
+#include <vector>
+#include <memory>
+
+#include "v_array.h"
 #include "hash.h"
 #include "vw_exception.h"
-#include "vw_validate.h"
-
-#ifndef O_LARGEFILE  // for OSX
-#define O_LARGEFILE 0
-#endif
-
-#ifdef _WIN32
-#define ssize_t int64_t
-#include <io.h>
-#include <sys/stat.h>
-#endif
+#include "io/io_adapter.h"
 
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
@@ -55,33 +40,32 @@ class io_buf
   // used to check-sum i/o files for corruption detection
   bool _verify_hash;
   uint32_t _hash;
+  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
 
- public:
+public:
   v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
                         // the buffer.
-  v_array<int> files;
+  std::vector<std::unique_ptr<VW::io::reader>> input_files;
+  std::vector<std::unique_ptr<VW::io::writer>> output_files;
   size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
   char* head;
   v_array<char> currentname;
   v_array<char> finalname;
 
-  static const int READ = 1;
-  static const int WRITE = 2;
+  static constexpr int READ = 1;
+  static constexpr int WRITE = 2;
 
-  void init()
+  io_buf(io_buf& other) = delete;
+  io_buf& operator=(io_buf& other) = delete;
+  io_buf(io_buf&& other) = delete;
+  io_buf& operator=(io_buf&& other) = delete;
+
+  ~io_buf()
   {
-    space = v_init<char>();
-    files = v_init<int>();
-    currentname = v_init<char>();
-    finalname = v_init<char>();
-    size_t s = 1 << 16;
-    space.resize(s);
-    current = 0;
-    count = 0;
-    head = space.begin();
-    _verify_hash = false;
-    _hash = 0;
+    space.delete_v();
+    currentname.delete_v();
+    finalname.delete_v();
   }
 
   void verify_hash(bool verify)
@@ -100,79 +84,48 @@ class io_buf
     return _hash;
   }
 
-  virtual int open_file(const char* name, bool stdin_off, int flag = READ)
+  void add_file(std::unique_ptr<VW::io::reader>&& file)
   {
-    int ret = -1;
-    switch (flag)
-    {
-      case READ:
-        if (*name != '\0')
-        {
-#ifdef _WIN32
-          // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
-          _sopen_s(&ret, name, _O_RDONLY | _O_BINARY | _O_SEQUENTIAL, _SH_DENYWR, 0);
-#else
-          ret = open(name, O_RDONLY | O_LARGEFILE);
-#endif
-        }
-        else if (!stdin_off)
-#ifdef _WIN32
-          ret = _fileno(stdin);
-#else
-          ret = fileno(stdin);
-#endif
-        if (ret != -1)
-          files.push_back(ret);
-        break;
-
-      case WRITE:
-#ifdef _WIN32
-        _sopen_s(&ret, name, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-        ret = open(name, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-        if (ret != -1)
-          files.push_back(ret);
-        break;
-
-      default:
-        std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
-        ret = -1;
-    }
-    if (ret == -1 && *name != '\0')
-      THROWERRNO("can't open: " << name);
-    return ret;
+    assert(output_files.size() == 0);
+    input_files.push_back(std::move(file));
   }
 
-  virtual void reset_file(int f)
+  void add_file(std::unique_ptr<VW::io::writer>&& file)
   {
-#ifdef _WIN32
-    _lseek(f, 0, SEEK_SET);
-#else
-    lseek(f, 0, SEEK_SET);
-#endif
+    assert(input_files.size() == 0);
+    output_files.push_back(std::move(file));
+  }
+
+  void reset_file(VW::io::reader* f)
+  {
+    f->reset();
     space.end() = space.begin();
     head = space.begin();
   }
 
-  io_buf() { init(); }
-
-  virtual ~io_buf()
+  io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
   {
-    files.delete_v();
-    space.delete_v();
+    space = v_init<char>();
+    currentname = v_init<char>();
+    finalname = v_init<char>();
+    space.resize(INITIAL_BUFF_SIZE);
+    head = space.begin();
   }
 
   void set(char* p) { head = p; }
 
-  virtual size_t num_files() { return files.size(); }
+  /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
+  size_t num_files() const { return input_files.size() + output_files.size(); }
+  size_t num_input_files() const { return input_files.size(); }
+  size_t num_output_files() const { return output_files.size(); }
 
-  virtual ssize_t read_file(int f, void* buf, size_t nbytes) { return read_file_or_socket(f, buf, nbytes); }
+  // You can definitely call read directly on the reader object. This function hasn't been changed yet to reduce churn
+  // in the refactor.
+  static ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
 
-  static ssize_t read_file_or_socket(int f, void* buf, size_t nbytes);
-
-  ssize_t fill(int f)
-  {  // if the loaded values have reached the allocated space
+  ssize_t fill(VW::io::reader* f)
+  {
+    // if the loaded values have reached the allocated space
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
       size_t head_loc = head - space.begin();
@@ -182,7 +135,8 @@ class io_buf
     // read more bytes from file up to the remaining allocated space
     ssize_t num_read = read_file(f, space.end(), space.end_array - space.end());
     if (num_read >= 0)
-    {  // if some bytes were actually loaded, update the end of loaded values
+    {
+      // if some bytes were actually loaded, update the end of loaded values
       space.end() = space.end() + num_read;
       return num_read;
     }
@@ -190,41 +144,52 @@ class io_buf
       return 0;
   }
 
-  virtual ssize_t write_file(int f, const void* buf, size_t nbytes) { return write_file_or_socket(f, buf, nbytes); }
-
-  static ssize_t write_file_or_socket(int f, const void* buf, size_t nbytes);
-
-  virtual void flush()
+  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
+  // in the refactor.
+  static ssize_t write_file(VW::io::writer* f, void* buf, size_t nbytes)
   {
-    if (files.size() > 0)
+    return f->write(static_cast<const char*>(buf), nbytes);
+  }
+
+  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
+  // in the refactor.
+  static ssize_t write_file(VW::io::writer* f, const void* buf, size_t nbytes)
+  {
+    return f->write(static_cast<const char*>(buf), nbytes);
+  }
+
+  void flush()
+  {
+    if (!output_files.empty())
     {
-      if (write_file(files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
+      if (write_file(output_files[0].get(), space.begin(), head - space.begin()) != (int)(head - space.begin()))
         std::cerr << "error, failed to write example\n";
       head = space.begin();
+      output_files[0]->flush();
     }
   }
 
-  virtual bool close_file()
+  bool close_file()
   {
-    if (files.size() > 0)
+    if (!input_files.empty())
     {
-      close_file_or_socket(files.pop());
+      input_files.pop_back();
       return true;
     }
+    else if (!output_files.empty())
+    {
+      output_files.pop_back();
+      return true;
+    }
+
     return false;
   }
-
-  virtual bool compressed() { return false; }
-
-  static void close_file_or_socket(int f);
 
   void close_files()
   {
     while (close_file())
       ;
   }
-
-  static bool is_socket(int f);
 
   void buf_write(char*& pointer, size_t n);
   size_t buf_read(char*& pointer, size_t n);
@@ -301,7 +266,6 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
   }
   else
     return bin_write(io, data, (uint32_t)len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
@@ -324,7 +288,6 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stri
   }
   else
     return io.bin_write_fixed(data, len);
-  return 0;
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)

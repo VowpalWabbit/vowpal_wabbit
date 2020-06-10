@@ -1,5 +1,8 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "best_constant.h"
-using namespace std;
 
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 {

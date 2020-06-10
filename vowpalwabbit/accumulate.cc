@@ -1,21 +1,17 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 /*
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
 */
 
 #include <iostream>
-#include <sys/timeb.h>
 #include <cmath>
-#include <stdint.h>
+#include <cstdint>
 #include "global_data.h"
 #include "vw_allreduce.h"
-
-using namespace std;
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
@@ -105,7 +101,7 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
       local_weights[i] = weight[0] * ratio;
       weight[0] *= ratio;
       weight[1] *= ratio;  // A crude max
-      if (all.normalized_updates)
+      if (all.normalized_idx > 0)
         weight[all.normalized_idx] *= ratio;  // A crude max
     }
     else
@@ -118,11 +114,12 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
 
 void accumulate_weighted_avg(vw& all, parameters& weights)
 {
-  if (!all.adaptive)
+  if (!weights.adaptive)
   {
     all.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
+
   uint32_t length = 1 << all.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 
@@ -142,7 +139,7 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
     do_weighting(all, length, local_weights, weights.dense_weights);
 
   if (weights.sparse)
-    cout << "sparse parameters not supported with parallel computation!" << endl;
+    std::cout << "sparse parameters not supported with parallel computation!" << std::endl;
   else
     all_reduce<float, add_float>(
         all, weights.dense_weights.first(), ((size_t)length) * (1ull << weights.stride_shift()));

@@ -1,19 +1,23 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "options_boost_po.h"
+#include "parse_primitives.h"
 
 #include <sstream>
 
 #include <algorithm>
 #include <iterator>
-#include "label_parser.h"
+#include <utility>
 
 using namespace VW::config;
 
-bool is_number(const std::string& s)
+bool is_number(const VW::string_view& s)
 {
-  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str()) + s.size()};
-  auto endptr = ss.end;
-  auto f = parseFloat(ss.begin, &endptr);
-  if ((endptr == ss.begin && ss.begin != ss.end) || std::isnan(f))
+  size_t endidx = 0;
+  auto f = parseFloat(s.begin(), endidx, s.end());
+  if ((endidx == 0 && !s.empty()) || std::isnan(f))
   {
     return false;
   }
@@ -41,7 +45,7 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
 void options_boost_po::add_to_description(
     std::shared_ptr<base_option> opt, po::options_description& options_description)
 {
-  add_to_description_impl<supported_options_types>(opt, options_description);
+  add_to_description_impl<supported_options_types>(std::move(opt), options_description);
 }
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
@@ -83,7 +87,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
       m_supplied_options.insert(option.string_key);
 
-      // If a string is later determined to be a value the erase it. This happens for negative numbers "-2"
+      // If a std::string is later determined to be a value the erase it. This happens for negative numbers "-2"
       for (auto& val : option.value)
       {
         m_ignore_supplied.insert(val);
@@ -94,7 +98,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
       if (option.string_key.length() > 0 && option.string_key[0] == '-')
       {
         auto short_name = option.string_key.substr(1);
-        for (auto opt_ptr : group.m_options)
+        for (const auto& opt_ptr : group.m_options)
         {
           if (opt_ptr->m_short_name == short_name)
           {
@@ -135,7 +139,7 @@ bool options_boost_po::was_supplied(const std::string& key)
     return true;
   }
 
-  // Basic check, string match against command line.
+  // Basic check, std::string match against command line.
   auto it = std::find(m_command_line.begin(), m_command_line.end(), std::string("--" + key));
   return it != m_command_line.end();
 }

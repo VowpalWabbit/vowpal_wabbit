@@ -1,59 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <iostream>
-#ifndef WIN32
-#include <strings.h>
-#else
 #include <string>
-#endif
 #include <stdexcept>
 #include <sstream>
 
 #include "parse_primitives.h"
 #include "hash.h"
 #include "vw_exception.h"
-
-bool substring_equal(const substring& a, const substring& b)
-{
-  return (a.end - a.begin == b.end - b.begin)  // same length
-      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
-}
-
-bool substring_equal(const substring& ss, const char* str)
-{
-  size_t len_ss = ss.end - ss.begin;
-  size_t len_str = strlen(str);
-  if (len_ss != len_str)
-    return false;
-  return (strncmp(ss.begin, str, len_ss) == 0);
-}
-
-size_t substring_len(substring& s) { return s.end - s.begin; }
-
-uint64_t hashstring(substring s, uint64_t h)
-{
-  // trim leading whitespace but not UTF-8
-  for (; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin) >= 0; s.begin++)
-    ;
-  // trim trailing white space but not UTF-8
-  for (; s.end > s.begin && *(s.end - 1) <= 0x20 && (int)*(s.end - 1) >= 0; s.end--)
-    ;
-
-  size_t ret = 0;
-  char* p = s.begin;
-  while (p != s.end)
-    if (*p >= '0' && *p <= '9')
-      ret = 10 * ret + *(p++) - '0';
-    else
-      return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h);
-
-  return ret + h;
-}
-
-uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h); }
 
 hash_func_t getHasher(const std::string& s)
 {
@@ -65,15 +21,52 @@ hash_func_t getHasher(const std::string& s)
     THROW("Unknown hash function: " << s);
 }
 
-std::ostream& operator<<(std::ostream& os, const substring& ss)
+std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
-  std::string s(ss.begin, ss.end - ss.begin);
-  return os << s;
+  std::vector<std::string> tokens;
+  std::string current;
+  size_t end_pos = 0;
+  const char delims[3] = {'\\', delim, '\0'};
+  bool last_space = false;
+
+  while (!s.empty() && ((end_pos = s.find_first_of(delims)) != VW::string_view::npos))
+  {
+    if(s[end_pos] == '\\')
+    {
+      current.append(s.begin(), end_pos);
+      s.remove_prefix(end_pos + 1);
+
+      // always insert the next character after an escape if it exists
+      if(!s.empty())
+      {
+        current.append(s.begin(), 1);
+        s.remove_prefix(1);
+      }
+    }
+    else
+    {
+      last_space = end_pos == 0;
+      current.append(s.begin(), end_pos);
+      s.remove_prefix(end_pos + 1);
+      if(!current.empty() || allow_empty)
+      {
+        tokens.push_back(current);
+      }
+      current.clear();
+    }
+  }
+  // write whatever's left into the vector
+  if (!s.empty() || !current.empty() || (last_space && allow_empty))
+  {
+    current.append(s.begin(), s.length());
+    tokens.push_back(current);
+  }
+  return tokens;
 }
 
-std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
+std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss)
 {
-  substring* it = ss.cbegin();
+  VW::string_view* it = ss.cbegin();
 
   if (it == ss.cend())
   {

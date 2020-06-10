@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include "options.h"
@@ -18,7 +22,6 @@ struct options_serializer_boost_po : options_serializer_i
 
   virtual void add(base_option& option) override;
   virtual std::string str() override;
-  virtual const char* data() override;
   virtual size_t size() override;
 
  private:

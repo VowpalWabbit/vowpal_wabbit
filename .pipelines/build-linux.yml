@@ -1,0 +1,31 @@
+pr:
+- master
+
+pool:
+  vmImage: 'ubuntu-16.04'
+
+container:
+  image: vowpalwabbit/ubuntu1604-build:0.3.0
+  endpoint: DockerHub
+
+strategy:
+  matrix:
+    Debug:
+      BUILD_CONFIGURATION: 'Debug'
+    Release:
+      BUILD_CONFIGURATION: 'Release'
+  maxParallel: 2
+
+steps:
+- bash: ./.scripts/linux/clang-format-check.sh
+  displayName: Clang format check
+- bash: ./.scripts/linux/build.sh $(BUILD_CONFIGURATION)
+  displayName: Build C++
+- bash: ./.scripts/linux/test.sh
+  displayName: Test C++
+- bash: ./.scripts/linux/java.sh
+  displayName: Build + test Java
+- bash: ./.scripts/linux/python27.sh
+  displayName: Build + test Python 2.7
+- bash: ./.scripts/linux/python36.sh
+  displayName: Build + test Python 3.6

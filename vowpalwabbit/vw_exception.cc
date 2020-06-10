@@ -1,38 +1,16 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "vw_exception.h"
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <Windows.h>
 #endif
 
 namespace VW
 {
-vw_exception::vw_exception(const char* pfile, int plineNumber, std::string pmessage)
-    : file(pfile), message(pmessage), lineNumber(plineNumber)
-{
-}
-
-vw_exception::vw_exception(const vw_exception& ex) : file(ex.file), message(ex.message), lineNumber(ex.lineNumber) {}
-
-vw_exception& vw_exception::operator=(const vw_exception& other)
-{
-  // check for self-assignment
-  if (&other == this)
-    return *this;
-
-  file = other.file;
-  message = other.message;
-  lineNumber = other.lineNumber;
-
-  return *this;
-}
-
-vw_exception::~vw_exception() _NOEXCEPT {}
-
-const char* vw_exception::what() const _NOEXCEPT { return message.c_str(); }
-
-const char* vw_exception::Filename() const { return file; }
-
-int vw_exception::LineNumber() const { return lineNumber; }
 
 #ifdef _WIN32
 
@@ -60,7 +38,7 @@ struct StopWatchData
 StopWatch::StopWatch() : data(new StopWatchData())
 {
   if (!::QueryPerformanceFrequency(&data->frequency_))
-    throw "Error with QueryPerformanceFrequency";
+    THROW("Error with QueryPerformanceFrequency");
   ::QueryPerformanceCounter(&data->startTime_);
 }
 

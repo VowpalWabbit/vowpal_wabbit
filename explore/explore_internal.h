@@ -5,7 +5,7 @@
 // get the error code defined in master
 #include "explore.h"
 
-#include <stdint.h>
+#include <cstdint>
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
@@ -17,7 +17,7 @@ namespace exploration
 const uint64_t a = 0xeece66d5deece66dULL;
 const uint64_t c = 2147483647;
 
-const int bias = 127 << 23;
+const int bias = 127 << 23u;
 
 union int_float {
   int32_t i;
@@ -83,7 +83,8 @@ int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, st
     OutputIt pmf_new_last = pmf_first + ((std::min)(num_actions_scores, num_actions_pmf));
 
     // zero out pmf
-    for (OutputIt d = pmf_new_last; d != pmf_last; ++d) *d = 0;
+    for (OutputIt d = pmf_new_last; d != pmf_last; ++d)
+      *d = 0;
 
     pmf_last = pmf_new_last;
   }
@@ -92,7 +93,8 @@ int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, st
     return E_EXPLORATION_BAD_RANGE;
 
   float norm = 0.;
-  float max_score = *std::max_element(scores_first, scores_last);
+  float max_score = lambda > 0 ? *std::max_element(scores_first, scores_last)
+                                : *std::min_element(scores_first, scores_last);
 
   InputIt s = scores_first;
   for (OutputIt d = pmf_first; d != pmf_last && s != scores_last; ++d, ++s)
@@ -104,7 +106,8 @@ int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, st
   }
 
   // normalize
-  for (OutputIt d = pmf_first; d != pmf_last; ++d) *d /= norm;
+  for (OutputIt d = pmf_first; d != pmf_last; ++d)
+    *d /= norm;
 
   return S_EXPLORATION_OK;
 }
@@ -396,7 +399,7 @@ int sample_scores(
   return S_EXPLORATION_OK;
 }
 
-// Sample one action from the given probability density function.
+// Sample one action from a range given the probability density.
 template <typename It>
 int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value,
     std::random_access_iterator_tag pdf_category)

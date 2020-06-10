@@ -1,23 +1,23 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>
 #endif
+
 #include "reductions.h"
 #include "gd.h"
 
-using namespace std;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct mf
 {
-  vector<string> pairs;
+  std::vector<std::vector<namespace_index>> pairs;
 
   size_t rank;
 
@@ -37,6 +37,13 @@ struct mf
   features temp_features;
 
   vw* all;  // for pairs? and finalize
+
+  ~mf()
+  {
+    // clean up local v_arrays
+    indices.delete_v();
+    sub_predictions.delete_v();
+  }
 };
 
 template <bool cache_sub_predictions>
@@ -62,7 +69,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (string& i : data.pairs)
+  for (auto& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -98,7 +105,7 @@ void predict(mf& data, single_learner& base, example& ec)
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
 }
 
 void learn(mf& data, single_learner& base, example& ec)
@@ -120,7 +127,7 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (string& i : data.pairs)
+  for (auto& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -183,10 +190,6 @@ void finish(mf& o)
 {
   // restore global pairs
   o.all->pairs = o.pairs;
-
-  // clean up local v_arrays
-  o.indices.delete_v();
-  o.sub_predictions.delete_v();
 }
 
 base_learner* mf_setup(options_i& options, vw& all)

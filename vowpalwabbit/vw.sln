@@ -102,19 +102,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cs_test", "..\cs\test\cs_te
 		{007B7DE0-1D9B-498D-ACFC-E9D33058F22E} = {007B7DE0-1D9B-498D-ACFC-E9D33058F22E}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "python", "python", "{5AF0ECDA-A523-4F8E-8537-E741983119CC}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python27", "..\python\windows27\python27.vcxproj", "{7D381808-CC76-4A1A-A8E6-3F71278858BB}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1E205806-7F80-47DD-A38D-FC08083F3593} = {1E205806-7F80-47DD-A38D-FC08083F3593}
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "simulator", "..\cs\examples\simulator\simulator.csproj", "{2A9C6717-3B6C-4DB7-A626-16C04FCFECCF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1E205806-7F80-47DD-A38D-FC08083F3593} = {1E205806-7F80-47DD-A38D-FC08083F3593}
 		{E621E022-C1F8-433F-905A-AB9A3DE072B7} = {E621E022-C1F8-433F-905A-AB9A3DE072B7}
 		{85E55AE0-3784-4968-9271-C81AF560E1C1} = {85E55AE0-3784-4968-9271-C81AF560E1C1}
 		{E4E962AE-7056-4EB0-A8C5-8DC824A4B068} = {E4E962AE-7056-4EB0-A8C5-8DC824A4B068}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_slim", "slim\vw_slim.vcxproj", "{B68B36AA-F5AC-4A1A-8E52-D1B071B39483}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_slim_test", "slim\test\vw_slim_test.vcxproj", "{AA39948B-C78F-4347-8A37-DD27B843E69E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B68B36AA-F5AC-4A1A-8E52-D1B071B39483} = {B68B36AA-F5AC-4A1A-8E52-D1B071B39483}
 	EndProjectSection
 EndProject
 Global
@@ -167,6 +167,14 @@ Global
 		{08636F79-5577-4AF2-8EED-EC8A5BC14AC4}.Debug|x64.Build.0 = Debug|x64
 		{08636F79-5577-4AF2-8EED-EC8A5BC14AC4}.Release|x64.ActiveCfg = Release|x64
 		{08636F79-5577-4AF2-8EED-EC8A5BC14AC4}.Release|x64.Build.0 = Release|x64
+		{B68B36AA-F5AC-4A1A-8E52-D1B071B39483}.Debug|x64.ActiveCfg = Debug|x64
+		{B68B36AA-F5AC-4A1A-8E52-D1B071B39483}.Debug|x64.Build.0 = Debug|x64
+		{B68B36AA-F5AC-4A1A-8E52-D1B071B39483}.Release|x64.ActiveCfg = Release|x64
+		{B68B36AA-F5AC-4A1A-8E52-D1B071B39483}.Release|x64.Build.0 = Release|x64
+		{AA39948B-C78F-4347-8A37-DD27B843E69E}.Debug|x64.ActiveCfg = Debug|x64
+		{AA39948B-C78F-4347-8A37-DD27B843E69E}.Debug|x64.Build.0 = Debug|x64
+		{AA39948B-C78F-4347-8A37-DD27B843E69E}.Release|x64.ActiveCfg = Release|x64
+		{AA39948B-C78F-4347-8A37-DD27B843E69E}.Release|x64.Build.0 = Release|x64
 		{01A85382-C3E9-480A-86BF-FAFE4AD107A7}.Debug|x64.ActiveCfg = Debug|x64
 		{01A85382-C3E9-480A-86BF-FAFE4AD107A7}.Debug|x64.Build.0 = Debug|x64
 		{01A85382-C3E9-480A-86BF-FAFE4AD107A7}.Release|x64.ActiveCfg = Release|x64
@@ -183,10 +191,6 @@ Global
 		{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}.Debug|x64.Build.0 = Debug|x64
 		{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}.Release|x64.ActiveCfg = Release|x64
 		{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}.Release|x64.Build.0 = Release|x64
-		{7D381808-CC76-4A1A-A8E6-3F71278858BB}.Debug|x64.ActiveCfg = Debug|x64
-		{7D381808-CC76-4A1A-A8E6-3F71278858BB}.Debug|x64.Build.0 = Debug|x64
-		{7D381808-CC76-4A1A-A8E6-3F71278858BB}.Release|x64.ActiveCfg = Release|x64
-		{7D381808-CC76-4A1A-A8E6-3F71278858BB}.Release|x64.Build.0 = Release|x64
 		{2A9C6717-3B6C-4DB7-A626-16C04FCFECCF}.Debug|x64.ActiveCfg = Debug|x64
 		{2A9C6717-3B6C-4DB7-A626-16C04FCFECCF}.Debug|x64.Build.0 = Debug|x64
 		{2A9C6717-3B6C-4DB7-A626-16C04FCFECCF}.Release|x64.ActiveCfg = Release|x64
@@ -194,9 +198,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{7D381808-CC76-4A1A-A8E6-3F71278858BB} = {5AF0ECDA-A523-4F8E-8537-E741983119CC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8

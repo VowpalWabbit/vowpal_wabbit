@@ -1,16 +1,14 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
+#include "vw_allreduce.h"
 #include "vw_clr.h"
 #include "vowpalwabbit.h"
 #include "best_constant.h"
 #include "parser.h"
 #include "hash.h"
 #include "vw_example.h"
-#include "vw_allreduce.h"
 #include "vw_builder.h"
 #include "clr_io.h"
 #include "lda_core.h"
@@ -64,8 +62,7 @@ void VowpalWabbit::Driver()
 void VowpalWabbit::RunMultiPass()
 { if (m_vw->numpasses > 1)
   { try
-    { adjust_used_index(*m_vw);
-      m_vw->do_reset_source = true;
+    { m_vw->do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
       VW::end_parser(*m_vw);
@@ -697,11 +694,11 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     k1 = (uint32_t)(keys[i] | keys[i + 1] << 8 | keys[i + 2] << 16 | keys[i + 3] << 24);
 
     k1 *= c1;
-    k1 = ROTL32(k1, 15);
+    k1 = rotl32(k1, 15);
     k1 *= c2;
 
     h1 ^= k1;
-    h1 = ROTL32(h1, 13);
+    h1 = rotl32(h1, 13);
     h1 = h1 * 5 + 0xe6546b64;
 
     i += 4;
@@ -717,7 +714,7 @@ uint64_t hashall(String^ s, int offset, int count, uint64_t u)
     case 1:
       k1 ^= (uint32_t)(keys[tail]);
       k1 *= c1;
-      k1 = ROTL32(k1, 15);
+      k1 = rotl32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
       break;
@@ -763,10 +760,10 @@ size_t hashstring(String^ s, size_t u)
 
 Func<String^, size_t, size_t>^ VowpalWabbit::GetHasher()
 { //feature manipulation
-  string hash_function("strings");
+  std::string hash_function("strings");
   if (m_vw->options->was_supplied("hash"))
   {
-    hash_function = m_vw->options->get_typed_option<string>("hash").value();
+    hash_function = m_vw->options->get_typed_option<std::string>("hash").value();
   }
 
   if (hash_function == "strings")

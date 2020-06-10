@@ -1,12 +1,8 @@
-/*
-  Copyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD
-  license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
-#ifdef __FreeBSD__
-#include <sys/socket.h>
-#endif
 
 #include "parse_regressor.h"
 #include "constant.h"
@@ -16,11 +12,11 @@
 
 namespace GD
 {
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
 struct gd;
 
-float finalize_prediction(shared_data* sd, float ret);
+float finalize_prediction(shared_data* sd, vw_logger& logger, float ret);
 void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, double& total_weight,
@@ -76,9 +72,9 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 {
   return all.weights.sparse
       ? foreach_feature<R, S, T, sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-            all.ignore_linear, *ec.interactions , all.permutations, ec, dat)
+            all.ignore_linear, *ec.interactions, all.permutations, ec, dat)
       : foreach_feature<R, S, T, dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions , all.permutations, ec, dat);
+            *ec.interactions, all.permutations, ec, dat);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,
@@ -100,7 +96,7 @@ inline float inline_predict(vw& all, example& ec)
   return all.weights.sparse ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
                                   all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial)
                             : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions , all.permutations, ec, ec.l.simple.initial);
+                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial);
 }
 
 inline float sign(float w)

@@ -8,7 +8,10 @@
 #include "../vowpalwabbit/ezexample.h"
 #include "libsearch.h"
 
-size_t sed(const string &s1, const string &s2, size_t subst_cost=1, size_t ins_cost=1, size_t del_cost=1);
+using std::cerr;
+using std::endl;
+
+size_t sed(const std::string &s1, const std::string &s2, size_t subst_cost=1, size_t ins_cost=1, size_t del_cost=1);
 
 action char2action(char c)    // 1=EOS, 2=' ', 3..28=a..z, 29=other
 { if (c == '$') return 1;
@@ -27,9 +30,9 @@ char action2char(action a)
 struct nextstr
 { char c;
   float cw;
-  string s;
+  std::string s;
   float sw;
-  nextstr(char _c, float _cw, string _s, float _sw) : c(_c), cw(_cw), s(_s), sw(_sw) {}
+  nextstr(char _c, float _cw, std::string _s, float _sw) : c(_c), cw(_cw), s(_s), sw(_sw) {}
 };
 
 class Trie
@@ -73,7 +76,7 @@ public:
     return children[id]->contains(str+1);
   }
 
-  void get_next(const char*prefix, vector<nextstr>& next)
+  void get_next(const char*prefix, std::vector<nextstr>& next)
   { if (prefix == nullptr || *prefix == 0)
     { next.clear();
       float c = 1. / (float)count;
@@ -90,7 +93,7 @@ public:
     }
   }
 
-  void build_max(string prefix="")
+  void build_max(std::string prefix="")
   { max_count = terminus;
     max_string = prefix;
     for (size_t id=0; id<children.size(); id++)
@@ -105,7 +108,7 @@ public:
   }
 
   void print(char c='^', size_t indent=0)
-  { cerr << string(indent*2, ' ');
+  { cerr << std::string(indent*2, ' ');
     cerr << '\'' << c << "' " << count << " [max_string=" << max_string << " max_count=" << max_count << "]" << endl;
     for (size_t i=0; i<children.size(); i++)
       if (children[i])
@@ -116,14 +119,14 @@ private:
   size_t terminus;   // count of words that end here?
   size_t count;      // count of all words under here (including us)
   size_t max_count;  // count of most frequent word under here
-  string max_string; // the corresponding string
-  vector<Trie*> children;
+  std::string max_string; // the corresponding std::string
+  std::vector<Trie*> children;
 };
 
 class IncrementalEditDistance
 {
 public:
-  IncrementalEditDistance(string& target, size_t subst_cost=1, size_t ins_cost=1, size_t del_cost=1)
+  IncrementalEditDistance(std::string& target, size_t subst_cost=1, size_t ins_cost=1, size_t del_cost=1)
     : target(target), subst_cost(subst_cost), ins_cost(ins_cost), del_cost(del_cost), N(target.length()), output_string("")
   { prev_row = new size_t[N+1];
     cur_row  = new size_t[N+1];
@@ -142,7 +145,7 @@ public:
     { cur_row[n] = min3( prev_row[n] + ins_cost,
                          prev_row[n-1] + ((target[n-1] == c) ? 0 : subst_cost),
                          cur_row[n-1] + del_cost );
-      prev_row_min = min(prev_row_min, cur_row[n]);
+      prev_row_min = std::min(prev_row_min, cur_row[n]);
     }
     // swap cur_row and prev_row
     size_t* tmp = cur_row;
@@ -150,9 +153,9 @@ public:
     prev_row = tmp;
   }
 
-  void append(string s) { for (char c : s) append(c); }
+  void append(std::string s) { for (char c : s) append(c); }
 
-  vector<char>& next()
+  std::vector<char>& next()
   { A.clear();
     for (size_t n=0; n<=N; n++)
     { if (prev_row[n] == prev_row_min)
@@ -163,10 +166,10 @@ public:
 
   float minf(float a, float b) { return (a < b) ? a : b; }
 
-  vector< pair<action,float> > all_next()
-  { vector< pair<action,float> > B;
+  std::vector<std::pair<action,float>> all_next()
+  {std::vector<std::pair<action,float>> B;
     for (size_t a=1; a<=29; a++)
-      B.push_back( make_pair(a, 1.) );
+      B.push_back(std::make_pair(a, 1.) );
     B[ char2action('$')-1 ].second = minf(100., (float)(prev_row[N] - prev_row_min));
     for (size_t n=0; n<N; n++)
       if (prev_row[n] == prev_row_min)
@@ -174,7 +177,7 @@ public:
     return B;
   }
 
-  string out() { return output_string; }
+  std::string out() { return output_string; }
   size_t distance() { return prev_row_min; }
   size_t finish_distance()
   { // find last occurance of prev_row_min
@@ -188,30 +191,30 @@ public:
 private:
   size_t* prev_row;
   size_t* cur_row;
-  string  target;
+  std::string  target;
   size_t  subst_cost, ins_cost, del_cost, prev_row_min, N;
-  string  output_string;
-  vector<char> A;
+  std::string  output_string;
+  std::vector<char> A;
 
   inline size_t min3(size_t a, size_t b, size_t c) { return (a < b) ? (a < c) ? a : c : (b < c) ? b : c; }
 };
 
 struct input
-{ string in;
-  string out;
+{ std::string in;
+  std::string out;
   float weight;
-  input(string _in, string _out, float _weight) : in(_in), out(_out), weight(_weight) {}
-  input(string _in, string _out) : in(_in), out(_out), weight(1.) {}
-  input(string _in) : in(_in), out(_in), weight(1.) {}
+  input(std::string _in, std::string _out, float _weight) : in(_in), out(_out), weight(_weight) {}
+  input(std::string _in, std::string _out) : in(_in), out(_out), weight(1.) {}
+  input(std::string _in) : in(_in), out(_in), weight(1.) {}
 };
 
-typedef string output;
+typedef std::string output;
 
 #define minf(a,b) (((a) < (b)) ? (a) : (b))
 
 float max_cost = 100.;
 
-float get_or_one(vector< pair<char,size_t> >& v, char c)
+float get_or_one(std::vector<std::pair<char,size_t> >& v, char c)
 { // TODO: could binary search
   for (auto& p : v)
     if (p.first == c)
@@ -224,9 +227,14 @@ class Generator : public SearchTask<input, output>
 public:
 
   Generator(vw& vw_obj, Trie* _dict=nullptr) : SearchTask<input,output>(vw_obj), dist(0), dict(_dict)    // must run parent constructor!
-  { sch.set_options( Search::AUTO_CONDITION_FEATURES | Search::NO_CACHING | Search::ACTION_COSTS );  // TODO: if action costs is specified but no allowed actions provided, don't segfault :P
+  {
+    // TODO: if action costs is specified but no allowed actions provided, don't segfault :P
+    sch.set_options(Search::AUTO_CONDITION_FEATURES | Search::NO_CACHING | Search::ACTION_COSTS);
     HookTask::task_data& d = *sch.get_task_data<HookTask::task_data>();
-    if (d.num_actions != 29) throw exception();
+    if (d.num_actions != 29)
+    {
+      THROW("Error: d.num_actions was not 29");
+    }
   }
 
   void _run(Search::search& sch, input& in, output& out)
@@ -237,7 +245,7 @@ public:
     v_array<action> ref = v_init<action>();
     int N = in.in.length();
     out = "^";
-    vector<nextstr> next;
+   std::vector<nextstr> next;
     for (int m=1; m<=N*2; m++)     // at most |in|*2 outputs
     { ezexample ex(&vw_obj);
 
@@ -250,7 +258,7 @@ public:
 
       // suffixes thus far
       ex(vw_namespace('s'));
-      string tmp("$");
+      std::string tmp("$");
       for (int i=m; i >= m-15 && i >= 0; i--)
       { tmp = out[i] + tmp;
         ex("p=" + tmp);
@@ -258,7 +266,7 @@ public:
 
       // characters thus far
       ex(vw_namespace('c'));
-      for (char c : out) ex("c=" + string(1,c));
+      for (char c : out) ex("c=" + std::string(1,c));
       ex("c=$");
 
       // words thus far
@@ -281,12 +289,12 @@ public:
         ex(vw_namespace('d'));
         char best_char = '~'; float best_count = 0.;
         for (auto xx : next)
-        { if (xx.cw > 0.) ex("c=" + string(1,xx.c), xx.cw);
+        { if (xx.cw > 0.) ex("c=" + std::string(1,xx.c), xx.cw);
           if (xx.sw > 0.) ex("mc=" + xx.s, xx.sw);
           if (xx.sw > best_count) { best_count = xx.sw; best_char = xx.c; }
         }
         if (best_count > 0.)
-          ex("best=" + string(1,best_char), best_count);
+          ex("best=" + std::string(1,best_char), best_count);
       }
 
       // input
@@ -311,7 +319,7 @@ public:
       ref.clear();
 
       /*
-      vector<char>& best = ied.next();
+      std::vector<char>& best = ied.next();
       if (best.size() == 0) ref.push_back( char2action('$') );
       else for (char c : best) ref.push_back( char2action(c) );
       char c = action2char( Search::predictor(sch, m)
@@ -320,7 +328,7 @@ public:
                             .predict() );
       */
 
-      vector< pair<action,float> > all = ied.all_next();
+      std::vector<std::pair<action,float> > all = ied.all_next();
       char c = action2char( Search::predictor(sch, m)
                             .set_input(* ex.get())
                             .set_allowed(all)
@@ -348,7 +356,7 @@ void run_easy()
   Generator task(vw_obj);
   output out("");
 
-  vector<input> training_data =
+  std::vector<input> training_data =
   { input("maison", "house"),
     input("lune", "moon"),
     input("petite lune", "little moon"),
@@ -359,7 +367,7 @@ void run_easy()
     input("grande lune", "big moon"),
     input("grande fleur", "big flower")
   };
-  vector<input> test_data =
+  std::vector<input> test_data =
   { input("petite fleur", "little flower"),
     input("grande maison", "big house")
   };
@@ -382,9 +390,9 @@ void run_easy()
 }
 
 Trie load_dictionary(const char* fname)
-{ ifstream h(fname);
+{ std::ifstream h(fname);
   Trie t;
-  string line;
+  std::string line;
   while (getline(h,line))
   { const char* str = line.c_str();
     char* space = (char*)strchr(str, ' ');
@@ -400,12 +408,12 @@ Trie load_dictionary(const char* fname)
 }
 
 void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t print_every=0)
-{ ifstream h(fname);
-  if (! h.is_open())
-  { cerr << "cannot open file " << fname << endl;
-    throw exception();
+{ std::ifstream h(fname);
+  if (!h.is_open())
+  {
+    THROW("cannot open file " << fname);
   }
-  string line;
+  std::string line;
   output out;
   size_t n = 0;
   float dist = 0.;
@@ -415,7 +423,7 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
     if (n % 500 == 0) cerr << '.';
     size_t i = line.find(" ||| ");
     size_t j = line.find(" ||| ", i+1);
-    if (i == string::npos || j == string::npos)
+    if (i == std::string::npos || j == std::string::npos)
     { cerr << "skipping line " << n << ": '" << line << "'" << endl;
       continue;
     }
@@ -427,13 +435,13 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
     else
     { gen.predict(dat, out);
       if (print_every>0 && (n % print_every == 0))
-        cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl;
+       std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl;
       dist += dat.weight * (float)gen.get_dist();
     }
   }
   if (n > 500) cerr << endl;
   if (!is_learn)
-    cout << "AVERAGE DISTANCE: " << (dist / weight) << endl;
+    std::cout << "AVERAGE DISTANCE: " << (dist / weight) << endl;
 }
 
 void train()
@@ -442,7 +450,7 @@ void train()
   dict.build_max();
   //dict.print();
 
-  string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
+  std::string init_str("--search 29 -b 28 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3"); //  --search_use_passthrough_repr"); // -q si -q wi -q ci -q di  -f my_model
   vw& vw_obj = *VW::initialize(init_str);
   cerr << init_str << endl;
   Generator gen(vw_obj, nullptr); // &dict);
@@ -463,12 +471,12 @@ void predict()
 
 int main(int argc, char *argv[])
 { /*
-  string target(argv[1]);
+  std::string target(argv[1]);
   cerr << "target = " << target << endl;
   IncrementalEditDistance ied(target);
   cerr << "^: ";
   for (size_t i=0; i<=strlen(argv[2]); i++) {
-    vector< pair<action,float> > next = ied.all_next();
+   std::vector< std::pair<action,float> > next = ied.all_next();
     for (auto& p : next)
       cerr << action2char(p.first) << ' ' << p.second << "\t";
     cerr << endl;
@@ -478,11 +486,11 @@ int main(int argc, char *argv[])
   cerr << endl;
   */
   /*
-  string target("abcde");
+  std::string target("abcde");
   IncrementalEditDistance ied(target);
-  ied.append(string("cde"));
+  ied.append(std::string("cde"));
   while (true) {
-    vector<char>& best = ied.next();
+   std::vector<char>& best = ied.next();
     cerr << ied.out() << " / " << ied.distance() << " -> "; for (char c : best) cerr << c; cerr << endl;
     char c = best[0];
     if (c == '$') break;

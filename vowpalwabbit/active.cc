@@ -1,26 +1,30 @@
-#include <errno.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cerrno>
+#include <cfloat>
+
 #include "reductions.h"
 #include "rand48.h"
-#include "float.h"
 #include "vw.h"
 #include "active.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
-using namespace std;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   float b, sb, rs, sl;
   b = (float)(c0 * (log(k + 1.) + 0.0001) / (k + 0.0001));
-  sb = sqrt(b);
-  avg_loss = min(1.f, max(0.f, avg_loss));  // loss should be in [0,1]
+  sb = std::sqrt(b);
+  avg_loss = std::min(1.f, std::max(0.f, avg_loss));  // loss should be in [0,1]
 
-  sl = sqrt(avg_loss) + sqrt(avg_loss + g);
+  sl = std::sqrt(avg_loss) + std::sqrt(avg_loss + g);
   if (g <= sb * sl + b)
     return 1;
-  rs = (sl + sqrt(sl * sl + 4 * g)) / (2 * g);
+  rs = (sl + std::sqrt(sl * sl + 4 * g)) / (2 * g);
   return b * rs * rs;
 }
 
@@ -32,10 +36,10 @@ float query_decision(active& a, float ec_revert_weight, float k)
   else
   {
     weighted_queries = (float)a.all->sd->weighted_labeled_examples;
-    avg_loss = (float)(a.all->sd->sum_loss / k + sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
+    avg_loss = (float)(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
-  if (merand48(a.all->random_state) < bias)
+  if (a._random_state->get_and_update_random() < bias)
     return 1.f / bias;
   else
     return -1.;
@@ -85,26 +89,31 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(int f, float res, float weight, v_array<char> tag)
+void active_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag)
 {
-  if (f >= 0)
+  if (f == nullptr)
   {
-    std::stringstream ss;
-    char temp[30];
-    sprintf(temp, "%f", res);
-    ss << temp;
-    if (!print_tag(ss, tag))
-      ss << ' ';
-    if (weight >= 0)
-    {
-      sprintf(temp, " %f", weight);
-      ss << temp;
-    }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+    return;
+  }
+  
+  std::stringstream ss;
+  ss << std::fixed << res;
+  if (!print_tag_by_ref(ss, tag))
+  {
+    ss << ' ';
+  }
+
+  if (weight >= 0)
+  {
+    ss << " " << std::fixed << weight;
+  }
+  ss << '\n';
+  const auto ss_str = ss.str();
+  ssize_t len = ss_str.size();
+  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -121,11 +130,10 @@ void output_and_account_example(vw& all, active& a, example& ec)
   if (ld.label == FLT_MAX)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
+  for (auto& i : all.final_prediction_sink)
   {
-    int f = (int)all.final_prediction_sink[i];
-    active_print_result(f, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i.get(), ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);
@@ -155,6 +163,7 @@ base_learner* active_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->_random_state = all.get_random_state();
 
   if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");

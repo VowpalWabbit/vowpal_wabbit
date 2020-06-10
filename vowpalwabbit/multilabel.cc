@@ -1,8 +1,10 @@
-#include "float.h"
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
 #include "gd.h"
 #include "vw.h"
-
-using namespace std;
 
 namespace MULTILABEL
 {
@@ -14,7 +16,7 @@ char* bufread_label(labels* ld, char* c, io_buf& cache)
   size_t total = sizeof(uint32_t) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    cout << "error in demarshal of cost data" << endl;
+    std::cout << "error in demarshal of cost data" << std::endl;
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -91,7 +93,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
 {
   labels* ld = (labels*)v;
 
@@ -103,17 +105,16 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     case 1:
       tokenize(',', words[0], p->parse_name);
 
-      for (size_t i = 0; i < p->parse_name.size(); i++)
+      for (const auto & parse_name : p->parse_name)
       {
-        *(p->parse_name[i].end) = '\0';
-        uint32_t n = atoi(p->parse_name[i].begin);
+        uint32_t n = int_of_string(parse_name);
         ld->label_v.push_back(n);
       }
       break;
     default:
-      cerr << "example with an odd label, what is ";
-      for (size_t i = 0; i < words.size(); i++) cerr << words[i].begin << " ";
-      cerr << endl;
+      std::cerr << "example with an odd label, what is ";
+      for (const auto & word : words) std::cerr << word << " ";
+      std::cerr << std::endl;
   }
 }
 
@@ -122,15 +123,15 @@ label_parser multilabel = {default_label, parse_label, cache_label, read_cached_
 
 void print_update(vw& all, bool is_test, example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
-    stringstream label_string;
+    std::stringstream label_string;
     if (is_test)
       label_string << " unknown";
     else
       for (size_t i = 0; i < ec.l.multilabels.label_v.size(); i++) label_string << " " << ec.l.multilabels.label_v[i];
 
-    stringstream pred_string;
+    std::stringstream pred_string;
     for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       pred_string << " " << ec.pred.multilabels.label_v[i];
 
@@ -177,8 +178,9 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
-    if (sink >= 0)
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (sink != nullptr)
     {
       std::stringstream ss;
 
@@ -189,8 +191,9 @@ void output_example(vw& all, example& ec)
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text(sink, ss.str(), ec.tag);
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
     }
+  }
 
   print_update(all, test_label(&ec.l.multilabels), ec);
 }

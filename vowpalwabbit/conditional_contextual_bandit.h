@@ -1,28 +1,23 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <cstdint>
 #include <vector>
 #include <string>
 
-#include "v_array.h"
+#include "reductions_fwd.h"
 #include "action_score.h"
-#include "options.h"
+#include "example_predict.h"
 
+namespace CCB
+{
+void calculate_and_insert_interactions(example* shared, std::vector<example*> actions, std::vector<std::vector<namespace_index>>& generated_interactions);
 
-namespace LEARNER {
-  template<class T, class E> struct learner;
-  using base_learner = learner<char, char>;
-}
+VW::LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
+bool ec_is_example_header(example const& ec);
+std::string generate_ccb_label_printout(const std::vector<example*>& slots);
 
-struct vw;
-struct example;
-
-namespace CCB {
-  void calculate_and_insert_interactions(
-    example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions);
-
-  // Each positon in outer array is implicitly the decision corresponding to that index. Each inner array is the result of CB for that call.
-  typedef v_array<ACTION_SCORE::action_scores> decision_scores_t;
-  
-  LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
-}
+}  // namespace CCB

@@ -1,13 +1,11 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <fstream>
-#include <float.h>
-#include <string.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cstdio>
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>
@@ -19,9 +17,7 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "array_parameters.h"
 
-using namespace std;
-
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct gdmf
@@ -31,6 +27,7 @@ struct gdmf
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
+  ~gdmf() { scalars.delete_v(); }
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
@@ -43,14 +40,14 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     bool audit = !fs.space_names.empty();
     for (auto& f : fs.values_indices_audit())
     {
-      cout << '\t';
+      std::cout << '\t';
       if (audit)
-        cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
-      cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
-      cout << ':' << (&weights[f.index()])[offset];
+        std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
+      std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
+      std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (string& i : all.pairs)
+  for (auto& i : all.pairs)
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     {
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
@@ -59,27 +56,28 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
           for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           {
-            cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':'
-                 << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
-            cout << ':' << (&weights[f1.index()])[offset + k];
+            std::cout << '\t' << f1.audit()->get()->first << k << '^' << f1.audit()->get()->second << ':'
+                      << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
+                      << f1.value();
+            std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':'
-                 << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
-                 << ':' << f2.value();
-            cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
+            std::cout << ':' << f2.audit()->get()->first << k << '^' << f2.audit()->get()->second << ':'
+                      << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
+                      << ':' << f2.value();
+            std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
-            cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
+            std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
           }
       }
     }
   if (all.triples.begin() != all.triples.end())
     THROW("cannot use triples in matrix factorization");
-  cout << endl;
+  std::cout << std::endl;
 }
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
+  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -98,7 +96,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
-  for (string& i : d.all->pairs)
+  for (auto& i : d.all->pairs)
   {
     ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
@@ -119,7 +117,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (string& i : d.all->pairs)
+  for (auto& i : d.all->pairs)
   {
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
@@ -155,7 +153,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   all.set_minmax(all.sd, ld.label);
 
-  ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ld.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
@@ -199,7 +197,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
-  for (string& i : all.pairs)
+  for (auto& i : all.pairs)
   {
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
@@ -261,7 +259,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     }
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     uint64_t i = 0;
     size_t brw = 1;
@@ -269,7 +267,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     {
       brw = 0;
       size_t K = d.rank * 2 + 1;
-      stringstream msg;
+      std::stringstream msg;
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file, (char*)&i, sizeof(i), "", read, msg, text);
       if (brw != 0)
@@ -322,8 +320,6 @@ void learn(gdmf& d, single_learner&, example& ec)
   if (all.training && ec.l.simple.label != FLT_MAX)
     mf_train(d, ec);
 }
-
-void finish(gdmf& d) { d.scalars.delete_v(); }
 
 base_learner* gd_mf_setup(options_i& options, vw& all)
 {
@@ -381,7 +377,6 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
-  l.set_finish(finish);
 
   return make_base(l);
 }

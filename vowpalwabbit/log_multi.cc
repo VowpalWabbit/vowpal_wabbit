@@ -1,17 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved. Released under a BSD (revised)
-license as described in the file LICENSE.node
-*/
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <sstream>
 
 #include "reductions.h"
 
-using namespace std;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 class node_pred
@@ -85,6 +83,13 @@ struct log_multi
   uint32_t swap_resist;
 
   uint32_t nbofswaps;
+
+  ~log_multi()
+  {
+    // save_node_stats(b);
+    for (auto& node : nodes) node.preds.delete_v();
+    nodes.delete_v();
+  }
 };
 
 inline void init_leaf(node& n)
@@ -121,7 +126,7 @@ void init_tree(log_multi& d)
 
 inline uint32_t min_left_right(log_multi& b, const node& n)
 {
-  return min(b.nodes[n.left].min_count, b.nodes[n.right].min_count);
+  return std::min(b.nodes[n.left].min_count, b.nodes[n.right].min_count);
 }
 
 inline uint32_t find_switch_node(log_multi& b)
@@ -152,19 +157,19 @@ inline void update_min_count(log_multi& b, uint32_t node)
 
 void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
-  for (uint32_t i = 0; i < depth; i++) cout << "\t";
-  cout << node.min_count << " " << node.left << " " << node.right;
-  cout << " label = " << node.max_count_label << " labels = ";
+  for (uint32_t i = 0; i < depth; i++) std::cout << "\t";
+  std::cout << node.min_count << " " << node.left << " " << node.right;
+  std::cout << " label = " << node.max_count_label << " labels = ";
   for (size_t i = 0; i < node.preds.size(); i++)
-    cout << node.preds[i].label << ":" << node.preds[i].label_count << "\t";
-  cout << endl;
+    std::cout << node.preds[i].label << ":" << node.preds[i].label_count << "\t";
+  std::cout << std::endl;
 
   if (node.internal)
   {
-    cout << "Left";
+    std::cout << "Left";
     display_tree_dfs(b, b.nodes[node.left], depth + 1);
 
-    cout << "Right";
+    std::cout << "Right";
     display_tree_dfs(b, b.nodes[node.right], depth + 1);
   }
 }
@@ -203,7 +208,7 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
       uint32_t swap_parent = b.nodes[swap_child].parent;
       uint32_t swap_grandparent = b.nodes[swap_parent].parent;
       if (b.nodes[swap_child].min_count != b.nodes[0].min_count)
-        cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << endl;
+        std::cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << std::endl;
       b.nbofswaps++;
 
       uint32_t nonswap_child;
@@ -271,7 +276,7 @@ void verify_min_dfs(log_multi& b, const node& node)
   {
     if (node.min_count != min_left_right(b, node))
     {
-      cout << "badness! " << endl;
+      std::cout << "badness! " << std::endl;
       display_tree_dfs(b, b.nodes[0], 0);
     }
     verify_min_dfs(b, b.nodes[node.left]);
@@ -388,18 +393,11 @@ void save_node_stats(log_multi& d)
   fclose(fp);
 }
 
-void finish(log_multi& b)
-{
-  // save_node_stats(b);
-  for (size_t i = 0; i < b.nodes.size(); i++) b.nodes[i].preds.delete_v();
-  b.nodes.delete_v();
-}
-
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
-    stringstream msg;
+    std::stringstream msg;
     msg << "k = " << b.k;
     bin_text_read_write_fixed(model_file, (char*)&b.max_predictors, sizeof(b.k), "", read, msg, text);
 
@@ -511,7 +509,7 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 
   data->progress = !data->progress;
 
-  string loss_function = "quantile";
+  std::string loss_function = "quantile";
   float loss_parameter = 0.5;
   delete (all.loss);
   all.loss = getLossFunction(all, loss_function, loss_parameter);
@@ -522,7 +520,6 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   learner<log_multi, example>& l = init_multiclass_learner(
       data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors);
   l.set_save_load(save_load_tree);
-  l.set_finish(finish);
 
   return make_base(l);
 }

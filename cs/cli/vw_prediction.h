@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
 
@@ -32,8 +30,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { prediction_type::prediction_type_t get();
+  property prediction_type_t PredictionType
+  { prediction_type_t get();
   }
 };
 
@@ -51,8 +49,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
     { throw gcnew NotSupportedException("Prediction type is not available.");
     }
   }
@@ -72,9 +70,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::scalar;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::scalar;
     }
   }
 };
@@ -101,9 +99,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::scalar;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::scalar;
     }
   }
 };
@@ -122,9 +120,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::scalars;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::scalars;
     }
   }
 };
@@ -143,9 +141,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::prob;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::prob;
     }
   }
 };
@@ -164,9 +162,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::multiclass;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::multiclass;
     }
   }
 };
@@ -185,9 +183,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::multiclass;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::multiclass;
     }
   }
 };
@@ -207,9 +205,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::multiclassprobs;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::multiclassprobs;
     }
   }
 };
@@ -228,9 +226,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
-    { return prediction_type::multilabels;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
+    { return prediction_type_t::multilabels;
     }
   }
 };
@@ -259,8 +257,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() abstract;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() abstract;
   }
 };
 
@@ -274,9 +272,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() override sealed
-    { return prediction_type::action_scores;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() override sealed
+    { return prediction_type_t::action_scores;
     }
   }
 };
@@ -291,9 +289,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() override sealed
-    { return prediction_type::action_probs;
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() override sealed
+    { return prediction_type_t::action_probs;
     }
   }
 };
@@ -312,8 +310,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type::prediction_type_t PredictionType
-  { virtual prediction_type::prediction_type_t get() sealed
+  property prediction_type_t PredictionType
+  { virtual prediction_type_t get() sealed
     { throw gcnew NotSupportedException("Prediction type is not available.");
     }
   }

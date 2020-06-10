@@ -1,15 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <float.h>
 #include <string.h>
 #include <math.h>
+#include <memory>
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
 #include "gd.h"  // for GD::foreach_feature
+#include "parse_primitives.h"
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
 #include "search_dep_parser.h"
@@ -22,17 +22,17 @@ license as described in the file LICENSE.
 #include "label_dictionary.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
-using namespace std;
+using namespace VW::LEARNER;
 using namespace VW::config;
 namespace CS = COST_SENSITIVE;
 namespace MC = MULTICLASS;
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+using std::endl;
 
 namespace Search
 {
+using byte_array = std::unique_ptr<uint8_t[]>;
+
 search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
     &EntityRelationTask::task, &HookTask::task, &GraphTask::task, nullptr};  // must nullptr terminate!
@@ -40,12 +40,13 @@ search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &Seque
 search_metatask* all_metatasks[] = {
     &DebugMT::metatask, &SelectiveBranchingMT::metatask, nullptr};  // must nullptr terminate!
 
-const bool PRINT_UPDATE_EVERY_EXAMPLE = 0;
-const bool PRINT_UPDATE_EVERY_PASS = 0;
-const bool PRINT_CLOCK_TIME = 0;
+constexpr bool PRINT_UPDATE_EVERY_EXAMPLE = false;
+constexpr bool PRINT_UPDATE_EVERY_PASS = false;
+constexpr bool PRINT_CLOCK_TIME = false;
+constexpr uint64_t SEARCH_HASH_SEED = 3419;
 
-string neighbor_feature_space("neighbor");
-string condition_feature_space("search_condition");
+std::string neighbor_feature_space("neighbor");
+std::string condition_feature_space("search_condition");
 
 uint32_t AUTO_CONDITION_FEATURES = 1, AUTO_HAMMING_LOSS = 2, EXAMPLES_DONT_CHANGE = 4, IS_LDF = 8, NO_CACHING = 16,
          ACTION_COSTS = 32;
@@ -104,7 +105,7 @@ std::ostream& operator<<(std::ostream& os, const scored_action& x)
 struct action_repr
 {
   action a;
-  features* repr;
+  features* repr = nullptr;
   action_repr(action _a, features* _repr) : a(_a)
   {
     if (_repr != nullptr)
@@ -112,8 +113,6 @@ struct action_repr
       repr = new features();
       repr->deep_copy_from(*_repr);
     }
-    else
-      repr = nullptr;
   }
   action_repr(action _a) : a(_a), repr(nullptr) {}
 };
@@ -137,9 +136,36 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
   return os;
 }
 
+void clear_memo_foreach_action(search_private& priv);
+
 struct search_private
 {
+ private:
+  struct cached_item_equivalent
+  {
+    bool operator()(const byte_array& A, const byte_array& B) const
+    {
+      size_t sz_A = *A.get();
+      size_t sz_B = *B.get();
+      if (sz_A != sz_B)
+        return false;
+      return memcmp(A.get(), B.get(), sz_A) == 0;
+    }
+  };
+  struct cached_item_hash
+  {
+    size_t operator()(const byte_array& key) const
+    {
+      size_t sz = *key.get();
+      return uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
+    }
+  };
+
+ public:
+  using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
+
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
 
   uint64_t offset;
   bool auto_condition_features;  // do you want us to automatically add conditioning features?
@@ -176,9 +202,9 @@ struct search_private
   v_array<char> learn_condition_on_names;       // the names of the actions
   v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
   v_array<action_repr> ptag_to_action;          // tag to action mapping for conditioning
-  vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
-                                        // vector cuz we might expose it to the library
-  action learn_oracle_action;           // store an oracle action for debugging purposes
+  std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
+                                             // vector cuz we might expose it to the library
+  action learn_oracle_action;                // store an oracle action for debugging purposes
   features last_action_repr;
 
   polylabel* allowed_actions_cache;
@@ -205,9 +231,9 @@ struct search_private
 
   // various strings for different search states
   bool should_produce_string;
-  stringstream* pred_string;
-  stringstream* truth_string;
-  stringstream* bad_string_stream;
+  std::stringstream* pred_string;
+  std::stringstream* truth_string;
+  std::stringstream* bad_string_stream;
 
   // parameters controlling interpolation
   float beta;   // interpolation rate
@@ -236,31 +262,31 @@ struct search_private
   size_t total_predictions_made;
   size_t total_cache_hits;
 
-  v_hashmap<unsigned char*, scored_action> cache_hash_map;
+  cache_map cache_hash_map;
 
   // for foreach_feature temporary storage for conditioning
   uint64_t dat_new_feature_idx;
   example* dat_new_feature_ec;
-  stringstream dat_new_feature_audit_ss;
+  std::stringstream dat_new_feature_audit_ss;
   size_t dat_new_feature_namespace;
-  string* dat_new_feature_feature_space;
+  std::string* dat_new_feature_feature_space;
   float dat_new_feature_value;
 
   // to reduce memory allocation
-  string rawOutputString;
-  stringstream* rawOutputStringStream;
+  std::string rawOutputString;
+  std::stringstream* rawOutputStringStream;
   CS::label ldf_test_label;
   v_array<action_repr> condition_on_actions;
   v_array<size_t> timesteps;
   polylabel learn_losses;
   polylabel gte_label;
-  v_array<pair<float, size_t>> active_uncertainty;
-  v_array<v_array<pair<CS::wclass&, bool>>> active_known;
+  v_array<std::pair<float, size_t>> active_uncertainty;
+  v_array<v_array<std::pair<CS::wclass&, bool>>> active_known;
   bool force_setup_ec_ref;
   bool active_csoaa;
   float active_csoaa_verify;
 
-  LEARNER::base_learner* base_learner;
+  VW::LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
@@ -272,13 +298,60 @@ struct search_private
                   // the "real" decision step but this really only matters for caching purposes
   v_array<v_array<action_cache>*>
       memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
+
+  ~search_private(){
+    if(all)
+    {
+      delete truth_string;
+      delete pred_string;
+      delete bad_string_stream;
+      neighbor_features.delete_v();
+      timesteps.delete_v();
+      if (cb_learner)
+        learn_losses.cb.costs.delete_v();
+      else
+        learn_losses.cs.costs.delete_v();
+      if (cb_learner)
+        gte_label.cb.costs.delete_v();
+      else
+        gte_label.cs.costs.delete_v();
+
+      condition_on_actions.delete_v();
+      learn_allowed_actions.delete_v();
+      ldf_test_label.costs.delete_v();
+      active_uncertainty.delete_v();
+      for (size_t i = 0; i < active_known.size(); i++) active_known[i].delete_v();
+      active_known.delete_v();
+
+      if (cb_learner)
+        allowed_actions_cache->cb.costs.delete_v();
+      else
+        allowed_actions_cache->cs.costs.delete_v();
+
+      train_trajectory.delete_v();
+
+      for (auto& ar : ptag_to_action) delete ar.repr;
+      ptag_to_action.delete_v();
+      clear_memo_foreach_action(*this);
+      memo_foreach_action.delete_v();
+
+      // destroy copied examples if we needed them
+      if (!examples_dont_change)
+      {
+        void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
+        for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
+        learn_ec_copy.delete_v();
+      }
+      learn_condition_on_names.delete_v();
+      learn_condition_on.delete_v();
+
+      learn_condition_on_act.delete_v();
+
+      free(allowed_actions_cache);
+      delete rawOutputStringStream;
+    }
+  }
 };
-
-search::search() { priv = &calloc_or_throw<search_private>(); }
-search::~search() { free(priv); }
-
-string audit_feature_space("conditional");
-uint64_t conditional_constant = 8290743;
 
 void clear_memo_foreach_action(search_private& priv)
 {
@@ -290,6 +363,23 @@ void clear_memo_foreach_action(search_private& priv)
     }
   priv.memo_foreach_action.clear();
 }
+
+search::search()
+{
+  priv = &calloc_or_throw<search_private>();
+  new (priv) search_private();
+}
+
+search::~search()
+{
+  if(this->priv){
+    this->priv->~search_private();
+    free(this->priv);
+  }
+}
+
+std::string audit_feature_space("conditional");
+uint64_t conditional_constant = 8290743;
 
 inline bool need_memo_foreach_action(search_private& priv)
 {
@@ -307,7 +397,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
       return (((int)priv.current_policy) - 1);
     if (allow_optimal)
       return -1;
-    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
+    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
     return (int)priv.current_policy;
   }
 
@@ -316,17 +406,17 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
 
   if (num_valid_policies == 0)
   {
-    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
+    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
     return (int)priv.current_policy;
   }
   else if (num_valid_policies == 1)
     pid = 0;
   else if (num_valid_policies == 2)
-    pid = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state)) >= priv.beta;
+    pid = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random()) >= priv.beta;
   else
   {
     // SPEEDUP this up in the case that beta is small!
-    float r = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state));
+    float r = (advance_prng ? priv._random_state->get_and_update_random() : priv._random_state->get_random());
     pid = 0;
 
     if (r > priv.beta)
@@ -379,7 +469,7 @@ bool should_print_update(vw& all, bool hit_new_pass = false)
     return true;
   if (PRINT_UPDATE_EVERY_PASS && hit_new_pass)
     return true;
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
 bool might_print_update(vw& all)
@@ -391,21 +481,21 @@ bool might_print_update(vw& all)
     return true;
   if (PRINT_UPDATE_EVERY_PASS)
     return true;  // SPEEDUP: make this better
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
 bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
 {
   return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
       might_print_update(all) ||                    // if we have to print and update to stderr
-      (all.raw_prediction > 0) ||                   // we need raw predictions
+      (all.raw_prediction != nullptr) ||            // we need raw predictions
       ((!all.vw_is_main) && (is_test_ex)) ||        // library needs predictions
       // or:
       //   it's not quiet AND
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.logger.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
@@ -420,7 +510,7 @@ float safediv(float a, float b)
     return (a / b);
 }
 
-void to_short_string(string in, size_t max_len, char* out)
+void to_short_string(std::string in, size_t max_len, char* out)
 {
   for (size_t i = 0; i < max_len; i++)
     out[i] = ((i >= in.length()) || (in[i] == '\n') || (in[i] == '\t')) ? ' ' : in[i];
@@ -433,22 +523,25 @@ void to_short_string(string in, size_t max_len, char* out)
   out[max_len] = 0;
 }
 
-void number_to_natural(size_t big, char* c)
+std::string number_to_natural(size_t big)
 {
+  std::stringstream ss;
   if (big > 9999999999)
-    sprintf(c, "%dg", (int)(big / 1000000000));
+    ss << big / 1000000000 << "g";
   else if (big > 9999999)
-    sprintf(c, "%dm", (int)(big / 1000000));
+    ss << big / 1000000 << "m";
   else if (big > 9999)
-    sprintf(c, "%dk", (int)(big / 1000));
+    ss << big / 1000 << "k";
   else
-    sprintf(c, "%d", (int)(big));
+    ss << big;
+
+  return ss.str();
 }
 
 void print_update(search_private& priv)
 {
   vw& all = *priv.all;
-  if (!priv.printed_output_header && !all.quiet)
+  if (!priv.printed_output_header && !all.logger.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",
@@ -490,23 +583,20 @@ void print_update(search_private& priv)
         (float)(all.sd->weighted_labeled_examples - all.sd->old_weighted_labeled_examples));
   }
 
-  char inst_cntr[9];
-  number_to_natural((size_t)all.sd->example_number, inst_cntr);
-  char total_pred[8];
-  number_to_natural(priv.total_predictions_made, total_pred);
-  char total_cach[8];
-  number_to_natural(priv.total_cache_hits, total_cach);
-  char total_exge[8];
-  number_to_natural(priv.total_examples_generated, total_exge);
+  auto const& inst_cntr = number_to_natural((size_t)all.sd->example_number);
+  auto const& total_pred = number_to_natural(priv.total_predictions_made);
+  auto const& total_cach = number_to_natural(priv.total_cache_hits);
+  auto const& total_exge = number_to_natural(priv.total_examples_generated);
 
-  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since, inst_cntr,
-      true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy, total_pred, total_cach,
-      total_exge, priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
+  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since,
+      inst_cntr.c_str(), true_label, pred_label, (int)priv.read_example_last_pass, (int)priv.current_policy,
+      total_pred.c_str(), total_cach.c_str(), total_exge.c_str(),
+      priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
 
   if (PRINT_CLOCK_TIME)
   {
     size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
-    cerr << " " << num_sec << "sec";
+    std::cerr << " " << num_sec << "sec";
   }
 
   if (use_heldout_loss)
@@ -528,7 +618,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
   if (priv.all->audit)
   {
-    stringstream temp;
+    std::stringstream temp;
     temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
     fs.space_names.push_back(audit_strings_ptr(new audit_strings(*priv.dat_new_feature_feature_space, temp.str())));
   }
@@ -579,7 +669,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
           priv.dat_new_feature_audit_ss << (char)ns;
       }
 
-      // cerr << "n=" << n << " offset=" << offset << endl;
+      // std::cerr << "n=" << n << " offset=" << offset << endl;
       if ((offset < 0) && (n < (uint64_t)(-offset)))  // add <s> feature
         add_new_feature(priv, 1., (uint64_t)925871901 << stride_shift);
       else if (n + offset >= ec_seq.size())  // add </s> feature
@@ -628,26 +718,20 @@ void reset_search_structure(search_private& priv)
   if (priv.adaptive_beta)
   {
     float x = -log1pf(-priv.alpha) * (float)priv.total_examples_generated;
-    static const float log_of_2 = (float)0.6931471805599453;
+    static constexpr float log_of_2 = (float)0.6931471805599453;
     priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1 - expf(-x));  // numerical stability
     // float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
     // assert( fabs(priv_beta - priv.beta) < 1e-2 );
     if (priv.beta > 1)
       priv.beta = 1;
   }
-  for (Search::action_repr& ar : priv.ptag_to_action)
-  {
-    if (ar.repr != nullptr)
-    {
-      ar.repr->delete_v();
-      delete ar.repr;
-    }
-  }
+
+  for (auto& ar : priv.ptag_to_action) delete ar.repr;
   priv.ptag_to_action.clear();
 
   if (!priv.cb_learner)  // was: if rollout_all_actions
   {
-    priv.all->random_state = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
+    priv._random_state->set_random_state((uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647);
   }
 }
 
@@ -675,21 +759,24 @@ void search_declare_loss(search_private& priv, float loss)
 }
 
 template <class T>
-void cdbg_print_array(string str, v_array<T>& A)
+void cdbg_print_array(std::string str, v_array<T>& A)
 {
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
   cdbg << " ]" << endl;
 }
 template <class T>
-void cerr_print_array(string str, v_array<T>& A)
+void cerr_print_array(std::string str, v_array<T>& A)
 {
   std::cerr << str << " = [";
   for (size_t i = 0; i < A.size(); i++) std::cerr << " " << A[i];
   std::cerr << " ]" << endl;
 }
 
-size_t random(uint64_t& v, size_t max) { return (size_t)(merand48(v) * (float)max); }
+size_t random(std::shared_ptr<rand_state>& rs, size_t max)
+{
+  return (size_t)(rs->get_and_update_random() * (float)max);
+}
 template <class T>
 bool array_contains(T target, const T* A, size_t n)
 {
@@ -714,7 +801,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
       extra_offset = 3849017 * ec.l.cs.costs[0].class_index;
 
   size_t I = condition_on_cnt;
-  size_t N = max(priv.acset.max_bias_ngram_length, priv.acset.max_quad_ngram_length);
+  size_t N = std::max(priv.acset.max_bias_ngram_length, priv.acset.max_quad_ngram_length);
   for (size_t i = 0; i < I; i++)  // position in conditioning
   {
     uint64_t fid = 71933 + 8491087 * extra_offset;
@@ -919,7 +1006,8 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
     cs_costs_erase(isCB, lab);
     for (action k = 0; k < ec_cnt; k++)
       cs_cost_push_back(isCB, lab, k, array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
-    // cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index << ':'
+    // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index
+    // << ':'
     // << lab.cs.costs[i].x; cdbg << " ]" << endl;
   }
   else if (priv.use_action_costs)
@@ -952,7 +1040,8 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
         for (action k = 0; k < priv.A; k++) cs_cost_push_back(isCB, lab, k + 1, 1.);
         set_to_one = true;
       }
-      // cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index <<
+      // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index
+      // <<
       // ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
       if (oracle_actions_cnt <= 1)  // common case to speed up
       {
@@ -993,21 +1082,21 @@ template <class T>
 void push_at(v_array<T>& v, T item, size_t pos)
 {
   if (v.size() > pos)
-    v.begin()[pos] = item;
+    v[pos] = item;
   else
   {
     if (v.end_array > v.begin() + pos)
     {
       // there's enough memory, just not enough filler
       memset(v.end(), 0, sizeof(T) * (pos - v.size()));
-      v.begin()[pos] = item;
+      v[pos] = item;
       v.end() = v.begin() + pos + 1;
     }
     else
     {
       // there's not enough memory
       v.resize(2 * pos + 3);
-      v.begin()[pos] = item;
+      v[pos] = item;
       v.end() = v.begin() + pos + 1;
     }
   }
@@ -1025,7 +1114,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
     for (size_t k = 0; k < K; k++) cdbg << ' ' << allowed_actions_cost[k];
     cdbg << " ]" << endl;
     float min_cost = FLT_MAX;
-    for (size_t k = 0; k < K; k++) min_cost = min(min_cost, allowed_actions_cost[k]);
+    for (size_t k = 0; k < K; k++) min_cost = std::min(min_cost, allowed_actions_cost[k]);
     cdbg << "min_cost = " << min_cost;
     if (min_cost < FLT_MAX)
     {
@@ -1035,7 +1124,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         {
           cdbg << ", hit @ " << k;
           count++;
-          if ((count == 1) || (merand48(priv.all->random_state) < 1. / (float)count))
+          if ((count == 1) || (priv._random_state->get_and_update_random() < 1. / (float)count))
           {
             a = (allowed_actions == nullptr) ? (uint32_t)(k + 1) : allowed_actions[k];
             cdbg << "***";
@@ -1048,13 +1137,13 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   if (a == (action)-1)
   {
     if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) &&
-        (merand48(priv.all->random_state) < priv.perturb_oracle))
+        (priv._random_state->get_and_update_random() < priv.perturb_oracle))
       oracle_actions_cnt = 0;
     a = (oracle_actions_cnt > 0)
-        ? oracle_actions[random(priv.all->random_state, oracle_actions_cnt)]
-        : (allowed_actions_cnt > 0) ? allowed_actions[random(priv.all->random_state, allowed_actions_cnt)]
-                                    : priv.is_ldf ? (action)random(priv.all->random_state, ec_cnt)
-                                                  : (action)(1 + random(priv.all->random_state, priv.A));
+        ? oracle_actions[random(priv._random_state, oracle_actions_cnt)]
+        : (allowed_actions_cnt > 0) ? allowed_actions[random(priv._random_state, allowed_actions_cnt)]
+                                    : priv.is_ldf ? (action)random(priv._random_state, ec_cnt)
+                                                  : (action)(1 + random(priv._random_state, priv.A));
   }
   cdbg << "choose_oracle_action from oracle_actions = [";
   for (size_t i = 0; i < oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i];
@@ -1166,7 +1255,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       }
     }
     if (min_cost2 < FLT_MAX)
-      priv.active_uncertainty.push_back(make_pair(min_cost2 - min_cost, priv.t + priv.meta_t));
+      priv.active_uncertainty.push_back(std::make_pair(min_cost2 - min_cost, priv.t + priv.meta_t));
   }
   if ((priv.state == INIT_TRAIN) && priv.active_csoaa)
   {
@@ -1175,8 +1264,8 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     size_t cur_t = priv.t + priv.meta_t - 1;
     while (priv.active_known.size() <= cur_t)
     {
-      priv.active_known.push_back(v_array<pair<CS::wclass&, bool>>());
-      priv.active_known[priv.active_known.size() - 1] = v_init<pair<CS::wclass&, bool>>();
+      priv.active_known.push_back(v_array<std::pair<CS::wclass&, bool>>());
+      priv.active_known[priv.active_known.size() - 1] = v_init<std::pair<CS::wclass&, bool>>();
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].clear();
@@ -1192,7 +1281,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       CS::wclass& wc = ec.l.cs.costs[k];
       // Get query_needed from pred
       bool query_needed = v_array_contains(ec.pred.multilabels.label_v, wc.class_index);
-      pair<CS::wclass&, bool> p = {wc, query_needed};
+      std::pair<CS::wclass&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);
       // cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index
@@ -1205,7 +1294,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
   }
 
   // generate raw predictions if necessary
-  if ((priv.state == INIT_TEST) && (all.raw_prediction > 0))
+  if ((priv.state == INIT_TEST) && (all.raw_prediction != nullptr))
   {
     priv.rawOutputStringStream->str("");
     for (size_t k = 0; k < cs_get_costs_size(priv.cb_learner, ec.l); k++)
@@ -1215,7 +1304,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       (*priv.rawOutputStringStream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
                                     << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
-    all.print_text(all.raw_prediction, priv.rawOutputStringStream->str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), priv.rawOutputStringStream->str(), ec.tag);
   }
 
   ec.l = old_label;
@@ -1354,13 +1443,6 @@ bool cached_item_equivalent(unsigned char* const& A, unsigned char* const& B)
   return memcmp(A, B, sz_A) == 0;
 }
 
-void free_key(unsigned char* mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
-void clear_cache_hash_map(search_private& priv)
-{
-  priv.cache_hash_map.iter(free_key);
-  priv.cache_hash_map.clear();
-}
-
 // returns true if found and do_store is false. if do_store is true, always returns true.
 bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on,
     const char* condition_on_names, action_repr* condition_on_actions, size_t condition_on_cnt, int policy,
@@ -1376,8 +1458,10 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   if (sz % 4 != 0)
     sz += 4 - (sz % 4);  // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-  unsigned char* item = calloc_or_throw<unsigned char>(sz);
-  unsigned char* here = item;
+  byte_array item(new uint8_t[sz]);
+  uint8_t* here = item.get();
+  // get rid of a valgrind warning about uninitialized memory
+  memset(here, 0, sz);
   *here = (unsigned char)sz;
   here += sizeof(size_t);
   *here = mytag;
@@ -1397,19 +1481,17 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
   }
-  uint64_t hash = uniform_hash(item, sz, 3419);
-
   if (do_store)
   {
-    priv.cache_hash_map.put(item, hash, scored_action(a, a_cost));
+    priv.cache_hash_map.emplace(std::move(item), scored_action(a, a_cost));
     return true;
   }
   else  // its a find
   {
-    scored_action sa = priv.cache_hash_map.get(item, hash);
-    a = sa.a;
-    a_cost = sa.s;
-    free(item);
+    auto sa_iter = priv.cache_hash_map.find(item);
+    if(sa_iter == priv.cache_hash_map.end()) return false;
+    a = sa_iter->second.a;
+    a_cost = sa_iter->second.s;
     return a != (action)-1;
   }
 }
@@ -1423,18 +1505,19 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
   if (priv.cb_learner)
   {
     if (min_loss == FLT_MAX)
-      for (size_t i = 0; i < losses.cb.costs.size(); i++) min_loss = MIN(min_loss, losses.cb.costs[i].cost);
+      for (size_t i = 0; i < losses.cb.costs.size(); i++) min_loss = std::min(min_loss, losses.cb.costs[i].cost);
     for (size_t i = 0; i < losses.cb.costs.size(); i++) losses.cb.costs[i].cost = losses.cb.costs[i].cost - min_loss;
   }
   else
   {
     if (min_loss == FLT_MAX)
-      for (size_t i = 0; i < losses.cs.costs.size(); i++) min_loss = MIN(min_loss, losses.cs.costs[i].x);
+      for (size_t i = 0; i < losses.cs.costs.size(); i++) min_loss = std::min(min_loss, losses.cs.costs[i].x);
     for (size_t i = 0; i < losses.cs.costs.size(); i++)
       losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
   }
-  // cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << ' ' << losses.cs.costs[i].class_index
-  // << ':' << losses.cs.costs[i].x; cerr << " ]" << endl;
+  // std::cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) std::cerr << ' ' <<
+  // losses.cs.costs[i].class_index
+  // << ':' << losses.cs.costs[i].x; std::cerr << " ]" << endl;
 
   if (!priv.is_ldf)  // not LDF
   {
@@ -1452,7 +1535,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t is_local = 0; is_local <= (size_t)priv.xv; is_local++)
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
-      ec.in_use = true;
       cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
       as_singleline(priv.base_learner)->learn(ec, learner);
       cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
@@ -1496,7 +1578,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
           lab.costs.push_back(wc);
         }
         lab.costs[0].x = losses.cs.costs[a - start_K].x;
-        ec.in_use = true;
         // store the offset to restore it later
         ec.ft_offset = priv.offset;
         // create the example collection used to learn
@@ -1668,11 +1749,13 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
 
         for (size_t i = 0; i < condition_on_cnt; i++)
+        {
           push_at(priv.learn_condition_on_act,
               action_repr(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
                       ? priv.ptag_to_action[condition_on[i]]
                       : 0),
               i);
+        }
 
         if (condition_on_names == nullptr)
         {
@@ -1764,9 +1847,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
       ensure_size(priv.condition_on_actions, condition_on_cnt);
       for (size_t i = 0; i < condition_on_cnt; i++)
+      {
         priv.condition_on_actions[i] = ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
             ? priv.ptag_to_action[condition_on[i]]
-            : 0;
+            : action_repr(0);
+      }
 
       bool not_test = priv.all->training && !ecs[0].test_only;
 
@@ -1790,13 +1875,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
           {
             if (priv.is_ldf)
             {
-              std::cerr << "search cannot use state representations in ldf mode" << endl;
-              throw exception();
+              THROW("search cannot use state representations in ldf mode");
             }
             if (ecs[0].passthrough)
             {
-              std::cerr << "search cannot passthrough" << endl;
-              throw exception();
+              THROW("search cannot passthrough");
             }
             ecs[0].passthrough = &priv.last_action_repr;
           }
@@ -1866,7 +1949,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 }
 
 inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
-inline bool cmp_size_t_pair(const pair<size_t, size_t>& a, const pair<size_t, size_t>& b)
+inline bool cmp_size_t_pair(const std::pair<size_t, size_t>& a, const std::pair<size_t, size_t>& b)
 {
   return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first);
 }
@@ -1892,7 +1975,7 @@ void hoopla_permute(size_t* B, size_t* end)
     size_t d2 = absdiff(A[lo], B[j - 1]);  // put B[j-1] at the bottom
     size_t d3 = absdiff(A[hi], B[i + 1]);  // put B[i+1] at the top
     size_t d4 = absdiff(A[hi], B[j - 1]);  // put B[j-1] at the top
-    size_t mx = max(max(d1, d2), max(d3, d4));
+    size_t mx = std::max(std::max(d1, d2), std::max(d3, d4));
     if (d1 >= mx)
       A[--lo] = B[++i];
     else if (d2 >= mx)
@@ -1916,7 +1999,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   if (priv.subsample_timesteps <= -1)
   {
     for (size_t i = 0; i < priv.active_uncertainty.size(); i++)
-      if (merand48(priv.all->random_state) > priv.active_uncertainty[i].first)
+      if (priv._random_state->get_and_update_random() > priv.active_uncertainty[i].first)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
     /*
     float k = (float)priv.total_examples_generated;
@@ -1933,7 +2016,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
       if (priv.active_csoaa && (t < priv.active_known.size()))
       {
         count = 0;
-        for (pair<CS::wclass&, bool> wcq : priv.active_known[t])
+        for (std::pair<CS::wclass&, bool> wcq : priv.active_known[t])
           if (wcq.second)
           {
             count++;
@@ -1949,11 +2032,11 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   else if (priv.subsample_timesteps < 1)
   {
     for (size_t t = 0; t < priv.T; t++)
-      if (merand48(priv.all->random_state) <= priv.subsample_timesteps)
+      if (priv._random_state->get_and_update_random() <= priv.subsample_timesteps)
         timesteps.push_back(t);
 
     if (timesteps.size() == 0)  // ensure at least one
-      timesteps.push_back((size_t)(merand48(priv.all->random_state) * priv.T));
+      timesteps.push_back((size_t)(priv._random_state->get_and_update_random() * priv.T));
   }
 
   // finally, if subsample >= 1, then pick (int) that many uniformly at random without replacement; could use an LFSR
@@ -1962,7 +2045,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   {
     while ((timesteps.size() < (size_t)priv.subsample_timesteps) && (timesteps.size() < priv.T))
     {
-      size_t t = (size_t)(merand48(priv.all->random_state) * (float)priv.T);
+      size_t t = (size_t)(priv._random_state->get_and_update_random() * (float)priv.T);
       if (!v_array_contains(timesteps, t))
         timesteps.push_back(t);
     }
@@ -1976,9 +2059,9 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
 struct final_item
 {
   v_array<scored_action>* prefix;
-  string str;
+  std::string str;
   float total_cost;
-  final_item(v_array<scored_action>* p, string s, float ic) : prefix(p), str(s), total_cost(ic) {}
+  final_item(v_array<scored_action>* p, std::string s, float ic) : prefix(p), str(s), total_cost(ic) {}
 };
 
 void free_final_item(final_item* p)
@@ -2034,9 +2117,9 @@ void run_task(search& sch, multi_ex& ec)
 }
 
 void verify_active_csoaa(
-    COST_SENSITIVE::label& losses, v_array<pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
+    COST_SENSITIVE::label& losses, v_array<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
 {
-  float threshold = multiplier / sqrt((float)t);
+  float threshold = multiplier / std::sqrt((float)t);
   cdbg << "verify_active_csoaa, losses = [";
   for (COST_SENSITIVE::wclass& wc : losses.costs) cdbg << " " << wc.class_index << ":" << wc.x;
   cdbg << " ]" << endl;
@@ -2103,7 +2186,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
 
   // if (! priv.no_caching)
-  clear_cache_hash_map(priv);
+  priv.cache_hash_map.clear();
 
   cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
   cdbg << "must_run_test = " << must_run_test(all, ec_seq, is_test_ex) << endl;
@@ -2119,7 +2202,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     reset_search_structure(priv);
     priv.state = INIT_TEST;
     priv.should_produce_string =
-        might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
+        might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction != nullptr);
     priv.pred_string->str("");
     priv.test_action_sequence.clear();
     run_task(sch, ec_seq);
@@ -2129,10 +2212,13 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       all.sd->update(ec_seq[0]->test_only, !is_test_ex, priv.test_loss, 1.f, priv.num_features);
 
     // generate output
-    for (int sink : all.final_prediction_sink) all.print_text((int)sink, priv.pred_string->str(), ec_seq[0]->tag);
+    for (auto& sink : all.final_prediction_sink)
+    {
+      all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag);
+    }
 
-    if (all.raw_prediction > 0)
-      all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr)
+      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
   }
 
   // if we're not training, then we're done!
@@ -2144,9 +2230,9 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   // do a pass over the data allowing oracle
   cdbg << "======================================== INIT TRAIN (" << priv.current_policy << ","
        << priv.read_example_last_pass << ") ========================================" << endl;
-  // cerr << "training" << endl;
+  // std::cerr << "training" << endl;
 
-  clear_cache_hash_map(priv);
+  priv.cache_hash_map.clear();
   reset_search_structure(priv);
   clear_memo_foreach_action(priv);
   priv.state = INIT_TRAIN;
@@ -2259,7 +2345,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     // float min_loss = 0.;
     // if (priv.metatask)
     //  for (size_t aid=0; aid<priv.memo_foreach_action[tid]->size(); aid++)
-    //    min_loss = MIN(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
+    //    min_loss = std::min(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
     cdbg << "priv.learn_losses = [";
     for (auto& wc : priv.learn_losses.cs.costs) cdbg << " " << wc.class_index << ":" << wc.x;
     cdbg << " ]" << endl;
@@ -2333,7 +2419,7 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   if (priv.task->run_setup)
     priv.task->run_setup(sch, ec_seq);
 
-  // if we're going to have to print to the screen, generate the "truth" string
+  // if we're going to have to print to the screen, generate the "truth" std::string
   cdbg << "======================================== GET TRUTH STRING (" << priv.current_policy << ","
        << priv.read_example_last_pass << ") ========================================" << endl;
   if (might_print_update(*priv.all))
@@ -2373,7 +2459,7 @@ void end_pass(search& sch)
       priv.current_policy++;
     if (priv.current_policy > priv.total_number_of_policies)
     {
-      std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
+      std::cerr << "internal error (bug): too many policies; not advancing" << endl;
       priv.current_policy = priv.total_number_of_policies;
     }
     // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
@@ -2415,6 +2501,7 @@ void search_initialize(vw* all, search& sch)
 {
   search_private& priv = *sch.priv;  // priv is zero initialized by default
   priv.all = all;
+  priv._random_state = all->get_random_state();
 
   priv.active_csoaa = false;
   priv.label_is_test = mc_label_is_test;
@@ -2423,9 +2510,9 @@ void search_initialize(vw* all, search& sch)
   priv.state = INITIALIZE;
   priv.mix_per_roll_policy = -2;
 
-  priv.pred_string = new stringstream();
-  priv.truth_string = new stringstream();
-  priv.bad_string_stream = new stringstream();
+  priv.pred_string = new std::stringstream();
+  priv.truth_string = new std::stringstream();
+  priv.bad_string_stream = new std::stringstream();
   priv.bad_string_stream->clear(priv.bad_string_stream->badbit);
 
   priv.rollout_method = MIX_PER_ROLL;
@@ -2441,104 +2528,27 @@ void search_initialize(vw* all, search& sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa((action)-1, 0.);
-  new (&priv.cache_hash_map) v_hashmap<unsigned char*, scored_action>();
-  priv.cache_hash_map.set_default_value(sa);
-  priv.cache_hash_map.set_equivalent(cached_item_equivalent);
+  // unnecessary if priv has a proper constructor
+  new (&priv.cache_hash_map) search_private::cache_map();
 
   sch.task_data = nullptr;
 
-  priv.active_uncertainty = v_init<pair<float, size_t>>();
-  priv.active_known = v_init<v_array<pair<CS::wclass&, bool>>>();
+  priv.active_uncertainty = v_init<std::pair<float, size_t>>();
+  priv.active_known = v_init<v_array<std::pair<CS::wclass&, bool>>>();
 
   CS::cs_label.default_label(&priv.empty_cs_label);
 
-  new (&priv.rawOutputString) string();
-  priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
-  new (&priv.test_action_sequence) vector<action>();
-  new (&priv.dat_new_feature_audit_ss) stringstream();
+  new (&priv.rawOutputString) std::string();
+  priv.rawOutputStringStream = new std::stringstream(priv.rawOutputString);
+  new (&priv.test_action_sequence) std::vector<action>();
+  new (&priv.dat_new_feature_audit_ss) std::stringstream();
 }
 
-void search_finish(search& sch)
-{
-  search_private& priv = *sch.priv;
-  cdbg << "search_finish" << endl;
-
-  clear_cache_hash_map(priv);
-
-  delete priv.truth_string;
-  delete priv.pred_string;
-  delete priv.bad_string_stream;
-  priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
-  priv.rawOutputString.~string();
-  priv.test_action_sequence.~vector<action>();
-  priv.dat_new_feature_audit_ss.~stringstream();
-  priv.neighbor_features.delete_v();
-  priv.timesteps.delete_v();
-  if (priv.cb_learner)
-    priv.learn_losses.cb.costs.delete_v();
-  else
-    priv.learn_losses.cs.costs.delete_v();
-  if (priv.cb_learner)
-    priv.gte_label.cb.costs.delete_v();
-  else
-    priv.gte_label.cs.costs.delete_v();
-
-  priv.condition_on_actions.delete_v();
-  priv.learn_allowed_actions.delete_v();
-  priv.ldf_test_label.costs.delete_v();
-  priv.last_action_repr.delete_v();
-  priv.active_uncertainty.delete_v();
-  for (size_t i = 0; i < priv.active_known.size(); i++) priv.active_known[i].delete_v();
-  priv.active_known.delete_v();
-
-  if (priv.cb_learner)
-    priv.allowed_actions_cache->cb.costs.delete_v();
-  else
-    priv.allowed_actions_cache->cs.costs.delete_v();
-
-  priv.train_trajectory.delete_v();
-  for (Search::action_repr& ar : priv.ptag_to_action)
-  {
-    if (ar.repr != nullptr)
-    {
-      ar.repr->delete_v();
-      delete ar.repr;
-      cdbg << "delete_v" << endl;
-    }
-  }
-  priv.ptag_to_action.delete_v();
-  clear_memo_foreach_action(priv);
-  priv.memo_foreach_action.delete_v();
-
-  // destroy copied examples if we needed them
-  if (!priv.examples_dont_change)
-  {
-    void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-    for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
-    priv.learn_ec_copy.delete_v();
-  }
-  priv.learn_condition_on_names.delete_v();
-  priv.learn_condition_on.delete_v();
-  priv.learn_condition_on_act.delete_v();
-
-  if (priv.active_csoaa)
-    std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
-
-  if (priv.task->finish)
-    priv.task->finish(sch);
-  if (priv.metatask && priv.metatask->finish)
-    priv.metatask->finish(sch);
-
-  free(priv.allowed_actions_cache);
-  delete priv.rawOutputStringStream;
-  free(sch.priv);
-}
-
-void ensure_param(float& v, float lo, float hi, float def, const char* string)
+void ensure_param(float& v, float lo, float hi, float def, const char* str)
 {
   if ((v < lo) || (v > hi))
   {
-    std::cerr << string << endl;
+    std::cerr << str << endl;
     v = def;
   }
 }
@@ -2563,6 +2573,20 @@ void handle_condition_options(vw& all, auto_condition_settings& acset)
                       .keep()
                       .help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
   all.options->add_and_parse(new_options);
+}
+
+void search_finish(search& sch)
+{
+  search_private& priv = *sch.priv;
+  cdbg << "search_finish" << endl;
+
+  if (priv.active_csoaa)
+    std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
+
+  if (priv.task->finish)
+    priv.task->finish(sch);
+  if (priv.metatask && priv.metatask->finish)
+    priv.metatask->finish(sch);
 }
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
@@ -2613,48 +2637,43 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   return allowed;
 }
 
-void parse_neighbor_features(string& nf_string, search& sch)
+void parse_neighbor_features(VW::string_view nf_strview, search& sch)
 {
   search_private& priv = *sch.priv;
   priv.neighbor_features.clear();
-  size_t len = nf_string.length();
-  if (len == 0)
+  if (nf_strview.empty())
     return;
 
-  char* cstr = new char[len + 1];
-  strcpy(cstr, nf_string.c_str());
-
-  char* p = strtok(cstr, ",");
-  std::vector<substring> cmd;
-  while (p != 0)
+  std::vector<VW::string_view> cmd;
+  size_t end_idx = 0;
+  while (!nf_strview.empty())
   {
-    cmd.clear();
-    substring me = {p, p + strlen(p)};
-    tokenize(':', me, cmd, true);
+    end_idx = nf_strview.find(',');
+    VW::string_view strview = nf_strview.substr(0, end_idx);
+    if (end_idx != VW::string_view::npos)
+      nf_strview.remove_prefix(end_idx + 1);
 
+    cmd.clear();
+    tokenize(':', strview, cmd, true);
     int32_t posn = 0;
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_substring(cmd[0]);
+      posn = int_of_string(cmd[0]);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_substring(cmd[0]);
-      ns = (cmd[1].end > cmd[1].begin) ? cmd[1].begin[0] : ' ';
+      posn = int_of_string(cmd[0]);
+      ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else
     {
-      std::cerr << "warning: ignoring malformed neighbor specification: '" << p << "'" << endl;
+      std::cerr << "warning: ignoring malformed neighbor specification: '" << strview << "'" << endl;
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
     priv.neighbor_features.push_back(enc);
-
-    p = strtok(nullptr, ",");
   }
-
-  delete[] cstr;
 }
 
 base_learner* setup(options_i& options, vw& all)
@@ -2896,7 +2915,7 @@ base_learner* setup(options_i& options, vw& all)
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.p->lp = MC::mc_label;
-  all.label_type = label_type::mc;
+  all.label_type = label_type_t::mc;
   if (priv.task && priv.task->initialize)
     priv.task->initialize(*sch.get(), priv.A, options);
   if (priv.metatask && priv.metatask->initialize)
@@ -2969,8 +2988,8 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
+        priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
     if (priv->acset.use_passthrough_repr)
@@ -2999,15 +3018,22 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
       condition_on_names, nullptr, 0, nullptr, learner_id, a_cost, weight);
   if (priv->state == INIT_TEST)
     priv->test_action_sequence.push_back(a);
-  if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
+
+  // If there is a shared example (example header), then action "1" is at index 1, but otherwise
+  // action "1" is at index 0. Map action to its appropriate index. In particular, this fixes an
+  // issue where the predicted action is the last, and there is no example header, causing an index
+  // beyond the end of the array (usually resulting in a segfault at some point.)
+  size_t action_index = a - COST_SENSITIVE::ec_is_example_header(ecs[0]) ? 0 : 1;
+
+  if ((mytag != 0) && ecs[action_index].l.cs.costs.size() > 0)
   {
     if (mytag < priv->ptag_to_action.size())
     {
       cdbg << "delete_v at " << mytag << endl;
       if (priv->ptag_to_action[mytag].repr != nullptr)
       {
-        priv->ptag_to_action[mytag].repr->delete_v();
         delete priv->ptag_to_action[mytag].repr;
+        priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
     push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
@@ -3022,7 +3048,7 @@ void search::loss(float loss) { search_declare_loss(*this->priv, loss); }
 
 bool search::predictNeedsExample() { return search_predictNeedsExample(*this->priv); }
 
-stringstream& search::output()
+std::stringstream& search::output()
 {
   if (!this->priv->should_produce_string)
     return *(this->priv->bad_string_stream);
@@ -3067,7 +3093,7 @@ void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
   this->priv->label_is_test = is_test;
 }
 
-void search::get_test_action_sequence(vector<action>& V)
+void search::get_test_action_sequence(std::vector<action>& V)
 {
   V.clear();
   for (size_t i = 0; i < this->priv->test_action_sequence.size(); i++) V.push_back(this->priv->test_action_sequence[i]);
@@ -3079,16 +3105,16 @@ uint64_t search::get_mask() { return this->priv->all->weights.mask(); }
 size_t search::get_stride_shift() { return this->priv->all->weights.stride_shift(); }
 uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 
-string search::pretty_label(action a)
+std::string search::pretty_label(action a)
 {
   if (this->priv->all->sd->ldict)
   {
-    substring ss = this->priv->all->sd->ldict->get(a);
-    return string(ss.begin, ss.end - ss.begin);
+    auto sv = this->priv->all->sd->ldict->get(a);
+    return sv.to_string();
   }
   else
   {
-    ostringstream os;
+    std::ostringstream os;
     os << a;
     return os.str();
   }
@@ -3123,9 +3149,14 @@ void predictor::free_ec()
   if (ec_alloced)
   {
     if (is_ldf)
-      for (size_t i = 0; i < ec_cnt; i++) VW::dealloc_example(CS::cs_label.delete_label, ec[i]);
+      for (size_t i = 0; i < ec_cnt; i++)
+      {
+        VW::dealloc_example(CS::cs_label.delete_label, ec[i]);
+      }
     else
+    {
       VW::dealloc_example(nullptr, *ec);
+    }
     free(ec);
   }
 }
@@ -3177,6 +3208,7 @@ void predictor::set_input_length(size_t input_length)
   is_ldf = true;
   if (ec_alloced)
   {
+    for (size_t i = ec_cnt; ec_cnt < input_length; ++i) ec[i].~example();
     example* temp = (example*)realloc(ec, input_length * sizeof(example));
     if (temp != nullptr)
       ec = temp;
@@ -3352,7 +3384,7 @@ predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, false);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
 }
-predictor& predictor::add_allowed(v_array<pair<action, float>>& a)
+predictor& predictor::add_allowed(v_array<std::pair<action, float>>& a)
 {
   for (size_t i = 0; i < a.size(); i++)
   {
@@ -3361,7 +3393,7 @@ predictor& predictor::add_allowed(v_array<pair<action, float>>& a)
   }
   return *this;
 }
-predictor& predictor::add_allowed(vector<pair<action, float>>& a)
+predictor& predictor::add_allowed(std::vector<std::pair<action, float>>& a)
 {
   for (size_t i = 0; i < a.size(); i++)
   {
@@ -3382,12 +3414,12 @@ predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
 }
-predictor& predictor::set_allowed(v_array<pair<action, float>>& a)
+predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
 {
   erase_alloweds();
   return add_allowed(a);
 }
-predictor& predictor::set_allowed(vector<pair<action, float>>& a)
+predictor& predictor::set_allowed(std::vector<std::pair<action, float>>& a)
 {
   erase_alloweds();
   return add_allowed(a);
@@ -3451,7 +3483,7 @@ action predictor::predict()
   }
   const action* alA = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin();
   const float* alAcosts = (allowed_actions_cost.size() == 0) ? nullptr : allowed_actions_cost.begin();
-  size_t numAlA = max(allowed_actions.size(), allowed_actions_cost.size());
+  size_t numAlA = std::max(allowed_actions.size(), allowed_actions_cost.size());
   action p = is_ldf
       ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id, weight)
       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, numAlA, alAcosts, learner_id, weight);

@@ -1,12 +1,9 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "search_sequencetask.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
 namespace SequenceTask
@@ -144,7 +141,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   if (search_span_bilou)
   {
-    cerr << "switching to BILOU encoding for sequence span labeling" << endl;
+    std::cerr << "switching to BILOU encoding for sequence span labeling" << std::endl;
     D->encoding = BILOU;
     num_actions = num_actions * 2 - 1;
   }
@@ -346,7 +343,7 @@ void run(Search::search& sch, multi_ex& ec)
   uint32_t max_prediction = 1;
   uint32_t max_label = 1;
 
-  for (size_t i = 0; i < ec.size(); i++) max_label = max(ec[i]->l.multi.label, max_label);
+  for (size_t i = 0; i < ec.size(); i++) max_label = std::max(ec[i]->l.multi.label, max_label);
 
   for (ptag i = 0; i < ec.size(); i++)
   {
@@ -354,7 +351,7 @@ void run(Search::search& sch, multi_ex& ec)
     uint32_t oracle = D.predict_max ? max_label : ec[i]->l.multi.label;
     uint32_t prediction = sch.predict(*ec[i], i + 1, &oracle, 1, &i, "p");
 
-    max_prediction = max(prediction, max_prediction);
+    max_prediction = std::max(prediction, max_prediction);
   }
   float loss = 0.;
   if (max_label > max_prediction)

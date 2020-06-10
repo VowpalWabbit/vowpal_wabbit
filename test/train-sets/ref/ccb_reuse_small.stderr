@@ -1,0 +1,19 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/ccb_reuse_small.data
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0 0:0.000000        0        8
+0.000000 0.000000            2            2.0 1:0.000000        1        8
+0.000000 0.000000            4            4.0 1:0.000000        1        8
+
+finished run
+number of examples = 4
+weighted example sum = 4.000000
+weighted label sum = 0.000000
+average loss = 0.000000
+total feature number = 32

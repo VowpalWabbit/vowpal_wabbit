@@ -1,8 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <unordered_map>
 #include "reductions.h"
 #include "correctedMath.h"
 
-using namespace std;
 using namespace VW::config;
 
 namespace MARGINAL
@@ -14,8 +17,8 @@ struct expert
   float weight;
 };
 
-typedef pair<double, double> marginal;
-typedef pair<expert, expert> expert_pair;
+typedef std::pair<double, double> marginal;
+typedef std::pair<expert, expert> expert_pair;
 
 struct data
 {
@@ -26,7 +29,7 @@ struct data
   bool unweighted_marginals;
   bool id_features[256];
   features temp[256];  // temporary storage when reducing.
-  unordered_map<uint64_t, marginal> marginals;
+  std::unordered_map<uint64_t, marginal> marginals;
 
   // bookkeeping variables for experts
   bool compete;
@@ -35,7 +38,7 @@ struct data
   float net_weight;          // normalizer for expert weights
   float net_feature_weight;  // the net weight on the feature-based expert
   float alg_loss;            // temporary storage for the loss of the current marginal-based predictor
-  unordered_map<uint64_t, expert_pair>
+  std::unordered_map<uint64_t, expert_pair>
       expert_state;  // pair of weights on marginal and feature based predictors, one per marginal feature
 
   vw* all;
@@ -74,25 +77,25 @@ void make_marginal(data& sm, example& ec)
         uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          cout << "warning: id feature namespace has " << sm.temp[n].size() << " features. Should be a multiple of 2"
-               << endl;
+          std::cout << "warning: id feature namespace has " << sm.temp[n].size()
+                    << " features. Should be a multiple of 2" << std::endl;
           break;
         }
         float second_value = j.value();
         uint64_t second_index = j.index() & mask;
         if (first_value != 1. || second_value != 1.)
         {
-          cout << "warning: bad id features, must have value 1." << endl;
+          std::cout << "warning: bad id features, must have value 1." << std::endl;
           continue;
         }
         uint64_t key = second_index + ec.ft_offset;
         if (sm.marginals.find(key) == sm.marginals.end())  // need to initialize things.
         {
-          sm.marginals.insert(make_pair(key, make_pair(sm.initial_numerator, sm.initial_denominator)));
+          sm.marginals.insert(std::make_pair(key, std::make_pair(sm.initial_numerator, sm.initial_denominator)));
           if (sm.compete)
           {
             expert e = {0, 0, 1.};
-            sm.expert_state.insert(make_pair(key, make_pair(e, e)));
+            sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
           }
         }
         float marginal_pred = (float)(sm.marginals[key].first / sm.marginals[key].second);
@@ -193,7 +196,7 @@ void update_marginal(data& sm, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(data& sm, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, example& ec)
 {
   make_marginal<is_learn>(sm, ec);
   if (is_learn)
@@ -237,21 +240,13 @@ void predict_or_learn(data& sm, LEARNER::single_learner& base, example& ec)
   undo_marginal(sm, ec);
 }
 
-void finish(data& sm)
-{
-  sm.marginals.~unordered_map();
-  if (sm.compete)
-    sm.expert_state.~unordered_map();
-  for (size_t i = 0; i < 256; i++) sm.temp[i].delete_v();
-}
-
 void save_load(data& sm, io_buf& io, bool read, bool text)
 {
   uint64_t stride_shift = sm.all->weights.stride_shift();
 
-  if (io.files.size() == 0)
+  if (io.num_files() == 0)
     return;
-  stringstream msg;
+  std::stringstream msg;
   uint64_t total_size;
   if (!read)
   {
@@ -285,7 +280,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     }
     bin_text_read_write_fixed(io, (char*)&denominator, sizeof(denominator), "", read, msg, text);
     if (read)
-      sm.marginals.insert(make_pair(index << stride_shift, make_pair(numerator, denominator)));
+      sm.marginals.insert(std::make_pair(index << stride_shift, std::make_pair(numerator, denominator)));
     else
       ++iter;
   }
@@ -341,7 +336,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
       {
         expert e1 = {r1, c1, w1};
         expert e2 = {r2, c2, w2};
-        sm.expert_state.insert(make_pair(index << stride_shift, make_pair(e1, e2)));
+        sm.expert_state.insert(std::make_pair(index << stride_shift, std::make_pair(e1, e2)));
       }
       else
         ++exp_iter;
@@ -352,7 +347,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
 
 using namespace MARGINAL;
 
-LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
 {
   free_ptr<MARGINAL::data> d = scoped_calloc_or_throw<MARGINAL::data>();
   std::string marginal;
@@ -380,12 +375,11 @@ LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   d->all = &all;
 
   for (size_t u = 0; u < 256; u++)
-    if (marginal.find((char)u) != string::npos)
+    if (marginal.find((char)u) != std::string::npos)
       d->id_features[u] = true;
 
-  LEARNER::learner<MARGINAL::data, example>& ret =
+  VW::LEARNER::learner<MARGINAL::data, example>& ret =
       init_learner(d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
-  ret.set_finish(finish);
   ret.set_save_load(save_load);
 
   return make_base(ret);
