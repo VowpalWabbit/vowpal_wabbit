@@ -21,7 +21,8 @@ namespace CB
       c += sizeof(LBL_ELM);
       ld->costs.push_back(temp);
     }
-
+    memcpy(&ld->weight, c, sizeof(ld->weight));
+    c += sizeof(ld->weight);
     return c;
   }
 
@@ -40,7 +41,7 @@ namespace CB
   }
 
   float weight(void*);
-  
+
   template <typename LBL = CB::label, typename LBL_ELM = cb_class>
   char* bufcache_label(LBL* ld, char* c)
   {
@@ -51,6 +52,8 @@ namespace CB
       *(LBL_ELM*)c = ld->costs[i];
       c += sizeof(LBL_ELM);
     }
+    memcpy(c, &ld->weight, sizeof(ld->weight));
+    c += sizeof(ld->weight);
     return c;
   }
 
@@ -68,6 +71,7 @@ namespace CB
   {
     auto ld = (LBL*)v;
     ld->costs.clear();
+    ld->weight = 1;
   }
 
   template <typename LBL = CB::label>
@@ -95,5 +99,6 @@ namespace CB
     auto ldD = (LBL*)dst;
     auto ldS = (LBL*)src;
     copy_array(ldD->costs, ldS->costs);
+    ldD->weight = ldS->weight;
   }
 }  // namespace CB
