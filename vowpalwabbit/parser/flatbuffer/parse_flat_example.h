@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vw.h"
-#include "example.h"
+#include "../../vw.h"
+#include "../../example.h"
 #include "generated/example_generated.h"
 
 namespace VW {

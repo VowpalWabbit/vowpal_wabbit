@@ -66,6 +66,7 @@ vw* setup(options_i& options)
 
 int main(int argc, char* argv[])
 {
+  bool should_use_onethread;
   option_group_definition driver_config("driver");
   std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;
