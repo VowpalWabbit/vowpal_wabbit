@@ -613,6 +613,8 @@ void lock_done(parser& p)
   p.done = true;
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.ready_parsed_examples.set_done();
+  // set ready_parsed = true so that the CV in get_example() is not waiting, since there is nothing else to wait for
+ // p.ready_parsed = true;
 }
 
 void set_done(vw& all)
@@ -786,8 +788,20 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
+
 }
+
 }  // namespace VW
+
+void notify_examples_cv(vw& all, example *ex)
+{
+
+  ex->done_parsing.store(true);
+  
+  all.p->example_parsed.notify_one();
+
+
+}
 
 namespace VW
 {
@@ -931,28 +945,45 @@ void finish_example(vw& all, example& ec)
     std::lock_guard<std::mutex> lock(all.p->output_lock);
     ++all.p->finished_examples;
     all.p->output_done.notify_one();
+    //all.p->example_parsed.notify_one();
   }
 }
 }  // namespace VW
 
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
-
+  
+  //don't use same lock as in "pop io and reserve ready example queue spot" lock. Need a lock for the CV.
+  //std::unique_lock<std::mutex> lck(all.p->parser_mutex);
   all.p->end_parsed_examples += examples.size();
 
-  for (auto example : examples)
-  {
-    
+  notify_examples_cv(all, examples[0]);
 
-    all.p->ready_parsed_examples.push(example);
-  }
+
 }
 
 void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example* get_example(parser* p) { return p->ready_parsed_examples.pop(); }
+example* get_example(parser* p) { 
+ 
+  std::unique_lock<std::mutex> lock(p->example_cv_mutex);
+
+  example* ex = p->ready_parsed_examples.pop();
+
+  //don't pop in here, can pop everything. pop before.
+  while(ex != nullptr && !ex->done_parsing) {
+
+    while(!ex->done_parsing) {
+      p->example_parsed.wait(lock);
+    }
+
+  }
+
+  return ex; 
+
+}
 
 float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
 
@@ -1002,6 +1033,8 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 example* example_initializer::operator()(example* ex)
 {
+  //mannally set parser ready flag here
+  ex->done_parsing.store(false);
   memset(&ex->l, 0, sizeof(polylabel));
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();
@@ -1020,7 +1053,20 @@ void adjust_used_index(vw&)
 namespace VW
 {
 
-void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
+void start_parser(vw& all) { 
+  //start io thread
+  //VW::start_io_thread(all);
+
+  //Will let user specify the number of threads on the CL. Default to 1.
+  int userSpecifiedNumThreads = 3;
+
+  for (int i=0; i < userSpecifiedNumThreads; i++){
+    all.parse_threads.push_back(
+      std::thread(main_parse_loop, &all)
+    );
+  }
+
+}
 
 
 }  // namespace VW
@@ -1048,9 +1094,14 @@ namespace VW
 {
 void end_parser(vw& all) { 
 
-  all.parse_thread.join();
+  for(int i=0; i < (int)(all.parse_threads.size()); i++){
+    all.parse_threads[i].join();
+  }
 
+  all.parse_threads.clear();
 
+  //end io thread
+  //VW::end_io_thread(all);
 }
 
 bool is_ring_example(vw& all, example* ae) { return all.p->example_pool.is_from_pool(ae); }
