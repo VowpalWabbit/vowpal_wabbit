@@ -21,6 +21,8 @@
 #include "options.h"
 #include "options_boost_po.h"
 
+#include "io_to_queue.h"
+
 using namespace VW::config;
 
 vw* setup(options_i& options)
@@ -121,12 +123,14 @@ int main(int argc, char* argv[])
     }
     else
     {
+      VW::start_io_thread(all);
       VW::start_parser(all);
       if (alls.size() == 1)
         VW::LEARNER::generic_driver(all);
       else
         VW::LEARNER::generic_driver(alls);
       VW::end_parser(all);
+      VW::end_io_thread(all);
     }
 
     for (vw* v : alls)
