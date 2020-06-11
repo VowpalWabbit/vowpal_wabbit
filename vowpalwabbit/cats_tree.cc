@@ -11,7 +11,7 @@
 
 
 using namespace VW::config;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 
 using CB::cb_class;
 using std::vector;
@@ -389,7 +389,7 @@ base_learner* setup(options_i& options, vw& all)
   // all.delete_prediction = ACTION_SCORE::delete_action_scores; //TODO: commented
 
   learner<cats_tree, example>& l =
-      init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type::multiclass);
+      init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type_t::multiclass);
   // TODO: changed to prediction_type::multiclass
 
   l.set_finish(finish);

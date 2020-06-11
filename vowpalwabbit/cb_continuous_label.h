@@ -29,5 +29,6 @@ namespace VW { namespace cb_continuous
 
   std::string to_string(const continuous_label_elm& elm);
   std::string to_string(continuous_label& lbl);
+
   }  // namespace cb_continuous
   }  // namespace VW

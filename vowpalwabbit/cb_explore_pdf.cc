@@ -5,7 +5,7 @@
 #include "parse_args.h"
 
 // Aliases
-using LEARNER::single_learner;
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::config::make_option;
 using VW::config::option_group_definition;
@@ -110,7 +110,7 @@ namespace continuous_action
 
     LEARNER::learner<cb_explore_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base),
         predict_or_learn<true>,
-        predict_or_learn<false>, 1, prediction_type::pdf);
+        predict_or_learn<false>, 1, prediction_type_t::pdf);
 
     return make_base(l);
   }

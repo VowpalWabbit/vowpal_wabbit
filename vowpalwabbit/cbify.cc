@@ -126,7 +126,7 @@ inline void delete_it(T* p)
     delete p;
 }
 
-void finish_cbify_reg(cbify_reg& data, ostream* trace_stream)
+void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
   if (trace_stream != nullptr)
     (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
@@ -635,9 +635,9 @@ void output_example_regression(vw& all, cbify& data, example& ec)
 }
 
 void output_cb_reg_predictions(
-    v_array<int>& predict_file_descriptors, continuous_label& label)
+  std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, continuous_label& label)
 {
-  stringstream strm;
+  std::stringstream strm;
   if (label.costs.size() == 1)
   {
     continuous_label_elm cost = label.costs[0];
@@ -652,12 +652,9 @@ void output_cb_reg_predictions(
     strm << "ERR Too many costs found. Expecting one." << std::endl;
   }
   const std::string str = strm.str();
-  for (const int f : predict_file_descriptors)
+  for (auto& f : predict_file_descriptors)
   {
-    if (f > 0)
-    {
-      /*size_t t = */io_buf::write_file_or_socket(f, str.c_str(), str.size());
-    }
+      f->write(str.c_str(), str.size());
   }
 }
 
@@ -820,13 +817,13 @@ base_learner* cbify_setup(options_i& options, vw& all)
       if (use_discrete)
       {
         l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
-            predict_or_learn_regression_discrete<false>, 1, prediction_type::scalar);
+            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar);
         l->set_finish_example(finish_example_cb_reg_discrete);  // todo: check
       }
       else
       {
         l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-            prediction_type::scalar);
+            prediction_type_t::scalar);
         l->set_finish_example(finish_example_cb_reg_continous);
       }
     }

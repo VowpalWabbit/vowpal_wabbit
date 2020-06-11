@@ -6,7 +6,7 @@
 #include "../explore/explore.h"
 
 // Aliases
-using LEARNER::single_learner;
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
@@ -124,7 +124,7 @@ namespace continuous_action
     p_reduction->init(as_singleline(p_base), &all.random_seed);
 
     LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-        predict_or_learn<false>, 1, prediction_type::action_pdf_value);
+        predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
 
     return make_base(l);
   }

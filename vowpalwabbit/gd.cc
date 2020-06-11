@@ -22,7 +22,6 @@
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
-#include "floatbits.h"
 #include "debug_log.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
@@ -30,6 +29,7 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+using std::endl;
 
 VW_DEBUG_ENABLE(false)
 

@@ -5,7 +5,7 @@
 #include "debug_log.h"
 
 // Aliases
-using LEARNER::single_learner;
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
@@ -87,7 +87,7 @@ class reduction_output
 {
  public:
   static void report_progress(vw& all, cats&, example& ec);
-  static void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::action_pdf_value& prediction);
+  static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::action_pdf_value& prediction);
 
  private:
   static inline bool does_example_have_label(example& ec);
@@ -104,13 +104,12 @@ void finish_example(vw& all, cats& data, example& ec)
 }
 
 void reduction_output::output_predictions(
-    v_array<int>& predict_file_descriptors, actions_pdf::action_pdf_value& prediction)
+  std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::action_pdf_value& prediction)
 {
   // output to the prediction to all files
   const std::string str = to_string(prediction, true);
-  for (const int f : predict_file_descriptors)
-    if (f > 0)
-      io_buf::write_file_or_socket(f, str.c_str(), str.size());
+  for (auto& f : predict_file_descriptors)
+      f->write(str.c_str(), str.size());
 }
 
 // "average loss" "since last" "example counter" "example weight"
@@ -131,7 +130,7 @@ inline bool reduction_output::does_example_have_label(example& ec)
 
 void reduction_output::print_update_cb_cont(vw& all, example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     all.sd->print_update(all.holdout_set_off, all.current_pass,
         to_string(ec.l.cb_cont.costs[0]),  // Label
@@ -173,7 +172,7 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
   p_reduction->init(as_singleline(p_base));
 
   LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type::action_pdf_value);
+      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
 
   l.set_finish_example(finish_example);
 

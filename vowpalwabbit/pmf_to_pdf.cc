@@ -132,7 +132,7 @@ namespace VW { namespace pmf_to_pdf
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
   {
-    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
     {
       std::stringstream label_string;
       if (is_test)
@@ -190,7 +190,8 @@ namespace VW { namespace pmf_to_pdf
     sprintf(temp_str, "%d:%f", maxid, maxprob);
     sso << temp_str;
 
-    for (int sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
+    for (auto& sink : all.final_prediction_sink)
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
     print_update(all, CB::cb_label.test_label(&ld), ec, sso);
   }
@@ -236,7 +237,7 @@ namespace VW { namespace pmf_to_pdf
     data->_p_base = p_base;
 
     learner<pmf_to_pdf::reduction, example>& l =
-        init_learner(data, p_base, learn, predict, 1, prediction_type::pdf);
+        init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);
 
     l.set_finish(finish);
 
