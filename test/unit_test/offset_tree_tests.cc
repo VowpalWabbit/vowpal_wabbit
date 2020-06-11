@@ -3,7 +3,7 @@
 #include <boost/test/unit_test.hpp>
 #include <utility>
 #include "offset_tree.h"
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace std;
 
 namespace VW{ namespace offset_tree {

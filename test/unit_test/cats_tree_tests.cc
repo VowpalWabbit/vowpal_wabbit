@@ -4,7 +4,7 @@
 #include "cats_tree.h"
 #include "cats_tree_tests.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace std;
 
 namespace VW

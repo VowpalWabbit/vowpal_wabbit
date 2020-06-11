@@ -6,7 +6,7 @@
 #include "parse_args.h"  // setup_base()
 #include "action_score.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace std;
 
 
