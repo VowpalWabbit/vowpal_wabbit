@@ -323,7 +323,7 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    print_result_by_ref(all.stdout_fileno, ec.pred.scalar, -1, ec.tag);
+    print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -1013,7 +1013,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       VW::set_weight(all, constant, 0, g.initial_constant);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = all.save_resume;
     std::stringstream msg;

@@ -9,7 +9,9 @@ container:
   endpoint: DockerHub
 
 steps:
-- bash: sudo apt install -y valgrind
+- bash: |
+    sudo apt update -y
+    sudo apt install -y valgrind
   displayName: Install Valgrind
 - bash: ./.scripts/linux/build-minimal.sh Release
   displayName: Build C++ VW binary

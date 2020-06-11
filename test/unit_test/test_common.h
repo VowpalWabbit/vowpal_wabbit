@@ -4,8 +4,10 @@
 #include <boost/test/test_tools.hpp>
 
 #include <vector>
+#include <string>
 
 #include "action_score.h"
+#include "vw.h"
 
 constexpr float FLOAT_TOL = 0.0001f;
 
@@ -33,3 +35,12 @@ void check_collections_exact(const ContainerOneT<T>& lhs, const ContainerTwoT<T>
 {
   BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 }
+
+template <typename T>
+void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const std::vector<std::vector<T>>& rhs) {
+  for (size_t i=0; i < lhs.size(); i++){
+    BOOST_CHECK_EQUAL_COLLECTIONS(lhs[i].begin(), lhs[i].end(), rhs[i].begin(), rhs[i].end());
+  }
+}
+
+multi_ex parse_json(vw& all, const std::string& line);

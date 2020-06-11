@@ -76,9 +76,11 @@ struct stagewise_poly
 #endif  // DEBUG
 
     //synth_ec.feature_space[tree_atomics].delete_v();
-    synth_ec.indices.delete_v();
     free(sd);
     free(depthsbits);
+
+    // Intentionally do not clear the unions here.
+    synth_ec.delete_unions(nullptr, nullptr);
   }
 };
 
@@ -641,7 +643,7 @@ void finish_example(vw &all, stagewise_poly &poly, example &ec)
 
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     bin_text_read_write_fixed(
