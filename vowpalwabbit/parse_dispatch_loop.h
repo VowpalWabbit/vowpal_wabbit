@@ -15,18 +15,9 @@ struct io_state;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
+
   v_array<example*> examples = v_init<example*>();
   size_t example_number = 0;  // for variable-size batch learning algorithms
-
-  io_state curr_io_state;
-
-  all.p->_io_state = curr_io_state ;
-
-  std::thread io_queue_th([&all]() 
-  {
-    io_lines_toqueue(all);
-
-  });
 
   try
   {
@@ -34,18 +25,21 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     while (!all.p->done)
     {
 
-      examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
+      example* example_ptr = &VW::get_unused_example(&all);
+      examples.push_back(example_ptr);
 
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
           all.p->reader(&all, examples) > 0)
       {
-
+       
         VW::setup_examples(all, examples);
         example_number += examples.size();
+
         dispatch(all, examples);
       }
       else
       {
+
         reset_source(all, all.num_bits);
         all.do_reset_source = false;
         all.passes_complete++;
@@ -60,6 +54,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           all.passes_complete = 0;
           all.pass_length = all.pass_length * 2 + 1;
         }
+
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
           lock_done(*all.p);
@@ -87,9 +82,6 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     // Stash the exception so it can be thrown on the main thread.
     all.p->exc_ptr = std::current_exception();
   }
-
-  //move to end_io_thread function
-  io_queue_th.join();
 
   lock_done(*all.p);
   examples.delete_v();
