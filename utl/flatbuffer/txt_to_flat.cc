@@ -67,7 +67,6 @@ vw* setup(options_i& options)
 int main(int argc, char* argv[])
 {
   option_group_definition driver_config("driver");
-  driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
   std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;
   std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));

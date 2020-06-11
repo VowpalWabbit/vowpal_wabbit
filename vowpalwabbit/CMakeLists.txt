@@ -274,8 +274,8 @@ set(vw_all_sources
   warm_cb.cc
 )
 
-add_dependencies(vw fbschemas)
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
+add_dependencies(vw fbschemas)
 
 target_link_libraries(vw
   PUBLIC

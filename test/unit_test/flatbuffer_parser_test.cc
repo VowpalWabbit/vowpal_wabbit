@@ -52,7 +52,7 @@ sample_flatbuffer(flatbuilder& build, VW::parsers::flatbuffer::Label label_type)
   auto label = get_label(build, label_type);
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(build._builder, "hello", 2.23, constant));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(build._builder, "a", constant, &fts));
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(build._builder, nullptr, constant_namespace, &fts));
   examplecollection.push_back(VW::parsers::flatbuffer::CreateExampleDirect(build._builder, &namespaces, label_type, label));
 
   return VW::parsers::flatbuffer::CreateExampleCollectionDirect(build._builder, &examplecollection);
@@ -79,8 +79,8 @@ BOOST_AUTO_TEST_CASE(check_flatbuffer)
   BOOST_CHECK_EQUAL(all->data->examples()->Get(0)->namespaces()->Get(0)->features()->size(), 1);
   BOOST_CHECK_CLOSE(all->data->examples()->Get(0)->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
   BOOST_CHECK_CLOSE(all->data->examples()->Get(0)->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(all->data->examples()->Get(0)->namespaces()->Get(0)->name()->c_str(), "a");
-  BOOST_CHECK_EQUAL(all->data->examples()->Get(0)->namespaces()->Get(0)->hash(), constant);
+  // BOOST_CHECK_EQUAL(all->data->examples()->Get(0)->namespaces()->Get(0)->name()->c_str(), constant_namespace);
+  BOOST_CHECK_EQUAL(all->data->examples()->Get(0)->namespaces()->Get(0)->hash(), constant_namespace);
   BOOST_CHECK_EQUAL(all->data->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
   BOOST_CHECK_EQUAL(all->data->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
   BOOST_CHECK_CLOSE(all->data->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->value(), 2.23, FLOAT_TOL);
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(check_parsed_flatbuffer_examples)
   BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 0.f, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[0]->l.simple.weight, 1.f, FLOAT_TOL);
 
-  BOOST_CHECK_EQUAL(examples[0]->indices[0], 'a');
+  BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
   BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].indicies[0], constant);
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
   VW::finish_example(*all, examples);

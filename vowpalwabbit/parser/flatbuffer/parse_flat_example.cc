@@ -97,16 +97,35 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
     auto label = static_cast<const VW::parsers::flatbuffer::CCBLabel*>(eg->label());
 
     ae->l.conditional_contextual_bandit.weight = label->weight();
-    //
-    for (auto i=0;i<label->explicit_included_actions()->Length();i++){
-      ae->l.conditional_contextual_bandit.explicit_included_actions.push_back(label->explicit_included_actions()->Get(i));
-    }
 
-    ae->l.conditional_contextual_bandit.outcome->cost = label->outcome()->cost();
+    if (label->example_type() == 1) ae->l.conditional_contextual_bandit.type = CCB::example_type::shared;
+    else if (label->example_type() == 2) ae->l.conditional_contextual_bandit.type = CCB::example_type::action;
+    else if (label->example_type() == 3) {
+      ae->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+
+      if (label->explicit_included_actions() != nullptr){
+        for (auto i=0;i<label->explicit_included_actions()->Length();i++){
+          ae->l.conditional_contextual_bandit.explicit_included_actions.push_back(label->explicit_included_actions()->Get(i));
+        }
+      }
+      else if (label->outcome() != nullptr){
+        auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
+        ccb_outcome.cost = label->outcome()->cost();
+        ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
+
+        for (auto const& as : *(label->outcome()->probabilities()))
+          ccb_outcome.probabilities.push_back({as->action(), as->score()});
+
+        ae->l.conditional_contextual_bandit.outcome = &ccb_outcome;
+      }
+    else ae->l.conditional_contextual_bandit.type = CCB::example_type::unset;
+      // ae->l.conditional_contextual_bandit.outcome->cost = label->outcome()->cost();
+    }
   }
   else if (label_type == Label_MultiClass){
     auto label = static_cast<const VW::parsers::flatbuffer::MultiClass*>(eg->label());
-    ae->l.multi.label = label->label();
+    uint32_t word = label->label();
+    ae->l.multi.label = all->sd->ldict ? (uint32_t)all->sd->ldict->get(std::to_string(word)) : word;
     ae->l.multi.weight = label->weight();
     // ae->l.multi = label->weight();
   }
@@ -128,7 +147,7 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
       ae->l.cs.costs.push_back(f); 
     }
   }  
-  else {
+  else if (label_type == Label_CB_EVAL_Label){
     auto label = static_cast<const VW::parsers::flatbuffer::CB_EVAL_Label*>(eg->label());
 
     ae->l.cb_eval.action = label->action();
@@ -142,6 +161,30 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
       f.partial_prediction = label->event()->costs()->Get(i)->partial_pred();
       ae->l.cb_eval.event.costs.push_back(f);
     }
+  }
+  else if (label_type == Label_Slates_Label) {
+    auto label = static_cast<const VW::parsers::flatbuffer::Slates_Label*>(eg->label());
+
+    ae->l.slates.weight = label->weight();
+
+    if (label->example_type() == 1) {
+      ae->l.slates.labeled = label->labeled();
+      ae->l.slates.cost = label->cost();
+    }
+    else if (label->example_type() == 2) ae->l.slates.slot_id = label->slot();
+    else if (label->example_type() == 3) {
+      ae->l.slates.labeled = label->labeled();
+      ae->l.slates.probabilities = v_init<ACTION_SCORE::action_score>();
+
+      for (auto const& as : *(label->probabilities()))
+        ae->l.slates.probabilities.push_back({as->action(), as->score()});    
+    }
+    else {
+      THROW("Example type not understood")
+    }
+  }
+  else {
+    // No label
   }
 }
 

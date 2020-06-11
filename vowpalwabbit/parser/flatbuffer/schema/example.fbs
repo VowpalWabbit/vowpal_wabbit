@@ -8,7 +8,7 @@ table Feature {
 
 table Namespace {
   name:string;
-  hash:uint64;
+  hash:uint8;
   features:[Feature];
 }
 
@@ -43,7 +43,7 @@ table MultiClass {
   weight:float;
 }
 
-enum CCB_example_type : byte {unset=0, shared=1, action=2, slot=3}
+enum CCB_Slates_example_type : byte {unset=0, shared=1, action=2, slot=3}
 
 table action_score {
   action:uint32;
@@ -56,7 +56,7 @@ table CCB_outcome {
 }
 
 table CCBLabel {
-  example_type:CCB_example_type;
+  example_type:CCB_Slates_example_type;
   outcome:CCB_outcome;
   explicit_included_actions:[uint32];
   weight:float;
@@ -77,7 +77,16 @@ table no_label {
   label:ubyte;
 }
 
-union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Label, CS_Label, no_label}
+table Slates_Label {
+  example_type:CCB_Slates_example_type;
+  weight:float;
+  labeled:bool;
+  cost:float;
+  slot:uint32;
+  probabilities:[action_score];
+}
+
+union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Label, CS_Label, no_label, Slates_Label}
 
 table Example {
   namespaces:[Namespace];

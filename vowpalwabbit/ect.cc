@@ -338,6 +338,7 @@ void learn(ect& e, single_learner& base, example& ec)
 base_learner* ect_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
+  // all.label_type = label_type_t::mc;
   std::string link;
   option_group_definition new_options("Error Correcting Tournament Options");
   new_options.add(make_option("ect", data->k).keep().help("Error correcting tournament with <k> labels"))
@@ -359,6 +360,7 @@ base_learner* ect_setup(options_i& options, vw& all)
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
   learner<ect, example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, all.p, wpp);
+  all.label_type = label_type_t::mc;
 
   return make_base(l);
 }
