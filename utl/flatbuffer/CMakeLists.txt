@@ -8,7 +8,7 @@ include_directories("../../explore" "../../vowpalwabbit")
 
 configure_file(../../vowpalwabbit/config.h.in config.h)
 
-add_executable(vwtxt_to_flatbuf txt_to_flat.cc vw_to_flat.cc vw_to_flat.h)
-target_include_directories(vwtxt_to_flatbuf PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)
-#add_dependencies(vwtxt_to_flatbuf fbschemas)
-target_link_libraries(vwtxt_to_flatbuf PRIVATE vw allreduce Boost::boost Boost::program_options ZLIB::ZLIB)
+add_executable(to_flatbuff txt_to_flat.cc vw_to_flat.cc vw_to_flat.h)
+target_include_directories(to_flatbuff PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)
+#add_dependencies(to_flatbuff fbschemas)
+target_link_libraries(to_flatbuff PRIVATE vw allreduce Boost::boost Boost::program_options ZLIB::ZLIB)

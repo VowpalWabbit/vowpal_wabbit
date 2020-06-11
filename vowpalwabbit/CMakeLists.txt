@@ -372,8 +372,8 @@ add_executable(vw-bin main.cc)
 target_link_libraries(vw-bin PRIVATE VowpalWabbit::vw Boost::program_options)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
-#add_executable(vwtxt_to_flatbuf txt_to_flat.cc ${vw_all_sources} ${vw_all_headers})
-#target_link_libraries(vwtxt_to_flatbuf VowpalWabbit::vw VowpalWabbit::explore)
+#add_executable(to_flatbuff txt_to_flat.cc ${vw_all_sources} ${vw_all_headers})
+#target_link_libraries(to_flatbuff VowpalWabbit::vw VowpalWabbit::explore)
 
 if(STATIC_LINK_VW)
   target_link_libraries(vw-bin PRIVATE ${unix_static_flag})
