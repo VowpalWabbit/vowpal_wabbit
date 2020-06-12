@@ -26,7 +26,7 @@
 #define SVM_KER_RBF 1
 #define SVM_KER_POLY 2
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 using std::endl;
@@ -331,7 +331,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   // TODO: check about initialization
 
   // params.all->opts_n_args.trace_message<<"Save load svm "<<read<<" "<<text<< endl;
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream msg;
   bin_text_read_write_fixed(model_file, (char*)&(model->num_support), sizeof(model->num_support), "", read, msg, text);
@@ -857,7 +857,7 @@ void learn(svm_params& params, single_learner&, example& ec)
   }
 }
 
-LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 {
   auto params = scoped_calloc_or_throw<svm_params>();
   std::string kernel_type;

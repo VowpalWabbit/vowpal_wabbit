@@ -25,7 +25,7 @@ my $VW;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
-$ENV{'PATH'} .= ':../build/vowpalwabbit:test:../vowpalwabbit:vowpalwabbit:.';
+$ENV{'PATH'} = '../build/vowpalwabbit:test:../vowpalwabbit:vowpalwabbit:.:' . $ENV{'PATH'};
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
@@ -44,7 +44,8 @@ my $ErrorCount = 0;
 # word by word:
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
-my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
+# 160 used to sufficient but there are new tests with VERY wide outputs - so it needs to be huge...
+my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 1500';
 $WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
@@ -1826,5 +1827,10 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.readable.txt
+
+# Test 211: cb_explore_adf with rnd exploration
+{VW} --cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict
+    train-sets/ref/cbe_adf_rnd.stderr
+    pred-sets/ref/cbe_adf_rnd.predict
 
 # Do not delete this line or the empty line above it

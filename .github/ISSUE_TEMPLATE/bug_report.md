@@ -2,7 +2,7 @@
 name: Bug report
 about: Report a bug in VW
 title: ''
-labels: bug
+labels: 'Bug'
 assignees: ''
 
 ---

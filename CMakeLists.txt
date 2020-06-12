@@ -8,8 +8,14 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+if(MSVC)
+  # Do nothing as the default compile flags for MSVC are okay.
+else()
+  # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
+  # is O2 and Release is O3, override that here:
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+endif()
+
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
@@ -98,7 +104,7 @@ if((NOT PROFILE) AND (NOT GCOV))
 endif()
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
+set(linux_flags -Wno-cast-function-type -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
 
 if(LTO)
 	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

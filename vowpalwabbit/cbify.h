@@ -5,5 +5,5 @@
 #pragma once
 #include "reductions_fwd.h"
 
-LEARNER::base_learner* cbify_setup(VW::config::options_i& options, vw& all);
-LEARNER::base_learner* cbifyldf_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* cbify_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* cbifyldf_setup(VW::config::options_i& options, vw& all);
