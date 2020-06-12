@@ -107,13 +107,6 @@ void io_buf::buf_write(char*& pointer, size_t n)
   }
 }
 
-//make all data that was writen available for reading
-void io_buf::flip_from_write_to_read()
-{
-  space.end() = head;
-  head = space.begin();
-}
-
 size_t io_buf::copy_to(void *dst, size_t max_size)
 {
   size_t to_copy = std::min(unflushed_bytes_count(), max_size);
