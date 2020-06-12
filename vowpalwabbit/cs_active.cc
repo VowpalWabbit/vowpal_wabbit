@@ -13,7 +13,7 @@
 //#define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
 
@@ -51,7 +51,7 @@ struct cs_active
   bool use_domination;
 
   vw* all;  // statistics, loss
-  LEARNER::base_learner* l;
+  VW::LEARNER::base_learner* l;
 
   v_array<lq_data> query_data;
 

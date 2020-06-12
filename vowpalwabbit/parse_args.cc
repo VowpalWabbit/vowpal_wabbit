@@ -37,6 +37,7 @@
 #include "cb_explore_adf_first.h"
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_rnd.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
 #include "mwt.h"
@@ -108,19 +109,19 @@ bool ends_with(std::string const& fullString, std::string const& ending)
   }
 }
 
-uint64_t hash_file_contents(io_buf* io, int f)
+uint64_t hash_file_contents(VW::io::reader* f)
 {
   uint64_t v = 5289374183516789128;
-  unsigned char buf[1024];
+  char buf[1024];
   while (true)
   {
-    ssize_t n = io->read_file(f, buf, 1024);
+    ssize_t n = f->read(buf, 1024);
     if (n <= 0)
       break;
     for (ssize_t i = 0; i < n; i++)
     {
       v *= 341789041;
-      v += buf[i];
+      v += static_cast<uint64_t>(buf[i]);
     }
   }
   return v;
@@ -154,7 +155,7 @@ std::string find_in_path(std::vector<std::string> paths, std::string fname)
   return "";
 }
 
-void parse_dictionary_argument(vw& all, std::string str)
+void parse_dictionary_argument(vw& all, const std::string& str)
 {
   if (str.length() == 0)
     return;
@@ -174,14 +175,18 @@ void parse_dictionary_argument(vw& all, std::string str)
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
-  io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
-  int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0)
+  std::unique_ptr<VW::io::reader> file_adapter;
+  try
+  {
+    file_adapter = is_gzip ? VW::io::open_compressed_file_reader(fname) : VW::io::open_file_reader(fname);
+  }
+  catch (...)
+  {
     THROW("error: cannot read dictionary from file '" << fname << "'"
                                                       << ", opening failed");
+  }
 
-  uint64_t fd_hash = hash_file_contents(io, fd);
-  io->close_file();
+  uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
   if (!all.logger.quiet)
     all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
@@ -189,23 +194,24 @@ void parse_dictionary_argument(vw& all, std::string str)
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
+  {
     if (all.loaded_dictionaries[id].file_hash == fd_hash)
     {
       all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
-      io->close_file();
-      delete io;
       return;
     }
-
-  fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
-  if (fd < 0)
-  {
-    delete io;
-    THROW("error: cannot re-read dictionary from file '" << fname << "'"
-                                                         << ", opening failed");
   }
 
-  std::shared_ptr<feature_dict> map = std::make_shared<feature_dict>();
+  std::unique_ptr<VW::io::reader> fd;
+  try
+  {
+    fd = VW::io::open_file_reader(fname);
+  }
+  catch (...)
+  {
+    THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");
+  }
+  auto map = std::make_shared<feature_dict>();
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
@@ -221,7 +227,7 @@ void parse_dictionary_argument(vw& all, std::string str)
     pos = 0;
     do
     {
-      nread = io->read_file(fd, &rc, 1);
+      nread = fd->read(&rc, 1);
       if ((rc != EOF) && (nread > 0))
         buffer[pos++] = rc;
       if (pos >= size - 1)
@@ -233,8 +239,6 @@ void parse_dictionary_argument(vw& all, std::string str)
           free(buffer);
           VW::dealloc_example(all.p->lp.delete_label, *ec);
           free(ec);
-          io->close_file();
-          delete io;
           THROW("error: memory allocation failed in reading dictionary");
         }
         else
@@ -278,8 +282,6 @@ void parse_dictionary_argument(vw& all, std::string str)
     }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  io->close_file();
-  delete io;
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
 
@@ -438,25 +440,23 @@ input_options parse_source(vw& all, options_i& options)
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
+      .add(make_option("no_daemon", all.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
                .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
 
 
   options.add_and_parse(input_options);
 
-  // If the option provider is program_options try and retrieve data as a positional parameter.
-  options_i* options_ptr = &options;
-  auto boost_options = dynamic_cast<options_boost_po*>(options_ptr);
-  if (boost_options)
+  // Check if the options provider has any positional args. Only really makes sense for command line, others just return
+  // an empty list.
+  const auto positional_tokens = options.get_positional_tokens();
+  if (positional_tokens.size() == 1)
   {
-    std::string data;
-    if (boost_options->try_get_positional_option_token("data", data, -1))
-    {
-      if (all.data_filename != data)
-      {
-        all.data_filename = data;
-      }
-    }
+    all.data_filename = positional_tokens[0];
+  }
+  else if (positional_tokens.size() > 1)
+  {
+    all.trace_message << "Warning: Multiple data files passed as positional parameters, only the first one will be read and the rest will be ignored." << endl;
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
@@ -471,12 +471,6 @@ input_options parse_source(vw& all, options_i& options)
   {
     parsed_options.cache_files.push_back(all.data_filename + ".cache");
   }
-
-  if (parsed_options.compressed)
-    set_compressed(all.p);
-
-  if (ends_with(all.data_filename, ".gz"))
-    set_compressed(all.p);
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
@@ -727,7 +721,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   }
 
   // prepare namespace interactions
-  std::vector<std::string> expanded_interactions;
+  std::vector<std::vector<namespace_index>> expanded_interactions;
 
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
@@ -759,8 +753,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << i << " ";
     }
 
+    std::vector<std::vector<namespace_index>> new_quadratics;
+    for (const auto& i : quadratics){
+      new_quadratics.emplace_back(i.begin(), i.end());
+    }
+
     expanded_interactions =
-        INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
+        INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.logger.quiet)
       all.trace_message << endl;
@@ -777,8 +776,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_cubic =
-        INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
+    std::vector<std::vector<namespace_index>> new_cubics;
+    for (const auto& i : cubics){
+      new_cubics.emplace_back(i.begin(), i.end());
+    }
+
+    std::vector<std::vector<namespace_index>> exp_cubic =
+        INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!all.logger.quiet)
@@ -789,6 +793,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     if (!all.logger.quiet)
       all.trace_message << "creating features for following interactions: ";
+
     for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
@@ -796,7 +801,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
+    std::vector<std::vector<namespace_index>> new_interactions;
+    for (const auto& i : interactions){
+      new_interactions.emplace_back(i.begin(), i.end());
+    }
+
+    std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!all.logger.quiet)
@@ -1122,21 +1132,18 @@ void parse_output_preds(options_i& options, vw& all)
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back((size_t)1);  // stdout
+      all.final_prediction_sink.push_back(VW::io::open_stdout());  // stdout
     }
     else
     {
-      const char* fstr = predictions.c_str();
-      int f;
-      // TODO can we migrate files to fstreams?
-#ifdef _WIN32
-      _sopen_s(&f, fstr, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-      f = open(fstr, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-      if (f < 0)
-        all.trace_message << "Error opening the predictions file: " << fstr << endl;
-      all.final_prediction_sink.push_back((size_t)f);
+      try
+      {
+        all.final_prediction_sink.push_back(VW::io::open_file_writer(predictions));
+      }
+      catch (...)
+      {
+        all.trace_message << "Error opening the predictions file: " << predictions << endl;
+      }
     }
   }
 
@@ -1150,17 +1157,12 @@ void parse_output_preds(options_i& options, vw& all)
                           << endl;
     }
     if (raw_predictions == "stdout")
-      all.raw_prediction = 1;  // stdout
+    {
+      all.raw_prediction = VW::io::open_stdout();
+    }
     else
     {
-      const char* t = raw_predictions.c_str();
-      int f;
-#ifdef _WIN32
-      _sopen_s(&f, t, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-#else
-      f = open(t, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-#endif
-      all.raw_prediction = f;
+      all.raw_prediction = VW::io::open_file_writer(raw_predictions);
     }
   }
 }
@@ -1222,7 +1224,7 @@ void load_input_model(vw& all, io_buf& io_temp)
   }
 }
 
-LEARNER::base_learner* setup_base(options_i& options, vw& all)
+VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
   auto setup_func = all.reduction_stack.top();
   all.reduction_stack.pop();
@@ -1289,6 +1291,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
   all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::rnd::setup);
   all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
   all.reduction_stack.push(VW::cb_explore_adf::first::setup);
   all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
@@ -1297,7 +1300,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_sample_setup);
   all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
   all.reduction_stack.push(CCB::ccb_explore_adf_setup);
-  all.reduction_stack.push(slates::slates_setup);
+  all.reduction_stack.push(VW::slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
   all.reduction_stack.push(cbify_setup);
@@ -1331,7 +1334,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     options.add_and_parse(vw_args);
-    
+
     if (ring_size_tmp <= 0)
     {
       THROW("ring_size should be positive");
@@ -1897,56 +1900,6 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception_thrown = true;
   }
 
-  if (all.l != nullptr)
-  {
-    all.l->finish();
-    free_it(all.l);
-  }
-
-  // Check if options object lifetime is managed internally.
-  if (all.should_delete_options)
-    delete all.options;
-
-  // TODO: migrate all finalization into parser destructor
-  if (all.p != nullptr)
-  {
-    free_parser(all);
-    finalize_source(all.p);
-    all.p->parse_name.clear();
-    all.p->parse_name.delete_v();
-    delete all.p;
-  }
-
-  bool seeded;
-  if (all.weights.seeded() > 0)
-    seeded = true;
-  else
-    seeded = false;
-  if (!seeded)
-  {
-    if (all.sd->ldict)
-    {
-      all.sd->ldict->~namedlabels();
-      free(all.sd->ldict);
-    }
-    free(all.sd);
-  }
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
-    if (all.final_prediction_sink[i] != 1)
-      io_buf::close_file_or_socket(all.final_prediction_sink[i]);
-  all.final_prediction_sink.delete_v();
-
-  all.loaded_dictionaries.clear();
-  // TODO: should we be clearing the namespace dictionaries?
-  for (auto & ns_dict : all.namespace_dictionaries)
-  {
-    ns_dict.clear();
-  }
-
-  delete all.loss;
-
-  delete all.all_reduce;
-
   if (delete_all)
     delete &all;
 
@@ -1954,4 +1907,3 @@ void finish(vw& all, bool delete_all)
     throw finalize_regressor_exception;
 }
 }  // namespace VW
-

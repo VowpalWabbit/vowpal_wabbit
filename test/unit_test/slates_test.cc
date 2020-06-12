@@ -1,4 +1,6 @@
+#ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -21,26 +23,26 @@ struct test_base
   PredictFunc test_predict_func;
 
   test_base(LearnFunc learn, PredictFunc predict) : test_learn_func(learn), test_predict_func(predict) {}
-  static void invoke_learn(test_base<LearnFunc, PredictFunc>& data, LEARNER::multi_learner& base, multi_ex& examples)
+  static void invoke_learn(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& /*base*/, multi_ex& examples)
   {
       data.test_learn_func(examples);
   }
-  static void invoke_predict(test_base<LearnFunc, PredictFunc>& data, LEARNER::multi_learner& base, multi_ex& examples)
+  static void invoke_predict(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& /*base*/, multi_ex& examples)
   {
       data.test_predict_func(examples);
   }
 };
 
 template <typename LearnFunc, typename PredictFunc>
-LEARNER::base_learner* make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
+VW::LEARNER::base_learner* make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = scoped_calloc_or_throw<test_base<LearnFunc, PredictFunc>>(learn, predict);
-  using func = void (*)(test_base<LearnFunc, PredictFunc>&, LEARNER::multi_learner&, multi_ex&);
+  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::multi_learner&, multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
-  auto& l = LEARNER::init_learner(test_base_data, (LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
+  auto& l = VW::LEARNER::init_learner(test_base_data, (VW::LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
       static_cast<func>(predict_fptr), 0, prediction_type_t::decision_probs);
-  return LEARNER::make_base(l);
+  return VW::LEARNER::make_base(l);
 }
 
 BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
@@ -85,8 +87,8 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
     examples[0]->pred.decision_scores.push_back(slot_one);
   };
   auto test_base_learner =
-      LEARNER::as_multiline(make_test_learner(mock_learn_or_pred, mock_learn_or_pred));
-  slates::slates_data slate_reduction;
+      VW::LEARNER::as_multiline(make_test_learner(mock_learn_or_pred, mock_learn_or_pred));
+  VW::slates::slates_data slate_reduction;
   slate_reduction.learn(*test_base_learner, examples);
 
   // This confirms that the reductions converted the CCB space decision scores back to slates action index space.

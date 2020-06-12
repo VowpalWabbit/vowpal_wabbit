@@ -75,8 +75,8 @@ struct cb_explore_adf_base
   {
   }
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
-  static void predict(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
-  static void learn(cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples);
+  static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
+  static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
  private:
   void output_example_seq(vw& all, multi_ex& ec_seq);
@@ -85,7 +85,7 @@ struct cb_explore_adf_base
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
-    cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
   data._known_cost = CB_ADF::get_observed_cost(examples);
@@ -108,7 +108,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
-    cb_explore_adf_base<ExploreType>& data, LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
   if (label_example != nullptr)
@@ -158,9 +158,9 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink) ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -172,7 +172,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, &ec_seq, true);
@@ -184,8 +184,8 @@ void cb_explore_adf_base<ExploreType>::output_example_seq(vw& all, multi_ex& ec_
   if (ec_seq.size() > 0)
   {
     output_example(all, ec_seq);
-    if (all.raw_prediction > 0)
-      all.print_text_by_ref(all.raw_prediction, "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr)
+      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
   }
 }
 

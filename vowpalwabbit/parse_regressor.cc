@@ -55,17 +55,7 @@ class polar_normal_weights_wrapper
  public:
   static void func(weight& w, uint64_t index)
   {
-    static float x1 = 0.0;
-    static float x2 = 0.0;
-    static float temp = 0.0;
-    do
-    {
-      x1 = 2.0f * merand48(index) - 1.0f;
-      x2 = 2.0f * merand48(index) - 1.0f;
-      temp = x1 * x1 + x2 * x2;
-    } while ((temp >= 1.0) || (temp == 0.0));
-    temp = sqrtf((-2.0f * logf(temp)) / temp);
-    w = x1 * temp;
+    w = merand48_boxmuller(index);
   }
 };
 // re-scaling to re-picking values outside the truncating boundary.
@@ -175,7 +165,7 @@ void save_load_header(
 
   try
   {
-    if (model_file.files.size() > 0)
+    if (model_file.num_files() > 0)
     {
       size_t bytes_read_write = 0;
 
@@ -262,16 +252,19 @@ void save_load_header(
 
           if (!read)
           {
-            memcpy(pair, all.pairs[i].c_str(), 2);
-            msg << all.pairs[i] << " ";
+            memcpy(pair, all.pairs[i].data(), 2);
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
+            msg.write(reinterpret_cast<char*>(all.pairs[i].data()), sizeof(all.pairs[i]));
+            msg << " ";
           }
 
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
           if (read)
           {
-            std::string temp(pair);
+            std::vector<namespace_index> temp(pair, pair+std::strlen(pair));
             if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-              all.pairs.push_back(temp);
+              all.pairs.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -291,15 +284,18 @@ void save_load_header(
 
           if (!read)
           {
-            msg << all.triples[i] << " ";
-            memcpy(triple, all.triples[i].c_str(), 3);
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
+            msg.write(reinterpret_cast<char*>(all.triples[i].data()), sizeof(all.triples[i]));
+            msg << " ";
+            memcpy(triple, all.triples[i].data(), 3);
           }
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
           if (read)
           {
-            std::string temp(triple);
+            std::vector<namespace_index> temp(triple, triple + std::strlen(triple));
             if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-              all.triples.push_back(temp);
+              all.triples.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -328,18 +324,19 @@ void save_load_header(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
             if (!read)
             {
-              memcpy(buff2, all.interactions[i].c_str(), inter_len);
+              memcpy(buff2, all.interactions[i].data(), inter_len);
 
               msg << "interaction: ";
-              msg.write(all.interactions[i].c_str(), inter_len);
+            // Copies data to stringstream regardless of existence of null characters.
+            // This might result in unintuitive behavior i.e. copy data after nulls as well.
+              msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
             }
 
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
 
             if (read)
             {
-              std::string temp(buff2, inter_len);
-              all.interactions.push_back(temp);
+              all.interactions.emplace_back(buff2, buff2 + inter_len);
             }
           }
 
@@ -523,6 +520,10 @@ void save_load_header(
 
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
+  if (buf.num_output_files() == 0)
+  {
+    THROW("Cannot dump regressor with an io buffer that has no output files.");
+  }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr)
@@ -538,8 +539,7 @@ void dump_regressor(vw& all, std::string reg_name, bool as_text)
     return;
   std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
-
-  io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
+  io_temp.add_file(VW::io::open_file_writer(start_name));
 
   dump_regressor(all, io_temp, as_text);
 
@@ -583,7 +583,8 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
 {
   if (all_intial.size() > 0)
   {
-    io_temp.open_file(all_intial[0].c_str(), all.stdin_off, io_buf::READ);
+    io_temp.add_file(VW::io::open_file_reader(all_intial[0]));
+
     if (!all.logger.quiet)
     {
       // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
@@ -612,7 +613,8 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
 
     // all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
-    io_temp_mask.open_file(feature_mask.c_str(), false, io_buf::READ);
+    io_temp_mask.add_file(VW::io::open_file_reader(feature_mask));
+
     save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
@@ -622,7 +624,8 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
     {
       // Load original header again.
       io_buf io_temp;
-      io_temp.open_file(initial_regressors[0].c_str(), false, io_buf::READ);
+      io_temp.add_file(VW::io::open_file_reader(initial_regressors[0]));
+
       save_load_header(all, io_temp, true, false, file_options, *all.options);
       io_temp.close_file();
 
