@@ -136,7 +136,7 @@ void reset_source(vw& all, size_t numbits)
     all.p->output->close_file();
 
     // This deletes the file from disk.
-    remove(all.p->output->finalname.c_str());
+    remove(all.p->finalname.c_str());
 
     // Rename the cache file to the final name.
     if (0 != rename(all.p->currentname.c_str(), all.p->finalname.c_str()))
@@ -144,7 +144,8 @@ void reset_source(vw& all, size_t numbits)
                                                                           << all.p->finalname);
     input->close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file_reader(all.p->finalname.cbegin()));
+    input->add_file(VW::io::open_file_reader(all.p->finalname));    all.p->reader = read_cached_features;
+    all.p->reader = read_cached_features;
   }
 
   if (all.p->resettable == true)
@@ -223,7 +224,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   }
   catch (const std::exception&)
   {
-    all.trace_message << "can't create cache file !" << temp << endl;
+    all.trace_message << "can't create cache file !" << all.p->currentname << endl;
     return;
   }
 
@@ -599,7 +600,6 @@ IGNORE_DEPRECATED_USAGE_END
   if (passes > 1 && !all.p->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  all.p->input->count = all.p->input->num_files();
   if (!quiet && !all.daemon)
     all.trace_message << "num sources = " << all.p->input->num_files() << endl;
 }

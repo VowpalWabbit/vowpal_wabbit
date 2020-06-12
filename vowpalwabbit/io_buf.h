@@ -49,47 +49,38 @@ class io_buf
 public:
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
   std::vector<std::unique_ptr<VW::io::writer>> output_files;
-  size_t count;    // maximum number of file descriptors.
   size_t current;  // file descriptor currently being used.
-
-  static constexpr int READ = 1;
-  static constexpr int WRITE = 2;
 
   io_buf(io_buf& other) = delete;
   io_buf& operator=(io_buf& other) = delete;
   io_buf(io_buf&& other) = delete;
   io_buf& operator=(io_buf&& other) = delete;
 
-  ~io_buf()
-  {
-    space.delete_v();
-  }
+  ~io_buf() { space.delete_v(); }
 
   void verify_hash(bool verify)
   {
     _verify_hash = verify;
     // reset the hash so that the io_buf can be re-used for loading
     // as it is done for Reload()
-    if (!verify)
-      _hash = 0;
+    if (!verify) { _hash = 0; }
   }
 
   uint32_t hash()
   {
-    if (!_verify_hash)
-      THROW("HASH WAS NOT CALCULATED");
+    if (!_verify_hash) THROW("HASH WAS NOT CALCULATED");
     return _hash;
   }
 
   void add_file(std::unique_ptr<VW::io::reader>&& file)
   {
-    assert(output_files.size() == 0);
+    assert(output_files.empty());
     input_files.push_back(std::move(file));
   }
 
   void add_file(std::unique_ptr<VW::io::writer>&& file)
   {
-    assert(input_files.size() == 0);
+    assert(input_files.empty());
     output_files.push_back(std::move(file));
   }
 
@@ -105,7 +96,7 @@ public:
     reset_buffer();
   }
 
-  io_buf() : _verify_hash{false}, _hash{0}, count{0}, current{0}
+  io_buf() : _verify_hash{false}, _hash{0}, current{0}
   {
     space = v_init<char>();
     space.resize(INITIAL_BUFF_SIZE);
@@ -140,8 +131,8 @@ public:
       space.end() = space.end() + num_read;
       return num_read;
     }
-    else
-      return 0;
+
+    return 0;
   }
 
   // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
@@ -158,17 +149,14 @@ public:
     return f->write(static_cast<const char*>(buf), nbytes);
   }
 
-  size_t unflushed_bytes_count()
-  {
-    return head - space.begin();
-  }
+  size_t unflushed_bytes_count() { return head - space.begin(); }
 
   void flush()
   {
     if (!output_files.empty())
     {
       if (write_file(output_files[0].get(), space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
-        std::cerr << "error, failed to write example\n";
+      { std::cerr << "error, failed to write example\n"; }
       head = space.begin();
       output_files[0]->flush();
     }
@@ -181,7 +169,8 @@ public:
       input_files.pop_back();
       return true;
     }
-    else if (!output_files.empty())
+
+    if (!output_files.empty())
     {
       output_files.pop_back();
       return true;
@@ -192,8 +181,7 @@ public:
 
   void close_files()
   {
-    while (close_file())
-      ;
+    while (close_file()) {}
   }
 
   void buf_write(char*& pointer, size_t n);
@@ -210,11 +198,9 @@ public:
       len = buf_read(p, len);
 
       // compute hash for check-sum
-      if (_verify_hash)
-        _hash = (uint32_t)uniform_hash(p, len, _hash);
+      if (_verify_hash) { _hash = (uint32_t)uniform_hash(p, len, _hash); }
 
-      if (*read_message == '\0')
-        memcpy(data, p, len);
+      if (*read_message == '\0') { memcpy(data, p, len); }
       else if (memcmp(data, p, len) != 0)
         THROW(read_message);
       return len;
@@ -232,27 +218,23 @@ public:
       memcpy(p, data, len);
 
       // compute hash for check-sum
-      if (_verify_hash)
-        _hash = (uint32_t)uniform_hash(p, len, _hash);
+      if (_verify_hash) { _hash = (uint32_t)uniform_hash(p, len, _hash); }
     }
     return len;
   }
 
   bool isbinary();
   size_t readto(char*& pointer, char terminal);
-  void flip_from_write_to_read();
-  size_t copy_to(void *dst, size_t max_size);
-  void replace_buffer(char *buf, size_t capacity);
-  char* buffer_start() { return space.begin(); } //This actually sucks, replace it with slicing
+  size_t copy_to(void* dst, size_t max_size);
+  void replace_buffer(char* buf, size_t capacity);
+  char* buffer_start() { return space.begin(); }  // This should be replaced with slicing.
 };
-
 
 inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
 {
   uint32_t obj_len;
   size_t ret = i.bin_read_fixed((char*)&obj_len, sizeof(obj_len), "");
-  if (obj_len > len || ret < sizeof(uint32_t))
-    THROW("bad model format!");
+  if (obj_len > len || ret < sizeof(uint32_t)) THROW("bad model format!");
 
   ret += i.bin_read_fixed(data, obj_len, read_message);
 
@@ -274,18 +256,15 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
     msg.str("");
     return temp;
   }
-  else
-    return bin_write(io, data, (uint32_t)len);
+  return bin_write(io, data, (uint32_t)len);
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write(
     io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
 {
-  if (read)
-    return bin_read(io, data, len, read_message);
-  else
-    return bin_text_write(io, data, len, msg, text);
+  if (read) { return bin_read(io, data, len, read_message); }
+  return bin_text_write(io, data, len, msg, text);
 }
 
 inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stringstream& msg, bool text)
@@ -296,18 +275,15 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stri
     msg.str("");
     return temp;
   }
-  else
-    return io.bin_write_fixed(data, len);
+  return io.bin_write_fixed(data, len);
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write_fixed(
     io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
 {
-  if (read)
-    return io.bin_read_fixed(data, len, read_message);
-  else
-    return bin_text_write_fixed(io, data, len, msg, text);
+  if (read) { return io.bin_read_fixed(data, len, read_message); }
+  return bin_text_write_fixed(io, data, len, msg, text);
 }
 
 inline size_t bin_text_read_write_fixed_validated(
@@ -316,10 +292,7 @@ inline size_t bin_text_read_write_fixed_validated(
   size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, msg, text);
   if (read && len > 0)  // only validate bytes read/write if expected length > 0
   {
-    if (nbytes == 0)
-    {
-      THROW("Unexpected end of file encountered.");
-    }
+    if (nbytes == 0) { THROW("Unexpected end of file encountered."); }
   }
   return nbytes;
 }

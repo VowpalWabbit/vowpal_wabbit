@@ -126,6 +126,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
   auto label = scoped_calloc_or_throw<VW::slates::label>();
   parse_label(lp, &p, "slates shared 0.5", *label.get());
   lp.cache_label(label.get(), io_writer);
+  io_writer.flush();
 
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
@@ -157,6 +158,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
   auto label = scoped_calloc_or_throw<VW::slates::label>();
   parse_label(lp, &p, "slates action 5", *label.get());
   lp.cache_label(label.get(), io_writer);
+  io_writer.flush();
 
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
@@ -189,6 +191,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
   auto label = scoped_calloc_or_throw<VW::slates::label>();
   parse_label(lp, &p, "slates slot 0:0.5,1:0.25,2:0.25", *label.get());
   lp.cache_label(label.get(), io_writer);
+  io_writer.flush();
 
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));

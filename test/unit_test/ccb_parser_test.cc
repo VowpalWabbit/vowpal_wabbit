@@ -121,7 +121,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
 
 BOOST_AUTO_TEST_CASE(ccb_cache_label)
 {
-
   auto backing_vector = std::make_shared<std::vector<char>>();
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
@@ -135,6 +134,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   auto label = scoped_calloc_or_throw<CCB::label>();
   parse_label(lp, &p, "ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label.get());
   lp.cache_label(label.get(), io_writer);
+  io_writer.flush();
 
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
