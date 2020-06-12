@@ -103,7 +103,7 @@ class SearchTask:
             above available options
 
         Returns
-        -------pylibvw.vw
+        -------
 
         out : Example
 
