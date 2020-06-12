@@ -252,7 +252,7 @@ void save_load_header(
 
           if (!read)
           {
-            memcpy(pair, all.pairs[i].data(), sizeof(all.pairs[i])*2);
+            memcpy(pair, all.pairs[i].data(), 2);
             // Copies data to stringstream regardless of existence of null characters.
             // This might result in unintuitive behavior i.e. copy data after nulls as well.
             msg.write(reinterpret_cast<char*>(all.pairs[i].data()), sizeof(all.pairs[i]));
@@ -288,7 +288,7 @@ void save_load_header(
             // This might result in unintuitive behavior i.e. copy data after nulls as well.
             msg.write(reinterpret_cast<char*>(all.triples[i].data()), sizeof(all.triples[i]));
             msg << " ";
-            memcpy(triple, all.triples[i].data(), sizeof(all.triples[i])*3);
+            memcpy(triple, all.triples[i].data(), 3);
           }
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
           if (read)
