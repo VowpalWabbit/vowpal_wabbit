@@ -291,6 +291,9 @@ void save_load_header(
         if (all.model_file_ver >=
             VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
         {
+          if (!read)
+            THROW("cannot write legacy format");
+
           // the only version that saves interacions among pairs and triples
           uint32_t len = 0;
 

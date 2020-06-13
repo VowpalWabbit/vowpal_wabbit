@@ -199,13 +199,15 @@ base_learner* mf_setup(options_i& options, vw& all)
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
+  auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
+      [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
+  if (non_pair_count > 0)
+{
+    THROW("can only use pairs with new_mf");
+  }
+
   data->pairs = all.interactions;
   all.interactions.clear();
-  for (std::string& i : data->pairs)
-  {
-    if(i.size() != 2)
-      THROW("can only use pairs with new_mf");
-  }
 
   all.random_positive_weights = true;
 
