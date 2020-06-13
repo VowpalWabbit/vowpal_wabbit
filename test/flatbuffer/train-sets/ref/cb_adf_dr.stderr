@@ -1,0 +1,19 @@
+predictions = cb_adf_dr.predict
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/cb_test.ldf
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+2.000000 2.000000            1            1.0    known        0:0...       12
+0.931417 -0.137166            2            2.0    known        1:0.121728...        8
+
+finished run
+number of examples = 3
+weighted example sum = 3.000000
+weighted label sum = 0.000000
+average loss = 0.931417
+total feature number = 31

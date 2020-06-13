@@ -1,0 +1,34 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/malformed.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+malformed example! '|' or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+1.000000 1.000000            1            1.0   1.0000   0.0000        2
+0.565537 0.131074            2            2.0   0.0000   0.3620        2
+malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #2: "| x:0.7"
+malformed example! '|' or EOL expected after : "| x:0.7"in Example #2: "| x:0.7"
+0.438417 0.311297            4            4.0   0.0000   0.4457        2
+malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #4: "| x:0.7"
+malformed example! '|' or EOL expected after : "| x:0.7"in Example #4: "| x:0.7"
+malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #6: "| x:0.7"
+malformed example! '|' or EOL expected after : "| x:0.7"in Example #6: "| x:0.7"
+0.332172 0.225927            8            8.0   0.0000   0.4680        2
+malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #8: "| x:0.7"
+malformed example! '|' or EOL expected after : "| x:0.7"in Example #8: "| x:0.7"
+malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #10: "| x:0.7"
+malformed example! '|' or EOL expected after : "| x:0.7"in Example #10: "| x:0.7"
+
+finished run
+number of examples = 11
+weighted example sum = 11.000000
+weighted label sum = 6.000000
+average loss = 0.290115
+best constant = 0.545455
+best constant's loss = 0.247934
+total feature number = 22

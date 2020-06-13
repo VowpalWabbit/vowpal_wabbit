@@ -1,0 +1,19 @@
+parsed 4 class weights
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/multiclass
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0        1        1        2
+0.909091 1.000000            2           11.0        2        1        2
+
+finished run
+number of examples = 10
+weighted example sum = 19.100000
+weighted label sum = 0.000000
+average loss = 0.947644
+total feature number = 20

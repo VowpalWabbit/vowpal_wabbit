@@ -1,0 +1,29 @@
+Generating 2-grams for all namespaces.
+Generating 4-skips for all namespaces.
+only testing
+Num weight bits = 24
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_raw_cb_small.vw
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.161820 0.161820            1            1.0    known        2      280
+-0.213881 -0.589583            2            2.0    known        1      598
+-0.257713 -0.301545            4            4.0    known        1      784
+-0.170628 -0.083542            8            8.0    known        1      850
+0.049008 0.268643           16           16.0    known        2      118
+0.029790 0.010573           32           32.0    known        1      166
+0.108944 0.188098           64           64.0    known        1      340
+0.079725 0.050506          128          128.0    known        2      610
+0.094953 0.110182          256          256.0    known        2      712
+0.114991 0.135028          512          512.0    known        1      424
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 0.000000
+average loss = 0.117742
+total feature number = 440020

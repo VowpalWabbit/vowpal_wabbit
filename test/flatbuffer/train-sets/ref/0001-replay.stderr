@@ -1,0 +1,34 @@
+Generating 3-grams for all namespaces.
+Generating 1-skips for all namespaces.
+experience replay level=b, buffer=100, replay count=1
+Num weight bits = 18
+learning rate = 2.56e+06
+initial_t = 128000
+power_t = 1
+decay_learning_rate = 1
+creating cache_file = train-sets/0001.dat.cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0   1.0000   0.0000      290
+0.500000 0.000000            2            2.0   0.0000   0.0000      608
+0.250000 0.000000            4            4.0   0.0000   0.0000      794
+0.250000 0.250000            8            8.0   0.0000   0.0000      860
+0.312500 0.375000           16           16.0   1.0000   0.0000      128
+0.343750 0.375000           32           32.0   0.0000   0.0000      176
+0.350946 0.358141           64           64.0   0.0000   0.0275      350
+0.371181 0.391417          128          128.0   1.0000   0.1510      620
+0.292717 0.214252          256          256.0   0.0000   0.3660      410
+0.149202 0.005688          512          512.0   0.0000   0.0000      278
+0.074603 0.000004         1024         1024.0   1.0000   1.0000      170
+
+finished run
+number of examples per pass = 200
+passes used = 8
+weighted example sum = 1600.000000
+weighted label sum = 728.000000
+average loss = 0.047746
+best constant = 0.455000
+best constant's loss = 0.247975
+total feature number = 717536

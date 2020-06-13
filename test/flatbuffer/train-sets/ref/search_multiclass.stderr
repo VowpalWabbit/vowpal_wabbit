@@ -1,0 +1,26 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/multiclass.sch.cache
+Reading datafile = train-sets/multiclass.sch
+num sources = 1
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+0.000000   0.000000          1  [1                   ] [1                   ]     0     0        4        0        4  0.000300
+0.500000   1.000000          2  [2                   ] [1                   ]     0     0        8        0        8  0.000700
+0.750000   1.000000          4  [4                   ] [2                   ]     0     0       16        0       16  0.001499
+0.875000   1.000000          8  [8                   ] [6                   ]     0     0       37        0       32  0.003095
+0.687500   0.500000         16  [7                   ] [6                   ]     1     0       69        0       64  0.006281
+0.375000   0.062500         32  [5                   ] [5                   ]     3     0      133        0      128  0.012620
+0.187500   0.000000         64  [10                  ] [10                  ]     7     0      261        0      256  0.025179
+0.093750   0.000000        128  [2                   ] [2                   ]    14     0      580        0      512  0.049819
+
+finished run
+number of examples per pass = 9
+passes used = 20
+weighted example sum = 181
+weighted label sum = 0
+average loss = 0.0662983
+total feature number = 1448

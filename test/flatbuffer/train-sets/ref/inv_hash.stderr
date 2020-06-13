@@ -1,0 +1,21 @@
+creating quadratic features for pairs: :: 
+WARNING: duplicate namespace interactions were found. Removed: 4278.
+You can use --leave_duplicate_interactions to disable this behaviour.
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = 
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0        3        1       28
+1.000000 1.000000            2            2.0        2        3       15
+
+finished run
+number of examples = 2
+weighted example sum = 2.000000
+weighted label sum = 0.000000
+average loss = 1.000000
+total feature number = 43

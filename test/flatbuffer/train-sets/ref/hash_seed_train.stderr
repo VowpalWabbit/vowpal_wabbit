@@ -1,0 +1,34 @@
+Generating 2-grams for all namespaces.
+creating quadratic features for pairs: :: 
+WARNING: duplicate namespace interactions were found. Removed: 4278.
+You can use --leave_duplicate_interactions to disable this behaviour.
+final_regressor = hash_seed5.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/rcv1_mini.dat.cache
+Reading datafile = train-sets/rcv1_mini.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0  -1.0000   0.0000    32385
+0.747407 0.494815            2            2.0  -1.0000  -0.2966     3741
+0.772949 0.798490            4            4.0  -1.0000  -1.0000    71631
+1.622789 2.472629            8            8.0   1.0000  -0.1378     2211
+1.372107 1.121425           16           16.0   1.0000   0.7096     3570
+1.483492 1.594877           32           32.0  -1.0000  -0.0765     4278
+1.323154 1.162815           64           64.0   1.0000   0.0982     5671
+1.230178 1.137203          128          128.0  -1.0000   0.0846     8778
+1.093884 0.957590          256          256.0  -1.0000  -0.9719    38781
+
+finished run
+number of examples per pass = 250
+passes used = 2
+weighted example sum = 500.000000
+weighted label sum = -60.000000
+average loss = 0.638042
+best constant = -0.120000
+best constant's loss = 0.985600
+total feature number = 8353018

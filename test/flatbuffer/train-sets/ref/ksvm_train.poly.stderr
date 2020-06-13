@@ -1,0 +1,37 @@
+using l2 regularization = 1
+predictions = ksvm_train.poly.predict
+Lambda = 1
+Kernel = poly
+degree = 2
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_smaller.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0   1.0000   0.0000       50
+1.236589 1.473179            2            2.0  -1.0000   0.4732      103
+1.072391 0.908193            4            4.0  -1.0000  -0.1956      134
+0.977210 0.882029            8            8.0  -1.0000  -0.3065      145
+0.941543 0.905877           16           16.0   1.0000  -0.3392       23
+0.938600 0.935656           32           32.0  -1.0000  -0.2156       31
+0.912083 0.885567           64           64.0  -1.0000  -0.9240       60
+0.900832 0.889580          128          128.0   1.0000   0.2666      105
+
+finished run
+number of examples = 250
+weighted example sum = 250.000000
+weighted label sum = -22.000000
+average loss = 0.816899
+best constant = -1.000000
+best constant's loss = 0.912000
+total feature number = 19870
+Num support = 248
+Number of kernel evaluations = 169707 Number of cache queries = 124678
+Total loss = 204.224655
+Done freeing model
+Done freeing kernel params
+Done with finish 

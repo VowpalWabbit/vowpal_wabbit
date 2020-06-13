@@ -1,0 +1,18 @@
+final_regressor = mwt.model
+predictions = cb_eval1.preds
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/cb_eval1
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+
+finished run
+number of examples = 4
+weighted example sum = 4.000000
+weighted label sum = 0.000000
+average loss = 0.000000
+total feature number = 12

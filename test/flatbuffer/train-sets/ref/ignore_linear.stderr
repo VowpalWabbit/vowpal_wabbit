@@ -1,0 +1,37 @@
+creating quadratic features for pairs: xx 
+ignoring linear terms for namespaces beginning with: x 
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = ignore_linear.cache
+Reading datafile = train-sets/0154.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0   1.0000   0.0000        2
+3.443754 5.887508            2            2.0   4.0000   1.5736        2
+60.932761 118.421768            4            4.0  16.0000   2.3476        2
+102.208121 143.483480            8            8.0   9.0000   0.8152        2
+142.516773 182.825425           16           16.0   1.0000   0.1426        2
+135.068843 127.620914           32           32.0   4.0000   0.8013        2
+123.009765 110.950687           64           64.0  16.0000   4.5816        2
+102.481446 81.953127          128          128.0   9.0000   3.7010        2
+76.571425 50.661404          256          256.0   1.0000   0.5708        2
+49.255278 21.939131          512          512.0   4.0000   2.9953        2
+27.296865 5.338452         1024         1024.0  16.0000  14.5116        2
+13.860577 0.424289         2048         2048.0   9.0000   8.8814        2
+6.932472 0.004367         4096         4096.0   1.0000   0.9997        2
+3.466236 0.000001         8192         8192.0   4.0000   4.0000        2
+1.733118 0.000000        16384        16384.0  16.0000  15.9999        2
+0.866559 0.000000        32768        32768.0   9.0000   9.0000        2
+
+finished run
+number of examples per pass = 5
+passes used = 10000
+weighted example sum = 50000.000000
+weighted label sum = 550000.000000
+average loss = 0.567908
+best constant = 11.000000
+total feature number = 100000

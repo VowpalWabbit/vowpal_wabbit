@@ -1,0 +1,21 @@
+only testing
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/marginal_features
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0   0.5000   0.5006        4
+0.000004 0.000008            2            2.0   1.0000   0.9972        4
+0.000004 0.000004            4            4.0   0.5000   0.5010        4
+
+finished run
+number of examples = 4
+weighted example sum = 4.000000
+weighted label sum = 2.250000
+average loss = 0.000004
+best constant = 0.562500
+total feature number = 16

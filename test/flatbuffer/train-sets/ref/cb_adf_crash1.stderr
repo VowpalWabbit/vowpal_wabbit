@@ -1,0 +1,18 @@
+final_regressor = models/cb_adf_crash.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/cb_adf_crash_1.data
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+-7.500000 -7.500000            1            1.0    known        0:0.5...        4
+
+finished run
+number of examples = 1
+weighted example sum = 1.000000
+weighted label sum = 0.000000
+average loss = -7.500000
+total feature number = 4

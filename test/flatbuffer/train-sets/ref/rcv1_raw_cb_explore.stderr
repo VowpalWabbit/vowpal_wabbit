@@ -1,0 +1,29 @@
+Generating 2-grams for all namespaces.
+Generating 4-skips for all namespaces.
+predictions = rcv1_raw_cb_explore.preds
+Num weight bits = 24
+learning rate = 0.25
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_raw_cb_small.vw
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.950000 1.950000            1            1.0        1 1:0.975000      280
+0.975000 0.000000            2            2.0        1 2:0.975000      598
+0.487500 0.000000            4            4.0        1 2:0.975000      784
+0.250000 0.012500            8            8.0        1 2:0.975000      850
+0.618750 0.987500           16           16.0        1 2:0.975000      118
+0.318750 0.018750           32           32.0        1 1:0.975000      166
+0.321875 0.325000           64           64.0        2 1:0.975000      340
+0.244922 0.167969          128          128.0        1 2:0.975000      610
+0.231250 0.217578          256          256.0        2 2:0.975000      712
+0.216992 0.202734          512          512.0        2 1:0.975000      424
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 0.000000
+average loss = 0.160650
+total feature number = 440020

@@ -1,0 +1,22 @@
+creating low rank quadratic features for pairs: aa3 
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/0080.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0   1.0000   1.0000        5
+0.000000 0.000000            2            2.0   2.0000   2.0000        5
+0.250000 0.500000            4            4.0   2.0000   2.0000        5
+
+finished run
+number of examples = 4
+weighted example sum = 4.000000
+weighted label sum = 6.000000
+average loss = 0.250000
+best constant = 1.500000
+best constant's loss = 0.250000
+total feature number = 18
