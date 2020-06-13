@@ -45,29 +45,31 @@ struct options_boost_po : public options_i
 {
   options_boost_po(int argc, char** argv) : options_boost_po(std::vector<std::string>(argv + 1, argv + argc)) {}
 
-  options_boost_po(std::vector<std::string> args) : m_command_line(args) {}
+  options_boost_po(const std::vector<std::string>& args) : m_command_line(args) {}
 
   options_boost_po(options_boost_po&) = delete;
   options_boost_po& operator=(options_boost_po&) = delete;
 
-  virtual void add_and_parse(const option_group_definition& group) override;
-  virtual bool was_supplied(const std::string& key) override;
-  virtual std::string help() override;
-  virtual void check_unregistered() override;
-  virtual std::vector<std::shared_ptr<base_option>> get_all_options() override;
-  virtual std::shared_ptr<base_option> get_option(const std::string& key) override;
+  void add_and_parse(const option_group_definition& group) override;
+  bool was_supplied(const std::string& key) const override;
+  std::string help() const override;
+  void check_unregistered() override;
+  std::vector<std::shared_ptr<base_option>> get_all_options() override;
+  std::vector<std::shared_ptr<const base_option>> get_all_options() const override;
+  std::shared_ptr<base_option> get_option(const std::string& key) override;
+  std::shared_ptr<const base_option> get_option(const std::string& key) const override;
 
-  virtual void insert(const std::string& key, const std::string& value) override
+  void insert(const std::string& key, const std::string& value) override
   {
     m_command_line.push_back("--" + key);
-    if (value != "")
+    if (!value.empty())
     {
       m_command_line.push_back(value);
     }
   }
 
   // Note: does not work for vector options.
-  virtual void replace(const std::string& key, const std::string& value) override
+  void replace(const std::string& key, const std::string& value) override
   {
     auto full_key = "--" + key;
     auto it = std::find(m_command_line.begin(), m_command_line.end(), full_key);
@@ -89,18 +91,15 @@ struct options_boost_po : public options_i
     *(it + 1) = value;
   }
 
-  std::vector<std::string> get_positional_tokens() override
+  std::vector<std::string> get_positional_tokens() const override
   {
     po::positional_options_description p;
     p.add("__positional__", -1);
-    auto* found_opt = master_description.find_nothrow("__positional__", false);
-    if (found_opt == nullptr)
-    {
-      master_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
-    }
+    auto copied_description = master_description;
+    copied_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
     po::parsed_options pos = po::command_line_parser(m_command_line)
                                  .style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
-                                 .options(master_description)
+                                 .options(copied_description)
                                  .allow_unregistered()
                                  .positional(p)
                                  .run();
