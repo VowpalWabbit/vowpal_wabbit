@@ -13,13 +13,14 @@
 #include "cb_algs.h"
 #include "constant.h"
 #include "v_array_pool.h"
+#include "decision_scores.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
 #include <bitset>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
@@ -38,8 +39,8 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list, include_list;
-  std::vector<std::string> generated_interactions;
-  std::vector<std::string>* original_interactions;
+  std::vector<std::vector<namespace_index>> generated_interactions;
+  std::vector<std::vector<namespace_index>>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
 
@@ -74,7 +75,7 @@ void clear_all(ccb& data)
 // split the slots, the actions and the shared example from the multiline example
 bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
-  for (auto ex : examples)
+  for (auto* ex : examples)
   {
     switch (ex->l.conditional_contextual_bandit.type)
     {
@@ -112,7 +113,7 @@ bool sanity_checks(ccb& data)
 
   if (is_learn)
   {
-    for (auto slot : data.slots)
+    for (auto* slot : data.slots)
     {
       if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
           slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
@@ -273,7 +274,7 @@ void remove_slot_features(example* shared, example* slot)
 
     if (index == default_namespace)  // slot default namespace has a special namespace in shared
     {
-      LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[32]);
+      LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]);
     }
     else
     {
@@ -283,8 +284,8 @@ void remove_slot_features(example* shared, example* slot)
 }
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
-void calculate_and_insert_interactions(
-    example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions)
+void calculate_and_insert_interactions(example* shared, const std::vector<example*>& actions,
+    std::vector<std::vector<namespace_index>>& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
@@ -304,7 +305,7 @@ void calculate_and_insert_interactions(
           !found_namespaces[action_index - INTERACTIONS::printable_start])
       {
         found_namespaces[action_index - INTERACTIONS::printable_start] = true;
-        generated_interactions.push_back({(char)action_index, (char)ccb_id_namespace});
+        generated_interactions.push_back({action_index, ccb_id_namespace});
       }
     }
   }
@@ -315,7 +316,7 @@ void calculate_and_insert_interactions(
         !found_namespaces[shared_index - INTERACTIONS::printable_start])
     {
       found_namespaces[shared_index - INTERACTIONS::printable_start] = true;
-      generated_interactions.push_back({(char)shared_index, (char)ccb_id_namespace});
+      generated_interactions.push_back({shared_index, ccb_id_namespace});
     }
   }
 }
@@ -425,7 +426,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         std::back_inserter(data.generated_interactions));
     calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
     data.shared->interactions = &data.generated_interactions;
-    for (auto ex : data.actions)
+    for (auto* ex : data.actions)
     {
       ex->interactions = &data.generated_interactions;
     }
@@ -456,7 +457,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     }
 
     data.shared->interactions = data.original_interactions;
-    for (auto ex : data.actions)
+    for (auto* ex : data.actions)
     {
       ex->interactions = data.original_interactions;
     }
@@ -490,92 +491,35 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   examples[0]->pred.decision_scores = decision_scores;
 }
 
-void print_decision_scores(int f, decision_scores_t& decision_scores)
+std::string generate_ccb_label_printout(const std::vector<example*>& slots)
 {
-  if (f >= 0)
+  size_t counter = 0;
+  std::stringstream label_ss;
+  std::string delim;
+  for (const auto& slot : slots)
   {
-    std::stringstream ss;
-    for (auto slot : decision_scores)
+    counter++;
+
+    auto* outcome = slot->l.conditional_contextual_bandit.outcome;
+    if (outcome == nullptr)
     {
-      std::string delimiter;
-      for (auto action_score : slot)
-      {
-        ss << delimiter << action_score.action << ':' << action_score.score;
-        delimiter = ",";
-      }
-      ss << '\n';
+      label_ss << delim << "?";
     }
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
+    else
     {
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      label_ss << delim << outcome->probabilities[0].action << ":" << outcome->cost;
+    }
+
+    delim = ",";
+
+    // Stop after 2...
+    if (counter > 1 && slots.size() > 2)
+    {
+      label_ss << delim << "...";
+      break;
     }
   }
-}
-
-void print_update(vw& all, std::vector<example*>& slots, decision_scores_t& decision_scores, size_t num_features)
-{
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
-  {
-    std::string label_str;
-    std::string delim;
-    int counter = 0;
-    for (auto slot : slots)
-    {
-      counter++;
-
-      auto outcome = slot->l.conditional_contextual_bandit.outcome;
-      if (outcome == nullptr)
-      {
-        label_str += delim;
-        label_str += "?";
-      }
-      else
-      {
-        label_str += delim;
-        label_str += std::to_string(outcome->probabilities[0].action);
-        label_str += ":";
-        label_str += std::to_string(outcome->cost);
-      }
-
-      delim = ",";
-
-      // Stop after 2...
-      if (counter > 1 && slots.size() > 2)
-      {
-        label_str += delim;
-        label_str += "...";
-        break;
-      }
-    }
-    std::ostringstream label_buf;
-    label_buf << std::setw(shared_data::col_current_label) << std::right << std::setfill(' ') << label_str;
-
-    std::string pred_str;
-    delim = "";
-    counter = 0;
-    for (auto slot : decision_scores)
-    {
-      counter++;
-      pred_str += delim;
-      pred_str += std::to_string(slot[0].action);
-      delim = ",";
-
-      // Stop after 3...
-      if (counter > 2)
-      {
-        pred_str += delim;
-        pred_str += "...";
-        break;
-      }
-    }
-    std::ostringstream pred_buf;
-    pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ') << pred_str;
-
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf.str(), pred_buf.str(), num_features,
-        all.progress_add, all.progress_arg);
-  }
+  return label_ss.str();
 }
 
 void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
@@ -590,7 +534,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   float loss = 0.;
 
   // Should this be done for shared, action and slot?
-  for (auto ec : ec_seq)
+  for (auto* ec : ec_seq)
   {
     num_features += ec->num_features;
 
@@ -605,7 +549,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   auto preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
-    auto outcome = slots[i]->l.conditional_contextual_bandit.outcome;
+    auto* outcome = slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
       num_labelled++;
@@ -629,12 +573,12 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   // TODO what does weight mean here?
   all.sd->update(holdout_example, num_labelled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
-  for (auto sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
   {
-    print_decision_scores(sink, ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
+    VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
   }
 
-  CCB::print_update(all, slots, preds, num_features);
+  VW::print_update_ccb(all, slots, preds, num_features);
 }
 
 void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
@@ -658,14 +602,12 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
-  bool slate = false;
   option_group_definition new_options(
       "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
   new_options.add(
       make_option("ccb_explore_adf", ccb_explore_adf_option)
           .keep()
           .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."));
-  new_options.add(make_option("slate", slate).keep().help("EXPERIMENTAL - MAY CHANGE: Enable slate mode in CCB."));
   options.add_and_parse(new_options);
 
   if (!ccb_explore_adf_option)
@@ -679,18 +621,13 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  if (options.was_supplied("cb_sample") && slate)
-  {
-    THROW("--slate and --cb_sample cannot be supplied together");
-  }
-
-  if (!options.was_supplied("cb_sample") && !slate)
+  if (!options.was_supplied("cb_sample"))
   {
     options.insert("cb_sample", "");
     options.add_and_parse(new_options);
   }
 
-  auto base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
   all.label_type = label_type_t::ccb;
 

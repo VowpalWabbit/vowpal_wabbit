@@ -10,7 +10,7 @@
 #include "float.h"
 #include "vw.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 inline float sign(float w)
@@ -35,7 +35,7 @@ struct active_cover
 
   vw* all;  // statistics, loss
   std::shared_ptr<rand_state> _random_state;
-  LEARNER::base_learner* l;
+  VW::LEARNER::base_learner* l;
 
   ~active_cover()
   {

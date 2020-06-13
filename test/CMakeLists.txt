@@ -1,4 +1,5 @@
 add_subdirectory(unit_test)
+add_subdirectory(tools)
 
 # Don't offer target on Windows
 if(NOT WIN32)

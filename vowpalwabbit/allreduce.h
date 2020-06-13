@@ -11,7 +11,9 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <WinSock2.h>
+#include <Windows.h>
 #include <WS2tcpip.h>
+#include <io.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
@@ -73,7 +75,7 @@ void addbufs(T* buf1, const T* buf2, const size_t n)
   for (size_t i = 0; i < n; i++) f(buf1[i], buf2[i]);
 }
 
-class VW_DEFAULT_VIS AllReduce
+class AllReduce
 {
  public:
   const size_t total;  // total number of nodes

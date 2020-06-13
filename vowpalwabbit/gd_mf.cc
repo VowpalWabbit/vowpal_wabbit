@@ -17,7 +17,7 @@
 #include "vw_exception.h"
 #include "array_parameters.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct gdmf
@@ -47,7 +47,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (std::string& i : all.interactions)
+  for (auto& i : all.interactions)
   {
     if (i.size() != 2)
       THROW("can only use pairs in matrix factorization");
@@ -80,7 +80,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
+  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -99,7 +99,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
-  for (std::string& i : d.all->interactions)
+  for (auto& i : d.all->interactions)
   {
     if (i.size() != 2)
       THROW("can only use pairs in matrix factorization");
@@ -265,7 +265,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     }
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     uint64_t i = 0;
     size_t brw = 1;

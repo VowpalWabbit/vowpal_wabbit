@@ -248,6 +248,7 @@ class ezexample
     }
     ec->num_features += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
+    ec->interactions = &vw_ref->interactions;
   }
 
   size_t get_num_features() { return ec->num_features; }
