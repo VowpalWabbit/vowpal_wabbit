@@ -226,7 +226,9 @@ class vw(pylibvw.vw):
             if isinstance(val, list):
                 # if a list is passed as a parameter value - create a key for
                 # each list element
-                return " ".join([format_input_pair(key, value) for value in val])
+                return " ".join(
+                    [format_input_pair(key, value) for value in val]
+                )
             else:
                 return format_input_pair(key, val)
 
@@ -285,17 +287,18 @@ class vw(pylibvw.vw):
             list of examples parsed
         """
 
-        #check if already parsed
-        if isinstance(str_ex, example) and getattr(str_ex, 'setup_done', None):
+        # check if already parsed
+        if isinstance(str_ex, example) and getattr(str_ex, "setup_done", None):
             return str_ex
 
         elif isinstance(str_ex, list):
-            if all([getattr(ex, 'setup_done', None) for ex in str_ex]):
+            if all([getattr(ex, "setup_done", None) for ex in str_ex]):
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
             raise TypeError(
-                'Unsupported type. List or string object must be passed.')
+                "Unsupported type. List or string object must be passed."
+            )
 
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
@@ -310,7 +313,8 @@ class vw(pylibvw.vw):
                 ec = ec[0]
             else:
                 raise TypeError(
-                    "expecting single line example, got multi_ex of len %i" % len(ec)
+                    "expecting single line example, got multi_ex of len %i"
+                    % len(ec)
                 )
         return ec
 
@@ -391,7 +395,7 @@ class vw(pylibvw.vw):
             new_example = True
 
         if isinstance(ec, example):
-            if not getattr(ec, 'setup_done', None):
+            if not getattr(ec, "setup_done", None):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
 
@@ -457,7 +461,6 @@ class vw(pylibvw.vw):
         else:
             pylibvw.vw.predict_multi(self, ec)
 
-
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
 
@@ -517,7 +520,12 @@ class vw(pylibvw.vw):
         sch = self.get_search_ptr()
 
         def predict(
-            examples, my_tag, oracle, condition=None, allowed=None, learner_id=0
+            examples,
+            my_tag,
+            oracle,
+            condition=None,
+            allowed=None,
+            learner_id=0,
         ):
             """The basic (via-reduction) prediction mechanism
 
@@ -596,7 +604,10 @@ class vw(pylibvw.vw):
                 if sch.predict_needs_example():
                     while hasattr(examples, "__call__"):
                         examples = examples()
-                    if hasattr(examples, "setup_done") and not examples.setup_done:
+                    if (
+                        hasattr(examples, "setup_done")
+                        and not examples.setup_done
+                    ):
                         examples.setup_example()
                     P.set_input(examples)
                 else:
@@ -631,7 +642,9 @@ class vw(pylibvw.vw):
                 for c in condition:
                     if not isinstance(c, tuple):
                         raise TypeError(
-                            "item " + str(c) + " in condition list is malformed"
+                            "item "
+                            + str(c)
+                            + " in condition list is malformed"
                         )
                     if (
                         len(c) == 2
@@ -715,7 +728,8 @@ class namespace_id:
             self.ord_ns = ord(self.ns)
         else:
             raise Exception(
-                "ns_to_characterord failed because id type is unknown: " + str(type(id))
+                "ns_to_characterord failed because id type is unknown: "
+                + str(type(id))
             )
 
 
@@ -904,7 +918,9 @@ class cost_sensitive_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0):
+            def __init__(
+                self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0
+            ):
                 self.label = label
                 self.cost = cost
                 self.partial_prediction = partial_prediction
@@ -971,7 +987,10 @@ class cbandits_label(abstract_label):
 
     def __str__(self):
         return " ".join(
-            ["{}:{}:{}".format(c.action, c.cost, c.probability) for c in self.costs]
+            [
+                "{}:{}:{}".format(c.action, c.cost, c.probability)
+                for c in self.costs
+            ]
         )
 
 
@@ -982,7 +1001,10 @@ class example(pylibvw.example):
     also with added python-specific functionality."""
 
     def __init__(
-        self, vw, initStringOrDictOrRawExample=None, labelType=pylibvw.vw.lDefault
+        self,
+        vw,
+        initStringOrDictOrRawExample=None,
+        labelType=pylibvw.vw.lDefault,
     ):
         """Construct a new example from vw.
 
@@ -1030,10 +1052,14 @@ class example(pylibvw.example):
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
         elif isinstance(initStringOrDictOrRawExample, str):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, labelType, initStringOrDictOrRawExample
+            )
             self.setup_done = True
         elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
-            pylibvw.example.__init__(self, vw, labelType, initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, labelType, initStringOrDictOrRawExample
+            )
         elif isinstance(initStringOrDictOrRawExample, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
@@ -1147,7 +1173,9 @@ class example(pylibvw.example):
         """If this example has been setup, reverse that process so you can
          continue editing the examples."""
         if not self.setup_done:
-            raise Exception("Trying to unsetup_example that has not yet been setup")
+            raise Exception(
+                "Trying to unsetup_example that has not yet been setup"
+            )
         self.vw.unsetup_example(self)
         self.setup_done = False
 
@@ -1225,7 +1253,9 @@ class example(pylibvw.example):
             if ns_hash is None:
                 ns_hash = self.vw.hash_space(self.get_ns(ns).ns)
             return self.vw.hash_feature(feature, ns_hash)
-        raise Exception("cannot extract feature of type: " + str(type(feature)))
+        raise Exception(
+            "cannot extract feature of type: " + str(type(feature))
+        )
 
     def push_hashed_feature(self, ns, f, v=1.0):
         """Add a hashed feature to a given namespace.
@@ -1323,7 +1353,9 @@ class example(pylibvw.example):
         """
         if self.setup_done:
             self.unsetup_example()
-        return pylibvw.example.ensure_namespace_exists(self, self.get_ns(ns).ord_ns)
+        return pylibvw.example.ensure_namespace_exists(
+            self, self.get_ns(ns).ord_ns
+        )
 
     def push_features(self, ns, featureList):
         """Push a list of features to a given namespace.
@@ -1377,7 +1409,9 @@ class example(pylibvw.example):
     def iter_features(self):
         """Iterate over all feature/value pairs in this example (all
         namespace included)."""
-        for ns_id in range(self.num_namespaces()):  # iterate over every namespace
+        for ns_id in range(
+            self.num_namespaces()
+        ):  # iterate over every namespace
             ns = self.get_ns(ns_id)
             for i in range(self.num_features_in(ns)):
                 f = self.feature(ns, i)
@@ -1398,325 +1432,292 @@ class example(pylibvw.example):
         return label_class(self)
 
 
-class Col:
-    """Refer to a column of a dataframe.
-    The methods of this class are used to:
-        - check if the column is in a specified dataframe
-        - extract the column from the specified dataframe
+def _get_col_or_value(x, df):
+    """If x is of type _Col returns the column to which x refers to, else
+    returns the string value of x.
+
+    Parameters
+    ----------
+    x: object
+        The value.
+    df: pandas.DataFrame
+        The dataframe from which to select the column (if x is of type _Col).
     """
+    if isinstance(x, _Col):
+        return x.get_col(df)
+    else:
+        return str(x)
 
-    def __init__(self, colname):
-        """Initialize a Col object.
 
-        Parameters
-        ----------
+class _Col:
+    """_Col class. It refers to a column of a dataframe."""
 
-        colname : str
-            The colname that refers to a column.
-
-        Raises
-        ------
-
-        TypeError
-            If attribute 'colname' is not a string.
-
-        Returns
-        -------
-
-        self : Col
-        """
-        if isinstance(colname, str):
-            self.colname = colname
-        else:
-            raise TypeError("'colname' must be a string")
-
-    def col_exist(self, df):
-        """Check if the column 'colname' is in a dataframe 'df'.
+    def __init__(self, colname, expected_type, min_value=None):
+        """Initialize a _Col instance
 
         Parameters
         ----------
-
-        df : pandas.DataFrame
-            The dataframe in which to look for the column.
-
-        Returns
-        -------
-
-        bool
-            True if the column is in the dataframe, False otherwise.
+        colname: str/int/float
+            The column name.
+        expected_type: tuple
+            The expected type of the column.
+        min_value: int/float
+            The minimum value to which the column must be superior or equal.
         """
-        return self.colname in df
+        self.colname = colname
+        self.expected_type = expected_type
+        self.min_value = min_value
 
     def get_col(self, df):
-        """Extract the column 'colname' from the dataframe 'df'.
+        """Returns the column 'colname' from the dataframe 'df'.
 
         Parameters
         ----------
-
         df : pandas.DataFrame
-            The dataframe from which to extract the column 'colname'.
+            The dataframe from which to pull the column 'colname'.
 
         Raises
         ------
-
         KeyError
             If the column is not found in the dataframe.
 
         Returns
         -------
-
         out : pandas.Series
-            The column extracted from the dataframe.
+            The column 'colname' from the dataframe 'df'.
         """
         try:
-            out = df[self.colname].fillna("").apply(str)
+            out = df[self.colname]
         except KeyError:
             raise KeyError(
-                "Column '{}' not found in dataframe".format(self.colname)
-            )
-        else:
-            return out
-
-
-def _get_col_or_value(x, df):
-    """Returns the column 'colname' from dataframe 'df' if x is a Col
-    object else returns the value of x converted to string.
-
-    Parameters
-    ----------
-
-    x : Col/str/int/float
-        The Col object or a literal value (str/int/float).
-    df : pandas.DataFrame
-        The dataframe in which to extract the column.
-
-    Returns
-    -------
-
-    out : str or pandas.Series
-        A pandas.Series if x is of type 'Col' or a string otherwise.
-    """
-    try:
-        out = x.get_col(df)
-    except AttributeError:
-        out = str(x)
-    return out
-
-
-def _get_all_cols(obj):
-    """Returns the attributes of type Col of a given instance. Note that this
-    method won't search for Col types in the attributes of the attributes
-    (no recursive search).
-
-    Returns
-    -------
-
-    out : list (of Col)
-        The list of Col objects in the instance.
-    """
-    attr_values = list(vars(obj).values())
-    out = [x for x in attr_values if isinstance(x, Col)]
-    return out
-
-
-def _check_type(obj, expected_type):
-    """Check if the type of an object is valid.
-
-    Parameters
-    ----------
-
-    obj : object
-        The object to check.
-    expected_type : type or tuple of types
-        The type(s) to check against.
-
-    Raises
-    ------
-
-    TypeError
-        If the argument is not of a valid type.
-    """
-    expected_type_str = str([x.__name__ for x in expected_type])
-    if obj is not None:
-        if not isinstance(obj, expected_type):
-            raise TypeError(
-                "Parameter {} should be of type(s) {}".format(
-                    obj, expected_type_str[1:-1]
+                "column '{colname}' not found in dataframe".format(
+                    colname=self.colname
                 )
             )
+        else:
+            return out.fillna("").apply(str)
 
-
-class Col:
-    """Refer to a column of a dataframe.
-    The methods of this class are used to:
-        - check if the column is in a specified dataframe
-        - extract the column from the specified dataframe
-    """
-
-    def __init__(self, colname):
-        """Initialize a Col object.
+    def check_col_type(self, df):
+        """Check if the type of the column is valid.
 
         Parameters
         ----------
-
-        colname : str
-            The colname that refers to a column.
+        df : pandas.DataFrame
+            The dataframe from which to check the column.
 
         Raises
         ------
-
         TypeError
-            If attribute 'colname' is not a string.
-
-        Returns
-        -------
-
-        self : Col
+            If the type of the column is not valid.
         """
-        if isinstance(colname, str):
-            self.colname = colname
-        else:
-            raise TypeError("'colname' must be a string")
+        expected_type = list(self.expected_type)
+        if str in expected_type:
+            expected_type.append(object)
 
-    def col_exist(self, df):
-        """Check if the column 'colname' is in a dataframe 'df'.
+        col_type = df[self.colname].dtype
+        if not (col_type in expected_type):
+            raise TypeError(
+                "column '{colname}' should be either of the following type(s): {type_name}.".format(
+                    colname=self.colname,
+                    type_name=str([x.__name__ for x in expected_type])[1:-1],
+                )
+            )
+
+    def check_col_value(self, df):
+        """Check if the value range of the column is valid.
 
         Parameters
         ----------
-
         df : pandas.DataFrame
-            The dataframe in which to look for the column.
-
-        Returns
-        -------
-
-        bool
-            True if the column is in the dataframe, False otherwise.
-        """
-        return self.colname in df
-
-    def get_col(self, df):
-        """Extract the column 'colname' from the dataframe 'df'.
-
-        Parameters
-        ----------
-
-        df : pandas.DataFrame
-            The dataframe from which to extract the column 'colname'.
+            The dataframe from which to check the column.
 
         Raises
         ------
+        ValueError
+            If the values of the column are not valid.
 
-        KeyError
-            If the column is not found in the dataframe.
-
-        Returns
-        -------
-
-        out : pandas.Series
-            The column extracted from the dataframe.
         """
-        try:
-            out = df[self.colname].fillna("").apply(str)
-        except KeyError:
-            raise KeyError(
-                "Column '{}' not found in dataframe".format(self.colname)
-            )
+        if self.min_value is None:
+            pass
         else:
-            return out
+            col_value = df[self.colname]
+            if not (col_value >= self.min_value).all():
+                raise ValueError(
+                    "column '{colname}' must be >= {min_value}.".format(
+                        colname=self.colname, min_value=self.min_value
+                    )
+                )
 
 
-def _get_col_or_value(x, df):
-    """Returns the column 'colname' from dataframe 'df' if x is a Col
-    object else returns the value of x converted to string.
+class AttributeDescriptor(object):
+    """This descriptor class enforces type checking and value checking for the
+    attributes of the (managed) classes SimpleLabel, MultiClass, Feature, etc.
 
-    Parameters
-    ----------
+    If the attribute represents a column, no type or value checking are
+    performed (since the dataframe and the subsequent column is not known yet)
+    but the type and value requirements are passed to the _Col instance for
+    future usage in the DFtoVW constructor.
 
-    x : Col/str/int/float
-        The Col object or a literal value (str/int/float).
-    df : pandas.DataFrame
-        The dataframe in which to extract the column.
-
-    Returns
-    -------
-
-    out : str or pandas.Series
-        A pandas.Series if x is of type 'Col' or a string otherwise.
+    In the managed class, the optional presence of a column for an attribute is
+    indicated using *_from_df attribute. The *_from_df attribute should be set
+    before the actual attribute to take effect.
     """
-    try:
-        out = x.get_col(df)
-    except AttributeError:
-        out = str(x)
-    return out
 
+    def __init__(self, attribute_name, expected_type, min_value=None):
+        """Initialize an AttributeDescriptor instance
 
-def _get_all_cols(obj):
-    """Returns the attributes of type Col of a given instance. Note that this
-    method won't search for Col types in the attributes of the attributes
-    (no recursive search).
+        Parameters
+        ----------
+        attribute_name: str
+            The name of the attribute.
+        expected_type: tuple
+            The expected type of the attribute.
+        min_value: str/int/float
+            The minimum value of the attribute.
 
-    Returns
-    -------
+        Raises
+        ------
+        TypeError
+            If one of the arguments passed is not of valid type.
+        """
+        if not isinstance(attribute_name, str):
+            raise TypeError("Argument 'attribute_name' must be a string")
+        self.attribute_name = attribute_name
+        if not isinstance(expected_type, tuple):
+            raise TypeError("Argument 'expected_type' must be a tuple")
+        self.expected_type = expected_type
+        self.min_value = min_value
 
-    out : list (of Col)
-        The list of Col objects in the instance.
-    """
-    attr_values = list(vars(obj).values())
-    out = [x for x in attr_values if isinstance(x, Col)]
-    return out
+    def __set__(self, instance, arg):
+        """Implement set protocol to enforce type (and value range) checking
+        for managed class such as SimpleLabel, Multiclass, Feature, etc.
 
+        Parameters
+        ----------
+        instance: object
+            The managed instance.
+        arg: str/int/float
+            The argument to set (if the checks are passed).
+        """
+        # initialize empty set that register the column names (for _Col arg)
+        if "columns" not in instance.__dict__:
+            instance.__dict__["columns"] = set()
 
-def _check_type(obj, expected_type):
-    """Check if the type of an object is valid.
+        # set instance attribute to None if arg is None
+        if arg is None:
+            instance.__dict__[self.attribute_name] = arg
+        else:
+            # get the *_from_df argument value if it exists in the instance
+            try:
+                from_df = getattr(
+                    instance, "{}_from_df".format(self.attribute_name)
+                )
+            except AttributeError:
+                from_df = False
 
-    Parameters
-    ----------
+            # If instance has *_from_df attribute, store in instance as _Col type
+            if from_df:
+                self.initialize_col_type(instance, arg)
+            # else process to type and value range checking
+            else:
+                # validate type
+                valid_type = isinstance(arg, self.expected_type)
 
-    obj : object
-        The object to check.
-    expected_type : type or tuple of types
-        The type(s) to check against.
+                # validate value
+                if self.min_value is not None and valid_type:
+                    valid_value = arg >= self.min_value
+                else:
+                    valid_value = True
 
-    Raises
-    ------
+                # store in instance if type and value are valid
+                if valid_type and valid_value:
+                    instance.__dict__[self.attribute_name] = arg
+                else:
+                    self.generate_error(instance, valid_type, valid_value)
 
-    TypeError
-        If the argument is not of a valid type.
-    """
-    expected_type_str = str([x.__name__ for x in expected_type])
-    if obj is not None:
-        if not isinstance(obj, expected_type):
+    def initialize_col_type(self, instance, colname):
+        """Initialize the attribute as a _Col type
+
+        Parameters
+        ----------
+        instance: object
+            The managed instance.
+        colname: str/int/float
+            The colname used for the _Col instance.
+        """
+
+        instance.__dict__["columns"].add(colname)
+        instance.__dict__[self.attribute_name] = _Col(
+            colname=colname,
+            expected_type=self.expected_type,
+            min_value=self.min_value,
+        )
+
+    def generate_error(self, instance, valid_type, valid_value):
+        """Generate message error for the attribute
+
+        Parameters
+        ----------
+        instance: object
+            The managed class.
+        valid_type: bool
+            True if the type if valid, False otherwise.
+        valid_value: bool
+            True if the value range if valid, False otherwise.
+
+        Raises
+        ------
+        TypeError
+            If the type is not valid.
+        ValueRange
+            If the value range is not valid.
+        """
+        class_name = type(instance).__name__
+
+        if not valid_type:
             raise TypeError(
-                "Parameter {} should be of type(s) {}".format(
-                    obj, expected_type_str[1:-1]
+                "In '{class_name}', when {from_df_false}, argument '{attribute_name}' should be either of the following type(s): {type_name_msg}.".format(
+                    class_name=class_name,
+                    from_df_false=self.attribute_name + "_from_df=False",
+                    attribute_name=self.attribute_name,
+                    type_name_msg=str(
+                        [x.__name__ for x in self.expected_type]
+                    )[1:-1],
+                )
+            )
+
+        if not valid_value:
+            raise ValueError(
+                "In '{class_name}', argument '{attribute_name}' must be >= {min_value}.".format(
+                    class_name=class_name,
+                    attribute_name=self.attribute_name,
+                    min_value=self.min_value,
                 )
             )
 
 
-class SimpleLabel:
-    """The SimpleLabel class is used to build a simple label for the
-    constructor of DFtoVW.
-    """
+class SimpleLabel(object):
+    """The simple label type for the constructor of DFtoVW."""
 
-    expected_type = dict(name=(Col, str, int, float))
+    name = AttributeDescriptor("name", expected_type=(int, float))
 
-    def __init__(self, name):
+    def __init__(self, name, name_from_df=True):
         """Initialize a SimpleLabel instance.
 
         Parameters
         ----------
-
-        name : Col/str/int/float
-            A Col object specifying the column to extract from a dataframe or a
-            constant value of type str/int/float.
+        name : str/int/float
+            The name of the column. If name_from_df=False, it should be of type
+            int or float.
+        name_from_df: bool (default: True)
+            True if the name refers to a column in the dataframe and False if
+            the name is a constant.
 
         Returns
         -------
-
         self : SimpleLabel
         """
-        _check_type(name, self.expected_type["name"])
+        self.name_from_df = name_from_df
         self.name = name
 
     def process(self, df):
@@ -1724,60 +1725,120 @@ class SimpleLabel:
 
         Parameters
         ----------
-
         df : pandas.DataFrame
-            The dataframe from which to extract a column.
+            The dataframe from which to select the column.
 
         Returns
         -------
-
         str or pandas.Series
             The SimpleLabel string representation.
         """
         return _get_col_or_value(self.name, df)
 
 
-class Feature:
-    """A feature for the constructor of DFtoVW"""
+class MultiClass(object):
+    """The multiclass label type for the constructor of DFtoVW."""
 
-    expected_type = dict(
-        name=(Col, str, float, int), value=(Col, str, float, int)
+    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
+    weight = AttributeDescriptor(
+        "weight", expected_type=(int, float), min_value=0
     )
 
-    def __init__(self, value, name=None):
+    def __init__(
+        self, name, weight=None, name_from_df=True, weight_from_df=True
+    ):
+        """Initialize a MultiClass instance.
+
+        Parameters
+        ----------
+        name : str/int
+            The name of the multi class. If name_from_df=False, it should be of
+            type int.
+        weight: str/int/float, optional
+            The (importance) weight of the multi class. If name_from_df=False,
+            it should be of type int or float.
+        name_from_df: bool (default: True)
+            True if the name refers to a column in the dataframe and False if
+            the name is a constant.
+        weight_from_df: bool (default: True)
+            True if the weight refers to a column in the dataframe and False if
+            the weight is a constant.
+
+        Returns
+        -------
+        self : MultiClass
+        """
+        self.name_from_df = name_from_df
+        self.weight_from_df = weight_from_df
+        self.name = name
+        self.weight = weight
+
+    def process(self, df):
+        """Returns the MultiClass string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column(s).
+
+        Returns
+        -------
+        str or pandas.Series
+            The MultiClass string representation.
+        """
+        name_col = _get_col_or_value(self.name, df)
+        if self.weight is not None:
+            weight_col = _get_col_or_value(self.weight, df)
+            out = name_col + " " + weight_col
+        else:
+            out = name_col
+        return out
+
+
+class Feature(object):
+    """The feature type for the constructor of DFtoVW"""
+
+    name = AttributeDescriptor("name", expected_type=(str, int, float))
+    value = AttributeDescriptor("value", expected_type=(str, int, float))
+
+    def __init__(
+        self, value, name=None, value_from_df=True, name_from_df=False
+    ):
         """
         Initialize a Feature instance.
 
         Parameters
         ----------
-
-        value : str/float/int or Col
-            The value of the feature. Can be a literal or a Col object.
-        name : str/float/int or Col, optional
-            The name of the feature. Can be constant value or a Col object.
+        value : str/float/int
+            The value of the feature.
+        name : str/float/int, optional
+            The name of the feature.
+        value_from_df: bool (default: True)
+            True if the value refers to a column in the dataframe and False if
+            the value is a constant.
+        name_from_df: bool (default: False)
+            True if the name refers to a column in the dataframe and False if
+            the name is a constant.
 
         Returns
         -------
-
         self : Feature
         """
-        for (arg, name_arg) in zip([name, value], ["name", "value"]):
-            _check_type(arg, self.expected_type[name_arg])
-        self.name = name
+        self.value_from_df = value_from_df
+        self.name_from_df = name_from_df
         self.value = value
+        self.name = name
 
     def process(self, df):
         """Returns the Feature string representation.
 
         Parameters
         ----------
-
         df : pandas.DataFrame
-            The dataframe from which to extract a column.
+            The dataframe from which to select the column(s).
 
         Returns
         -------
-
         out : str or pandas.Series
             The Feature string representation.
         """
@@ -1790,22 +1851,57 @@ class Feature:
         return out
 
 
-class Namespace:
-    """A namespace for the constructor of DFtoVW.
+class _Tag(object):
+    """A tag for the constructor of DFtoVW"""
+
+    tag = AttributeDescriptor("tag", expected_type=(str, int, float))
+
+    def __init__(self, tag, tag_from_df=True):
+        """
+        Initialize a Tag instance.
+
+        Parameters
+        ----------
+        tag : str/float/int
+            The value of the tag.
+        tag_from_df: bool (default: True)
+            True if the tag refers to a column in the dataframe and False if
+            the tag is a constant.
+
+        Returns
+        -------
+        self : _Tag
+        """
+        self.tag_from_df = tag_from_df
+        self.tag = tag
+
+    def process(self, df):
+        """Returns the _Tag string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column.
+
+        Returns
+        -------
+        out : str or pandas.Series
+            The Tag string representation.
+        """
+        return _get_col_or_value(self.tag, df)
+
+
+class Namespace(object):
+    """The namespace type for the constructor of DFtoVW.
     The Namespace is a container for Feature object(s), and thus must
     be composed of a Feature object or a list of Feature objects.
     """
-
-    expected_type = dict(
-        name=(str, int, float), value=(int, float), features=(list, Feature),
-    )
 
     def __init__(self, features, name=None, value=None):
         """Initialize a Namespace instance.
 
         Parameters
         ----------
-
         features : Feature or list of Feature
             A (list of) Feature object(s) that form the namespace.
         name : str/int/float, optional
@@ -1816,35 +1912,64 @@ class Namespace:
 
         Examples
         --------
-
         >>> from pyvw import Namespace, Feature
-        >>> ns_one_feature = Namespace(Feature(Col("a")))
-        >>> ns_multi_features = Namespace([Feature(Col("a")), Feature(Col("b"))])
-        >>> ns_one_feature_with_name = Namespace(Feature(Col("a")),
-                                                 name="FirstNamespace")
+        >>> ns_one_feature = Namespace(Feature("a"))
+        >>> ns_multi_features = Namespace([Feature("a"), Feature("b")])
+        >>> ns_one_feature_with_name = Namespace(Feature("a"), name="FirstNamespace")
+        >>> ns_one_feature_with_name_and_value = Namespace(Feature("a"), name="FirstNamespace", value=2)
 
         Returns
         -------
-
         self : Namespace
         """
-        for (arg, name_arg) in zip([name, value, features],
-                                   ["name", "value", "features"]):
-            _check_type(arg, self.expected_type[name_arg])
 
-        self.features = (
-            list(features) if isinstance(features, (list, set)) else [features]
-        )
         if (value is not None) and (name is None):
             raise ValueError(
                 "Namespace can't have a 'value' argument without a 'name' argument"
             )
-        self.name = name
-        if value is not None:
-            value = str(value)
-        self.value = value
 
-    def process(self, df=None):
+        self.name = name
+        self.value = value
+        self.features = (
+            list(features) if isinstance(features, (list, set)) else [features]
+        )
+        self.check_attributes_type()
+
+    def check_attributes_type(self):
+        """Check if attributes are of valid type.
+
+        Raises
+        ------
+        TypeError
+            If one of the attribute is not valid.
+        """
+        valid_feature = all(
+            [isinstance(feature, Feature) for feature in self.features]
+        )
+        if not valid_feature:
+            raise TypeError(
+                "In Namespace, argument 'features' should be a Feature or a list of Feature."
+            )
+
+        expected_type = dict(name=(str, int, float), value=(int, float))
+        for attribute_name in ["name", "value"]:
+            attribute_value = getattr(self, attribute_name)
+            if attribute_value is not None and not isinstance(
+                attribute_value, expected_type[attribute_name]
+            ):
+                raise TypeError(
+                    "In Namespace, argument '{attribute_name}' should be either of the following type(s): {types}".format(
+                        attribute_name=attribute_name,
+                        types=repr(
+                            [
+                                x.__name__
+                                for x in self.expected_type[attribute_name]
+                            ]
+                        )[1:-1],
+                    )
+                )
+
+    def process(self):
         """Returns the Namespace string representation"""
         out = ["|"]
         if self.name is not None:
@@ -1857,153 +1982,252 @@ class Namespace:
 
 class DFtoVW:
     """Convert a pandas DataFrame to a suitable VW format.
-    Instances of this class are built with classes such as SimpleLabel, Feature
-    or Namespace (that can themselves be built on Col object(s)).
+    Instances of this class are built with classes such as SimpleLabel,
+    MultiClass, Feature or Namespace.
+
     The class also provided a convenience constructor to initialize the class
     based on the target/features column names only.
     """
 
-    def __init__(self, df, namespaces, label=None, tag=None):
+    def __init__(
+        self,
+        df,
+        features=None,
+        namespaces=None,
+        label=None,
+        tag=None,
+        tag_from_df=True,
+    ):
         """Initialize a DFtoVW instance.
 
         Parameters
         ----------
-
         df : pandas.DataFrame
             The dataframe to convert to VW input format.
-        namespaces : list of Namespace/Namespace
+        features: Feature/list of Feature
+            One or more Feature object(s).
+        namespaces : Namespace/list of Namespace
             One or more Namespace object(s), each of being composed of one or
             more Feature object(s).
         label : SimpleLabel
-            The label is the real numbers to be predicted for the examples.
-        tag :  Col or str
-            The tag that is used as identifiers for the examples.
+            The label.
+        tag :  str/int/float
+            The tag (used as identifiers for examples).
+        tag_from_df: bool (default: True)
+            True if the tag should refers to a column in the dataframe and
+            False if the tag should be constant.
 
         Examples
         --------
-
         >>> from vowpalwabbit.pyvw import DFtoVW
         >>> from pandas as pd
-        >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
+
+        >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
         >>> conv1 = DFtoVW(df=df,
-                           label=SimpleLabel(Col("y")),
-                           namespaces=Namespace(Feature(name="feat_a", value=Col("a"))))
-        >>> conv1.process_df()
+                           label=SimpleLabel("y"),
+                           features=Feature("a"))
+        >>> conv1.convert_df()
 
         >>> conv2 = DFtoVW(df=df,
-                           label=SimpleLabel(Col("y")),
-                           namespaces=Namespace(
-                                   name="DoubleIt", value=2,
-                                   features=Feature(name="feat_a", value=Col("a"))))
-        >>> conv2.process_df()
+                           label=SimpleLabel("y"),
+                           features=[Feature(col) for col in ["a", "b"]])
+        >>> conv2.convert_df()
 
         >>> conv3 = DFtoVW(df=df,
-                           label=SimpleLabel(Col("y")),
-                           namespaces=[Namespace(name="NS1", features=Feature(Col("a"))),
-                                       Namespace(name="NS2", features=Feature(Col("b")))])
-        >>>conv3.process_df()
+                           label=SimpleLabel("y"),
+                           namespaces=Namespace(
+                                   name="DoubleIt", value=2,
+                                   features=Feature(value="a", name="feat_a")))
+        >>> conv3.convert_df()
+
+        >>> conv4 = DFtoVW(df=df,
+                           label=SimpleLabel("y"),
+                           namespaces=[Namespace(name="NS1", features=[Feature(col) for col in ["a", "c"]]),
+                                       Namespace(name="NS2", features=Feature("b"))])
+        >>> conv4.convert_df()
 
         Returns
         -------
-
         self : DFtoVW
         """
         self.df = df
         self.n_rows = df.shape[0]
         self.label = label
-        self.tag = tag
-        self.namespaces = (
-            list(namespaces)
-            if isinstance(namespaces, (list, set))
-            else [namespaces]
-        )
+        self.tag = _Tag(tag, tag_from_df) if tag else None
+
+        if features is not None:
+            self.check_features_type(features)
+
+        self.set_namespaces_or_features(namespaces, features)
+
         self.check_label_type()
         self.check_namespaces_type()
-        self.check_features_type()
-        self.check_if_cols_exist()
+
+        self.check_columns_existence_in_df()
+        self.check_columns_type_and_values()
 
     @classmethod
-    def from_colnames(cls, y, x, df):
+    def from_colnames(cls, y, x, df, label_type="simple_label"):
         """Build DFtoVW instance using column names only.
-
 
         Parameters
         ----------
-
-        y : str/list
+        y : str/list of str
             The column for the label.
-        x : str/list
+        x : str/list of str
             The column(s) for the feature(s).
         df : pandas.DataFrame
             The dataframe used.
+        label_type: str (default: 'simple_label')
+            The type of the label.
 
         Raises
         ------
-
         TypeError
-            If argument label is a list of multiple strings
+            If argument label is not of valid type.
+        ValueError
+            If argument label_type is not valid.
 
         Examples
         --------
-
         >>> from vowpalwabbit.pyvw import DFtoVW
         >>> from pandas as pd
         >>> df = pd.DataFrame({"y": [1], "x": [2]})
-        >>> conv = DFtoVW.from_colnames(y="y", x="x")
-        >>> conv.process_df()
+        >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
+        >>> conv.convert_df()
+
+        >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
+        >>> conv2 = DFtoVW.from_colnames(y="y", x=set(df2.columns) - set("y"), df=df2)
+        >>> conv2.convert_df()
 
         Returns
         -------
-
         DFtoVW
             A initialized DFtoVW instance.
         """
+        dict_label_type = {
+            "simple_label": SimpleLabel,
+            "multi_class": MultiClass,
+        }
 
         if isinstance(y, list):
             if len(y) == 1:
                 y = y[0]
             else:
                 raise ValueError(
-                    "Parameter should a list of one string (or a string)"
+                    "Argument 'y' should a list of one string (or a string)."
                 )
         if not isinstance(y, str):
             raise TypeError(
-                "Argument 'y' should be a string or a list of one string"
+                "Argument 'y' should be a string or a list of one string."
             )
 
-        label = SimpleLabel(Col(y))
+        try:
+            label = dict_label_type[label_type](y)
+        except KeyError:
+            raise ValueError(
+                "'label_type' should be either of the following string: {label_types}".format(
+                    label_types=repr(list(dict_label_type.keys()))[1:-1]
+                )
+            )
 
         x = list(x) if isinstance(x, (list, set)) else [x]
         if not all(isinstance(xi, str) for xi in x):
             raise TypeError(
-                "Argument 'x' should be a string or a list of string"
+                "Argument 'x' should be a string or a list of string."
             )
 
         namespaces = Namespace(
-            features=[Feature(value=Col(colname)) for colname in x]
+            features=[Feature(value=colname) for colname in x]
         )
         return cls(namespaces=namespaces, label=label, df=df)
 
-    def check_label_type(self):
-        """Check label argument conformity.
+    def check_features_type(self, features):
+        """Check if the features argument is of type Feature.
+
+        Parameters
+        ----------
+        features: (list of) Feature,
+            The features argument to check.
 
         Raises
         ------
-
         TypeError
-            If label is not of type SimpleLabel.
+            If the features is not a Feature of a list of Feature.
         """
-        if not isinstance(self.label, SimpleLabel) and self.label is not None:
-            raise TypeError("Argument 'label' must be of type 'SimpleLabel'")
+        if isinstance(features, list):
+            valid_feature = all(
+                [isinstance(feature, Feature) for feature in features]
+            )
+        else:
+            valid_feature = isinstance(features, Feature)
+        if not valid_feature:
+            raise TypeError(
+                "Argument 'features' should be a Feature or a list of Feature."
+            )
+
+    def set_namespaces_or_features(self, namespaces, features):
+        """Set namespaces attributes
+
+        Parameters
+        ----------
+        namespaces: Namespace / list of Namespace objects
+            The namespaces argument.
+        features: Feature / list of Feature objects
+            The features argument.
+
+        Raise
+        -----
+            ValueError:
+                If argument 'features' or 'namespaces' are not valid.
+        """
+        if (features is None) and (namespaces is None):
+            raise ValueError("Missing 'features' or 'namespace' argument")
+        if (features is not None) and (namespaces is not None):
+            raise ValueError(
+                "Arguments supplied for both 'features' and 'namespaces', only one of the these arguments should be supplied."
+            )
+
+        if features is not None:
+            namespaces = Namespace(features=features)
+
+        namespaces = (
+            list(namespaces)
+            if isinstance(namespaces, (list, set))
+            else [namespaces]
+        )
+
+        self.namespaces = namespaces
+
+    def check_label_type(self):
+        """Check label type.
+
+        Raises
+        ------
+        TypeError
+            If label is not of type SimpleLabel or MultiClass.
+        """
+        available_labels = (SimpleLabel, MultiClass)
+
+        if self.label is None:
+            pass
+        else:
+            if not isinstance(self.label, available_labels):
+                raise TypeError(
+                    "Argument 'label' should be either of the following type: {label_types}.".format(
+                        label_types=repr(
+                            [x.__name__ for x in available_labels]
+                        )[1:-1]
+                    )
+                )
 
     def check_namespaces_type(self):
         """Check if namespaces arguments are of type Namespace.
 
         Raises
         ------
-
         TypeError
-            If namespaces are not of type Namespace.
+            If namespaces are not of type Namespace or list of Namespace.
         """
         wrong_type_namespaces = [
             not isinstance(namespace, Namespace)
@@ -2011,89 +2235,158 @@ class DFtoVW:
         ]
         if any(wrong_type_namespaces):
             raise TypeError(
-                "Argument `namespaces` should be "
-                "a Namespace object or a list of Namespace objects"
+                "Argument 'namespaces' should be a Namespace or a list of Namespace."
             )
 
-    def check_features_type(self):
-        """Check if 'features' attribute of namespaces are of type Feature.
+    def check_columns_existence_in_df(self):
+        """Check if the columns are in the dataframe."""
+        absent_cols = {}
+        df_colnames = set(self.df.columns)
+
+        try:
+            missing_cols = self.label.columns
+        except AttributeError:
+            pass
+        else:
+            if missing_cols is not None:
+                type_label = type(self.label).__name__
+                absent_cols[type_label] = list(missing_cols - df_colnames)
+
+        try:
+            missing_cols = self.tag.columns
+        except AttributeError:
+            pass
+        else:
+            if missing_cols is not None:
+                absent_cols["tag"] = list(missing_cols - df_colnames)
+
+        all_features = [
+            feature
+            for namespace in self.namespaces
+            for feature in namespace.features
+        ]
+        missing_features_cols = []
+        for feature in all_features:
+            try:
+                missing_cols = feature.columns
+            except AttributeError:
+                pass
+            else:
+                if missing_cols is not None:
+                    missing_features_cols += list(missing_cols - df_colnames)
+
+        absent_cols["Feature"] = sorted(list(set(missing_features_cols)))
+
+        absent_cols = {
+            key: value
+            for (key, value) in absent_cols.items()
+            if len(value) > 0
+        }
+        self.generate_missing_col_error(absent_cols)
+
+    def generate_missing_col_error(self, absent_cols_dict):
+        """Generate error if some columns are missing
 
         Raises
         ------
-
-        TypeError
-            If parameters any of the element in a 'Namespace' is not of type
-            'Feature'.
-        """
-        for ns in self.namespaces:
-            features = ns.features
-            wrong_type_features = [
-                not isinstance(feature, Feature) for feature in features
-            ]
-            if any(wrong_type_features):
-                raise TypeError(
-                    "Argument 'features' of Namespace should be "
-                    "a Feature object or a list of Feature objects"
-                )
-
-    def check_if_cols_exist(self):
-        """Check if the columns specified in the constructor are in the
-        dataframe.
-
-        Raises
-        ------
-
         ValueError
             If one or more columns are not in the dataframe.
         """
-        absent_cols = {}
-
-        if self.label is not None:
-            absent_cols["label"] = [
-                x.colname
-                for x in _get_all_cols(self.label)
-                if not x.col_exist(self.df)
-            ]
-
-        if self.tag is not None:
-            if isinstance(self.tag, Col) and not self.tag.col_exist(self.df):
-                absent_cols["tag"] = repr(self.tag.colname)
-
-        missing_features_cols = []
-        for ns in self.namespaces:
-            for feature in ns.features:
-                missing_features_cols += [
-                    x.colname
-                    for x in _get_all_cols(feature)
-                    if not x.col_exist(self.df)
-                ]
-        absent_cols["features"] = sorted(list(set(missing_features_cols)))
-
-        absent_cols = {
-            key: value for (key, value) in absent_cols.items() if len(value) > 0
-        }
-        msg_error = ""
-        for arg_name, missing_cols in absent_cols.items():
-            missing_cols = (
-                repr(missing_cols)[1:-1]
-                if isinstance(missing_cols, list)
-                else missing_cols
-            )
-            if len(msg_error) > 0:
-                msg_error += "\n"
-            msg_error += "In argument '{}', column(s) {} not found in dataframe".format(
-                arg_name, missing_cols
-            )
-
-        if absent_cols:
+        if absent_cols_dict:
+            msg_error = ""
+            for attribute_name, missing_cols in absent_cols_dict.items():
+                missing_cols = (
+                    repr(missing_cols)[1:-1]
+                    if isinstance(missing_cols, list)
+                    else missing_cols
+                )
+                if len(msg_error) > 0:
+                    msg_error += " "
+                msg_error += "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
+                    attribute=attribute_name, colnames=missing_cols,
+                )
             raise ValueError(msg_error)
+
+    def check_columns_type_and_values(self):
+        """Check columns type and values range"""
+        for instance in [self.tag, self.label]:
+            self.check_instance_columns(instance)
+
+        for namespace in self.namespaces:
+            for feature in namespace.features:
+                self.check_instance_columns(feature)
+
+    def check_instance_columns(self, instance):
+        """Check the columns type and values of a given instance.
+        The method iterate through the attributes and look for _Col type
+        attribute. Once found, the method use the _Col methods to check the
+        type and the value range of the column. Also, the instance type in
+        which the errors occur are prepend to the error message to be more
+        explicit about where the error occurs in the formula.
+
+        Raises
+        ------
+        TypeError
+            If a column is not of valid type.
+        ValueError
+            If a column values are not in the valid range.
+        """
+        if instance is None:
+            pass
+        else:
+            class_name = type(instance).__name__
+            for attribute_name in vars(instance):
+                attribute_value = getattr(instance, attribute_name)
+                if isinstance(attribute_value, _Col):
+                    # Testing column type
+                    try:
+                        attribute_value.check_col_type(self.df)
+                    except TypeError as type_error:
+                        type_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
+                            class_name=class_name,
+                            attribute=attribute_name,
+                            error=str(type_error),
+                        )
+                        raise TypeError(type_error_msg)
+                    # Testing column value range
+                    try:
+                        attribute_value.check_col_value(self.df)
+                    except ValueError as value_error:
+                        value_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
+                            class_name=class_name,
+                            attribute=attribute_name,
+                            error=str(value_error),
+                        )
+                        raise ValueError(value_error_msg)
+
+    def convert_df(self):
+        """Main method that converts the dataframe to the VW format.
+
+        Returns
+        -------
+        list
+            The list of parsed lines in VW format.
+        """
+        self.out = self.empty_col()
+
+        if not all([x is None for x in [self.label, self.tag]]):
+            self.out += self.process_label_and_tag()
+
+        for (i, namespace) in enumerate(self.namespaces):
+            to_add = namespace.process() + self.process_features(
+                namespace.features
+            )
+            self.out += (
+                (to_add + " ") if (i < len(self.namespaces) - 1) else to_add
+            )
+
+        return self.out.to_list()
 
     def empty_col(self):
         """Create an empty string column.
 
         Returns
         -------
-
         pandas.Series
             A column of empty string with as much rows as the input dataframe.
         """
@@ -2104,7 +2397,6 @@ class DFtoVW:
 
         Returns
         -------
-
         out : pandas.Series
             A column where each row is the processed label and tag.
         """
@@ -2112,7 +2404,7 @@ class DFtoVW:
         if self.label is not None:
             out += self.label.process(self.df) + " "
         if self.tag is not None:
-            out += _get_col_or_value(self.tag, self.df)
+            out += self.tag.process(self.df)
         return out
 
     def process_features(self, features):
@@ -2120,13 +2412,11 @@ class DFtoVW:
 
         Parameters
         ----------
-
         features : list of Feature
             The list of Feature objects.
 
         Returns
         -------
-
         out : pandas.Series
             The column of the processed features.
         """
@@ -2134,27 +2424,3 @@ class DFtoVW:
         for feature in features:
             out += " " + feature.process(self.df)
         return out
-
-    def process_df(self):
-        """Main method that converts the pandas dataframe to the VW format.
-
-        Returns
-        -------
-
-        list
-            The list of parsed lines in VW format.
-        """
-        self.out = self.empty_col()
-
-        if not all(x is None for x in [self.label, self.tag]):
-            self.out += self.process_label_and_tag()
-
-        for (num_ns, ns_obj) in enumerate(self.namespaces):
-            to_add = ns_obj.process() + self.process_features(ns_obj.features)
-            self.out += (
-                (to_add + " ")
-                if (num_ns < len(self.namespaces) - 1)
-                else to_add
-            )
-
-        return self.out.to_list()
