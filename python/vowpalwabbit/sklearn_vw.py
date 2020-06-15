@@ -548,6 +548,8 @@ class VW(BaseEstimator):
                          sample_weight=sample_weight,
                          convert_labels=self.convert_labels)
 
+
+
             # add examples to model
             for n in range(passes):
                 if n >= 1:
@@ -1042,6 +1044,10 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
 
     if use_weight:
         sample_weight = check_array(sample_weight, accept_sparse=False, ensure_2d=False, dtype=np.int, order="C")
+        if sample_weight.ndim != 1:
+            raise ValueError("Sample weights must be 1D array or scalar")
+        if sample_weight.shape != (x.shape[0],):
+            raise ValueError("Sample weight shape == {}, expected {}".format(sample_weight.shape, (x.shape[0],)))
     else:
         sample_weight = np.ones(x.shape[0], dtype=np.int)
 
