@@ -1897,6 +1897,10 @@ class Namespace(object):
     be composed of a Feature object or a list of Feature objects.
     """
 
+    expected_type = dict(
+        name=(str, int, float), value=(int, float), features=(Feature,)
+    )
+
     def __init__(self, features, name=None, value=None):
         """Initialize a Namespace instance.
 
@@ -1943,19 +1947,10 @@ class Namespace(object):
         TypeError
             If one of the attribute is not valid.
         """
-        valid_feature = all(
-            [isinstance(feature, Feature) for feature in self.features]
-        )
-        if not valid_feature:
-            raise TypeError(
-                "In Namespace, argument 'features' should be a Feature or a list of Feature."
-            )
-
-        expected_type = dict(name=(str, int, float), value=(int, float))
         for attribute_name in ["name", "value"]:
             attribute_value = getattr(self, attribute_name)
             if attribute_value is not None and not isinstance(
-                attribute_value, expected_type[attribute_name]
+                attribute_value, self.expected_type[attribute_name]
             ):
                 raise TypeError(
                     "In Namespace, argument '{attribute_name}' should be either of the following type(s): {types}".format(
@@ -1968,6 +1963,17 @@ class Namespace(object):
                         )[1:-1],
                     )
                 )
+
+        valid_feature = all(
+            [
+                isinstance(feature, self.expected_type["features"])
+                for feature in self.features
+            ]
+        )
+        if not valid_feature:
+            raise TypeError(
+                "In Namespace, argument 'features' should be a Feature or a list of Feature."
+            )
 
     def process(self):
         """Returns the Namespace string representation"""
