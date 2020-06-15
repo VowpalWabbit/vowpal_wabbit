@@ -523,8 +523,7 @@ class VW(BaseEstimator):
         params = {k: v for k, v in self.get_params().items() if v is not None}
 
         passes = 1
-        use_data_file = params.get('data', False)
-        use_data_file = params.get('d', use_data_file)
+        use_data_file = params.get('data', params.get('d', False))
         if not use_data_file:
             # remove passes from vw params since we're feeding in the data manually
             passes = params.pop('passes', passes)

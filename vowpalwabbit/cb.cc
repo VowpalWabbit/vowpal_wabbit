@@ -9,7 +9,7 @@
 #include "vw.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 
 namespace CB
 {

@@ -3,7 +3,7 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -16,6 +16,9 @@ if(WIN32)
 else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
+
+add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
+target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 
 set(vw_all_headers
   accumulate.h
@@ -44,13 +47,14 @@ set(vw_all_headers
   cb_explore_adf_first.h
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
+  cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
   cb_explore.h
   cb.h
   cbify.h
   ccb_label.h
   classweight.h
-  comp_io.h
+  compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
@@ -60,6 +64,7 @@ set(vw_all_headers
   crossplat_compat.h
   cs_active.h
   csoaa.h
+  decision_scores.h
   distributionally_robust.h
   ect.h
   error_reporting.h
@@ -75,6 +80,7 @@ set(vw_all_headers
   gd.h
   gen_cs_example.h
   global_data.h
+  guard.h
   hashstring.h
   interact.h
   interactions_predict.h
@@ -114,12 +120,14 @@ set(vw_all_headers
   parse_example.h
   parse_primitives.h
   parse_regressor.h
+  parse_slates_example_json.h
   parser.h
   print.h
   queue.h
   rand48.h
   recall_tree.h
   reductions.h
+  scope_exit.h
   scorer.h
   search_dep_parser.h
   search_entityrelationtask.h
@@ -133,10 +141,12 @@ set(vw_all_headers
   shared_feature_merger.h
   simple_label.h
   slates_label.h
+  slates.h
   spanning_tree.h
   stable_unique.h
   stagewise_poly.h
   svrg.h
+  tag_utils.h
   topk.h
   unique_sort.h
   v_array.h
@@ -175,6 +185,7 @@ set(vw_all_sources
   cb_explore_adf_first.cc
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
+  cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
   cb_explore.cc
   cb_sample.cc
@@ -182,16 +193,18 @@ set(vw_all_sources
   cbify.cc
   ccb_label.cc
   classweight.cc
-  comp_io.cc
   conditional_contextual_bandit.cc
   confidence.cc
   cost_sensitive.cc
   cs_active.cc
   csoaa.cc
+  decision_scores.cc
   distributionally_robust.cc
   ect.cc
+  example_predict.cc
   example.cc
   explore_eval.cc
+  feature_group.cc
   ftrl.cc
   gd_mf.cc
   gd.cc
@@ -244,8 +257,10 @@ set(vw_all_sources
   shared_feature_merger.cc
   simple_label.cc
   slates_label.cc
+  slates.cc
   stagewise_poly.cc
   svrg.cc
+  tag_utils.cc
   topk.cc
   unique_sort.cc
   version.cc
@@ -254,13 +269,13 @@ set(vw_all_sources
   warm_cb.cc
 )
 
-add_library(vw ${vw_all_sources} ${vw_all_headers})
+add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} ZLIB::ZLIB
+    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -379,7 +394,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce
+    TARGETS vw vw-bin allreduce vw_io
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
