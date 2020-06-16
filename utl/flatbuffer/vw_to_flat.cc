@@ -158,7 +158,11 @@ void convert_txt_to_flat(vw& all)
       }
       namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, ns, &fts));
     }
-    examplecollection.push_back(VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label.Union()));
+    std::string tag(v->tag.begin(), v->tag.size());
+
+    auto flat_namespaces = builder.CreateVector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>>(namespaces);
+    auto flat_example = VW::parsers::flatbuffer::CreateExample(builder, flat_namespaces, label_type, label.Union(), builder.CreateString(tag.data()));
+    examplecollection.push_back(flat_example);
 
     examples++;
     v = all.p->ready_parsed_examples.pop();

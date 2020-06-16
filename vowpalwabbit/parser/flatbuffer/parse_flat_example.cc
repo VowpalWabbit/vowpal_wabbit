@@ -38,6 +38,12 @@ void parse_example(vw* all, example* ae, const Example* eg)
   all->p->lp.default_label(&ae->l);
   parse_flat_label(all, ae, eg);
 
+  if (flatbuffers::IsFieldPresent(eg, VW::parsers::flatbuffer::Example::VT_TAG)){
+    ae->tag = v_init<char>();
+    VW::string_view tag(eg->tag()->c_str());
+    push_many(ae->tag, tag.begin(), tag.size());
+  }
+
   for (int i=0; i < eg->namespaces()->size(); i++){
     parse_namespaces(all, ae, eg->namespaces()->Get(i));
   }
@@ -127,7 +133,6 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
     uint32_t word = label->label();
     ae->l.multi.label = all->sd->ldict ? (uint32_t)all->sd->ldict->get(std::to_string(word)) : word;
     ae->l.multi.weight = label->weight();
-    // ae->l.multi = label->weight();
   }
   else if (label_type == Label_MultiLabel){
     auto label = static_cast<const VW::parsers::flatbuffer::MultiLabel*>(eg->label());

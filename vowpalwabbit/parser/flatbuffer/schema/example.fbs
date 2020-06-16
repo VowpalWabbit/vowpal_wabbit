@@ -91,6 +91,7 @@ union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Lab
 table Example {
   namespaces:[Namespace];
   label:Label;
+  tag:string;
 }
 
 table ExampleCollection {
