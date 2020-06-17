@@ -332,7 +332,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
-  // Retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
+  // Retrieve the list of actions explicitly available for the slot (if the list is empty, then all actions are possible)
   auto& explicit_includes = slot->l.conditional_contextual_bandit.explicit_included_actions;
   if (!explicit_includes.empty())
   {
