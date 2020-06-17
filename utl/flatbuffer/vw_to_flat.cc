@@ -97,7 +97,7 @@ void convert_txt_to_flat(vw& all)
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::wclass>> costs;
       for (auto const& wc : v->l.cs.costs)
       {
-        costs.push_back(VW::parsers::flatbuffer::Createwclass(builder, wc.x, wc.partial_prediction, wc.wap_value, wc.partial_prediction));
+        costs.push_back(VW::parsers::flatbuffer::Createwclass(builder, wc.x, wc.partial_prediction, wc.wap_value, wc.class_index));
       }
       label = VW::parsers::flatbuffer::CreateCS_LabelDirect(builder, &costs).Union();
       label_type = VW::parsers::flatbuffer::Label_CS_Label;

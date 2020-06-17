@@ -1063,7 +1063,7 @@ __DATA__
         train-sets/ref/sequence_data.ldf.train.stderr
 
 # Test 47: search sequence labeling, ldf test
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant --fb
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
 
@@ -1131,12 +1131,8 @@ __DATA__
 
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
-echo "" | {VW}
-    train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
-./daemon-test.sh
-    test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
 {VW} --ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat --fb
@@ -1166,7 +1162,7 @@ echo "" | {VW}
     train-sets/ref/dictionary_test.stderr
 
 # Test 68: Search for multiclass classification
-{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
+{VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off --fb
     train-sets/ref/search_multiclass.stderr
 
 # Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
@@ -1254,13 +1250,8 @@ echo "" | {VW}
     pred-sets/ref/cb_adf_rank.predict
 
 # Test 88: named labels at training time
-{VW} --named_labels det,noun,verb --oaa 3 -d train-sets/test_named  -k -c --passes 10 --holdout_off -f models/test_named.model --fb
-    train-sets/ref/test_named_train.stderr
 
 # Test 89: named labels at prediction
-{VW} -i models/test_named.model -t -d train-sets/test_named -p test_named.predict --fb
-    train-sets/ref/test_named_test.stderr
-    pred-sets/ref/test_named.predict
 
 # Test 90: named labels at training time (csoaa)
 {VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --fb
@@ -1504,11 +1495,6 @@ echo "" | {VW}
     train-sets/ref/cb_adf_dm.stderr
     pred-sets/ref/cb_adf_dm.predict
 
-# Test 149: initial_weight option is used
-echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --fb
-    train-sets/ref/initial_weight.stderr
-    train-sets/ref/initial_weight.stdout
-
 # Test 150:  Test --sparse_weights with 148
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights --fb
     train-sets/ref/sparse.stderr
@@ -1517,10 +1503,6 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --fb
 {VW} --lrqfa aa3 -d train-sets/0080.dat --fb
     train-sets/ref/0151.stderr
 
-# Test 152: daemon on the foreground test --fb
-./daemon-test.sh --foreground
-    test-sets/ref/vw-daemon.stdout
-
 # Test 153: marginal features
 {VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100  --compete --fb
     train-sets/ref/marginal_compete.stderr
@@ -1528,9 +1510,6 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --fb
 # Test 154: ignore linear
 {VW} -k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx --fb
     train-sets/ref/ignore_linear.stderr
-
-# Test 156: --cubic regression verification
-./cubic-test.sh ${VW}
 
 # Test 157: save_resume without --preserve_performce_counters does not alter performance counters over multiple passes
 {VW} -d train-sets/0001.dat -f models/sr.model  --passes 2 -c -k  -P 50 --save_resume --fb
@@ -1610,9 +1589,6 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --fb
 {VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01 --fb
     train-sets/ref/cbify_ldf_regcbopt.stderr
 
-# Test 176: same model on cluster mode
-./same-model-test.sh
-
 # Test 178 cb_adf, sharedfeatures
 {VW} --cb_adf -d train-sets/no_shared_features.json --fb
     train-sets/ref/no_shared_features.stderr
@@ -1675,18 +1651,6 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --fb
     test-sets/ref/ftrl_coin.stderr
     pred-sets/ref/ftrl_coin.predict
 
-# Test 193: malformed examples, onethread, strict_parse failure
-./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse --fb
-    train-sets/ref/malformed-onethread-strict_parse.stderr
-
-# Test 194: malformed examples, strict_parse failure
-./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse --fb
-    train-sets/ref/malformed-strict_parse.stderr
-
-# Test 195: malformed examples success
-{VW} -d train-sets/malformed.dat --onethread --fb
-    train-sets/ref/malformed.stderr
-
 # Test 196: online contextual memory tree
 {VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off --fb
     train-sets/ref/cmt_rcv1_smaller_online.stderr
@@ -1717,16 +1681,8 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --fb
 {VW} --ccb_explore_adf --ring_size 20 -d train-sets/ccb_reuse_medium.dsjson --fb
     train-sets/ref/ccb_reuse_medium.stderr
 
-# Test 203: Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread
-python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree \
-    --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat \
-    --prediction_file cluster.predict
-        test-sets/ref/cluster.stderr
-        test-sets/ref/cluster.stdout
-        pred-sets/ref/cluster.predict
-
 # Test 204: Test if options that are negative numbers are handled correctly
-{VW} --classweight -1:0.5 --no_stdin --fb
+{VW} --classweight -1:0.5 --no_stdin
     test-sets/ref/negative-num-option.stderr
 
 # Test 205: test cb_dro with softmax

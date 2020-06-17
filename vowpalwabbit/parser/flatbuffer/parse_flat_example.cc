@@ -21,7 +21,7 @@ void read_flatbuffer(vw* all, char* line, size_t len, v_array<example*>& example
 
 int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
 {
-  all->max_examples = all->data->examples()->size() - 1;
+  all->max_examples = (all->max_examples != std::numeric_limits<size_t>::max()) ? all->max_examples : all->data->examples()->size() - 1;
   parse_examples(all, examples, all->data);
 
   return 1; // Get rid of this
