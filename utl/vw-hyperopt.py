@@ -38,7 +38,7 @@ def read_arguments():
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
     parser.add_argument('--vw_space', type=str, required=True, help="hyperparameter search space (must be 'quoted')")
     parser.add_argument('--outer_loss_function', default='logistic',
-                        choices=['logistic', 'roc-auc', 'pr-auc', 'hinge', 'squared'])  # TODO: implement quantile
+                        choices=['logistic', 'roc-auc', 'pr-auc', 'hinge', 'squared', 'quantile'])
     parser.add_argument('--regression', action='store_true', default=False, help="""regression (continuous class labels)
                                                                         or classification (-1 or 1, default value).""")
     parser.add_argument('--plot', action='store_true', default=False, help=("Plot the results in the end. "
@@ -293,6 +293,11 @@ class HyperOptimizer(object):
             y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             fpr, tpr, _ = roc_curve(self.y_true_holdout, y_pred_holdout_proba)
             loss = -auc(fpr, tpr)
+
+        elif self.outer_loss_function == 'quantile': # Minimum at Median
+            tau = 0.5
+            loss = np.mean([max(tau * (true - pred), (tau - 1) * (true - pred)) \
+                          for true, pred in zip(self.y_true_holdout, y_pred_holdout)])
 
         else:
             raise KeyError('Invalide outer loss function')
