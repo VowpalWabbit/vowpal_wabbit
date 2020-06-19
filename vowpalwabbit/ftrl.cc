@@ -161,15 +161,6 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
   w[W_G2] += fabs(gradient);
 }
 
-std::string coin_betting_state_to_string(float* w)
-{
-  std::stringstream tmp;
-  tmp << "W_XT:" << w[0] << ", W_ZT:" << w[1]
-      << ", W_G2:" << w[2] << ", W_MX:" << w[3]
-      << ", W_WE:" << w[4] << ", W_MG:" << w[5];
-  return tmp.str();
-}
-
 // Coin betting vectors
 // W_XT 0  current parameter
 // W_ZT 1  sum negative gradients
@@ -196,18 +187,6 @@ void inner_coin_betting_predict(update_data& d, float x, float& wref)
   d.predict += w_xt * x;
   if (w_mx > 0)
     d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
-
-// #ifdef _DEBUG
-//   if (nanpattern(d.predict) || infpattern(w[W_WE]) )
-//     cerr << "PREDICT: example_counter=" << __debug_current_example__->example_counter
-//          << ", ft_offset=" << __debug_current_example__->ft_offset << ", "
-//           << ", w_xt=" << w_xt
-//           << ", x=" << x
-//           << ", pre_d_predict=" << pre_d_predict
-//           << ", d.predict=" << d.predict << ", "
-//           << coin_betting_state_to_string(w)
-//           << ", ftrl_alpha=" << d.ftrl_alpha << endl;
-// #endif
 }
 
 void inner_coin_betting_update_after_prediction(update_data& d, float x, float& wref)
@@ -236,14 +215,6 @@ void inner_coin_betting_update_after_prediction(update_data& d, float x, float& 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
-
-#ifdef DEBUG
-  if (infpattern(w[W_WE]))
-  {
-    cerr << "UPDATE: d.update=" << d.update << ", x=" << x << ", gradient=" << gradient << ", "
-          << coin_betting_state_to_string(w) << endl;
-  }
-#endif
 }
 
 void coin_betting_predict(ftrl& b, single_learner&, example& ec)
@@ -259,19 +230,6 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
   ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
-
-#ifdef DEBUG
-  if (nanpattern(ec.partial_prediction))
-  {
-    cerr << "ec.example_counter=" << ec.example_counter << ", ec.ft_offset=" << ec.ft_offset << endl;
-    cerr << "b.all->normalized_sum_norm_x=" << b.all->normalized_sum_norm_x << ", ec.weight=" << ec.weight
-         << ", b.data.normalized_squared_norm_x=" << b.data.normalized_squared_norm_x
-         << ", b.total_weight=" << b.total_weight << ", ec.weight=" << ec.weight
-         << ", ec.partial_prediction=" << ec.partial_prediction << ", b.data.predict=" << b.data.predict
-         << ", (b.all->normalized_sum_norm_x + 1e-6)=" << (b.all->normalized_sum_norm_x + 1e-6)
-         << ", b.total_weight=" << b.total_weight << endl;
-  }
-#endif
 }
 
 void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)

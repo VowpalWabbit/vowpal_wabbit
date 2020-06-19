@@ -33,13 +33,10 @@ using std::endl;
 
 VW_DEBUG_ENABLE(false)
 
+// todo:
+// 4. Factor various state out of vw&
 namespace GD
 {
-bool GET_VW_DEBUG_LOG() { return VW_DEBUG_LOG; }
-
-std::string depth_str;
-std::string get_depth_str() { return depth_str; }
-
 struct gd
 {
   //  double normalized_sum_norm_x;
@@ -380,7 +377,6 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
-  depth_str = depth_indent_string(ec);
   vw& all = *g.all;
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
@@ -389,9 +385,6 @@ void predict(gd& g, base_learner&, example& ec)
 
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
-
-  VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
-
   if (audit)
     print_audit_features(all, ec);
 }

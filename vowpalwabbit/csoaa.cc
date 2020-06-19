@@ -33,7 +33,7 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 {
   if (is_learn)
   {
-    (cost == FLT_MAX) ? ec.weight = 0.0f : ec.weight = 1.0f;
+    ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     ec.l.simple.label = cost;
     base.learn(ec, i - 1);
   }
@@ -356,7 +356,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 
       base.learn(*ec1);
     }
-    
+
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
