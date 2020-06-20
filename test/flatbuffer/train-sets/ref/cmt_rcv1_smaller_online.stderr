@@ -4,7 +4,7 @@ learning rate = 0.001
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = train-sets/rcv1_smaller.dat
+Reading datafile = train-sets/rcv1_smaller_memory_tree.dat
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features

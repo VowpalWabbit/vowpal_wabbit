@@ -1227,8 +1227,6 @@ __DATA__
     pred-sets/ref/ftrl_pistol.predict
 
 # Test 83: check redefine functionality
-{VW} -k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy --fb
-    train-sets/ref/redefine.stderr
 
 # Test 84: check cb_adf
 {VW} --cb_adf -d train-sets/cb_test.ldf --noconstant --fb
@@ -1652,16 +1650,14 @@ __DATA__
     pred-sets/ref/ftrl_coin.predict
 
 # Test 196: online contextual memory tree
-{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off --fb
+{VW} -d train-sets/rcv1_smaller_memory_tree.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off --fb
     train-sets/ref/cmt_rcv1_smaller_online.stderr
 
 # Test 197: offline contextual memory tree
-{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off --fb
+{VW} -d train-sets/rcv1_smaller_memory_tree.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off --fb
     train-sets/ref/cmt_rcv1_smaller_offline.stderr
 
 # Test 198: test cb_sample
-{VW} --cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234 --fb
-    pred-sets/ref/cb_sample_seed.predict
 
 # Test 199: CCB train then test
 {VW} -d train-sets/ccb_test.dat --ccb_explore_adf -p ccb_test.predict --fb
@@ -1678,29 +1674,16 @@ __DATA__
     train-sets/ref/ccb_reuse_small.stderr
 
 # Test 202: Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind
-{VW} --ccb_explore_adf --ring_size 20 -d train-sets/ccb_reuse_medium.dsjson --fb
-    train-sets/ref/ccb_reuse_medium.stderr
 
 # Test 204: Test if options that are negative numbers are handled correctly
 {VW} --classweight -1:0.5 --no_stdin
     test-sets/ref/negative-num-option.stderr
 
 # Test 205: test cb_dro with softmax
-{VW} --cb_dro --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_adf_sm.predict --cb_type sm --fb
-    train-sets/ref/cb_dro_adf_sm.stderr
-    pred-sets/ref/cb_dro_adf_sm.predict
 
 # Test 209: Test override epsilon value saved in a model
-{VW} -i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds --fb
-    pred-sets/ref/override_epsilon.stderr
-    pred-sets/ref/override_epsilon.preds
 
 # Test 210: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
-# SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)
-{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant --fb\
-    && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt  --fb
-    train-sets/ref/inv_hash_load_model.invert.txt
-    train-sets/ref/inv_hash_load_model.readable.txt
         
 # Test 211: cb_explore_adf with rnd exploration
 {VW} --cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict --fb
