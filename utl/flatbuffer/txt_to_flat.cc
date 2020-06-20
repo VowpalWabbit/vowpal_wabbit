@@ -72,12 +72,14 @@ int main(int argc, char* argv[])
   std::vector<vw*> alls;
   std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
   ptr->add_and_parse(driver_config);
+  alls[0]->logger.quiet = true;
   alls.push_back(setup(*ptr));
   arguments.push_back(std::move(ptr));
 
   vw& all = *alls[0];
 
   VW::start_parser(all);
+  all.logger.quiet = true;
   convert_txt_to_flat(all);
   VW::end_parser(all); 
   return 0;

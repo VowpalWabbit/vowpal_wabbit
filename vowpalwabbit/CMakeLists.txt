@@ -125,6 +125,7 @@ set(vw_all_headers
   parser/flatbuffer/endian.h
   parser/flatbuffer/preamble.h
   parser/flatbuffer/parse_flat_example.h
+  parser/flatbuffer/parse_label.h
   print.h
   queue.h
   rand48.h
@@ -246,6 +247,7 @@ set(vw_all_sources
   parser/flatbuffer/endian.cc
   parser/flatbuffer/preamble.cc
   parser/flatbuffer/parse_flat_example.cc
+  parser/flatbuffer/parse_label.cc
   print.cc
   rand48.cc
   recall_tree.cc

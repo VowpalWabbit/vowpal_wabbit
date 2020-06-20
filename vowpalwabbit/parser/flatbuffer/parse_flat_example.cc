@@ -9,6 +9,7 @@
 #include "../../action_score.h"
 #include "../../best_constant.h"
 #include "parse_flat_example.h"
+#include "parse_label.h"
 #include "generated/example_generated.h"
 
 namespace VW {
@@ -38,7 +39,7 @@ void parse_example(vw* all, example* ae, const Example* eg)
   all->p->lp.default_label(&ae->l);
   parse_flat_label(all, ae, eg);
 
-  if (flatbuffers::IsFieldPresent(eg, VW::parsers::flatbuffer::Example::VT_TAG)){
+  if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG)){
     ae->tag = v_init<char>();
     VW::string_view tag(eg->tag()->c_str());
     push_many(ae->tag, tag.begin(), tag.size());
@@ -76,120 +77,56 @@ void parse_features(vw* all, example* ae, features& fs, const Feature* feature)
 
 void parse_flat_label(vw* all, example* ae, const Example* eg)
 {
-  VW::parsers::flatbuffer::Label label_type = eg->label_type();
+  Label label_type = eg->label_type();
 
-  if (label_type == Label_SimpleLabel){
-    auto simple_label = static_cast<const VW::parsers::flatbuffer::SimpleLabel*>(eg->label());
-    ae->l.simple.label = simple_label->label();
-    ae->l.simple.weight = simple_label->weight();
-    count_label(all->sd, simple_label->label());
+  switch (label_type)
+  {
+  case Label_SimpleLabel:{
+    const SimpleLabel* simple_label = static_cast<const SimpleLabel*>(eg->label());
+    parse_simple_label(all, ae, simple_label);
+    break;
   }
-
-  else if (label_type == Label_CBLabel){
-    auto label = static_cast<const VW::parsers::flatbuffer::CBLabel*>(eg->label());
-    ae->l.cb.weight = label->weight();
-    for (auto i=0;i<label->costs()->Length();i++){
-
-      CB::cb_class f;
-      f.cost = label->costs()->Get(i)->cost();
-      f.action = label->costs()->Get(i)->action();
-      f.probability = label->costs()->Get(i)->probability();
-      f.partial_prediction = label->costs()->Get(i)->partial_pred();
-      ae->l.cb.costs.push_back(f);
-    }
-    
+  case Label_CBLabel:{
+    const CBLabel* cb_label = static_cast<const CBLabel*>(eg->label());
+    parse_cb_label(ae, cb_label);
+    break;
   }
-  else if (label_type == Label_CCBLabel){
-    auto label = static_cast<const VW::parsers::flatbuffer::CCBLabel*>(eg->label());
-
-    ae->l.conditional_contextual_bandit.weight = label->weight();
-
-    if (label->example_type() == 1) ae->l.conditional_contextual_bandit.type = CCB::example_type::shared;
-    else if (label->example_type() == 2) ae->l.conditional_contextual_bandit.type = CCB::example_type::action;
-    else if (label->example_type() == 3) {
-      ae->l.conditional_contextual_bandit.type = CCB::example_type::slot;
-
-      if (label->explicit_included_actions() != nullptr){
-        for (auto i=0;i<label->explicit_included_actions()->Length();i++){
-          ae->l.conditional_contextual_bandit.explicit_included_actions.push_back(label->explicit_included_actions()->Get(i));
-        }
-      }
-      else if (label->outcome() != nullptr){
-        auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
-        ccb_outcome.cost = label->outcome()->cost();
-        ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
-
-        for (auto const& as : *(label->outcome()->probabilities()))
-          ccb_outcome.probabilities.push_back({as->action(), as->score()});
-
-        ae->l.conditional_contextual_bandit.outcome = &ccb_outcome;
-      }
-    else ae->l.conditional_contextual_bandit.type = CCB::example_type::unset;
-      // ae->l.conditional_contextual_bandit.outcome->cost = label->outcome()->cost();
-    }
+  case Label_CCBLabel:{
+    const CCBLabel* ccb_label = static_cast<const CCBLabel*>(eg->label());
+    parse_ccb_label(ae, ccb_label);
+    break;
   }
-  else if (label_type == Label_MultiClass){
-    auto label = static_cast<const VW::parsers::flatbuffer::MultiClass*>(eg->label());
-    uint32_t word = label->label();
-    ae->l.multi.label = all->sd->ldict ? (uint32_t)all->sd->ldict->get(std::to_string(word)) : word;
-    ae->l.multi.weight = label->weight();
+  case Label_CB_EVAL_Label:{
+    auto cb_eval_label = static_cast<const CB_EVAL_Label*>(eg->label());
+    parse_cb_eval_label(ae, cb_eval_label);
+    break;
   }
-  else if (label_type == Label_MultiLabel){
-    auto label = static_cast<const VW::parsers::flatbuffer::MultiLabel*>(eg->label());
-    for (auto i=0;i<label->labels()->Length();i++){
-      ae->l.multilabels.label_v.push_back(label->labels()->Get(i));
-    }
+  case Label_CS_Label:{
+    auto cs_label = static_cast<const CS_Label*>(eg->label());
+    parse_cs_label(ae, cs_label);
+    break;
   }
-  else if (label_type == Label_CS_Label){
-    auto label = static_cast<const VW::parsers::flatbuffer::CS_Label*>(eg->label());
-
-    for (auto i=0;i<label->costs()->Length();i++){
-      COST_SENSITIVE::wclass f;
-      f.x = label->costs()->Get(i)->x();
-      f.partial_prediction = label->costs()->Get(i)->partial_pred();
-      f.wap_value = label->costs()->Get(i)->wap_value();
-      f.class_index = label->costs()->Get(i)->class_index();
-      ae->l.cs.costs.push_back(f); 
-    }
-  }  
-  else if (label_type == Label_CB_EVAL_Label){
-    auto label = static_cast<const VW::parsers::flatbuffer::CB_EVAL_Label*>(eg->label());
-
-    ae->l.cb_eval.action = label->action();
-
-    ae->l.cb_eval.event.weight = label->event()->weight();
-    for (auto i=0;i<label->event()->costs()->Length();i++){
-      CB::cb_class f;
-      f.cost = label->event()->costs()->Get(i)->cost();
-      f.action = label->event()->costs()->Get(i)->action();
-      f.probability = label->event()->costs()->Get(i)->probability();
-      f.partial_prediction = label->event()->costs()->Get(i)->partial_pred();
-      ae->l.cb_eval.event.costs.push_back(f);
-    }
+  case Label_MultiClass:{
+    auto mc_label = static_cast<const MultiClass*>(eg->label());
+    parse_mc_label(all, ae, mc_label);
+    break;
   }
-  else if (label_type == Label_Slates_Label) {
-    auto label = static_cast<const VW::parsers::flatbuffer::Slates_Label*>(eg->label());
-
-    ae->l.slates.weight = label->weight();
-
-    if (label->example_type() == 1) {
-      ae->l.slates.labeled = label->labeled();
-      ae->l.slates.cost = label->cost();
-    }
-    else if (label->example_type() == 2) ae->l.slates.slot_id = label->slot();
-    else if (label->example_type() == 3) {
-      ae->l.slates.labeled = label->labeled();
-      ae->l.slates.probabilities = v_init<ACTION_SCORE::action_score>();
-
-      for (auto const& as : *(label->probabilities()))
-        ae->l.slates.probabilities.push_back({as->action(), as->score()});    
-    }
-    else {
-      THROW("Example type not understood")
-    }
+  case Label_MultiLabel:{
+    auto multi_label = static_cast<const MultiLabel*>(eg->label());
+    parse_multi_label(ae, multi_label);
+    break;
   }
-  else {
-    // No label
+  case Label_Slates_Label:{
+    auto slates_label = static_cast<const Slates_Label*>(eg->label());
+    parse_slates_label(ae, slates_label);
+    break;
+  }
+  case Label_no_label:
+    // auto label = static_cast<const no_label*>(eg->label());
+    parse_no_label();
+    break;
+  default:
+    THROW("Label type in Flatbuffer not understood");
   }
 }
 

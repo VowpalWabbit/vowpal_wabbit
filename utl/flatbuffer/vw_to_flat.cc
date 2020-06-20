@@ -187,3 +187,5 @@ void convert_txt_to_flat(vw& all)
   outfile.write(reinterpret_cast<char*>(buf), size);
   all.trace_message << "Flatbuffer " << all.flatout << " created";
 }
+
+
