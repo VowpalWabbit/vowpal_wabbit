@@ -49,8 +49,6 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <cstdio>
 #include <cassert>
 
-#include "parser/flatbuffer/generated/example_generated.h"
-#include "parser/flatbuffer/preamble.h"
 #include "parse_example.h"
 #include "cache.h"
 #include "unique_sort.h"
@@ -62,7 +60,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
 #include "io/io_adapter.h"
-#include "parser/flatbuffer/parse_flat_example.h"
+#include "parser/flatbuffer/generated/example_generated.h"
 
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)

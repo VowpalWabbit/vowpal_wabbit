@@ -11,7 +11,6 @@
 #include "../../vowpalwabbit/best_constant.h"
 #include "../../vowpalwabbit/vw_exception.h"
 #include "../../vowpalwabbit/options_boost_po.h"
-#include "../../vowpalwabbit/parser/flatbuffer/preamble.h"
 #include "../../vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
 
 void create_simple_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
