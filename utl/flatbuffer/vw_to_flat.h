@@ -8,7 +8,7 @@
 struct flatbuilder
 {
   flatbuffers::FlatBufferBuilder _builder;
-  flatbuilder() : _builder(1024) { }
+  flatbuilder() : _builder(1) { }
 };
 
 void convert_txt_to_flat(vw& all);
