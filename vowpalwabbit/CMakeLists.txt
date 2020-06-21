@@ -122,8 +122,6 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
-  parser/flatbuffer/endian.h
-  parser/flatbuffer/preamble.h
   parser/flatbuffer/parse_flat_example.h
   parser/flatbuffer/parse_label.h
   print.h
@@ -244,8 +242,7 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  parser/flatbuffer/endian.cc
-  parser/flatbuffer/preamble.cc
+
   parser/flatbuffer/parse_flat_example.cc
   parser/flatbuffer/parse_label.cc
   print.cc
