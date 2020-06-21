@@ -70,9 +70,17 @@ int main(int argc, char* argv[])
   option_group_definition driver_config("driver");
   std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;
-  std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+  char *newargs[argc+1];
+  char *quiet = "--quiet";
+  // memcpy(&newargs, &argv, argc);
+  for(int j = 0; j<argc; j++)
+    {
+      newargs[j] = argv[j];
+    }
+  newargs[argc] = quiet;
+  // std::cout << newargs[0] << " " << newargs[1] << " " << newargs[argc];
+  std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc+1, newargs));
   ptr->add_and_parse(driver_config);
-  alls[0]->logger.quiet = true;
   alls.push_back(setup(*ptr));
   arguments.push_back(std::move(ptr));
 

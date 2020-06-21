@@ -57,7 +57,7 @@ void parse_namespaces(vw* all, example* ae, const Namespace* ns)
     ae->indices.push_back(ns->name()->c_str()[0]);
     c_hash = all->p->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
   }
-  else ae->indices.push_back(ns->hash());
+  else {ae->indices.push_back(ns->hash());}
 
   features& fs = ae->feature_space[ns->hash()];
 
@@ -72,7 +72,7 @@ void parse_features(vw* all, example* ae, features& fs, const Feature* feature)
     uint64_t word_hash = all->p->hasher(feature->name()->c_str(), feature->name()->Length(), c_hash);
     fs.push_back(feature->value(), word_hash);
   }
-  else fs.push_back(feature->value(), feature->hash());
+  else {fs.push_back(feature->value(), feature->hash());}
 }
 
 void parse_flat_label(vw* all, example* ae, const Example* eg)

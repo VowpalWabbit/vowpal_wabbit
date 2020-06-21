@@ -42,7 +42,7 @@ def main():
             label.Init(example.Label().Bytes, example.Label().Pos)
             print("{0:.7g} {1}|".format(label.Label(), label.Weight()), end="")
             for i in range(0, example.NamespacesLength()):
-                # print("{}".format(example.Namespaces(i).Hash()), end=" ")
+                print("{}".format(example.Namespaces(i).Hash()), end=" ")
                 print("{}".format(i), end=" ")
                 for j in range(0, example.Namespaces(i).FeaturesLength()):
                     # print("{}:{}".format(example.Namespaces(i).Features(j).Hash(), example.Namespaces(i).Features(j).Value()), end=" ")
