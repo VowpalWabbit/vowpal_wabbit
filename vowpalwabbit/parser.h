@@ -39,13 +39,14 @@ struct example_initializer
 
 struct parser
 {
-  parser(size_t ring_size, bool strict_parse_)
+  parser(size_t ring_size, bool strict_parse_, int num_parse_threads)
       : example_pool{ring_size}
       , ready_parsed_examples{ring_size}
       , ring_size{ring_size}
       , begin_parsed_examples(0)
       , end_parsed_examples(0)
       , finished_examples(0)
+      , num_parse_threads{num_parse_threads}
       , strict_parse{strict_parse_}
   {
     this->input = new io_buf{};
@@ -103,12 +104,24 @@ struct parser
   uint32_t in_pass_counter = 0;
   bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather
                                               // than a per-line basis
+  int num_parse_threads = 1; // The number of parse threads to use
 
   std::mutex output_lock;
   std::condition_variable output_done;
 
   //for io_to_queue
   //std::mutex io_queue_lock;
+
+  //for multithreaded parsing
+  //for reader function
+  std::mutex parser_mutex;
+  std::condition_variable example_parsed;
+  bool ready_parsed = false;
+  //for cv notify and wait
+  std::mutex example_cv_mutex;
+
+  //std::mutex substring_to_example_mutex;
+
 
   bool done = false;
   v_array<size_t> gram_mask;
@@ -151,3 +164,5 @@ VW_DEPRECATED("Function is no longer used")
 void set_compressed(parser* par);
 
 void free_parser(vw& all);
+
+void notify_examples_cv(vw& all);
