@@ -6,15 +6,15 @@
 
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 {
-  if (all.sd->first_observed_label == FLT_MAX ||  // no non-test labels observed or function was never called
+  if (all.sd->first_observed_label.load() == FLT_MAX ||  // no non-test labels observed or function was never called
       (all.loss == nullptr) || (all.sd == nullptr))
     return false;
 
-  float label1 = all.sd->first_observed_label;  // observed labels might be inside [sd->Min_label, sd->Max_label], so
+  float label1 = all.sd->first_observed_label.load();  // observed labels might be inside [sd->Min_label, sd->Max_label], so
                                                 // can't use Min/Max
-  float label2 = (all.sd->second_observed_label == FLT_MAX)
+  float label2 = (all.sd->second_observed_label.load() == FLT_MAX)
       ? 0
-      : all.sd->second_observed_label;  // if only one label observed, second might be 0
+      : all.sd->second_observed_label.load();  // if only one label observed, second might be 0
   if (label1 > label2)
   {
     float tmp = label1;
@@ -39,7 +39,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   auto funcName = all.loss->getType();
   if (funcName.compare("squared") == 0 || funcName.compare("Huber") == 0 || funcName.compare("classic") == 0)
     best_constant = (float)all.sd->weighted_labels / (float)(all.sd->weighted_labeled_examples);
-  else if (all.sd->is_more_than_two_labels_observed)
+  else if (all.sd->is_more_than_two_labels_observed.load())
   {
     // loss functions below don't have generic formuas for constant yet.
     return false;
@@ -76,7 +76,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   else
     return false;
 
-  if (!all.sd->is_more_than_two_labels_observed)
+  if (!all.sd->is_more_than_two_labels_observed.load())
   {
     best_constant_loss = (label1_cnt > 0) ? all.loss->getLoss(all.sd, best_constant, label1) * label1_cnt : 0.0f;
     best_constant_loss += (label2_cnt > 0) ? all.loss->getLoss(all.sd, best_constant, label2) * label2_cnt : 0.0f;
