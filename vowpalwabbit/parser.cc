@@ -970,18 +970,34 @@ example* get_example(parser* p) {
  
   std::unique_lock<std::mutex> lock(p->example_cv_mutex);
 
+  //std::cout << "get_example start" << std::endl;
+  
   example* ex = p->ready_parsed_examples.pop();
+  
+  if (ex != nullptr && !ex->done_parsing) {
 
-  //don't pop in here, can pop everything. pop before.
-  while(ex != nullptr && !ex->done_parsing) {
-
-    while(!ex->done_parsing) {
+    while( ex != nullptr && !ex->done_parsing) {
+      //std::cout << "in while loop " << std::endl;
       p->example_parsed.wait(lock);
     }
 
   }
 
-  return ex; 
+ // std::cout << "get_example end" << std::endl;
+
+  return ex;
+
+   //don't pop in here, can pop everything. pop before.
+/*  while(ex != nullptr && !ex->done_parsing) {
+
+    //while(!ex->done_parsing) {
+      p->example_parsed.wait(lock);
+    //}
+
+  }*/
+
+ // std::cout << "popped ex memory addr: " << ex << std::endl;
+ 
 
 }
 
@@ -1033,7 +1049,7 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 example* example_initializer::operator()(example* ex)
 {
-  //mannally set parser ready flag here
+  //manually set parser ready flag here
   ex->done_parsing.store(false);
   memset(&ex->l, 0, sizeof(polylabel));
   ex->passthrough = nullptr;
@@ -1054,13 +1070,19 @@ namespace VW
 {
 
 void start_parser(vw& all) { 
-  //start io thread
-  //VW::start_io_thread(all);
 
   //Will let user specify the number of threads on the CL. Default to 1.
-  int userSpecifiedNumThreads = 3;
+  //int user_specified_num_parse_threads = 1;
+  int user_specified_num_parse_threads = all.p->num_parse_threads;
+  
+  //Edge case that user specifies a number of threads < 1
+  if(user_specified_num_parse_threads < 1){
+    //print error message to user
+    user_specified_num_parse_threads = 1;
+  }
+  //Question - is there a max number of threads to allow?
 
-  for (int i=0; i < userSpecifiedNumThreads; i++){
+  for (int i=0; i < user_specified_num_parse_threads; i++){
     all.parse_threads.push_back(
       std::thread(main_parse_loop, &all)
     );
