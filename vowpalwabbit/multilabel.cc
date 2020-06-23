@@ -93,7 +93,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
+void parse_label(parser*, shared_data*, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name_localcpy)
 {
   labels* ld = (labels*)v;
 
