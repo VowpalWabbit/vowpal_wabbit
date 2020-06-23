@@ -1330,9 +1330,11 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
     bool strict_parse = false;
     int ring_size_tmp;
+    int num_parse_threads = 1;
     option_group_definition vw_args("VW options");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
-        .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
+        .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"))
+        .add(make_option("num_parse_threads", num_parse_threads).help("number of parser threads"));
     options.add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0)
@@ -1341,7 +1343,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     }
     size_t ring_size = static_cast<size_t>(ring_size_tmp);
 
-    all.p = new parser{ring_size, strict_parse};
+    all.p = new parser{ring_size, strict_parse, num_parse_threads};
     all.p->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");
