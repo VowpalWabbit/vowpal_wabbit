@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <vector>
 
@@ -99,6 +100,11 @@ struct example : public example_predict  // core example datatype.
       "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
       "Standalone examples are by definition always in use.")
   bool in_use = true;
+
+  // NT set to false!!!
+  //std::atomic<bool> done_parsing; // flag used in multithreaded parsing to indicate that the example is done being parsed
+  std::atomic_bool done_parsing{false};
+
 };
 IGNORE_DEPRECATED_USAGE_END
 
