@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
   option_group_definition driver_config("driver");
   driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
 
+
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
@@ -114,6 +115,8 @@ int main(int argc, char* argv[])
 
     vw& all = *alls[0];
 
+    VW::start_io_thread(all);
+
     if (should_use_onethread)
     {
       if (alls.size() == 1)
@@ -123,15 +126,17 @@ int main(int argc, char* argv[])
     }
     else
     {
-      VW::start_io_thread(all);
+     // VW::start_io_thread(all);
       VW::start_parser(all);
       if (alls.size() == 1)
         VW::LEARNER::generic_driver(all);
       else
         VW::LEARNER::generic_driver(alls);
       VW::end_parser(all);
-      VW::end_io_thread(all);
+    //  VW::end_io_thread(all);
     }
+
+    VW::end_io_thread(all);
 
     for (vw* v : alls)
     {
@@ -143,6 +148,7 @@ int main(int argc, char* argv[])
       VW::sync_stats(*v);
       VW::finish(*v);
     }
+
   }
   catch (VW::vw_exception& e)
   {
@@ -160,5 +166,6 @@ int main(int argc, char* argv[])
     exit(1);
   }
   // cin.ignore();
+  
   return 0;
 }
