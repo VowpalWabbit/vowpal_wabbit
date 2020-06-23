@@ -300,8 +300,8 @@ vw::vw()
   sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;  // next update progress dump
   sd->contraction = 1.;
-  sd->first_observed_label = FLT_MAX;
-  sd->is_more_than_two_labels_observed = false;
+  sd->first_observed_label.store(FLT_MAX);
+  sd->is_more_than_two_labels_observed.store(false);
   sd->max_label = 0;
   sd->min_label = 0;
 
@@ -404,9 +404,9 @@ vw::vw()
   progress_add = false;  // default is multiplicative progress dumps
   progress_arg = 2.0;    // next update progress dump multiplier
 
-  sd->is_more_than_two_labels_observed = false;
-  sd->first_observed_label = FLT_MAX;
-  sd->second_observed_label = FLT_MAX;
+  sd->is_more_than_two_labels_observed.store(false);
+  sd->first_observed_label.store(FLT_MAX);
+  sd->second_observed_label.store(FLT_MAX);
 
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
