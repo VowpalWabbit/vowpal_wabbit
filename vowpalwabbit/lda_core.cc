@@ -1378,11 +1378,14 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);
+
+  //should num_parse_threads be specifiable or just 1? tell user this? write in the wiki page you make?
+  int num_parse_threads = 1;
   if (minibatch2 > all.p->ring_size)
   {
     bool previous_strict_parse = all.p->strict_parse;
     delete all.p;
-    all.p = new parser{minibatch2, previous_strict_parse};
+    all.p = new parser{minibatch2, previous_strict_parse, num_parse_threads};
     all.p->_shared_data = all.sd;
   }
 
