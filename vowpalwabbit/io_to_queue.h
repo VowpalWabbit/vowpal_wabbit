@@ -52,12 +52,6 @@ inline void start_io_thread(vw& all){
 
 inline void end_io_thread(vw& all){
 
-  for(int i=0; i < (int)(all.parse_threads.size()); i++){
-    all.parse_threads[i].join();
-  }
-
-  all.parse_threads.clear();
-
   all.io_thread.join();
 
 }
