@@ -970,10 +970,12 @@ example* get_example(parser* p) {
  
   std::unique_lock<std::mutex> lock(p->example_cv_mutex);
 
-  //std::cout << "get_example start" << std::endl;
+  //std::cout << "get_example" << std::endl;
   
   example* ex = p->ready_parsed_examples.pop();
-  
+
+  //std::cout << "ex->done_parsing: " << ex->done_parsing << std::endl;
+
   if (ex != nullptr && !ex->done_parsing) {
 
     while( ex != nullptr && !ex->done_parsing) {
@@ -1083,9 +1085,11 @@ void start_parser(vw& all) {
   //Question - is there a max number of threads to allow?
 
   for (int i=0; i < user_specified_num_parse_threads; i++){
-    all.parse_threads.push_back(
-      std::thread(main_parse_loop, &all)
-    );
+    if(!all.early_terminate) {
+      all.parse_threads.push_back(
+        std::thread(main_parse_loop, &all)
+      );
+    }
   }
 
 }
