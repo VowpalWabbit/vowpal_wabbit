@@ -21,6 +21,7 @@ Implementation by Miro Dudik.
 #include "gd.h"
 #include "vw_exception.h"
 #include <exception>
+#include <chrono>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -67,10 +68,9 @@ struct bfgs
   double wolfe1_bound;
 
   size_t final_pass;
-  struct timeb t_start, t_end;
-  double net_comm_time;
 
-  struct timeb t_start_global, t_end_global;
+  std::chrono::time_point<std::chrono::system_clock> t_start_global;
+  std::chrono::time_point<std::chrono::system_clock> t_end_global;
   double net_time;
 
   v_array<float> predictions;
@@ -676,9 +676,8 @@ int process_pass(vw& all, bfgs& b)
     {
       b.step_size = 0.5;
       float d_mag = direction_magnitude(all);
-      ftime(&b.t_end_global);
-      b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-          (b.t_end_global.millitm - b.t_start_global.millitm));
+      b.t_end_global = std::chrono::system_clock::now();
+      b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
       if (!all.logger.quiet)
         fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
       b.predictions.clear();
@@ -735,9 +734,8 @@ int process_pass(vw& all, bfgs& b)
     else if (b.backstep_on && (wolfe1 < b.wolfe1_bound || b.loss_sum > b.previous_loss_sum))
     {
       // curvature violated, or we stepped too far last time: step back
-      ftime(&b.t_end_global);
-      b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-          (b.t_end_global.millitm - b.t_start_global.millitm));
+      b.t_end_global = std::chrono::system_clock::now();
+      b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
       float ratio = (b.step_size == 0.f) ? 0.f : (float)new_step / (float)b.step_size;
       if (!all.logger.quiet)
         fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
@@ -787,9 +785,8 @@ int process_pass(vw& all, bfgs& b)
       else
       {
         float d_mag = direction_magnitude(all);
-        ftime(&b.t_end_global);
-        b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-            (b.t_end_global.millitm - b.t_start_global.millitm));
+        b.t_end_global = std::chrono::system_clock::now();
+        b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
         if (!all.logger.quiet)
           fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
         b.predictions.clear();
@@ -830,9 +827,8 @@ int process_pass(vw& all, bfgs& b)
 
     b.predictions.clear();
     update_weight(all, b.step_size);
-    ftime(&b.t_end_global);
-    b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-        (b.t_end_global.millitm - b.t_start_global.millitm));
+    b.t_end_global = std::chrono::system_clock::now();
+    b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
 
     if (!all.logger.quiet)
       fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
@@ -848,9 +844,8 @@ int process_pass(vw& all, bfgs& b)
       accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     // preconditioner_to_regularizer(all, b, all.l2_lambda);
   }
-  ftime(&b.t_end_global);
-  b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-      (b.t_end_global.millitm - b.t_start_global.millitm));
+  b.t_end_global = std::chrono::system_clock::now();
+  b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
 
   if (all.save_per_pass)
     save_predictor(all, all.final_regressor_name, b.current_pass);
@@ -1054,7 +1049,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
                 << "M for weights and mem" << std::endl;
 
     b.net_time = 0.0;
-    ftime(&b.t_start_global);
+    b.t_start_global = std::chrono::system_clock::now();
 
     if (!all->logger.quiet)
     {
