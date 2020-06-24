@@ -13,6 +13,34 @@
 #include "../../vowpalwabbit/options_boost_po.h"
 #include "../../vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
 
+std::string get_label_string(label_type_t label_type)
+{
+  switch (label_type)
+  {
+  case label_type_t::nolabel:
+    return std::string("No label");
+  case label_type_t::cb:
+    return std::string("Contextual Bandit Label");
+  case label_type_t::ccb:
+    return std::string("Conditional Contextual Bandit Label");
+  case label_type_t::multi:
+    return std::string("Multilabel Label");
+  case label_type_t::mc:
+    return std::string("Multiclass Label");
+  case label_type_t::cs:
+    return std::string("Cost Sensitive Label");
+  case label_type_t::cb_eval:
+    return std::string("Contextual Bandit Eval Label");
+  case label_type_t::slates:
+    return std::string("Slates Label");
+  case label_type_t::simple:
+    return std::string("Simple Label");
+  default:
+    THROW("Unknown label type");
+    break;
+  }
+}
+
 void create_simple_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
   label = VW::parsers::flatbuffer::CreateSimpleLabel(build._builder, v->l.simple.label, v->l.simple.weight).Union();
@@ -211,7 +239,7 @@ void convert_txt_to_flat(vw& all)
   }
 
   // label_type_t labelt = all.label_type;
-  // all.trace_message << "\nLabel type " << #labelt << std::endl;
+  all.trace_message << "\nLabel type " << get_label_string(all.label_type) << std::endl;
   all.trace_message << "Converted " << examples - 1 << " examples" << std::endl;
 
   flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(build._builder, &examplecollection);
@@ -229,3 +257,5 @@ void convert_txt_to_flat(vw& all)
   outfile.write(reinterpret_cast<char*>(buf), size);
   all.trace_message << "Flatbuffer " << all.flatout << " created";
 }
+
+
