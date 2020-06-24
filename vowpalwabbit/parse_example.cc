@@ -14,7 +14,7 @@
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
-  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
+  size_t num_chars_initial = all->p->input->readto(line, '\n');
   if (num_chars_initial < 1)
     return num_chars_initial;
   num_chars = num_chars_initial;
