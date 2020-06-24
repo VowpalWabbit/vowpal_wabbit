@@ -83,42 +83,42 @@ void parse_flat_label(vw* all, example* ae, const Example* eg)
   {
   case Label_SimpleLabel:{
     const SimpleLabel* simple_label = static_cast<const SimpleLabel*>(eg->label());
-    parse_simple_label(all, ae, simple_label);
+    parse_simple_label(all->sd, &(ae->l), simple_label);
     break;
   }
   case Label_CBLabel:{
     const CBLabel* cb_label = static_cast<const CBLabel*>(eg->label());
-    parse_cb_label(ae, cb_label);
+    parse_cb_label(&(ae->l), cb_label);
     break;
   }
   case Label_CCBLabel:{
     const CCBLabel* ccb_label = static_cast<const CCBLabel*>(eg->label());
-    parse_ccb_label(ae, ccb_label);
+    parse_ccb_label(&(ae->l), ccb_label);
     break;
   }
   case Label_CB_EVAL_Label:{
     auto cb_eval_label = static_cast<const CB_EVAL_Label*>(eg->label());
-    parse_cb_eval_label(ae, cb_eval_label);
+    parse_cb_eval_label(&(ae->l), cb_eval_label);
     break;
   }
   case Label_CS_Label:{
     auto cs_label = static_cast<const CS_Label*>(eg->label());
-    parse_cs_label(ae, cs_label);
+    parse_cs_label(&(ae->l), cs_label);
     break;
   }
   case Label_MultiClass:{
     auto mc_label = static_cast<const MultiClass*>(eg->label());
-    parse_mc_label(all, ae, mc_label);
+    parse_mc_label(all->sd, &(ae->l), mc_label);
     break;
   }
   case Label_MultiLabel:{
     auto multi_label = static_cast<const MultiLabel*>(eg->label());
-    parse_multi_label(ae, multi_label);
+    parse_multi_label(&(ae->l), multi_label);
     break;
   }
   case Label_Slates_Label:{
     auto slates_label = static_cast<const Slates_Label*>(eg->label());
-    parse_slates_label(ae, slates_label);
+    parse_slates_label(&(ae->l), slates_label);
     break;
   }
   case Label_no_label:

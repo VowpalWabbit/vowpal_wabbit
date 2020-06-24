@@ -212,7 +212,7 @@ void convert_txt_to_flat(vw& all)
 
   // label_type_t labelt = all.label_type;
   // all.trace_message << "\nLabel type " << #labelt << std::endl;
-  all.trace_message << "Convered " << examples - 1 << " examples" << std::endl;
+  all.trace_message << "Converted " << examples - 1 << " examples" << std::endl;
 
   flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(build._builder, &examplecollection);
 
