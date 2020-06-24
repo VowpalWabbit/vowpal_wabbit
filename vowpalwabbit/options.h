@@ -44,9 +44,9 @@ struct typed_option : base_option
     return *this;
   }
 
-  bool default_value_supplied() { return m_default_value.get() != nullptr; }
+  bool default_value_supplied() const { return m_default_value.get() != nullptr; }
 
-  T default_value() { return m_default_value ? *m_default_value : T(); }
+  T default_value() const { return m_default_value ? *m_default_value : T(); }
 
   typed_option& short_name(const std::string& short_name)
   {
@@ -73,7 +73,7 @@ struct typed_option : base_option
     return *this;
   }
 
-  bool value_supplied() { return m_value.get() != nullptr; }
+  bool value_supplied() const { return m_value.get() != nullptr; }
 
   typed_option& value(T value)
   {
@@ -81,7 +81,7 @@ struct typed_option : base_option
     return *this;
   }
 
-  T value() { return m_value ? *m_value : T(); }
+  T value() const { return m_value ? *m_value : T(); }
 
   T& m_location;
 
@@ -122,29 +122,34 @@ struct option_group_definition
 struct options_i
 {
   virtual void add_and_parse(const option_group_definition& group) = 0;
-  virtual bool was_supplied(const std::string& key) = 0;
-  virtual std::string help() = 0;
+  virtual bool was_supplied(const std::string& key) const = 0;
+  virtual std::string help() const = 0;
 
   virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
+  virtual std::vector<std::shared_ptr<const base_option>> get_all_options() const = 0;
   virtual std::shared_ptr<base_option> get_option(const std::string& key) = 0;
+  virtual std::shared_ptr<const base_option> get_option(const std::string& key) const = 0;
 
   virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
-  virtual std::vector<std::string> get_positional_tokens()
-  {
-    return std::vector<std::string>();
-  }
+  virtual std::vector<std::string> get_positional_tokens() const { return std::vector<std::string>(); }
 
   template <typename T>
   typed_option<T>& get_typed_option(const std::string& key)
   {
     base_option& base = *get_option(key);
-    if (base.m_type_hash != typed_option<T>::type_hash())
-    {
-      throw std::bad_cast();
-    }
+    if (base.m_type_hash != typed_option<T>::type_hash()) { throw std::bad_cast(); }
 
     return dynamic_cast<typed_option<T>&>(base);
+  }
+
+  template <typename T>
+  const typed_option<T>& get_typed_option(const std::string& key) const
+  {
+    const base_option& base = *get_option(key);
+    if (base.m_type_hash != typed_option<T>::type_hash()) { throw std::bad_cast(); }
+
+    return dynamic_cast<const typed_option<T>&>(base);
   }
 
   // Will throw if any options were supplied that do not having a matching argument specification.
@@ -156,19 +161,19 @@ struct options_i
 struct options_serializer_i
 {
   virtual void add(base_option& argument) = 0;
-  virtual std::string str() = 0;
-  virtual size_t size() = 0;
+  virtual std::string str() const = 0;
+  virtual size_t size() const = 0;
 };
 
 template <typename T>
-bool operator==(typed_option<T>& lhs, typed_option<T>& rhs)
+bool operator==(const typed_option<T>& lhs, const typed_option<T>& rhs)
 {
   return lhs.m_name == rhs.m_name && lhs.m_type_hash == rhs.m_type_hash && lhs.m_help == rhs.m_help &&
       lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep && lhs.default_value() == rhs.default_value();
 }
 
 template <typename T>
-bool operator!=(typed_option<T>& lhs, typed_option<T>& rhs)
+bool operator!=(const typed_option<T>& lhs, const typed_option<T>& rhs)
 {
   return !(lhs == rhs);
 }
