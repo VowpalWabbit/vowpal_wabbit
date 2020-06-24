@@ -238,7 +238,6 @@ void convert_txt_to_flat(vw& all)
     v = all.p->ready_parsed_examples.pop();
   }
 
-  // label_type_t labelt = all.label_type;
   all.trace_message << "\nLabel type " << get_label_string(all.label_type) << std::endl;
   all.trace_message << "Converted " << examples - 1 << " examples" << std::endl;
 

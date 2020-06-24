@@ -31,6 +31,7 @@
 #endif
 
 #include "parser/flatbuffer/generated/example_generated.h"
+// #include "parser/flatbuffer/parse_flat_example.h"
 #include "v_array.h"
 #include "array_parameters.h"
 #include "parse_primitives.h"
@@ -362,6 +363,8 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+namespace VW { namespace parsers { namespace flatbuffer {class parse;}}}
+// class VW::parsers::flatbuffer::to_flatbuff;
 struct vw
 {
  private:
@@ -398,15 +401,9 @@ struct vw
 
   uint32_t hash_seed;
 
-  std::string data_filename;  // was vm["data"]
-  std::ifstream infile;
-  const VW::parsers::flatbuffer::ExampleCollection* data;
-  char* flatbuffer_pointer;
-  bool to_flat;
-  std::string flatout;
-  bool add_names_to_flat;
-  bool hash_from_names;
-  // std::string label_type;
+  VW::parsers::flatbuffer::parse* flat_converter;
+  std::string flatout; // For flatbuffer conversion
+  std::string data_filename;
 
   bool daemon;
   size_t num_children;

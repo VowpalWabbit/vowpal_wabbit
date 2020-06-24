@@ -593,35 +593,7 @@ IGNORE_DEPRECATED_USAGE_END
       }
       else if (input_options.flatbuffer)
       {
-        all.infile.open(all.data_filename, std::ios::binary | std::ios::in);
-        if (!all.infile.good()) THROW_EX(VW::vw_argument_invalid_value_exception, "Flatbuffer does not exist");
-
-        // char raw_preamble[8];
-        // std::cout << "Reading preamble\n";
-        // all.infile.read(raw_preamble, 8);
-        // std::cout << "Read preamble\n";
-
-        // VW::parsers::flatbuffer::preamble p;
-        // std::cout << "Assigning preamble\n";
-        // p.read_from_bytes(reinterpret_cast<uint8_t*>(raw_preamble), 8);
-        // std::cout << "Assigned preamble\n";
-        // std::unique_ptr<char> msg_data(new char[p.msg_size]);
-
-        // std::cout << "Reading Flatbuffer\n";
-        // all.infile.read(msg_data.get(), p.msg_size);
-        // std::cout << "Read preamble\n";
-        // all.flatbuffer_pointer = msg_data.get();
-        // std::cout << "Preamble size " << p.msg_size << " Flatbuf size " << p.msg_size << std::endl;
-
-        // all.flatbuffer_pointer
-        all.infile.seekg(0,std::ios::end);
-        int length = all.infile.tellg();
-        all.infile.seekg(0,std::ios::beg);
-        char *buffer_pointer = new char[length];
-        all.infile.read(buffer_pointer, length);
-        all.flatbuffer_pointer = buffer_pointer;
-
-        all.data = VW::parsers::flatbuffer::GetExampleCollection(all.flatbuffer_pointer);
+        all.flat_converter = new VW::parsers::flatbuffer::parse(all.data_filename);
 
         all.p->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
         all.p->text_reader = VW::parsers::flatbuffer::read_flatbuffer;

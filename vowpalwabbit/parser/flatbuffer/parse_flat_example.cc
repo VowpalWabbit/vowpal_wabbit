@@ -15,6 +15,32 @@
 namespace VW {
 namespace parsers {
 namespace flatbuffer {
+
+parse::parse(std::string filename){
+  _filename = filename;
+  init();
+}
+parse::parse(uint8_t *buffer_pointer){
+  flatbuffer_pointer = buffer_pointer;
+  data = VW::parsers::flatbuffer::GetExampleCollection(flatbuffer_pointer);
+}
+
+void parse::init()
+{
+  infile.open(_filename, std::ios::binary | std::ios::in);
+  if (!infile.good()) THROW_EX(VW::vw_argument_invalid_value_exception, "Flatbuffer does not exist");
+
+  infile.seekg(0,std::ios::end);
+  int length = infile.tellg();
+  infile.seekg(0,std::ios::beg);
+  char *buffer_pointer = new char[length];
+  infile.read(buffer_pointer, length);
+  flatbuffer_pointer = reinterpret_cast<u_int8_t*>(buffer_pointer);
+
+  data = VW::parsers::flatbuffer::GetExampleCollection(flatbuffer_pointer);
+}
+
+
 void read_flatbuffer(vw* all, char* line, size_t len, v_array<example*>& examples)
 {
   // Do something
@@ -22,19 +48,19 @@ void read_flatbuffer(vw* all, char* line, size_t len, v_array<example*>& example
 
 int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
 {
-  all->max_examples = (all->max_examples != std::numeric_limits<size_t>::max()) ? all->max_examples : all->data->examples()->size() - 1;
-  parse_examples(all, examples, all->data);
+  all->max_examples = (all->max_examples != std::numeric_limits<size_t>::max()) ? all->max_examples : all->flat_converter->data->examples()->size() - 1;
+  all->flat_converter->parse_examples(all, examples, all->flat_converter->data);
 
   return 1; // Get rid of this
 }
 
-void parse_examples(vw* all, v_array<example*>& examples, const ExampleCollection* ec)
+void parse::parse_examples(vw* all, v_array<example*>& examples, const ExampleCollection* ec)
 {
   parse_example(all, examples[0], ec->examples()->Get(example_index));
   example_index++;
 }
 
-void parse_example(vw* all, example* ae, const Example* eg)
+void parse::parse_example(vw* all, example* ae, const Example* eg)
 {
   all->p->lp.default_label(&ae->l);
   parse_flat_label(all, ae, eg);
@@ -50,14 +76,15 @@ void parse_example(vw* all, example* ae, const Example* eg)
   }
 }
 
-void parse_namespaces(vw* all, example* ae, const Namespace* ns)
+void parse::parse_namespaces(vw* all, example* ae, const Namespace* ns)
 {
 
-  if (all->hash_from_names){
-    ae->indices.push_back(ns->name()->c_str()[0]);
-    c_hash = all->p->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
-  }
-  else {ae->indices.push_back(ns->hash());}
+  // if (all->hash_from_names){
+  //   ae->indices.push_back(ns->name()->c_str()[0]);
+  //   c_hash = all->p->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
+  // }
+  // else 
+  {ae->indices.push_back(ns->hash());}
 
   features& fs = ae->feature_space[ns->hash()];
 
@@ -66,16 +93,17 @@ void parse_namespaces(vw* all, example* ae, const Namespace* ns)
   }
 }
 
-void parse_features(vw* all, example* ae, features& fs, const Feature* feature)
+void parse::parse_features(vw* all, example* ae, features& fs, const Feature* feature)
 {
-  if (all->hash_from_names){
-    uint64_t word_hash = all->p->hasher(feature->name()->c_str(), feature->name()->Length(), c_hash);
-    fs.push_back(feature->value(), word_hash);
-  }
-  else {fs.push_back(feature->value(), feature->hash());}
+  // if (all->hash_from_names){
+  //   uint64_t word_hash = all->p->hasher(feature->name()->c_str(), feature->name()->Length(), c_hash);
+  //   fs.push_back(feature->value(), word_hash);
+  // }
+  // else 
+  {fs.push_back(feature->value(), feature->hash());}
 }
 
-void parse_flat_label(vw* all, example* ae, const Example* eg)
+void parse::parse_flat_label(vw* all, example* ae, const Example* eg)
 {
   Label label_type = eg->label_type();
 
