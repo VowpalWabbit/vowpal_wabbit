@@ -149,6 +149,9 @@ public:
     return f->write(static_cast<const char*>(buf), nbytes);
   }
 
+  // This has different meanings in write and read mode:
+  //   - Write mode: Number of bytes that have not yet been flushed to the output device
+  //   - Read mode: The offset of the position that has been read up to so far.
   size_t unflushed_bytes_count() { return head - space.begin(); }
 
   void flush()
