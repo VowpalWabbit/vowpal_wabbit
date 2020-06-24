@@ -164,11 +164,11 @@ namespace cats_pdf
     // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree ... rest specified by cats_tree]
     if (!options.was_supplied("cb_explore_pdf"))
       options.insert("cb_explore_pdf", "");
-    if (!options.add_or_check_options("pmf_to_pdf", pdf_num_actions, num_actions))
+    if (!options.add_or_check_options("pmf_to_pdf", num_actions))
       THROW(error_code::options_disagree_s);
     if (!options.was_supplied("get_pmf"))
       options.insert("get_pmf", "");
-    if (!options.add_or_check_options("cats_tree", cats_tree_actions, num_actions))
+    if (!options.add_or_check_options("cats_tree", num_actions))
       THROW(error_code::options_disagree_s);
 
     LEARNER::base_learner* p_base = setup_base(options, all);

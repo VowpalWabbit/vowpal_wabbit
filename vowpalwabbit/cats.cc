@@ -164,7 +164,7 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
   if (!options.was_supplied("sample_pdf"))
     options.insert("sample_pdf", "");
 
-  if (!options.add_or_check_options("cats_pdf", pdf_num_actions, num_actions))
+  if (!options.add_or_check_options("cats_pdf", num_actions))
     THROW(error_code::options_disagree_s);
 
   LEARNER::base_learner* p_base = setup_base(options, all);
