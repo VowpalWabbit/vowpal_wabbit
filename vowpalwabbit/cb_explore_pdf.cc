@@ -87,7 +87,7 @@ namespace continuous_action
     float max;
     new_options
         .add(make_option("cb_explore_pdf", invoked).keep().help("Sample a pdf and pick a continuous valued action"))
-        .add(make_option("epsilon", epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"))
+        .add(make_option("epsilon", epsilon).keep().allow_override().default_value(0.05f).help("epsilon-greedy exploration"))
         .add(make_option("min_value", min).keep().default_value(0.0f).help("min value for continuous range"))
         .add(make_option("max_value", max).keep().default_value(1.0f).help("max value for continuous range"));
 
