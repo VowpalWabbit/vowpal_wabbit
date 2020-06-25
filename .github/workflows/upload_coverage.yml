@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: Apt update
+        shell: bash
+        run: sudo apt update
       - name: Install curl
         shell: bash
         run: sudo apt install curl
