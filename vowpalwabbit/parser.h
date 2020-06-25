@@ -29,12 +29,6 @@
 
 struct vw;
 struct input_options;
-
-struct example_initializer
-{
-  example* operator()(example* ex);
-};
-
 struct parser
 {
   parser(size_t ring_size, bool strict_parse_)
@@ -72,7 +66,7 @@ struct parser
   // helper(s) for text parsing
   std::vector<VW::string_view> words;
 
-  VW::object_pool<example, example_initializer> example_pool;
+  VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
   io_buf* input = nullptr;  // Input source(s)
