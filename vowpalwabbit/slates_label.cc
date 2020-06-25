@@ -172,7 +172,7 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
       ld.labeled = true;
       tokenize(',', words[2], p->parse_name);
 
-      auto split_colons = v_init<VW::string_view>();
+      std::vector<VW::string_view> split_colons;
       for (auto& token : p->parse_name)
       {
         tokenize(':', token, split_colons);
@@ -185,7 +185,6 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
         ld.probabilities.push_back(
             {static_cast<uint32_t>(int_of_string(split_colons[0])), float_of_string(split_colons[1])});
       }
-      split_colons.delete_v();
 
       // If a full distribution has been given, check if it sums to 1, otherwise throw.
       if (ld.probabilities.size() > 1)

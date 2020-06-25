@@ -169,6 +169,11 @@ struct node
     nr = 0.001;
     examples_index = v_init<uint32_t>();
   }
+
+  ~node()
+  {
+    examples_index.delete_v();
+  }
 };
 
 // memory_tree
@@ -177,7 +182,7 @@ struct memory_tree
   vw* all;
   std::shared_ptr<rand_state> _random_state;
 
-  v_array<node> nodes;         // array of nodes.
+  std::vector<node> nodes;         // array of nodes.
   v_array<example*> examples;  // array of example points
 
   size_t max_leaf_examples;
@@ -219,7 +224,6 @@ struct memory_tree
 
   memory_tree()
   {
-    nodes = v_init<node>();
     examples = v_init<example*>();
     alpha = 0.5;
     routers_used = 0;
@@ -235,8 +239,6 @@ struct memory_tree
 
   ~memory_tree()
   {
-    for (auto& node : nodes) node.examples_index.delete_v();
-    nodes.delete_v();
     for (auto ex : examples) free_example(ex);
     examples.delete_v();
     if (kprod_ec)
