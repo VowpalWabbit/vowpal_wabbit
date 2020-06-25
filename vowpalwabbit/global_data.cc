@@ -314,21 +314,22 @@ vw::vw()
   p = nullptr;
 
   reg_mode = 0;
-  current_pass = 0;
 
-  data_filename = "";
+  gs.current_pass = 0;
+
+  ic.data_filename = "";
   delete_prediction = nullptr;
 
   bfgs = false;
   no_bias = false;
   hessian_on = false;
   active = false;
-  num_bits = 18;
-  default_bits = true;
-  daemon = false;
-  num_children = 10;
-  save_resume = false;
-  preserve_performance_counters = false;
+  fc.num_bits = 18;
+  fc.default_bits = true;
+  rc.daemon = false;
+  rc.num_children = 10;
+  oc.save_resume = false;
+  oc.preserve_performance_counters = false;
 
   random_positive_weights = false;
 
@@ -354,7 +355,7 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
-  stdout_adapter = VW::io::open_stdout();
+  oc.stdout_adapter = VW::io::open_stdout();
 
   searchstr = nullptr;
 
@@ -363,8 +364,8 @@ vw::vw()
   l2_lambda = 0.0;
 
   eta_decay_rate = 1.0;
-  initial_weight = 0.0;
-  initial_constant = 0.0;
+  wc.initial_weight = 0.0;
+  wc.initial_constant = 0.0;
 
   all_reduce = nullptr;
 
@@ -386,7 +387,7 @@ vw::vw()
   pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;
 
-  save_per_pass = false;
+  oc.save_per_pass = false;
 
   stdin_off = false;
   do_reset_source = false;
@@ -423,7 +424,7 @@ vw::~vw()
   }
 
   // Check if options object lifetime is managed internally.
-  if (should_delete_options)
+  if (rc.should_delete_options)
     delete options;
 
   // TODO: migrate all finalization into parser destructor

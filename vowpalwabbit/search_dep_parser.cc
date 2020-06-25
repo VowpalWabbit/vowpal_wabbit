@@ -242,7 +242,7 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   task_data *data = sch.get_task_data<task_data>();
   reset_ex(data->ex);
   uint64_t mask = sch.get_mask();
-  uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+  uint64_t multiplier = (uint64_t)all.gs.wpp << all.weights.stride_shift();
 
   auto& stack = data->stack;
   auto& tags = data->tags;

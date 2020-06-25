@@ -283,7 +283,7 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
     if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
     {
       isTest = true;
-      data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << std::endl;
+      data.all->oc.trace_message << "warning: ldf example has mix of train/test data; assuming test" << std::endl;
     }
   }
   return isTest;
@@ -879,9 +879,9 @@ base_learner* csldf_setup(options_i& options, vw& all)
     all.sd->report_multiclass_log_loss = true;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
-      all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
+      all.oc.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
     if (!ld->treat_as_classifier)
-      all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << std::endl;
+      all.oc.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << std::endl;
   }
 
   all.p->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;

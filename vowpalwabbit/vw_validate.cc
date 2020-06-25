@@ -9,9 +9,9 @@ namespace VW
 {
 void validate_version(vw& all)
 {
-  if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
-    THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
-  if (all.model_file_ver > PACKAGE_VERSION)
+  if (all.gs.model_file_ver < LAST_COMPATIBLE_VERSION)
+    THROW("Model has possibly incompatible version! " << all.gs.model_file_ver.to_string());
+  if (all.gs.model_file_ver > PACKAGE_VERSION)
     std::cerr << "Warning: model version is more recent than VW version.  This may not work." << std::endl;
 }
 
@@ -23,13 +23,13 @@ void validate_min_max_label(vw& all)
 
 void validate_default_bits(vw& all, uint32_t local_num_bits)
 {
-  if (all.default_bits != true && all.num_bits != local_num_bits)
-    THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
+  if (all.fc.default_bits != true && all.fc.num_bits != local_num_bits)
+    THROW("-b bits mismatch: command-line " << all.fc.num_bits << " != " << local_num_bits << " stored in model");
 }
 
 void validate_num_bits(vw& all)
 {
-  if (all.num_bits > sizeof(size_t) * 8 - 3)
+  if (all.fc.num_bits > sizeof(size_t) * 8 - 3)
     THROW("Only " << sizeof(size_t) * 8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up.");
 }
 }  // namespace VW

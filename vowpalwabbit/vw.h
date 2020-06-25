@@ -152,7 +152,7 @@ void save_predictor(vw& all, io_buf& buf);
 // First create the hash of a namespace.
 inline uint64_t hash_space(vw& all, const std::string& s)
 {
-  return all.p->hasher(s.data(), s.length(), all.hash_seed);
+  return all.p->hasher(s.data(), s.length(), all.fc.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
@@ -160,7 +160,7 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 }
 inline uint64_t hash_space_cstr(vw& all, const char* fstr)
 {
-  return all.p->hasher(fstr, strlen(fstr), all.hash_seed);
+  return all.p->hasher(fstr, strlen(fstr), all.fc.hash_seed);
 }
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)

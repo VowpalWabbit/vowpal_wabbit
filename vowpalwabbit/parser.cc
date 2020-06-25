@@ -150,7 +150,7 @@ void reset_source(vw& all, size_t numbits)
 
   if (all.p->resettable == true)
   {
-    if (all.daemon)
+    if (all.rc.daemon)
     {
       // wait for all predictions to be sent back to client
       {
@@ -213,7 +213,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   io_buf* output = all.p->output;
   if (output->num_files() != 0)
   {
-    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    all.oc.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
@@ -224,7 +224,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   }
   catch (const std::exception&)
   {
-    all.trace_message << "can't create cache file !" << all.p->currentname << endl;
+    all.oc.trace_message << "can't create cache file !" << all.p->currentname << endl;
     return;
   }
 
@@ -233,13 +233,13 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
   output->bin_write_fixed(VW::version.to_string().c_str(), v_length);
   output->bin_write_fixed("c", 1);
-  output->bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
+  output->bin_write_fixed(reinterpret_cast<const char*>(&all.fc.num_bits), sizeof(all.fc.num_bits));
   output->flush();
 
   all.p->finalname = newname;
   all.p->write_cache = true;
   if (!quiet)
-    all.trace_message << "creating cache_file = " << newname << endl;
+    all.oc.trace_message << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -264,10 +264,10 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     else
     {
       uint64_t c = cache_numbits(all.p->input, all.p->input->input_files.back().get());
-      if (c < all.num_bits)
+      if (c < all.fc.num_bits)
       {
         if (!quiet)
-          all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
+          all.oc.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
                             << endl;
         all.p->input->close_file();
         make_write_cache(all, file, quiet);
@@ -275,9 +275,9 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       else
       {
         if (!quiet)
-          all.trace_message << "using cache_file = " << file.c_str() << endl;
+          all.oc.trace_message << "using cache_file = " << file.c_str() << endl;
         all.p->reader = read_cached_features;
-        if (c == all.num_bits)
+        if (c == all.fc.num_bits)
           all.p->sorted_cache = true;
         else
           all.p->sorted_cache = false;
@@ -286,11 +286,11 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     }
   }
 
-  all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
+  all.parse_mask = ((uint64_t)1 << all.fc.num_bits) - 1;
   if (cache_files.size() == 0)
   {
     if (!quiet)
-      all.trace_message << "using no cache" << endl;
+      all.oc.trace_message << "using no cache" << endl;
   }
 }
 
@@ -307,7 +307,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   // default text reader
   all.p->text_reader = VW::read_lines;
 
-  if (!all.no_daemon && (all.daemon || all.active))
+  if (!all.no_daemon && (all.rc.daemon || all.active))
   {
 #ifdef _WIN32
     WSAData wsaData;
@@ -320,18 +320,18 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::stringstream msg;
       msg << "socket: " << strerror(errno);
-      all.trace_message << msg.str() << endl;
+      all.oc.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      all.oc.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      all.oc.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -355,7 +355,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.trace_message << "getsockname: " << strerror(errno) << endl;
+        all.oc.trace_message << "getsockname: " << strerror(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
@@ -395,7 +395,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     }
 
-    if (all.daemon && !all.active)
+    if (all.rc.daemon && !all.active)
     {
 #ifdef _WIN32
       THROW("not supported on windows");
@@ -471,7 +471,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     if (!all.logger.quiet)
-      all.trace_message << "calling accept" << endl;
+      all.oc.trace_message << "calling accept" << endl;
     auto f_a = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f_a < 0)
       THROWERRNO("accept");
@@ -491,7 +491,7 @@ IGNORE_DEPRECATED_USAGE_END
 
     all.p->input->add_file(socket->get_reader());
     if (!all.logger.quiet)
-      all.trace_message << "reading data from port " << port << endl;
+      all.oc.trace_message << "reading data from port " << port << endl;
 
     if (all.active)
       all.p->reader = read_features_string;
@@ -511,22 +511,22 @@ IGNORE_DEPRECATED_USAGE_END
       }
       all.p->sorted_cache = true;
     }
-    all.p->resettable = all.p->write_cache || all.daemon;
+    all.p->resettable = all.p->write_cache || all.rc.daemon;
   }
   else
   {
     if (all.p->input->num_files() != 0)
     {
       if (!quiet)
-        all.trace_message << "ignoring text input in favor of cache input" << endl;
+        all.oc.trace_message << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
-      std::string temp = all.data_filename;
+      std::string temp = all.ic.data_filename;
       if (!quiet)
-        all.trace_message << "Reading datafile = " << temp << endl;
+        all.oc.trace_message << "Reading datafile = " << temp << endl;
 
-      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+      auto should_use_compressed = input_options.compressed || ends_with(all.ic.data_filename, ".gz");
 
       try
       {
@@ -559,7 +559,7 @@ IGNORE_DEPRECATED_USAGE_END
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (!temp.empty())
         {
-          all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
+          all.oc.trace_message << "can't open '" << temp << "', sailing on!" << endl;
         }
         else
         {
@@ -593,15 +593,15 @@ IGNORE_DEPRECATED_USAGE_END
       }
 
       all.p->resettable = all.p->write_cache;
-      all.chain_hash = input_options.chain_hash;
+      all.fc.chain_hash = input_options.chain_hash;
     }
   }
 
   if (passes > 1 && !all.p->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->num_files() << endl;
+  if (!quiet && !all.rc.daemon)
+    all.oc.trace_message << "num sources = " << all.p->input->num_files() << endl;
 }
 
 void lock_done(parser& p)
@@ -761,7 +761,7 @@ void setup_example(vw& all, example* ae)
   if (!all.limit_strings.empty())
     feature_limit(all, ae);
 
-  uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+  uint64_t multiplier = (uint64_t)all.gs.wpp << all.weights.stride_shift();
 
   if (multiplier != 1)  // make room for per-feature information.
     for (features& fs : *ae)

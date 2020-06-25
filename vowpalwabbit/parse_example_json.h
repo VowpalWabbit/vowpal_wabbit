@@ -846,7 +846,7 @@ class DefaultState : public BaseState<audit>
       }
     }
 
-    if (ctx.all->chain_hash)
+    if (ctx.all->fc.chain_hash)
     {
       ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key, str);
     }

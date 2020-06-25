@@ -57,7 +57,7 @@ struct OjaNewton
 
   void initialize_Z(parameters& weights)
   {
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->fc.num_bits;
     if (normalize)  // initialize normalization part
     {
       for (uint32_t i = 0; i < length; i++) (&(weights.strided_index(i)))[NORM2] = 0.1f;
@@ -304,7 +304,7 @@ struct OjaNewton
 
     // second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->fc.num_bits;
     for (uint32_t i = 0; i < length; i++)
     {
       weight& w = all->weights.strided_index(i);
@@ -515,7 +515,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
-    bool resume = all.save_resume;
+    bool resume = all.oc.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);

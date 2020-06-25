@@ -150,7 +150,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() != 0)
   {
-    bool resume = s.all->save_resume;
+    bool resume = s.all->oc.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);

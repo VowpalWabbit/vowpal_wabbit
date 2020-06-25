@@ -41,7 +41,7 @@ void print_update(vw& all, std::vector<example*>& slots, const VW::decision_scor
     std::ostringstream pred_buf;
     pred_buf << std::setw(shared_data::col_current_predict) << std::right << std::setfill(' ') << pred_ss.str();
 
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf.str(), pred_buf.str(), num_features,
+    all.sd->print_update(all.holdout_set_off, all.gs.current_pass, label_buf.str(), pred_buf.str(), num_features,
         all.progress_add, all.progress_arg);
   }
 }

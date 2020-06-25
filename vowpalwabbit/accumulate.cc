@@ -17,7 +17,7 @@ void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void accumulate(vw& all, parameters& weights, size_t offset)
 {
-  uint64_t length = UINT64_ONE << all.num_bits;  // This is size of gradient
+  uint64_t length = UINT64_ONE << all.fc.num_bits;  // This is size of gradient
   float* local_grad = new float[length];
 
   if (weights.sparse)
@@ -48,7 +48,7 @@ float accumulate_scalar(vw& all, float local_sum)
 
 void accumulate_avg(vw& all, parameters& weights, size_t offset)
 {
-  uint32_t length = 1 << all.num_bits;  // This is size of gradient
+  uint32_t length = 1 << all.fc.num_bits;  // This is size of gradient
   float numnodes = (float)all.all_reduce->total;
   float* local_grad = new float[length];
 
@@ -116,11 +116,11 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
 {
   if (!weights.adaptive)
   {
-    all.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
+    all.oc.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
 
-  uint32_t length = 1 << all.num_bits;  // This is the number of parameters
+  uint32_t length = 1 << all.fc.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 
   if (weights.sparse)

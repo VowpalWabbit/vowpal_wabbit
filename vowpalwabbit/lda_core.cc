@@ -788,7 +788,7 @@ class set_initial_lda_wrapper
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 {
   vw &all = *(l.all);
-  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t length = (uint64_t)1 << all.fc.num_bits;
   if (read)
   {
     initialize_regressor(all);
@@ -812,7 +812,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
       if (!read && text)
         msg << i << " ";
 
-      if (!read || all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+      if (!read || all.gs.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
         brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
       else
       {
@@ -855,7 +855,7 @@ void return_example(vw &all, example &ec)
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
     all.sd->print_update(
-        all.holdout_set_off, all.current_pass, "none", 0, ec.num_features, all.progress_add, all.progress_arg);
+        all.holdout_set_off, all.gs.current_pass, "none", 0, ec.num_features, all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);
 }
 
@@ -1073,7 +1073,7 @@ struct feature_pair
 template <class T>
 void get_top_weights(vw *all, int top_words_count, int topic, std::vector<feature> &output, T &weights)
 {
-  uint64_t length = (uint64_t)1 << all->num_bits;
+  uint64_t length = (uint64_t)1 << all->fc.num_bits;
 
   // get top features for this topic
   auto cmp = [](feature left, feature right) { return left.x > right.x; };
@@ -1113,7 +1113,7 @@ void get_top_weights(vw *all, int top_words_count, int topic, std::vector<featur
 template <class T>
 void compute_coherence_metrics(lda &l, T &weights)
 {
-  uint64_t length = (uint64_t)1 << l.all->num_bits;
+  uint64_t length = (uint64_t)1 << l.all->fc.num_bits;
 
   std::vector<std::vector<feature_pair>> topics_word_pairs;
   topics_word_pairs.resize(l.topics);
@@ -1361,8 +1361,8 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   ld->example_t = all.initial_t;
   if (ld->compute_coherence_metrics)
   {
-    ld->feature_counts.resize((uint32_t)(UINT64_ONE << all.num_bits));
-    ld->feature_to_example_map.resize((uint32_t)(UINT64_ONE << all.num_bits));
+    ld->feature_counts.resize((uint32_t)(UINT64_ONE << all.fc.num_bits));
+    ld->feature_to_example_map.resize((uint32_t)(UINT64_ONE << all.fc.num_bits));
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));

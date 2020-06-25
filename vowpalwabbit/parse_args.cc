@@ -189,7 +189,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
   if (!all.logger.quiet)
-    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
+    all.oc.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
                       << std::dec << endl;
 
   // see if we've already read this dictionary
@@ -286,7 +286,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   free(ec);
 
   if (!all.logger.quiet)
-    all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
+    all.oc.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
                       << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
@@ -387,7 +387,7 @@ void parse_diagnostics(options_i& options, vw& all)
       all.progress_add = true;
       if (all.progress_arg < 1)
       {
-        all.trace_message << "warning: additive --progress <int>"
+        all.oc.trace_message << "warning: additive --progress <int>"
                           << " can't be < 1: forcing to 1" << endl;
         all.progress_arg = 1;
       }
@@ -400,13 +400,13 @@ void parse_diagnostics(options_i& options, vw& all)
 
       if (all.progress_arg <= 1.0)
       {
-        all.trace_message << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
+        all.oc.trace_message << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
                           << endl;
         all.progress_arg += 1.0;
       }
       else if (all.progress_arg > 9.0)
       {
-        all.trace_message << "warning: multiplicative --progress <float>"
+        all.oc.trace_message << "warning: multiplicative --progress <float>"
                           << " is > 9.0: you probably meant to use an integer" << endl;
       }
       all.sd->dump_interval = 1.0;
@@ -419,12 +419,12 @@ input_options parse_source(vw& all, options_i& options)
   input_options parsed_options;
 
   option_group_definition input_options("Input options");
-  input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
+  input_options.add(make_option("data", all.ic.data_filename).short_name("d").help("Example set"))
       .add(make_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"))
       .add(make_option("foreground", parsed_options.foreground)
                .help("in persistent daemon mode, do not run in the background"))
       .add(make_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"))
-      .add(make_option("num_children", all.num_children).help("number of children for persistent daemon mode"))
+      .add(make_option("num_children", all.rc.num_children).help("number of children for persistent daemon mode"))
       .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
       .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
       .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
@@ -452,16 +452,16 @@ input_options parse_source(vw& all, options_i& options)
   const auto positional_tokens = options.get_positional_tokens();
   if (positional_tokens.size() == 1)
   {
-    all.data_filename = positional_tokens[0];
+    all.ic.data_filename = positional_tokens[0];
   }
   else if (positional_tokens.size() > 1)
   {
-    all.trace_message << "Warning: Multiple data files passed as positional parameters, only the first one will be read and the rest will be ignored." << endl;
+    all.oc.trace_message << "Warning: Multiple data files passed as positional parameters, only the first one will be read and the rest will be ignored." << endl;
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
   {
-    all.daemon = true;
+    all.rc.daemon = true;
     // allow each child to process up to 1e5 connections
     all.numpasses = (size_t)1e5;
   }
@@ -469,7 +469,7 @@ input_options parse_source(vw& all, options_i& options)
   // Add an implicit cache file based on the data filename.
   if (parsed_options.cache)
   {
-    parsed_options.cache_files.push_back(all.data_filename + ".cache");
+    parsed_options.cache_files.push_back(all.ic.data_filename + ".cache");
   }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
@@ -480,7 +480,7 @@ input_options parse_source(vw& all, options_i& options)
           options.was_supplied("output_feature_regularizer_text")))
   {
     all.holdout_set_off = true;
-    all.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
+    all.oc.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
   return parsed_options;
@@ -510,7 +510,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin()))
     return "limit";
 
-  if (vw1.num_bits != vw2.num_bits)
+  if (vw1.fc.num_bits != vw2.fc.num_bits)
     return "num_bits";
 
   if (vw1.permutations != vw2.permutations)
@@ -612,7 +612,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   option_group_definition feature_options("Feature options");
   feature_options
       .add(make_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
-      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
+      .add(make_option("hash_seed", all.fc.hash_seed).keep().default_value(0).help("seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
@@ -627,7 +627,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
                .keep())
       .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
-      .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
+      .add(make_option("constant", all.wc.initial_constant).short_name("C").help("Set initial value of constant"))
       .add(make_option("ngram", all.ngram_strings)
                .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
       .add(make_option("skips", all.skip_strings)
@@ -678,7 +678,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
   if (options.was_supplied("q:"))
   {
-    all.trace_message << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions."
+    all.oc.trace_message << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions."
                       << endl;
   }
 
@@ -710,12 +710,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
   if (options.was_supplied("bit_precision"))
   {
-    if (all.default_bits == false && new_bits != all.num_bits)
-      THROW("Number of bits is set to " << new_bits << " and " << all.num_bits
+    if (all.fc.default_bits == false && new_bits != all.fc.num_bits)
+      THROW("Number of bits is set to " << new_bits << " and " << all.fc.num_bits
                                         << " by argument and model.  That does not work.");
 
-    all.default_bits = false;
-    all.num_bits = new_bits;
+    all.fc.default_bits = false;
+    all.fc.num_bits = new_bits;
 
     VW::validate_num_bits(all);
   }
@@ -728,7 +728,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
+    all.oc.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
                          "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
                       << endl;
 
@@ -740,13 +740,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   if (options.was_supplied("quadratic"))
   {
     if (!all.logger.quiet)
-      all.trace_message << "creating quadratic features for pairs: ";
+      all.oc.trace_message << "creating quadratic features for pairs: ";
 
     for (auto& i : quadratics)
     {
       i = spoof_hex_encoded_namespaces(i);
       if (!all.logger.quiet)
-        all.trace_message << i << " ";
+        all.oc.trace_message << i << " ";
     }
 
     std::vector<std::vector<namespace_index>> new_quadratics;
@@ -758,18 +758,18 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.logger.quiet)
-      all.trace_message << endl;
+      all.oc.trace_message << endl;
   }
 
   if (options.was_supplied("cubic"))
   {
     if (!all.logger.quiet)
-      all.trace_message << "creating cubic features for triples: ";
+      all.oc.trace_message << "creating cubic features for triples: ";
     for (auto i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.logger.quiet)
-        all.trace_message << *i << " ";
+        all.oc.trace_message << *i << " ";
     }
 
     std::vector<std::vector<namespace_index>> new_cubics;
@@ -782,19 +782,19 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!all.logger.quiet)
-      all.trace_message << endl;
+      all.oc.trace_message << endl;
   }
 
   if (options.was_supplied("interactions"))
   {
     if (!all.logger.quiet)
-      all.trace_message << "creating features for following interactions: ";
+      all.oc.trace_message << "creating features for following interactions: ";
 
     for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       if (!all.logger.quiet)
-        all.trace_message << *i << " ";
+        all.oc.trace_message << *i << " ";
     }
 
     std::vector<std::vector<namespace_index>> new_interactions;
@@ -806,7 +806,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!all.logger.quiet)
-      all.trace_message << endl;
+      all.oc.trace_message << endl;
   }
 
   if (expanded_interactions.size() > 0)
@@ -817,11 +817,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0)
-      all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
+      all.oc.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
                         << endl
                         << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
     if (sorted_cnt > 0)
-      all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has "
+      all.oc.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has "
                            "been changed. Interactions affected: "
                         << sorted_cnt << '.' << endl;
 
@@ -854,11 +854,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     if (!all.logger.quiet)
     {
-      all.trace_message << "ignoring namespaces beginning with: ";
+      all.oc.trace_message << "ignoring namespaces beginning with: ";
       for (auto const& ignore : ignores)
-        for (auto const character : ignore) all.trace_message << character << " ";
+        for (auto const character : ignore) all.oc.trace_message << character << " ";
 
-      all.trace_message << endl;
+      all.oc.trace_message << endl;
     }
   }
 
@@ -875,11 +875,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     if (!all.logger.quiet)
     {
-      all.trace_message << "ignoring linear terms for namespaces beginning with: ";
+      all.oc.trace_message << "ignoring linear terms for namespaces beginning with: ";
       for (auto const& ignore : ignore_linears)
-        for (auto const character : ignore) all.trace_message << character << " ";
+        for (auto const character : ignore) all.oc.trace_message << character << " ";
 
-      all.trace_message << endl;
+      all.oc.trace_message << endl;
     }
   }
 
@@ -897,11 +897,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     if (!all.logger.quiet)
     {
-      all.trace_message << "using namespaces beginning with: ";
+      all.oc.trace_message << "using namespaces beginning with: ";
       for (auto const& keep : keeps)
-        for (auto const character : keep) all.trace_message << character << " ";
+        for (auto const character : keep) all.oc.trace_message << character << " ";
 
-      all.trace_message << endl;
+      all.oc.trace_message << endl;
     }
   }
 
@@ -946,7 +946,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
 
       if (++operator_pos > 3)  // seek operator end
-        all.trace_message
+        all.oc.trace_message
             << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('"
             << new_namespace << "') will be used as target namespace." << endl;
 
@@ -1052,7 +1052,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (test_only || all.eta == 0.)
   {
     if (!all.logger.quiet)
-      all.trace_message << "only testing" << endl;
+      all.oc.trace_message << "only testing" << endl;
     all.training = false;
     if (all.lda > 0)
       all.eta = 0;
@@ -1073,19 +1073,19 @@ void parse_example_tweaks(options_i& options, vw& all)
     all.sd->ldict = &calloc_or_throw<namedlabels>();
     new (all.sd->ldict) namedlabels(named_labels);
     if (!all.logger.quiet)
-      all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+      all.oc.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   if (all.l1_lambda < 0.)
   {
-    all.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
+    all.oc.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
     all.l1_lambda = 0.;
   }
   if (all.l2_lambda < 0.)
   {
-    all.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
+    all.oc.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
     all.l2_lambda = 0.;
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
@@ -1093,9 +1093,9 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (!all.logger.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-      all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
+      all.oc.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
     if (all.reg_mode > 1)
-      all.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
+      all.oc.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
   }
 }
 
@@ -1114,7 +1114,7 @@ void parse_output_preds(options_i& options, vw& all)
   if (options.was_supplied("predictions"))
   {
     if (!all.logger.quiet)
-      all.trace_message << "predictions = " << predictions << endl;
+      all.oc.trace_message << "predictions = " << predictions << endl;
 
     if (predictions == "stdout")
     {
@@ -1128,7 +1128,7 @@ void parse_output_preds(options_i& options, vw& all)
       }
       catch (...)
       {
-        all.trace_message << "Error opening the predictions file: " << predictions << endl;
+        all.oc.trace_message << "Error opening the predictions file: " << predictions << endl;
       }
     }
   }
@@ -1137,9 +1137,9 @@ void parse_output_preds(options_i& options, vw& all)
   {
     if (!all.logger.quiet)
     {
-      all.trace_message << "raw predictions = " << raw_predictions << endl;
+      all.oc.trace_message << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
-        all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
+        all.oc.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
                           << endl;
     }
     if (raw_predictions == "stdout")
@@ -1162,20 +1162,20 @@ void parse_output_model(options_i& options, vw& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive."))
-      .add(make_option("save_resume", all.save_resume)
+      .add(make_option("save_resume", all.oc.save_resume)
                .help("save extra state so learning can be resumed later with new data"))
-      .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
+      .add(make_option("preserve_performance_counters", all.oc.preserve_performance_counters)
                .help("reset performance counters when warmstarting"))
-      .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
+      .add(make_option("save_per_pass", all.oc.save_per_pass).help("Save the model after every pass over data"))
       .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output)
                .help("Per feature regularization output file"))
       .add(make_option("output_feature_regularizer_text", all.per_feature_regularizer_text)
                .help("Per feature regularization output file, in text"))
-      .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
+      .add(make_option("id", all.oc.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
   if (all.final_regressor_name.compare("") && !all.logger.quiet)
-    all.trace_message << "final_regressor = " << all.final_regressor_name << endl;
+    all.oc.trace_message << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash"))
     all.hash_inv = true;
@@ -1192,17 +1192,17 @@ void load_input_model(vw& all, io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
-  if (!all.feature_mask.empty() && all.initial_regressors.size() > 0 && all.feature_mask == all.initial_regressors[0])
+  if (!all.ic.feature_mask.empty() && all.ic.initial_regressors.size() > 0 && all.ic.feature_mask == all.ic.initial_regressors[0])
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
 
-    parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
+    parse_mask_regressor_args(all, all.ic.feature_mask, all.ic.initial_regressors);
   }
   else
   {  // load mask first
-    parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
+    parse_mask_regressor_args(all, all.ic.feature_mask, all.ic.initial_regressors);
 
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
@@ -1306,8 +1306,8 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
   if (trace_listener)
   {
-    all.trace_message.trace_listener = trace_listener;
-    all.trace_message.trace_context = trace_context;
+    all.oc.trace_message.trace_listener = trace_listener;
+    all.oc.trace_message.trace_context = trace_context;
   }
 
   try
@@ -1336,15 +1336,15 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("decay_learning_rate", all.eta_decay_rate)
                  .help("Set Decay factor for learning_rate between passes"))
         .add(make_option("initial_t", all.sd->t).help("initial t value"))
-        .add(make_option("feature_mask", all.feature_mask)
+        .add(make_option("feature_mask", all.ic.feature_mask)
                  .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                        "given, also used for initial weights."));
     options.add_and_parse(update_args);
 
     option_group_definition weight_args("Weight options");
     weight_args
-        .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
-        .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
+        .add(make_option("initial_regressor", all.ic.initial_regressors).help("Initial regressor(s)").short_name("i"))
+        .add(make_option("initial_weight", all.wc.initial_weight).help("Set all weights to an initial value of arg."))
         .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
         .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
         .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
@@ -1540,12 +1540,12 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "Num weight bits = " << all.num_bits << endl;
-    all.trace_message << "learning rate = " << all.eta << endl;
-    all.trace_message << "initial_t = " << all.sd->t << endl;
-    all.trace_message << "power_t = " << all.power_t << endl;
+    all.oc.trace_message << "Num weight bits = " << all.fc.num_bits << endl;
+    all.oc.trace_message << "learning rate = " << all.eta << endl;
+    all.oc.trace_message << "initial_t = " << all.sd->t << endl;
+    all.oc.trace_message << "power_t = " << all.power_t << endl;
     if (all.numpasses > 1)
-      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      all.oc.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
 }
 
@@ -1563,7 +1563,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
   uint32_t i = 0;
   size_t params_per_problem = all.l->increment;
   while (params_per_problem > ((uint64_t)1 << i)) i++;
-  all.wpp = (1 << i) >> all.weights.stride_shift();
+  all.gs.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
 namespace VW
@@ -1665,7 +1665,7 @@ vw* initialize(
     io_buf localModel;
     if (!model)
     {
-      std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
+      std::vector<std::string> all_initial_regressor_files(all.ic.initial_regressors);
       if (options.was_supplied("input_feature_regularizer"))
       {
         all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
@@ -1700,7 +1700,7 @@ vw* initialize(
   }
   catch (std::exception& e)
   {
-    all.trace_message << "Error: " << e.what() << endl;
+    all.oc.trace_message << "Error: " << e.what() << endl;
     finish(all);
     throw;
   }
@@ -1759,7 +1759,7 @@ vw* initialize(
   vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
 
   // When VW is deleted the options object will be cleaned up too.
-  all->should_delete_options = true;
+  all->rc.should_delete_options = true;
   return all;
 }
 
@@ -1822,36 +1822,36 @@ void finish(vw& all, bool delete_all)
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
   {
-    all.trace_message.precision(6);
-    all.trace_message << std::fixed;
-    all.trace_message << endl << "finished run";
-    if (all.current_pass == 0 || all.current_pass == 1)
-      all.trace_message << endl << "number of examples = " << all.sd->example_number;
+    all.oc.trace_message.precision(6);
+    all.oc.trace_message << std::fixed;
+    all.oc.trace_message << endl << "finished run";
+    if (all.gs.current_pass == 0 || all.gs.current_pass == 1)
+      all.oc.trace_message << endl << "number of examples = " << all.sd->example_number;
     else
     {
-      all.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      all.trace_message << endl << "passes used = " << all.current_pass;
+      all.oc.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.gs.current_pass;
+      all.oc.trace_message << endl << "passes used = " << all.gs.current_pass;
     }
-    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
-    all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
-    all.trace_message << endl << "average loss = ";
+    all.oc.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
+    all.oc.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
+    all.oc.trace_message << endl << "average loss = ";
     if (all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
-        all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
+        all.oc.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << "n.a.";
+        all.oc.trace_message << "n.a.";
     else if ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
-      all.trace_message << "undefined (no holdout)";
+      all.oc.trace_message << "undefined (no holdout)";
     else
-      all.trace_message << all.sd->holdout_best_loss << " h";
+      all.oc.trace_message << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        all.trace_message << endl
+        all.oc.trace_message << endl
                           << "average multiclass log loss = "
                           << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << endl
+        all.oc.trace_message << endl
                           << "average multiclass log loss = "
                           << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
@@ -1860,15 +1860,15 @@ void finish(vw& all, bool delete_all)
     float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
-      all.trace_message << endl << "best constant = " << best_constant;
+      all.oc.trace_message << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
-        all.trace_message << endl << "best constant's loss = " << best_constant_loss;
+        all.oc.trace_message << endl << "best constant's loss = " << best_constant_loss;
     }
 
-    all.trace_message << endl << "total feature number = " << all.sd->total_features;
+    all.oc.trace_message << endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      all.trace_message << endl << "total queries = " << all.sd->queries;
-    all.trace_message << endl;
+      all.oc.trace_message << endl << "total queries = " << all.sd->queries;
+    all.oc.trace_message << endl;
   }
 
   // implement finally.

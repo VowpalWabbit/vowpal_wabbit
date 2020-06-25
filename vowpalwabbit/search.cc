@@ -489,16 +489,16 @@ bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
   return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
       might_print_update(all) ||                    // if we have to print and update to stderr
       (all.raw_prediction != nullptr) ||            // we need raw predictions
-      ((!all.vw_is_main) && (is_test_ex)) ||        // library needs predictions
+      ((!all.rc.vw_is_main) && (is_test_ex)) ||        // library needs predictions
       // or:
       //   it's not quiet AND
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.logger.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.logger.quiet || !all.rc.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.holdout_set_off ||                          // no holdout
-              ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
+              ec[0]->test_only || (all.gs.current_pass == 0)  // we need error rates for progressive cost
               ));
 }
 
@@ -566,7 +566,7 @@ void print_update(search_private& priv)
 
   float avg_loss = 0.;
   float avg_loss_since = 0.;
-  bool use_heldout_loss = (!all.holdout_set_off && all.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
+  bool use_heldout_loss = (!all.holdout_set_off && all.gs.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
   if (use_heldout_loss)
   {
     avg_loss = safediv((float)all.sd->holdout_sum_loss, (float)all.sd->weighted_holdout_examples);
@@ -2188,7 +2188,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   // if (! priv.no_caching)
   priv.cache_hash_map.clear();
 
-  cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
+  cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.rc.vw_is_main << endl;
   cdbg << "must_run_test = " << must_run_test(all, ec_seq, is_test_ex) << endl;
   // do an initial test pass to compute output (and loss)
   if (must_run_test(all, ec_seq, is_test_ex))
@@ -3060,7 +3060,7 @@ std::stringstream& search::output()
 
 void search::set_options(uint32_t opts)
 {
-  if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+  if (this->priv->all->rc.vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set options except in initialize function!" << endl;
   if ((opts & AUTO_CONDITION_FEATURES) != 0)
     this->priv->auto_condition_features = true;
@@ -3086,7 +3086,7 @@ void search::set_options(uint32_t opts)
 
 void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
 {
-  if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
+  if (this->priv->all->rc.vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
   this->priv->all->p->lp = lp;
   this->priv->all->p->lp.test_label = (bool (*)(void*))is_test;

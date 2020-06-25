@@ -363,7 +363,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
     THROW("error: you can't use --cs_active and --csoaa at the same time");
 
   if (!options.was_supplied("adax"))
-    all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+    all.oc.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
   all.p->lp = cs_label;  // assigning the label parser
   all.set_minmax(all.sd, data->cost_max);

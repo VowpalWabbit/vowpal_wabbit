@@ -80,7 +80,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
+  print_result_by_ref(d.all->oc.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -251,7 +251,7 @@ class set_rand_wrapper
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
   vw& all = *d.all;
-  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t length = (uint64_t)1 << all.fc.num_bits;
   if (read)
   {
     initialize_regressor(all);
@@ -303,15 +303,15 @@ void end_pass(gdmf& d)
   vw* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass)
-    save_predictor(*all, all->final_regressor_name, all->current_pass);
+  if (all->oc.save_per_pass)
+    save_predictor(*all, all->final_regressor_name, all->gs.current_pass);
 
   if (!all->holdout_set_off)
   {
     if (summarize_holdout_set(*all, d.no_win_counter))
       finalize_regressor(*all, all->final_regressor_name);
     if ((d.early_stop_thres == d.no_win_counter) &&
-        ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
+        ((all->check_holdout_every_n_passes <= 1) || ((all->gs.current_pass % all->check_holdout_every_n_passes) == 0)))
       set_done(*all);
   }
 }

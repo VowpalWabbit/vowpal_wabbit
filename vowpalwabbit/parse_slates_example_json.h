@@ -125,7 +125,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
         }
       }
 
-      if (all.chain_hash)
+      if (all.fc.chain_hash)
       {
         namespaces.back().AddFeature(&all, key_namespace, str);
       }

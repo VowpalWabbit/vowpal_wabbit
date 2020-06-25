@@ -359,6 +359,153 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+struct WeightConfig
+{
+  /*
+   * Set once on; on parse_args
+   * weight configuration
+   */
+  float initial_weight;
+  float initial_constant;
+
+
+};
+
+struct FeatureConfig
+{
+  /*
+   * Set once on; part of input_options
+   * Setting for features
+   */
+  bool chain_hash = false;
+
+  /*
+   * Bit precision related
+   * feature related
+   */
+  uint32_t num_bits;  // log_2 of the number of features.
+
+  /*
+   * do we need this? might be state
+   */
+  bool default_bits;
+
+  /*
+   * Set once on; on parse_args
+   * Setting for features
+   */
+  uint32_t hash_seed;
+
+
+};
+
+struct InputConfig
+{
+  /*
+   * Set once on; on parse_args
+   * Input file
+   */
+  std::string data_filename;  // was vm["data"]
+
+  /*
+   * controversial, weight related
+   * but this is a list of file names to be read
+   */
+  std::vector<std::string> initial_regressors;
+
+  /*
+   * input related, since its a file name to be read
+   * might be mostly gd.cc related, can used for initial weights
+   */
+  std::string feature_mask;
+};
+
+struct OutputConfig
+{
+  bool save_per_pass;
+
+  /*
+   * output related config
+   */
+  bool save_resume;
+
+  /*
+   * output related config
+   */
+  std::string id;
+
+  /*
+   * GD specific config, but not really
+   */
+  bool preserve_performance_counters;
+
+  /*
+   * output configuration
+   */
+  // error reporting
+  vw_ostream trace_message;
+
+  /*
+   * output related
+   */
+  std::unique_ptr<VW::io::writer> stdout_adapter;
+
+
+};
+
+struct VWRuntimeConfig
+{
+  /*
+   * Set once on; on parse_args
+   * runtime configuration
+   * also applies to num_children
+   */
+  bool daemon;
+  size_t num_children;
+
+  /*
+   * runtime configuration
+   */
+  bool vw_is_main = false;  // true if vw is executable; false in library mode
+
+  /*
+   * runtime configuration
+   * not set directly by user
+   */
+  // Flag used when VW internally manages lifetime of options object.
+  bool should_delete_options = false;
+
+};
+
+struct GlobalState
+{
+  /*
+   * Should be part of learner?
+   * not input, used as state
+   */
+  uint64_t current_pass;
+
+  /*
+   * versioning related
+   * input/output file related
+   * not directly set by user but depends on input model
+   */
+  VW::version_struct model_file_ver;
+
+  /*
+   * updated only by ftrl.cc, gd.cc
+   */
+  double normalized_sum_norm_x;
+
+  /*
+   * wpp = weights per problem
+   * feature related?
+   * parameters related? (see array_parameters.h)
+   * not directly set by user
+   */
+  uint32_t wpp;
+};
+
 struct vw
 {
  private:
@@ -373,11 +520,14 @@ struct vw
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
-  /*
-   * Set once on; part of input_options
-   * Setting for features
-   */
-  bool chain_hash = false;
+  InputConfig ic;
+  OutputConfig oc;
+
+  WeightConfig wc;
+  FeatureConfig fc;
+
+  VWRuntimeConfig rc;
+  GlobalState gs;
 
   VW::LEARNER::base_learner* l;               // the top level learner
   VW::LEARNER::single_learner* scorer;        // a scoring function
@@ -393,50 +543,6 @@ struct vw
   void (*set_minmax)(shared_data* sd, float label);
 
   /*
-   * Should be part of learner?
-   * not input, used as state
-   */
-  uint64_t current_pass;
-
-  /*
-   * Bit precision related
-   * feature related
-   */
-  uint32_t num_bits;  // log_2 of the number of features.
-  /*
-   * do we need this?
-   */
-  bool default_bits;
-
-  /*
-   * Set once on; on parse_args
-   * Setting for features
-   */
-  uint32_t hash_seed;
-
-  /*
-   * Set once on; on parse_args
-   * Input file
-   */
-  std::string data_filename;  // was vm["data"]
-
-  /*
-   * Set once on; on parse_args
-   * runtime configuration
-   * also applies to num_children
-   */
-  bool daemon;
-  size_t num_children;
-
-  /*
-   * Set once on; on parse_args
-   * weight configuration
-   */
-  bool save_per_pass;
-  float initial_weight;
-  float initial_constant;
-
-  /*
    * reduction stack configuration
    */
   bool bfgs;
@@ -445,44 +551,6 @@ struct vw
    */
   bool hessian_on;
 
-  /*
-   * output related config
-   */
-  bool save_resume;
-  /*
-   * GD specific config
-   */
-  bool preserve_performance_counters;
-  /*
-   * output related config
-   */
-  std::string id;
-
-  /*
-   * versioning related
-   * input/output file related?
-   */
-  VW::version_struct model_file_ver;
-  /*
-   * updated only by ftrl.cc, gd.cc
-   */
-  double normalized_sum_norm_x;
-  /*
-   * runtime configuration
-   */
-  bool vw_is_main = false;  // true if vw is executable; false in library mode
-
-  /*
-   * output configuration
-   */
-  // error reporting
-  vw_ostream trace_message;
-
-  /*
-   * runtime configuration
-   */
-  // Flag used when VW internally manages lifetime of options object.
-  bool should_delete_options = false;
 
   VW::config::options_i* options;
 
@@ -491,28 +559,8 @@ struct vw
    */
   void* /*Search::search*/ searchstr;
 
-  /*
-   * wpp = weights per problem
-   * feature related?
-   * parameters related? (see array_parameters.h)
-   */
-  uint32_t wpp;
 
-  /*
-   * output related
-   */
-  std::unique_ptr<VW::io::writer> stdout_adapter;
 
-  /*
-   * input related
-   */
-  std::vector<std::string> initial_regressors;
-
-  /*
-   * input related
-   * might be mostly gd.cc related?
-   */
-  std::string feature_mask;
 
   /*
    * input related
@@ -650,7 +698,7 @@ struct vw
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
 
-  size_t length() { return ((size_t)1) << num_bits; };
+  size_t length() { return ((size_t)1) << fc.num_bits; };
 
   std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 

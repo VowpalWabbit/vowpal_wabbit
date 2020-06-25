@@ -91,7 +91,7 @@ void initialize_regressor(vw& all, T& weights)
 
   if (weights.not_null())
     return;
-  size_t length = ((size_t)1) << all.num_bits;
+  size_t length = ((size_t)1) << all.fc.num_bits;
   try
   {
     uint32_t ss = weights.stride_shift();
@@ -100,14 +100,14 @@ void initialize_regressor(vw& all, T& weights)
   }
   catch (const VW::vw_exception&)
   {
-    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.fc.num_bits << " bits: try decreasing -b <bits>");
   }
   if (weights.mask() == 0)
   {
-    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.fc.num_bits << " bits: try decreasing -b <bits>");
   }
-  else if (all.initial_weight != 0.)
-    weights.template set_default<float, set_initial_wrapper<T> >(all.initial_weight);
+  else if (all.wc.initial_weight != 0.)
+    weights.template set_default<float, set_initial_wrapper<T> >(all.wc.initial_weight);
   else if (all.random_positive_weights)
     weights.template set_default<random_positive_wrapper<T> >();
   else if (all.random_weights)
@@ -179,27 +179,27 @@ void save_load_header(
         buff2[std::min(v_length, default_buf_size) - 1] = '\0';
       }
       bytes_read_write += bin_text_read_write(model_file, buff2, v_length, "", read, msg, text);
-      all.model_file_ver = buff2;  // stored in all to check save_resume fix in gd
+      all.gs.model_file_ver = buff2;  // stored in all to check save_resume fix in gd
       VW::validate_version(all);
 
-      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      if (all.gs.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
         model_file.verify_hash(true);
 
-      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+      if (all.gs.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
       {
-        v_length = all.id.length() + 1;
+        v_length = all.oc.id.length() + 1;
 
-        msg << "Id " << all.id << "\n";
-        memcpy(buff2, all.id.c_str(), std::min(v_length, default_buf_size));
+        msg << "Id " << all.oc.id << "\n";
+        memcpy(buff2, all.oc.id.c_str(), std::min(v_length, default_buf_size));
         if (read)
           v_length = default_buf_size;
         bytes_read_write += bin_text_read_write(model_file, buff2, v_length, "", read, msg, text);
-        all.id = buff2;
+        all.oc.id = buff2;
 
-        if (read && !options.was_supplied("id") && !all.id.empty())
+        if (read && !options.was_supplied("id") && !all.oc.id.empty())
         {
           file_options += " --id";
-          file_options += " " + all.id;
+          file_options += " " + all.oc.id;
         }
       }
 
@@ -216,8 +216,8 @@ void save_load_header(
       bytes_read_write += bin_text_read_write_fixed_validated(
           model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label), "", read, msg, text);
 
-      msg << "bits:" << all.num_bits << "\n";
-      uint32_t local_num_bits = all.num_bits;
+      msg << "bits:" << all.fc.num_bits << "\n";
+      uint32_t local_num_bits = all.fc.num_bits;
       bytes_read_write += bin_text_read_write_fixed_validated(
           model_file, (char*)&local_num_bits, sizeof(local_num_bits), "", read, msg, text);
 
@@ -231,12 +231,12 @@ void save_load_header(
 
       VW::validate_default_bits(all, local_num_bits);
 
-      all.default_bits = false;
-      all.num_bits = local_num_bits;
+      all.fc.default_bits = false;
+      all.fc.num_bits = local_num_bits;
 
       VW::validate_num_bits(all);
 
-      if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
+      if (all.gs.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
       {
         if (!read)
           THROW("cannot write legacy format");
@@ -288,7 +288,7 @@ void save_load_header(
         msg << "\n";
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
-        if (all.model_file_ver >=
+        if (all.gs.model_file_ver >=
             VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
         {
           if (!read)
@@ -328,7 +328,7 @@ void save_load_header(
         }
       }
 
-      if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
+      if (all.gs.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
       {
         // to fix compatibility that was broken in 7.9
         uint32_t rank = 0;
@@ -345,7 +345,7 @@ void save_load_header(
             file_options += " " + temp.str();
           }
           else
-            all.trace_message << "WARNING: this model file contains 'rank: " << rank
+            all.oc.trace_message << "WARNING: this model file contains 'rank: " << rank
                               << "' value but it will be ignored as another value specified via the command line."
                               << std::endl;
         }
@@ -448,7 +448,7 @@ void save_load_header(
         auto serialized_keep_options = serializer.str();
 
         // We need to save our current PRG state
-        if (all.save_resume && all.get_random_state()->get_current_state() != 0)
+        if (all.oc.save_resume && all.get_random_state()->get_current_state() != 0)
         {
           serialized_keep_options += " --random_seed";
           serialized_keep_options += " " + std::to_string(all.get_random_state()->get_current_state());
@@ -465,9 +465,9 @@ void save_load_header(
       }
 
       // Read/write checksum if required by version
-      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
+      if (all.gs.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
       {
-        uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+        uint32_t check_sum = (all.gs.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
             ? model_file.hash()
             : (uint32_t)uniform_hash(model_file.buffer_start(), bytes_read_write, 0);
 
@@ -480,7 +480,7 @@ void save_load_header(
           THROW("Checksum is inconsistent, file is possibly corrupted.");
       }
 
-      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      if (all.gs.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
       {
         model_file.verify_hash(false);
       }
@@ -531,7 +531,7 @@ void save_predictor(vw& all, std::string reg_name, size_t current_pass)
 {
   std::stringstream filename;
   filename << reg_name;
-  if (all.save_per_pass)
+  if (all.oc.save_per_pass)
     filename << "." << current_pass;
   dump_regressor(all, filename.str(), false);
 }
@@ -567,7 +567,7 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
       // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
+        all.oc.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
                           << std::endl;
       }
     }

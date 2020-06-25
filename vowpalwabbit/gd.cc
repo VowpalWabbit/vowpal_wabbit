@@ -140,7 +140,7 @@ void train(gd& g, example& ec, float update)
 void end_pass(gd& g)
 {
   vw& all = *g.all;
-  if (all.save_resume)
+  if (all.oc.save_resume)
   {
     // TODO work out a better system to update state that will be saved in the model.
     if (all.sd->gravity != 0.)
@@ -164,15 +164,15 @@ void end_pass(gd& g)
       accumulate_avg(all, all.weights, 0);
   }
   all.eta *= all.eta_decay_rate;
-  if (all.save_per_pass)
-    save_predictor(all, all.final_regressor_name, all.current_pass);
+  if (all.oc.save_per_pass)
+    save_predictor(all, all.final_regressor_name, all.gs.current_pass);
 
   if (!all.holdout_set_off)
   {
     if (summarize_holdout_set(all, g.no_win_counter))
       finalize_regressor(all, all.final_regressor_name);
     if ((g.early_stop_thres == g.no_win_counter) &&
-        ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+        ((all.check_holdout_every_n_passes <= 1) || ((all.gs.current_pass % all.check_holdout_every_n_passes) == 0)))
       set_done(all);
   }
 }
@@ -252,7 +252,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     dat.results.push_back(sv);
   }
 
-  if ((dat.all.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
+  if ((dat.all.gs.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
   {
     // for invert_hash
 
@@ -323,7 +323,7 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
+    print_result_by_ref(all.oc.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -552,14 +552,14 @@ float get_pred_per_update(gd& g, example& ec)
   {
     if (!stateless)
     {
-      g.all->normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
+      g.all->gs.normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
       g.total_weight += ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-          (float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
+          (float)g.total_weight, (float)g.all->gs.normalized_sum_norm_x, g.neg_norm_power);
     }
     else
     {
-      float nsnx = ((float)g.all->normalized_sum_norm_x) + ec.weight * nd.norm_x;
+      float nsnx = ((float)g.all->gs.normalized_sum_norm_x) + ec.weight * nd.norm_x;
       float tw = (float)g.total_weight + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
@@ -728,12 +728,12 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 
   uint64_t i = 0;
   uint32_t old_i = 0;
-  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t length = (uint64_t)1 << all.fc.num_bits;
   if (read)
     do
     {
       brw = 1;
-      if (all.num_bits < 31)  // backwards compatible
+      if (all.fc.num_bits < 31)  // backwards compatible
       {
         brw = model_file.bin_read_fixed((char*)&old_i, sizeof(old_i), "");
         i = old_i;
@@ -756,7 +756,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
 
-        brw = write_index(model_file, msg, text, all.num_bits, i);
+        brw = write_index(model_file, msg, text, all.fc.num_bits, i);
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
@@ -774,7 +774,7 @@ template <class T>
 void save_load_online_state(
     vw& all, io_buf& model_file, bool read, bool text, gd* g, std::stringstream& msg, uint32_t ftrl_size, T& weights)
 {
-  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t length = (uint64_t)1 << all.fc.num_bits;
 
   uint64_t i = 0;
   uint32_t old_i = 0;
@@ -784,7 +784,7 @@ void save_load_online_state(
     do
     {
       brw = 1;
-      if (all.num_bits < 31)  // backwards compatible
+      if (all.fc.num_bits < 31)  // backwards compatible
       {
         brw = model_file.bin_read_fixed((char*)&old_i, sizeof(old_i), "");
         i = old_i;
@@ -819,7 +819,7 @@ void save_load_online_state(
       {
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
         {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
+          brw = write_index(model_file, msg, text, all.fc.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
@@ -828,7 +828,7 @@ void save_load_online_state(
       {
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0. || (&(*v))[3] != 0.)
         {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
+          brw = write_index(model_file, msg, text, all.fc.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
         }
@@ -838,7 +838,7 @@ void save_load_online_state(
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0. || (&(*v))[3] != 0. || (&(*v))[4] != 0. ||
             (&(*v))[5] != 0.)
         {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
+          brw = write_index(model_file, msg, text, all.fc.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
               << (&(*v))[5] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
@@ -848,7 +848,7 @@ void save_load_online_state(
       {
         if (*v != 0.)
         {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
+          brw = write_index(model_file, msg, text, all.fc.num_bits, i);
           msg << ":" << *v << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
         }
@@ -858,7 +858,7 @@ void save_load_online_state(
         // either adaptive or normalized
         if (*v != 0. || (&(*v))[1] != 0.)
         {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
+          brw = write_index(model_file, msg, text, all.fc.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
         }
@@ -868,7 +868,7 @@ void save_load_online_state(
         // adaptive and normalized
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
         {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
+          brw = write_index(model_file, msg, text, all.fc.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
           brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
@@ -885,9 +885,9 @@ void save_load_online_state(
   msg << "initial_t " << all.initial_t << "\n";
   bin_text_read_write_fixed(model_file, (char*)&all.initial_t, sizeof(all.initial_t), "", read, msg, text);
 
-  msg << "norm normalizer " << all.normalized_sum_norm_x << "\n";
+  msg << "norm normalizer " << all.gs.normalized_sum_norm_x << "\n";
   bin_text_read_write_fixed(
-      model_file, (char*)&all.normalized_sum_norm_x, sizeof(all.normalized_sum_norm_x), "", read, msg, text);
+      model_file, (char*)&all.gs.normalized_sum_norm_x, sizeof(all.gs.normalized_sum_norm_x), "", read, msg, text);
 
   msg << "t " << all.sd->t << "\n";
   bin_text_read_write_fixed(model_file, (char*)&all.sd->t, sizeof(all.sd->t), "", read, msg, text);
@@ -902,7 +902,7 @@ void save_load_online_state(
   float dump_interval = all.sd->dump_interval;
   msg << "dump_interval " << dump_interval << "\n";
   bin_text_read_write_fixed(model_file, (char*)&dump_interval, sizeof(dump_interval), "", read, msg, text);
-  if (!read || (all.training && all.preserve_performance_counters))  // update dump_interval from input model
+  if (!read || (all.training && all.oc.preserve_performance_counters))  // update dump_interval from input model
     all.sd->dump_interval = dump_interval;
 
   msg << "min_label " << all.sd->min_label << "\n";
@@ -931,7 +931,7 @@ void save_load_online_state(
   bin_text_read_write_fixed(
       model_file, (char*)&all.sd->total_features, sizeof(all.sd->total_features), "", read, msg, text);
 
-  if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
+  if (!read || all.gs.model_file_ver >= VERSION_SAVE_RESUME_FIX)
   {
     // restore some data to allow --save_resume work more accurate
 
@@ -945,20 +945,20 @@ void save_load_online_state(
         sizeof(all.sd->old_weighted_labeled_examples), "", read, msg, text);
 
     // fix "number of examples per pass"
-    msg << "current_pass " << all.current_pass << "\n";
-    if (all.model_file_ver >= VERSION_PASS_UINT64)
-      bin_text_read_write_fixed(model_file, (char*)&all.current_pass, sizeof(all.current_pass), "", read, msg, text);
+    msg << "current_pass " << all.gs.current_pass << "\n";
+    if (all.gs.model_file_ver >= VERSION_PASS_UINT64)
+      bin_text_read_write_fixed(model_file, (char*)&all.gs.current_pass, sizeof(all.gs.current_pass), "", read, msg, text);
     else  // backwards compatiblity.
     {
-      size_t temp_pass = (size_t)all.current_pass;
+      size_t temp_pass = (size_t)all.gs.current_pass;
       bin_text_read_write_fixed(model_file, (char*)&temp_pass, sizeof(temp_pass), "", read, msg, text);
-      all.current_pass = temp_pass;
+      all.gs.current_pass = temp_pass;
     }
   }
 
   if (read &&
       (!all.training ||
-          !all.preserve_performance_counters))  // reset various things so that we report test set performance properly
+          !all.oc.preserve_performance_counters))  // reset various things so that we report test set performance properly
   {
     all.sd->sum_loss = 0;
     all.sd->sum_loss_since_last_dump = 0;
@@ -968,7 +968,7 @@ void save_load_online_state(
     all.sd->old_weighted_labeled_examples = 0.;
     all.sd->example_number = 0;
     all.sd->total_features = 0;
-    all.current_pass = 0;
+    all.gs.current_pass = 0;
   }
   if (all.weights.sparse)
     save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.sparse_weights);
@@ -996,7 +996,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
     if (all.weights.adaptive && all.initial_t > 0)
     {
-      float init_weight = all.initial_weight;
+      float init_weight = all.wc.initial_weight;
       std::pair<float, float> p = std::make_pair(init_weight, all.initial_t);
       if (all.weights.sparse)
         all.weights.sparse_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<sparse_parameters> >(p);
@@ -1015,14 +1015,14 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
-    bool resume = all.save_resume;
+    bool resume = all.oc.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
     if (resume)
     {
-      if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        all.trace_message
+      if (read && all.gs.model_file_ver < VERSION_SAVE_RESUME_FIX)
+        all.oc.trace_message
             << std::endl
             << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
             << VERSION_SAVE_RESUME_FIX << std::endl
@@ -1125,24 +1125,24 @@ base_learner* setup(options_i& options, vw& all)
   bool normalized = false;
 
   option_group_definition new_options("Gradient Descent options");
-  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.").keep(all.save_resume))
-      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.").keep(all.save_resume))
+  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.").keep(all.oc.save_resume))
+      .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.").keep(all.oc.save_resume))
       .add(make_option("adax", adax).help("use adaptive learning rates with x^2 instead of g^2x^2"))
-      .add(make_option("invariant", invariant).help("use safe/importance aware updates.").keep(all.save_resume))
-      .add(make_option("normalized", normalized).help("use per feature normalized updates").keep(all.save_resume))
+      .add(make_option("invariant", invariant).help("use safe/importance aware updates.").keep(all.oc.save_resume))
+      .add(make_option("normalized", normalized).help("use per feature normalized updates").keep(all.oc.save_resume))
       .add(make_option("sparse_l2", g->sparse_l2).default_value(0.f).help("use per feature normalized updates"))
       .add(make_option("l1_state", all.sd->gravity)
-               .keep(all.save_resume)
+               .keep(all.oc.save_resume)
                .default_value(0.)
                .help("use per feature normalized updates"))
       .add(make_option("l2_state", all.sd->contraction)
-               .keep(all.save_resume)
+               .keep(all.oc.save_resume)
                .default_value(1.)
                .help("use per feature normalized updates"));
   options.add_and_parse(new_options);
 
   g->all = &all;
-  g->all->normalized_sum_norm_x = 0;
+  g->all->gs.normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
   g->total_weight = 0.;
   all.weights.adaptive = true;
@@ -1153,7 +1153,7 @@ base_learner* setup(options_i& options, vw& all)
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
-    g->all->normalized_sum_norm_x = all.initial_t;
+    g->all->gs.normalized_sum_norm_x = all.initial_t;
     g->total_weight = all.initial_t;
   }
 
@@ -1167,7 +1167,7 @@ base_learner* setup(options_i& options, vw& all)
     g->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  g->initial_constant = all.initial_constant;
+  g->initial_constant = all.wc.initial_constant;
 
   if (sgd || adaptive || invariant || normalized)
   {
@@ -1208,7 +1208,7 @@ base_learner* setup(options_i& options, vw& all)
     THROW("Cannot use adax without adaptive");
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)
-    all.trace_message << "Warning: the learning rate for the last pass is multiplied by: "
+    all.oc.trace_message << "Warning: the learning rate for the last pass is multiplied by: "
                       << pow((double)all.eta_decay_rate, (double)all.numpasses)
                       << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 

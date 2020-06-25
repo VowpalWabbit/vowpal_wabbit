@@ -47,7 +47,7 @@ void learn_multi_ex(multi_ex& ec_seq, vw& all)
 
 void end_pass(example& ec, vw& all)
 {
-  all.current_pass++;
+  all.gs.current_pass++;
   all.l->end_pass();
 
   VW::finish_example(all, ec);
@@ -62,7 +62,7 @@ void save(example& ec, vw& all)
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
   if (!all.logger.quiet)
-    all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
+    all.oc.trace_message << "saving regressor to " << final_regressor_name << std::endl;
   save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);

@@ -27,7 +27,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       }
       else
       {
-        reset_source(all, all.num_bits);
+        reset_source(all, all.fc.num_bits);
         all.do_reset_source = false;
         all.passes_complete++;
 

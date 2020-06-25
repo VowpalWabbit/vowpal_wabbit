@@ -533,12 +533,12 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     cb_type = CB_TYPE_SM;
   else
   {
-    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr." << std::endl;
+    all.oc.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr." << std::endl;
     cb_type = CB_TYPE_MTR;
   }
 
   if (clip_p > 0.f && cb_type == CB_TYPE_SM)
-    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
+    all.oc.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
                       << std::endl;
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
@@ -563,7 +563,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     options.insert("check_enabled", "");
   }
 
-  auto ld = scoped_calloc_or_throw<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
+  auto ld = scoped_calloc_or_throw<cb_adf>(all.sd, cb_type, &all.gs.model_file_ver, rank_all, clip_p, no_predict);
 
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;

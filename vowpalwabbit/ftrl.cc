@@ -224,10 +224,10 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
 
   GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
 
-  b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
+  b.all->gs.normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
 
-  ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  ec.partial_prediction = b.data.predict / ((float)((b.all->gs.normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
@@ -298,7 +298,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() != 0)
   {
-    bool resume = all->save_resume;
+    bool resume = all->oc.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
@@ -319,7 +319,7 @@ void end_pass(ftrl& g)
     if (summarize_holdout_set(all, g.no_win_counter))
       finalize_regressor(all, all.final_regressor_name);
     if ((g.early_stop_thres == g.no_win_counter) &&
-        ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+        ((all.check_holdout_every_n_passes <= 1) || ((all.gs.current_pass % all.check_holdout_every_n_passes) == 0)))
       set_done(all);
   }
 }
@@ -363,7 +363,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   b->all = &all;
   b->no_win_counter = 0;
-  b->all->normalized_sum_norm_x = 0;
+  b->all->gs.normalized_sum_norm_x = 0;
   b->total_weight = 0;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;

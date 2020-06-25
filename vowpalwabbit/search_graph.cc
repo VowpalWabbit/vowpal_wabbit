@@ -186,7 +186,7 @@ void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   D.multiplier = D.wpp << D.ss;
-  D.wpp = sch.get_vw_pointer_unsafe().wpp;
+  D.wpp = sch.get_vw_pointer_unsafe().gs.wpp;
   D.mask = sch.get_vw_pointer_unsafe().weights.mask();
   D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
   D.N = 0;

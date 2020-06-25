@@ -116,7 +116,7 @@ void print_update(vw& all, example& ec)
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
       !all.logger.quiet && !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
+    all.sd->print_update(all.holdout_set_off, all.gs.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
         all.progress_add, all.progress_arg);
   }
 }
@@ -158,7 +158,7 @@ bool summarize_holdout_set(vw& all, size_t& no_win_counter)
   if (thisLoss < all.sd->holdout_best_loss)
   {
     all.sd->holdout_best_loss = thisLoss;
-    all.sd->holdout_best_pass = all.current_pass;
+    all.sd->holdout_best_pass = all.gs.current_pass;
     no_win_counter = 0;
     return true;
   }
