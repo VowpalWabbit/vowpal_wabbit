@@ -107,7 +107,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   er->all = &all;
   er->_random_state = all.get_random_state();
   er->buf = VW::alloc_examples(1, er->N);
-  er->buf->interactions = &all.interactions;
+  er->buf->interactions = &all.gs.interactions;
 
   if (er_level == 'c')
     for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();

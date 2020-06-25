@@ -426,6 +426,14 @@ struct FeatureConfig
    */
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
+  /* input
+   */
+  std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
+
+  /* input
+   */
+  std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
+
 };
 
 struct ExampleConfig
@@ -572,6 +580,17 @@ struct GlobalState
    * feature related setting?
    */
   uint64_t parse_mask;  // 1 << num_bits -1
+
+  /*
+   * following 7 are feature related settings?
+   * not so sure but feels like its state, related to features though
+   */
+  // Referenced by examples as their set of interactions. Can be overriden by reductions.
+  std::vector<std::vector<namespace_index>> interactions;
+
+  /* highly related to feature.ignore but this is just evil state*/
+  bool ignore_some;
+  bool ignore_some_linear;
 };
 
 struct vw
@@ -635,20 +654,6 @@ struct vw
    */
   int reg_mode;
 
-
-  /*
-   * following 7 are feature related settings?
-   */
-  // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<namespace_index>> interactions;
-  bool ignore_some;
-  /* input
-   */
-  std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
-  bool ignore_some_linear;
-  /* input
-   */
-  std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
 
   bool redefine_some;                                  // --redefine param was used
   /* input, example related

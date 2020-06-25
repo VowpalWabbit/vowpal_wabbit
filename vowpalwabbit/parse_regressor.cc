@@ -255,9 +255,9 @@ void save_load_header(
           // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
           std::vector<namespace_index> temp(pair, *(&pair + 1));
-          if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+          if (std::count(all.gs.interactions.begin(), all.gs.interactions.end(), temp) == 0)
           {
-            all.interactions.emplace_back(temp.begin(), temp.end());
+            all.gs.interactions.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -279,9 +279,9 @@ void save_load_header(
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
 
           std::vector<namespace_index> temp(triple, *(&triple + 1));
-          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+          if (count(all.gs.interactions.begin(), all.gs.interactions.end(), temp) == 0)
           {
-            all.interactions.emplace_back(temp.begin(), temp.end());
+            all.gs.interactions.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -317,9 +317,9 @@ void save_load_header(
             }
 
             std::vector<namespace_index> temp(buff2, buff2 + size);
-            if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+            if (count(all.gs.interactions.begin(), all.gs.interactions.end(), temp) == 0)
             {
-              all.interactions.emplace_back(buff2, buff2 + inter_len);
+              all.gs.interactions.emplace_back(buff2, buff2 + inter_len);
             }
           }
 

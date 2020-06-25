@@ -516,20 +516,20 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.fc.permutations != vw2.fc.permutations)
     return "permutations";
 
-  if (vw1.interactions.size() != vw2.interactions.size())
+  if (vw1.gs.interactions.size() != vw2.gs.interactions.size())
     return "interactions size";
 
-  if (vw1.ignore_some != vw2.ignore_some)
+  if (vw1.gs.ignore_some != vw2.gs.ignore_some)
     return "ignore_some";
 
-  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin()))
+  if (vw1.gs.ignore_some && !std::equal(vw1.fc.ignore.begin(), vw1.fc.ignore.end(), vw2.fc.ignore.begin()))
     return "ignore";
 
-  if (vw1.ignore_some_linear != vw2.ignore_some_linear)
+  if (vw1.gs.ignore_some_linear != vw2.gs.ignore_some_linear)
     return "ignore_some_linear";
 
-  if (vw1.ignore_some_linear &&
-      !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
+  if (vw1.gs.ignore_some_linear &&
+      !std::equal(vw1.fc.ignore_linear.begin(), vw1.fc.ignore_linear.end(), vw2.fc.ignore_linear.begin()))
     return "ignore_linear";
 
   if (vw1.redefine_some != vw2.redefine_some)
@@ -547,7 +547,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
+  for (auto i = std::begin(vw1.gs.interactions), j = std::begin(vw2.gs.interactions); i != std::end(vw1.gs.interactions);
        ++i, ++j)
     if (*i != *j)
       return "interaction mismatch";
@@ -723,7 +723,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   // prepare namespace interactions
   std::vector<std::vector<namespace_index>> expanded_interactions;
 
-  if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( (!all.gs.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
@@ -733,8 +733,8 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
                       << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.interactions.empty())
-      all.interactions.clear();
+    if (!all.gs.interactions.empty())
+      all.gs.interactions.clear();
   }
 
   if (options.was_supplied("quadratic"))
@@ -825,31 +825,31 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
                            "been changed. Interactions affected: "
                         << sorted_cnt << '.' << endl;
 
-    if (all.interactions.size() > 0)
+    if (all.gs.interactions.size() > 0)
     {
       // should be empty, but just in case...
-      all.interactions.clear();
+      all.gs.interactions.clear();
     }
 
-    all.interactions = expanded_interactions;
+    all.gs.interactions = expanded_interactions;
   }
 
   for (size_t i = 0; i < 256; i++)
   {
-    all.ignore[i] = false;
-    all.ignore_linear[i] = false;
+    all.fc.ignore[i] = false;
+    all.fc.ignore_linear[i] = false;
   }
-  all.ignore_some = false;
-  all.ignore_some_linear = false;
+  all.gs.ignore_some = false;
+  all.gs.ignore_some_linear = false;
 
   if (options.was_supplied("ignore"))
   {
-    all.ignore_some = true;
+    all.gs.ignore_some = true;
 
     for (auto & i : ignores)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (auto j : i) all.ignore[(size_t)(unsigned char)j] = true;
+      for (auto j : i) all.fc.ignore[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.logger.quiet)
@@ -864,13 +864,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
   if (options.was_supplied("ignore_linear"))
   {
-    all.ignore_some_linear = true;
+    all.gs.ignore_some_linear = true;
 
     for (auto & i : ignore_linears)
     {
       i = spoof_hex_encoded_namespaces(i);
       for (auto j : i)
-        all.ignore_linear[(size_t)(unsigned char)j] = true;
+        all.fc.ignore_linear[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.logger.quiet)
@@ -885,14 +885,14 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < 256; i++) all.ignore[i] = true;
+    for (size_t i = 0; i < 256; i++) all.fc.ignore[i] = true;
 
-    all.ignore_some = true;
+    all.gs.ignore_some = true;
 
     for (auto & i : keeps)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
+      for (const auto& j : i) all.fc.ignore[(size_t)(unsigned char)j] = false;
     }
 
     if (!all.logger.quiet)

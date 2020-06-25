@@ -214,7 +214,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
 
   // initialize baseline example
   data->ec = VW::alloc_examples(simple_label.label_size, 1);
-  data->ec->interactions = &all.interactions;
+  data->ec->interactions = &all.gs.interactions;
 
   data->all = &all;
 

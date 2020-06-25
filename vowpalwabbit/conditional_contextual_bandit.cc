@@ -637,7 +637,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   // Extract from lower level reductions
   data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
-  data->original_interactions = &all.interactions;
+  data->original_interactions = &all.gs.interactions;
   data->all = &all;
 
   data->id_namespace_str.push_back((char)ccb_id_namespace);

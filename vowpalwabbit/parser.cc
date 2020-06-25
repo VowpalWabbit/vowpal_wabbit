@@ -741,9 +741,9 @@ void setup_example(vw& all, example* ae)
 
   ae->weight = all.p->lp.get_weight(&ae->l);
 
-  if (all.ignore_some)
+  if (all.gs.ignore_some)
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
-      if (all.ignore[*i])
+      if (all.fc.ignore[*i])
       {
         // delete namespace
         ae->feature_space[*i].clear();
@@ -775,7 +775,7 @@ void setup_example(vw& all, example* ae)
   }
 
   // Set the interactions for this example to the global set.
-  ae->interactions = &all.interactions;
+  ae->interactions = &all.gs.interactions;
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;

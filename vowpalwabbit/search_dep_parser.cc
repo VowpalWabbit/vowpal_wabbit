@@ -78,7 +78,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   data->ex->indices.push_back(val_namespace);
   for (size_t i = 1; i < 14; i++) data->ex->indices.push_back((unsigned char)i + 'A');
   data->ex->indices.push_back(constant_namespace);
-  data->ex->interactions = &sch.get_vw_pointer_unsafe().interactions;
+  data->ex->interactions = &sch.get_vw_pointer_unsafe().gs.interactions;
 
   if (data->one_learner)
     sch.set_num_learners(1);
@@ -89,9 +89,9 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
       {'B','C'}, {'B','E'}, {'B','B'}, {'C','C'}, {'D','D'}, {'E','E'}, {'F','F'}, {'G','G'}, {'E','F'}, {'B','H'}, {'B','J'}, {'E','L'}, {'d','B'}, {'d','C'}, {'d','D'}, {'d','E'}, {'d','F'}, {'d','G'}, {'d','d'}};
   std::vector<std::vector<namespace_index>> newtriples {{'E','F','G'}, {'B','E','F'}, {'B','C','E'}, {'B','C','D'}, {'B','E','L'}, {'E','L','M'}, {'B','H','I'}, {'B','C','C'}, {'B','E','J'}, {'B','E','H'}, {'B','J','K'}, {'B','E','N'}};
 
-  all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(newpairs), std::end(newpairs));
-  all.interactions.insert(std::end(all.interactions), std::begin(newtriples), std::end(newtriples));
+  all.gs.interactions.clear();
+  all.gs.interactions.insert(std::end(all.gs.interactions), std::begin(newpairs), std::end(newpairs));
+  all.gs.interactions.insert(std::end(all.gs.interactions), std::begin(newtriples), std::end(newtriples));
 
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);

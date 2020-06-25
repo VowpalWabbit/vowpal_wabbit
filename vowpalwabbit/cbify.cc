@@ -238,7 +238,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
     adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
     auto& lab = adf_data.ecs[a]->l.cb;
     CB::cb_label.default_label(&lab);
-    adf_data.ecs[a]->interactions = &data.all->interactions;
+    adf_data.ecs[a]->interactions = &data.all->gs.interactions;
   }
 }
 

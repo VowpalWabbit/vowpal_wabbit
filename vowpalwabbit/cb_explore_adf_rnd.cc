@@ -166,9 +166,9 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
   std::pair<float, float> dotwithnorm(0.f, 0.f);
   GD::foreach_feature<std::pair<float, float>, const float&, vec_add_with_norm, LazyGaussian>(
     w,
-    all->ignore_some_linear,
-    all->ignore_linear,
-    all->interactions,
+    all->gs.ignore_some_linear,
+    all->fc.ignore_linear,
+    all->gs.interactions,
     all->fc.permutations,
     *ec,
     dotwithnorm);
