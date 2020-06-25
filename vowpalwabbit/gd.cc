@@ -624,9 +624,9 @@ float compute_update(gd& g, example& ec)
       double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
       if (fabs(dev1) > 1e-8)
-        all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
+        all.sd->contraction *= (1. - all.uc.l2_lambda * eta_bar);
       update /= (float)all.sd->contraction;
-      all.sd->gravity += eta_bar * all.l1_lambda;
+      all.sd->gravity += eta_bar * all.uc.l1_lambda;
     }
   }
 
@@ -1147,8 +1147,8 @@ base_learner* setup(options_i& options, vw& all)
   g->total_weight = 0.;
   all.weights.adaptive = true;
   all.weights.normalized = true;
-  g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
-  g->neg_power_t = -all.power_t;
+  g->neg_norm_power = (all.weights.adaptive ? (all.uc.power_t - 1.f) : -1.f);
+  g->neg_power_t = -all.uc.power_t;
 
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
@@ -1188,7 +1188,7 @@ base_learner* setup(options_i& options, vw& all)
         all.sd->t = 1.f;
         all.initial_t = 1.f;
       }
-      all.eta *= powf((float)(all.sd->t), all.power_t);
+      all.eta *= powf((float)(all.sd->t), all.uc.power_t);
     }
   }
   else
@@ -1235,7 +1235,7 @@ base_learner* setup(options_i& options, vw& all)
   }
 
   uint64_t stride;
-  if (all.power_t == 0.5)
+  if (all.uc.power_t == 0.5)
     stride = set_learn<true>(all, feature_mask_off, *g.get());
   else
     stride = set_learn<false>(all, feature_mask_off, *g.get());

@@ -321,7 +321,7 @@ vw::vw()
   delete_prediction = nullptr;
 
   bfgs = false;
-  no_bias = false;
+  uc.no_bias = false;
   hessian_on = false;
   active = false;
   fc.num_bits = 18;
@@ -337,7 +337,7 @@ vw::vw()
 
   set_minmax = set_mm;
 
-  power_t = 0.5;
+  uc.power_t = 0.5;
   eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
               // updates (see parse_args.cc)
   numpasses = 1;
@@ -351,17 +351,17 @@ vw::vw()
   random_weights = false;
   normal_weights = false;
   tnormal_weights = false;
-  per_feature_regularizer_input = "";
-  per_feature_regularizer_output = "";
-  per_feature_regularizer_text = "";
+  ic.per_feature_regularizer_input = "";
+  oc.per_feature_regularizer_output = "";
+  oc.per_feature_regularizer_text = "";
 
   oc.stdout_adapter = VW::io::open_stdout();
 
   searchstr = nullptr;
 
   nonormalize = false;
-  l1_lambda = 0.0;
-  l2_lambda = 0.0;
+  uc.l1_lambda = 0.0;
+  uc.l2_lambda = 0.0;
 
   eta_decay_rate = 1.0;
   wc.initial_weight = 0.0;

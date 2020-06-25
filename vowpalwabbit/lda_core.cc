@@ -914,7 +914,7 @@ void learn_batch(lda &l)
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
-  eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
+  eta = l.all->eta * l.powf((float)l.example_t, -l.all->uc.power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
   l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
@@ -948,7 +948,7 @@ void learn_batch(lda &l)
 
   for (size_t d = 0; d < batch_size; d++)
   {
-    float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), l.examples[d], l.all->power_t);
+    float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), l.examples[d], l.all->uc.power_t);
     if (l.all->audit)
       GD::print_audit_features(*l.all, *l.examples[d]);
     // If the doc is empty, give it loss of 0.

@@ -914,7 +914,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   if (!options.was_supplied("subsample") && params->para_active)
     params->subsample = (size_t)ceil(params->pool_size / all.all_reduce->total);
 
-  params->lambda = all.l2_lambda;
+  params->lambda = all.uc.l2_lambda;
   if (params->lambda == 0.)
     params->lambda = 1.;
   params->all->oc.trace_message << "Lambda = " << params->lambda << endl;

@@ -1040,9 +1040,9 @@ void parse_example_tweaks(options_i& options, vw& all)
       .add(make_option("quantile_tau", loss_parameter)
                .default_value(0.5f)
                .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
-      .add(make_option("l1", all.l1_lambda).help("l_1 lambda"))
-      .add(make_option("l2", all.l2_lambda).help("l_2 lambda"))
-      .add(make_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
+      .add(make_option("l1", all.uc.l1_lambda).help("l_1 lambda"))
+      .add(make_option("l2", all.uc.l2_lambda).help("l_2 lambda"))
+      .add(make_option("no_bias_regularization", all.uc.no_bias).help("no bias in regularization"))
       .add(make_option("named_labels", named_labels)
                .keep()
                .help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
@@ -1078,24 +1078,24 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
-  if (all.l1_lambda < 0.)
+  if (all.uc.l1_lambda < 0.)
   {
-    all.oc.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
-    all.l1_lambda = 0.;
+    all.oc.trace_message << "l1_lambda should be nonnegative: resetting from " << all.uc.l1_lambda << " to 0" << endl;
+    all.uc.l1_lambda = 0.;
   }
-  if (all.l2_lambda < 0.)
+  if (all.uc.l2_lambda < 0.)
   {
-    all.oc.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
-    all.l2_lambda = 0.;
+    all.oc.trace_message << "l2_lambda should be nonnegative: resetting from " << all.uc.l2_lambda << " to 0" << endl;
+    all.uc.l2_lambda = 0.;
   }
-  all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
-  all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
+  all.reg_mode += (all.uc.l1_lambda > 0.) ? 1 : 0;
+  all.reg_mode += (all.uc.l2_lambda > 0.) ? 2 : 0;
   if (!all.logger.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-      all.oc.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
+      all.oc.trace_message << "using l1 regularization = " << all.uc.l1_lambda << endl;
     if (all.reg_mode > 1)
-      all.oc.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
+      all.oc.trace_message << "using l2 regularization = " << all.uc.l2_lambda << endl;
   }
 }
 
@@ -1167,9 +1167,9 @@ void parse_output_model(options_i& options, vw& all)
       .add(make_option("preserve_performance_counters", all.oc.preserve_performance_counters)
                .help("reset performance counters when warmstarting"))
       .add(make_option("save_per_pass", all.oc.save_per_pass).help("Save the model after every pass over data"))
-      .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output)
+      .add(make_option("output_feature_regularizer_binary", all.oc.per_feature_regularizer_output)
                .help("Per feature regularization output file"))
-      .add(make_option("output_feature_regularizer_text", all.per_feature_regularizer_text)
+      .add(make_option("output_feature_regularizer_text", all.oc.per_feature_regularizer_text)
                .help("Per feature regularization output file, in text"))
       .add(make_option("id", all.oc.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
@@ -1332,7 +1332,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
-        .add(make_option("power_t", all.power_t).help("t power value"))
+        .add(make_option("power_t", all.uc.power_t).help("t power value"))
         .add(make_option("decay_learning_rate", all.eta_decay_rate)
                  .help("Set Decay factor for learning_rate between passes"))
         .add(make_option("initial_t", all.sd->t).help("initial t value"))
@@ -1349,7 +1349,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
         .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
         .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
-        .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
+        .add(make_option("input_feature_regularizer", all.ic.per_feature_regularizer_input)
                  .help("Per feature regularization input file"));
     options.add_and_parse(weight_args);
 
@@ -1543,7 +1543,7 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
     all.oc.trace_message << "Num weight bits = " << all.fc.num_bits << endl;
     all.oc.trace_message << "learning rate = " << all.eta << endl;
     all.oc.trace_message << "initial_t = " << all.sd->t << endl;
-    all.oc.trace_message << "power_t = " << all.power_t << endl;
+    all.oc.trace_message << "power_t = " << all.uc.power_t << endl;
     if (all.numpasses > 1)
       all.oc.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
@@ -1668,7 +1668,7 @@ vw* initialize(
       std::vector<std::string> all_initial_regressor_files(all.ic.initial_regressors);
       if (options.was_supplied("input_feature_regularizer"))
       {
-        all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
+        all_initial_regressor_files.push_back(all.ic.per_feature_regularizer_input);
       }
       read_regressor_file(all, all_initial_regressor_files, localModel);
       model = &localModel;

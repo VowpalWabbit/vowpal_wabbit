@@ -466,7 +466,7 @@ double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
 
   // if we're not regularizing the intercept term, then subtract it off from the result above
   // when accessing weights[constant], always use weights.strided_index(constant)
-  if (all.no_bias)
+  if (all.uc.no_bias)
   {
     if (b.regularizers == nullptr)
     {
@@ -639,7 +639,7 @@ int process_pass(vw& all, bfgs& b)
 {
   int status = LEARN_OK;
 
-  finalize_preconditioner(all, b, all.l2_lambda);
+  finalize_preconditioner(all, b, all.uc.l2_lambda);
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
@@ -651,15 +651,15 @@ int process_pass(vw& all, bfgs& b)
       float temp = (float)b.importance_weight_sum;
       b.importance_weight_sum = accumulate_scalar(all, temp);
     }
-    // finalize_preconditioner(all, b, all.l2_lambda);
+    // finalize_preconditioner(all, b, all.fc.uc.l2_lambda);
     if (all.all_reduce != nullptr)
     {
       float temp = (float)b.loss_sum;
       b.loss_sum = accumulate_scalar(all, temp);  // Accumulate loss_sums
       accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
-    if (all.l2_lambda > 0.)
-      b.loss_sum += add_regularization(all, b, all.l2_lambda);
+    if (all.uc.l2_lambda > 0.)
+      b.loss_sum += add_regularization(all, b, all.uc.l2_lambda);
     if (!all.logger.quiet)
       fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass + 1, b.loss_sum / b.importance_weight_sum);
 
@@ -696,8 +696,8 @@ int process_pass(vw& all, bfgs& b)
       b.loss_sum = accumulate_scalar(all, t);  // Accumulate loss_sums
       accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
     }
-    if (all.l2_lambda > 0.)
-      b.loss_sum += add_regularization(all, b, all.l2_lambda);
+    if (all.uc.l2_lambda > 0.)
+      b.loss_sum += add_regularization(all, b, all.uc.l2_lambda);
     if (!all.logger.quiet)
     {
       if (!all.holdout_set_off && b.current_pass >= 1)
@@ -805,8 +805,8 @@ int process_pass(vw& all, bfgs& b)
       float t = (float)b.curvature;
       b.curvature = accumulate_scalar(all, t);  // Accumulate curvatures
     }
-    if (all.l2_lambda > 0.)
-      b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
+    if (all.uc.l2_lambda > 0.)
+      b.curvature += regularizer_direction_magnitude(all, b, all.uc.l2_lambda);
     float dd = (float)derivative_in_direction(all, b, b.mem, b.origin);
     if (b.curvature == 0. && dd != 0.)
     {
@@ -842,7 +842,7 @@ int process_pass(vw& all, bfgs& b)
   {
     if (all.all_reduce != nullptr)
       accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
-    // preconditioner_to_regularizer(all, b, all.l2_lambda);
+    // preconditioner_to_regularizer(all, b, all.uc.l2_lambda);
   }
   b.t_end_global = std::chrono::system_clock::now();
   b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
@@ -977,7 +977,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
   size_t brw = 1;
 
   if (b.output_regularizer && !read)
-    preconditioner_to_regularizer(*(b.all), b, b.all->l2_lambda);
+    preconditioner_to_regularizer(*(b.all), b, b.all->uc.l2_lambda);
 
   do
   {
@@ -1025,7 +1025,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   if (read)
   {
     initialize_regressor(*all);
-    if (all->per_feature_regularizer_input != "")
+    if (all->ic.per_feature_regularizer_input != "")
     {
       b.regularizers = calloc_or_throw<weight>(2 * length);
       if (b.regularizers == nullptr)
@@ -1060,13 +1060,13 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     }
 
     if (b.regularizers != nullptr)
-      all->l2_lambda = 1;  // To make sure we are adding the regularization
-    b.output_regularizer = (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
+      all->uc.l2_lambda = 1;  // To make sure we are adding the regularization
+    b.output_regularizer = (all->oc.per_feature_regularizer_output != "" || all->oc.per_feature_regularizer_text != "");
     reset_state(*all, b, false);
   }
 
   // bool reg_vector = b.output_regularizer || all->per_feature_regularizer_input.length() > 0;
-  bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+  bool reg_vector = (b.output_regularizer && !read) || (all->ic.per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.num_files() > 0)
   {

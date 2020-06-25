@@ -371,6 +371,30 @@ struct WeightConfig
 
 };
 
+struct UpdateConfig
+{
+  /*
+   * input config, used by gd, gd_mf, lda_core, search
+   */
+  float power_t;    // the power on learning rate decay.
+
+  /*
+   * input related
+   * used only by gd.cc and ftrl.cc
+   */
+  float l1_lambda;  // the level of l_1 regularization to impose.
+  /*
+   * input related
+   * used only by bfgs, gd, gd_mf, kernel_svm and ftrl
+   */
+  float l2_lambda;  // the level of l_2 regularization to impose.
+  /*
+   * bfgs setting
+   */
+  bool no_bias;     // no bias in regularization
+
+};
+
 struct FeatureConfig
 {
   /*
@@ -396,7 +420,6 @@ struct FeatureConfig
    */
   uint32_t hash_seed;
 
-
 };
 
 struct InputConfig
@@ -418,6 +441,13 @@ struct InputConfig
    * might be mostly gd.cc related, can used for initial weights
    */
   std::string feature_mask;
+
+  /*
+   * input related, bc filename
+   * might be mostly bfgs.cc related?
+   * related to weights
+   */
+  std::string per_feature_regularizer_input;
 };
 
 struct OutputConfig
@@ -450,6 +480,13 @@ struct OutputConfig
    */
   std::unique_ptr<VW::io::writer> stdout_adapter;
 
+  /*
+   * output related
+   * might be mostly bfgs.cc related?
+   * applies to both
+   */
+  std::string per_feature_regularizer_output;
+  std::string per_feature_regularizer_text;
 
 };
 
@@ -525,6 +562,7 @@ struct vw
 
   WeightConfig wc;
   FeatureConfig fc;
+  UpdateConfig uc;
 
   VWRuntimeConfig rc;
   GlobalState gs;
@@ -560,39 +598,6 @@ struct vw
   void* /*Search::search*/ searchstr;
 
 
-
-
-  /*
-   * input related
-   * might be mostly bfgs.cc related?
-   */
-  std::string per_feature_regularizer_input;
-  /*
-   * output related
-   * might be mostly bfgs.cc related?
-   * applies to both
-   */
-  std::string per_feature_regularizer_output;
-  std::string per_feature_regularizer_text;
-
-  /*
-   * input related
-   * used only by gd.cc and ftrl.cc
-   */
-  float l1_lambda;  // the level of l_1 regularization to impose.
-  /*
-   * input related
-   * used only by bfgs, gd, gd_mf, kernel_svm and ftrl
-   */
-  float l2_lambda;  // the level of l_2 regularization to impose.
-  /*
-   * bfgs setting
-   */
-  bool no_bias;     // no bias in regularization
-  /*
-   * input config, used by gd, gd_mf, lda_core, search
-   */
-  float power_t;    // the power on learning rate decay.
   /*
    * gd setting
    */

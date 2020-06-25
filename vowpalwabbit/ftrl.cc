@@ -396,8 +396,8 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   b->data.ftrl_alpha = b->ftrl_alpha;
   b->data.ftrl_beta = b->ftrl_beta;
-  b->data.l1_lambda = b->all->l1_lambda;
-  b->data.l2_lambda = b->all->l2_lambda;
+  b->data.l1_lambda = b->all->uc.l1_lambda;
+  b->data.l2_lambda = b->all->uc.l2_lambda;
 
   if (!all.logger.quiet)
   {
