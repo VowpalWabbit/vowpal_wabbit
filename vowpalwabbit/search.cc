@@ -2766,7 +2766,7 @@ base_learner* setup(options_i& options, vw& all)
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
-    priv.passes_per_policy = all.numpasses;
+    priv.passes_per_policy = all.ec.numpasses;
     if (priv.current_policy > 1)
       priv.current_policy = 1;
   }
@@ -2828,7 +2828,7 @@ base_learner* setup(options_i& options, vw& all)
   // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;
   if (all.training)
-    tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)priv.passes_per_policy));
+    tmp_number_of_policies += (int)ceil(((float)all.ec.numpasses) / ((float)priv.passes_per_policy));
 
   // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
   // so only set total_number_of_policies to computed value if it is larger

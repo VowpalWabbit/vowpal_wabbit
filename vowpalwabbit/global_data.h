@@ -420,6 +420,25 @@ struct FeatureConfig
    */
   uint32_t hash_seed;
 
+  /*
+   * input, set once based on num_bits
+   * feature related setting?
+   */
+  bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
+
+};
+
+struct ExampleConfig
+{
+  /*
+   * runtime behaviour setting
+   */
+  size_t pass_length;
+  /*
+   * runtime behaviour setting, used by multiple reductions
+   */
+  size_t numpasses;
+
 };
 
 struct InputConfig
@@ -541,6 +560,18 @@ struct GlobalState
    * not directly set by user
    */
   uint32_t wpp;
+
+  /*
+   * not input, used as state
+   * related to examples
+   */
+  size_t passes_complete;
+
+  /*
+   * not input, set once based on num_bits
+   * feature related setting?
+   */
+  uint64_t parse_mask;  // 1 << num_bits -1
 };
 
 struct vw
@@ -563,6 +594,7 @@ struct vw
   WeightConfig wc;
   FeatureConfig fc;
   UpdateConfig uc;
+  ExampleConfig ec;
 
   VWRuntimeConfig rc;
   GlobalState gs;
@@ -603,28 +635,6 @@ struct vw
    */
   int reg_mode;
 
-  /*
-   * runtime behaviour setting
-   */
-  size_t pass_length;
-  /*
-   * runtime behaviour setting, used by multiple reductions
-   */
-  size_t numpasses;
-  /*
-   * not input, used as state
-   */
-  size_t passes_complete;
-  /*
-   * not input, set once based on num_bits
-   * feature related setting?
-   */
-  uint64_t parse_mask;  // 1 << num_bits -1
-  /*
-   * input, set once based on num_bits
-   * feature related setting?
-   */
-  bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   /*
    * following 7 are feature related settings?

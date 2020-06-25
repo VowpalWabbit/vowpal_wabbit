@@ -236,7 +236,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
   v_array<float> results = v_init<float>();
 
-  if (all.permutations)
+  if (all.fc.permutations)
   {
     // just multiply precomputed values for all namespaces
     for (const auto& inter : *ec.interactions)

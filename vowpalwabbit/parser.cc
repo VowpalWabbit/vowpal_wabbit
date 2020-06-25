@@ -286,7 +286,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     }
   }
 
-  all.parse_mask = ((uint64_t)1 << all.fc.num_bits) - 1;
+  all.gs.parse_mask = ((uint64_t)1 << all.fc.num_bits) - 1;
   if (cache_files.size() == 0)
   {
     if (!quiet)
@@ -690,7 +690,7 @@ void feature_limit(vw& all, example* ex)
     if (all.limit[index] < ex->feature_space[index].size())
     {
       features& fs = ex->feature_space[index];
-      fs.sort(all.parse_mask);
+      fs.sort(all.gs.parse_mask);
       unique_features(fs, all.limit[index]);
     }
 }
@@ -713,12 +713,12 @@ void setup_examples(vw& all, v_array<example*>& examples)
 void setup_example(vw& all, example* ae)
 {
   if (all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.parse_mask, ae);
+    unique_sort_features(all.gs.parse_mask, ae);
 
   if (all.p->write_cache)
   {
     all.p->lp.cache_label(&ae->l, *(all.p->output));
-    cache_features(*(all.p->output), ae, all.parse_mask);
+    cache_features(*(all.p->output), ae, all.gs.parse_mask);
   }
 
   ae->partial_prediction = 0.;

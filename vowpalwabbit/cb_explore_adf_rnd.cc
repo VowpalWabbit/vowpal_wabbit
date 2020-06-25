@@ -169,7 +169,7 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
     all->ignore_some_linear,
     all->ignore_linear,
     all->interactions,
-    all->permutations,
+    all->fc.permutations,
     *ec,
     dotwithnorm);
 

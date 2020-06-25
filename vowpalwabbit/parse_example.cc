@@ -470,7 +470,7 @@ class TC_parser
       this->_spelling_features = &all.spelling_features;
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.fc.hash_seed;
-      this->_parse_mask = all.parse_mask;
+      this->_parse_mask = all.gs.parse_mask;
       this->_chain_hash = all.fc.chain_hash;
       listNameSpace();
     }

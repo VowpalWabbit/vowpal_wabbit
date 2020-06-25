@@ -625,7 +625,7 @@ void end_pass(stagewise_poly &poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  if (poly.numpasses != poly.all->numpasses)
+  if (poly.numpasses != poly.all->ec.numpasses)
   {
     poly.update_support = true;
     poly.numpasses++;

@@ -1027,7 +1027,7 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
 
 void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
 {
-  if (l.all->passes_complete == 0)
+  if (l.all->gs.passes_complete == 0)
   {
     // build feature to example map
     uint64_t stride_shift = l.all->weights.stride_shift();
@@ -1259,7 +1259,7 @@ void end_pass(lda &l)
   if (!l.examples.empty())
     learn_batch(l);
 
-  if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
+  if (l.compute_coherence_metrics && l.all->gs.passes_complete == l.all->ec.numpasses)
   {
     compute_coherence_metrics(l);
     // FASTPASS return;

@@ -280,7 +280,7 @@ void print_lda_features(vw& all, example& ec)
     for (features::iterator_all& f : fs.values_indices_audit())
     {
       std::cout << '\t' << f.audit()->get()->first << '^' << f.audit()->get()->second << ':'
-                << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+                << ((f.index() >> stride_shift) & all.gs.parse_mask) << ':' << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
   }
@@ -1207,9 +1207,9 @@ base_learner* setup(options_i& options, vw& all)
   if (g->adax && !all.weights.adaptive)
     THROW("Cannot use adax without adaptive");
 
-  if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)
+  if (pow((double)all.eta_decay_rate, (double)all.ec.numpasses) < 0.0001)
     all.oc.trace_message << "Warning: the learning rate for the last pass is multiplied by: "
-                      << pow((double)all.eta_decay_rate, (double)all.numpasses)
+                      << pow((double)all.eta_decay_rate, (double)all.ec.numpasses)
                       << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)

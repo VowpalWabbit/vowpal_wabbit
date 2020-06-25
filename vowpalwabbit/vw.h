@@ -165,7 +165,7 @@ inline uint64_t hash_space_cstr(vw& all, const char* fstr)
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {
-  return all.p->hasher(s.data(), s.length(), u) & all.parse_mask;
+  return all.p->hasher(s.data(), s.length(), u) & all.gs.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
@@ -175,7 +175,7 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
 
 inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
-  return all.p->hasher(fstr, strlen(fstr), u) & all.parse_mask;
+  return all.p->hasher(fstr, strlen(fstr), u) & all.gs.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

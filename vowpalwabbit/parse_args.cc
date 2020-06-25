@@ -463,7 +463,7 @@ input_options parse_source(vw& all, options_i& options)
   {
     all.rc.daemon = true;
     // allow each child to process up to 1e5 connections
-    all.numpasses = (size_t)1e5;
+    all.ec.numpasses = (size_t)1e5;
   }
 
   // Add an implicit cache file based on the data filename.
@@ -513,7 +513,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.fc.num_bits != vw2.fc.num_bits)
     return "num_bits";
 
-  if (vw1.permutations != vw2.permutations)
+  if (vw1.fc.permutations != vw2.fc.permutations)
     return "permutations";
 
   if (vw1.interactions.size() != vw2.interactions.size())
@@ -650,7 +650,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       .add(make_option("interactions", interactions)
                .keep()
                .help("Create feature interactions of any level between namespaces."))
-      .add(make_option("permutations", all.permutations)
+      .add(make_option("permutations", all.fc.permutations)
                .help("Use permutations instead of combinations for feature interactions of same namespace."))
       .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
                .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
@@ -1025,8 +1025,8 @@ void parse_example_tweaks(options_i& options, vw& all)
               .default_value(3)
               .help(
                   "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
-      .add(make_option("passes", all.numpasses).help("Number of Training Passes"))
-      .add(make_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
+      .add(make_option("passes", all.ec.numpasses).help("Number of Training Passes"))
+      .add(make_option("initial_pass_length", all.ec.pass_length).help("initial number of examples per pass"))
       .add(make_option("examples", all.max_examples).help("number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
@@ -1060,7 +1060,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   else
     all.training = true;
 
-  if ((all.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
+  if ((all.ec.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
     all.holdout_set_off = false;  // holdout is on unless explicitly off
   else
     all.holdout_set_off = true;
@@ -1544,7 +1544,7 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
     all.oc.trace_message << "learning rate = " << all.eta << endl;
     all.oc.trace_message << "initial_t = " << all.sd->t << endl;
     all.oc.trace_message << "power_t = " << all.uc.power_t << endl;
-    if (all.numpasses > 1)
+    if (all.ec.numpasses > 1)
       all.oc.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
 }
@@ -1557,7 +1557,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
     model.close_file();
 
   auto parsed_source_options = parse_source(all, options);
-  enable_sources(all, all.logger.quiet, all.numpasses, parsed_source_options);
+  enable_sources(all, all.logger.quiet, all.ec.numpasses, parsed_source_options);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;

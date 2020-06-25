@@ -81,7 +81,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     for (size_t j = 0; j < fs.size(); ++j)
     {
       tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':'
-                 << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
+                 << ((fs.indicies[j] >> weights.stride_shift()) & all.gs.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
         weight& w = weights[(fs.indicies[j] + k)];
@@ -129,11 +129,11 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
       if (rd.all->weights.sparse)
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, sparse_parameters>(
-            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.sparse_weights);
+            rd.all->interactions, rd.all->fc.permutations, ec, rd, rd.all->weights.sparse_weights);
       else
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, dense_parameters>(
-            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights);
+            rd.all->interactions, rd.all->fc.permutations, ec, rd, rd.all->weights.dense_weights);
 
       ec.ft_offset += rd.increment;
       ++rd.cur_class;
@@ -258,7 +258,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   if (out_file.empty())
     THROW("audit_regressor argument (output filename) is missing.");
 
-  if (all.numpasses > 1)
+  if (all.ec.numpasses > 1)
     THROW("audit_regressor can't be used with --passes > 1.");
 
   all.audit = true;

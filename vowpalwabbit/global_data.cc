@@ -340,7 +340,7 @@ vw::vw()
   uc.power_t = 0.5;
   eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
               // updates (see parse_args.cc)
-  numpasses = 1;
+  ec.numpasses = 1;
 
   print = print_result;
   print_text = print_raw_text;
@@ -384,8 +384,8 @@ vw::vw()
   add_constant = true;
   audit = false;
 
-  pass_length = std::numeric_limits<size_t>::max();
-  passes_complete = 0;
+  ec.pass_length = std::numeric_limits<size_t>::max();
+  gs.passes_complete = 0;
 
   oc.save_per_pass = false;
 

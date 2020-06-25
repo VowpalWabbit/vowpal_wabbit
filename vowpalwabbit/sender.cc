@@ -89,7 +89,7 @@ void learn(sender& s, VW::LEARNER::single_learner&, example& ec)
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->p->lp.cache_label(&ec.l, *s.buf);  // send label information.
   cache_tag(*s.buf, ec.tag);
-  send_features(s.buf, ec, (uint32_t)s.all->parse_mask);
+  send_features(s.buf, ec, (uint32_t)s.all->gs.parse_mask);
   s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
 }
 

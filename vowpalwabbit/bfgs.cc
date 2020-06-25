@@ -1116,7 +1116,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   b->gradient_pass = true;
   b->preconditioner_pass = true;
   b->backstep_on = false;
-  b->final_pass = all.numpasses;
+  b->final_pass = all.ec.numpasses;
   b->no_win_counter = 0;
 
   if (!all.holdout_set_off)
@@ -1140,7 +1140,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
       b->all->oc.trace_message << "**without** curvature calculation" << std::endl;
   }
 
-  if (all.numpasses < 2 && all.training)
+  if (all.ec.numpasses < 2 && all.training)
     THROW("you must make at least 2 passes to use BFGS");
 
   all.bfgs = true;
