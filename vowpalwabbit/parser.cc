@@ -882,12 +882,9 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<VW::string_view> words = v_init<VW::string_view>();
-
+  std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
-  words.clear();
-  words.delete_v();
 }
 
 void empty_example(vw& /*all*/, example& ec)

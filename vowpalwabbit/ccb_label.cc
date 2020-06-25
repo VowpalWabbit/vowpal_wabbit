@@ -266,12 +266,12 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label* ld, v_array<VW::string_view>& split_inclusions)
+void parse_explicit_inclusions(CCB::label* ld, std::vector<VW::string_view>& split_inclusions)
 {
   for (const auto& inclusion : split_inclusions) { ld->explicit_included_actions.push_back(int_of_string(inclusion)); }
 }
 
-void parse_label(parser* p, shared_data* /*sd*/, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words)
 {
   auto* ld = static_cast<CCB::label*>(v);
   ld->weight = 1.0;
