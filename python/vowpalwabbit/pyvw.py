@@ -1551,7 +1551,7 @@ class _Col:
 
 class AttributeDescriptor(object):
     """This descriptor class enforces type checking and value checking for the
-    attributes of the (managed) classes SimpleLabel, MultiClass, Feature, etc.
+    attributes of the (managed) classes SimpleLabel, Feature, etc.
 
     If the attribute represents a column, no type or value checking are
     performed (since the dataframe and the subsequent column is not known yet)
@@ -1590,7 +1590,7 @@ class AttributeDescriptor(object):
 
     def __set__(self, instance, arg):
         """Implement set protocol to enforce type (and value range) checking
-        for managed class such as SimpleLabel, Multiclass, Feature, etc.
+        for managed class such as SimpleLabel, Feature, etc.
 
         Parameters
         ----------
@@ -1734,65 +1734,6 @@ class SimpleLabel(object):
             The SimpleLabel string representation.
         """
         return _get_col_or_value(self.name, df)
-
-
-class MultiClass(object):
-    """The multiclass label type for the constructor of DFtoVW."""
-
-    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
-    weight = AttributeDescriptor(
-        "weight", expected_type=(int, float), min_value=0
-    )
-
-    def __init__(
-        self, name, weight=None, name_from_df=True, weight_from_df=True
-    ):
-        """Initialize a MultiClass instance.
-
-        Parameters
-        ----------
-        name : str/int
-            The name of the multi class. If name_from_df=False, it should be of
-            type int.
-        weight: str/int/float, optional
-            The (importance) weight of the multi class. If name_from_df=False,
-            it should be of type int or float.
-        name_from_df: bool (default: True)
-            True if the name refers to a column in the dataframe and False if
-            the name is a constant.
-        weight_from_df: bool (default: True)
-            True if the weight refers to a column in the dataframe and False if
-            the weight is a constant.
-
-        Returns
-        -------
-        self : MultiClass
-        """
-        self.name_from_df = name_from_df
-        self.weight_from_df = weight_from_df
-        self.name = name
-        self.weight = weight
-
-    def process(self, df):
-        """Returns the MultiClass string representation.
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column(s).
-
-        Returns
-        -------
-        str or pandas.Series
-            The MultiClass string representation.
-        """
-        name_col = _get_col_or_value(self.name, df)
-        if self.weight is not None:
-            weight_col = _get_col_or_value(self.weight, df)
-            out = name_col + " " + weight_col
-        else:
-            out = name_col
-        return out
 
 
 class Feature(object):
@@ -1989,7 +1930,7 @@ class Namespace(object):
 class DFtoVW:
     """Convert a pandas DataFrame to a suitable VW format.
     Instances of this class are built with classes such as SimpleLabel,
-    MultiClass, Feature or Namespace.
+    Feature or Namespace.
 
     The class also provided a convenience constructor to initialize the class
     based on the target/features column names only.
@@ -2113,7 +2054,6 @@ class DFtoVW:
         """
         dict_label_type = {
             "simple_label": SimpleLabel,
-            "multi_class": MultiClass,
         }
 
         if isinstance(y, list):
@@ -2211,9 +2151,9 @@ class DFtoVW:
         Raises
         ------
         TypeError
-            If label is not of type SimpleLabel or MultiClass.
+            If label is not of type SimpleLabel.
         """
-        available_labels = (SimpleLabel, MultiClass)
+        available_labels = (SimpleLabel, )
 
         if self.label is None:
             pass
