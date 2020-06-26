@@ -62,10 +62,10 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 {
   if (all.weights.sparse)
     generate_interactions<R, S, T, sparse_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+        all.gs.interactions, all.fc.permutations, ec, dat, all.weights.sparse_weights);
   else
     generate_interactions<R, S, T, dense_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
+        all.gs.interactions, all.fc.permutations, ec, dat, all.weights.dense_weights);
 }
 
 // C(n,k) = n!/(k!(n-k)!)

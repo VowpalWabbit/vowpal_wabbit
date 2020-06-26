@@ -34,17 +34,17 @@ private:
 
 internal:
   VowpalWabbitArguments(vw* vw) :
-    m_data(gcnew String(vw->data_filename.c_str())),
+    m_data(gcnew String(vw->ic.data_filename.c_str())),
     m_finalRegressor(gcnew String(vw->final_regressor_name.c_str())),
     m_testonly(!vw->training),
-    m_passes((int)vw->numpasses)
+    m_passes((int)vw->ec.numpasses)
   {
     auto options = vw->options;
 
-    if (vw->initial_regressors.size() > 0)
+    if (vw->ic.initial_regressors.size() > 0)
     { m_regressors = gcnew List<String^>;
 
-      for (auto& r : vw->initial_regressors)
+      for (auto& r : vw->ic.initial_regressors)
         m_regressors->Add(gcnew String(r.c_str()));
     }
 
@@ -65,7 +65,7 @@ internal:
     }
 
 	m_learning_rate = vw->eta;
-	m_power_t = vw->power_t;
+	m_power_t = vw->uc.power_t;
   }
 
 public:

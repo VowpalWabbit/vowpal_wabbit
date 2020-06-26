@@ -149,7 +149,7 @@ void VowpalWabbitBase::InternalDispose()
 
   try
   { if (m_vw != nullptr)
-    { reset_source(*m_vw, m_vw->num_bits);
+    { reset_source(*m_vw, m_vw->fc.num_bits);
 
       // make sure don't try to free m_vw twice in case VW::finish throws.
       vw* vw_tmp = m_vw;
@@ -185,7 +185,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
   auto stringArgs = msclr::interop::marshal_as<std::string>(args);
 
   try
-  { reset_source(*m_vw, m_vw->num_bits);
+  { reset_source(*m_vw, m_vw->fc.num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
     {
@@ -215,11 +215,11 @@ String^ VowpalWabbitBase::AreFeaturesCompatible(VowpalWabbitBase^ other)
 }
 
 String^ VowpalWabbitBase::ID::get()
-{ return gcnew String(m_vw->id.c_str());
+{ return gcnew String(m_vw->oc.id.c_str());
 }
 
 void VowpalWabbitBase::ID::set(String^ value)
-{ m_vw->id = msclr::interop::marshal_as<std::string>(value);
+{ m_vw->oc.id = msclr::interop::marshal_as<std::string>(value);
 }
 
 void VowpalWabbitBase::SaveModel()

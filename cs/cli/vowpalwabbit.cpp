@@ -60,7 +60,7 @@ void VowpalWabbit::Driver()
 }
 
 void VowpalWabbit::RunMultiPass()
-{ if (m_vw->numpasses > 1)
+{ if (m_vw->ec.numpasses > 1)
   { try
     { m_vw->do_reset_source = true;
       VW::start_parser(*m_vw);
@@ -75,11 +75,11 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 { // see parse_args.cc:finish(...)
   auto stats = gcnew VowpalWabbitPerformanceStatistics();
 
-  if (m_vw->current_pass == 0)
+  if (m_vw->gs.current_pass == 0)
   { stats->NumberOfExamplesPerPass = m_vw->sd->example_number;
   }
   else
-  { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->current_pass;
+  { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->gs.current_pass;
   }
 
   stats->WeightedExampleSum = m_vw->sd->weighted_examples();
@@ -120,7 +120,7 @@ uint64_t VowpalWabbit::HashSpace(String^ s)
 }
 
 uint64_t VowpalWabbit::HashFeature(String^ s, size_t u)
-{ auto newHash = m_hasher(s, u) & m_vw->parse_mask;
+{ auto newHash = m_hasher(s, u) & m_vw->gs.parse_mask;
 
 #ifdef _DEBUG
   auto oldHash = HashFeatureNative(s, u);
@@ -828,7 +828,7 @@ void VowpalWabbit::ReturnExampleToPool(VowpalWabbitExample^ ex)
 }
 
 cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
-{ uint64_t length = (uint64_t)1 << m_vw->num_bits;
+{ uint64_t length = (uint64_t)1 << m_vw->fc.num_bits;
   // using jagged array to enable LINQ
   auto K = (int)m_vw->lda;
   auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
@@ -852,7 +852,7 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
 template<typename T>
 cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 {
-	uint64_t length = (uint64_t)1 << m_vw->num_bits;
+	uint64_t length = (uint64_t)1 << m_vw->fc.num_bits;
 
 	// using jagged array to enable LINQ
 	auto K = (int)m_vw->lda;
