@@ -41,7 +41,7 @@ namespace VW { namespace pmf_to_pdf
       }
     }
 
-    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1) 
+    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1)
       pdf_lim.push_back(num_actions - 1);
 
     auto& p_dist = ec.pred.prob_dist;
@@ -123,11 +123,6 @@ namespace VW { namespace pmf_to_pdf
   void learn(pmf_to_pdf::reduction& data, single_learner&, example& ec)
   {
     data.learn(ec);
-  }
-
-  void finish(reduction& data)
-  {
-    data.~reduction();
   }
 
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
@@ -238,8 +233,6 @@ namespace VW { namespace pmf_to_pdf
 
     learner<pmf_to_pdf::reduction, example>& l =
         init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);
-
-    l.set_finish(finish);
 
     return make_base(l);
   }
