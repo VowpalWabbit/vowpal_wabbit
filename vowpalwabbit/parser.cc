@@ -919,6 +919,8 @@ void empty_example(vw& /*all*/, example& ec)
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
+  ec.done_parsing = false;
+  
 }
 
 void clean_example(vw& all, example& ec, bool rewind)
@@ -969,37 +971,18 @@ namespace VW
 example* get_example(parser* p) { 
  
   std::unique_lock<std::mutex> lock(p->example_cv_mutex);
-
-  //std::cout << "get_example" << std::endl;
   
   example* ex = p->ready_parsed_examples.pop();
-
-  //std::cout << "ex->done_parsing: " << ex->done_parsing << std::endl;
 
   if (ex != nullptr && !ex->done_parsing) {
 
     while( ex != nullptr && !ex->done_parsing) {
-      //std::cout << "in while loop " << std::endl;
       p->example_parsed.wait(lock);
     }
 
   }
 
- // std::cout << "get_example end" << std::endl;
-
   return ex;
-
-   //don't pop in here, can pop everything. pop before.
-/*  while(ex != nullptr && !ex->done_parsing) {
-
-    //while(!ex->done_parsing) {
-      p->example_parsed.wait(lock);
-    //}
-
-  }*/
-
- // std::cout << "popped ex memory addr: " << ex << std::endl;
- 
 
 }
 
