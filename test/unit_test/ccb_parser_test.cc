@@ -21,7 +21,7 @@ void parse_label(label_parser& lp, parser* p, VW::string_view label, CCB::label&
 BOOST_AUTO_TEST_CASE(ccb_parse_label)
 {
   auto lp = CCB::ccb_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
 
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   io_buf io;
   //io.init();      TODO: figure out and fix leak caused by double init()
 
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
 
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
 
 BOOST_AUTO_TEST_CASE(ccb_copy_label)
 {
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
   auto lp = CCB::ccb_label_parser;
