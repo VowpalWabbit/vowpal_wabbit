@@ -67,6 +67,7 @@ vw* setup(options_i& options)
 
 int main(int argc, char* argv[])
 {
+  
   bool should_use_onethread = false;
   option_group_definition driver_config("driver");
   driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
@@ -115,7 +116,7 @@ int main(int argc, char* argv[])
 
     vw& all = *alls[0];
 
-    VW::start_io_thread(all);
+   // VW::start_io_thread(all);
 
     if (should_use_onethread)
     {
@@ -126,17 +127,17 @@ int main(int argc, char* argv[])
     }
     else
     {
-     // VW::start_io_thread(all);
+      VW::start_io_thread(all);
       VW::start_parser(all);
       if (alls.size() == 1)
         VW::LEARNER::generic_driver(all);
       else
         VW::LEARNER::generic_driver(alls);
       VW::end_parser(all);
-    //  VW::end_io_thread(all);
+      VW::end_io_thread(all);
     }
 
-    VW::end_io_thread(all);
+   // VW::end_io_thread(all);
 
     for (vw* v : alls)
     {
