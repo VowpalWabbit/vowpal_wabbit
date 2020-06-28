@@ -14,8 +14,6 @@
 //Adds all lines of input to the input queue
 inline void io_lines_toqueue(vw& all){
   
-  parser *original_p = all.p;
-  
   char* line = nullptr;
 
   bool should_finish = false;
@@ -25,8 +23,6 @@ inline void io_lines_toqueue(vw& all){
     should_finish = all.p->_io_state.add_to_queue(line, all.p->input);
 
   }
-
-  all.p = original_p;
 
   all.p->_io_state.done_with_io.store(true);
 
@@ -39,14 +35,14 @@ inline void start_io_thread(vw& all){
 
   io_state curr_io_state;
 
-  all.p->_io_state = curr_io_state ;
+  if(!all.early_terminate) {
+    all.io_thread = std::thread([&all]() 
+    {
 
-  all.io_thread = std::thread([&all]() 
-  {
+      io_lines_toqueue(all);
 
-    io_lines_toqueue(all);
-
-  });
+    });
+  }
 
 }
 
