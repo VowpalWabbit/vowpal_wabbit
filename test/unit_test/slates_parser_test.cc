@@ -21,7 +21,7 @@ void parse_label(label_parser& lp, parser* p, VW::string_view label, VW::slates:
 BOOST_AUTO_TEST_CASE(slates_parse_label)
 {
   auto lp = VW::slates::slates_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
 
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
 {
   io_buf io;
 
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
 
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 {
   io_buf io;
 
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
 
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 {
   io_buf io;
 
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
 
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
 BOOST_AUTO_TEST_CASE(slates_copy_label)
 {
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
   p.words = v_init<VW::string_view>();
   p.parse_name = v_init<VW::string_view>();
   auto lp = VW::slates::slates_label_parser;
