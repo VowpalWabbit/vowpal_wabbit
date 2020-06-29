@@ -23,7 +23,7 @@ namespace VW
 namespace cats_tree
 {
 tree_node::tree_node(
-    uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth, 
+    uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth,
     bool left_only, bool right_only, bool is_leaf)
     : id(node_id)
     , left_id(left_node_id)
@@ -41,7 +41,7 @@ bool tree_node::operator==(const tree_node& rhs) const
 {
   if (this == &rhs)
     return true;
-  return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && parent_id == rhs.parent_id && 
+  return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && parent_id == rhs.parent_id &&
   depth == rhs.depth && left_only == rhs.left_only && right_only == rhs.right_only && is_leaf == rhs.is_leaf);
 }
 
@@ -85,7 +85,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
       nodes[i].is_leaf = false;
       if (2 * i + 1 >= depth_const)
         depth_const = (1 << (++depth + 1)) - 1;
-      
+
       uint32_t id = 2 * i + 1;
       bool right_only = false;
       bool left_only = false;
@@ -95,7 +95,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
         left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
       }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
-      
+
       id = 2 * i + 2;
       if (bandwidth)
       {
@@ -177,7 +177,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       else
       {
         cur_node = nodes[cur_node.right_id];
-      } 
+      }
     }
   }
   ec.l.cb = saved_label;
@@ -186,7 +186,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
 
 void cats_tree::init_node_costs(v_array<cb_class>& ac)
 {
-  assert(ac.size() > 0); 
+  assert(ac.size() > 0);
   assert(ac[0].action > 0);
 
   _cost_star = ac[0].cost / ac[0].probability;
@@ -265,7 +265,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         ec.l.simple.label = local_action;  // TODO:scalar label type
         ec.l.simple.initial = 0.f;
         ec.weight = abs(cost_v - cost_w);
-  
+
         bool filter = false;
         const float weight_th = 0.00001f;
         if (ec.weight < weight_th)
@@ -303,12 +303,12 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
             VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
           }
         }
-        
+
       }
       if (i == 0)
         a_parent_cost = cost_parent;
       else
-        b_parent_cost = cost_parent;      
+        b_parent_cost = cost_parent;
     }
     _a = {nodes[_a.node_id].parent_id, a_parent_cost};
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
@@ -347,8 +347,6 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
   tree.learn(base, ec);
   VW_DBG(ec) << "otree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
 }
-
-void finish(cats_tree& t) { t.~cats_tree(); }
 
 base_learner* setup(options_i& options, vw& all)
 {
@@ -391,8 +389,6 @@ base_learner* setup(options_i& options, vw& all)
   learner<cats_tree, example>& l =
       init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type_t::multiclass);
   // TODO: changed to prediction_type::multiclass
-
-  l.set_finish(finish);
 
   return make_base(l);
 }
