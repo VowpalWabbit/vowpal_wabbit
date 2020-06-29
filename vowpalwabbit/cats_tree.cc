@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "cats_tree.h"
 #include "parse_args.h"  // setup_base()
 #include "learner.h"     // init_learner()

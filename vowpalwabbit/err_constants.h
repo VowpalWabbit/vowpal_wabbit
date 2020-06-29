@@ -1,10 +1,7 @@
-/**
- * @brief Definition of all API error return codes and descriptions
- *
- * @file err_constants.h
- * @author Rajan Chari et al
- * @date 2018-07-18
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 //! [Error Generator]

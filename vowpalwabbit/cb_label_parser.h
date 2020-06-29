@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 #include "cb.h"
 
@@ -55,7 +59,7 @@ namespace CB
     c += sizeof(ld->weight);
     return c;
   }
-  
+
   template <typename LBL = CB::label, typename LBL_ELM = cb_class>
   char* bufcache_label(LBL* ld, char* c)
   {
