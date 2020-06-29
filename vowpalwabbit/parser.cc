@@ -413,7 +413,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       all.p->_shared_data = sd;
 
       // create children
-      size_t num_children = all.num_children;
+      size_t num_children = all.rc.num_children;
       v_array<int> children = v_init<int>();
       children.resize(num_children);
       for (size_t i = 0; i < num_children; i++)
