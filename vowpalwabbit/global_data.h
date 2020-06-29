@@ -691,6 +691,8 @@ struct GlobalState
   // This array is required to be value initialized so that the std::vectors are constructed.
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
+
+  label_type_t label_type;
 };
 
 struct vw
@@ -799,7 +801,6 @@ struct vw
 
   std::map<uint64_t, std::string> index_name_map;
 
-  label_type_t label_type;
 
   vw();
   ~vw();

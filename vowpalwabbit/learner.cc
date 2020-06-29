@@ -73,7 +73,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
   bool is_header = false;
-  if (all.label_type == label_type_t::ccb)
+  if (all.gs.label_type == label_type_t::ccb)
   {
     is_header = CCB::ec_is_example_header(ec);
   }

@@ -215,7 +215,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
 
   multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
-  all.label_type = label_type_t::cb;
+  all.gs.label_type = label_type_t::cb;
 
   learner<explore_eval, multi_ex>& l =
       init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs);

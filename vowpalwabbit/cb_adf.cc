@@ -567,7 +567,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
-  all.label_type = label_type_t::cb;
+  all.gs.label_type = label_type_t::cb;
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l =
