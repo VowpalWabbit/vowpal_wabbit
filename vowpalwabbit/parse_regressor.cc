@@ -356,7 +356,7 @@ void save_load_header(
           bin_text_read_write_fixed_validated(model_file, (char*)&all.lda, sizeof(all.lda), "", read, msg, text);
 
       // TODO: validate ngram_len?
-      uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
+      uint32_t ngram_len = (uint32_t)all.fc.ngram_strings.size();
       msg << ngram_len << " ngram:";
       bytes_read_write +=
           bin_text_read_write_fixed_validated(model_file, (char*)&ngram_len, sizeof(ngram_len), "", read, msg, text);
@@ -366,14 +366,14 @@ void save_load_header(
         char ngram[4] = {0, 0, 0, 0};
         if (!read)
         {
-          msg << all.ngram_strings[i] << " ";
-          memcpy(ngram, all.ngram_strings[i].c_str(), std::min(static_cast<size_t>(3), all.ngram_strings[i].size()));
+          msg << all.fc.ngram_strings[i] << " ";
+          memcpy(ngram, all.fc.ngram_strings[i].c_str(), std::min(static_cast<size_t>(3), all.fc.ngram_strings[i].size()));
         }
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3, "", read, msg, text);
         if (read)
         {
           std::string temp(ngram);
-          all.ngram_strings.push_back(temp);
+          all.fc.ngram_strings.push_back(temp);
 
           file_options += " --ngram";
           file_options += " " + temp;
@@ -384,7 +384,7 @@ void save_load_header(
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
       // TODO: validate skips?
-      uint32_t skip_len = (uint32_t)all.skip_strings.size();
+      uint32_t skip_len = (uint32_t)all.fc.skip_strings.size();
       msg << skip_len << " skip:";
       bytes_read_write +=
           bin_text_read_write_fixed_validated(model_file, (char*)&skip_len, sizeof(skip_len), "", read, msg, text);
@@ -394,15 +394,15 @@ void save_load_header(
         char skip[4] = {0, 0, 0, 0};
         if (!read)
         {
-          msg << all.skip_strings[i] << " ";
-          memcpy(skip, all.skip_strings[i].c_str(), std::min(static_cast<size_t>(3), all.skip_strings[i].size()));
+          msg << all.fc.skip_strings[i] << " ";
+          memcpy(skip, all.fc.skip_strings[i].c_str(), std::min(static_cast<size_t>(3), all.fc.skip_strings[i].size()));
         }
 
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3, "", read, msg, text);
         if (read)
         {
           std::string temp(skip);
-          all.skip_strings.push_back(temp);
+          all.fc.skip_strings.push_back(temp);
 
           file_options += " --skips";
           file_options += " " + temp;

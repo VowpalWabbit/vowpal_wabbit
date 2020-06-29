@@ -668,11 +668,11 @@ void generateGrams(vw& all, example*& ex)
   for (namespace_index index : ex->indices)
   {
     size_t length = ex->feature_space[index].size();
-    for (size_t n = 1; n < all.ngram[index]; n++)
+    for (size_t n = 1; n < all.gs.ngram[index]; n++)
     {
       all.p->gram_mask.clear();
       all.p->gram_mask.push_back((size_t)0);
-      addgrams(all, n, all.skips[index], ex->feature_space[index], length, all.p->gram_mask, 0);
+      addgrams(all, n, all.gs.skips[index], ex->feature_space[index], length, all.p->gram_mask, 0);
     }
   }
 }
@@ -687,11 +687,11 @@ void end_pass_example(vw& all, example* ae)
 void feature_limit(vw& all, example* ex)
 {
   for (namespace_index index : ex->indices)
-    if (all.limit[index] < ex->feature_space[index].size())
+    if (all.gs.limit[index] < ex->feature_space[index].size())
     {
       features& fs = ex->feature_space[index];
       fs.sort(all.gs.parse_mask);
-      unique_features(fs, all.limit[index]);
+      unique_features(fs, all.gs.limit[index]);
     }
 }
 
@@ -752,13 +752,13 @@ void setup_example(vw& all, example* ae)
         i--;
       }
 
-  if (!all.ngram_strings.empty())
+  if (!all.fc.ngram_strings.empty())
     generateGrams(all, ae);
 
   if (all.add_constant)  // add constant feature
     VW::add_constant_feature(all, ae);
 
-  if (!all.limit_strings.empty())
+  if (!all.fc.limit_strings.empty())
     feature_limit(all, ae);
 
   uint64_t multiplier = (uint64_t)all.gs.wpp << all.weights.stride_shift();

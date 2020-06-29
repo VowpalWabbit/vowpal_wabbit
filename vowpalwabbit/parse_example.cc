@@ -463,11 +463,11 @@ class TC_parser
     {
       this->_read_idx = 0;
       this->_p = all.p;
-      this->_redefine_some = all.redefine_some;
-      this->_redefine = &all.redefine;
+      this->_redefine_some = all.gs.redefine_some;
+      this->_redefine = &all.fc.redefine;
       this->_ae = ae;
-      this->_affix_features = &all.affix_features;
-      this->_spelling_features = &all.spelling_features;
+      this->_affix_features = &all.gs.affix_features;
+      this->_spelling_features = &all.gs.spelling_features;
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.fc.hash_seed;
       this->_parse_mask = all.gs.parse_mask;

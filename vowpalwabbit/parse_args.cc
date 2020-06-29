@@ -335,8 +335,8 @@ void parse_affix_argument(vw& all, std::string str)
       }
 
       uint16_t afx = (len << 1) | (prefix & 0x1);
-      all.affix_features[ns] <<= 4;
-      all.affix_features[ns] |= afx;
+      all.gs.affix_features[ns] <<= 4;
+      all.gs.affix_features[ns] |= afx;
 
       p = strtok(nullptr, ",");
     }
@@ -495,19 +495,19 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
     return "hasher";
 
 
-  if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
+  if (!std::equal(vw1.gs.spelling_features.begin(), vw1.gs.spelling_features.end(), vw2.gs.spelling_features.begin()))
     return "spelling_features";
 
-  if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
+  if (!std::equal(vw1.gs.affix_features.begin(), vw1.gs.affix_features.end(), vw2.gs.affix_features.begin()))
     return "affix_features";
 
-  if (!std::equal(vw1.ngram.begin(), vw1.ngram.end(), vw2.ngram.begin()))
+  if (!std::equal(vw1.gs.ngram.begin(), vw1.gs.ngram.end(), vw2.gs.ngram.begin()))
     return "ngram";
 
-  if (!std::equal(vw1.skips.begin(), vw1.skips.end(), vw2.skips.begin()))
+  if (!std::equal(vw1.gs.skips.begin(), vw1.gs.skips.end(), vw2.gs.skips.begin()))
     return "skips";
 
-  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin()))
+  if (!std::equal(vw1.gs.limit.begin(), vw1.gs.limit.end(), vw2.gs.limit.begin()))
     return "limit";
 
   if (vw1.fc.num_bits != vw2.fc.num_bits)
@@ -532,10 +532,10 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
       !std::equal(vw1.fc.ignore_linear.begin(), vw1.fc.ignore_linear.end(), vw2.fc.ignore_linear.begin()))
     return "ignore_linear";
 
-  if (vw1.redefine_some != vw2.redefine_some)
+  if (vw1.gs.redefine_some != vw2.gs.redefine_some)
     return "redefine_some";
 
-  if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
+  if (vw1.gs.redefine_some && !std::equal(vw1.fc.redefine.begin(), vw1.fc.redefine.end(), vw2.fc.redefine.begin()))
     return "redefine";
 
   if (vw1.add_constant != vw2.add_constant)
@@ -628,12 +628,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
       .add(make_option("constant", all.wc.initial_constant).short_name("C").help("Set initial value of constant"))
-      .add(make_option("ngram", all.ngram_strings)
+      .add(make_option("ngram", all.fc.ngram_strings)
                .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
-      .add(make_option("skips", all.skip_strings)
+      .add(make_option("skips", all.fc.skip_strings)
                .help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate "
                      "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
-      .add(make_option("feature_limit", all.limit_strings)
+      .add(make_option("feature_limit", all.fc.limit_strings)
                .help("limit to N features. To apply to a single namespace 'foo', arg should be fN"))
       .add(make_option("affix", affix)
                .keep()
@@ -670,9 +670,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     {
       spelling_ns[id] = spoof_hex_encoded_namespaces(spelling_ns[id]);
       if (spelling_ns[id][0] == '_')
-        all.spelling_features[(unsigned char)' '] = true;
+        all.gs.spelling_features[(unsigned char)' '] = true;
       else
-        all.spelling_features[(size_t)spelling_ns[id][0]] = true;
+        all.gs.spelling_features[(size_t)spelling_ns[id][0]] = true;
     }
   }
 
@@ -690,9 +690,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (options.was_supplied("sort_features"))
       THROW("ngram is incompatible with sort_features.");
 
-    for (size_t i = 0; i < all.ngram_strings.size(); i++)
-      all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
-    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.logger.quiet);
+    for (size_t i = 0; i < all.fc.ngram_strings.size(); i++)
+      all.fc.ngram_strings[i] = spoof_hex_encoded_namespaces(all.fc.ngram_strings[i]);
+    compile_gram(all.fc.ngram_strings, all.gs.ngram, (char*)"grams", all.logger.quiet);
   }
 
   if (options.was_supplied("skips"))
@@ -700,13 +700,13 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (!options.was_supplied("ngram"))
       THROW("You can not skip unless ngram is > 1");
 
-    for (size_t i = 0; i < all.skip_strings.size(); i++)
-      all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
-    compile_gram(all.skip_strings, all.skips, (char*)"skips", all.logger.quiet);
+    for (size_t i = 0; i < all.fc.skip_strings.size(); i++)
+      all.fc.skip_strings[i] = spoof_hex_encoded_namespaces(all.fc.skip_strings[i]);
+    compile_gram(all.fc.skip_strings, all.gs.skips, (char*)"skips", all.logger.quiet);
   }
 
   if (options.was_supplied("feature_limit"))
-    compile_limits(all.limit_strings, all.limit, all.logger.quiet);
+    compile_limits(all.fc.limit_strings, all.gs.limit, all.logger.quiet);
 
   if (options.was_supplied("bit_precision"))
   {
@@ -906,12 +906,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   }
 
   // --redefine param code
-  all.redefine_some = false;  // false by default
+  all.gs.redefine_some = false;  // false by default
 
   if (options.was_supplied("redefine"))
   {
     // initail values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < 256; i++) all.redefine[i] = (unsigned char)i;
+    for (size_t i = 0; i < 256; i++) all.fc.redefine[i] = (unsigned char)i;
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -950,23 +950,23 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
             << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('"
             << new_namespace << "') will be used as target namespace." << endl;
 
-      all.redefine_some = true;
+      all.gs.redefine_some = true;
 
       // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
       if (operator_pos == arg_len)  // S is empty, default namespace shall be used
-        all.redefine[(int)' '] = new_namespace;
+        all.fc.redefine[(int)' '] = new_namespace;
       else
         for (size_t i = operator_pos; i < arg_len; i++)
         {
           // all namespaces from S are redefined to N
           unsigned char c = argument[i];
           if (c != ':')
-            all.redefine[c] = new_namespace;
+            all.fc.redefine[c] = new_namespace;
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t i = 0; i < 256; i++) all.redefine[i] = new_namespace;
+            for (size_t i = 0; i < 256; i++) all.fc.redefine[i] = new_namespace;
             break;  // break processing S
           }
         }

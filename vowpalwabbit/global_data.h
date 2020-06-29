@@ -434,6 +434,14 @@ struct FeatureConfig
    */
   std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
 
+  /* input
+   */
+  std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
+
+  /* namespace related */
+  std::vector<std::string> ngram_strings;
+  std::vector<std::string> skip_strings;
+  std::vector<std::string> limit_strings;      // descriptor of feature limits
 };
 
 struct ExampleConfig
@@ -591,6 +599,21 @@ struct GlobalState
   /* highly related to feature.ignore but this is just evil state*/
   bool ignore_some;
   bool ignore_some_linear;
+
+  /*looks like state*/
+  bool redefine_some;                                  // --redefine param was used
+
+  /* this should be on feature config but we currently parse and use this as state */
+  std::array<uint64_t, NUM_NAMESPACES>
+      affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
+
+  /* this should be on feature config but we currently transform from input to this state*/
+  std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
+
+  /* this is just state driven by feature stuff */
+  std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
+  std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
+  std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
 };
 
 struct vw
@@ -654,21 +677,6 @@ struct vw
    */
   int reg_mode;
 
-
-  bool redefine_some;                                  // --redefine param was used
-  /* input, example related
-   * applies to the next 9
-   */
-  std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
-  std::vector<std::string> ngram_strings;
-  std::vector<std::string> skip_strings;
-  std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
-  std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
-  std::vector<std::string> limit_strings;      // descriptor of feature limits
-  std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
-  std::array<uint64_t, NUM_NAMESPACES>
-      affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
-  std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
 
   /* input, example related
    * feature dictionary stuff, applies to the next 3
