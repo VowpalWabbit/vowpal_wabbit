@@ -164,7 +164,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       ec.pred.scalar = 0.f;
       ec.l.simple.initial = 0.f;  // needed for gd.predict()
       base.predict(ec, cur_node.id);
-      VW_DBG(_dd) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
+      VW_DBG(ec) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
                   << ", nodeid = " << cur_node.id << std::endl;
       if (ec.pred.scalar < 0)
       {
@@ -188,13 +188,9 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
   _cost_star = ac[0].cost / ac[0].probability;
 
   uint32_t node_id = ac[0].action + _binary_tree.internal_node_count() - 1;
-    VW_DBG(_dd) << "otree_c: learn() ac[0].action  = " << ac[0].action << ", node_id  = " << node_id
-                << std::endl;
   _a = {node_id, _cost_star};
 
   node_id = ac[ac.size()-1].action + _binary_tree.internal_node_count() - 1;
-    VW_DBG(_dd) << "otree_c: learn() ac[1].action  = " << ac[ac.size()-1].action << ", node_id  = " << node_id
-                << std::endl;
   _b = {node_id, _cost_star};
 }
 
@@ -224,11 +220,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
   const vector<tree_node>& nodes = _binary_tree.nodes;
   v_array<cb_class>& ac = ec.l.cb.costs;
 
-  // Store the reduction indent depth for debug logging
-  // without having to carry example around
-  _dd = ec.stack_depth;
-
-  VW_DBG(_dd) << "otree_c: learn() -- tree_traversal -- " << std::endl;
+  VW_DBG(ec) << "otree_c: learn() -- tree_traversal -- " << std::endl;
 
   init_node_costs(ac);
 
@@ -252,7 +244,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
       float cost_w = return_cost(w);
       if (cost_v != cost_w)
       {
-        VW_DBG(_dd) << "otree_c: learn() cost_w = " << cost_w << ", cost_v != cost_w" << std::endl;
+        VW_DBG(ec) << "otree_c: learn() cost_w = " << cost_w << ", cost_v != cost_w" << std::endl;
         float local_action = RIGHT;
         if (((cost_v < cost_w) ? v : w).id == v_parent.left_id)
           local_action = LEFT;
@@ -278,24 +270,24 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         }
         if (!filter)
         {
-          VW_DBG(_dd) << "otree_c: learn() #### binary learning the node " << v.parent_id << std::endl;
+          VW_DBG(ec) << "otree_c: learn() #### binary learning the node " << v.parent_id << std::endl;
           base.learn(ec, v.parent_id);
           _binary_tree.nodes[v.parent_id].learn_count++;
           base.predict(ec, v.parent_id);
-          VW_DBG(_dd) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
+          VW_DBG(ec) << "otree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
             << ", local_action = " << (local_action) << std::endl;
           float trained_action = (ec.pred.scalar < 0) ? LEFT : RIGHT;
           if (trained_action == local_action)
           {
             cost_parent =
               (std::min)(cost_v, cost_w) * fabs(ec.pred.scalar) + (std::max)(cost_v, cost_w) * (1 - fabs(ec.pred.scalar));
-            VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
+            VW_DBG(ec) << "otree_c: learn() ec.pred.scalar == local_action" << std::endl;
           }
           else
           {
             cost_parent =
               (std::max)(cost_v, cost_w) * fabs(ec.pred.scalar) + (std::min)(cost_v, cost_w) * (1 - fabs(ec.pred.scalar));
-            VW_DBG(_dd) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
+            VW_DBG(ec) << "otree_c: learn() ec.pred.scalar != local_action" << std::endl;
           }
         }
 
