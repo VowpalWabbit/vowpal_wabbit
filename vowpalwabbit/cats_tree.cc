@@ -148,7 +148,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
   const vector<tree_node>& nodes = _binary_tree.nodes;
 
   // Handle degenerate cases of zero node trees
-  if (_binary_tree.leaf_node_count() == 0)  // todo: chnage this to throw error at some point
+  if (_binary_tree.leaf_node_count() == 0)
     return 0;
   const CB::label saved_label = ec.l.cb;
   ec.l.simple.label = FLT_MAX;  // says it is a test example
