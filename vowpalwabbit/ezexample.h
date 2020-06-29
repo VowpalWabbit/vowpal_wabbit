@@ -238,11 +238,13 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (auto const& pair : vw_ref->pairs)
+    for (auto const& interaction : vw_ref->interactions)
     {
-      quadratic_features_num += ec->feature_space[(int)pair[0]].size() * ec->feature_space[(int)pair[1]].size();
+      if(interaction.size() != 2)
+        continue;
+      quadratic_features_num += ec->feature_space[(int)interaction[0]].size() * ec->feature_space[(int)interaction[1]].size();
       quadratic_features_sqr +=
-          ec->feature_space[(int)pair[0]].sum_feat_sq * ec->feature_space[(int)pair[1]].sum_feat_sq;
+          ec->feature_space[(int)interaction[0]].sum_feat_sq * ec->feature_space[(int)interaction[1]].sum_feat_sq;
     }
     ec->num_features += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
