@@ -866,7 +866,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
     ld->treat_as_classifier = true;
   else
   {
-    if (all.training)
+    if (all.gs.training)
       THROW("ldf requires either m/multiline or mc/multiline-classifier");
     if ((ldf_arg == "singleline" || ldf_arg == "s") || (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
       THROW(

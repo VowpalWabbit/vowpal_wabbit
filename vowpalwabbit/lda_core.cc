@@ -949,7 +949,7 @@ void learn_batch(lda &l)
   for (size_t d = 0; d < batch_size; d++)
   {
     float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), l.examples[d], l.all->uc.power_t);
-    if (l.all->audit)
+    if (l.all->oc.audit)
       GD::print_audit_features(*l.all, *l.examples[d]);
     // If the doc is empty, give it loss of 0.
     if (l.doc_lengths[d] > 0)

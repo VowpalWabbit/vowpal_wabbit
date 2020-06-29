@@ -616,7 +616,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
   cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
-  if (priv.all->audit)
+  if (priv.all->oc.audit)
   {
     std::stringstream temp;
     temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
@@ -660,7 +660,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       priv.dat_new_feature_value = 1.;
       priv.dat_new_feature_idx = priv.neighbor_features[n_id] * 13748127;
       priv.dat_new_feature_namespace = neighbor_namespace;
-      if (priv.all->audit)
+      if (priv.all->oc.audit)
       {
         priv.dat_new_feature_feature_space = &neighbor_feature_space;
         priv.dat_new_feature_audit_ss.str("");
@@ -805,7 +805,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
   for (size_t i = 0; i < I; i++)  // position in conditioning
   {
     uint64_t fid = 71933 + 8491087 * extra_offset;
-    if (priv.all->audit)
+    if (priv.all->oc.audit)
     {
       priv.dat_new_feature_audit_ss.str("");
       priv.dat_new_feature_audit_ss.clear();
@@ -825,7 +825,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
       priv.dat_new_feature_namespace = conditioning_namespace;
       priv.dat_new_feature_value = priv.acset.feature_value;
 
-      if (priv.all->audit)
+      if (priv.all->oc.audit)
       {
         if (n > 0)
           priv.dat_new_feature_audit_ss << ',';
@@ -858,7 +858,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
         {
           uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indicies[k]);
-          if (priv.all->audit)
+          if (priv.all->oc.audit)
           {
             priv.dat_new_feature_audit_ss.str("");
             priv.dat_new_feature_audit_ss.clear();
@@ -1732,7 +1732,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
         ensure_size(priv.learn_ec_copy, ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, priv.learn_ec_copy.begin() + i, ecs + i, label_size, label_copy_fn);
+          VW::copy_example_data(priv.all->oc.audit, priv.learn_ec_copy.begin() + i, ecs + i, label_size, label_copy_fn);
 
         priv.learn_ec_ref = priv.learn_ec_copy.begin();
       }
@@ -1853,7 +1853,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
             : action_repr(0);
       }
 
-      bool not_test = priv.all->training && !ecs[0].test_only;
+      bool not_test = priv.all->gs.training && !ecs[0].test_only;
 
       if ((!skip) && (!need_fea) && not_test &&
           cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.begin(),
@@ -2222,7 +2222,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   }
 
   // if we're not training, then we're done!
-  if ((!is_learn) || is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training))
+  if ((!is_learn) || is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->gs.training))
     return;
 
   // SPEEDUP: if the oracle was never called, we can skip this!
@@ -2455,7 +2455,7 @@ void end_pass(search& sch)
   if (priv.passes_since_new_policy >= priv.passes_per_policy)
   {
     priv.passes_since_new_policy = 0;
-    if (all->training)
+    if (all->gs.training)
       priv.current_policy++;
     if (priv.current_policy > priv.total_number_of_policies)
     {
@@ -2480,7 +2480,7 @@ void end_examples(search& sch)
   search_private& priv = *sch.priv;
   vw* all = priv.all;
 
-  if (all->training)
+  if (all->gs.training)
   {
     // TODO work out a better system to update state that will be saved in the model.
     // Dig out option and change it in case we already loaded a predictor which had a value stored for
@@ -2827,7 +2827,7 @@ base_learner* setup(options_i& options, vw& all)
   // compute total number of policies we will have at end of training
   // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;
-  if (all.training)
+  if (all.gs.training)
     tmp_number_of_policies += (int)ceil(((float)all.ec.numpasses) / ((float)priv.passes_per_policy));
 
   // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
@@ -2847,7 +2847,7 @@ base_learner* setup(options_i& options, vw& all)
   // current policy currently points to a new policy we would train
   // if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
   // so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
-  if (!all.training && priv.current_policy > 0)
+  if (!all.gs.training && priv.current_policy > 0)
     priv.current_policy--;
 
   all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));

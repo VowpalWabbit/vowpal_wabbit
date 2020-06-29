@@ -372,7 +372,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
-    if (all.audit)
+    if (all.oc.audit)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
@@ -414,12 +414,12 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   }
 
   learner<ftrl, example>* l;
-  if (all.audit || all.hash_inv)
+  if (all.oc.audit || all.hash_inv)
     l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift());
   else
     l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift());
   l->set_sensitivity(sensitivity);
-  if (all.audit || all.hash_inv)
+  if (all.oc.audit || all.hash_inv)
     l->set_multipredict(multipredict<true>);
   else
     l->set_multipredict(multipredict<false>);

@@ -517,7 +517,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
 
   if (bar_idx != VW::string_view::npos)
   {
-    if (all->audit || all->hash_inv)
+    if (all->oc.audit || all->hash_inv)
       TC_parser<true> parser_line(example.substr(bar_idx), *all, ae);
     else
       TC_parser<false> parser_line(example.substr(bar_idx), *all, ae);

@@ -112,7 +112,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 
               right_fs.push_back(scale * *lw * lfx * rfx, rwindex);
 
-              if (all.audit || all.hash_inv)
+              if (all.oc.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << right_fs.space_names[rfn].get()->second << '^' << n;
@@ -178,7 +178,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
-  lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
+  lrq->initial_seed = lrq->seed = all.rc.random_seed | 8675309;
 
   if (!all.logger.quiet)
   {

@@ -92,7 +92,7 @@ void finish_setup(nn& n, vw& all)
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv)
+    if (all.oc.audit || all.hash_inv)
     {
       std::stringstream ss;
       ss << "OutputLayer" << i;
@@ -105,7 +105,7 @@ void finish_setup(nn& n, vw& all)
   if (!n.inpass)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv)
+    if (all.oc.audit || all.hash_inv)
       fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputLayerConst")));
     ++n.output_layer.num_features;
   }
@@ -115,7 +115,7 @@ void finish_setup(nn& n, vw& all)
   n.hiddenbias.interactions = &all.gs.interactions;
   n.hiddenbias.indices.push_back(constant_namespace);
   n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
-  if (all.audit || all.hash_inv)
+  if (all.oc.audit || all.hash_inv)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
   n.hiddenbias.total_sum_feat_sq++;
@@ -126,7 +126,7 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
-  if (all.audit || all.hash_inv)
+  if (all.oc.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "OutputWeight")));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
@@ -322,7 +322,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
       n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
     }
 
-    if (is_learn && n.all->training && ld.label != FLT_MAX)
+    if (is_learn && n.all->gs.training && ld.label != FLT_MAX)
     {
       float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
 
@@ -440,25 +440,25 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.logger.quiet)
-    std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;
+    std::cerr << "using multitask sharing for neural network " << (all.gs.training ? "training" : "testing") << std::endl;
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
     if (!all.logger.quiet)
-      std::cerr << "using mean field for neural network " << (all.training ? "training" : "testing") << std::endl;
+      std::cerr << "using mean field for neural network " << (all.gs.training ? "training" : "testing") << std::endl;
   }
 
   if (n->dropout && !all.logger.quiet)
-    std::cerr << "using dropout for neural network " << (all.training ? "training" : "testing") << std::endl;
+    std::cerr << "using dropout for neural network " << (all.gs.training ? "training" : "testing") << std::endl;
 
   if (n->inpass && !all.logger.quiet)
-    std::cerr << "using input passthrough for neural network " << (all.training ? "training" : "testing") << std::endl;
+    std::cerr << "using input passthrough for neural network " << (all.gs.training ? "training" : "testing") << std::endl;
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);
 
-  n->xsubi = all.random_seed;
+  n->xsubi = all.rc.random_seed;
 
   n->save_xsubi = n->xsubi;
 

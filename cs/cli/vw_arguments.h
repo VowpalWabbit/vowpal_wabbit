@@ -36,7 +36,7 @@ internal:
   VowpalWabbitArguments(vw* vw) :
     m_data(gcnew String(vw->ic.data_filename.c_str())),
     m_finalRegressor(gcnew String(vw->final_regressor_name.c_str())),
-    m_testonly(!vw->training),
+    m_testonly(!vw->gs.training),
     m_passes((int)vw->ec.numpasses)
   {
     auto options = vw->options;

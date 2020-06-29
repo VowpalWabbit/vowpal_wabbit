@@ -1140,20 +1140,20 @@ base_learner* bfgs_setup(options_i& options, vw& all)
       b->all->oc.trace_message << "**without** curvature calculation" << std::endl;
   }
 
-  if (all.ec.numpasses < 2 && all.training)
+  if (all.ec.numpasses < 2 && all.gs.training)
     THROW("you must make at least 2 passes to use BFGS");
 
   all.bfgs = true;
   all.weights.stride_shift(2);
 
   void (*learn_ptr)(bfgs&, base_learner&, example&) = nullptr;
-  if (all.audit)
+  if (all.oc.audit)
     learn_ptr = learn<true>;
   else
     learn_ptr = learn<false>;
 
   learner<bfgs, example>* l;
-  if (all.audit || all.hash_inv)
+  if (all.oc.audit || all.hash_inv)
     l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride());
   else
     l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride());

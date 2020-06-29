@@ -261,7 +261,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   if (all.ec.numpasses > 1)
     THROW("audit_regressor can't be used with --passes > 1.");
 
-  all.audit = true;
+  all.oc.audit = true;
 
   auto dat = scoped_calloc_or_throw<audit_regressor_data>();
   dat->all = &all;

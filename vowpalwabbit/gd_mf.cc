@@ -163,7 +163,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   if (ld.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
 
-  if (all.audit)
+  if (all.oc.audit)
     mf_print_audit_features(d, ec, 0);
 
   return ec.pred.scalar;
@@ -323,7 +323,7 @@ void learn(gdmf& d, single_learner&, example& ec)
   vw& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple.label != FLT_MAX)
+  if (all.gs.training && ec.l.simple.label != FLT_MAX)
     mf_train(d, ec);
 }
 

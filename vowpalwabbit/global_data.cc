@@ -163,7 +163,7 @@ void vw::learn(example& ec)
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
-  if (ec.test_only || !training)
+  if (ec.test_only || !gs.training)
     VW::LEARNER::as_singleline(l)->predict(ec);
   else
     VW::LEARNER::as_singleline(l)->learn(ec);
@@ -174,7 +174,7 @@ void vw::learn(multi_ex& ec)
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
-  if (!training)
+  if (!gs.training)
     VW::LEARNER::as_multiline(l)->predict(ec);
   else
     VW::LEARNER::as_multiline(l)->learn(ec);
@@ -347,7 +347,7 @@ vw::vw()
   print_by_ref = print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
-  random_seed = 0;
+  rc.random_seed = 0;
   random_weights = false;
   normal_weights = false;
   tnormal_weights = false;
@@ -382,7 +382,7 @@ vw::vw()
   normalized_idx = 2;
 
   add_constant = true;
-  audit = false;
+  oc.audit = false;
 
   ec.pass_length = std::numeric_limits<size_t>::max();
   gs.passes_complete = 0;

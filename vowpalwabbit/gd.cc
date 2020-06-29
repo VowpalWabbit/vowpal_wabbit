@@ -239,7 +239,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
   std::string ns_pre;
   for (std::string& s : dat.ns_pre) ns_pre += s;
 
-  if (dat.all.audit)
+  if (dat.all.oc.audit)
   {
     std::ostringstream tempstream;
     tempstream << ':' << (index >> stride_shift) << ':' << ft_weight << ':'
@@ -252,7 +252,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     dat.results.push_back(sv);
   }
 
-  if ((dat.all.gs.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
+  if ((dat.all.gs.current_pass == 0 || dat.all.gs.training == false) && dat.all.hash_inv)
   {
     // for invert_hash
 
@@ -312,7 +312,7 @@ void print_features(vw& all, example& ec)
         all, ec, dat);
 
     stable_sort(dat.results.begin(), dat.results.end());
-    if (all.audit)
+    if (all.oc.audit)
     {
       for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
       std::cout << std::endl;
@@ -322,7 +322,7 @@ void print_features(vw& all, example& ec)
 
 void print_audit_features(vw& all, example& ec)
 {
-  if (all.audit)
+  if (all.oc.audit)
     print_result_by_ref(all.oc.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
@@ -902,7 +902,7 @@ void save_load_online_state(
   float dump_interval = all.sd->dump_interval;
   msg << "dump_interval " << dump_interval << "\n";
   bin_text_read_write_fixed(model_file, (char*)&dump_interval, sizeof(dump_interval), "", read, msg, text);
-  if (!read || (all.training && all.oc.preserve_performance_counters))  // update dump_interval from input model
+  if (!read || (all.gs.training && all.oc.preserve_performance_counters))  // update dump_interval from input model
     all.sd->dump_interval = dump_interval;
 
   msg << "min_label " << all.sd->min_label << "\n";
@@ -957,7 +957,7 @@ void save_load_online_state(
   }
 
   if (read &&
-      (!all.training ||
+      (!all.gs.training ||
           !all.oc.preserve_performance_counters))  // reset various things so that we report test set performance properly
   {
     all.sd->sum_loss = 0;
@@ -1032,7 +1032,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     else
       save_load_regressor(all, model_file, read, text);
   }
-  if (!all.training)  // If the regressor was saved as --save_resume, then when testing we want to materialize the
+  if (!all.gs.training)  // If the regressor was saved as --save_resume, then when testing we want to materialize the
                       // weights.
     sync_weights(all);
 }
@@ -1173,7 +1173,7 @@ base_learner* setup(options_i& options, vw& all)
   {
     // nondefault
     all.weights.adaptive = adaptive;
-    all.invariant_updates = all.training && invariant;
+    all.invariant_updates = all.gs.training && invariant;
     all.weights.normalized = normalized;
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
@@ -1193,16 +1193,16 @@ base_learner* setup(options_i& options, vw& all)
   }
   else
   {
-    all.invariant_updates = all.training;
+    all.invariant_updates = all.gs.training;
   }
   g->adaptive_input = all.weights.adaptive;
   g->normalized_input = all.weights.normalized;
 
-  all.weights.adaptive = all.weights.adaptive && all.training;
-  all.weights.normalized = all.weights.normalized && all.training;
+  all.weights.adaptive = all.weights.adaptive && all.gs.training;
+  all.weights.normalized = all.weights.normalized && all.gs.training;
 
   if (adax)
-    g->adax = all.training && adax;
+    g->adax = all.gs.training && adax;
 
   if (g->adax && !all.weights.adaptive)
     THROW("Cannot use adax without adaptive");
@@ -1213,7 +1213,7 @@ base_learner* setup(options_i& options, vw& all)
                       << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)
-    if (all.audit || all.hash_inv)
+    if (all.oc.audit || all.hash_inv)
     {
       g->predict = predict<true, true>;
       g->multipredict = multipredict<true, true>;
@@ -1223,7 +1223,7 @@ base_learner* setup(options_i& options, vw& all)
       g->predict = predict<true, false>;
       g->multipredict = multipredict<true, false>;
     }
-  else if (all.audit || all.hash_inv)
+  else if (all.oc.audit || all.hash_inv)
   {
     g->predict = predict<false, true>;
     g->multipredict = multipredict<false, true>;

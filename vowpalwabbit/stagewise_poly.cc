@@ -510,7 +510,7 @@ void predict(stagewise_poly &poly, single_learner &base, example &ec)
 
 void learn(stagewise_poly &poly, single_learner &base, example &ec)
 {
-  bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
+  bool training = poly.all->gs.training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
 
   if (training)

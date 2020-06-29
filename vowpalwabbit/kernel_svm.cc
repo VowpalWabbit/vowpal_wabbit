@@ -746,7 +746,7 @@ void train(svm_params& params)
     sync_queries(*(params.all), params, train_pool);
   }
 
-  if (params.all->training)
+  if (params.all->gs.training)
   {
     svm_model* model = params.model;
 
@@ -836,9 +836,9 @@ void learn(svm_params& params, single_learner&, example& ec)
     // std::cout<<"Score = "<<score<< endl;
     ec.loss = std::max(0.f, 1.f - score * ec.l.simple.label);
     params.loss_sum += ec.loss;
-    if (params.all->training && ec.example_counter % 100 == 0)
+    if (params.all->gs.training && ec.example_counter % 100 == 0)
       trim_cache(params);
-    if (params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
+    if (params.all->gs.training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
       params.all->oc.trace_message << "Number of support vectors = " << params.model->num_support << endl;
       params.all->oc.trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "

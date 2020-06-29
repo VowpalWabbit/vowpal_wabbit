@@ -523,6 +523,9 @@ struct OutputConfig
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
 
+  /* flag for runtime behaviour, input setting, for output
+   */
+  bool audit;     // should I print lots of debugging information?
 };
 
 struct VWRuntimeConfig
@@ -547,6 +550,9 @@ struct VWRuntimeConfig
   // Flag used when VW internally manages lifetime of options object.
   bool should_delete_options = false;
 
+  uint64_t random_seed;
+
+  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
 };
 
 struct GlobalState
@@ -614,6 +620,10 @@ struct GlobalState
   std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
   std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
   std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
+
+  /* this shouldnt be state but it is. flag for behaviour
+   */
+  bool training;  // Should I train if lable data is available?
 };
 
 struct vw
@@ -693,18 +703,15 @@ struct vw
   /* output related
    */
   vw_logger logger;
-  /* flag for runtime behaviour, input setting, for output
-   */
-  bool audit;     // should I print lots of debugging information?
-  /* flag for behaviour, example related
-   */
-  bool training;  // Should I train if lable data is available?
+
   /* input, see active.cc
    * not sure where used
    */
   bool active;
+
+  /* gd option? */
   bool invariant_updates;  // Should we use importance aware/safe updates
-  uint64_t random_seed;
+
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
   bool normal_weights;
@@ -747,7 +754,6 @@ struct vw
 
   bool stdin_off;
 
-  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
 
   // runtime accounting variables.
   float initial_t;

@@ -307,7 +307,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   // default text reader
   all.p->text_reader = VW::read_lines;
 
-  if (!all.no_daemon && (all.rc.daemon || all.active))
+  if (!all.rc.no_daemon && (all.rc.daemon || all.active))
   {
 #ifdef _WIN32
     WSAData wsaData;
@@ -571,7 +571,7 @@ IGNORE_DEPRECATED_USAGE_END
       {
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
-        if (all.audit || all.hash_inv)
+        if (all.oc.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
           all.p->text_reader = &line_to_examples_json<true>;
@@ -814,7 +814,7 @@ void add_constant_feature(vw& vw, example* ec)
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.audit || vw.hash_inv)
+  if (vw.oc.audit || vw.hash_inv)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
 }
 

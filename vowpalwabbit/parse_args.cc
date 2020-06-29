@@ -357,7 +357,7 @@ void parse_diagnostics(options_i& options, vw& all)
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic options");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
-      .add(make_option("audit", all.audit).short_name("a").help("print weights of features"))
+      .add(make_option("audit", all.oc.audit).short_name("a").help("print weights of features"))
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
@@ -440,7 +440,7 @@ input_options parse_source(vw& all, options_i& options)
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
-      .add(make_option("no_daemon", all.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
+      .add(make_option("no_daemon", all.rc.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
                .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
 
@@ -1053,12 +1053,12 @@ void parse_example_tweaks(options_i& options, vw& all)
   {
     if (!all.logger.quiet)
       all.oc.trace_message << "only testing" << endl;
-    all.training = false;
+    all.gs.training = false;
     if (all.lda > 0)
       all.eta = 0;
   }
   else
-    all.training = true;
+    all.gs.training = true;
 
   if ((all.ec.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
     all.holdout_set_off = false;  // holdout is on unless explicitly off
@@ -1524,9 +1524,9 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
 void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
-  rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
+  rand_options.add(make_option("random_seed", all.rc.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
-  all.get_random_state()->set_random_state(all.random_seed);
+  all.get_random_state()->set_random_state(all.rc.random_seed);
 
   parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
 

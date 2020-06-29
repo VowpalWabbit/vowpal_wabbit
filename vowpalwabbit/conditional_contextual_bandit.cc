@@ -434,7 +434,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     data.include_list.clear();
     build_cb_example<is_learn>(data.cb_ex, slot, data);
 
-    if (data.all->audit)
+    if (data.all->oc.audit)
     {
       inject_slot_id<true>(data, data.shared, slot_id);
     }
@@ -463,7 +463,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     }
     remove_slot_features(data.shared, slot);
 
-    if (data.all->audit)
+    if (data.all->oc.audit)
     {
       remove_slot_id<true>(data.shared);
     }

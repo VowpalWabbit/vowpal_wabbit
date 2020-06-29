@@ -98,7 +98,7 @@ base_learner* confidence_setup(options_i& options, vw& all)
   if (!confidence_arg)
     return nullptr;
 
-  if (!all.training)
+  if (!all.gs.training)
   {
     std::cout
         << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
