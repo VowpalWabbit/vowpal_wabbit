@@ -538,7 +538,7 @@ void save_predictor(vw& all, std::string reg_name, size_t current_pass)
 
 void finalize_regressor(vw& all, std::string reg_name)
 {
-  if (!all.ec.early_terminate)
+  if (!all.gs.early_terminate)
   {
     if (all.oc.per_feature_regularizer_output.length() > 0)
       dump_regressor(all, all.oc.per_feature_regularizer_output, false);

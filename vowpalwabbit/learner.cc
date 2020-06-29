@@ -92,7 +92,7 @@ bool inline is_save_cmd(example* ec)
 
 void drain_examples(vw& all)
 {
-  if (all.ec.early_terminate)
+  if (all.gs.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
     while ((ec = VW::get_example(all.p)) != nullptr) VW::finish_example(all, *ec);
@@ -227,7 +227,7 @@ class ready_examples_queue
  public:
   ready_examples_queue(vw& master) : _master(master) {}
 
-  example* pop() { return !_master.ec.early_terminate ? VW::get_example(_master.p) : nullptr; }
+  example* pop() { return !_master.gs.early_terminate ? VW::get_example(_master.p) : nullptr; }
 
  private:
   vw& _master;

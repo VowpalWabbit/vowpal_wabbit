@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 
   // initialize model
   vw* model = VW::initialize(vwparams);
-  model->audit = true;
+  model->oc.audit = true;
 
   string target("--rank ");
   size_t loc = vwparams.find(target);

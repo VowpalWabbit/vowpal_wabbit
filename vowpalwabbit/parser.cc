@@ -613,7 +613,7 @@ void lock_done(parser& p)
 
 void set_done(vw& all)
 {
-  all.ec.early_terminate = true;
+  all.gs.early_terminate = true;
   lock_done(*all.p);
 }
 

@@ -394,7 +394,7 @@ vw::vw()
   ec.holdout_set_off = true;
   ec.holdout_after = 0;
   gs.check_holdout_every_n_passes = 1;
-  ec.early_terminate = false;
+  gs.early_terminate = false;
 
   max_examples = std::numeric_limits<size_t>::max();
 
