@@ -23,12 +23,7 @@ namespace VW
   void finish_example(vw& all, example& ec);
 }
 
-namespace VW
-{
-namespace continuous_action
-{
-namespace cats_pdf
-{
+namespace VW { namespace continuous_action { namespace cats_pdf {
   ////////////////////////////////////////////////////
   // BEGIN cats_pdf reduction and reduction methods
   struct cats_pdf

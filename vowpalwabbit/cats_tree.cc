@@ -18,114 +18,112 @@ using std::vector;
 
 VW_DEBUG_ENABLE(false)
 
-namespace VW
-{
-namespace cats_tree
-{
-tree_node::tree_node(
-    uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth,
-    bool left_only, bool right_only, bool is_leaf)
-    : id(node_id)
-    , left_id(left_node_id)
-    , right_id(right_node_id)
-    , parent_id(p_id)
-    , depth(depth)
-    , left_only(left_only)
-    , right_only(right_only)
-    , is_leaf(is_leaf)
-    , learn_count(0)
-{
-}
+namespace VW { namespace cats_tree {
 
-bool tree_node::operator==(const tree_node& rhs) const
-{
-  if (this == &rhs)
-    return true;
-  return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && parent_id == rhs.parent_id &&
-  depth == rhs.depth && left_only == rhs.left_only && right_only == rhs.right_only && is_leaf == rhs.is_leaf);
-}
-
-bool tree_node::operator!=(const tree_node& rhs) const { return !(*this == rhs); }
-
-void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
-{
-  // Sanity checks
-  if (_initialized)
+  tree_node::tree_node(
+      uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t p_id, uint32_t depth,
+      bool left_only, bool right_only, bool is_leaf)
+      : id(node_id)
+      , left_id(left_node_id)
+      , right_id(right_node_id)
+      , parent_id(p_id)
+      , depth(depth)
+      , left_only(left_only)
+      , right_only(right_only)
+      , is_leaf(is_leaf)
+      , learn_count(0)
   {
-    if (num_nodes != _num_leaf_nodes)
-    {
-      THROW("Tree already initialized.  New leaf node count (" << num_nodes << ") does not equal current value. ("
-                                                               << _num_leaf_nodes << ")");
-    }
-    return;
   }
 
-  _num_leaf_nodes = num_nodes;
-  // deal with degenerate cases of 0 and 1 actions
-  if (_num_leaf_nodes == 0)
+  bool tree_node::operator==(const tree_node& rhs) const
   {
-    _initialized = true;
-    return;
+    if (this == &rhs)
+      return true;
+    return (id == rhs.id && left_id == rhs.left_id && right_id == rhs.right_id && parent_id == rhs.parent_id &&
+    depth == rhs.depth && left_only == rhs.left_only && right_only == rhs.right_only && is_leaf == rhs.is_leaf);
   }
 
-  try
+  bool tree_node::operator!=(const tree_node& rhs) const { return !(*this == rhs); }
+
+  void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
   {
-    // Number of nodes in a minimal binary tree := (2 * LeafCount) - 1
-    nodes.reserve(2 * _num_leaf_nodes - 1);
-
-    //  Insert Root Node: First node in the collection, Parent is itself
-    //  {node_id, left_id, right_id, parent_id, depth, right_only, left_only, is_leaf}
-    nodes.emplace_back(0, 0, 0, 0, 0, false, false, true);
-
-    uint32_t depth = 0, depth_const = 1;
-    for (uint32_t i = 0; i < _num_leaf_nodes - 1; ++i)
+    // Sanity checks
+    if (_initialized)
     {
-      nodes[i].left_id = 2 * i + 1;
-      nodes[i].right_id = 2 * i + 2;
-      nodes[i].is_leaf = false;
-      if (2 * i + 1 >= depth_const)
-        depth_const = (1 << (++depth + 1)) - 1;
-
-      uint32_t id = 2 * i + 1;
-      bool right_only = false;
-      bool left_only = false;
-      if (bandwidth)
+      if (num_nodes != _num_leaf_nodes)
       {
-        right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
-        left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
+        THROW("Tree already initialized.  New leaf node count (" << num_nodes << ") does not equal current value. ("
+                                                                << _num_leaf_nodes << ")");
       }
-      nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
-
-      id = 2 * i + 2;
-      if (bandwidth)
-      {
-        right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
-        left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
-      }
-      nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
+      return;
     }
 
-    _initialized = true;
-    _depth = depth;
+    _num_leaf_nodes = num_nodes;
+    // deal with degenerate cases of 0 and 1 actions
+    if (_num_leaf_nodes == 0)
+    {
+      _initialized = true;
+      return;
+    }
+
+    try
+    {
+      // Number of nodes in a minimal binary tree := (2 * LeafCount) - 1
+      nodes.reserve(2 * _num_leaf_nodes - 1);
+
+      //  Insert Root Node: First node in the collection, Parent is itself
+      //  {node_id, left_id, right_id, parent_id, depth, right_only, left_only, is_leaf}
+      nodes.emplace_back(0, 0, 0, 0, 0, false, false, true);
+
+      uint32_t depth = 0, depth_const = 1;
+      for (uint32_t i = 0; i < _num_leaf_nodes - 1; ++i)
+      {
+        nodes[i].left_id = 2 * i + 1;
+        nodes[i].right_id = 2 * i + 2;
+        nodes[i].is_leaf = false;
+        if (2 * i + 1 >= depth_const)
+          depth_const = (1 << (++depth + 1)) - 1;
+
+        uint32_t id = 2 * i + 1;
+        bool right_only = false;
+        bool left_only = false;
+        if (bandwidth)
+        {
+          right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
+          left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
+        }
+        nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
+
+        id = 2 * i + 2;
+        if (bandwidth)
+        {
+          right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
+          left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
+        }
+        nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
+      }
+
+      _initialized = true;
+      _depth = depth;
+    }
+    catch (std::bad_alloc& e)
+    {
+      THROW("Unable to allocate memory for cats_tree.  Label count:" << _num_leaf_nodes << " bad_alloc:" << e.what());
+    }
   }
-  catch (std::bad_alloc& e)
+
+  uint32_t min_depth_binary_tree::internal_node_count() const { return (uint32_t)nodes.size() - _num_leaf_nodes; }
+
+  uint32_t min_depth_binary_tree::leaf_node_count() const { return _num_leaf_nodes; }
+
+  uint32_t min_depth_binary_tree::depth() const { return _depth; }
+
+  const tree_node& min_depth_binary_tree::get_sibling(const tree_node& v)
   {
-    THROW("Unable to allocate memory for cats_tree.  Label count:" << _num_leaf_nodes << " bad_alloc:" << e.what());
+    // We expect not to get called on root
+    const tree_node& v_parent = nodes[v.parent_id];
+    return nodes[(v.id == v_parent.left_id) ? v_parent.right_id : v_parent.left_id];
   }
-}
-
-uint32_t min_depth_binary_tree::internal_node_count() const { return (uint32_t)nodes.size() - _num_leaf_nodes; }
-
-uint32_t min_depth_binary_tree::leaf_node_count() const { return _num_leaf_nodes; }
-
-uint32_t min_depth_binary_tree::depth() const { return _depth; }
-
-const tree_node& min_depth_binary_tree::get_sibling(const tree_node& v)
-{
-  // We expect not to get called on root
-  const tree_node& v_parent = nodes[v.parent_id];
-  return nodes[(v.id == v_parent.left_id) ? v_parent.right_id : v_parent.left_id];
-}
 
 std::string min_depth_binary_tree::tree_stats_to_string()
 {
