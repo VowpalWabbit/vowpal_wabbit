@@ -163,9 +163,10 @@ inline uint64_t hash_space_cstr(vw& all, const char* fstr)
   return all.p->hasher(fstr, strlen(fstr), all.hash_seed);
 }
 // Then use it as the seed for hashing features.
-inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
+inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u, bool apply_mask = true)
 {
-  return all.p->hasher(s.data(), s.length(), u) & all.parse_mask;
+  auto word_hash = all.p->hasher(s.data(), s.length(), u);
+  return apply_mask ? word_hash & all.parse_mask : word_hash;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {

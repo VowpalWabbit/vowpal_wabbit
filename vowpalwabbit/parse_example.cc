@@ -190,8 +190,10 @@ class TC_parser
 
       if (_chain_hash && !string_feature_value.empty())
       {
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(),
-                         _p->hasher(string_feature_value.begin(), string_feature_value.length(), _channel_hash)) & _parse_mask);
+        // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
+        word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
+                         _p->hasher(feature_name.begin(), feature_name.length(), _channel_hash)) &
+            _parse_mask);
       }
       else if (!feature_name.empty())
       {
