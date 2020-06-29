@@ -792,7 +792,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   if (read)
   {
     initialize_regressor(all);
-    initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.wc.random_weights, all.lda,
+    initial_weights init(all.gs.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.wc.random_weights, all.lda,
         all.weights.stride());
     if (all.weights.sparse)
       all.weights.sparse_weights.set_default<initial_weights, set_initial_lda_wrapper<sparse_parameters>>(init);
@@ -1358,7 +1358,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;
-  ld->example_t = all.initial_t;
+  ld->example_t = all.gs.initial_t;
   if (ld->compute_coherence_metrics)
   {
     ld->feature_counts.resize((uint32_t)(UINT64_ONE << all.fc.num_bits));

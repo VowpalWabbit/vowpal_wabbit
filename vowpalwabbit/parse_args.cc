@@ -1388,7 +1388,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
     parse_diagnostics(options, all);
 
-    all.initial_t = (float)all.sd->t;
+    all.gs.initial_t = (float)all.sd->t;
     return all;
   }
   catch (...)

@@ -882,8 +882,8 @@ void save_load_online_state(
   // vw& all = *g.all;
   std::stringstream msg;
 
-  msg << "initial_t " << all.initial_t << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.initial_t, sizeof(all.initial_t), "", read, msg, text);
+  msg << "initial_t " << all.gs.initial_t << "\n";
+  bin_text_read_write_fixed(model_file, (char*)&all.gs.initial_t, sizeof(all.gs.initial_t), "", read, msg, text);
 
   msg << "norm normalizer " << all.gs.normalized_sum_norm_x << "\n";
   bin_text_read_write_fixed(
@@ -994,10 +994,10 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   {
     initialize_regressor(all);
 
-    if (all.weights.adaptive && all.initial_t > 0)
+    if (all.weights.adaptive && all.gs.initial_t > 0)
     {
       float init_weight = all.wc.initial_weight;
-      std::pair<float, float> p = std::make_pair(init_weight, all.initial_t);
+      std::pair<float, float> p = std::make_pair(init_weight, all.gs.initial_t);
       if (all.weights.sparse)
         all.weights.sparse_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<sparse_parameters> >(p);
       else
@@ -1150,11 +1150,11 @@ base_learner* setup(options_i& options, vw& all)
   g->neg_norm_power = (all.weights.adaptive ? (all.uc.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.uc.power_t;
 
-  if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
+  if (all.gs.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
-    g->all->gs.normalized_sum_norm_x = all.initial_t;
-    g->total_weight = all.initial_t;
+    g->all->gs.normalized_sum_norm_x = all.gs.initial_t;
+    g->total_weight = all.gs.initial_t;
   }
 
   bool feature_mask_off = true;
@@ -1186,7 +1186,7 @@ base_learner* setup(options_i& options, vw& all)
       if (!options.was_supplied("initial_t"))
       {
         all.sd->t = 1.f;
-        all.initial_t = 1.f;
+        all.gs.initial_t = 1.f;
       }
       all.eta *= powf((float)(all.sd->t), all.uc.power_t);
     }

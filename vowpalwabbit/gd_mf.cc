@@ -376,7 +376,7 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   if (!options.was_supplied("initial_t"))
   {
     all.sd->t = 1.f;
-    all.initial_t = 1.f;
+    all.gs.initial_t = 1.f;
   }
   all.eta *= powf((float)(all.sd->t), all.uc.power_t);
 

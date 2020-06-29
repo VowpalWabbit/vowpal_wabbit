@@ -634,6 +634,9 @@ struct GlobalState
 
   /* runtime related?*/
   bool do_reset_source;
+
+  /* this is update config related, but sadly we override it all over the place */
+  float initial_t;
 };
 
 struct vw
@@ -765,7 +768,6 @@ struct vw
 
 
   // runtime accounting variables.
-  float initial_t;
   float eta;  // learning rate control.
   float eta_decay_rate;
   time_t init_time;
