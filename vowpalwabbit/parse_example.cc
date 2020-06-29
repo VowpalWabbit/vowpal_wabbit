@@ -468,7 +468,7 @@ class TC_parser
       this->_ae = ae;
       this->_affix_features = &all.gs.affix_features;
       this->_spelling_features = &all.gs.spelling_features;
-      this->_namespace_dictionaries = &all.namespace_dictionaries;
+      this->_namespace_dictionaries = &all.gs.namespace_dictionaries;
       this->_hash_seed = all.fc.hash_seed;
       this->_parse_mask = all.gs.parse_mask;
       this->_chain_hash = all.fc.chain_hash;

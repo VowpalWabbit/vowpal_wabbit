@@ -170,7 +170,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     s.remove_prefix(2);
   }
 
-  std::string fname = find_in_path(all.dictionary_path, std::string(s));
+  std::string fname = find_in_path(all.ic.dictionary_path, std::string(s));
   if (fname == "")
     THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
@@ -193,11 +193,11 @@ void parse_dictionary_argument(vw& all, const std::string& str)
                       << std::dec << endl;
 
   // see if we've already read this dictionary
-  for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
+  for (size_t id = 0; id < all.gs.loaded_dictionaries.size(); id++)
   {
-    if (all.loaded_dictionaries[id].file_hash == fd_hash)
+    if (all.gs.loaded_dictionaries[id].file_hash == fd_hash)
     {
-      all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
+      all.gs.namespace_dictionaries[(size_t)ns].push_back(all.gs.loaded_dictionaries[id].dict);
       return;
     }
   }
@@ -289,9 +289,9 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     all.oc.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
                       << endl;
 
-  all.namespace_dictionaries[(size_t)ns].push_back(map);
+  all.gs.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = {s.to_string(), fd_hash, map};
-  all.loaded_dictionaries.push_back(info);
+  all.gs.loaded_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(vw& all, std::string str)
@@ -541,10 +541,10 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.gs.add_constant != vw2.gs.add_constant)
     return "add_constant";
 
-  if (vw1.dictionary_path.size() != vw2.dictionary_path.size())
+  if (vw1.ic.dictionary_path.size() != vw2.ic.dictionary_path.size())
     return "dictionary_path size";
 
-  if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
+  if (!std::equal(vw1.ic.dictionary_path.begin(), vw1.ic.dictionary_path.end(), vw2.ic.dictionary_path.begin()))
     return "dictionary_path";
 
   for (auto i = std::begin(vw1.gs.interactions), j = std::begin(vw2.gs.interactions); i != std::end(vw1.gs.interactions);
@@ -978,9 +978,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (options.was_supplied("dictionary_path"))
       for (const std::string & path : dictionary_path)
         if (directory_exists(path))
-          all.dictionary_path.push_back(path);
+          all.ic.dictionary_path.push_back(path);
     if (directory_exists("."))
-      all.dictionary_path.push_back(".");
+      all.ic.dictionary_path.push_back(".");
 
     const std::string PATH = getenv("PATH");
 #if _WIN32
@@ -994,11 +994,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       size_t index = PATH.find(delimiter);
       while (index != std::string::npos)
       {
-        all.dictionary_path.push_back(PATH.substr(previous, index - previous));
+        all.ic.dictionary_path.push_back(PATH.substr(previous, index - previous));
         previous = index + 1;
         index = PATH.find(delimiter, previous);
       }
-      all.dictionary_path.push_back(PATH.substr(previous));
+      all.ic.dictionary_path.push_back(PATH.substr(previous));
     }
   }
 

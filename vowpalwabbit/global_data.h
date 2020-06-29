@@ -497,6 +497,11 @@ struct InputConfig
    * related to weights
    */
   std::string per_feature_regularizer_input;
+
+  /* input, example related
+   * feature dictionary stuff, applies to the next 3
+   */
+  std::vector<std::string> dictionary_path;            // where to look for dictionaries
 };
 
 struct OutputConfig
@@ -679,6 +684,13 @@ struct GlobalState
   /* not sure how it related to oc hash_inv*/
   bool print_invert;
 
+  /* related to example/features bc namespace, this could be refactored */
+  // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
+  // use shared pointers to avoid the question of ownership
+  std::vector<dictionary_info> loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
+  // This array is required to be value initialized so that the std::vectors are constructed.
+  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
+      namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 };
 
 struct vw
@@ -719,45 +731,33 @@ struct vw
 
   void (*set_minmax)(shared_data* sd, float label);
 
+  VW::config::options_i* options;
+
+  /* output related
+   */
+  vw_logger logger;
+
   /*
    * reduction stack configuration
    */
   bool bfgs;
+
   /*
    * bfgs specific config
    */
   bool hessian_on;
-
-
-  VW::config::options_i* options;
 
   /*
    * search.cc specific config
    */
   void* /*Search::search*/ searchstr;
 
-
   /*
    * gd setting
    */
   int reg_mode;
 
-
-  /* input, example related
-   * feature dictionary stuff, applies to the next 3
-   */
-  std::vector<std::string> dictionary_path;            // where to look for dictionaries
-  // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
-  // use shared pointers to avoid the question of ownership
-  std::vector<dictionary_info> loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
-  // This array is required to be value initialized so that the std::vectors are constructed.
-  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
-      namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
-
   void (*delete_prediction)(void*);
-  /* output related
-   */
-  vw_logger logger;
 
   /* input, see active.cc
    * not sure where used
@@ -795,14 +795,7 @@ struct vw
   VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
-
-
-  // runtime accounting variables.
-
-
   parameters weights;
-
-
 
   std::map<uint64_t, std::string> index_name_map;
 
