@@ -548,9 +548,9 @@ void finalize_regressor(vw& all, std::string reg_name)
       dump_regressor(all, all.oc.per_feature_regularizer_text, true);
     else
     {
-      dump_regressor(all, all.text_regressor_name, true);
+      dump_regressor(all, all.oc.text_regressor_name, true);
       all.print_invert = true;
-      dump_regressor(all, all.inv_hash_regressor_name, true);
+      dump_regressor(all, all.oc.inv_hash_regressor_name, true);
       all.print_invert = false;
     }
   }

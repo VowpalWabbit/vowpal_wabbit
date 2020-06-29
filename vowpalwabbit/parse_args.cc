@@ -1157,10 +1157,10 @@ void parse_output_model(options_i& options, vw& all)
 {
   option_group_definition output_model_options("Output model");
   output_model_options
-      .add(make_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
-      .add(make_option("readable_model", all.text_regressor_name)
+      .add(make_option("final_regressor", all.oc.final_regressor_name).short_name("f").help("Final regressor"))
+      .add(make_option("readable_model", all.oc.text_regressor_name)
                .help("Output human-readable final regressor with numeric features"))
-      .add(make_option("invert_hash", all.inv_hash_regressor_name)
+      .add(make_option("invert_hash", all.oc.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive."))
       .add(make_option("save_resume", all.oc.save_resume)
                .help("save extra state so learning can be resumed later with new data"))
@@ -1174,8 +1174,8 @@ void parse_output_model(options_i& options, vw& all)
       .add(make_option("id", all.oc.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
-  if (all.final_regressor_name.compare("") && !all.logger.quiet)
-    all.oc.trace_message << "final_regressor = " << all.final_regressor_name << endl;
+  if (all.oc.final_regressor_name.compare("") && !all.logger.quiet)
+    all.oc.trace_message << "final_regressor = " << all.oc.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash"))
     all.hash_inv = true;
@@ -1878,7 +1878,7 @@ void finish(vw& all, bool delete_all)
   bool finalize_regressor_exception_thrown = false;
   try
   {
-    finalize_regressor(all, all.final_regressor_name);
+    finalize_regressor(all, all.oc.final_regressor_name);
   }
   catch (vw_exception& e)
   {

@@ -536,6 +536,11 @@ struct OutputConfig
   /* flag for runtime behaviour, input setting, for output
    */
   bool audit;     // should I print lots of debugging information?
+
+  std::string final_regressor_name;
+  std::string text_regressor_name;
+  std::string inv_hash_regressor_name;
+
 };
 
 struct VWRuntimeConfig
@@ -656,6 +661,8 @@ struct GlobalState
 
   /*related to updateconfig*/
   float eta;  // learning rate control.
+
+  size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 };
 
 struct vw
@@ -750,12 +757,8 @@ struct vw
   /* NOT used anymore? */
   bool nonormalize;
 
-  size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
-
+  /* lda related state for other things to know */
   uint32_t lda;
-
-  std::string text_regressor_name;
-  std::string inv_hash_regressor_name;
 
   size_t length() { return ((size_t)1) << fc.num_bits; };
 
@@ -781,7 +784,6 @@ struct vw
 
   // runtime accounting variables.
 
-  std::string final_regressor_name;
 
   parameters weights;
 

@@ -379,7 +379,7 @@ vw::vw()
   }
 
   invariant_updates = true;
-  normalized_idx = 2;
+  gs.normalized_idx = 2;
 
   gs.add_constant = true;
   oc.audit = false;

@@ -317,7 +317,7 @@ void end_pass(ftrl& g)
   if (!all.ec.holdout_set_off)
   {
     if (summarize_holdout_set(all, g.no_win_counter))
-      finalize_regressor(all, all.final_regressor_name);
+      finalize_regressor(all, all.oc.final_regressor_name);
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.gs.check_holdout_every_n_passes <= 1) || ((all.gs.current_pass % all.gs.check_holdout_every_n_passes) == 0)))
       set_done(all);

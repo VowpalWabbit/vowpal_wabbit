@@ -165,12 +165,12 @@ void end_pass(gd& g)
   }
   all.gs.eta *= all.uc.eta_decay_rate;
   if (all.oc.save_per_pass)
-    save_predictor(all, all.final_regressor_name, all.gs.current_pass);
+    save_predictor(all, all.oc.final_regressor_name, all.gs.current_pass);
 
   if (!all.ec.holdout_set_off)
   {
     if (summarize_holdout_set(all, g.no_win_counter))
-      finalize_regressor(all, all.final_regressor_name);
+      finalize_regressor(all, all.oc.final_regressor_name);
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.gs.check_holdout_every_n_passes <= 1) || ((all.gs.current_pass % all.gs.check_holdout_every_n_passes) == 0)))
       set_done(all);
@@ -1041,7 +1041,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
     uint64_t spare, uint64_t next>
 uint64_t set_learn(vw& all, gd& g)
 {
-  all.normalized_idx = normalized;
+  all.gs.normalized_idx = normalized;
   if (g.adax)
   {
     g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare>;
@@ -1062,7 +1062,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, uint64_t adaptive, uin
     uint64_t next>
 uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {
-  all.normalized_idx = normalized;
+  all.gs.normalized_idx = normalized;
   if (feature_mask_off)
     return set_learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare, next>(all, g);
   else

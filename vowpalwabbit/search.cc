@@ -2370,7 +2370,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     size_t prev_num = priv.num_calls_to_run_previous / priv.save_every_k_runs;
     size_t this_num = priv.num_calls_to_run / priv.save_every_k_runs;
     if (this_num > prev_num)
-      save_predictor(all, all.final_regressor_name, this_num);
+      save_predictor(all, all.oc.final_regressor_name, this_num);
     priv.num_calls_to_run_previous = priv.num_calls_to_run;
   }
 }

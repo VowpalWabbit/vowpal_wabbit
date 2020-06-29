@@ -304,12 +304,12 @@ void end_pass(gdmf& d)
 
   all->gs.eta *= all->uc.eta_decay_rate;
   if (all->oc.save_per_pass)
-    save_predictor(*all, all->final_regressor_name, all->gs.current_pass);
+    save_predictor(*all, all->oc.final_regressor_name, all->gs.current_pass);
 
   if (!all->ec.holdout_set_off)
   {
     if (summarize_holdout_set(*all, d.no_win_counter))
-      finalize_regressor(*all, all->final_regressor_name);
+      finalize_regressor(*all, all->oc.final_regressor_name);
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->gs.check_holdout_every_n_passes <= 1) || ((all->gs.current_pass % all->gs.check_holdout_every_n_passes) == 0)))
       set_done(*all);

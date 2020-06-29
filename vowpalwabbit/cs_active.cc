@@ -186,7 +186,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   {
     // save regressor
     std::stringstream filename;
-    filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
+    filename << cs_a.all->oc.final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
              << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
     cerr << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;

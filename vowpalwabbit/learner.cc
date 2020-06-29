@@ -56,7 +56,7 @@ void end_pass(example& ec, vw& all)
 void save(example& ec, vw& all)
 {
   // save state command
-  std::string final_regressor_name = all.final_regressor_name;
+  std::string final_regressor_name = all.oc.final_regressor_name;
 
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);

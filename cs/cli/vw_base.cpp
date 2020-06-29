@@ -223,7 +223,7 @@ void VowpalWabbitBase::ID::set(String^ value)
 }
 
 void VowpalWabbitBase::SaveModel()
-{ std::string name = m_vw->final_regressor_name;
+{ std::string name = m_vw->oc.final_regressor_name;
   if (name.empty())
   { return;
   }

@@ -101,8 +101,8 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
       local_weights[i] = weight[0] * ratio;
       weight[0] *= ratio;
       weight[1] *= ratio;  // A crude max
-      if (all.normalized_idx > 0)
-        weight[all.normalized_idx] *= ratio;  // A crude max
+      if (all.gs.normalized_idx > 0)
+        weight[all.gs.normalized_idx] *= ratio;  // A crude max
     }
     else
     {

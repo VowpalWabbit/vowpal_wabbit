@@ -342,7 +342,7 @@ VW_DLL_PUBLIC size_t VW_CALLING_CONV VW_Get_Stride(VW_HANDLE handle)
 VW_DLL_PUBLIC void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle)
 { vw* pointer = static_cast<vw*>(handle);
 
-  string name = pointer->final_regressor_name;
+  string name = pointer->oc.final_regressor_name;
   if (name.empty())
   { return;
   }

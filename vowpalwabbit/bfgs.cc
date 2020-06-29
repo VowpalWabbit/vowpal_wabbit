@@ -848,7 +848,7 @@ int process_pass(vw& all, bfgs& b)
   b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
 
   if (all.oc.save_per_pass)
-    save_predictor(all, all.final_regressor_name, b.current_pass);
+    save_predictor(all, all.oc.final_regressor_name, b.current_pass);
   return status;
 }
 
@@ -927,7 +927,7 @@ void end_pass(bfgs& b)
       if (!all->ec.holdout_set_off)
       {
         if (summarize_holdout_set(*all, b.no_win_counter))
-          finalize_regressor(*all, all->final_regressor_name);
+          finalize_regressor(*all, all->oc.final_regressor_name);
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
@@ -936,7 +936,7 @@ void end_pass(bfgs& b)
       }
       if (b.final_pass == b.current_pass)
       {
-        finalize_regressor(*all, all->final_regressor_name);
+        finalize_regressor(*all, all->oc.final_regressor_name);
         set_done(*all);
       }
     }
