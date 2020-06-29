@@ -105,7 +105,7 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
   all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass,
       sv_label.empty() ? "unknown" : sv_label.to_string(),
       sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features,
-      all.progress_add, all.progress_arg);
+      all.oc.progress_add, all.oc.progress_arg);
 }
 
 void print_probability(vw& all, example& ec, uint32_t prediction)
@@ -118,7 +118,7 @@ void print_probability(vw& all, example& ec, uint32_t prediction)
   label_ss << ec.l.multi.label;
 
   all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
-      all.progress_add, all.progress_arg);
+      all.oc.progress_add, all.oc.progress_arg);
 }
 
 void print_score(vw& all, example& ec, uint32_t prediction)
@@ -130,13 +130,13 @@ void print_score(vw& all, example& ec, uint32_t prediction)
   label_ss << ec.l.multi.label;
 
   all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
-      all.progress_add, all.progress_arg);
+      all.oc.progress_add, all.oc.progress_arg);
 }
 
 void direct_print_update(vw& all, example& ec, uint32_t prediction)
 {
   all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass, ec.l.multi.label, prediction, ec.num_features,
-      all.progress_add, all.progress_arg);
+      all.oc.progress_add, all.oc.progress_arg);
 }
 
 template <void (*T)(vw&, example&, uint32_t)>

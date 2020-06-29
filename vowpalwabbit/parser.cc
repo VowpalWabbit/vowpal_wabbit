@@ -536,7 +536,7 @@ IGNORE_DEPRECATED_USAGE_END
           adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp)
                                           : VW::io::open_file_reader(temp);
         }
-        else if (!all.stdin_off)
+        else if (!all.ic.stdin_off)
         {
           // Should try and use stdin
           if (should_use_compressed)
@@ -571,7 +571,7 @@ IGNORE_DEPRECATED_USAGE_END
       {
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
-        if (all.oc.audit || all.hash_inv)
+        if (all.oc.audit || all.oc.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
           all.p->text_reader = &line_to_examples_json<true>;
@@ -814,7 +814,7 @@ void add_constant_feature(vw& vw, example* ec)
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
-  if (vw.oc.audit || vw.hash_inv)
+  if (vw.oc.audit || vw.oc.hash_inv)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
 }
 

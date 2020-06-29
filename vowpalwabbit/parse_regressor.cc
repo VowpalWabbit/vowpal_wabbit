@@ -549,9 +549,9 @@ void finalize_regressor(vw& all, std::string reg_name)
     else
     {
       dump_regressor(all, all.oc.text_regressor_name, true);
-      all.print_invert = true;
+      all.gs.print_invert = true;
       dump_regressor(all, all.oc.inv_hash_regressor_name, true);
-      all.print_invert = false;
+      all.gs.print_invert = false;
     }
   }
 }

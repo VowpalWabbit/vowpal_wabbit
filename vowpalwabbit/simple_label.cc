@@ -117,7 +117,7 @@ void print_update(vw& all, example& ec)
       !all.logger.quiet && !all.bfgs)
   {
     all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
-        all.progress_add, all.progress_arg);
+        all.oc.progress_add, all.oc.progress_arg);
   }
 }
 

@@ -452,6 +452,8 @@ struct FeatureConfig
 
 struct ExampleConfig
 {
+  size_t max_examples;  // for TLC
+
   /*
    * runtime behaviour setting
    */
@@ -469,6 +471,8 @@ struct ExampleConfig
 
 struct InputConfig
 {
+  bool stdin_off;
+
   /*
    * Set once on; on parse_args
    * Input file
@@ -540,6 +544,14 @@ struct OutputConfig
   std::string final_regressor_name;
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
+
+  bool hash_inv;
+
+  /*this could be state, but we can clean up impl
+   * def a code smell, we keep passing them along */
+  // Set by --progress <arg>
+  bool progress_add;   // additive (rather than multiplicative) progress dumps
+  float progress_arg;  // next update progress dump multiplier
 
 };
 
@@ -663,6 +675,10 @@ struct GlobalState
   float eta;  // learning rate control.
 
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
+
+  /* not sure how it related to oc hash_inv*/
+  bool print_invert;
+
 };
 
 struct vw
@@ -779,7 +795,6 @@ struct vw
   VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
-  bool stdin_off;
 
 
   // runtime accounting variables.
@@ -787,14 +802,7 @@ struct vw
 
   parameters weights;
 
-  size_t max_examples;  // for TLC
 
-  bool hash_inv;
-  bool print_invert;
-
-  // Set by --progress <arg>
-  bool progress_add;   // additive (rather than multiplicative) progress dumps
-  float progress_arg;  // next update progress dump multiplier
 
   std::map<uint64_t, std::string> index_name_map;
 

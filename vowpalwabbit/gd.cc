@@ -252,7 +252,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     dat.results.push_back(sv);
   }
 
-  if ((dat.all.gs.current_pass == 0 || dat.all.gs.training == false) && dat.all.hash_inv)
+  if ((dat.all.gs.current_pass == 0 || dat.all.gs.training == false) && dat.all.oc.hash_inv)
   {
     // for invert_hash
 
@@ -701,7 +701,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 {
   size_t brw = 1;
 
-  if (all.print_invert)  // write readable model with feature names
+  if (all.gs.print_invert)  // write readable model with feature names
   {
     std::stringstream msg;
 
@@ -1213,7 +1213,7 @@ base_learner* setup(options_i& options, vw& all)
                       << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)
-    if (all.oc.audit || all.hash_inv)
+    if (all.oc.audit || all.oc.hash_inv)
     {
       g->predict = predict<true, true>;
       g->multipredict = multipredict<true, true>;
@@ -1223,7 +1223,7 @@ base_learner* setup(options_i& options, vw& all)
       g->predict = predict<true, false>;
       g->multipredict = multipredict<true, false>;
     }
-  else if (all.oc.audit || all.hash_inv)
+  else if (all.oc.audit || all.oc.hash_inv)
   {
     g->predict = predict<false, true>;
     g->multipredict = multipredict<false, true>;

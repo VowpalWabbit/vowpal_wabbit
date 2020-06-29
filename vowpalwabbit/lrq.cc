@@ -112,7 +112,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 
               right_fs.push_back(scale * *lw * lfx * rfx, rwindex);
 
-              if (all.oc.audit || all.hash_inv)
+              if (all.oc.audit || all.oc.hash_inv)
               {
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << right_fs.space_names[rfn].get()->second << '^' << n;

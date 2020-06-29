@@ -389,21 +389,21 @@ vw::vw()
 
   oc.save_per_pass = false;
 
-  stdin_off = false;
+  ic.stdin_off = false;
   gs.do_reset_source = false;
   ec.holdout_set_off = true;
   ec.holdout_after = 0;
   gs.check_holdout_every_n_passes = 1;
   gs.early_terminate = false;
 
-  max_examples = std::numeric_limits<size_t>::max();
+  ec.max_examples = std::numeric_limits<size_t>::max();
 
-  hash_inv = false;
-  print_invert = false;
+  oc.hash_inv = false;
+  gs.print_invert = false;
 
   // Set by the '--progress <arg>' option and affect sd->dump_interval
-  progress_add = false;  // default is multiplicative progress dumps
-  progress_arg = 2.0;    // next update progress dump multiplier
+  oc.progress_add = false;  // default is multiplicative progress dumps
+  oc.progress_arg = 2.0;    // next update progress dump multiplier
 
   sd->is_more_than_two_labels_observed = false;
   sd->first_observed_label = FLT_MAX;

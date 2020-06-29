@@ -604,7 +604,7 @@ void print_update(search_private& priv)
 
   fprintf(stderr, "\n");
   fflush(stderr);
-  all.sd->update_dump_interval(all.progress_add, all.progress_arg);
+  all.sd->update_dump_interval(all.oc.progress_add, all.oc.progress_arg);
 }
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)

@@ -855,7 +855,7 @@ void return_example(vw &all, example &ec)
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
     all.sd->print_update(
-        all.ec.holdout_set_off, all.gs.current_pass, "none", 0, ec.num_features, all.progress_add, all.progress_arg);
+        all.ec.holdout_set_off, all.gs.current_pass, "none", 0, ec.num_features, all.oc.progress_add, all.oc.progress_arg);
   VW::finish_example(all, ec);
 }
 

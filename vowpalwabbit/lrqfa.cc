@@ -82,7 +82,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               uint64_t rwindex = (rindex + ((uint64_t)(lfd_id * k + n) << stride_shift));
 
               rfs.push_back(*lw * lfx * rfx, rwindex);
-              if (all.oc.audit || all.hash_inv)
+              if (all.oc.audit || all.oc.hash_inv)
               {
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << rfs.space_names[rfn].get()->second << '^' << n;
@@ -124,7 +124,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
       features& rfs = ec.feature_space[right];
       rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
 
-      if (all.oc.audit || all.hash_inv)
+      if (all.oc.audit || all.oc.hash_inv)
       {
         for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j) rfs.space_names[j].~audit_strings_ptr();
 

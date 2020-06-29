@@ -379,32 +379,32 @@ void parse_diagnostics(options_i& options, vw& all)
 
   if (options.was_supplied("progress") && !all.logger.quiet)
   {
-    all.progress_arg = (float)::atof(progress_arg.c_str());
+    all.oc.progress_arg = (float)::atof(progress_arg.c_str());
     // --progress interval is dual: either integer or floating-point
     if (progress_arg.find_first_of(".") == std::string::npos)
     {
       // No "." in arg: assume integer -> additive
-      all.progress_add = true;
-      if (all.progress_arg < 1)
+      all.oc.progress_add = true;
+      if (all.oc.progress_arg < 1)
       {
         all.oc.trace_message << "warning: additive --progress <int>"
                           << " can't be < 1: forcing to 1" << endl;
-        all.progress_arg = 1;
+        all.oc.progress_arg = 1;
       }
-      all.sd->dump_interval = all.progress_arg;
+      all.sd->dump_interval = all.oc.progress_arg;
     }
     else
     {
       // A "." in arg: assume floating-point -> multiplicative
-      all.progress_add = false;
+      all.oc.progress_add = false;
 
-      if (all.progress_arg <= 1.0)
+      if (all.oc.progress_arg <= 1.0)
       {
         all.oc.trace_message << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
                           << endl;
-        all.progress_arg += 1.0;
+        all.oc.progress_arg += 1.0;
       }
-      else if (all.progress_arg > 9.0)
+      else if (all.oc.progress_arg > 9.0)
       {
         all.oc.trace_message << "warning: multiplicative --progress <float>"
                           << " is > 9.0: you probably meant to use an integer" << endl;
@@ -439,7 +439,7 @@ input_options parse_source(vw& all, options_i& options)
               .help(
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
-      .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
+      .add(make_option("no_stdin", all.ic.stdin_off).help("do not default to reading from stdin"))
       .add(make_option("no_daemon", all.rc.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
                .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
@@ -1027,7 +1027,7 @@ void parse_example_tweaks(options_i& options, vw& all)
                   "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
       .add(make_option("passes", all.ec.numpasses).help("Number of Training Passes"))
       .add(make_option("initial_pass_length", all.ec.pass_length).help("initial number of examples per pass"))
-      .add(make_option("examples", all.max_examples).help("number of examples to parse"))
+      .add(make_option("examples", all.ec.max_examples).help("number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
       .add(make_option("sort_features", all.p->sort_features)
@@ -1178,7 +1178,7 @@ void parse_output_model(options_i& options, vw& all)
     all.oc.trace_message << "final_regressor = " << all.oc.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash"))
-    all.hash_inv = true;
+    all.oc.hash_inv = true;
 
   // Question: This doesn't seem necessary
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())

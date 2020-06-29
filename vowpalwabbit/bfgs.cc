@@ -1153,7 +1153,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
     learn_ptr = learn<false>;
 
   learner<bfgs, example>* l;
-  if (all.oc.audit || all.hash_inv)
+  if (all.oc.audit || all.oc.hash_inv)
     l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride());
   else
     l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride());
