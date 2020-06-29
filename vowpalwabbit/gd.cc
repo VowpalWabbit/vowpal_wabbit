@@ -163,7 +163,7 @@ void end_pass(gd& g)
     else
       accumulate_avg(all, all.weights, 0);
   }
-  all.eta *= all.eta_decay_rate;
+  all.gs.eta *= all.uc.eta_decay_rate;
   if (all.oc.save_per_pass)
     save_predictor(all, all.final_regressor_name, all.gs.current_pass);
 
@@ -581,7 +581,7 @@ float sensitivity(gd& g, example& ec)
 template <size_t adaptive>
 float get_scale(gd& g, example& /* ec */, float weight)
 {
-  float update_scale = g.all->eta * weight;
+  float update_scale = g.all->gs.eta * weight;
   if (!adaptive)
   {
     float t =
@@ -1178,7 +1178,7 @@ base_learner* setup(options_i& options, vw& all)
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
         !(all.weights.adaptive && all.weights.normalized))
-      all.eta = 10;  // default learning rate to 10 for non default update rule
+      all.gs.eta = 10;  // default learning rate to 10 for non default update rule
 
     // if not using normalized or adaptive, default initial_t to 1 instead of 0
     if (!all.weights.adaptive && !all.weights.normalized)
@@ -1188,7 +1188,7 @@ base_learner* setup(options_i& options, vw& all)
         all.sd->t = 1.f;
         all.gs.initial_t = 1.f;
       }
-      all.eta *= powf((float)(all.sd->t), all.uc.power_t);
+      all.gs.eta *= powf((float)(all.sd->t), all.uc.power_t);
     }
   }
   else
@@ -1207,9 +1207,9 @@ base_learner* setup(options_i& options, vw& all)
   if (g->adax && !all.weights.adaptive)
     THROW("Cannot use adax without adaptive");
 
-  if (pow((double)all.eta_decay_rate, (double)all.ec.numpasses) < 0.0001)
+  if (pow((double)all.uc.eta_decay_rate, (double)all.ec.numpasses) < 0.0001)
     all.oc.trace_message << "Warning: the learning rate for the last pass is multiplied by: "
-                      << pow((double)all.eta_decay_rate, (double)all.ec.numpasses)
+                      << pow((double)all.uc.eta_decay_rate, (double)all.ec.numpasses)
                       << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)

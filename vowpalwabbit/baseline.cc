@@ -142,9 +142,9 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
         if (multiplier > max_multiplier)
           multiplier = max_multiplier;
       }
-      data.all->eta *= multiplier;
+      data.all->gs.eta *= multiplier;
       base.learn(*data.ec);
-      data.all->eta /= multiplier;
+      data.all->gs.eta /= multiplier;
     }
     else
       base.learn(*data.ec);

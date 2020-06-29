@@ -338,7 +338,7 @@ vw::vw()
   set_minmax = set_mm;
 
   uc.power_t = 0.5;
-  eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
+  gs.eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
               // updates (see parse_args.cc)
   ec.numpasses = 1;
 
@@ -363,7 +363,7 @@ vw::vw()
   uc.l1_lambda = 0.0;
   uc.l2_lambda = 0.0;
 
-  eta_decay_rate = 1.0;
+  uc.eta_decay_rate = 1.0;
   wc.initial_weight = 0.0;
   wc.initial_constant = 0.0;
 

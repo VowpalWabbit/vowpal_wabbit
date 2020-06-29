@@ -1049,13 +1049,13 @@ void parse_example_tweaks(options_i& options, vw& all)
                      "labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
 
-  if (test_only || all.eta == 0.)
+  if (test_only || all.gs.eta == 0.)
   {
     if (!all.logger.quiet)
       all.oc.trace_message << "only testing" << endl;
     all.gs.training = false;
     if (all.lda > 0)
-      all.eta = 0;
+      all.gs.eta = 0;
   }
   else
     all.gs.training = true;
@@ -1312,7 +1312,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
   try
   {
-    time(&all.init_time);
+    time(&all.gs.init_time);
 
     bool strict_parse = false;
     int ring_size_tmp;
@@ -1331,9 +1331,9 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     all.p->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");
-    update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
+    update_args.add(make_option("learning_rate", all.gs.eta).help("Set learning rate").short_name("l"))
         .add(make_option("power_t", all.uc.power_t).help("t power value"))
-        .add(make_option("decay_learning_rate", all.eta_decay_rate)
+        .add(make_option("decay_learning_rate", all.uc.eta_decay_rate)
                  .help("Set Decay factor for learning_rate between passes"))
         .add(make_option("initial_t", all.sd->t).help("initial t value"))
         .add(make_option("feature_mask", all.ic.feature_mask)
@@ -1541,11 +1541,11 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
   if (!all.logger.quiet)
   {
     all.oc.trace_message << "Num weight bits = " << all.fc.num_bits << endl;
-    all.oc.trace_message << "learning rate = " << all.eta << endl;
+    all.oc.trace_message << "learning rate = " << all.gs.eta << endl;
     all.oc.trace_message << "initial_t = " << all.sd->t << endl;
     all.oc.trace_message << "power_t = " << all.uc.power_t << endl;
     if (all.ec.numpasses > 1)
-      all.oc.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      all.oc.trace_message << "decay_learning_rate = " << all.uc.eta_decay_rate << endl;
   }
 }
 

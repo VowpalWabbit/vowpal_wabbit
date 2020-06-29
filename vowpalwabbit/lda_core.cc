@@ -914,7 +914,7 @@ void learn_batch(lda &l)
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
-  eta = l.all->eta * l.powf((float)l.example_t, -l.all->uc.power_t);
+  eta = l.all->gs.eta * l.powf((float)l.example_t, -l.all->uc.power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
   l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
@@ -1371,10 +1371,10 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   all.wc.random_weights = true;
   all.gs.add_constant = false;
 
-  if (all.eta > 1.)
+  if (all.gs.eta > 1.)
   {
     std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
-    all.eta = std::min(all.eta, 1.f);
+    all.gs.eta = std::min(all.gs.eta, 1.f);
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);

@@ -193,7 +193,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-  float eta_t = all.eta / powf((float)all.sd->t + ec.weight, (float)all.uc.power_t) / 3.f * ec.weight;
+  float eta_t = all.gs.eta / powf((float)all.sd->t + ec.weight, (float)all.uc.power_t) / 3.f * ec.weight;
   float update = all.loss->getUpdate(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
   float regularization = eta_t * all.uc.l2_lambda;
@@ -302,7 +302,7 @@ void end_pass(gdmf& d)
 {
   vw* all = d.all;
 
-  all->eta *= all->eta_decay_rate;
+  all->gs.eta *= all->uc.eta_decay_rate;
   if (all->oc.save_per_pass)
     save_predictor(*all, all->final_regressor_name, all->gs.current_pass);
 
@@ -370,7 +370,7 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   }
 
   if (!options.was_supplied("learning_rate") && !options.was_supplied("l"))
-    all.eta = 10;  // default learning rate to 10 for non default update rule
+    all.gs.eta = 10;  // default learning rate to 10 for non default update rule
 
   // default initial_t to 1 instead of 0
   if (!options.was_supplied("initial_t"))
@@ -378,7 +378,7 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
     all.sd->t = 1.f;
     all.gs.initial_t = 1.f;
   }
-  all.eta *= powf((float)(all.sd->t), all.uc.power_t);
+  all.gs.eta *= powf((float)(all.sd->t), all.uc.power_t);
 
   learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
   l.set_save_load(save_load);

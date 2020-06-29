@@ -396,6 +396,8 @@ struct UpdateConfig
    */
   bool no_bias;     // no bias in regularization
 
+
+  float eta_decay_rate;
 };
 
 struct FeatureConfig
@@ -566,6 +568,8 @@ struct VWRuntimeConfig
 
 struct GlobalState
 {
+  time_t init_time;
+
   /*
    * Should be part of learner?
    * not input, used as state
@@ -650,6 +654,8 @@ struct GlobalState
   /* related to exampleconfig */
   bool early_terminate;
 
+  /*related to updateconfig*/
+  float eta;  // learning rate control.
 };
 
 struct vw
@@ -774,9 +780,6 @@ struct vw
 
 
   // runtime accounting variables.
-  float eta;  // learning rate control.
-  float eta_decay_rate;
-  time_t init_time;
 
   std::string final_regressor_name;
 
