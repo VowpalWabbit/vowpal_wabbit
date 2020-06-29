@@ -6,9 +6,7 @@
 #include "debug_log.h"
 #include <cassert>
 #include <explore_internal.h>
-
 #include "hash.h"
-
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -168,7 +166,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       base.predict(ec, cur_node.id);
       VW_DBG(_dd) << "otree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
                   << ", nodeid = " << cur_node.id << std::endl;
-      if (ec.pred.scalar < 0)  // TODO: check
+      if (ec.pred.scalar < 0)
       {
         cur_node = nodes[cur_node.left_id];
       }
@@ -202,7 +200,6 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
 
 constexpr float RIGHT = 1.0f;
 constexpr float LEFT = -1.0f;
-
 
 float cats_tree::return_cost(const tree_node& w)
 {
@@ -257,10 +254,10 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
       {
         VW_DBG(_dd) << "otree_c: learn() cost_w = " << cost_w << ", cost_v != cost_w" << std::endl;
         float local_action = RIGHT;
-        if (((cost_v < cost_w) ? v : w).id == v_parent.left_id)  ////
+        if (((cost_v < cost_w) ? v : w).id == v_parent.left_id)
           local_action = LEFT;
 
-        ec.l.simple.label = local_action;  // TODO:scalar label type
+        ec.l.simple.label = local_action;
         ec.l.simple.initial = 0.f;
         ec.weight = abs(cost_v - cost_w);
 
@@ -334,7 +331,7 @@ void predict(cats_tree& ot, single_learner& base, example& ec)
 {
   VW_DBG(ec) << "otree_c: before tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec)
              << std::endl;
-  ec.pred.multiclass = ot.predict(base, ec);  // TODO: check: making the prediction zero-based?
+  ec.pred.multiclass = ot.predict(base, ec);
   VW_DBG(ec) << "otree_c: after tree.predict() " << multiclass_pred_to_string(ec) << features_to_string(ec)
              << std::endl;
 }
@@ -352,19 +349,19 @@ base_learner* setup(options_i& options, vw& all)
   uint32_t num_actions; // = K = 2^D
   uint32_t bandwidth; // = 2^h#
   uint32_t scorer_flag;
-  new_options.add(make_option("cats_tree", num_actions).keep().help("CATS Tree with <k> labels")) // TODO: D or K
+  new_options.add(make_option("cats_tree", num_actions).keep().help("CATS Tree with <k> labels"))
       .add(make_option("scorer_option", scorer_flag)
                .default_value(0)
                .keep()
-               .help("CATS Tree reduction to scorer [-1, 1] versus binary -1/+1"))  // TODO: oct
+               .help("CATS Tree reduction to scorer [-1, 1] versus binary -1/+1"))
       .add(make_option("bandwidth", bandwidth)
                .default_value(0)
                .keep()
-               .help("bandwidth for continuous actions in terms of #actions"));  // TODO: h# or 2^h#
+               .help("bandwidth for continuous actions in terms of #actions"));
 
   options.add_and_parse(new_options);
 
-  if (!options.was_supplied("cats_tree"))  // todo: if num_actions = 0 throw error
+  if (!options.was_supplied("cats_tree"))
     return nullptr;
 
   if (scorer_flag)
@@ -382,11 +379,8 @@ base_learner* setup(options_i& options, vw& all)
 
   base_learner* base = setup_base(options, all);
 
-  // all.delete_prediction = ACTION_SCORE::delete_action_scores; //TODO: commented
-
   learner<cats_tree, example>& l =
       init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type_t::multiclass);
-  // TODO: changed to prediction_type::multiclass
 
   return make_base(l);
 }
