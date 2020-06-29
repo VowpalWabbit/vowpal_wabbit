@@ -56,7 +56,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cats_tree_tests.h" />
     <ClInclude Include="test_common.h" />
   </ItemGroup>
   <ItemGroup>

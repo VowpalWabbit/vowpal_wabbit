@@ -7,6 +7,7 @@ using namespace VW::LEARNER;
 using namespace std;
 
 namespace VW{ namespace offset_tree {
+
   std::ostream& operator<<(std::ostream& os, const tree_node& node) {
     os << "{" << node.id << "," << node.left_id << "," << node.right_id << ", " << node.parent_id << ", "
        << (node.is_leaf ? "true" : "false")
@@ -15,42 +16,42 @@ namespace VW{ namespace offset_tree {
   }
 
 
-struct reduction_test_harness {
-  reduction_test_harness():
-  _curr_idx(0){}
+  struct reduction_test_harness {
+    reduction_test_harness():
+    _curr_idx(0){}
 
-  void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
+    void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(single_learner& base, example& ec) {
-    ec.pred.a_s.clear();
-    const auto curr_pred = _predictions[_curr_idx++];
-    ec.pred.a_s.push_back(ACTION_SCORE::action_score{ 0,curr_pred.first});
-    ec.pred.a_s.push_back(ACTION_SCORE::action_score{ 1,curr_pred.second});
-  }
+    void test_predict(single_learner& base, example& ec) {
+      ec.pred.a_s.clear();
+      const auto curr_pred = _predictions[_curr_idx++];
+      ec.pred.a_s.push_back(ACTION_SCORE::action_score{ 0,curr_pred.first});
+      ec.pred.a_s.push_back(ACTION_SCORE::action_score{ 1,curr_pred.second});
+    }
 
-  void test_learn(single_learner& base, example& ec) {
-    // do nothing
-  }
+    void test_learn(single_learner& base, example& ec) {
+      // do nothing
+    }
 
-  static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec) {
-    test_reduction.test_predict(base,ec);
-  }
+    static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec) {
+      test_reduction.test_predict(base,ec);
+    }
 
-  static void learn(reduction_test_harness& test_reduction, single_learner& base, example& ec) {
-    test_reduction.test_learn(base,ec);
+    static void learn(reduction_test_harness& test_reduction, single_learner& base, example& ec) {
+      test_reduction.test_learn(base,ec);
+    };
+  private:
+    vector<pair<float, float>> _predictions;
+    int _curr_idx;
   };
-private:
-  vector<pair<float, float>> _predictions;
-  int _curr_idx;
-};
 
-using test_learner_t = learner<reduction_test_harness, example>;
-using predictions_t = vector<pair<float, float>>;
-using scores_t = std::vector<float>;
+  using test_learner_t = learner<reduction_test_harness, example>;
+  using predictions_t = vector<pair<float, float>>;
+  using scores_t = std::vector<float>;
 
-void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores);
-test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions);
-}}
+  void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores);
+  test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions);
+}} // namespace
 
 
 BOOST_AUTO_TEST_CASE(offset_tree_learn_basic){
@@ -171,37 +172,33 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_too_big) {
 }
 
 
-namespace VW
-{
-namespace offset_tree
-{
-test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
-{
-  // Setup a test harness base reduction
-  auto test_harness = scoped_calloc_or_throw<reduction_test_harness>();
-  test_harness->set_predict_response(base_reduction_predictions);
-  auto& test_learner =
-      init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
-          reduction_test_harness::learn,  // test_harness learn
-          reduction_test_harness::predict,  // test_harness predict
-          1                                 // Number of regressors in test_harness (not used)
-      );                                    // Create a learner using the base reduction.
-  return &test_learner;
-}
+namespace VW { namespace offset_tree {
 
-void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores)
-{
-  const auto test_base = get_test_harness_reduction(base_reduction_predictions);
-  VW::offset_tree::offset_tree tree;
-  tree.init(expected_scores.size());
-  example ec;
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-  ec.l.cb.costs = v_init<CB::cb_class>();
-  auto& ret_val = tree.predict(*as_singleline(test_base), ec);
-  BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
-  destroy_free<test_learner_t>(test_base);
+  test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+  {
+    // Setup a test harness base reduction
+    auto test_harness = scoped_calloc_or_throw<reduction_test_harness>();
+    test_harness->set_predict_response(base_reduction_predictions);
+    auto& test_learner =
+        init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
+            reduction_test_harness::learn,  // test_harness learn
+            reduction_test_harness::predict,  // test_harness predict
+            1                                 // Number of regressors in test_harness (not used)
+        );                                    // Create a learner using the base reduction.
+    return &test_learner;
+  }
 
-}
-}
+  void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores)
+  {
+    const auto test_base = get_test_harness_reduction(base_reduction_predictions);
+    VW::offset_tree::offset_tree tree;
+    tree.init(expected_scores.size());
+    example ec;
+    ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
+    ec.l.cb.costs = v_init<CB::cb_class>();
+    auto& ret_val = tree.predict(*as_singleline(test_base), ec);
+    BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
+    destroy_free<test_learner_t>(test_base);
+  }
 
-}
+}} // namespace
