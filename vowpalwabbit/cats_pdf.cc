@@ -1,3 +1,12 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+// Notes:
+// This reduction exists to be invoked as a top level reduction that
+// can ouput pdf related to cats_tree
+// It can also parse a continuous labeled example.
+
 #include "cats_pdf.h"
 #include "parse_args.h"
 #include "err_constants.h"
@@ -28,18 +37,17 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   // BEGIN cats_pdf reduction and reduction methods
   struct cats_pdf
   {
+    cats_pdf(single_learner* p_base);
+
     int learn(example& ec, api_status* status);
     int predict(example& ec, api_status* status);
-
-    // TODO: replace with constructor after merge with master
-    void init(single_learner* p_base);
 
    private:
     single_learner* _base = nullptr;
   };
 
   // Pass through
-  int cats_pdf::predict(example& ec, api_status* status = nullptr)
+  int cats_pdf::predict(example& ec, api_status*)
   {
     VW_DBG(ec) << "cats_pdf::predict(), " << features_to_string(ec) << endl;
     _base->predict(ec);
@@ -47,7 +55,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   }
 
   // Pass through
-  int cats_pdf::learn(example& ec, api_status* status = nullptr)
+  int cats_pdf::learn(example& ec, api_status* status)
   {
     assert(!ec.test_only);
     predict(ec, status);
@@ -56,7 +64,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     return error_code::success;
   }
 
-  void cats_pdf::init(single_learner* p_base) { _base = p_base; }
+  cats_pdf::cats_pdf(single_learner* p_base) : _base(p_base) {}
 
   // Free function to tie function pointers to reduction class methods
   template <bool is_learn>
@@ -167,8 +175,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
       THROW(error_code::options_disagree_s);
 
     LEARNER::base_learner* p_base = setup_base(options, all);
-    auto p_reduction = scoped_calloc_or_throw<cats_pdf>();
-    p_reduction->init(as_singleline(p_base));
+    auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base));
 
     LEARNER::learner<cats_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
         predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
@@ -179,6 +186,4 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
 
     return make_base(l);
   }
-}
-}
-}  // namespace VW
+}}}  // namespace VW
