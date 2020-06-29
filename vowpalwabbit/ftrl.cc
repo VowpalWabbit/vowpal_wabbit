@@ -314,12 +314,12 @@ void end_pass(ftrl& g)
 {
   vw& all = *g.all;
 
-  if (!all.holdout_set_off)
+  if (!all.ec.holdout_set_off)
   {
     if (summarize_holdout_set(all, g.no_win_counter))
       finalize_regressor(all, all.final_regressor_name);
     if ((g.early_stop_thres == g.no_win_counter) &&
-        ((all.check_holdout_every_n_passes <= 1) || ((all.gs.current_pass % all.check_holdout_every_n_passes) == 0)))
+        ((all.gs.check_holdout_every_n_passes <= 1) || ((all.gs.current_pass % all.gs.check_holdout_every_n_passes) == 0)))
       set_done(all);
   }
 }
@@ -407,7 +407,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
-  if (!all.holdout_set_off)
+  if (!all.ec.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();

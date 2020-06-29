@@ -700,7 +700,7 @@ int process_pass(vw& all, bfgs& b)
       b.loss_sum += add_regularization(all, b, all.uc.l2_lambda);
     if (!all.logger.quiet)
     {
-      if (!all.holdout_set_off && b.current_pass >= 1)
+      if (!all.ec.holdout_set_off && b.current_pass >= 1)
       {
         if (all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.)
         {
@@ -924,7 +924,7 @@ void end_pass(bfgs& b)
         // Reset preconditioner to zero so that it is correctly recomputed in the next pass
         zero_preconditioner(*all);
       }
-      if (!all->holdout_set_off)
+      if (!all->ec.holdout_set_off)
       {
         if (summarize_holdout_set(*all, b.no_win_counter))
           finalize_regressor(*all, all->final_regressor_name);
@@ -1119,7 +1119,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   b->final_pass = all.ec.numpasses;
   b->no_win_counter = 0;
 
-  if (!all.holdout_set_off)
+  if (!all.ec.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();

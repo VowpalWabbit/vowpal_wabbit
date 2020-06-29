@@ -497,7 +497,7 @@ bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
       //     OR it's a test example
       ((!all.logger.quiet || !all.rc.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
-          (all.holdout_set_off ||                          // no holdout
+          (all.ec.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.gs.current_pass == 0)  // we need error rates for progressive cost
               ));
 }
@@ -566,7 +566,7 @@ void print_update(search_private& priv)
 
   float avg_loss = 0.;
   float avg_loss_since = 0.;
-  bool use_heldout_loss = (!all.holdout_set_off && all.gs.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
+  bool use_heldout_loss = (!all.ec.holdout_set_off && all.gs.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
   if (use_heldout_loss)
   {
     avg_loss = safediv((float)all.sd->holdout_sum_loss, (float)all.sd->weighted_holdout_examples);
@@ -2929,7 +2929,7 @@ base_learner* setup(options_i& options, vw& all)
   handle_condition_options(all, priv.acset);
 
   if (!priv.allow_current_policy)  // if we're not dagger
-    all.check_holdout_every_n_passes = priv.passes_per_policy;
+    all.gs.check_holdout_every_n_passes = priv.passes_per_policy;
 
   all.searchstr = sch.get();
 

@@ -613,7 +613,7 @@ void lock_done(parser& p)
 
 void set_done(vw& all)
 {
-  all.early_terminate = true;
+  all.ec.early_terminate = true;
   lock_done(*all.p);
 }
 
@@ -731,8 +731,8 @@ void setup_example(vw& all, example* ae)
     all.p->in_pass_counter++;
 
   // Determine if this example is part of the holdout set.
-  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
-      all.p->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
+  ae->test_only = is_test_only(all.p->in_pass_counter, all.ec.holdout_period, all.ec.holdout_after, all.ec.holdout_set_off,
+      all.p->emptylines_separate_examples ? (all.ec.holdout_period - 1) : 0);
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.p->lp.test_label(&ae->l);
 

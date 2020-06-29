@@ -459,6 +459,12 @@ struct ExampleConfig
    */
   size_t numpasses;
 
+  bool holdout_set_off;
+
+  bool early_terminate;
+
+  uint32_t holdout_period;
+  uint32_t holdout_after;
 };
 
 struct InputConfig
@@ -557,6 +563,7 @@ struct VWRuntimeConfig
   uint64_t random_seed;
 
   bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
+
 };
 
 struct GlobalState
@@ -637,6 +644,11 @@ struct GlobalState
 
   /* this is update config related, but sadly we override it all over the place */
   float initial_t;
+
+  /* this could be a config */
+  size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
+                                        // passes learning a single policy
+
 };
 
 struct vw
@@ -730,13 +742,6 @@ struct vw
 
   /* NOT used anymore? */
   bool nonormalize;
-
-  bool holdout_set_off;
-  bool early_terminate;
-  uint32_t holdout_period;
-  uint32_t holdout_after;
-  size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
-                                        // passes learning a single policy
 
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 

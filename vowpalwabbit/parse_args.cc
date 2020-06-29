@@ -475,11 +475,11 @@ input_options parse_source(vw& all, options_i& options)
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
 
-  if (!all.holdout_set_off &&
+  if (!all.ec.holdout_set_off &&
       (options.was_supplied("output_feature_regularizer_binary") ||
           options.was_supplied("output_feature_regularizer_text")))
   {
-    all.holdout_set_off = true;
+    all.ec.holdout_set_off = true;
     all.oc.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
@@ -1016,9 +1016,9 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   option_group_definition example_options("Example options");
   example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
-      .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
-      .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
-      .add(make_option("holdout_after", all.holdout_after)
+      .add(make_option("holdout_off", all.ec.holdout_set_off).help("no holdout data in multiple passes"))
+      .add(make_option("holdout_period", all.ec.holdout_period).default_value(10).help("holdout period for test only"))
+      .add(make_option("holdout_after", all.ec.holdout_after)
                .help("holdout after n training examples, default off (disables holdout_period)"))
       .add(
           make_option("early_terminate", early_terminate_passes)
@@ -1060,10 +1060,10 @@ void parse_example_tweaks(options_i& options, vw& all)
   else
     all.gs.training = true;
 
-  if ((all.ec.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
-    all.holdout_set_off = false;  // holdout is on unless explicitly off
+  if ((all.ec.numpasses > 1 || all.ec.holdout_after > 0) && !all.ec.holdout_set_off)
+    all.ec.holdout_set_off = false;  // holdout is on unless explicitly off
   else
-    all.holdout_set_off = true;
+    all.ec.holdout_set_off = true;
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
     all.set_minmax = noop_mm;
@@ -1835,7 +1835,7 @@ void finish(vw& all, bool delete_all)
     all.oc.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
     all.oc.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
     all.oc.trace_message << endl << "average loss = ";
-    if (all.holdout_set_off)
+    if (all.ec.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
         all.oc.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
@@ -1846,7 +1846,7 @@ void finish(vw& all, bool delete_all)
       all.oc.trace_message << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
-      if (all.holdout_set_off)
+      if (all.ec.holdout_set_off)
         all.oc.trace_message << endl
                           << "average multiclass log loss = "
                           << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;

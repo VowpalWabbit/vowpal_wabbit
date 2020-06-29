@@ -306,12 +306,12 @@ void end_pass(gdmf& d)
   if (all->oc.save_per_pass)
     save_predictor(*all, all->final_regressor_name, all->gs.current_pass);
 
-  if (!all->holdout_set_off)
+  if (!all->ec.holdout_set_off)
   {
     if (summarize_holdout_set(*all, d.no_win_counter))
       finalize_regressor(*all, all->final_regressor_name);
     if ((d.early_stop_thres == d.no_win_counter) &&
-        ((all->check_holdout_every_n_passes <= 1) || ((all->gs.current_pass % all->check_holdout_every_n_passes) == 0)))
+        ((all->gs.check_holdout_every_n_passes <= 1) || ((all->gs.current_pass % all->gs.check_holdout_every_n_passes) == 0)))
       set_done(*all);
   }
 }
@@ -363,7 +363,7 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   all.weights.stride_shift((size_t)temp);
   all.wc.random_weights = true;
 
-  if (!all.holdout_set_off)
+  if (!all.ec.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     data->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
