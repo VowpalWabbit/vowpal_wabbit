@@ -255,7 +255,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   if (read)
   {
     initialize_regressor(all);
-    if (all.random_weights)
+    if (all.wc.random_weights)
     {
       uint32_t stride = all.weights.stride();
       if (all.weights.sparse)
@@ -361,7 +361,7 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data->rank * 2 + 1)) / logf(2.f));
   all.weights.stride_shift((size_t)temp);
-  all.random_weights = true;
+  all.wc.random_weights = true;
 
   if (!all.holdout_set_off)
   {

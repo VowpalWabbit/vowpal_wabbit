@@ -1345,9 +1345,9 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     weight_args
         .add(make_option("initial_regressor", all.ic.initial_regressors).help("Initial regressor(s)").short_name("i"))
         .add(make_option("initial_weight", all.wc.initial_weight).help("Set all weights to an initial value of arg."))
-        .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
-        .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
-        .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
+        .add(make_option("random_weights", all.wc.random_weights).help("make initial weights random"))
+        .add(make_option("normal_weights", all.wc.normal_weights).help("make initial weights normal"))
+        .add(make_option("truncated_normal_weights", all.wc.tnormal_weights).help("make initial weights truncated normal"))
         .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
         .add(make_option("input_feature_regularizer", all.ic.per_feature_regularizer_input)
                  .help("Per feature regularization input file"));

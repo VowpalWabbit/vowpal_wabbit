@@ -368,7 +368,10 @@ struct WeightConfig
   float initial_weight;
   float initial_constant;
 
+  bool random_weights;
 
+  bool normal_weights;
+  bool tnormal_weights;
 };
 
 struct UpdateConfig
@@ -712,10 +715,9 @@ struct vw
   /* gd option? */
   bool invariant_updates;  // Should we use importance aware/safe updates
 
-  bool random_weights;
+  /* mf option */
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
-  bool normal_weights;
-  bool tnormal_weights;
+
   bool add_constant;
   bool nonormalize;
   bool do_reset_source;

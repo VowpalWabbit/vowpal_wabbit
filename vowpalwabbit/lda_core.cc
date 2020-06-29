@@ -792,7 +792,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   if (read)
   {
     initialize_regressor(all);
-    initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda,
+    initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.wc.random_weights, all.lda,
         all.weights.stride());
     if (all.weights.sparse)
       all.weights.sparse_weights.set_default<initial_weights, set_initial_lda_wrapper<sparse_parameters>>(init);
@@ -1368,7 +1368,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
 
   all.weights.stride_shift((size_t)temp);
-  all.random_weights = true;
+  all.wc.random_weights = true;
   all.add_constant = false;
 
   if (all.eta > 1.)

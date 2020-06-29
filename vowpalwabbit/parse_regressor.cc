@@ -110,13 +110,13 @@ void initialize_regressor(vw& all, T& weights)
     weights.template set_default<float, set_initial_wrapper<T> >(all.wc.initial_weight);
   else if (all.random_positive_weights)
     weights.template set_default<random_positive_wrapper<T> >();
-  else if (all.random_weights)
+  else if (all.wc.random_weights)
     weights.template set_default<random_weights_wrapper<T> >();
-  else if (all.normal_weights)
+  else if (all.wc.normal_weights)
   {
     weights.template set_default<polar_normal_weights_wrapper<T> >();
   }
-  else if (all.tnormal_weights)
+  else if (all.wc.tnormal_weights)
   {
     weights.template set_default<polar_normal_weights_wrapper<T> >();
     truncate(all, weights);
