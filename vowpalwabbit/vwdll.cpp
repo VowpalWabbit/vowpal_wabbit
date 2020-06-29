@@ -82,7 +82,7 @@ VW_DLL_PUBLIC void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
 { vw * pointer = static_cast<vw*>(handle);
   if (pointer->ec.numpasses > 1)
   {
-    pointer->do_reset_source = true;
+    pointer->gs.do_reset_source = true;
     VW::start_parser(*pointer);
     VW::LEARNER::generic_driver(*pointer);
     VW::end_parser(*pointer);

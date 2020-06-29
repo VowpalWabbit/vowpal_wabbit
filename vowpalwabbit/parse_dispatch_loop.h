@@ -18,7 +18,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     while (!all.p->done)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
-      if (!all.do_reset_source && example_number != all.ec.pass_length && all.max_examples > example_number &&
+      if (!all.gs.do_reset_source && example_number != all.ec.pass_length && all.max_examples > example_number &&
           all.p->reader(&all, examples) > 0)
       {
         VW::setup_examples(all, examples);
@@ -28,7 +28,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       else
       {
         reset_source(all, all.fc.num_bits);
-        all.do_reset_source = false;
+        all.gs.do_reset_source = false;
         all.gs.passes_complete++;
 
         // setup an end_pass example

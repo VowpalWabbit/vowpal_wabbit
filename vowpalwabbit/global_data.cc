@@ -390,7 +390,7 @@ vw::vw()
   oc.save_per_pass = false;
 
   stdin_off = false;
-  do_reset_source = false;
+  gs.do_reset_source = false;
   holdout_set_off = true;
   holdout_after = 0;
   check_holdout_every_n_passes = 1;

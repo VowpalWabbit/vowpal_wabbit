@@ -631,6 +631,9 @@ struct GlobalState
 
   /* this should be feature config but LDA core overrides it, this could be refactored */
   bool add_constant;
+
+  /* runtime related?*/
+  bool do_reset_source;
 };
 
 struct vw
@@ -722,8 +725,9 @@ struct vw
   /* mf option */
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
 
+  /* NOT used anymore? */
   bool nonormalize;
-  bool do_reset_source;
+
   bool holdout_set_off;
   bool early_terminate;
   uint32_t holdout_period;
