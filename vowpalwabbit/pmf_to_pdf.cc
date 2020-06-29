@@ -6,13 +6,10 @@
 #include "pmf_to_pdf.h" // todo rename
 #include "explore.h"
 #include "vw.h"
-#include "debug_log.h"
 
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
-
-VW_DEBUG_ENABLE(false)
 
 namespace VW { namespace pmf_to_pdf
 {
@@ -90,7 +87,6 @@ namespace VW { namespace pmf_to_pdf
 
     const float continuous_range = max_value - min_value;
     const float unit_range = continuous_range / (num_actions - 1);
-    const float h = unit_range * bandwidth;
 
     const float ac = (action_cont - min_value) / unit_range;
     int ic = (int)floor(ac);

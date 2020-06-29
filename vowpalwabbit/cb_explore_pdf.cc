@@ -39,13 +39,13 @@ namespace continuous_action
       single_learner* _base = nullptr;
   };
 
-  int cb_explore_pdf::learn(example& ec, api_status* status)
+  int cb_explore_pdf::learn(example& ec, api_status*)
   {
     _base->learn(ec);
     return error_code::success;
   }
 
-  int cb_explore_pdf::predict(example& ec, api_status* status)
+  int cb_explore_pdf::predict(example& ec, api_status*)
   {
     _base->predict(ec);
 

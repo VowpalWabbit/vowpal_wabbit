@@ -41,7 +41,7 @@ namespace continuous_action
       single_learner* _base = nullptr;
   };
 
-  int sample_pdf::learn(example& ec, api_status* status)
+  int sample_pdf::learn(example& ec, api_status*)
   {
     // one of the base reductions will call predict so we need a valid
     // predict buffer
@@ -53,7 +53,7 @@ namespace continuous_action
     return error_code::success;
   }
 
-  int sample_pdf::predict(example& ec, api_status* status)
+  int sample_pdf::predict(example& ec, api_status*)
   {
     _pred_pdf.clear();
 

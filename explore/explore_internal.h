@@ -398,7 +398,7 @@ namespace exploration
   // Sample one action from a range given the probability density.
   template <typename It>
   int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value,
-      std::random_access_iterator_tag pdf_category)
+      std::random_access_iterator_tag)
   {
     if (std::distance(pdf_first, pdf_last) == 0)
       return E_EXPLORATION_BAD_PDF;

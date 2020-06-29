@@ -22,7 +22,6 @@
 #include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
-#include "debug_log.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
@@ -30,8 +29,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 using std::endl;
-
-VW_DEBUG_ENABLE(false)
 
 // todo:
 // 4. Factor various state out of vw&

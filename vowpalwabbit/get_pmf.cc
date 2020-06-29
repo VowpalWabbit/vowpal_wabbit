@@ -38,13 +38,13 @@ struct get_pmf
   float _epsilon;
 };
 
-int get_pmf::learn(example& ec, api_status* status)
+int get_pmf::learn(example& ec, api_status*)
 {
   _base->learn(ec);
   return error_code::success;
 }
 
-int get_pmf::predict(example& ec, api_status* status)
+int get_pmf::predict(example& ec, api_status*)
 {
   uint32_t base_prediction;
 

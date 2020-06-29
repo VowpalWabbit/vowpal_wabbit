@@ -16,16 +16,20 @@ using std::endl;
 namespace CB
 {
   template <>
-  char* bufcache_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label* ld, char* c) { return c; }
+  char* bufcache_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*, char* c)
+  { return c; }
 
   template<>
-  char* bufread_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label* ld, char* c) { return c; }
+  char* bufread_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*, char* c)
+  { return c; }
 
   template <>
-  void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*){}
+  void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*)
+  {}
 
   template <>
-  void copy_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*, VW::cb_continuous::continuous_label*){}
+  void copy_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*, VW::cb_continuous::continuous_label*)
+  {}
 }
 
 namespace VW { namespace cb_continuous
