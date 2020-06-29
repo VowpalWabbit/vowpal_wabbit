@@ -381,7 +381,7 @@ vw::vw()
   invariant_updates = true;
   normalized_idx = 2;
 
-  add_constant = true;
+  gs.add_constant = true;
   oc.audit = false;
 
   ec.pass_length = std::numeric_limits<size_t>::max();

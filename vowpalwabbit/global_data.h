@@ -445,6 +445,7 @@ struct FeatureConfig
   std::vector<std::string> ngram_strings;
   std::vector<std::string> skip_strings;
   std::vector<std::string> limit_strings;      // descriptor of feature limits
+
 };
 
 struct ExampleConfig
@@ -627,6 +628,9 @@ struct GlobalState
   /* this shouldnt be state but it is. flag for behaviour
    */
   bool training;  // Should I train if lable data is available?
+
+  /* this should be feature config but LDA core overrides it, this could be refactored */
+  bool add_constant;
 };
 
 struct vw
@@ -718,7 +722,6 @@ struct vw
   /* mf option */
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
 
-  bool add_constant;
   bool nonormalize;
   bool do_reset_source;
   bool holdout_set_off;

@@ -538,7 +538,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.gs.redefine_some && !std::equal(vw1.fc.redefine.begin(), vw1.fc.redefine.end(), vw2.fc.redefine.begin()))
     return "redefine";
 
-  if (vw1.add_constant != vw2.add_constant)
+  if (vw1.gs.add_constant != vw2.gs.add_constant)
     return "add_constant";
 
   if (vw1.dictionary_path.size() != vw2.dictionary_path.size())
@@ -1003,7 +1003,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   }
 
   if (noconstant)
-    all.add_constant = false;
+    all.gs.add_constant = false;
 }
 
 void parse_example_tweaks(options_i& options, vw& all)

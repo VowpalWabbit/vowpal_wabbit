@@ -755,7 +755,7 @@ void setup_example(vw& all, example* ae)
   if (!all.fc.ngram_strings.empty())
     generateGrams(all, ae);
 
-  if (all.add_constant)  // add constant feature
+  if (all.gs.add_constant)  // add constant feature
     VW::add_constant_feature(all, ae);
 
   if (!all.fc.limit_strings.empty())

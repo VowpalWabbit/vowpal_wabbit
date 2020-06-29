@@ -1369,7 +1369,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   all.weights.stride_shift((size_t)temp);
   all.wc.random_weights = true;
-  all.add_constant = false;
+  all.gs.add_constant = false;
 
   if (all.eta > 1.)
   {
