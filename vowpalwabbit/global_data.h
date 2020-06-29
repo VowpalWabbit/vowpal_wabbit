@@ -778,6 +778,9 @@ struct vw
   /* lda related state for other things to know */
   uint32_t lda;
 
+  /* gd option? */
+  std::map<uint64_t, std::string> index_name_map;
+
   size_t length() { return ((size_t)1) << fc.num_bits; };
 
   std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
@@ -792,15 +795,13 @@ struct vw
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
   void (*print_text)(VW::io::writer*, std::string, v_array<char>);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
+
   loss_function* loss;
 
   VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   parameters weights;
-
-  std::map<uint64_t, std::string> index_name_map;
-
 
   vw();
   ~vw();
