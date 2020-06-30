@@ -123,7 +123,6 @@ set(vw_all_headers
   parse_slates_example_json.h
   parser.h
   parser/flatbuffer/parse_flat_example.h
-  parser/flatbuffer/parse_label.h
   print.h
   queue.h
   rand48.h

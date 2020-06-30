@@ -17,27 +17,29 @@ namespace VW {
 namespace parsers {
 namespace flatbuffer {
 
-void parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label)
+void parser::parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label)
 {
   l->simple.label = label->label();
   l->simple.weight = label->weight();
   count_label(sd, label->label());
 }
 
-void parse_cb_label(polylabel* l, const CBLabel* label)
+void parser::parse_cb_label(polylabel* l, const CBLabel* label)
 {
   l->cb.weight = label->weight();
-  for (auto i=0;i<label->costs()->Length();i++){
+  for (auto const& cost : *(label->costs())){
     CB::cb_class f;
-    f.cost = label->costs()->Get(i)->cost();
-    f.action = label->costs()->Get(i)->action();
-    f.probability = label->costs()->Get(i)->probability();
-    f.partial_prediction = label->costs()->Get(i)->partial_pred();
+    f.action = cost->action();
+    f.cost = cost->cost();
+    f.probability = cost->probability();
+    f.partial_prediction = cost->partial_pred();
     l->cb.costs.push_back(f);
+    // l->cb.costs.emplace_back(cost->cost(), cost->action(), cost->probability(), cost->partial_pred());
+    // l->cb.costs.push_back(f);
   }
 }
 
-void parse_ccb_label(polylabel* l, const CCBLabel* label)
+void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
 {
   l->conditional_contextual_bandit.weight = label->weight();
   if (label->example_type() == 1) l->conditional_contextual_bandit.type = CCB::example_type::shared;
@@ -65,7 +67,7 @@ void parse_ccb_label(polylabel* l, const CCBLabel* label)
   }
 }
 
-void parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
+void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
 {
   l->cb_eval.action = label->action();
   l->cb_eval.event.weight = label->event()->weight();
@@ -79,7 +81,7 @@ void parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
   }
 }
 
-void parse_cs_label(polylabel* l, const CS_Label* label)
+void parser::parse_cs_label(polylabel* l, const CS_Label* label)
 {
   for (auto i=0;i<label->costs()->Length();i++){
     COST_SENSITIVE::wclass f;
@@ -91,20 +93,20 @@ void parse_cs_label(polylabel* l, const CS_Label* label)
   }
 }
 
-void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label)
+void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label)
 {
   uint32_t word = label->label();
   l->multi.label = sd->ldict ? (uint32_t)sd->ldict->get(std::to_string(word)) : word;
   l->multi.weight = label->weight();
 }
 
-void parse_multi_label(polylabel* l, const MultiLabel* label)
+void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
 {
   for (auto i=0;i<label->labels()->Length();i++)
     l->multilabels.label_v.push_back(label->labels()->Get(i));
 }
 
-void parse_slates_label(polylabel* l, const Slates_Label* label)
+void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
 {
   l->slates.weight = label->weight();
   if (label->example_type() == 1) {
@@ -124,7 +126,7 @@ void parse_slates_label(polylabel* l, const Slates_Label* label)
   }
 }
 
-void parse_no_label()
+void parser::parse_no_label()
 {
   // No Label
 }

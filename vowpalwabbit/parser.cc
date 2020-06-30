@@ -593,7 +593,7 @@ IGNORE_DEPRECATED_USAGE_END
       }
       else if (input_options.flatbuffer)
       {
-        all.flat_converter = new VW::parsers::flatbuffer::parse(all.data_filename);
+        all.flat_converter = new VW::parsers::flatbuffer::parser(all.data_filename);
 
         all.p->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
         all.p->text_reader = VW::parsers::flatbuffer::read_flatbuffer;

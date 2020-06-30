@@ -73,18 +73,18 @@ BOOST_AUTO_TEST_CASE(check_flatbuffer)
   uint8_t *buf = build._builder.GetBufferPointer();
   int size = build._builder.GetSize();
 
-  all->flat_converter = new VW::parsers::flatbuffer::parse(buf);
+  all->flat_converter = new VW::parsers::flatbuffer::parser(buf);
 
-  BOOST_CHECK_EQUAL(all->flat_converter->data->examples()->Length(), 1);
-  BOOST_CHECK_EQUAL(all->flat_converter->data->examples()->Get(0)->namespaces()->Length(), 1);
-  BOOST_CHECK_EQUAL(all->flat_converter->data->examples()->Get(0)->namespaces()->Get(0)->features()->size(), 1);
-  BOOST_CHECK_CLOSE(all->flat_converter->data->examples()->Get(0)->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(all->flat_converter->data->examples()->Get(0)->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
-  // BOOST_CHECK_EQUAL(all->flat_converter->data->examples()->Get(0)->namespaces()->Get(0)->name()->c_str(), constant_namespace);
-  BOOST_CHECK_EQUAL(all->flat_converter->data->examples()->Get(0)->namespaces()->Get(0)->hash(), constant_namespace);
-  BOOST_CHECK_EQUAL(all->flat_converter->data->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
-  BOOST_CHECK_EQUAL(all->flat_converter->data->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
-  BOOST_CHECK_CLOSE(all->flat_converter->data->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->value(), 2.23, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Length(), 1);
+  BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Get(0)->namespaces()->Length(), 1);
+  BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Get(0)->namespaces()->Get(0)->features()->size(), 1);
+  BOOST_CHECK_CLOSE(all->flat_converter->data()->examples()->Get(0)->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(all->flat_converter->data()->examples()->Get(0)->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
+  // BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Get(0)->namespaces()->Get(0)->name()->c_str(), constant_namespace);
+  BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Get(0)->namespaces()->Get(0)->hash(), constant_namespace);
+  BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
+  BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
+  BOOST_CHECK_CLOSE(all->flat_converter->data()->examples()->Get(0)->namespaces()->Get(0)->features()->Get(0)->value(), 2.23, FLOAT_TOL);
 }
 
 BOOST_AUTO_TEST_CASE(check_parsed_flatbuffer_examples)
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(check_parsed_flatbuffer_examples)
   uint8_t *buf = build._builder.GetBufferPointer();
   int size = build._builder.GetSize();
 
-  all->flat_converter = new VW::parsers::flatbuffer::parse(buf);
+  all->flat_converter = new VW::parsers::flatbuffer::parser(buf);
   auto examples = parse_flatbuffer(*all);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);

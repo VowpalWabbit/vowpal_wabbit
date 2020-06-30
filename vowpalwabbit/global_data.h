@@ -363,7 +363,7 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
-namespace VW { namespace parsers { namespace flatbuffer {class parse;}}}
+namespace VW { namespace parsers { namespace flatbuffer {class parser;}}}
 // class VW::parsers::flatbuffer::to_flatbuff;
 struct vw
 {
@@ -401,8 +401,8 @@ struct vw
 
   uint32_t hash_seed;
 
-  VW::parsers::flatbuffer::parse* flat_converter;
-  std::string flatout; // For flatbuffer conversion
+  VW::parsers::flatbuffer::parser* flat_converter;
+  std::string flatout; // For flatbuffer conversion - Remove this
   std::string data_filename;
 
   bool daemon;
