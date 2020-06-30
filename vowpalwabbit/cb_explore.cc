@@ -234,7 +234,8 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
       label_string << " unknown";
     else
       label_string << ec.l.cb.costs[0].action;
-    all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass, label_string.str(), pred_string.str(), ec.num_features,
+    all.sd->print_update(all.example_config.holdout_set_off, all.gs.current_pass, label_string.str(), pred_string.str(),
+        ec.num_features,
         all.oc.progress_add, all.oc.progress_arg);
   }
 }

@@ -80,7 +80,7 @@ VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const
 
 VW_DLL_PUBLIC void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
 { vw * pointer = static_cast<vw*>(handle);
-  if (pointer->ec.numpasses > 1)
+  if (pointer->example_config.numpasses > 1)
   {
     pointer->gs.do_reset_source = true;
     VW::start_parser(*pointer);

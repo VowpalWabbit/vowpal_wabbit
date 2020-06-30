@@ -854,8 +854,8 @@ void return_example(vw &all, example &ec)
   }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
-    all.sd->print_update(
-        all.ec.holdout_set_off, all.gs.current_pass, "none", 0, ec.num_features, all.oc.progress_add, all.oc.progress_arg);
+    all.sd->print_update(all.example_config.holdout_set_off, all.gs.current_pass, "none", 0, ec.num_features,
+        all.oc.progress_add, all.oc.progress_arg);
   VW::finish_example(all, ec);
 }
 
@@ -1259,7 +1259,7 @@ void end_pass(lda &l)
   if (!l.examples.empty())
     learn_batch(l);
 
-  if (l.compute_coherence_metrics && l.all->gs.passes_complete == l.all->ec.numpasses)
+  if (l.compute_coherence_metrics && l.all->gs.passes_complete == l.all->example_config.numpasses)
   {
     compute_coherence_metrics(l);
     // FASTPASS return;

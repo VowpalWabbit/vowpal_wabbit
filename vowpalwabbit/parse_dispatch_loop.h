@@ -18,7 +18,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     while (!all.p->done)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
-      if (!all.gs.do_reset_source && example_number != all.ec.pass_length && all.ec.max_examples > example_number &&
+      if (!all.gs.do_reset_source && example_number != all.example_config.pass_length &&
+          all.example_config.max_examples > example_number &&
           all.p->reader(&all, examples) > 0)
       {
         VW::setup_examples(all, examples);
@@ -36,13 +37,13 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         examples[0]->end_pass = true;
         all.p->in_pass_counter = 0;
 
-        if (all.gs.passes_complete == all.ec.numpasses && example_number == all.ec.pass_length)
+        if (all.gs.passes_complete == all.example_config.numpasses && example_number == all.example_config.pass_length)
         {
           all.gs.passes_complete = 0;
-          all.ec.pass_length = all.ec.pass_length * 2 + 1;
+          all.example_config.pass_length = all.example_config.pass_length * 2 + 1;
         }
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
-        if (all.gs.passes_complete >= all.ec.numpasses && all.ec.max_examples >= example_number)
+        if (all.gs.passes_complete >= all.example_config.numpasses && all.example_config.max_examples >= example_number)
           lock_done(*all.p);
         example_number = 0;
       }

@@ -314,7 +314,7 @@ void end_pass(ftrl& g)
 {
   vw& all = *g.all;
 
-  if (!all.ec.holdout_set_off)
+  if (!all.example_config.holdout_set_off)
   {
     if (summarize_holdout_set(all, g.no_win_counter))
       finalize_regressor(all, all.oc.final_regressor_name);
@@ -407,7 +407,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
-  if (!all.ec.holdout_set_off)
+  if (!all.example_config.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();

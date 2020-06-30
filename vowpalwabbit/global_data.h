@@ -715,7 +715,7 @@ struct vw
   WeightConfig wc;
   FeatureConfig fc;
   UpdateConfig uc;
-  ExampleConfig ec;
+  ExampleConfig example_config;
 
   VWRuntimeConfig rc;
   GlobalState gs;

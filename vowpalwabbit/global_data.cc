@@ -340,7 +340,7 @@ vw::vw()
   uc.power_t = 0.5;
   gs.eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
               // updates (see parse_args.cc)
-  ec.numpasses = 1;
+  example_config.numpasses = 1;
 
   print = print_result;
   print_text = print_raw_text;
@@ -384,19 +384,19 @@ vw::vw()
   gs.add_constant = true;
   oc.audit = false;
 
-  ec.pass_length = std::numeric_limits<size_t>::max();
+  example_config.pass_length = std::numeric_limits<size_t>::max();
   gs.passes_complete = 0;
 
   oc.save_per_pass = false;
 
   ic.stdin_off = false;
   gs.do_reset_source = false;
-  ec.holdout_set_off = true;
-  ec.holdout_after = 0;
+  example_config.holdout_set_off = true;
+  example_config.holdout_after = 0;
   gs.check_holdout_every_n_passes = 1;
   gs.early_terminate = false;
 
-  ec.max_examples = std::numeric_limits<size_t>::max();
+  example_config.max_examples = std::numeric_limits<size_t>::max();
 
   oc.hash_inv = false;
   gs.print_invert = false;

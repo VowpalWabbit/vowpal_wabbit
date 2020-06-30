@@ -60,7 +60,7 @@ void VowpalWabbit::Driver()
 }
 
 void VowpalWabbit::RunMultiPass()
-{ if (m_vw->ec.numpasses > 1)
+{ if (m_vw->example_config.numpasses > 1)
   { try
     { m_vw->gs.do_reset_source = true;
       VW::start_parser(*m_vw);
@@ -85,7 +85,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
   stats->WeightedExampleSum = m_vw->sd->weighted_examples();
   stats->WeightedLabelSum = m_vw->sd->weighted_labels;
 
-  if (m_vw->ec.holdout_set_off)
+  if (m_vw->example_config.holdout_set_off)
 	  if (m_vw->sd->weighted_labeled_examples > 0)
 		  stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_labeled_examples;
 	  else

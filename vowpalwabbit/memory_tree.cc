@@ -1263,7 +1263,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   tree->all = &all;
   tree->_random_state = all.get_random_state();
   tree->current_pass = 0;
-  tree->final_pass = all.ec.numpasses;
+  tree->final_pass = all.example_config.numpasses;
 
   tree->max_leaf_examples = (size_t)(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
 

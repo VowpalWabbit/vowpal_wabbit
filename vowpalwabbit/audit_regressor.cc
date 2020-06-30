@@ -258,7 +258,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   if (out_file.empty())
     THROW("audit_regressor argument (output filename) is missing.");
 
-  if (all.ec.numpasses > 1)
+  if (all.example_config.numpasses > 1)
     THROW("audit_regressor can't be used with --passes > 1.");
 
   all.oc.audit = true;

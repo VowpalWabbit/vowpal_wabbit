@@ -25,7 +25,7 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_performRemainingPass
   try
   {
     vw* vwInstance = (vw*)vwPtr;
-    if (vwInstance->ec.numpasses > 1)
+    if (vwInstance->example_config.numpasses > 1)
     {
       adjust_used_index(*vwInstance);
       vwInstance->gs.do_reset_source = true;

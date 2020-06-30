@@ -226,12 +226,14 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
         pred_buf << ec.pred.a_s[0].action;
       if (action_scores)
         pred_buf << ".....";
-      all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass, label_buf, pred_buf.str(), num_current_features,
+      all.sd->print_update(all.example_config.holdout_set_off, all.gs.current_pass, label_buf, pred_buf.str(),
+          num_current_features,
           all.oc.progress_add, all.oc.progress_arg);
       ;
     }
     else
-      all.sd->print_update(all.ec.holdout_set_off, all.gs.current_pass, label_buf, prediction, num_current_features,
+      all.sd->print_update(all.example_config.holdout_set_off, all.gs.current_pass, label_buf, prediction,
+          num_current_features,
           all.oc.progress_add, all.oc.progress_arg);
   }
 }

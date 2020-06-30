@@ -733,7 +733,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
       // What should be the "ec"? data.ec_seq[0]?
       // Based on parse_args.cc (where "average multiclass log loss") is printed,
       // I decided to try yet another way: (!all.holdout_set_off).
-      if (!all.ec.holdout_set_off)
+      if (!all.example_config.holdout_set_off)
         all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
       else
         all.sd->multiclass_log_loss += multiclass_log_loss;

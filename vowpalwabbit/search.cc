@@ -497,7 +497,7 @@ bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
       //     OR it's a test example
       ((!all.logger.quiet || !all.rc.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
-          (all.ec.holdout_set_off ||                          // no holdout
+          (all.example_config.holdout_set_off ||              // no holdout
               ec[0]->test_only || (all.gs.current_pass == 0)  // we need error rates for progressive cost
               ));
 }
@@ -566,7 +566,8 @@ void print_update(search_private& priv)
 
   float avg_loss = 0.;
   float avg_loss_since = 0.;
-  bool use_heldout_loss = (!all.ec.holdout_set_off && all.gs.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
+  bool use_heldout_loss =
+      (!all.example_config.holdout_set_off && all.gs.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
   if (use_heldout_loss)
   {
     avg_loss = safediv((float)all.sd->holdout_sum_loss, (float)all.sd->weighted_holdout_examples);
@@ -2766,7 +2767,7 @@ base_learner* setup(options_i& options, vw& all)
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
-    priv.passes_per_policy = all.ec.numpasses;
+    priv.passes_per_policy = all.example_config.numpasses;
     if (priv.current_policy > 1)
       priv.current_policy = 1;
   }
@@ -2828,7 +2829,7 @@ base_learner* setup(options_i& options, vw& all)
   // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;
   if (all.gs.training)
-    tmp_number_of_policies += (int)ceil(((float)all.ec.numpasses) / ((float)priv.passes_per_policy));
+    tmp_number_of_policies += (int)ceil(((float)all.example_config.numpasses) / ((float)priv.passes_per_policy));
 
   // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
   // so only set total_number_of_policies to computed value if it is larger

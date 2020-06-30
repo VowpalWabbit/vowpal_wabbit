@@ -463,7 +463,7 @@ input_options parse_source(vw& all, options_i& options)
   {
     all.rc.daemon = true;
     // allow each child to process up to 1e5 connections
-    all.ec.numpasses = (size_t)1e5;
+    all.example_config.numpasses = (size_t)1e5;
   }
 
   // Add an implicit cache file based on the data filename.
@@ -475,11 +475,11 @@ input_options parse_source(vw& all, options_i& options)
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
 
-  if (!all.ec.holdout_set_off &&
+  if (!all.example_config.holdout_set_off &&
       (options.was_supplied("output_feature_regularizer_binary") ||
           options.was_supplied("output_feature_regularizer_text")))
   {
-    all.ec.holdout_set_off = true;
+    all.example_config.holdout_set_off = true;
     all.oc.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
@@ -1016,18 +1016,21 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   option_group_definition example_options("Example options");
   example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
-      .add(make_option("holdout_off", all.ec.holdout_set_off).help("no holdout data in multiple passes"))
-      .add(make_option("holdout_period", all.ec.holdout_period).default_value(10).help("holdout period for test only"))
-      .add(make_option("holdout_after", all.ec.holdout_after)
+      .add(make_option("holdout_off", all.example_config.holdout_set_off).help("no holdout data in multiple passes"))
+      .add(make_option("holdout_period", all.example_config.holdout_period)
+               .default_value(10)
+               .help("holdout period for test only"))
+      .add(make_option("holdout_after", all.example_config.holdout_after)
                .help("holdout after n training examples, default off (disables holdout_period)"))
       .add(
           make_option("early_terminate", early_terminate_passes)
               .default_value(3)
               .help(
                   "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
-      .add(make_option("passes", all.ec.numpasses).help("Number of Training Passes"))
-      .add(make_option("initial_pass_length", all.ec.pass_length).help("initial number of examples per pass"))
-      .add(make_option("examples", all.ec.max_examples).help("number of examples to parse"))
+      .add(make_option("passes", all.example_config.numpasses).help("Number of Training Passes"))
+      .add(make_option("initial_pass_length", all.example_config.pass_length)
+               .help("initial number of examples per pass"))
+      .add(make_option("examples", all.example_config.max_examples).help("number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
       .add(make_option("sort_features", all.p->sort_features)
@@ -1060,10 +1063,10 @@ void parse_example_tweaks(options_i& options, vw& all)
   else
     all.gs.training = true;
 
-  if ((all.ec.numpasses > 1 || all.ec.holdout_after > 0) && !all.ec.holdout_set_off)
-    all.ec.holdout_set_off = false;  // holdout is on unless explicitly off
+  if ((all.example_config.numpasses > 1 || all.example_config.holdout_after > 0) && !all.example_config.holdout_set_off)
+    all.example_config.holdout_set_off = false;  // holdout is on unless explicitly off
   else
-    all.ec.holdout_set_off = true;
+    all.example_config.holdout_set_off = true;
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
     all.set_minmax = noop_mm;
@@ -1544,7 +1547,7 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
     all.oc.trace_message << "learning rate = " << all.gs.eta << endl;
     all.oc.trace_message << "initial_t = " << all.sd->t << endl;
     all.oc.trace_message << "power_t = " << all.uc.power_t << endl;
-    if (all.ec.numpasses > 1)
+    if (all.example_config.numpasses > 1)
       all.oc.trace_message << "decay_learning_rate = " << all.uc.eta_decay_rate << endl;
   }
 }
@@ -1557,7 +1560,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
     model.close_file();
 
   auto parsed_source_options = parse_source(all, options);
-  enable_sources(all, all.logger.quiet, all.ec.numpasses, parsed_source_options);
+  enable_sources(all, all.logger.quiet, all.example_config.numpasses, parsed_source_options);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
@@ -1835,7 +1838,7 @@ void finish(vw& all, bool delete_all)
     all.oc.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
     all.oc.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
     all.oc.trace_message << endl << "average loss = ";
-    if (all.ec.holdout_set_off)
+    if (all.example_config.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
         all.oc.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
@@ -1846,7 +1849,7 @@ void finish(vw& all, bool delete_all)
       all.oc.trace_message << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
-      if (all.ec.holdout_set_off)
+      if (all.example_config.holdout_set_off)
         all.oc.trace_message << endl
                           << "average multiclass log loss = "
                           << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;

@@ -167,7 +167,7 @@ void end_pass(gd& g)
   if (all.oc.save_per_pass)
     save_predictor(all, all.oc.final_regressor_name, all.gs.current_pass);
 
-  if (!all.ec.holdout_set_off)
+  if (!all.example_config.holdout_set_off)
   {
     if (summarize_holdout_set(all, g.no_win_counter))
       finalize_regressor(all, all.oc.final_regressor_name);
@@ -1161,7 +1161,7 @@ base_learner* setup(options_i& options, vw& all)
   if (options.was_supplied("feature_mask"))
     feature_mask_off = false;
 
-  if (!all.ec.holdout_set_off)
+  if (!all.example_config.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     g->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
@@ -1207,9 +1207,9 @@ base_learner* setup(options_i& options, vw& all)
   if (g->adax && !all.weights.adaptive)
     THROW("Cannot use adax without adaptive");
 
-  if (pow((double)all.uc.eta_decay_rate, (double)all.ec.numpasses) < 0.0001)
+  if (pow((double)all.uc.eta_decay_rate, (double)all.example_config.numpasses) < 0.0001)
     all.oc.trace_message << "Warning: the learning rate for the last pass is multiplied by: "
-                      << pow((double)all.uc.eta_decay_rate, (double)all.ec.numpasses)
+                      << pow((double)all.uc.eta_decay_rate, (double)all.example_config.numpasses)
                       << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)
