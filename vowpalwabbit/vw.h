@@ -181,7 +181,7 @@ inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& value, uint64_t u)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-  return all.p->hasher(value.data(), value.length(), all.p->hasher(name.data(), name.length(), u)) & all.parse_mask;
+  return all.p->hasher(value.data(), value.length(), all.p->hasher(name.data(), name.length(), u)) & all.gs.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
