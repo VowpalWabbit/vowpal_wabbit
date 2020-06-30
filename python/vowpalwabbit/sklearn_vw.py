@@ -980,7 +980,7 @@ class VWMultiClassifier(VWClassifier):
         >>> X = np.array([ [10, 10], [8, 10], [-5, 5.5], [-5.4, 5.5], [-20, -20],  [-15, -20] ])
         >>> y = np.array([1, 1, 2, 2, 3, 3])
         >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
-        >>> model = VWMultiClassifier(oaa=2, loss_function='logistic')
+        >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
         >>> model.fit(X, y)
         >>> model.predict_proba(X)
         """
