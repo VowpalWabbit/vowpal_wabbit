@@ -143,3 +143,13 @@ BOOST_AUTO_TEST_CASE(swap_guard_execute_temp_value_no_copy)
   }
   BOOST_CHECK_EQUAL(original_location._value, 1);
 }
+
+
+#include "fast_pow10.h"
+#include "test_common.h"
+
+
+BOOST_AUTO_TEST_CASE(pow10_tests)
+{
+  BOOST_CHECK_CLOSE(fast_pow10(0), 1, FLOAT_TOL);
+}
