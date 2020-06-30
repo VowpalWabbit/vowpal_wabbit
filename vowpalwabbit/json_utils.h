@@ -44,7 +44,7 @@ struct Namespace
 
   void AddFeature(vw* all, const char* key, const char* value)
   {
-    ftrs->push_back(1., VW::hash_feature(*all, value, VW::hash_feature(*all, key, namespace_hash)));
+    ftrs->push_back(1., VW::chain_hash(*all, key, value, namespace_hash));
     feature_count++;
 
     std::stringstream ss;
