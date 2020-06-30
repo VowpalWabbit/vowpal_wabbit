@@ -9,7 +9,6 @@
 #include <iostream>
 #include <cstdint>
 #include <cmath>
-#include <array>
 
 #include "v_array.h"
 #include "hashstring.h"
@@ -56,7 +55,6 @@ typedef example& (*example_factory_t)(void*);
 typedef uint64_t (*hash_func_t)(const char * s, size_t, uint64_t);
 
 hash_func_t getHasher(const std::string& s);
-
 
 // The following function is a home made strtof. The
 // differences are :
