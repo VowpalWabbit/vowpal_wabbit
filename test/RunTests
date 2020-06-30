@@ -1839,7 +1839,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/slates_simple.predict
 
 # Test 213: Regression test for crash on unlabelled data
-{VW} --slates --dsjson -d train-sets/slates_simple_unlabeled.dsjson
+{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
     train-sets/ref/slates_simple_unlabeled.stderr
 
 # Do not delete this line or the empty line above it
