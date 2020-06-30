@@ -1833,4 +1833,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_rnd.stderr
     pred-sets/ref/cbe_adf_rnd.predict
 
+# Test 212: Slates sanity check
+{VW} --slates -d train-sets/slates_simple.txt -p slates_simple.predict
+    train-sets/ref/slates_simple.stderr
+    pred-sets/ref/slates_simple.predict
+
 # Do not delete this line or the empty line above it
