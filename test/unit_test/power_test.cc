@@ -19,4 +19,9 @@ BOOST_AUTO_TEST_CASE(pow10_tests)
   BOOST_CHECK_CLOSE(VW::fast_pow10(10), 1e10, FLOAT_TOL);
   BOOST_CHECK_CLOSE(VW::fast_pow10(37), 1e37, FLOAT_TOL);
   BOOST_CHECK_CLOSE(VW::fast_pow10(38), 1e38, FLOAT_TOL);
+  BOOST_CHECK(std::isnan(VW::fast_pow10(39)));
+  BOOST_CHECK(std::isnan(VW::fast_pow10(-39)));
+  BOOST_CHECK(std::isnan(VW::fast_pow10(-127)));
+  BOOST_CHECK(std::isnan(VW::fast_pow10(127)));
+
 }

@@ -11,8 +11,10 @@
 #endif
 
 #ifdef HAS_STD17
+#define VW_STD17_CONSTEXPR constexpr
 #define VW_ATTR(name) [[ name ]]
 #else
+#define VW_STD17_CONSTEXPR
 #define VW_ATTR(name)
 #endif
 

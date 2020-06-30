@@ -4,6 +4,8 @@
 #include <array>
 #include <cstdint>
 
+#include "future_compat.h"
+
 static constexpr std::array<float, 77> pow_10_lookup_table = {
     1e-38f,
     1e-37f,
@@ -86,11 +88,14 @@ static constexpr std::array<float, 77> pow_10_lookup_table = {
 
 namespace VW
 {
-constexpr inline float fast_pow10(int8_t pow)
+// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard is used.
+VW_STD17_CONSTEXPR inline float fast_pow10(int8_t pow)
 {
   // If the power would be above the range float can represent, return NaN.
   return (pow > 38 || pow < -38) ? std::numeric_limits<float>::quiet_NaN() : pow_10_lookup_table[pow + 38];
 }
 
-constexpr inline float fast_pow10_unsafe(int8_t pow) { return pow_10_lookup_table[pow + 38]; }
+// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard is used.
+// Undefined behavior if pow is > 38 or < -38
+VW_STD17_CONSTEXPR inline float fast_pow10_unsafe(int8_t pow) { return pow_10_lookup_table[pow + 38]; }
 }  // namespace VW
