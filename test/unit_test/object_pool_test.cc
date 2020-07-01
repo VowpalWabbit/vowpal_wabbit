@@ -23,7 +23,7 @@ struct obj_initializer
 BOOST_AUTO_TEST_CASE(object_pool_test)
 {
   {
-    VW::object_pool<obj, obj_initializer> pool_with_size{50};
+    VW::object_pool<obj> pool_with_size{50};
     BOOST_CHECK_EQUAL(pool_with_size.size(), 50);
   }
 
