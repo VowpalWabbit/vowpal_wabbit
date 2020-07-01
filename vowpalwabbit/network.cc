@@ -1,9 +1,8 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #include <io.h>
 #else
@@ -12,22 +11,17 @@ license as described in the file LICENSE.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#endif
-#include <errno.h>
-#ifndef _WIN32
 #include <netdb.h>
-#include <strings.h>
 #endif
-#include <string.h>
 
-#include <stdlib.h>
+#include <cstring>
+#include <cerrno>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include "vw_exception.h"
-
-using namespace std;
 
 int open_socket(const char* host)
 {
@@ -41,7 +35,7 @@ int open_socket(const char* host)
   if (colon != nullptr)
   {
     port = atoi(colon + 1);
-    string hostname(host, colon - host);
+    std::string hostname(host, colon - host);
     he = gethostbyname(hostname.c_str());
   }
   else
@@ -70,6 +64,6 @@ int open_socket(const char* host)
       write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #endif
   )
-    cerr << "write failed!" << endl;
+    std::cerr << "write failed!" << std::endl;
   return sd;
 }

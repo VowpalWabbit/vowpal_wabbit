@@ -1,9 +1,23 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
+
+/*! \mainpage
+ *
+ * For the primary interface see:
+ * - \link VW VW namespace documentation \endlink
+ *
+ * For other docs see:
+ * - [Project website](https://vowpalwabbit.org)
+ * - [Wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki)
+ * - C++ build instructions:
+ *     - [Install dependencies](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Dependencies)
+ *     - [Build](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building)
+ *     - [Install](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Installing)
+ * - [Install other languages](https://vowpalwabbit.org/start.html)
+ * - [Tutorials](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Tutorial)
+ */
 
 #ifdef _WIN32
 #ifdef LEAKCHECK
@@ -21,6 +35,8 @@ license as described in the file LICENSE.
 
 #include "options.h"
 
+#include "compat.h"
+
 namespace VW
 {
 /*    Caveats:
@@ -35,10 +51,20 @@ vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLo
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* seed_vw_model(
     vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+// Allows the input command line string to have spaces escaped by '\'
+vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
+VW_DEPRECATED("By value version is deprecated, pass std::string by const ref instead using `to_argv`")
 char** get_argv_from_string(std::string s, int& argc);
+
+// The argv array from both of these functions must be freed.
+char** to_argv(std::string const& s, int& argc);
+char** to_argv_escaped(std::string const& s, int& argc);
+void free_args(int argc, char* argv[]);
+
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
 /*
@@ -69,7 +95,7 @@ example* read_example(vw& all, std::string example_line);
 // The more complex way to create an example.
 
 // after you create and fill feature_spaces, get an example with everything filled in.
-example* import_example(vw& all, std::string label, primitive_feature_space* features, size_t len);
+example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len);
 
 // callers must free memory using release_example
 // this interface must be used with care as finish_example is a no-op for these examples.
@@ -112,7 +138,6 @@ void empty_example(vw& all, example& ec);
 void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(void*, void*));
 void copy_example_metadata(bool audit, example*, example*);
 void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
-void clear_example_data(example&);                       // don't clear the label
 void move_feature_namespace(example* dst, example* src, namespace_index c);
 
 // after export_example, must call releaseFeatureSpace to free native memory
@@ -125,43 +150,32 @@ void save_predictor(vw& all, io_buf& buf);
 // inlines
 
 // First create the hash of a namespace.
-inline uint64_t hash_space(vw& all, std::string s)
+inline uint64_t hash_space(vw& all, const std::string& s)
 {
-  substring ss;
-  ss.begin = (char*)s.c_str();
-  ss.end = ss.begin + s.length();
-  return all.p->hasher(ss, all.hash_seed);
+  return all.p->hasher(s.data(), s.length(), all.hash_seed);
 }
-inline uint64_t hash_space_static(std::string s, std::string hash)
+inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
-  substring ss;
-  ss.begin = (char*)s.c_str();
-  ss.end = ss.begin + s.length();
-  return getHasher(hash)(ss, 0);
+  return getHasher(hash)(s.data(), s.length(), 0);
+}
+inline uint64_t hash_space_cstr(vw& all, const char* fstr)
+{
+  return all.p->hasher(fstr, strlen(fstr), all.hash_seed);
 }
 // Then use it as the seed for hashing features.
-inline uint64_t hash_feature(vw& all, std::string s, uint64_t u)
+inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {
-  substring ss;
-  ss.begin = (char*)s.c_str();
-  ss.end = ss.begin + s.length();
-  return all.p->hasher(ss, u) & all.parse_mask;
+  return all.p->hasher(s.data(), s.length(), u) & all.parse_mask;
 }
-inline uint64_t hash_feature_static(std::string s, uint64_t u, std::string h, uint32_t num_bits)
+inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
-  substring ss;
-  ss.begin = (char*)s.c_str();
-  ss.end = ss.begin + s.length();
   size_t parse_mark = (1 << num_bits) - 1;
-  return getHasher(h)(ss, u) & parse_mark;
+  return getHasher(h)(s.data(), s.length(), u) & parse_mark;
 }
 
 inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
-  substring ss;
-  ss.begin = fstr;
-  ss.end = ss.begin + strlen(fstr);
-  return all.p->hasher(ss, u) & all.parse_mask;
+  return all.p->hasher(fstr, strlen(fstr), u) & all.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

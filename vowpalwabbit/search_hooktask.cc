@@ -1,11 +1,8 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "search_hooktask.h"
 
-using namespace std;
 using namespace VW::config;
 
 // this is used for the C++ library and python library hook; hopefully
@@ -53,7 +50,7 @@ void run(Search::search& sch, multi_ex& /*ec*/)
   if (td->run_f)
     td->run_f(sch);
   else
-    cerr << "warning: HookTask::structured_predict called before hook is set" << endl;
+    std::cerr << "warning: HookTask::structured_predict called before hook is set" << std::endl;
 }
 
 void run_setup(Search::search& sch, multi_ex& /*ec*/)

@@ -1,0 +1,25 @@
+creating quadratic features for pairs: st 
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/cache_interaction_audit.txt.cache
+Reading datafile = train-sets/cache_interaction_audit.txt
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.000000 1.000000            1            1.0   1.0000   0.0000       16
+1.728843 2.457685            2            2.0   2.0000   0.4323       16
+1.189158 0.649473            4            4.0   2.0000   0.9061       16
+ unknown  unknown            8            8.0   2.0000   1.6939       16 h
+
+finished run
+number of examples per pass = 4
+passes used = 2
+weighted example sum = 8.000000
+weighted label sum = 12.000000
+average loss = undefined (no holdout)
+best constant = 1.500000
+best constant's loss = 0.250000
+total feature number = 128

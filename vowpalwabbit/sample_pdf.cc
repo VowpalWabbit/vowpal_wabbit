@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "sample_pdf.h"
 #include "err_constants.h"
 #include "api_status.h"
@@ -6,7 +10,7 @@
 #include "../explore/explore.h"
 
 // Aliases
-using LEARNER::single_learner;
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
@@ -37,7 +41,7 @@ namespace continuous_action
       single_learner* _base = nullptr;
   };
 
-  int sample_pdf::learn(example& ec, api_status* status)
+  int sample_pdf::learn(example& ec, api_status*)
   {
     // one of the base reductions will call predict so we need a valid
     // predict buffer
@@ -49,7 +53,7 @@ namespace continuous_action
     return error_code::success;
   }
 
-  int sample_pdf::predict(example& ec, api_status* status)
+  int sample_pdf::predict(example& ec, api_status*)
   {
     _pred_pdf.clear();
 
@@ -124,7 +128,7 @@ namespace continuous_action
     p_reduction->init(as_singleline(p_base), &all.random_seed);
 
     LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-        predict_or_learn<false>, 1, prediction_type::action_pdf_value);
+        predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
 
     return make_base(l);
   }

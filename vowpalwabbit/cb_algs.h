@@ -1,14 +1,13 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include "baseline.h"
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
-LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
 
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1
@@ -20,7 +19,7 @@ namespace CB_ALGS
 {
 template <bool is_learn>
 float get_cost_pred(
-    LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
+    VW::LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 {
   CB::label ld = ec.l.cb;
 
@@ -77,7 +76,7 @@ inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint
   return 0.;
 }
 
-inline bool example_is_newline_not_header(example& ec)
+inline bool example_is_newline_not_header(example const& ec)
 {
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }

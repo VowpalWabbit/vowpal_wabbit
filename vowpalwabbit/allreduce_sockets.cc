@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 /*
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
@@ -16,6 +15,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <string.h>
 #include <stdlib.h>
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #include <Windows.h>
 #include <WS2tcpip.h>
@@ -28,7 +28,8 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "allreduce.h"
 #include "vw_exception.h"
 
-using namespace std;
+using std::cerr;
+using std::endl;
 
 // port is already in network order
 socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
@@ -63,7 +64,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
   while ((ret = connect(sock, (sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
   {
     count++;
-    stringstream msg;
+    std::stringstream msg;
     if (!quiet)
     {
       msg << "connect attempt " << count << " failed: " << strerror(errno);
@@ -288,7 +289,7 @@ void AllReduceSockets::all_reduce_init()
 
 void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos)
 {
-  size_t my_bufsize = min(ar_buf_size, (parent_read_pos - children_sent_pos));
+  size_t my_bufsize = std::min(ar_buf_size, (parent_read_pos - children_sent_pos));
 
   if (my_bufsize > 0)
   {
@@ -334,7 +335,7 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n)
       if (parent_read_pos == n)
         THROW("I think parent has no data to send but he thinks he has");
 
-      size_t count = min(ar_buf_size, n - parent_read_pos);
+      size_t count = std::min(ar_buf_size, n - parent_read_pos);
       int read_size = recv(socks.parent, buffer + parent_read_pos, (int)count, 0);
       if (read_size == -1)
       {

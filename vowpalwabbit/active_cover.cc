@@ -1,10 +1,16 @@
-#include <errno.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cmath>
+#include <cerrno>
+#include <memory>
 #include "reductions.h"
 #include "rand48.h"
 #include "float.h"
 #include "vw.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 inline float sign(float w)
@@ -28,7 +34,14 @@ struct active_cover
   float* lambda_d;
 
   vw* all;  // statistics, loss
-  LEARNER::base_learner* l;
+  std::shared_ptr<rand_state> _random_state;
+  VW::LEARNER::base_learner* l;
+
+  ~active_cover()
+  {
+    delete[] lambda_n;
+    delete[] lambda_d;
+  }
 };
 
 bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */, float threshold)
@@ -59,7 +72,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
   else
   {
     float avg_loss = sum_loss / t;
-    float threshold = sqrt(c0 * avg_loss / t) + fmax(2.f * alpha, 4.f) * c0 * log(t) / t;
+    float threshold = std::sqrt(c0 * avg_loss / t) + fmax(2.f * alpha, 4.f) * c0 * log(t) / t;
     return threshold;
   }
 }
@@ -73,7 +86,7 @@ float get_pmin(float sum_loss, float t)
   }
 
   float avg_loss = sum_loss / t;
-  float pmin = fmin(1.f / (sqrt(t * avg_loss) + log(t)), 0.5f);
+  float pmin = fmin(1.f / (std::sqrt(t * avg_loss) + log(t)), 0.5f);
   return pmin;  // treating n*eps_n = 1
 }
 
@@ -102,14 +115,14 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
     q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
   }
 
-  p = sqrt(q2) / (1 + sqrt(q2));
+  p = std::sqrt(q2) / (1 + std::sqrt(q2));
 
-  if (nanpattern(p))
+  if (std::isnan(p))
   {
     p = 1.f;
   }
 
-  if (merand48(a.all->random_state) <= p)
+  if (a._random_state->get_and_update_random() <= p)
   {
     return 1.f / p;
   }
@@ -186,7 +199,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       // Update cost
       if (in_dis)
       {
-        p = sqrt(q2) / (1.f + sqrt(q2));
+        p = std::sqrt(q2) / (1.f + std::sqrt(q2));
         s = 2.f * a.alpha * a.alpha - 1.f / p;
         cost_delta = 2.f * cost - r * (fmax(importance, 0.f)) - s;
       }
@@ -218,12 +231,6 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
   }
 }
 
-void finish(active_cover& ac)
-{
-  delete[] ac.lambda_n;
-  delete[] ac.lambda_d;
-}
-
 base_learner* active_cover_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active_cover>();
@@ -239,7 +246,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
                .help("active learning variance upper bound parameter alpha. Default 1."))
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
-               .help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."))
+               .help("active learning variance upper bound parameter beta_scale. Default std::sqrt(10)."))
       .add(make_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false."));
   options.add_and_parse(new_options);
@@ -248,6 +255,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
     return nullptr;
 
   data->all = &all;
+  data->_random_state = all.get_random_state();
   data->beta_scale *= data->beta_scale;
 
   if (data->oracular)
@@ -273,7 +281,6 @@ base_learner* active_cover_setup(options_i& options, vw& all)
   // Create new learner
   learner<active_cover, example>& l = init_learner(
       data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
-  l.set_finish(finish);
 
   return make_base(l);
 }

@@ -10,10 +10,16 @@ import java.util.*;
 import org.vowpalwabbit.spark.prediction.*;
 
 /**
+ * command line invocation
+ * 
+ * mvn verify -Dtest=foo
+ * -Dit.test=org.vowpalwabbit.spark.VowpalWabbitNativeIT#testAudit
+ * -DfailIfNoTests=false -Dmaven.javadoc.skip=true
+ * 
  * @author Markus Cozowicz
  */
 public class VowpalWabbitNativeIT {
-    @Test 
+    @Test
     public void testHashing() throws Exception {
         String w1 = "ஜெய்";
 
@@ -29,10 +35,11 @@ public class VowpalWabbitNativeIT {
     public void testWrappedVsCommandLine() throws Exception {
         String vwBinary = Files.readAllLines(Paths.get(getClass().getResource("/vw-bin.txt").getPath())).get(0);
 
-        // need to use confidence_after_training as otherwise the numbers don't match up...
-        Runtime.getRuntime()
-            .exec(vwBinary + " --quiet --confidence --confidence_after_training -f target/testSimple1-ref.model -d src/test/resources/test.txt -p target/testSimple1-ref.pred")
-            .waitFor();
+        // need to use confidence_after_training as otherwise the numbers don't match
+        // up...
+        Runtime.getRuntime().exec(vwBinary
+                + " --quiet --confidence --confidence_after_training -f target/testSimple1-ref.model -d src/test/resources/test.txt -p target/testSimple1-ref.pred")
+                .waitFor();
 
         byte[] modelRef = Files.readAllBytes(Paths.get("target/testSimple1-ref.model"));
         List<String> predsRef = Files.readAllLines(Paths.get("target/testSimple1-ref.pred"), Charset.defaultCharset());
@@ -42,20 +49,17 @@ public class VowpalWabbitNativeIT {
         VowpalWabbitExample ex = null;
         FileOutputStream out = null;
 
-        try
-        {
+        try {
             vw = new VowpalWabbitNative("--quiet --confidence --confidence_after_training");
             ex = vw.createExample();
 
-            for (int i=0;i<10;i++) {
-                ex.addToNamespaceDense('a',
-                    VowpalWabbitMurmur.hash("a", 0),
-                    new double[] { 1.0, 2.0, 3.0 });
+            for (int i = 0; i < 10; i++) {
+                ex.addToNamespaceDense('a', VowpalWabbitMurmur.hash("a", 0), new double[] { 1.0, 2.0, 3.0 });
                 ex.setLabel(i % 2);
 
                 ex.learn();
 
-                ScalarPrediction pred = (ScalarPrediction)ex.getPrediction();
+                ScalarPrediction pred = (ScalarPrediction) ex.getPrediction();
 
                 String[] scalarAndConfidenceRef = predsRef.get(i).split(" ");
 
@@ -71,8 +75,8 @@ public class VowpalWabbitNativeIT {
             model = vw.getModel();
             out = new FileOutputStream("target/testSimple1.model");
             out.write(model);
-        }
-        finally {
+
+        } finally {
             if (out != null)
                 out.close();
 
@@ -94,14 +98,11 @@ public class VowpalWabbitNativeIT {
         VowpalWabbitNative vw = null;
         VowpalWabbitExample ex = null;
 
-        try
-        {
+        try {
             vw = new VowpalWabbitNative("--quiet");
             ex = vw.createExample();
-            for (int i=0;i<10;i++) {
-                ex.addToNamespaceDense('a',
-                    VowpalWabbitMurmur.hash("a", 0),
-                    new double[] { 1.0, 2.0, 3.0 });
+            for (int i = 0; i < 10; i++) {
+                ex.addToNamespaceDense('a', VowpalWabbitMurmur.hash("a", 0), new double[] { 1.0, 2.0, 3.0 });
                 ex.setLabel(i % 2);
 
                 ex.learn();
@@ -115,13 +116,11 @@ public class VowpalWabbitNativeIT {
             model = vw.getModel();
 
             ex = vw.createExample();
-            ex.addToNamespaceDense('a',
-                VowpalWabbitMurmur.hash("a", 0),
-                new double[] { 1.0, 2.0, 3.0 });
+            ex.addToNamespaceDense('a', VowpalWabbitMurmur.hash("a", 0), new double[] { 1.0, 2.0, 3.0 });
 
             ex.predict();
 
-            ScalarPrediction pred = (ScalarPrediction)ex.getPrediction();
+            ScalarPrediction pred = (ScalarPrediction) ex.getPrediction();
             learnPrediction = pred.getValue();
 
             assertTrue(learnPrediction > 0);
@@ -136,15 +135,12 @@ public class VowpalWabbitNativeIT {
             assertEquals(0, args.getHashSeed());
 
             ex = vw.createExample();
-            ex.addToNamespaceDense('a',
-                VowpalWabbitMurmur.hash("a", 0),
-                new double[] { 1.0, 2.0, 3.0 });
+            ex.addToNamespaceDense('a', VowpalWabbitMurmur.hash("a", 0), new double[] { 1.0, 2.0, 3.0 });
 
-            pred = (ScalarPrediction)ex.predict();
+            pred = (ScalarPrediction) ex.predict();
 
             assertEquals(learnPrediction, pred.getValue(), 1e-4);
-        }
-        finally {
+        } finally {
             if (ex != null)
                 ex.close();
 
@@ -155,22 +151,23 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testBFGS() throws Exception {
-        File tempFile = File. createTempFile("vowpalwabbit", ".cache");
+        File tempFile = File.createTempFile("vowpalwabbit", ".cache");
         tempFile.deleteOnExit();
         String cachePath = tempFile.getAbsolutePath();
         VowpalWabbitNative vw = null;
         VowpalWabbitExample ex = null;
 
-        try 
-        {
-            vw = new VowpalWabbitNative("--loss_function=logistic --bfgs --passes 2 -k --cache_file=" + cachePath);
+        try {
+            vw = new VowpalWabbitNative(
+                    "--loss_function=logistic -l 3.1 --power_t 0.2 --bfgs --passes 2 -k --cache_file=" + cachePath);
+            // make sure getArguments works
+            assertTrue(vw.getArguments().getArgs().contains("--bfgs"));
+
             ex = vw.createExample();
 
-            for (int i=0;i<10;i++) {
-                ex.addToNamespaceDense('a',
-                    VowpalWabbitMurmur.hash("a", 0),
-                    new double[] { 1.0, 2.0, 3.0 });
-                ex.setLabel((i % 2) * 2 - 1 );
+            for (int i = 0; i < 10; i++) {
+                ex.addToNamespaceDense('a', VowpalWabbitMurmur.hash("a", 0), new double[] { 1.0, 2.0, 3.0 });
+                ex.setLabel((i % 2) * 2 - 1);
 
                 ex.learn();
                 ex.clear();
@@ -178,8 +175,54 @@ public class VowpalWabbitNativeIT {
 
             vw.endPass();
             vw.performRemainingPasses();
+
+            // validate arguments
+            VowpalWabbitArguments args = vw.getArguments();
+
+            assertEquals(3.1, args.getLearningRate(), 0.001);
+            assertEquals(0.2, args.getPowerT(), 0.001);
+
+            VowpalWabbitPerformanceStatistics stats = vw.getPerformanceStatistics();
+
+            assertEquals(4, stats.getNumberOfExamplesPerPass());
+            assertEquals(9.0, stats.getWeightedExampleSum(), 0.0001);
+            assertEquals(-1.0, stats.getWeightedLabelSum(), 0.0001);
+            assertEquals(0.6931, stats.getAverageLoss(), 0.0001);
+            assertEquals(-0.223144, stats.getBestConstant(), 0.0001);
+            assertEquals(0.6869, stats.getBestConstantLoss(), 0.0001);
+            assertEquals(36, stats.getTotalNumberOfFeatures());
+
+        } finally {
+            if (ex != null)
+                ex.close();
+
+            if (vw != null)
+                vw.close();
         }
-        finally {
+    }
+
+    @Test
+    public void testAudit() throws Exception {
+        VowpalWabbitNative vw = null;
+        VowpalWabbitExample ex = null;
+
+        try {
+            // exepct no crash, can't directly validate as it writes to stdout
+            vw = new VowpalWabbitNative("--loss_function=logistic --link=logistic -a");
+
+            ex = vw.createExample();
+
+            for (int i = 0; i < 2; i++) {
+                ex.addToNamespaceDense('a', VowpalWabbitMurmur.hash("a", 0), new double[] { 1.0, 2.0, 3.0 });
+                ex.setLabel((i % 2) * 2 - 1);
+
+                ex.learn();
+                ex.clear();
+            }
+
+            vw.endPass();
+
+        } finally {
             if (ex != null)
                 ex.close();
 

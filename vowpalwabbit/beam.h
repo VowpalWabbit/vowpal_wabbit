@@ -1,13 +1,12 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
-#include <stdio.h>
-#include <float.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cfloat>
+#include <cstdlib>
 #include "v_array.h"
 
 // TODO: special case the version where beam_size == 1
@@ -178,7 +177,7 @@ class beam
     if (cost > worst_cost)
     {
       worst_cost = cost;
-      prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
+      prune_if_gt = std::max(1.f, best_cost) * pruning_coefficient;
     }
     return true;
   }
@@ -211,7 +210,7 @@ class beam
     if (ret != nullptr)
     {
       best_cost = next_best_cost;
-      prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
+      prune_if_gt = std::max(1.f, best_cost) * pruning_coefficient;
       ret->active = false;
       count--;
     }
@@ -236,7 +235,7 @@ class beam
         ;
       assert(start < A.size());
       assert(end <= A.size());
-      // cerr << "start=" << start << " end=" << end << endl;
+      // std::cerr << "start=" << start << " end=" << end << std::endl;
       // go over all pairs
       for (size_t i = start; i < end; i++)
       {
@@ -248,12 +247,13 @@ class beam
           if (!A[j].active)
             continue;
           assert(j < A.size());
-          // cerr << "te " << i << "," << j << endl;
+          // std::cerr << "te " << i << "," << j << std::endl;
           if (is_equivalent(A[i].data, A[j].data))
           {
             A[j].active = false;  // TODO: if kbest is on, do recomb_friends
-            // cerr << "equivalent " << i << "," << j << ": " << ((size_t)A[i].data) << " and " << ((size_t)A[j].data)
-            // << endl;
+            // std::cerr << "equivalent " << i << "," << j << ": " << ((size_t)A[i].data) << " and " <<
+            // ((size_t)A[j].data)
+            // << std::endl;
           }
         }
       }
@@ -281,7 +281,7 @@ class beam
 
     best_cost = A[0].cost;
     worst_cost = A[count - 1].cost;
-    prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
+    prune_if_gt = std::max(1.f, best_cost) * pruning_coefficient;
     best_cost_data = A[0].data;
   }
 
@@ -323,7 +323,7 @@ class beam
   //       better->recomb_friends = worse->recomb_friends;
   //       worse->recomb_friends = nullptr;
   //     } else
-  //       better->recomb_friends = new vector<beam_element<T>*>;
+  //       better->recomb_friends = new std::vector<beam_element<T>*>;
   //   } else {
   //     assert(worse->recomb_friends == nullptr);
   //   }

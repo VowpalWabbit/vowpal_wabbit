@@ -1,12 +1,12 @@
-prefix==@CMAKE_INSTALL_PREFIX@
-exec_prefix==@CMAKE_INSTALL_PREFIX@/bin
-libdir=@CMAKE_INSTALL_PREFIX@/lib
-includedir=@CMAKE_INSTALL_PREFIX@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_FULL_BINDIR@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 
 Name: Vowpal Wabbit (C wrapper)
-Description: Vowpal Wabbit Machine Learning System (C wrapper)
-URL: @PACKAGE_URL@
+Description: @VW_PROJECT_DESCRIPTION@ (C wrapper)
+URL: @VW_PROJECT_URL@
 Version: @PACKAGE_VERSION@
 Requires: libvw
-Libs: -L@CMAKE_INSTALL_PREFIX@/lib -lvw_c_wrapper
-Cflags:
+Libs: -L${libdir} -lvw_c_wrapper
+Cflags: -I${includedir}

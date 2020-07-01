@@ -1,9 +1,8 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
-#include <float.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
 
 #include "vw.h"
 #include "reductions.h"
@@ -11,8 +10,7 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 
-using namespace LEARNER;
-using namespace std;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 using namespace CB;
@@ -23,6 +21,12 @@ struct cb
 {
   cb_to_cs cbcs;
   COST_SENSITIVE::label cb_cs_ld;
+
+  ~cb()
+  {
+    cb_cs_ld.costs.delete_v();
+    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
+  }
 };
 
 bool know_all_cost_example(CB::label& ld)
@@ -47,7 +51,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld);
   if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
-    cerr << "invalid action: " << c.known_cost->action << endl;
+    std::cerr << "invalid action: " << c.known_cost->action << std::endl;
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ld, data.cb_cs_ld);
@@ -56,6 +60,9 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   {
     ec.l.cs = data.cb_cs_ld;
 
+    // Guard example state restore against throws
+    auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cb = ld; });
+
     if (is_learn)
       base.learn(ec);
     else
@@ -63,7 +70,6 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
     for (size_t i = 0; i < ld.costs.size(); i++)
       ld.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
-    ec.l.cb = ld;
   }
 }
 
@@ -93,11 +99,11 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
-    stringstream outputStringStream;
+    std::stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       cb_class cl = ld.costs[i];
@@ -105,17 +111,10 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
         outputStringStream << ' ';
       outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
-}
-
-void finish(cb& data)
-{
-  cb_to_cs& c = data.cbcs;
-  data.cb_cs_ld.costs.delete_v();
-  COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
 }
 
 void finish_example(vw& all, cb& c, example& ec)
@@ -179,7 +178,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("csoaa"))
   {
-    stringstream ss;
+    std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("csoaa", ss.str());
   }
@@ -188,28 +187,27 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   if (eval)
   {
     all.p->lp = CB_EVAL::cb_eval;
-    all.label_type = label_type::cb_eval;
+    all.label_type = label_type_t::cb_eval;
   }
   else
   {
     all.p->lp = CB::cb_label;
-    all.label_type = label_type::cb;
+    all.label_type = label_type_t::cb;
   }
 
   learner<cb, example>* l;
   if (eval)
   {
-    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
+    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
     l = &init_learner(
-        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type::multiclass);
+        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type_t::multiclass);
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;
 
-  l->set_finish(finish);
   return make_base(*l);
 }

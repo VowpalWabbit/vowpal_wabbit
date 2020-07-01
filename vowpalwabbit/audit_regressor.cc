@@ -1,15 +1,12 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "reductions.h"
 #include "interactions.h"
 #include "parse_args.h"
 #include "vw.h"
 
-using namespace std;
 using namespace VW::config;
 
 struct audit_regressor_data
@@ -18,7 +15,7 @@ struct audit_regressor_data
   size_t increment;
   size_t cur_class;
   size_t total_class_cnt;
-  vector<string>* ns_pre;
+  std::vector<std::string>* ns_pre;
   io_buf* out_file;
   size_t loaded_regressor_values;
   size_t values_audited;
@@ -33,7 +30,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
     return;
   }
 
-  string ns_pre;
+  std::string ns_pre;
   if (!dat.ns_pre->empty())
     ns_pre += '*';
 
@@ -57,26 +54,26 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   else
     return;
 
-  string ns_pre;
-  for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
+  std::string ns_pre;
+  for (std::vector<std::string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
 
-  ostringstream tempstream;
+  std::ostringstream tempstream;
   tempstream << ':' << ((ft_idx & weights.mask()) >> weights.stride_shift()) << ':' << weights[ft_idx];
 
-  string temp = ns_pre + tempstream.str() + '\n';
+  std::string temp = ns_pre + tempstream.str() + '\n';
   if (dat.total_class_cnt > 1)  // add class prefix for multiclass problems
-    temp = to_string(dat.cur_class) + ':' + temp;
+    temp = std::to_string(dat.cur_class) + ':' + temp;
 
   dat.out_file->bin_write_fixed(temp.c_str(), (uint32_t)temp.size());
 
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* base */, example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, example& ec)
 {
   vw& all = *rd.all;
 
-  ostringstream tempstream;
+  std::ostringstream tempstream;
   parameters& weights = rd.all->weights;
   for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
   {
@@ -91,7 +88,7 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
         tempstream << ':' << w;
         w = 0.;
       }
-      tempstream << endl;
+      tempstream << std::endl;
     }
   }
 
@@ -99,9 +96,9 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
 }
 
 // This is a learner which does nothing with examples.
-// void learn(audit_regressor_data&, LEARNER::base_learner&, example&) {}
+// void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, LEARNER::single_learner& base, example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, example& ec)
 {
   vw& all = *rd.all;
 
@@ -164,7 +161,7 @@ inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t pro
 void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 {
   bool printed = false;
-  if (ec.example_counter + 1 >= all.sd->dump_interval && !all.quiet)
+  if (ec.example_counter + 1 >= all.sd->dump_interval && !all.logger.quiet)
   {
     print_ex(all, ec.example_counter + 1, dd.values_audited, dd.values_audited * 100 / dd.loaded_regressor_values);
     all.sd->weighted_unlabeled_examples = (double)(ec.example_counter + 1);  // used in update_dump_interval
@@ -187,7 +184,7 @@ void finish(audit_regressor_data& dat)
 {
   if (dat.values_audited < dat.loaded_regressor_values)
     dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset ("
-                           << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
+                           << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << std::endl;
 }
 
 template <class T>
@@ -232,7 +229,7 @@ void init_driver(audit_regressor_data& dat)
   if (dat.loaded_regressor_values == 0)
     THROW("regressor has no non-zero weights. Nothing to audit.");
 
-  if (!dat.all->quiet)
+  if (!dat.all->logger.quiet)
   {
     dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
     dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
@@ -244,9 +241,9 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
-  string out_file;
+  std::string out_file;
 
   option_group_definition new_options("Audit Regressor");
   new_options.add(make_option("audit_regressor", out_file)
@@ -268,16 +265,16 @@ LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 
   auto dat = scoped_calloc_or_throw<audit_regressor_data>();
   dat->all = &all;
-  dat->ns_pre = new vector<string>();  // explicitly invoking vector's constructor
+  dat->ns_pre = new std::vector<std::string>();  // explicitly invoking std::vector's constructor
   dat->out_file = new io_buf();
-  dat->out_file->open_file(out_file.c_str(), all.stdin_off, io_buf::WRITE);
+  dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
-  LEARNER::learner<audit_regressor_data, example>& ret =
-      LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);
+  VW::LEARNER::learner<audit_regressor_data, example>& ret =
+      VW::LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);
   ret.set_init_driver(init_driver);
 
-  return LEARNER::make_base<audit_regressor_data>(ret);
+  return VW::LEARNER::make_base<audit_regressor_data>(ret);
 }

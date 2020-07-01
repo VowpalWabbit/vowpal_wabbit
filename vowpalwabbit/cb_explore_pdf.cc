@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "cb_explore_pdf.h"
 #include "err_constants.h"
 #include "api_status.h"
@@ -5,7 +9,7 @@
 #include "parse_args.h"
 
 // Aliases
-using LEARNER::single_learner;
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::config::make_option;
 using VW::config::option_group_definition;
@@ -35,13 +39,13 @@ namespace continuous_action
       single_learner* _base = nullptr;
   };
 
-  int cb_explore_pdf::learn(example& ec, api_status* status)
+  int cb_explore_pdf::learn(example& ec, api_status*)
   {
     _base->learn(ec);
     return error_code::success;
   }
 
-  int cb_explore_pdf::predict(example& ec, api_status* status)
+  int cb_explore_pdf::predict(example& ec, api_status*)
   {
     _base->predict(ec);
 
@@ -87,7 +91,7 @@ namespace continuous_action
     float max;
     new_options
         .add(make_option("cb_explore_pdf", invoked).keep().help("Sample a pdf and pick a continuous valued action"))
-        .add(make_option("epsilon", epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"))
+        .add(make_option("epsilon", epsilon).keep().allow_override().default_value(0.05f).help("epsilon-greedy exploration"))
         .add(make_option("min_value", min).keep().default_value(0.0f).help("min value for continuous range"))
         .add(make_option("max_value", max).keep().default_value(1.0f).help("max value for continuous range"));
 
@@ -110,7 +114,7 @@ namespace continuous_action
 
     LEARNER::learner<cb_explore_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base),
         predict_or_learn<true>,
-        predict_or_learn<false>, 1, prediction_type::pdf);
+        predict_or_learn<false>, 1, prediction_type_t::pdf);
 
     return make_base(l);
   }

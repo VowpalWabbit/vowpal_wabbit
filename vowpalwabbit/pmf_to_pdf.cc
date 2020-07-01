@@ -1,14 +1,15 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "reductions.h"
 #include "pmf_to_pdf.h" // todo rename
 #include "explore.h"
 #include "vw.h"
-#include "debug_log.h"
 
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
-
-VW_DEBUG_ENABLE(false)
 
 namespace VW { namespace pmf_to_pdf
 {
@@ -41,7 +42,7 @@ namespace VW { namespace pmf_to_pdf
       }
     }
 
-    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1) 
+    if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1)
       pdf_lim.push_back(num_actions - 1);
 
     auto& p_dist = ec.pred.prob_dist;
@@ -86,7 +87,6 @@ namespace VW { namespace pmf_to_pdf
 
     const float continuous_range = max_value - min_value;
     const float unit_range = continuous_range / (num_actions - 1);
-    const float h = unit_range * bandwidth;
 
     const float ac = (action_cont - min_value) / unit_range;
     int ic = (int)floor(ac);
@@ -125,14 +125,9 @@ namespace VW { namespace pmf_to_pdf
     data.learn(ec);
   }
 
-  void finish(reduction& data)
-  {
-    data.~reduction();
-  }
-
   void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
   {
-    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
     {
       std::stringstream label_string;
       if (is_test)
@@ -190,7 +185,8 @@ namespace VW { namespace pmf_to_pdf
     sprintf(temp_str, "%d:%f", maxid, maxprob);
     sso << temp_str;
 
-    for (int sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
+    for (auto& sink : all.final_prediction_sink)
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
     print_update(all, CB::cb_label.test_label(&ld), ec, sso);
   }
@@ -236,9 +232,7 @@ namespace VW { namespace pmf_to_pdf
     data->_p_base = p_base;
 
     learner<pmf_to_pdf::reduction, example>& l =
-        init_learner(data, p_base, learn, predict, 1, prediction_type::pdf);
-
-    l.set_finish(finish);
+        init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);
 
     return make_base(l);
   }
