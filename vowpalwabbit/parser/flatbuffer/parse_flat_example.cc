@@ -76,7 +76,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples)
 void parser::parse_example(vw* all, example* ae, const Example* eg)
 {
   all->p->lp.default_label(&ae->l);
-  parse_flat_label(all, ae, eg);
+  parse_flat_label(all->sd, ae, eg);
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG)){
     ae->tag = v_init<char>();
@@ -116,7 +116,7 @@ void parser::parse_features(vw* all, example* ae, features& fs, const Feature* f
   {fs.push_back(feature->value(), feature->hash());}
 }
 
-void parser::parse_flat_label(vw* all, example* ae, const Example* eg)
+void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
 {
   Label label_type = eg->label_type();
 
@@ -124,7 +124,7 @@ void parser::parse_flat_label(vw* all, example* ae, const Example* eg)
   {
   case Label_SimpleLabel:{
     const SimpleLabel* simple_label = static_cast<const SimpleLabel*>(eg->label());
-    parse_simple_label(all->sd, &(ae->l), simple_label);
+    parse_simple_label(sd, &(ae->l), simple_label);
     break;
   }
   case Label_CBLabel:{
@@ -149,7 +149,7 @@ void parser::parse_flat_label(vw* all, example* ae, const Example* eg)
   }
   case Label_MultiClass:{
     auto mc_label = static_cast<const MultiClass*>(eg->label());
-    parse_mc_label(all->sd, &(ae->l), mc_label);
+    parse_mc_label(sd, &(ae->l), mc_label);
     break;
   }
   case Label_MultiLabel:{

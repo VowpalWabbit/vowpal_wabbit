@@ -33,7 +33,7 @@ private:
     void parse_example(vw* all, example* ae, const Example* eg);
     void parse_namespaces(vw* all, example* ae, const Namespace* ns);
     void parse_features(vw* all, example* ae, features& fs, const Feature* feature);
-    void parse_flat_label(vw* all, example* ae, const Example* eg);
+    void parse_flat_label(shared_data* sd, example* ae, const Example* eg);
 
     void parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label);
     void parse_cb_label(polylabel* l, const CBLabel* label);

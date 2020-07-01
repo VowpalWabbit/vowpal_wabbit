@@ -12,7 +12,6 @@
 #include "generated/example_generated.h"
 
 
-// TO-DO: Remove all wherever not needed.
 namespace VW {
 namespace parsers {
 namespace flatbuffer {
