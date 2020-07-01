@@ -237,10 +237,10 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
-  auto split_commas = v_init<VW::string_view>();
+  std::vector<VW::string_view> split_commas;
   tokenize(',', outcome, split_commas);
 
-  auto split_colons = v_init<VW::string_view>();
+  std::vector<VW::string_view> split_colons;
   tokenize(':', split_commas[0], split_colons);
 
   if (split_colons.size() != 3) THROW("Malformed ccb label");
@@ -260,18 +260,15 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
     ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
   }
 
-  split_colons.delete_v();
-  split_commas.delete_v();
-
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label* ld, v_array<VW::string_view>& split_inclusions)
+void parse_explicit_inclusions(CCB::label* ld, std::vector<VW::string_view>& split_inclusions)
 {
   for (const auto& inclusion : split_inclusions) { ld->explicit_included_actions.push_back(int_of_string(inclusion)); }
 }
 
-void parse_label(parser* p, shared_data* /*sd*/, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words)
 {
   auto* ld = static_cast<CCB::label*>(v);
   ld->weight = 1.0;

@@ -5,12 +5,15 @@
 #pragma once
 
 #include "v_array.h"
+#include "future_compat.h"
 
 #include <utility>
 #include <memory>
 #include <string>
 #include <algorithm>
 #include <cstddef>
+#include <vector>
+#include <type_traits>
 
 using feature_value = float;
 using feature_index = uint64_t;
@@ -23,17 +26,19 @@ struct features_value_index_audit_range;
 // sparse feature definition for the library interface
 struct feature
 {
-  float x{0.f};
-  uint64_t weight_index{0};
+  float x;
+  uint64_t weight_index;
 
   feature() = default;
   feature(float _x, uint64_t _index) : x(_x), weight_index(_index) {}
 
   feature(const feature&) = default;
   feature& operator=(const feature&) = default;
-  feature(feature&&) = default;
-  feature& operator=(feature&&) = default;
+  feature(feature&&) noexcept = default;
+  feature& operator=(feature&&) noexcept = default;
 };
+
+static_assert(std::is_trivial<feature>::value, "To be used in v_array feature must be trivial");
 
 /// iterator over feature values only
 class features_value_iterator
@@ -205,7 +210,7 @@ struct features
 
   v_array<feature_value> values;           // Always needed.
   v_array<feature_index> indicies;         // Optional for sparse data.
-  v_array<audit_strings_ptr> space_names;  // Optional for audit mode.
+  std::vector<audit_strings_ptr> space_names;  // Optional for audit mode.
 
   float sum_feat_sq;
 
@@ -220,11 +225,11 @@ struct features
 
     inline features_value_index_audit_iterator begin()
     {
-      return {_outer->values.begin(), _outer->indicies.begin(), _outer->space_names.begin()};
+      return {_outer->values.begin(), _outer->indicies.begin(), _outer->space_names.data()};
     }
     inline features_value_index_audit_iterator end()
     {
-      return {_outer->values.end(), _outer->indicies.end(), _outer->space_names.end()};
+      return {_outer->values.end(), _outer->indicies.end(), _outer->space_names.data() + _outer->space_names.size() };
     }
   };
 
@@ -242,6 +247,7 @@ struct features
 
   inline bool nonempty() const { return !values.empty(); }
 
+  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal.")
   void free_space_names(size_t i);
 
   inline features_value_index_audit_range values_indices_audit() { return features_value_index_audit_range{this}; }

@@ -30,7 +30,13 @@ struct default_cleanup
   void operator()(T*) {}
 };
 
-template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
+template <typename T>
+struct default_initializer
+{
+  T* operator()(T* obj) { return obj; }
+};
+
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct no_lock_object_pool
 {
   no_lock_object_pool() = default;
@@ -166,7 +172,7 @@ struct value_object_pool
   TDeleter m_deleter;
 };
 
-template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct object_pool
 {
   object_pool() = default;
