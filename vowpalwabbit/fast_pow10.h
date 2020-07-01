@@ -6,7 +6,16 @@
 
 #include "future_compat.h"
 
-static constexpr std::array<float, 77> pow_10_lookup_table = {
+const constexpr int8_t VALUES_BELOW_ZERO = 44;
+const constexpr int8_t VALUES_ABOVE_ZERO = 38;
+
+static constexpr std::array<float, VALUES_BELOW_ZERO + 1 + VALUES_ABOVE_ZERO> pow_10_lookup_table = {
+    1e-44f,
+    1e-43f,
+    1e-42f,
+    1e-41f,
+    1e-40f,
+    1e-39f,
     1e-38f,
     1e-37f,
     1e-36f,
@@ -88,14 +97,19 @@ static constexpr std::array<float, 77> pow_10_lookup_table = {
 
 namespace VW
 {
-// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard is used.
+// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard
+// is used.
 VW_STD17_CONSTEXPR inline float fast_pow10(int8_t pow)
 {
-  // If the power would be above the range float can represent, return NaN.
-  return (pow > 38 || pow < -38) ? std::numeric_limits<float>::quiet_NaN() : pow_10_lookup_table[pow + 38];
+  // If the power would be above the range float can represent, return inf.
+  return pow > VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
+                                 : (pow < -1 * VALUES_BELOW_ZERO) ? 0.f : pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(VALUES_BELOW_ZERO)];
 }
 
-// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard is used.
-// Undefined behavior if pow is > 38 or < -38
-VW_STD17_CONSTEXPR inline float fast_pow10_unsafe(int8_t pow) { return pow_10_lookup_table[pow + 38]; }
+// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard
+// is used. Undefined behavior if pow is > 38 or < -45
+VW_STD17_CONSTEXPR inline float fast_pow10_unsafe(int8_t pow)
+{
+  return pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(VALUES_BELOW_ZERO)];
+}
 }  // namespace VW
