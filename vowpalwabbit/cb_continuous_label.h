@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include "label_parser.h"
@@ -29,5 +28,6 @@ namespace VW { namespace cb_continuous
 
   std::string to_string(const continuous_label_elm& elm);
   std::string to_string(continuous_label& lbl);
+
   }  // namespace cb_continuous
   }  // namespace VW

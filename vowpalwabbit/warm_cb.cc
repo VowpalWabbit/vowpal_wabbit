@@ -1,4 +1,8 @@
-#include <float.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
 #include "reductions.h"
 #include "cb_algs.h"
 #include "rand48.h"
@@ -7,13 +11,14 @@
 #include "hash.h"
 #include "explore.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 #include <vector>
+#include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
-using namespace std;
 using namespace VW::config;
 
 #define WARM_START 1
@@ -40,6 +45,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter;
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   multi_ex ecs;
   float loss0;
   float loss1;
@@ -62,13 +68,13 @@ struct warm_cb
   // auxiliary variables
   uint32_t num_actions;
   float epsilon;
-  vector<float> lambdas;
+  std::vector<float> lambdas;
   action_scores a_s_adf;
-  vector<float> cumulative_costs;
+  std::vector<float> cumulative_costs;
   CB::cb_class cl_adf;
   uint32_t ws_train_size;
   uint32_t ws_vali_size;
-  vector<example*> ws_vali;
+  std::vector<example*> ws_vali;
   float cumu_var;
   uint32_t ws_iter;
   uint32_t inter_iter;
@@ -77,6 +83,36 @@ struct warm_cb
   COST_SENSITIVE::label* csls;
   CB::label* cbls;
   bool use_cs;
+
+  ~warm_cb()
+  {
+    CB::cb_label.delete_label(&cb_label);
+    a_s.delete_v();
+
+    for (size_t a = 0; a < num_actions; ++a)
+    {
+      COST_SENSITIVE::cs_label.delete_label(&csls[a]);
+    }
+    free(csls);
+    free(cbls);
+
+    for (size_t a = 0; a < num_actions; ++a)
+    {
+      ecs[a]->pred.a_s.delete_v();
+      VW::dealloc_example(CB::cb_label.delete_label, *ecs[a]);
+      free_it(ecs[a]);
+    }
+
+    a_s_adf.delete_v();
+    for (size_t i = 0; i < ws_vali.size(); ++i)
+    {
+      if (use_cs)
+        VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *ws_vali[i]);
+      else
+        VW::dealloc_example(MULTICLASS::mc_label.delete_label, *ws_vali[i]);
+      free(ws_vali[i]);
+    }
+  }
 };
 
 float loss(warm_cb& data, uint32_t label, uint32_t final_prediction)
@@ -102,14 +138,7 @@ float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fi
 }
 
 template <class T>
-inline void delete_it(T* p)
-{
-  if (p != nullptr)
-    delete p;
-}
-
-template <class T>
-uint32_t find_min(vector<T> arr)
+uint32_t find_min(std::vector<T> arr)
 {
   T min_val = FLT_MAX;
   uint32_t argmin = 0;
@@ -127,47 +156,15 @@ uint32_t find_min(vector<T> arr)
 
 void finish(warm_cb& data)
 {
-  CB::cb_label.delete_label(&data.cb_label);
-  data.a_s.delete_v();
-
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->quiet)
+  if (!data.all->logger.quiet)
   {
-    cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << endl;
-    cerr << "theoretical average variance = " << data.num_actions / data.epsilon << endl;
-    cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
-         << " to " << data.lambdas[data.choices_lambda - 1] << endl;
+    std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    std::cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
+              << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
-
-  for (size_t a = 0; a < data.num_actions; ++a)
-  {
-    COST_SENSITIVE::cs_label.delete_label(&data.csls[a]);
-  }
-  free(data.csls);
-  free(data.cbls);
-
-  for (size_t a = 0; a < data.num_actions; ++a)
-  {
-    data.ecs[a]->pred.a_s.delete_v();
-    VW::dealloc_example(CB::cb_label.delete_label, *data.ecs[a]);
-    free_it(data.ecs[a]);
-  }
-  data.ecs.~vector<example*>();
-
-  data.lambdas.~vector<float>();
-  data.cumulative_costs.~vector<float>();
-
-  data.a_s_adf.delete_v();
-  for (size_t i = 0; i < data.ws_vali.size(); ++i)
-  {
-    if (data.use_cs)
-      VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data.ws_vali[i]);
-    else
-      VW::dealloc_example(MULTICLASS::mc_label.delete_label, *data.ws_vali[i]);
-    free(data.ws_vali[i]);
-  }
-  data.ws_vali.~vector<example*>();
 }
 
 void copy_example_to_adf(warm_cb& data, example& ec)
@@ -210,7 +207,7 @@ float minimax_lambda(float epsilon) { return epsilon / (1.0f + epsilon); }
 void setup_lambdas(warm_cb& data)
 {
   // The lambdas are arranged in ascending order
-  vector<float>& lambdas = data.lambdas;
+  std::vector<float>& lambdas = data.lambdas;
   for (uint32_t i = 0; i < data.choices_lambda; i++) lambdas.push_back(0.f);
 
   // interaction only: set all lambda's to be identically 1
@@ -247,7 +244,7 @@ void setup_lambdas(warm_cb& data)
 
 uint32_t generate_uar_action(warm_cb& data)
 {
-  float randf = merand48(data.all->random_state);
+  float randf = data._random_state->get_and_update_random();
 
   for (uint32_t i = 1; i <= data.num_actions; i++)
   {
@@ -269,7 +266,7 @@ uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
     cor_type = data.cor_type_ws;
   }
 
-  float randf = merand48(data.all->random_state);
+  float randf = data._random_state->get_and_update_random();
   if (randf < cor_prob)
   {
     if (cor_type == UAR)
@@ -369,7 +366,7 @@ void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
     data.ecs[a]->l.cs = csls[a];
   }
 
-  vector<float> old_weights;
+  std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
@@ -424,8 +421,19 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   auto& lab = data.ecs[cl.action - 1]->l.cb;
   lab.costs.push_back(cl);
 
-  vector<float> old_weights;
+  std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
+
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&old_weights, &data]
+    {
+      for (size_t a = 0; a < data.num_actions; ++a) 
+      {
+        data.ecs[a]->weight = old_weights[a];
+      }
+    }
+  );
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
@@ -433,8 +441,6 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
     for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a] * weight_multiplier;
     base.learn(data.ecs, i);
   }
-
-  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 }
 
 template <bool use_cs>
@@ -576,7 +582,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("warm_start", data->ws_period)
                .default_value(0U)
                .help("number of training examples for warm start phase"))
-      .add(make_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("interaction", data->inter_period)
                .default_value(UINT32_MAX)
                .help("number of examples for the interactive contextual bandit learning phase"))
@@ -620,17 +626,18 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
   data->all = &all;
+  data->_random_state = all.get_random_state();
   data->use_cs = use_cs;
 
   init_adf_data(*data.get(), num_actions);
 
-  options.insert("cb_min_cost", to_string(data->loss0));
-  options.insert("cb_max_cost", to_string(data->loss1));
+  options.insert("cb_min_cost", std::to_string(data->loss0));
+  options.insert("cb_max_cost", std::to_string(data->loss1));
 
   if (options.was_supplied("baseline"))
   {
-    stringstream ss;
-    ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
+    std::stringstream ss;
+    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
@@ -643,7 +650,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("epsilon"))
   {
-    cerr << "Warning: no epsilon (greedy parameter) specified; resetting to 0.05" << endl;
+    std::cerr << "Warning: no epsilon (greedy parameter) specified; resetting to 0.05" << std::endl;
     data->epsilon = 0.05f;
   }
 

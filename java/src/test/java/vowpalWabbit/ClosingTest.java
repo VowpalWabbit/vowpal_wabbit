@@ -172,17 +172,14 @@ public class ClosingTest  extends VWTestHelper {
     }
 
     private VWScalarLearner model(final int passes, final boolean quiet) throws IOException {
-        File cacheFile = File.createTempFile("ClosingTest", ".vw.cache");
-        cacheFile.deleteOnExit();
-
         String command =
                 (!DIAGNOSTICS && quiet ?
                     " --quiet " :
                     " --progress " + ((int) Math.round(passes / 10d))
-                ) +
+                    ) +
                 " --passes " + passes +
                 " --holdout_off " +
-                " --cache_file " + cacheFile.getCanonicalPath();
+                " --cache";
 
         // Create a learner and just have it take 1 example, but many passes.
         VWScalarLearner vw = VWLearners.create(command);

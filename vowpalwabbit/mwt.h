@@ -1,13 +1,13 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
-LEARNER::base_learner* mwt_setup(VW::config::options_i& options, vw& all);
+#include "reductions_fwd.h"
+
+VW::LEARNER::base_learner* mwt_setup(VW::config::options_i& options, vw& all);
 
 namespace MWT
 {
 void delete_scalars(void* v);
-void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag);
+void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag);
 }  // namespace MWT

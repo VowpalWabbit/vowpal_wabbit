@@ -25,9 +25,10 @@ class SequenceLabeler(pyvw.SearchTask):
         for n in range(len(sentence)):
             pos,word = sentence[n]
             # use "with...as..." to guarantee that the example is finished properly
-            with self.vw.example({'w': [word]}) as ex:
-                pred = self.sch.predict(examples=ex, my_tag=n+1, oracle=pos, condition=(n,'p'))
-                output.append(pred)
+            ex = self.vw.example({'w': [word]})
+            pred = self.sch.predict(examples=ex, my_tag=n+1, oracle=pos, condition=(n,'p'))
+            vw.finish_example([ex]) # must pass the example in as a list because search is a MultiEx reduction
+            output.append(pred)
         return output
 
 # wow! your data can be ANY type you want... does NOT have to be VW examples

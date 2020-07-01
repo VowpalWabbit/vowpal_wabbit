@@ -1,8 +1,20 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 #include "cb.h"
 
 namespace CB
 {
+  template<typename LBL = CB::label>
+  char* bufread_label_additional_fields(LBL* ld, char* c)
+  {
+    memcpy(&ld->weight, c, sizeof(ld->weight));
+    c += sizeof(ld->weight);
+    return c;
+  }
+
   template<typename LBL=CB::label, typename LBL_ELM=cb_class>
   char* bufread_label(LBL* ld, char* c, io_buf& cache)
   {
@@ -22,7 +34,7 @@ namespace CB
       ld->costs.push_back(temp);
     }
 
-    return c;
+    return bufread_label_additional_fields(ld,c);
   }
 
   template <typename LBL = CB::label, typename LBL_ELM = cb_class>
@@ -40,7 +52,14 @@ namespace CB
   }
 
   float weight(void*);
-  
+
+  template <typename LBL>
+  char* bufcache_label_additional_fields(LBL* ld, char* c) {
+    memcpy(c, &ld->weight, sizeof(ld->weight));
+    c += sizeof(ld->weight);
+    return c;
+  }
+
   template <typename LBL = CB::label, typename LBL_ELM = cb_class>
   char* bufcache_label(LBL* ld, char* c)
   {
@@ -51,7 +70,7 @@ namespace CB
       *(LBL_ELM*)c = ld->costs[i];
       c += sizeof(LBL_ELM);
     }
-    return c;
+    return bufcache_label_additional_fields(ld, c);
   }
 
   template <typename LBL = CB::label, typename LBL_ELM = cb_class>
@@ -63,11 +82,18 @@ namespace CB
     bufcache_label<LBL,LBL_ELM>(ld, c);
   }
 
+  template <typename LBL>
+  void default_label_additional_fields(LBL* ld)
+  {
+    ld->weight = 1;
+  }
+
   template <typename LBL = CB::label>
   void default_label(void* v)
   {
     auto ld = (LBL*)v;
     ld->costs.clear();
+    default_label_additional_fields(ld);
   }
 
   template <typename LBL = CB::label>
@@ -90,10 +116,16 @@ namespace CB
   }
 
   template <typename LBL = CB::label>
+  void copy_label_additional_fields(LBL* dst, LBL* src) {
+    dst->weight = src->weight;
+  }
+
+  template <typename LBL = CB::label>
   void copy_label(void* dst, void* src)
   {
     auto ldD = (LBL*)dst;
     auto ldS = (LBL*)src;
     copy_array(ldD->costs, ldS->costs);
+    copy_label_additional_fields(ldD, ldS);
   }
 }  // namespace CB

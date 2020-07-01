@@ -13,7 +13,7 @@
 using namespace VW::config;
 
 BOOST_AUTO_TEST_CASE(make_option_and_customize) {
-  int loc;
+  int loc = 0;
   auto opt = make_option("opt", loc)
     .default_value(4)
     .help("Help text")

@@ -1,19 +1,17 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
 
-#define cdbg clog
+#define cdbg std::clog
 #undef cdbg
 #define cdbg \
   if (1)     \
   {          \
   }          \
   else       \
-    clog
+    std::clog
 // comment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t action;
@@ -132,7 +130,7 @@ struct search
   //                           AUTO_CONDITION_FEATURES is on, then we will automatically
   //                           add features to ec based on what you're conditioning on.
   //                           nullptr => independent prediction
-  //   condition_on_names    a string containing the list of names of features you're
+  //   condition_on_names    a std::string containing the list of names of features you're
   //                           conditioning on. used explicitly for auditing, implicitly
   //                           for keeping tags separated. also, strlen(condition_on_names)
   //                           tells us how long condition_on is
@@ -374,11 +372,7 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
 
 // void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
 // char* mismatch_error_string);
-bool string_equal(std::string a, std::string b);
-bool float_equal(float a, float b);
-bool uint32_equal(uint32_t a, uint32_t b);
-bool size_equal(size_t a, size_t b);
 
 // our interface within VW
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 }  // namespace Search

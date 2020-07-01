@@ -52,7 +52,7 @@ It should also be noted that Vowpal Wabbit makes all attempts at compatibility b
 | 8.1.0      | 9e5831a72d5b0a124c845dcaec75879f498b355f |
 
 # Spark Layer
-To improve performance when hosting VW in Spark an additional optimized layer can be found in org.vowpalwabbit.spark.*. The actual VW/Spark integration will be available throogh [MMLSpark](https://github.com/Azure/mmlspark).
+To improve performance when hosting VW in Spark an additional optimized layer can be found in org.vowpalwabbit.spark.*. The actual VW/Spark integration will be available through [MMLSpark](https://github.com/Azure/mmlspark).
 
 ## Features
 

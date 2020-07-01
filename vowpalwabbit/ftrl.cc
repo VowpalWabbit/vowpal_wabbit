@@ -1,15 +1,11 @@
-/*
-   Copyright (c) by respective owners including Yahoo!, Microsoft, and
-   individual contributors. All rights reserved.  Released under a BSD (revised)
-   license as described in the file LICENSE.
-   */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <string>
 #include "correctedMath.h"
 #include "gd.h"
-#include "reductions.h"
 
-using namespace std;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 #define W_XT 0  // current parameter
@@ -70,18 +66,18 @@ inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
   float uncertain = ((d.b.data.ftrl_beta + sqrtf_ng2) / d.b.data.ftrl_alpha + d.b.data.l2_lambda);
   d.score += (1 / uncertain) * sign(fx);
 }
-
 float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 {
   uncertainty uncetain(b);
   GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
   return uncetain.score;
 }
+
 template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit)
     GD::print_audit_features(*(b.all), ec);
 }
@@ -106,7 +102,7 @@ void multipredict(
   if (all.sd->contraction != 1.)
     for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
+    for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
@@ -151,7 +147,7 @@ void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
 
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
-  w[W_XT] = sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2.f * tmp) * tmp;
+  w[W_XT] = std::sqrt(w[W_G2]) * d.ftrl_beta * w[W_ZT] * correctedExp(squared_theta / 2.f * tmp) * tmp;
 
   d.predict += w[W_XT] * x;
 }
@@ -163,15 +159,6 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
-}
-
-std::string coin_betting_state_to_string(float* w)
-{
-  std::stringstream tmp;
-  tmp << "W_XT:" << w[0] << ", W_ZT:" << w[1]
-      << ", W_G2:" << w[2] << ", W_MX:" << w[3]
-      << ", W_WE:" << w[4] << ", W_MG:" << w[5];
-  return tmp.str();
 }
 
 // Coin betting vectors
@@ -197,25 +184,9 @@ void inner_coin_betting_predict(update_data& d, float x, float& wref)
   if (w[W_MG] * w_mx > 0)
     w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
 
-// #ifdef _DEBUG
-//   float pre_d_predict = d.predict;
-// #endif
-
   d.predict += w_xt * x;
   if (w_mx > 0)
     d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
-
-// #ifdef _DEBUG
-//   if (nanpattern(d.predict) || infpattern(w[W_WE]) )
-//     cerr << "PREDICT: example_counter=" << __debug_current_example__->example_counter
-//          << ", ft_offset=" << __debug_current_example__->ft_offset << ", "
-//           << ", w_xt=" << w_xt
-//           << ", x=" << x
-//           << ", pre_d_predict=" << pre_d_predict
-//           << ", d.predict=" << d.predict << ", "
-//           << coin_betting_state_to_string(w)
-//           << ", ftrl_alpha=" << d.ftrl_alpha << endl;
-// #endif
 }
 
 void inner_coin_betting_update_after_prediction(update_data& d, float x, float& wref)
@@ -244,14 +215,6 @@ void inner_coin_betting_update_after_prediction(update_data& d, float x, float& 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
-
-#ifdef DEBUG
-  if (infpattern(w[W_WE]))
-  {
-    cerr << "UPDATE: d.update=" << d.update << ", x=" << x << ", gradient=" << gradient << ", "
-          << coin_betting_state_to_string(w) << endl;
-  }
-#endif
 }
 
 void coin_betting_predict(ftrl& b, single_learner&, example& ec)
@@ -266,20 +229,7 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 
   ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
-
-#ifdef DEBUG
-  if (nanpattern(ec.partial_prediction))
-  {
-    cerr << "ec.example_counter=" << ec.example_counter << ", ec.ft_offset=" << ec.ft_offset << endl;
-    cerr << "b.all->normalized_sum_norm_x=" << b.all->normalized_sum_norm_x << ", ec.weight=" << ec.weight
-         << ", b.data.normalized_squared_norm_x=" << b.data.normalized_squared_norm_x
-         << ", b.total_weight=" << b.total_weight << ", ec.weight=" << ec.weight
-         << ", ec.partial_prediction=" << ec.partial_prediction << ", b.data.predict=" << b.data.predict
-         << ", (b.all->normalized_sum_norm_x + 1e-6)=" << (b.all->normalized_sum_norm_x + 1e-6)
-         << ", b.total_weight=" << b.total_weight << endl;
-  }
-#endif
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
@@ -288,7 +238,7 @@ void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 
   GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
   ec.partial_prediction = b.data.predict;
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_after_prediction_proximal(ftrl& b, example& ec)
@@ -314,8 +264,6 @@ void coin_betting_update_after_prediction(ftrl& b, example& ec)
 template <bool audit>
 void learn_proximal(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // predict with confidence
   predict<audit>(a, base, ec);
 
@@ -325,8 +273,6 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
 
 void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
 
@@ -336,8 +282,6 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
 
 void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
 
@@ -351,10 +295,10 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   if (read)
     initialize_regressor(*all);
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() != 0)
   {
     bool resume = all->save_resume;
-    stringstream msg;
+    std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
@@ -423,7 +367,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
-  string algorithm_name;
+  std::string algorithm_name;
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
@@ -454,12 +398,12 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->data.l1_lambda = b->all->l1_lambda;
   b->data.l2_lambda = b->all->l2_lambda;
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
-    cerr << "Enabling FTRL based optimization" << endl;
-    cerr << "Algorithm used: " << algorithm_name << endl;
-    cerr << "ftrl_alpha = " << b->ftrl_alpha << endl;
-    cerr << "ftrl_beta = " << b->ftrl_beta << endl;
+    std::cerr << "Enabling FTRL based optimization" << std::endl;
+    std::cerr << "Algorithm used: " << algorithm_name << std::endl;
+    std::cerr << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
   if (!all.holdout_set_off)

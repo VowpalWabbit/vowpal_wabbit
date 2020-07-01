@@ -1,3 +1,12 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+// Notes:
+// This reduction exists to be invoked as a top level reduction that
+// can ouput pdf related to cats_tree
+// It can also parse a continuous labeled example.
+
 #include "cats_pdf.h"
 #include "parse_args.h"
 #include "err_constants.h"
@@ -6,7 +15,7 @@
 #include "debug_log.h"
 
 // Aliases
-using LEARNER::single_learner;
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
@@ -23,28 +32,22 @@ namespace VW
   void finish_example(vw& all, example& ec);
 }
 
-namespace VW
-{
-namespace continuous_action
-{
-namespace cats_pdf
-{
+namespace VW { namespace continuous_action { namespace cats_pdf {
   ////////////////////////////////////////////////////
   // BEGIN cats_pdf reduction and reduction methods
   struct cats_pdf
   {
+    cats_pdf(single_learner* p_base);
+
     int learn(example& ec, api_status* status);
     int predict(example& ec, api_status* status);
-
-    // TODO: replace with constructor after merge with master
-    void init(single_learner* p_base);
 
    private:
     single_learner* _base = nullptr;
   };
 
   // Pass through
-  int cats_pdf::predict(example& ec, api_status* status = nullptr)
+  int cats_pdf::predict(example& ec, api_status*)
   {
     VW_DBG(ec) << "cats_pdf::predict(), " << features_to_string(ec) << endl;
     _base->predict(ec);
@@ -52,7 +55,7 @@ namespace cats_pdf
   }
 
   // Pass through
-  int cats_pdf::learn(example& ec, api_status* status = nullptr)
+  int cats_pdf::learn(example& ec, api_status* status)
   {
     assert(!ec.test_only);
     predict(ec, status);
@@ -61,7 +64,7 @@ namespace cats_pdf
     return error_code::success;
   }
 
-  void cats_pdf::init(single_learner* p_base) { _base = p_base; }
+  cats_pdf::cats_pdf(single_learner* p_base) : _base(p_base) {}
 
   // Free function to tie function pointers to reduction class methods
   template <bool is_learn>
@@ -87,7 +90,7 @@ namespace cats_pdf
   {
    public:
     static void report_progress(vw& all, cats_pdf&, example& ec);
-    static void output_predictions(v_array<int>& predict_file_descriptors, actions_pdf::pdf& prediction);
+    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::pdf& prediction);
 
    private:
     static inline bool does_example_have_label(example& ec);
@@ -104,13 +107,12 @@ namespace cats_pdf
   }
 
   void reduction_output::output_predictions(
-      v_array<int>& predict_file_descriptors, actions_pdf::pdf& prediction)
+    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::pdf& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
-    for (const int f : predict_file_descriptors)
-      if (f > 0)
-        io_buf::write_file_or_socket(f, str.c_str(), str.size());
+    for (auto& f : predict_file_descriptors)
+      f->write(str.c_str(), str.size());
   }
 
   // "average loss" "since last" "example counter" "example weight"
@@ -131,7 +133,7 @@ namespace cats_pdf
 
   void reduction_output::print_update_cb_cont(vw& all, example& ec)
   {
-    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
     {
       all.sd->print_update(all.holdout_set_off, all.current_pass,
           to_string(ec.l.cb_cont.costs[0]),  // Label
@@ -165,19 +167,18 @@ namespace cats_pdf
     // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree ... rest specified by cats_tree]
     if (!options.was_supplied("cb_explore_pdf"))
       options.insert("cb_explore_pdf", "");
-    if (!options.add_or_check_options("pmf_to_pdf", pdf_num_actions, num_actions))
+    if (!options.add_or_check_options("pmf_to_pdf", num_actions))
       THROW(error_code::options_disagree_s);
     if (!options.was_supplied("get_pmf"))
       options.insert("get_pmf", "");
-    if (!options.add_or_check_options("cats_tree", cats_tree_actions, num_actions))
+    if (!options.add_or_check_options("cats_tree", num_actions))
       THROW(error_code::options_disagree_s);
 
     LEARNER::base_learner* p_base = setup_base(options, all);
-    auto p_reduction = scoped_calloc_or_throw<cats_pdf>();
-    p_reduction->init(as_singleline(p_base));
+    auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base));
 
     LEARNER::learner<cats_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-        predict_or_learn<false>, 1, prediction_type::action_pdf_value);
+        predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
 
     l.set_finish_example(finish_example);
     all.p->lp = cb_continuous::the_label_parser;
@@ -185,6 +186,4 @@ namespace cats_pdf
 
     return make_base(l);
   }
-}
-}
-}  // namespace VW
+}}}  // namespace VW

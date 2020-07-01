@@ -1,23 +1,23 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #else
 #include <netdb.h>
 #endif
+
 #include "reductions.h"
 #include "gd.h"
 
-using namespace std;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct mf
 {
-  vector<string> pairs;
+  std::vector<std::vector<namespace_index>> pairs;
 
   size_t rank;
 
@@ -37,6 +37,13 @@ struct mf
   features temp_features;
 
   vw* all;  // for pairs? and finalize
+
+  ~mf()
+  {
+    // clean up local v_arrays
+    indices.delete_v();
+    sub_predictions.delete_v();
+  }
 };
 
 template <bool cache_sub_predictions>
@@ -62,7 +69,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (string& i : data.pairs)
+  for (auto& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -98,7 +105,7 @@ void predict(mf& data, single_learner& base, example& ec)
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
 }
 
 void learn(mf& data, single_learner& base, example& ec)
@@ -120,7 +127,7 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (string& i : data.pairs)
+  for (auto& i : data.pairs)
   {
     int left_ns = (int)i[0];
     int right_ns = (int)i[1];
@@ -179,16 +186,6 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = predicted;
 }
 
-void finish(mf& o)
-{
-  // restore global pairs
-  o.all->pairs = o.pairs;
-
-  // clean up local v_arrays
-  o.indices.delete_v();
-  o.sub_predictions.delete_v();
-}
-
 base_learner* mf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<mf>();
@@ -202,13 +199,19 @@ base_learner* mf_setup(options_i& options, vw& all)
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data->pairs = all.pairs;
-  all.pairs.clear();
+  auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
+      [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
+  if (non_pair_count > 0)
+{
+    THROW("can only use pairs with new_mf");
+  }
+
+  data->pairs = all.interactions;
+  all.interactions.clear();
 
   all.random_positive_weights = true;
 
   learner<mf, example>& l =
       init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
-  l.set_finish(finish);
   return make_base(l);
 }

@@ -1,8 +1,7 @@
 #! /bin/bash
 
 run_offline(){
-  
-  # cd ../../
+
   # parameteres for all the experiments
   pass=1
   timee=5000
@@ -22,7 +21,7 @@ run_offline(){
   sdata=$name
   filename1=results/$sdata\_offline\_srm.txt
   filename2=results/$sdata\_offline\_test.txt
-  
+
   # running the CATS offline algorithm and saving the loss estimation in SRM and test error results
 
   # 1) saving logged data from training the initial model
@@ -63,13 +62,11 @@ run_offline(){
   fi;
   done
   done
-  # cd -
 }
 
 
 run_online(){
-  
-  # cd ../../
+
   # parameteres for all the experiments
   pass=1
   timee=5000
@@ -133,5 +130,4 @@ run_online(){
   time -p ( timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --cb_discrete --min_value=$min --max_value=$max \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll >> $filename3 2>&1 ) 2>> $filename3
   done
-  # cd -
 }

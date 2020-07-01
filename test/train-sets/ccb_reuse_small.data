@@ -1,0 +1,20 @@
+ccb shared |User b
+ccb action |Action d
+ccb action |Action e
+ccb slot 0:0:0.2 |Slot h
+
+ccb shared |User b
+ccb action |Action d
+ccb action |Action e
+ccb slot 1:0:0.2 |Slot h
+
+ccb shared |User c
+ccb action |Action d
+ccb action |Action e
+ccb slot 1:0:0.25 |Slot i
+
+ccb shared |User a
+ccb action |Action d
+ccb action |Action e
+ccb slot 1:0:0.2 |Slot h
+

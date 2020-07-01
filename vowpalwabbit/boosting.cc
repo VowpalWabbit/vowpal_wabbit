@@ -1,8 +1,6 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 /*
  * Implementation of online boosting algorithms from
@@ -10,22 +8,25 @@
  *    ICML-2015.
  */
 
-#include <float.h>
-#include <limits.h>
-#include <math.h>
+#include <cfloat>
+#include <climits>
+#include <cmath>
 #include "correctedMath.h"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <vector>
+#include <memory>
 
 #include "reductions.h"
 #include "vw.h"
 #include "rand48.h"
 
-using namespace std;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
+
+using std::cerr;
+using std::endl;
 
 inline float sign(float w)
 {
@@ -58,8 +59,9 @@ struct boosting
 {
   int N;
   float gamma;
-  string alg;
+  std::string alg;
   vw* all;
+  std::shared_ptr<rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;
@@ -70,7 +72,7 @@ struct boosting
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -138,7 +140,7 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -196,7 +198,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -210,7 +212,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
     o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
-  float stopping_point = merand48(o.all->random_state);
+  float stopping_point = o._random_state->get_and_update_random();
 
   for (int i = 0; i < o.N; i++)
   {
@@ -290,9 +292,9 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
 
 void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
-  stringstream os;
+  std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
@@ -311,7 +313,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
@@ -325,7 +327,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "v " << o.v[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
@@ -346,12 +348,6 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   cerr << endl;
 }
 
-void finish(boosting& o)
-{
-  o.C.~vector();
-  o.alpha.~vector();
-}
-
 void return_example(vw& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
@@ -360,9 +356,9 @@ void return_example(vw& all, boosting& /* a */, example& ec)
 
 void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
-  stringstream os;
+  std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
@@ -378,12 +374,12 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     }
     else
     {
-      stringstream os2;
+      std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
 
-  if (!o.all->quiet)
+  if (!o.all->logger.quiet)
   {
     if (read)
       cerr << "Loading alpha: " << endl;
@@ -395,7 +391,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   }
 }
 
-LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 {
   free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
   option_group_definition new_options("Boosting");
@@ -420,14 +416,15 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     cerr << "Number of weak learners = " << data->N << endl;
-  if (!all.quiet)
+  if (!all.logger.quiet)
     cerr << "Gamma = " << data->gamma << endl;
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
+  data->_random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 
@@ -450,7 +447,6 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   else
     THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
 
-  l->set_finish(finish);
   l->set_finish_example(return_example);
 
   return make_base(*l);

@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "get_pmf.h"
 #include "err_constants.h"
 #include "api_status.h"
@@ -5,7 +9,7 @@
 #include "parse_args.h"
 
 // Aliases
-using LEARNER::single_learner;
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
@@ -34,13 +38,13 @@ struct get_pmf
   float _epsilon;
 };
 
-int get_pmf::learn(example& ec, api_status* status)
+int get_pmf::learn(example& ec, api_status*)
 {
   _base->learn(ec);
   return error_code::success;
 }
 
-int get_pmf::predict(example& ec, api_status* status)
+int get_pmf::predict(example& ec, api_status*)
 {
   uint32_t base_prediction;
 
@@ -101,7 +105,7 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
   p_reduction->init(as_singleline(p_base), epsilon);
 
   LEARNER::learner<get_pmf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type::pdf);
+      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
 
   return make_base(l);
 }

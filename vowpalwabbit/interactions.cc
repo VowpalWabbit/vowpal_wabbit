@@ -1,9 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "interactions.h"
 
 #include "vw_exception.h"
 #include <algorithm>
-
-using namespace std;
 
 namespace INTERACTIONS
 {
@@ -14,7 +16,7 @@ namespace INTERACTIONS
 // expand namespace interactions if contain wildcards
 // recursive function used internally in this module
 void expand_namespaces_with_recursion(
-    std::string const& ns, std::vector<std::string>& res, std::string& val, size_t pos)
+    std::vector<namespace_index> const& ns, std::vector<std::vector<namespace_index>>& res, std::vector<namespace_index>& val, size_t pos)
 {
   assert(pos <= ns.size());
 
@@ -23,7 +25,7 @@ void expand_namespaces_with_recursion(
     // we're at the end of interaction
 
     // and store it in res
-    res.push_back(val);
+    res.emplace_back(val);
     // don't free s memory as it's data will be used later
   }
   else
@@ -55,14 +57,14 @@ void expand_namespaces_with_recursion(
 // called from parse_args.cc
 // process all interactions in a vector
 
-std::vector<std::string> expand_interactions(
-    const vector<string>& vec, const size_t required_length, const string& err_msg)
+std::vector<std::vector<namespace_index>> expand_interactions(
+    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg)
 {
-  std::vector<std::string> res;
+  std::vector<std::vector<namespace_index>> res;
 
-  for (string const& i : vec)
+  for (auto const& i : vec)
   {
-    const size_t len = i.length();
+    const size_t len = i.size();
     if (required_length > 0 && len != required_length)
     // got strict requirement of interaction length and it was failed.
     {
@@ -72,7 +74,7 @@ std::vector<std::string> expand_interactions(
       // regardles of required_length value this check is always performed
       THROW("error, feature interactions must involve at least two namespaces" << err_msg);
 
-    std::string temp;
+    std::vector<namespace_index> temp;
     expand_namespaces_with_recursion(i, res, temp, 0);
   }
   return res;
@@ -86,10 +88,10 @@ std::vector<std::string> expand_interactions(
 // with one exeption - returns false if interaction made of one namespace
 // like 'aaa' as it has no sense to sort such things.
 
-inline bool must_be_left_sorted(const std::string& oi)
+inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 {
   if (oi.size() <= 1)
-    return true;  // one letter in string - no need to sort
+    return true;  // one letter in std::string - no need to sort
 
   bool diff_ns_found = false;
   bool pair_found = false;
@@ -116,30 +118,30 @@ inline bool must_be_left_sorted(const std::string& oi)
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 
 void sort_and_filter_duplicate_interactions(
-    std::vector<std::string>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
   // 2 out parameters
   removed_cnt = 0;
   sorted_cnt = 0;
 
   // interaction value sort + original position
-  std::vector<std::pair<std::string, size_t>> vec_sorted;
+  std::vector<std::pair<std::vector<namespace_index>, size_t>> vec_sorted;
   for (size_t i = 0; i < vec.size(); ++i)
   {
-    std::string sorted_i(vec[i]);
+    std::vector<namespace_index> sorted_i(vec[i]);
     std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
-    vec_sorted.push_back(make_pair(sorted_i, i));
+    vec_sorted.push_back(std::make_pair(sorted_i, i));
   }
 
   if (filter_duplicates)
   {
     // remove duplicates
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
+        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
           return a.first < b.first;
         });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
+        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
           return a.first == b.first;
         });
     vec_sorted.erase(last, vec_sorted.end());
@@ -149,7 +151,7 @@ void sort_and_filter_duplicate_interactions(
 
     // restore original order
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
+        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
           return a.second < b.second;
         });
   }
@@ -157,7 +159,7 @@ void sort_and_filter_duplicate_interactions(
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
   // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
   // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
-  std::vector<std::string> res;
+  std::vector<std::vector<namespace_index>> res;
   for (auto& i : vec_sorted)
   {
     if (must_be_left_sorted(i.first))
@@ -202,10 +204,10 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 #endif
 
 // lookup table of factorials up tu 21!
-int64_t fast_factorial[] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800,
-    87178291200, 1307674368000, 20922789888000, 355687428096000, 6402373705728000, 121645100408832000,
+constexpr int64_t fast_factorial[] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600,
+    6227020800, 87178291200, 1307674368000, 20922789888000, 355687428096000, 6402373705728000, 121645100408832000,
     2432902008176640000};
-const size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_factorial);
+constexpr size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_factorial);
 
 // helper factorial function that allows to perform:
 // n!/(n-k)! = (n-k+1)*(n-k+2)..*(n-1)*n
@@ -237,7 +239,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
   if (all.permutations)
   {
     // just multiply precomputed values for all namespaces
-    for (std::string& inter : *ec.interactions)
+    for (const auto& inter : *ec.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -266,7 +268,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
     generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
 #endif
 
-    for (std::string& inter : *ec.interactions)
+    for (auto& inter : *ec.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -292,7 +294,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
               ++order_of_inter;
 
           // namespace is same for whole block
-          features& fs = ec.feature_space[(const int)*ns];
+          features& fs = ec.feature_space[static_cast<int>(*ns)];
 
           // count number of features with value != 1.;
           size_t cnt_ft_value_non_1 = 0;
@@ -380,10 +382,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
     if (correct_features_cnt != new_features_cnt)
       all.trace_message << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt
-                        << endl;
+                        << std::endl;
     if (fabs(correct_features_value - new_features_value) > 1e-5)
       all.trace_message << "Incorrect new features value " << new_features_value << " must be "
-                        << correct_features_value << endl;
+                        << correct_features_value << std::endl;
 #endif
   }
 

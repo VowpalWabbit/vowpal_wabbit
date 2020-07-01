@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -11,6 +10,7 @@ license as described in the file LICENSE.
 #include <cerrno>
 #include <cstdlib>
 #ifdef _WIN32
+#define NOMINMAX
 #include <WinSock2.h>
 #else
 #include <sys/types.h>
@@ -21,7 +21,8 @@ license as described in the file LICENSE.
 #include <netdb.h>
 #endif
 
-using namespace std;
+using std::cerr;
+using std::endl;
 
 int open_socket(const char* host, unsigned short port)
 {
@@ -30,18 +31,18 @@ int open_socket(const char* host, unsigned short port)
 
   if (he == nullptr)
   {
-    stringstream msg;
+    std::stringstream msg;
     msg << "gethostbyname(" << host << "): " << strerror(errno);
     cerr << msg.str() << endl;
-    throw runtime_error(msg.str().c_str());
+    throw std::runtime_error(msg.str().c_str());
   }
   int sd = socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
   {
-    stringstream msg;
+    std::stringstream msg;
     msg << "socket: " << strerror(errno);
     cerr << msg.str() << endl;
-    throw runtime_error(msg.str().c_str());
+    throw std::runtime_error(msg.str().c_str());
   }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -50,10 +51,10 @@ int open_socket(const char* host, unsigned short port)
   memset(&far_end.sin_zero, '\0', 8);
   if (connect(sd, (sockaddr*)&far_end, sizeof(far_end)) == -1)
   {
-    stringstream msg;
+    std::stringstream msg;
     msg << "connect(" << host << ':' << port << "): " << strerror(errno);
     cerr << msg.str() << endl;
-    throw runtime_error(msg.str().c_str());
+    throw std::runtime_error(msg.str().c_str());
   }
   return sd;
 }
@@ -76,12 +77,12 @@ int main(int argc, char* argv[])
 {
   char buf[256];
   char *toks, *itok, *ttag;
-  string tag;
+  std::string tag;
   const char* host = "localhost";
   unsigned short port = ~0;
   ssize_t pos;
   int s, ret, queries = 0;
-  string line;
+  std::string line;
 
   if (argc > 1)
   {
@@ -91,7 +92,7 @@ int main(int argc, char* argv[])
   {
     port = atoi(argv[2]);
   }
-  if (port <= 1024 || port == (unsigned short)(~0))
+  if (port <= 1024 || port == (unsigned short)(~0u))
   {
     port = 26542;
   }
@@ -103,10 +104,10 @@ int main(int argc, char* argv[])
   {
     const char* msg = "Could not perform handshake!";
     cerr << msg << endl;
-    throw runtime_error(msg);
+    throw std::runtime_error(msg);
   }
 
-  while (getline(cin, line))
+  while (getline(std::cin, line))
   {
     line.append("\n");
     int len = line.size();
@@ -117,20 +118,20 @@ int main(int argc, char* argv[])
     {
       const char* msg = "Could not send unlabeled data!";
       cerr << msg << endl;
-      throw runtime_error(msg);
+      throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
       const char* msg = "Could not receive queries!";
       cerr << msg << endl;
-      throw runtime_error(msg);
+      throw std::runtime_error(msg);
     }
     buf[ret] = '\0';
     toks = &buf[0];
     strsep(&toks, " ");
     ttag = strsep(&toks, " ");
-    tag = ttag ? string(ttag) : string("'empty");
+    tag = ttag ? std::string(ttag) : std::string("'empty");
     itok = strsep(&toks, "\n");
     if (itok == nullptr || itok[0] == '\0')
     {
@@ -138,8 +139,8 @@ int main(int argc, char* argv[])
     }
 
     queries += 1;
-    string imp = string(itok) + " " + tag + " |";
-    pos = line.find_first_of("|");
+    std::string imp = std::string(itok) + " " + tag + " |";
+    pos = line.find_first_of('|');
     line.replace(pos, 1, imp);
     cstr = line.c_str();
     len = line.size();
@@ -148,17 +149,17 @@ int main(int argc, char* argv[])
     {
       const char* msg = "Could not send labeled data!";
       cerr << msg << endl;
-      throw runtime_error(msg);
+      throw std::runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
       const char* msg = "Could not receive predictions!";
       cerr << msg << endl;
-      throw runtime_error(msg);
+      throw std::runtime_error(msg);
     }
   }
   close(s);
-  cout << "Went through the data by doing " << queries << " queries" << endl;
+  std::cout << "Went through the data by doing " << queries << " queries" << endl;
   return 0;
 }

@@ -1,8 +1,12 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <functional>
 
-using dispatch_fptr = std::function<void(vw&, v_array<example*>&)>;
+using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {

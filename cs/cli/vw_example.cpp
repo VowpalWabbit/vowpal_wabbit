@@ -1,13 +1,12 @@
-﻿/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"
 #include "gd.h"
+#include <algorithm>
 
 namespace VW
 {
@@ -158,7 +157,7 @@ bool FloatEqual(float a, float b)
   { return true;
   }
 
-  return abs(a - b) / max(a, b) < 1e-6;
+  return abs(a - b) / std::max(a, b) < 1e-6;
 }
 
 System::String^ FormatFeatures(vw* vw, features& arr)
@@ -171,7 +170,7 @@ System::String^ FormatFeatures(vw* vw, features& arr)
 }
 
 System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned char ns)
-{ vector<size_t> fa_missing;
+{ std::vector<size_t> fa_missing;
   for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
   { auto masked_weight_index = fa.indicies[ia] & vw->weights.mask();
     auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
@@ -315,7 +314,7 @@ String^ VowpalWabbitContextualBanditLabelComparator::Diff(VowpalWabbitExample^ e
     { return System::String::Format("Cost differ: {0} vs {1}", c1.cost, c2.cost);
     }
 
-    if (abs(c1.probability - c2.probability) / max(c1.probability, c2.probability) > 0.01)
+    if (abs(c1.probability - c2.probability) / std::max(c1.probability, c2.probability) > 0.01)
     { return System::String::Format("Probability differ: {0} vs {1}", c1.probability, c2.probability);
     }
   }

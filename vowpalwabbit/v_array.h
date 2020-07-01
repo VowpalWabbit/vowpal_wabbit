@@ -1,15 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
+#define NOMINMAX
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdint.h>
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+#include <cstdint>
 
 #ifdef _WIN32
 #define __INLINE
@@ -17,10 +17,13 @@ license as described in the file LICENSE.
 #define __INLINE inline
 #endif
 
+#ifndef VW_NOEXCEPT
 #include "vw_exception.h"
+#endif
+
 #include "memory.h"
 
-const size_t erase_point = ~((1 << 10) - 1);
+const size_t erase_point = ~((1u << 10u) - 1u);
 
 template <class T>
 struct v_array
@@ -33,9 +36,14 @@ struct v_array
   T* end_array;
   size_t erase_count;
 
+  using iterator = T*;
+
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
+
+  inline const T* begin() const { return _begin; }
+  inline const T* end() const { return _end; }
 
   inline T* cbegin() const { return _begin; }
   inline T* cend() const { return _end; }
@@ -66,7 +74,7 @@ struct v_array
       T* temp = (T*)realloc(_begin, sizeof(T) * length);
       if ((temp == nullptr) && ((sizeof(T) * length) > 0))
       {
-        THROW("realloc of " << length << " failed in resize().  out of memory?");
+        THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?");
       }
       else
         _begin = temp;
@@ -102,7 +110,16 @@ struct v_array
       resize(2 * (end_array - _begin) + 3);
     new (_end++) T(new_ele);
   }
+
   void push_back_unchecked(const T& new_ele) { new (_end++) T(new_ele); }
+
+  template <class... Args>
+  void emplace_back(Args&&... args)
+  {
+    if (_end == end_array)
+      resize(2 * (end_array - _begin) + 3);
+    new (_end++) T(std::forward<Args>(args)...);
+  }
 
   size_t find_sorted(const T& ele) const  // index of the smallest element >= ele, return true if element is in the
                                           // array
@@ -167,26 +184,6 @@ struct v_array
   }
 };
 
-#ifdef _WIN32
-#undef max
-#undef min
-#endif
-
-inline size_t max(size_t a, size_t b)
-{
-  if (a < b)
-    return b;
-  else
-    return a;
-}
-inline size_t min(size_t a, size_t b)
-{
-  if (a < b)
-    return a;
-  else
-    return b;
-}
-
 template <class T>
 inline v_array<T> v_init()
 {
@@ -216,11 +213,15 @@ void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&))
 }
 
 template <class T>
-void push_many(v_array<T>& v, const T* _begin, size_t num)
+void push_many(v_array<T>& v, const T* src, size_t num)
 {
   if (v._end + num >= v.end_array)
-    v.resize(max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
-  memcpy(v._end, _begin, num * sizeof(T));
+    v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
+#ifdef _WIN32
+  memcpy_s(v._end, (v.end_array - v._end)* sizeof(T), src, num * sizeof(T));
+#else
+  memcpy(v._end, src, num * sizeof(T));
+#endif
   v._end += num;
 }
 

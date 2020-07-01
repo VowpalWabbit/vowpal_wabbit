@@ -1,16 +1,13 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "vw.h"
 #include "reductions.h"
 #include "gd.h"
 #include "cb_algs.h"
 #include "io_buf.h"
 
-using namespace std;
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
@@ -36,6 +33,13 @@ struct mwt
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   vw* all;
+
+  ~mwt()
+  {
+    evals.delete_v();
+    policies.delete_v();
+    indices.delete_v();
+  }
 };
 
 inline bool observed_cost(CB::cb_class* cl)
@@ -58,7 +62,7 @@ CB::cb_class* get_observed_cost(CB::label& ld)
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
   if (val < 0 || floor(val) != val)
-    cout << "error " << val << " is not a valid action " << endl;
+    std::cout << "error " << val << " is not a valid action " << std::endl;
 
   uint32_t value = (uint32_t)val;
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -124,10 +128,10 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 
   if (exclude || learn)
-    while (c.indices.size() > 0)
+    while (!c.indices.empty())
     {
       unsigned char ns = c.indices.pop();
-      swap(c.feature_space[ns], ec.feature_space[ns]);
+      std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
 
   // modify the predictions to use a vector with a score for each evaluated feature.
@@ -139,9 +143,9 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
+void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
 
@@ -159,9 +163,9 @@ void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
+      std::cerr << "write error: " << strerror(errno) << std::endl;
   }
 }
 
@@ -173,7 +177,7 @@ void finish_example(vw& all, mwt& c, example& ec)
       loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars[0]);
   all.sd->update(ec.test_only, c.observation != nullptr, loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) print_scalars(sink, ec.pred.scalars, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag);
 
   if (c.learn)
   {
@@ -185,20 +189,12 @@ void finish_example(vw& all, mwt& c, example& ec)
   VW::finish_example(all, ec);
 }
 
-void finish(mwt& c)
-{
-  c.evals.delete_v();
-  c.policies.delete_v();
-  for (size_t i = 0; i < 256; i++) c.feature_space[i].delete_v();
-  c.indices.delete_v();
-}
-
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
 
-  stringstream msg;
+  std::stringstream msg;
 
   // total
   msg << "total: " << c.total;
@@ -237,7 +233,7 @@ using namespace MWT;
 base_learner* mwt_setup(options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<mwt>();
-  string s;
+  std::string s;
   bool exclude_eval = false;
   option_group_definition new_options("Multiworld Testing Options");
   new_options.add(make_option("multiworld_test", s).keep().help("Evaluate features as a policies"))
@@ -248,7 +244,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (!options.was_supplied("multiworld_test"))
     return nullptr;
 
-  for (size_t i = 0; i < s.size(); i++) c->namespaces[(unsigned char)s[i]] = true;
+  for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
   calloc_reserve(c->evals, all.length());
@@ -256,7 +252,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  all.label_type = label_type_t::cb;
 
   if (c->num_classes > 0)
   {
@@ -264,7 +260,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
     if (!options.was_supplied("cb"))
     {
-      stringstream ss;
+      std::stringstream ss;
       ss << c->num_classes;
       options.insert("cb", ss.str());
     }
@@ -274,16 +270,15 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type::scalars);
+          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars);
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type::scalars);
+          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars);
   else
     l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type::scalars);
+        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
-  l->set_finish(finish);
   return make_base(*l);
 }

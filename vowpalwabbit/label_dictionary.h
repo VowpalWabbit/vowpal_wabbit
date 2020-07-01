@@ -1,11 +1,15 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include "example_predict.h"
-#include "v_hashmap.h"
+#include <unordered_map>
 
 namespace LabelDict
 {
-typedef v_hashmap<size_t, features> label_feature_map;
+typedef std::unordered_map<size_t, features> label_feature_map;
 inline bool size_t_eq(const size_t& a, const size_t& b) { return (a == b); }
 
 void add_example_namespace(example& ec, namespace_index ns, features& fs);
@@ -18,5 +22,4 @@ void del_example_namespaces_from_example(example& target, example& source);
 void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab);
 void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab);
 
-void free_label_features(label_feature_map& lfm);
 }  // namespace LabelDict

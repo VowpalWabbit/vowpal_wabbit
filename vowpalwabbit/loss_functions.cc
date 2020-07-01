@@ -1,14 +1,11 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <math.h>
 #include "correctedMath.h"
 #include <iostream>
 #include <stdlib.h>
 #include <float.h>
-using namespace std;
 
 #include "global_data.h"
 #include "vw_exception.h"
@@ -122,7 +119,7 @@ class hingeloss : public loss_function
   float getLoss(shared_data*, float prediction, float label)
   {
     if (label != -1.f && label != 1.f)
-      cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
+      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
@@ -163,7 +160,7 @@ class logloss : public loss_function
   float getLoss(shared_data*, float prediction, float label)
   {
     if (label != -1.f && label != 1.f)
-      cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << endl;
+      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
     return log(1 + correctedExp(-label * prediction));
   }
 
@@ -311,7 +308,7 @@ class poisson_loss : public loss_function
   float getLoss(shared_data*, float prediction, float label)
   {
     if (label < 0.f)
-      cout << "You are using label " << label << " but loss function expects label >= 0!" << endl;
+      std::cout << "You are using label " << label << " but loss function expects label >= 0!" << std::endl;
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
@@ -361,7 +358,7 @@ class poisson_loss : public loss_function
   }
 };
 
-loss_function* getLossFunction(vw& all, string funcName, float function_parameter)
+loss_function* getLossFunction(vw& all, std::string funcName, float function_parameter)
 {
   if (funcName.compare("squared") == 0 || funcName.compare("Huber") == 0)
     return new squaredloss();

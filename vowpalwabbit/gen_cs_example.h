@@ -1,15 +1,14 @@
-/*
-  Copyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
-#include <float.h>
+#include <cfloat>
 
 #include "vw.h"
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 namespace GEN_CS
 {
@@ -18,7 +17,7 @@ struct cb_to_cs
   size_t cb_type;
   uint32_t num_actions;
   COST_SENSITIVE::label pred_scores;
-  LEARNER::single_learner* scorer;
+  VW::LEARNER::single_learner* scorer;
   float avg_loss_regressors;
   size_t nb_ex_regressors;
   float last_pred_reg;
@@ -40,14 +39,14 @@ struct cb_to_cs_adf
   // for DR
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
-  LEARNER::single_learner* scorer;
+  VW::LEARNER::single_learner* scorer;
 };
 
 CB::cb_class* get_observed_cost(CB::label& ld);
 
 float safe_probability(float prob);
 
-void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
+void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p = 0.f);
 
 template <bool is_learn>
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
@@ -121,7 +120,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 }
 
 template <bool is_learn>
-void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action)
+void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action, float clip_p = 0.f)
 {
   COST_SENSITIVE::wclass wc = {0., action, 0., 0.};
 
@@ -137,14 +136,14 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
         ((c.known_cost->cost - wc.x) * (c.known_cost->cost - wc.x) - c.avg_loss_regressors);
     c.last_pred_reg = wc.x;
     c.last_correct_cost = c.known_cost->cost;
-    wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
+    wc.x += (c.known_cost->cost - wc.x) / std::max(c.known_cost->probability, clip_p);
   }
 
   cs_ld.costs.push_back(wc);
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ = 0.f)
 {  // this implements the doubly robust method
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
@@ -184,7 +183,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 
 void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f);
 
 void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
@@ -194,7 +193,7 @@ void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_of
     ACTION_SCORE::action_scores action_vals, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f)
 {  // size_t mysize = examples.size();
   c.pred_scores.costs.clear();
 
@@ -223,7 +222,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
 
     // add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action == i)
-      wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
+      wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p);
     cs_labels.costs.push_back(wc);
   }
 }
@@ -248,7 +247,7 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
 }
 
 template <bool is_learn>
-void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
+void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
     COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
 {
   cb_labels.clear();
@@ -271,20 +270,25 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
     ec->ft_offset = offset;
   }
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&cb_labels, saved_offset, &examples]
+    {
+      // 3rd: restore cb_label for each example
+      // (**ec).l.cb = array.element.
+      // and restore offsets
+      for (size_t i = 0; i < examples.size(); ++i)
+      {
+        examples[i]->l.cb = cb_labels[i];
+        examples[i]->ft_offset = saved_offset;
+      }
+    });
+
   // 2nd: predict for each ex
   // // call base.predict for all examples
   if (is_learn)
     base.learn(examples, (int32_t)id);
   else
     base.predict(examples, (int32_t)id);
-
-  // 3rd: restore cb_label for each example
-  // (**ec).l.cb = array.element.
-  // and restore offsets
-  for (size_t i = 0; i < examples.size(); ++i)
-  {
-    examples[i]->l.cb = cb_labels[i];
-    examples[i]->ft_offset = saved_offset;
-  }
 }
 }  // namespace GEN_CS

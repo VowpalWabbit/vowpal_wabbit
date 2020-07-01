@@ -4,7 +4,7 @@
 
     <groupId>com.github.vowpalwabbit</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>@PACKAGE_VERSION@-SNAPSHOT</version>
+    <version>@PACKAGE_VERSION@.3</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
@@ -200,7 +200,7 @@
                     <!--<forkMode>once</forkMode>-->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <argLine>-Djava.library.path=${project.build.directory}/bin</argLine>
+                    <argLine>-Djava.library.path=${project.build.directory}/bin/natives/linux_64</argLine>
 
                 </configuration>
             </plugin>
@@ -251,6 +251,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <source>${java.version}</source>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

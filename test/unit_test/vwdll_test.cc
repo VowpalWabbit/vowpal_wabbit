@@ -70,8 +70,20 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 
   VW_ReleaseFeatureSpace(fs, 2);
 
+  VW_FinishExample(handle1, example_parsed);
+  VW_FinishExample(handle2, example_constructed);
+
   VW_Finish(handle1);
   VW_Finish(handle2);
 }
 
+BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
+{
+  // This call doesn't escape and so sees --nonexistent_option as a standalone invalid argument.
+  BOOST_CHECK_THROW(VW_InitializeA("-d test\\ --nonexistent_option --quiet"), VW::vw_unrecognised_option_exception);
 
+  // The space is escaped and so the data argument becomes "test --nonexistent_option"
+  VW_HANDLE handle1 = VW_InitializeEscapedA("-d test\\ --nonexistent_option --quiet");
+  BOOST_CHECK(handle1 != nullptr);
+  VW_Finish(handle1);
+}

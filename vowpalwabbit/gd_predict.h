@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
 #include "interactions_predict.h"
@@ -10,8 +8,6 @@ license as described in the file LICENSE.
 
 namespace GD
 {
-bool GET_VW_DEBUG_LOG();
-std::string get_depth_str();
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t), class W>
@@ -34,9 +30,6 @@ inline void foreach_feature(const W& weights, features& fs, R& dat, uint64_t off
   for (features::iterator& f : fs)
   {
     const weight& w = weights[(f.index() + offset)];
-    if(GET_VW_DEBUG_LOG())
-      std::cout << get_depth_str() << "gd: vec_add: {pre_acc=" << dat << ", mult=" << mult << ", v=" << f.value() 
-                << ", w=" << w << " (f.idx=" << f.index() << ", offset=" << offset << ")} acc += mult * v * w" << std::endl;
     T(dat, mult * f.value(), w);
   }
 }
@@ -48,7 +41,7 @@ inline void dummy_func(R&, const audit_strings*)
 
 template <class R, class S, void (*T)(R&, float, S), class W>  // nullptr func can't be used as template param in old
                                                                // compilers
-inline void generate_interactions(std::vector<std::string>& interactions, bool permutations, example_predict& ec,
+inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
     R& dat,
     W& weights)  // default value removed to eliminate
                  // ambiguity in old complers
@@ -59,8 +52,8 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, S)
 // where S is EITHER float& feature_weight OR uint64_t feature_index
 template <class R, class S, void (*T)(R&, float, S), class W>
-inline void foreach_feature(W& weights, bool ignore_some_linear, bool ignore_linear[256],
-    std::vector<std::string>& interactions, bool permutations, example_predict& ec, R& dat)
+inline void foreach_feature(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
+    std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, R& dat)
 {
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
@@ -81,8 +74,8 @@ inline void foreach_feature(W& weights, bool ignore_some_linear, bool ignore_lin
 inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
 
 template <class W>
-inline float inline_predict(W& weights, bool ignore_some_linear, bool ignore_linear[256],
-    std::vector<std::string>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
+inline float inline_predict(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
+    std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
 {
   foreach_feature<float, const float&, vec_add, W>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);
