@@ -294,7 +294,9 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
-IGNORE_DEPRECATED_USAGE_START
+VW_DISABLE_WARNING_PUSH
+VW_DISABLE_WARNING_DEPRECATED_USAGE
+
 vw::vw()
 {
   sd = &calloc_or_throw<shared_data>();
@@ -412,7 +414,7 @@ vw::vw()
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
 }
-IGNORE_DEPRECATED_USAGE_END
+VW_DISABLE_WARNING_POP
 
 vw::~vw()
 {

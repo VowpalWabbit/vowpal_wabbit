@@ -21,11 +21,11 @@
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
+VW_DISABLE_WARNING_PUSH
+VW_DISABLE_WARNING_CLASS_MEMACCESS
 #include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
-#pragma GCC diagnostic pop
+VW_DISABLE_WARNING_POP
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #pragma managed(pop)
