@@ -88,7 +88,7 @@ class EvaluatorOnline:
     self.saveConfidenceIntervals(self.best_disc_linear)
 
     if (not self.quiet):
-      # self.printAllResults()
+      self.printAllResults()
 
       print("max_time = ", self.max_time)
     
