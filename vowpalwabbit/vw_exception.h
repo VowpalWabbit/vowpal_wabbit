@@ -10,6 +10,11 @@
 #include <string>
 
 #include <cstring>
+#include <string.h>
+
+#ifndef _WIN32
+#include <locale.h>
+#endif
 
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -106,9 +111,9 @@ class strict_parse_exception : public vw_exception
   ~strict_parse_exception() noexcept override = default;
 };
 
-
 inline std::string strerror_to_string(int error_number)
 {
+#ifdef _WIN32
   constexpr auto BUFFER_SIZE = 256;
   std::array<char, BUFFER_SIZE> error_message_buffer;
   auto result = strerror_s(error_message_buffer.data(), error_message_buffer.size(), error_number);
@@ -116,6 +121,18 @@ inline std::string strerror_to_string(int error_number)
 
   auto length = std::strlen(error_message_buffer.data());
   return std::string(error_message_buffer.data(), length);
+#else
+  locale_t locale = newlocale(LC_ALL_MASK, "",(locale_t)0);
+
+  if (locale == (locale_t)0) {
+    return "Failed to create locale";
+  }
+
+  // Even if error_number is unknown, will return a "Unknown error nnn" message.
+  std::string message = strerror_l(error_number, locale);
+  freelocale(locale);
+  return message;
+#endif
 }
 
 #ifdef _WIN32
