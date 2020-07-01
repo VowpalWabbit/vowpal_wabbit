@@ -66,7 +66,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples)
   {
     THROW("No examples to parse");
   }
-  if (_example_index == _data->examples()->size() - 1)
+  if (_example_index == _data->examples()->size())
     return false;
   parse_example(all, examples[0], _data->examples()->Get(_example_index));
   _example_index++;

@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   option_group_definition driver_config("driver");
 
   to_flat converter;
-  driver_config.add(make_option("flatout", converter.flatout));
+  driver_config.add(make_option("fb_out", converter.output_flatbuffer_name));
 
   std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;

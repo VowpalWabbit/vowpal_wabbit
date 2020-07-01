@@ -171,7 +171,7 @@ void to_flat::convert_txt_to_flat(vw& all)
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> examplecollection;
   example* v = all.p->ready_parsed_examples.pop();
   int examples = 0;
-  while (v!=nullptr)
+  while (v!=nullptr && !v->end_pass)
   {
     // Create Label for current example
     flatbuffers::Offset<void> label;
@@ -240,7 +240,7 @@ void to_flat::convert_txt_to_flat(vw& all)
   }
 
   all.trace_message << "\nLabel type " << get_label_string(all.label_type) << std::endl;
-  all.trace_message << "Converted " << examples - 1 << " examples" << std::endl;
+  all.trace_message << "Converted " << examples << " examples" << std::endl;
 
   flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &examplecollection);
 
@@ -250,11 +250,11 @@ void to_flat::convert_txt_to_flat(vw& all)
   int size = _builder.GetSize();
 
   std::ofstream outfile;
-  if (flatout.empty()) {flatout = all.data_filename + ".fb";}
-  outfile.open(flatout, std::ios::binary | std::ios::out);
+  if (output_flatbuffer_name.empty()) {output_flatbuffer_name = all.data_filename + ".fb";}
+  outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
 
   outfile.write(reinterpret_cast<char*>(buf), size);
-  all.trace_message << "Flatbuffer " << flatout << " created";
+  all.trace_message << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 }
 
 

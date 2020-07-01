@@ -8,7 +8,7 @@
 
 class to_flat{
   public:
-    std::string flatout;
+    std::string output_flatbuffer_name;
     void convert_txt_to_flat(vw& all);
     to_flat();
   private:
