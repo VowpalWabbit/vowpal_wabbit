@@ -109,7 +109,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
     {
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
     }
   }
 }
@@ -127,7 +127,7 @@ void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
   if (t != len)
   {
-    std::cerr << "write error: " << strerror(errno) << std::endl;
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -144,7 +144,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
   if (t != len)
   {
-    std::cerr << "write error: " << strerror(errno) << std::endl;
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 

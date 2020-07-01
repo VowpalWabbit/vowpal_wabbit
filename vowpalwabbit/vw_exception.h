@@ -6,6 +6,8 @@
 #ifndef VW_NOEXCEPT
 #include <stdexcept>
 #include <sstream>
+#include <array>
+#include <string>
 
 #include <cstring>
 
@@ -104,6 +106,18 @@ class strict_parse_exception : public vw_exception
   ~strict_parse_exception() noexcept override = default;
 };
 
+
+inline std::string strerror_to_string(int error_number)
+{
+  constexpr auto BUFFER_SIZE = 256;
+  std::array<char, BUFFER_SIZE> error_message_buffer;
+  auto result = strerror_s(error_message_buffer.data(), error_message_buffer.size(), error_number);
+  if (result != 0) { return "unknown"; }
+
+  auto length = std::strlen(error_message_buffer.data());
+  return std::string(error_message_buffer.data(), length);
+}
+
 #ifdef _WIN32
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
@@ -130,11 +144,7 @@ bool launchDebugger();
   {                                                              \
     std::stringstream __msg;                                     \
     __msg << args;                                               \
-    char __errmsg[256];                                          \
-    if (strerror_s(__errmsg, sizeof __errmsg, errno) != 0)       \
-      __msg << ", errno = unknown";                              \
-    else                                                         \
-      __msg << ", errno = " << __errmsg;                         \
+    __msg << ", errno = " << VW::strerror_to_string(errno);          \
     throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #else
@@ -142,11 +152,7 @@ bool launchDebugger();
   {                                                              \
     std::stringstream __msg;                                     \
     __msg << args;                                               \
-    char __errmsg[256];                                          \
-    if (strerror_r(errno, __errmsg, sizeof __errmsg) != 0)       \
-      __msg << "errno = unknown";                                \
-    else                                                         \
-      __msg << "errno = " << __errmsg;                           \
+    __msg << ", errno = " << VW::strerror_to_string(errno);          \
     throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #endif

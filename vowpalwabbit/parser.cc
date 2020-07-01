@@ -165,7 +165,7 @@ void reset_source(vw& all, size_t numbits)
       socklen_t size = sizeof(client_address);
       int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
       if (f < 0)
-        THROW("accept: " << strerror(errno));
+        THROW("accept: " << VW::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
       int one = 1;
@@ -319,19 +319,19 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (all.p->bound_sock < 0)
     {
       std::stringstream msg;
-      msg << "socket: " << strerror(errno);
+      msg << "socket: " << VW::strerror_to_string(errno);
       all.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -355,7 +355,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.trace_message << "getsockname: " << strerror(errno) << endl;
+        all.trace_message << "getsockname: " << VW::strerror_to_string(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
