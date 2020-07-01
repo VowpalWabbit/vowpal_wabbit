@@ -30,18 +30,25 @@ struct plt
 {
   vw* all;
 
+  // tree structure
   uint32_t k;     // number of labels
   uint32_t t;     // number of tree nodes
   uint32_t ti;    // number of internal nodes
   uint32_t kary;  // kary tree
 
+  // for training
   v_array<float> nodes_time;  // in case of sgd, this stores individual t for each node
+  std::unordered_set<uint32_t> positive_nodes;  // container for positive nodes
+  std::unordered_set<uint32_t> negative_nodes;  // container for negative nodes
 
+  // for prediction
   float threshold;
   uint32_t top_k;
   v_array<polyprediction> node_preds;  // for storing results of base.multipredict
+  std::vector<node> node_queue; // container for queue used for both types of predictions
 
   // for measuring predictive performance
+  std::unordered_set<uint32_t> true_labels;
   v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
   uint32_t tp;
   uint32_t fp;
@@ -88,8 +95,8 @@ void learn(plt& p, single_learner& base, example& ec)
   double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
   p.all->sd->weighted_holdout_examples = 0;
 
-  std::unordered_set<uint32_t> n_positive;  // positive nodes
-  std::unordered_set<uint32_t> n_negative;  // negative nodes
+  p.positive_nodes.clear();
+  p.negative_nodes.clear();
 
   if (multilabels.label_v.size() > 0)
   {
@@ -98,11 +105,11 @@ void learn(plt& p, single_learner& base, example& ec)
       uint32_t tn = label + p.ti;
       if (tn < p.t)
       {
-        n_positive.insert(tn);
+        p.positive_nodes.insert(tn);
         while (tn > 0)
         {
           tn = floor(static_cast<float>(tn - 1) / p.kary);
-          n_positive.insert(tn);
+          p.positive_nodes.insert(tn);
         }
       }
     }
@@ -110,27 +117,27 @@ void learn(plt& p, single_learner& base, example& ec)
       std::cout << "label " << ec.l.multilabels.label_v.last() << " is not in {0," << p.k - 1
                 << "} This won't work right." << std::endl;
 
-    for (auto& n : n_positive)
+    for (auto& n : p.positive_nodes)
     {
       if (n < p.ti)
       {
         for (uint32_t i = 1; i <= p.kary; ++i)
         {
           uint32_t n_child = p.kary * n + i;
-          if (n_child < p.t && n_positive.find(n_child) == n_positive.end())
-            n_negative.insert(n_child);
+          if (n_child < p.t && p.positive_nodes.find(n_child) == p.positive_nodes.end())
+            p.negative_nodes.insert(n_child);
         }
       }
     }
   }
   else
-    n_negative.insert(0);
+    p.negative_nodes.insert(0);
 
   ec.l.simple = {1.f, 1.f, 0.f};
-  for (auto& n : n_positive) learn_node(p, n, base, ec);
+  for (auto& n : p.positive_nodes) learn_node(p, n, base, ec);
 
   ec.l.simple.label = -1.f;
-  for (auto& n : n_negative) learn_node(p, n, base, ec);
+  for (auto& n : p.negative_nodes) learn_node(p, n, base, ec);
 
   p.all->sd->t = t;
   p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
@@ -154,28 +161,29 @@ void predict(plt& p, single_learner& base, example& ec)
   preds.label_v.clear();
 
   // split labels into true and skip (those > max. label num)
-  std::unordered_set<uint32_t> true_labels;
-  std::unordered_set<uint32_t> skip_labels;
-  for (auto label : multilabels.label_v)
+  p.true_labels.clear();
+  for (auto label : ec.l.multilabels.label_v)
   {
     if (label < p.k)
-      true_labels.insert(label);
+      p.true_labels.insert(label);
     else
-      skip_labels.insert(label - p.k);
+      std::cout << "label " << label << " is not in {0," << p.k - 1
+                << "} Model can't predict it." << std::endl;
   }
+
+  p.node_queue.clear(); // clear node queue
 
   // prediction with threshold
   if (threshold)
   {
-    std::queue<node> node_queue;
     float cp_root = predict_node(0, base, ec);
     if (cp_root > p.threshold)
-      node_queue.push({0, cp_root});
+      p.node_queue.push_back({0, cp_root}); // here queue is used for dfs search
 
-    while (!node_queue.empty())
+    while (!p.node_queue.empty())
     {
-      node node = node_queue.front();  // current node
-      node_queue.pop();
+      node node = p.node_queue.back();  // current node
+      p.node_queue.pop_back();
 
       uint32_t n_child = p.kary * node.n + 1;
       ec.l.simple = {FLT_MAX, 1.f, 0.f};
@@ -187,7 +195,7 @@ void predict(plt& p, single_learner& base, example& ec)
         if (cp_child > p.threshold)
         {
           if (n_child < p.ti)
-            node_queue.push({n_child, cp_child});
+            p.node_queue.push_back({n_child, cp_child});
           else
           {
             uint32_t l = n_child - p.ti;
@@ -197,17 +205,17 @@ void predict(plt& p, single_learner& base, example& ec)
       }
     }
 
-    if (true_labels.size() > 0)
+    if (p.true_labels.size() > 0)
     {
       uint32_t tp = 0;
       for (auto pred_label : preds.label_v)
       {
-        if (true_labels.count(pred_label))
+        if (p.true_labels.count(pred_label))
           ++tp;
       }
       p.tp += tp;
       p.fp += preds.label_v.size() - tp;
-      p.fn += true_labels.size() - tp;
+      p.fn += p.true_labels.size() - tp;
       ++p.ec_count;
     }
   }
@@ -215,13 +223,14 @@ void predict(plt& p, single_learner& base, example& ec)
   // top-k prediction
   else
   {
-    std::priority_queue<node> node_queue;
-    node_queue.push({0, predict_node(0, base, ec)});
+    p.node_queue.push_back({0, predict_node(0, base, ec)}); // here queue is used as priority queue
+    std::push_heap(p.node_queue.begin(), p.node_queue.end());
 
-    while (!node_queue.empty())
+    while (!p.node_queue.empty())
     {
-      node node = node_queue.top();
-      node_queue.pop();
+      std::pop_heap(p.node_queue.begin(), p.node_queue.end());
+      node node = p.node_queue.back();
+      p.node_queue.pop_back();
 
       if (node.n < p.ti)
       {
@@ -232,7 +241,8 @@ void predict(plt& p, single_learner& base, example& ec)
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
         {
           float cp_child = node.p * (1.0f / (1.0f + exp(-p.node_preds[i].scalar)));
-          node_queue.push({n_child, cp_child});
+          p.node_queue.push_back({n_child, cp_child});
+          std::push_heap(p.node_queue.begin(), p.node_queue.end());
         }
       }
       else
@@ -245,17 +255,19 @@ void predict(plt& p, single_learner& base, example& ec)
     }
 
     // calculate p@
-    if (true_labels.size() > 0)
+    if (p.true_labels.size() > 0)
     {
       for (size_t i = 0; i < p.top_k; ++i)
       {
-        if (true_labels.count(preds.label_v[i]))
+        if (p.true_labels.count(preds.label_v[i]))
           ++p.tp_at[i];
       }
       ++p.ec_count;
-      p.true_count += true_labels.size();
+      p.true_count += p.true_labels.size();
     }
   }
+
+  p.node_queue.clear();
 
   ec.pred.multilabels = std::move(preds);
   ec.l.multilabels = std::move(multilabels);
