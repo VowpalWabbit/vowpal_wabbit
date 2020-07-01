@@ -258,7 +258,7 @@ void remove_slot_id(example* shared)
 
   if (audit)
   {
-    shared->feature_space[ccb_id_namespace].space_names.pop();
+    shared->feature_space[ccb_id_namespace].space_names.pop_back();
   }
 }
 

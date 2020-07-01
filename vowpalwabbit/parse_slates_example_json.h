@@ -1,6 +1,12 @@
 #pragma once
 
+// RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
+// polluted by it.
+// https://github.com/Tencent/rapidjson/issues/1700
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
 #include <rapidjson/document.h>
+#pragma GCC diagnostic pop
 
 #include "json_utils.h"
 

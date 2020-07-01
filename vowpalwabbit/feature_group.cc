@@ -21,7 +21,6 @@ features::features()
 {
   values = v_init<feature_value>();
   indicies = v_init<feature_index>();
-  space_names = v_init<audit_strings_ptr>();
   sum_feat_sq = 0.f;
 }
 
@@ -29,7 +28,6 @@ features::~features()
 {
   values.delete_v();
   indicies.delete_v();
-  space_names.delete_v();
 }
 
 // custom move operators required since we need to leave the old value in
@@ -49,10 +47,6 @@ features::features(features&& other) noexcept
   i._begin = nullptr;
   i._end = nullptr;
   i.end_array = nullptr;
-  auto& s = other.space_names;
-  s._begin = nullptr;
-  s._end = nullptr;
-  s.end_array = nullptr;
   other.sum_feat_sq = 0;
 }
 
@@ -71,20 +65,13 @@ features& features::operator=(features&& other) noexcept
   i._begin = nullptr;
   i._end = nullptr;
   i.end_array = nullptr;
-  auto& s = other.space_names;
-  s._begin = nullptr;
-  s._end = nullptr;
-  s.end_array = nullptr;
   other.sum_feat_sq = 0;
   return *this;
 }
 
 void features::free_space_names(size_t i)
 {
-  for (; i < space_names.size(); i++)
-  {
-    space_names[i].~audit_strings_ptr();
-  }
+  space_names.erase(space_names.begin() + i, space_names.end());
 }
 
 void features::clear()
@@ -106,8 +93,7 @@ void features::truncate_to(const features_value_iterator& pos)
 
   if (space_names.begin() != space_names.end())
   {
-    free_space_names((size_t)i);
-    space_names.end() = space_names.begin() + i;
+    space_names.erase(space_names.begin() + i, space_names.end());
   }
 }
 
@@ -119,10 +105,9 @@ void features::truncate_to(size_t i)
     indicies.end() = indicies.begin() + i;
   }
 
-  if (space_names.begin() != space_names.end())
+  if (space_names.size() > i )
   {
-    free_space_names(i);
-    space_names.end() = space_names.begin() + i;
+    space_names.erase(space_names.begin() + i, space_names.end());
   }
 }
 
@@ -188,6 +173,6 @@ void features::deep_copy_from(const features& src)
 {
   copy_array(values, src.values);
   copy_array(indicies, src.indicies);
-  copy_array_no_memcpy(space_names, src.space_names);
+  space_names = src.space_names;
   sum_feat_sq = src.sum_feat_sq;
 }

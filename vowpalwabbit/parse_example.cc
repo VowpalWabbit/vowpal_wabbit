@@ -504,10 +504,11 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
     std::vector<VW::string_view> tokenized;
     tokenize(' ', label_space, all->p->words);
     if (all->p->words.size() > 0 &&
-        (all->p->words.last().end() == label_space.end() ||
-        all->p->words.last().front() == '\''))  // The last field is a tag, so record and strip it off
+        (all->p->words.back().end() == label_space.end() ||
+        all->p->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->p->words.pop();
+      VW::string_view tag = all->p->words.back();
+      all->p->words.pop_back();
       if (tag.front() == '\'')
         tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());

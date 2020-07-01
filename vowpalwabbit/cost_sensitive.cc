@@ -11,7 +11,7 @@
 
 namespace COST_SENSITIVE
 {
-void name_value(VW::string_view& s, v_array<VW::string_view>& name, float& v)
+void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -121,7 +121,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
