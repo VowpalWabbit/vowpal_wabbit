@@ -13,7 +13,9 @@
 #include "../../vowpalwabbit/options_boost_po.h"
 #include "../../vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
 
-std::string get_label_string(label_type_t label_type)
+to_flat::to_flat() : _builder(1) {};
+
+std::string to_flat::get_label_string(label_type_t label_type)
 {
   switch (label_type)
   {
@@ -41,22 +43,22 @@ std::string get_label_string(label_type_t label_type)
   }
 }
 
-void create_simple_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_simple_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
-  label = VW::parsers::flatbuffer::CreateSimpleLabel(build._builder, v->l.simple.label, v->l.simple.weight).Union();
+  label = VW::parsers::flatbuffer::CreateSimpleLabel(_builder, v->l.simple.label, v->l.simple.weight).Union();
   label_type = VW::parsers::flatbuffer::Label_SimpleLabel;
 }
 
-void create_cb_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_cb_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
   for (auto const& cost : v->l.cb.costs){
-    costs.push_back(VW::parsers::flatbuffer::CreateCB_class(build._builder, cost.cost, cost.action, cost.probability, cost.partial_prediction));}
-  label = VW::parsers::flatbuffer::CreateCBLabelDirect(build._builder, v->l.cb.weight, &costs).Union();
+    costs.push_back(VW::parsers::flatbuffer::CreateCB_class(_builder, cost.cost, cost.action, cost.probability, cost.partial_prediction));}
+  label = VW::parsers::flatbuffer::CreateCBLabelDirect(_builder, v->l.cb.weight, &costs).Union();
   label_type = VW::parsers::flatbuffer::Label_CBLabel;
 }
 
-void create_ccb_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_ccb_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
   auto weight = v->l.conditional_contextual_bandit.weight;
   auto e_type = v->l.conditional_contextual_bandit.type;
@@ -64,11 +66,11 @@ void create_ccb_label(example* v, flatbuilder& build, flatbuffers::Offset<void>&
 
   if (e_type == 1) {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
-    label = VW::parsers::flatbuffer::CreateCCBLabelDirect(build._builder, type, 0, nullptr, weight).Union();
+    label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
   }
   else if (e_type == 2) {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
-    label = VW::parsers::flatbuffer::CreateCCBLabelDirect(build._builder, type, 0, nullptr, weight).Union();
+    label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
   }
   else if (e_type == 3){
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
@@ -78,54 +80,54 @@ void create_ccb_label(example* v, flatbuilder& build, flatbuffers::Offset<void>&
       for (const auto& probability : v->l.conditional_contextual_bandit.outcome->probabilities){
         auto action = probability.action;
         auto score = probability.score;
-        action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(build._builder, action, score));
+        action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, action, score));
       }
       auto cost = v->l.conditional_contextual_bandit.outcome->cost;
-      auto outcome = VW::parsers::flatbuffer::CreateCCB_outcomeDirect(build._builder, cost, &action_scores);
-      label = VW::parsers::flatbuffer::CreateCCBLabelDirect(build._builder, type, outcome, nullptr).Union();
+      auto outcome = VW::parsers::flatbuffer::CreateCCB_outcomeDirect(_builder, cost, &action_scores);
+      label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, nullptr).Union();
     }
     else if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr){
       for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions){ 
         explicit_included_actions.push_back(action);}
-      label = VW::parsers::flatbuffer::CreateCCBLabelDirect(build._builder, type, 0, &explicit_included_actions).Union();
+      label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, &explicit_included_actions).Union();
     }
     else{
-      label = VW::parsers::flatbuffer::CreateCCBLabelDirect(build._builder, type, 0, nullptr, weight).Union();
+      label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
     }
   }
   else { 
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_unset;
-    label = VW::parsers::flatbuffer::CreateCCBLabelDirect(build._builder, type, 0, nullptr, weight).Union();
+    label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
   }
 }
 
-void create_cb_eval_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_cb_eval_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
   for (const auto& cost : v->l.cb_eval.event.costs){
-    costs.push_back(VW::parsers::flatbuffer::CreateCB_class(build._builder, cost.cost, cost.action, cost.probability, cost.partial_prediction));
+    costs.push_back(VW::parsers::flatbuffer::CreateCB_class(_builder, cost.cost, cost.action, cost.probability, cost.partial_prediction));
   }
-  auto sub_label = CreateCBLabelDirect(build._builder, v->l.cb_eval.event.weight, &costs);
-  label = VW::parsers::flatbuffer::CreateCB_EVAL_Label(build._builder, v->l.cb_eval.action, sub_label).Union();
+  auto sub_label = CreateCBLabelDirect(_builder, v->l.cb_eval.event.weight, &costs);
+  label = VW::parsers::flatbuffer::CreateCB_EVAL_Label(_builder, v->l.cb_eval.action, sub_label).Union();
   label_type = VW::parsers::flatbuffer::Label_CB_EVAL_Label;
 }
 
-void create_mc_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_mc_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
-  label = VW::parsers::flatbuffer::CreateMultiClass(build._builder, v->l.multi.label, v->l.multi.weight).Union();
+  label = VW::parsers::flatbuffer::CreateMultiClass(_builder, v->l.multi.label, v->l.multi.weight).Union();
   label_type = VW::parsers::flatbuffer::Label_MultiClass;
 }
 
-void create_multi_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_multi_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
   std::vector<uint32_t> labels;
   for (auto const l : v->l.multilabels.label_v) {labels.push_back(l);}
 
-  label = VW::parsers::flatbuffer::CreateMultiLabelDirect(build._builder, &labels).Union();
+  label = VW::parsers::flatbuffer::CreateMultiLabelDirect(_builder, &labels).Union();
   label_type = VW::parsers::flatbuffer::Label_MultiLabel;
 }
 
-void create_slates_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_slates_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::action_score>> action_scores;
   float weight = v->l.slates.weight;
@@ -134,39 +136,38 @@ void create_slates_label(example* v, flatbuilder& build, flatbuffers::Offset<voi
 
   if (e_type == 1) {//shared type
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
-    label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(build._builder, type, weight, v->l.slates.labeled, v->l.slates.cost, 0U, nullptr).Union();
+    label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(_builder, type, weight, v->l.slates.labeled, v->l.slates.cost, 0U, nullptr).Union();
   }
   else if (e_type == 2){// action type
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
-    label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(build._builder, type, weight, false, 0.0, v->l.slates.slot_id, nullptr).Union();
+    label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(_builder, type, weight, false, 0.0, v->l.slates.slot_id, nullptr).Union();
   }
   else if (e_type == 3) {//slot type 
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     for (auto const& as : v->l.slates.probabilities){
-      action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(build._builder, as.action, as.score));
+      action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, as.action, as.score));
     }
-    label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(build._builder, type, weight, v->l.slates.labeled, 0.0, 0U, &action_scores).Union();
+    label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(_builder, type, weight, v->l.slates.labeled, 0.0, 0U, &action_scores).Union();
   }
-  else {label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(build._builder, VW::parsers::flatbuffer::CCB_Slates_example_type_unset, weight, false, 0.0, 0U, nullptr).Union();}
+  else {label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(_builder, VW::parsers::flatbuffer::CCB_Slates_example_type_unset, weight, false, 0.0, 0U, nullptr).Union();}
 }
 
-void create_cs_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_cs_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::wclass>> costs;
   for (auto const& wc : v->l.cs.costs){
-    costs.push_back(VW::parsers::flatbuffer::Createwclass(build._builder, wc.x, wc.partial_prediction, wc.wap_value, wc.class_index));}
-  label = VW::parsers::flatbuffer::CreateCS_LabelDirect(build._builder, &costs).Union();
+    costs.push_back(VW::parsers::flatbuffer::Createwclass(_builder, wc.x, wc.partial_prediction, wc.wap_value, wc.class_index));}
+  label = VW::parsers::flatbuffer::CreateCS_LabelDirect(_builder, &costs).Union();
   label_type = VW::parsers::flatbuffer::Label_CS_Label;
 }
 
-void create_no_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_no_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
-  label = VW::parsers::flatbuffer::Createno_label(build._builder, (uint8_t)'\000').Union();
+  label = VW::parsers::flatbuffer::Createno_label(_builder, (uint8_t)'\000').Union();
 }
 
-void convert_txt_to_flat(vw& all, std::string flatout)
+void to_flat::convert_txt_to_flat(vw& all)
 {
-  flatbuilder build;
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> examplecollection;
   example* v = all.p->ready_parsed_examples.pop();
   int examples = 0;
@@ -178,31 +179,31 @@ void convert_txt_to_flat(vw& all, std::string flatout)
     switch (all.label_type)
     {
     case label_type_t::nolabel:
-      create_no_label(v, build, label, label_type);
+      to_flat::create_no_label(v, label, label_type);
       break;
     case label_type_t::cb:
-      create_cb_label(v, build, label, label_type);
+      to_flat::create_cb_label(v, label, label_type);
       break;
     case label_type_t::ccb:
-      create_ccb_label(v, build, label, label_type);
+      to_flat::create_ccb_label(v, label, label_type);
       break;
     case label_type_t::multi:
-      create_multi_label(v, build, label, label_type);
+      to_flat::create_multi_label(v, label, label_type);
       break;
     case label_type_t::mc:
-      create_mc_label(v, build, label, label_type);
+      to_flat::create_mc_label(v, label, label_type);
       break;
     case label_type_t::cs:
-      create_cs_label(v, build, label, label_type);
+      to_flat::create_cs_label(v, label, label_type);
       break;
     case label_type_t::cb_eval:
-      create_cb_eval_label(v, build, label, label_type);
+      to_flat::create_cb_eval_label(v, label, label_type);
       break;
     case label_type_t::slates:
-      create_slates_label(v, build, label, label_type);
+      to_flat::create_slates_label(v, label, label_type);
       break;
     case label_type_t::simple:
-      create_simple_label(v, build, label, label_type);
+      to_flat::create_simple_label(v, label, label_type);
       break;
     default:
       THROW("Unknown label type");
@@ -224,14 +225,14 @@ void convert_txt_to_flat(vw& all, std::string flatout)
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
 
       for (features::iterator& f : v->feature_space[ns]){
-        fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(build._builder, nullptr, f.value(), f.index()));
+        fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index()));
       }
-      namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(build._builder, nullptr, ns, &fts));
+      namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts));
     }
     std::string tag(v->tag.begin(), v->tag.size());
 
-    auto flat_namespaces = build._builder.CreateVector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>>(namespaces);
-    auto flat_example = VW::parsers::flatbuffer::CreateExample(build._builder, flat_namespaces, label_type, label.Union(), build._builder.CreateString(tag.data()));
+    auto flat_namespaces = _builder.CreateVector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>>(namespaces);
+    auto flat_example = VW::parsers::flatbuffer::CreateExample(_builder, flat_namespaces, label_type, label.Union(), _builder.CreateString(tag.data()));
     examplecollection.push_back(flat_example);
 
     examples++;
@@ -241,12 +242,12 @@ void convert_txt_to_flat(vw& all, std::string flatout)
   all.trace_message << "\nLabel type " << get_label_string(all.label_type) << std::endl;
   all.trace_message << "Converted " << examples - 1 << " examples" << std::endl;
 
-  flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(build._builder, &examplecollection);
+  flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &examplecollection);
 
-  build._builder.Finish(egcollection);
+  _builder.Finish(egcollection);
 
-  uint8_t *buf = build._builder.GetBufferPointer();
-  int size = build._builder.GetSize();
+  uint8_t *buf = _builder.GetBufferPointer();
+  int size = _builder.GetSize();
 
   std::ofstream outfile;
   if (flatout.empty()) {flatout = all.data_filename + ".fb";}
