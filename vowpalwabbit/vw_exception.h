@@ -122,9 +122,10 @@ inline std::string strerror_to_string(int error_number)
   auto length = std::strlen(error_message_buffer.data());
   return std::string(error_message_buffer.data(), length);
 #else
-  locale_t locale = newlocale(LC_ALL_MASK, "",(locale_t)0);
+  // Passing "" for the locale means use the default system locale
+  locale_t locale = newlocale(LC_ALL_MASK, "", static_cast<locale_t>(0));
 
-  if (locale == (locale_t)0) {
+  if (locale == static_cast<locale_t>(0)) {
     return "Failed to create locale";
   }
 
