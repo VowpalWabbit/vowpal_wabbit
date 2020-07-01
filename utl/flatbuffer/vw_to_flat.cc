@@ -164,7 +164,7 @@ void create_no_label(example* v, flatbuilder& build, flatbuffers::Offset<void>& 
   label = VW::parsers::flatbuffer::Createno_label(build._builder, (uint8_t)'\000').Union();
 }
 
-void convert_txt_to_flat(vw& all)
+void convert_txt_to_flat(vw& all, std::string flatout)
 {
   flatbuilder build;
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> examplecollection;
@@ -249,12 +249,11 @@ void convert_txt_to_flat(vw& all)
   int size = build._builder.GetSize();
 
   std::ofstream outfile;
-  if (all.flatout.empty()) {all.flatout = all.data_filename + ".fb";}
-  outfile.open(all.flatout, std::ios::binary | std::ios::out);
+  if (flatout.empty()) {flatout = all.data_filename + ".fb";}
+  outfile.open(flatout, std::ios::binary | std::ios::out);
 
-  // std::cout << *(buf-4) << pre.msg_size <<  "\n";
   outfile.write(reinterpret_cast<char*>(buf), size);
-  all.trace_message << "Flatbuffer " << all.flatout << " created";
+  all.trace_message << "Flatbuffer " << flatout << " created";
 }
 
 

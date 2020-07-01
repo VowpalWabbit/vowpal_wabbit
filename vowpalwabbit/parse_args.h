@@ -22,7 +22,6 @@ struct input_options
   bool compressed;
   bool chain_hash;
   bool flatbuffer = false;
-  bool txt_to_flat = false;
 };
 
 // trace listener + context need to be passed at initialization to capture all messages.

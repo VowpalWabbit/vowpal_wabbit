@@ -18,17 +18,15 @@ namespace flatbuffer {
 parser::parser(std::string filename) : 
 _filename(filename),
 _example_index(0),
-_c_hash(0)
-//_flatbuffer_pointer()?
-{
-  // _filename = filename;
-  init(); //Shift as a separate call
-}
+_c_hash(0),
+_flatbuffer_pointer(nullptr)
+{}
+
 parser::parser(uint8_t *buffer_pointer) : 
 _flatbuffer_pointer(buffer_pointer),
 _example_index(0),
 _c_hash(0),
-_filename("")
+_filename("empty")
 {
   _data = VW::parsers::flatbuffer::GetExampleCollection(_flatbuffer_pointer); //Shift as a separate call
 }
@@ -45,6 +43,7 @@ void parser::init()
   std::unique_ptr<char> buffer_pointer(new char[length]);
   infile.read(buffer_pointer.get(), length);
   _flatbuffer_pointer = reinterpret_cast<u_int8_t*>(buffer_pointer.get());
+  infile.close();
 
   _data = VW::parsers::flatbuffer::GetExampleCollection(_flatbuffer_pointer);
 }

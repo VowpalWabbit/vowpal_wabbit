@@ -68,17 +68,17 @@ int main(int argc, char* argv[])
 {
   bool should_use_onethread;
   option_group_definition driver_config("driver");
+  std::string flatout;
+  driver_config.add(make_option("flatout", flatout));
   std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;
   char *newargs[argc+1];
   char *quiet = "--quiet";
-  // memcpy(&newargs, &argv, argc);
   for(int j = 0; j<argc; j++)
     {
       newargs[j] = argv[j];
     }
   newargs[argc] = quiet;
-  // std::cout << newargs[0] << " " << newargs[1] << " " << newargs[argc];
   std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc+1, newargs));
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(*ptr));
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
   VW::start_parser(all);
   all.logger.quiet = true;
-  convert_txt_to_flat(all);
+  convert_txt_to_flat(all, flatout);
   VW::end_parser(all); 
   return 0;
 }
