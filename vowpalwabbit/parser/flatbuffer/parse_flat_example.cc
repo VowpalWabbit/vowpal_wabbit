@@ -17,16 +17,16 @@ namespace flatbuffer {
 
 parser::parser(std::string filename) : 
 _filename(filename),
+_flatbuffer_pointer(nullptr),
 _example_index(0),
-_c_hash(0),
-_flatbuffer_pointer(nullptr)
+_c_hash(0)
 {}
 
 parser::parser(uint8_t *buffer_pointer) : 
+_filename("empty"),
 _flatbuffer_pointer(buffer_pointer),
 _example_index(0),
-_c_hash(0),
-_filename("empty")
+_c_hash(0)
 {
   _data = VW::parsers::flatbuffer::GetExampleCollection(_flatbuffer_pointer); //Shift as a separate call
 }
