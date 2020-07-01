@@ -3,11 +3,13 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
+#include <algorithm>
 
 #include "example.h"
 #include "parse_primitives.h"
 #include "vw.h"
 #include "vw_exception.h"
+#include "vw_string_view.h"
 
 using namespace VW::LEARNER;
 
@@ -108,7 +110,7 @@ void copy_label(void* dst, void* src)
   ldD->weight = ldS->weight;
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
@@ -120,7 +122,9 @@ void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& wor
     tokenize(':', word, p->parse_name);
 
     if (p->parse_name.empty() || p->parse_name.size() > 3)
-      THROW("malformed cost specification: " << p->parse_name);
+    {
+      THROW("malformed cost specification: " << word);
+    }
 
     f.partial_prediction = 0.;
     f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
@@ -272,7 +276,7 @@ void copy_label(void* dst, void* src)
   ldD->action = ldS->action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 
@@ -281,11 +285,11 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& 
 
   ld->action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
 
-  words.begin()++;
-
+  // Removing the first element of a vector is not efficient at all, every element must be copied/moved.
+  const auto stashed_first_token = std::move(words[0]);
+  words.erase(words.begin());
   CB::parse_label(p, sd, &(ld->event), words);
-
-  words.begin()--;
+  words.insert(words.begin(), std::move(stashed_first_token));
 }
 
 label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,

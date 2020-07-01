@@ -100,6 +100,9 @@ class collection_pair_iterator
   // must support: *a = t;
   Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
 
+  // VS library 14.25.28610 requires operator[] (since it's a random access iterator)
+  Ref operator[](size_t n) { return Ref(_ptr1 + n, _ptr2 + n); }
+
   // must support: ++a; a++; *a++;
   Iter& operator++()
   {

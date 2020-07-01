@@ -24,24 +24,15 @@ namespace memory_tree_ns
 ///////////////////////Helper//////////////////////////////
 //////////////////////////////////////////////////////////
 template <typename T>
-void remove_at_index(v_array<T>& array, uint32_t index)
+void remove_at_index(std::vector<T>& array, uint32_t index)
 {
   if (index >= array.size())
   {
     std::cout << "ERROR: index is larger than the size" << std::endl;
     return;
   }
-  if (index == array.size() - 1)
-  {
-    array.pop();
-    return;
-  }
-  for (size_t i = index + 1; i < array.size(); i++)
-  {
-    array[i - 1] = array[i];
-  }
-  array.pop();
-  return;
+
+  array.erase(array.begin() + index);
 }
 
 void copy_example_data(example* dst, example* src, bool oas = false)  // copy example data.
@@ -154,7 +145,7 @@ struct node
   double nl;  // number of examples routed to left.
   double nr;  // number of examples routed to right.
 
-  v_array<uint32_t> examples_index;
+  std::vector<uint32_t> examples_index;
 
   node()  // construct:
   {
@@ -167,7 +158,12 @@ struct node
     right = 0;
     nl = 0.001;  // initilze to 1, as we need to do nl/nr.
     nr = 0.001;
-    examples_index = v_init<uint32_t>();
+    // examples_index = v_init<uint32_t>();
+  }
+
+  ~node()
+  {
+    // examples_index.delete_v();
   }
 };
 
@@ -177,7 +173,8 @@ struct memory_tree
   vw* all;
   std::shared_ptr<rand_state> _random_state;
 
-  v_array<node> nodes;         // array of nodes.
+  std::vector<node> nodes;         // array of nodes.
+  // v_array<node> nodes;         // array of nodes.
   v_array<example*> examples;  // array of example points
 
   size_t max_leaf_examples;
@@ -219,7 +216,7 @@ struct memory_tree
 
   memory_tree()
   {
-    nodes = v_init<node>();
+    // nodes = v_init<node>();
     examples = v_init<example*>();
     alpha = 0.5;
     routers_used = 0;
@@ -235,8 +232,7 @@ struct memory_tree
 
   ~memory_tree()
   {
-    for (auto& node : nodes) node.examples_index.delete_v();
-    nodes.delete_v();
+    // nodes.delete_v();
     for (auto ex : examples) free_example(ex);
     examples.delete_v();
     if (kprod_ec)
@@ -509,7 +505,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       b.examples[ec_pos]->l.multilabels = multilabels;
     }
   }
-  b.nodes[cn].examples_index.delete_v();                                                 // empty the cn's example list
+  b.nodes[cn].examples_index.clear();                                                    // empty the cn's example list
   b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001);   // avoid to set nl to zero
   b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
