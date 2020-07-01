@@ -1833,17 +1833,22 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_rnd.stderr
     pred-sets/ref/cbe_adf_rnd.predict
 
-# Test 212: offset_tree, 2 actions
+# Test 212: Slates sanity check
+{VW} --slates -d train-sets/slates_simple.txt -p slates_simple.predict
+    train-sets/ref/slates_simple.stderr
+    pred-sets/ref/slates_simple.predict
+
+# Test 213: offset_tree, 2 actions
 {VW} --ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.pred -P 1
     test-sets/ref/offset_tree_000.stderr
     pred-sets/ref/offset_tree_000.pred
 
-# Test 213: offset_tree, 3 actions
+# Test 214: offset_tree, 3 actions
 {VW} --ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.pred -P 1
     test-sets/ref/offset_tree_001.stderr
     pred-sets/ref/offset_tree_001.pred
 
-# Test 214: offset_tree, 4 actions
+# Test 215: offset_tree, 4 actions
 {VW} --ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.pred -P 1
     test-sets/ref/offset_tree_002.stderr
     pred-sets/ref/offset_tree_002.pred

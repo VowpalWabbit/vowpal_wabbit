@@ -22,8 +22,6 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
 {
   auto lp = VW::slates::slates_label_parser;
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
 
   {
     auto label = scoped_calloc_or_throw<VW::slates::label>();
@@ -107,9 +105,6 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "slates slot 0:0,1:0.5", *label.get()), VW::vw_exception);
     lp.delete_label(label.get());
   }
-
-  p.words.delete_v();
-  p.parse_name.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
@@ -119,8 +114,6 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
 
   auto lp = VW::slates::slates_label_parser;
   auto label = scoped_calloc_or_throw<VW::slates::label>();
@@ -139,10 +132,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
   BOOST_CHECK_EQUAL(uncached_label->labeled, true);
   BOOST_CHECK_CLOSE(uncached_label->cost, 0.5, FLOAT_TOL);
   lp.delete_label(label.get());
-  lp.delete_label(uncached_label.get());
-  p.words.delete_v();
-  p.parse_name.delete_v();
-}
+  lp.delete_label(uncached_label.get());}
 
 BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 {
@@ -151,8 +141,6 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
 
   auto lp = VW::slates::slates_label_parser;
   auto label = scoped_calloc_or_throw<VW::slates::label>();
@@ -171,10 +159,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
   BOOST_CHECK_EQUAL(uncached_label->labeled, false);
   BOOST_CHECK_EQUAL(uncached_label->slot_id, 5);
   lp.delete_label(label.get());
-  lp.delete_label(uncached_label.get());
-  p.words.delete_v();
-  p.parse_name.delete_v();
-}
+  lp.delete_label(uncached_label.get());}
 
 
 BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
@@ -184,8 +169,6 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
 
   auto lp = VW::slates::slates_label_parser;
   auto label = scoped_calloc_or_throw<VW::slates::label>();
@@ -205,17 +188,12 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
   check_collections_with_float_tolerance(uncached_label->probabilities,
       std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
   lp.delete_label(label.get());
-  lp.delete_label(uncached_label.get());
-  p.words.delete_v();
-  p.parse_name.delete_v();
-}
+  lp.delete_label(uncached_label.get());}
 
 
 BOOST_AUTO_TEST_CASE(slates_copy_label)
 {
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
   auto lp = VW::slates::slates_label_parser;
 
   auto label = scoped_calloc_or_throw<VW::slates::label>();
@@ -231,7 +209,4 @@ BOOST_AUTO_TEST_CASE(slates_copy_label)
   check_collections_with_float_tolerance(
       copied_to->probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
   lp.delete_label(label.get());
-  lp.delete_label(copied_to.get());
-  p.words.delete_v();
-  p.parse_name.delete_v();
-}
+  lp.delete_label(copied_to.get());}

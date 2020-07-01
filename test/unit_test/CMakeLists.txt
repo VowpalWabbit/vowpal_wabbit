@@ -22,6 +22,7 @@ add_executable(vw-unit-test.out
   test_common.cc
   test_common.h
   tokenize_tests.cc
+  chain_hashing.cc
   offset_tree_tests.cc
   random_test.cc
   cats_tree_tests.cc

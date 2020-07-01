@@ -702,6 +702,9 @@ example& get_unused_example(vw* all)
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
+  IGNORE_DEPRECATED_USAGE_START
+  ex->in_use = true;
+  IGNORE_DEPRECATED_USAGE_END
   return *ex;
 }
 
@@ -882,12 +885,9 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<VW::string_view> words = v_init<VW::string_view>();
-
+  std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
-  words.clear();
-  words.delete_v();
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -909,6 +909,9 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
+  IGNORE_DEPRECATED_USAGE_START
+  ec.in_use = false;
+  IGNORE_DEPRECATED_USAGE_END
   all.p->example_pool.return_object(&ec);
 }
 
@@ -989,18 +992,6 @@ size_t get_feature_number(example* ec) { return ec->num_features; }
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
 
-example* example_initializer::operator()(example* ex)
-{
-  memset(&ex->l, 0, sizeof(polylabel));
-  ex->passthrough = nullptr;
-  ex->tag = v_init<char>();
-  ex->indices = v_init<namespace_index>();
-IGNORE_DEPRECATED_USAGE_START
-  ex->in_use = true;
-IGNORE_DEPRECATED_USAGE_END
-  memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
-  return ex;
-}
 
 void adjust_used_index(vw&)
 { /* no longer used */
