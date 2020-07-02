@@ -4,7 +4,7 @@ import os
 import time
 
 # Parameters
-k = 2456
+k = 2456  # number of labels
 kary_tree = 16
 l = 1.0
 passes = 3
@@ -17,7 +17,7 @@ test_data = "rcv1x_test.vw"
 
 print("Vowpal Wabbit PLT example on RCV1X-2K dataset with {} labels".format(k))
 
-# Download dataset
+# Download dataset (source: http://manikvarma.org/downloads/XC/XMLRepository.html)
 if not os.path.exists(train_data):
     os.system("wget http://www.cs.put.poznan.pl/mwydmuch/data/{}".format(train_data))
 if not os.path.exists(test_data):

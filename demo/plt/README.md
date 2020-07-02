@@ -2,7 +2,8 @@ Probabilistic Label Tree demo
 -------------------------------
 
 This demo presents PLT for applications of logarithmic time multilabel classification.
-It uses RCV1-2K, AmazonCat-13K, and Wiki10-31K datasets from the [XML repository](http://manikvarma.org/downloads/XC/XMLRepository.html).
+It uses RCV1-2K, AmazonCat-13K, and Wiki10-31K datasets from the [XML repository](http://manikvarma.org/downloads/XC/XMLRepository.html) 
+converted to Vowpal Wabbit format using scripts from [this repository](https://github.com/mwydmuch/datasets4vw).
 There are separate scripts for each dataset that download data, train PLT model, and test prediction with threshold = 0.5 as well as top-5 prediction. 
 Scripts require VW, Python and wget installed.
 

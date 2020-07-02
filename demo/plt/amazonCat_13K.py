@@ -4,7 +4,7 @@ import os
 import time
 
 # Parameters
-k = 13330
+k = 13330  # number of labels
 kary_tree = 16
 l = 1.0
 passes = 3
@@ -17,7 +17,7 @@ test_data = "amazonCat_test.vw"
 
 print("Vowpal Wabbit PLT example on AmazonCat-13K dataset with {} labels".format(k))
 
-# Download dataset
+# Download dataset (source: http://manikvarma.org/downloads/XC/XMLRepository.html)
 if not os.path.exists(train_data):
     os.system("wget http://www.cs.put.poznan.pl/mwydmuch/data/{}".format(train_data))
 if not os.path.exists(test_data):
