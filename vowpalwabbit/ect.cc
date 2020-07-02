@@ -338,7 +338,6 @@ void learn(ect& e, single_learner& base, example& ec)
 base_learner* ect_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
-  // all.label_type = label_type_t::mc;
   std::string link;
   option_group_definition new_options("Error Correcting Tournament Options");
   new_options.add(make_option("ect", data->k).keep().help("Error correcting tournament with <k> labels"))

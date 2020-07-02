@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <iostream>
-#include <fstream>
 #include <iomanip>
 #include <vector>
 #include <map>
@@ -31,7 +30,6 @@
 #endif
 
 #include "parser/flatbuffer/generated/example_generated.h"
-// #include "parser/flatbuffer/parse_flat_example.h"
 #include "v_array.h"
 #include "array_parameters.h"
 #include "parse_primitives.h"
@@ -364,7 +362,7 @@ struct vw_logger
 };
 
 namespace VW { namespace parsers { namespace flatbuffer {class parser;}}}
-// class VW::parsers::flatbuffer::to_flatbuff;
+
 struct vw
 {
  private:
@@ -402,7 +400,6 @@ struct vw
   uint32_t hash_seed;
 
   VW::parsers::flatbuffer::parser* flat_converter;
-  std::string flatout; // For flatbuffer conversion - Remove this
   std::string data_filename;
 
   bool daemon;
