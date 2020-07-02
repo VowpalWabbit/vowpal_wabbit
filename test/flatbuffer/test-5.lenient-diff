@@ -1,6 +1,0 @@
-																																																																																													     >	0.004372 0.001637         1024         1024.0   0.5836   0.6246      119
-number of examples = 1000																																																																																										     |	number of examples = 2001
-weighted example sum = 1000.000000																																																																																									     |	weighted example sum = 2001.000000
-weighted label sum = 526.517586																																																																																										     |	weighted label sum = 1053.035171
-average loss = 0.004364																																																																																											     |	average loss = 0.002590
-total feature number = 118940																																																																																										     |	total feature number = 237881
