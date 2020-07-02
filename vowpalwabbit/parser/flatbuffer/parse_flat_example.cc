@@ -91,15 +91,18 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
 
 void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
 {
-
+  uint8_t temp_index;
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)){
-    ae->indices.push_back(ns->name()->c_str()[0]);
+    temp_index = (uint8_t)ns->name()->c_str()[0];
+    ae->indices.push_back(temp_index);
     _c_hash = all->p->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
   }
-  else 
-  {ae->indices.push_back(ns->hash());}
+  else {
+    ae->indices.push_back(ns->hash());
+    temp_index = ns->hash();
+  }
 
-  features& fs = ae->feature_space[ns->hash()];
+  features& fs = ae->feature_space[temp_index];
 
   for (int j=0; j<ns->features()->size(); j++){
     parse_features(all, ae, fs, ns->features()->Get(j));
