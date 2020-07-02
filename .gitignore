@@ -141,3 +141,7 @@ dist/
 *.model
 python/examples/*.model
 doc/html
+test/flatbuffer/*.predict
+test/flatbuffer/*.stderr
+test/*.stderr
+test/*.predict
