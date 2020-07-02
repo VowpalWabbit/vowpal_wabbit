@@ -1849,7 +1849,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 
 # Test 215: check plt top-1 prediction
 {VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
-train-sets/ref/plt_top1_multilabel_predict.stderr
+    train-sets/ref/plt_top1_multilabel_predict.stderr
     pred-sets/ref/plt_top1_multilabel.predict
 
 # Do not delete this line or the empty line above it
