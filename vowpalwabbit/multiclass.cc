@@ -70,7 +70,7 @@ bool test_label(void* v)
 
 void delete_label(void*) {}
 
-void parse_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words)
+void parse_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>& words)
 {
   label_t* ld = (label_t*)v;
 

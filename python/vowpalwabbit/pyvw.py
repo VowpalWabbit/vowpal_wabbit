@@ -4,9 +4,12 @@
 from __future__ import division
 import pylibvw
 import warnings
+import pandas as pd
 
-class SearchTask():
+
+class SearchTask:
     """Search task class"""
+
     def __init__(self, vw, sch, num_actions):
         """
         Parameters
@@ -39,10 +42,9 @@ class SearchTask():
     def _run(self, your_own_input_example):
         pass
 
-    def _call_vw(self,
-                 my_example,
-                 isTest,
-                 useOracle=False):  # run_fn, setup_fn, takedown_fn, isTest):
+    def _call_vw(
+        self, my_example, isTest, useOracle=False
+    ):  # run_fn, setup_fn, takedown_fn, isTest):
         self._output = None
         self.bogus_example[0].set_test_only(isTest)
 
@@ -58,7 +60,8 @@ class SearchTask():
         self.sch.set_structured_predict_hook(run, setup, takedown)
         self.sch.set_force_oracle(useOracle)
         self.vw.learn(
-            self.bogus_example)  # this will cause our ._run hook to get called
+            self.bogus_example
+        )  # this will cause our ._run hook to get called
 
     def learn(self, data_iterator):
         """Train search task by providing an iterator of examples.
@@ -173,7 +176,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
         pylibvw.vw.pPROB: ec.get_prob,
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
-        pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores
+        pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
     }
     return switch_prediction_type[prediction_type]()
 
@@ -182,6 +185,7 @@ class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
+
     def __init__(self, arg_str=None, **kw):
         """Initialize the vw object.
 
@@ -208,20 +212,23 @@ class vw(pylibvw.vw):
 
         self : vw
         """
+
         def format_input_pair(key, val):
             if type(val) is bool and not val:
-                s = ''
+                s = ""
             else:
-                prefix = '-' if len(key) == 1 else '--'
-                value = '' if type(val) is bool else ' {}'.format(val)
-                s = '{p}{k}{v}'.format(p=prefix, k=key, v=value)
+                prefix = "-" if len(key) == 1 else "--"
+                value = "" if type(val) is bool else " {}".format(val)
+                s = "{p}{k}{v}".format(p=prefix, k=key, v=value)
             return s
 
         def format_input(key, val):
             if isinstance(val, list):
-                # if a list is passed as a parameter value - create a key for each list element
-                return ' '.join(
-                    [format_input_pair(key, value) for value in val])
+                # if a list is passed as a parameter value - create a key for
+                # each list element
+                return " ".join(
+                    [format_input_pair(key, value) for value in val]
+                )
             else:
                 return format_input_pair(key, val)
 
@@ -229,18 +236,18 @@ class vw(pylibvw.vw):
         if arg_str is not None:
             l = [arg_str] + l
 
-        pylibvw.vw.__init__(self, ' '.join(l))
+        pylibvw.vw.__init__(self, " ".join(l))
 
         # check to see if native parser needs to run
-        ext_file_args = ['d', 'data', 'passes']
+        ext_file_args = ["d", "data", "passes"]
         if any(x in kw for x in ext_file_args):
             pylibvw.vw.run_parser(self)
 
         self.finished = False
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
-        """Returns a collection of examples for a multiline example learner or a single
-        example for a single example learner.
+        """Returns a collection of examples for a multiline example learner or
+        a single example for a single example learner.
 
         Parameters
         ----------
@@ -280,21 +287,22 @@ class vw(pylibvw.vw):
             list of examples parsed
         """
 
-        #check if already parsed
-        if isinstance(str_ex, example) and getattr(str_ex, 'setup_done', None):
+        # check if already parsed
+        if isinstance(str_ex, example) and getattr(str_ex, "setup_done", None):
             return str_ex
 
         elif isinstance(str_ex, list):
-            if all([getattr(ex, 'setup_done', None) for ex in str_ex]):
+            if all([getattr(ex, "setup_done", None) for ex in str_ex]):
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
             raise TypeError(
-                'Unsupported type. List or string object must be passed.')
+                "Unsupported type. List or string object must be passed."
+            )
 
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
-        str_ex = str_ex.replace('\r', '')
+        str_ex = str_ex.replace("\r", "")
         str_ex = str_ex.strip()
         ec = self._parse(str_ex)
         ec = [example(self, x, labelType) for x in ec]
@@ -305,8 +313,9 @@ class vw(pylibvw.vw):
                 ec = ec[0]
             else:
                 raise TypeError(
-                    'expecting single line example, got multi_ex of len %i' %
-                    len(ec))
+                    "expecting single line example, got multi_ex of len %i"
+                    % len(ec)
+                )
         return ec
 
     def finish_example(self, ex):
@@ -322,7 +331,8 @@ class vw(pylibvw.vw):
         if isinstance(ex, example):
             if self._is_multiline():
                 raise ValueError(
-                    'Learner is multiline but single example was passed to finish_example. Use the list of examples instead?'
+                    "Learner is multiline but single example was passed to "
+                    "finish_example. Use the list of examples instead?"
                 )
             if not ex.finished:
                 pylibvw.vw._finish_example(self, ex)
@@ -330,7 +340,8 @@ class vw(pylibvw.vw):
         elif isinstance(ex, list):
             if not self._is_multiline():
                 raise ValueError(
-                    'Learner is singleline but multi example was passed to finish_example. Use a single example instead?'
+                    "Learner is singleline but multi example was passed to "
+                    "finish_example. Use a single example instead?"
                 )
             if all(x.finished == False for x in ex):
                 pylibvw.vw._finish_example_multi_ex(self, ex)
@@ -342,7 +353,8 @@ class vw(pylibvw.vw):
         return pylibvw.vw.num_weights(self)
 
     def get_weight(self, index, offset=0):
-        """Get the weight at a particular position in the (learned) weight vector.
+        """Get the weight at a particular position in the (learned) weight
+        vector.
 
         Parameters
         ----------
@@ -383,7 +395,7 @@ class vw(pylibvw.vw):
             new_example = True
 
         if isinstance(ec, example):
-            if not getattr(ec, 'setup_done', None):
+            if not getattr(ec, "setup_done", None):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
 
@@ -392,8 +404,9 @@ class vw(pylibvw.vw):
 
         else:
             raise TypeError(
-                'expecting string or example object as ec argument for learn, got %s'
-                % type(ec))
+                "expecting string or example object as ec argument for learn,"
+                " got %s" % type(ec)
+            )
 
         if new_example:
             self.finish_example(ec)
@@ -436,17 +449,17 @@ class vw(pylibvw.vw):
 
         if not isinstance(ec, example) and not isinstance(ec, list):
             raise TypeError(
-                'expecting string, example object, or list of example objects as ec argument for predict, got %s'
-                % type(ec))
+                "expecting string, example object, or list of example objects"
+                " as ec argument for predict, got %s" % type(ec)
+            )
 
-        if isinstance(ec, example) and not getattr(ec, 'setup_done', True):
+        if isinstance(ec, example) and not getattr(ec, "setup_done", True):
             ec.setup_example()
 
         if isinstance(ec, example):
             pylibvw.vw.predict(self, ec)
         else:
             pylibvw.vw.predict_multi(self, ec)
-
 
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
@@ -506,12 +519,14 @@ class vw(pylibvw.vw):
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()
 
-        def predict(examples,
-                    my_tag,
-                    oracle,
-                    condition=None,
-                    allowed=None,
-                    learner_id=0):
+        def predict(
+            examples,
+            my_tag,
+            oracle,
+            condition=None,
+            allowed=None,
+            learner_id=0,
+        ):
             """The basic (via-reduction) prediction mechanism
 
             Parameters
@@ -560,41 +575,46 @@ class vw(pylibvw.vw):
             """
             P = sch.get_predictor(my_tag)
             if sch.is_ldf():
-                # we need to know how many actions there are, even if we don't know their identities
-                while hasattr(examples, '__call__'):
+                # we need to know how many actions there are, even if we don't
+                # know their identities
+                while hasattr(examples, "__call__"):
                     examples = examples()
                 if not isinstance(examples, list):
                     raise TypeError(
-                        'expected example _list_ in LDF mode for SearchTask.predict()'
+                        "expected example _list_ in LDF mode for SearchTask.predict()"
                     )
                 P.set_input_length(len(examples))
                 if sch.predict_needs_example():
                     for n in range(len(examples)):
                         ec = examples[n]
-                        while hasattr(ec, '__call__'):
+                        while hasattr(ec, "__call__"):
                             ec = ec()  # unfold the lambdas
                         if not isinstance(ec, example) and not isinstance(
-                                ec, pylibvw.example):
+                            ec, pylibvw.example
+                        ):
                             raise TypeError(
-                                'non-example in LDF example list in SearchTask.predict()'
+                                "non-example in LDF example list in SearchTask.predict()"
                             )
-                        if hasattr(ec, 'setup_done') and not ec.setup_done:
+                        if hasattr(ec, "setup_done") and not ec.setup_done:
                             ec.setup_example()
                         P.set_input_at(n, ec)
                 else:
                     pass  # TODO: do we need to set the examples even though they're not used?
             else:
                 if sch.predict_needs_example():
-                    while hasattr(examples, '__call__'):
+                    while hasattr(examples, "__call__"):
                         examples = examples()
-                    if hasattr(examples,
-                               'setup_done') and not examples.setup_done:
+                    if (
+                        hasattr(examples, "setup_done")
+                        and not examples.setup_done
+                    ):
                         examples.setup_example()
                     P.set_input(examples)
                 else:
                     pass  # TODO: do we need to set the examples even though they're not used?
 
-            # if (isinstance(examples, list) and all([isinstance(ex, example) or isinstance(ex, pylibvw.example) for ex in examples])) or \
+            # if (isinstance(examples, list) and all([isinstance(ex, example) or
+            #       isinstance(ex, pylibvw.example) for ex in examples])) or \
             #    isinstance(examples, example) or isinstance(examples, pylibvw.example):
             #     if isinstance(examples, list): # LDF
             #         P.set_input_length(len(examples))
@@ -602,58 +622,80 @@ class vw(pylibvw.vw):
             #             P.set_input_at(n, examples[n])
             #     else: # non-LDF
             #         P.set_input(examples)
-            if oracle is None: pass
+            if oracle is None:
+                pass
             elif isinstance(oracle, list):
-                assert 0 not in oracle, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                assert 0 not in oracle, "multiclass labels are from 1..., "
+                "please do not use zero or bad things will happen!"
                 if len(oracle) > 0:
                     P.set_oracles(oracle)
             elif isinstance(oracle, int):
-                assert oracle > 0, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                assert oracle > 0, "multiclass labels are from 1...,"
+                " please do not use zero or bad things will happen!"
                 P.set_oracle(oracle)
             else:
-                raise TypeError('expecting oracle to be a list or an integer')
+                raise TypeError("expecting oracle to be a list or an integer")
 
             if condition is not None:
-                if not isinstance(condition, list): condition = [condition]
+                if not isinstance(condition, list):
+                    condition = [condition]
                 for c in condition:
                     if not isinstance(c, tuple):
-                        raise TypeError('item ' + str(c) +
-                                        ' in condition list is malformed')
-                    if len(c) == 2 and isinstance(c[0], int) and isinstance(
-                            c[1], str) and len(c[1]) == 1:
+                        raise TypeError(
+                            "item "
+                            + str(c)
+                            + " in condition list is malformed"
+                        )
+                    if (
+                        len(c) == 2
+                        and isinstance(c[0], int)
+                        and isinstance(c[1], str)
+                        and len(c[1]) == 1
+                    ):
                         P.add_condition(max(0, c[0]), c[1])
-                    elif len(c) == 3 and isinstance(c[0], int) and isinstance(
-                            c[1], int) and isinstance(c[2], str) and len(
-                                c[2]) == 1:
+                    elif (
+                        len(c) == 3
+                        and isinstance(c[0], int)
+                        and isinstance(c[1], int)
+                        and isinstance(c[2], str)
+                        and len(c[2]) == 1
+                    ):
                         P.add_condition_range(max(0, c[0]), max(0, c[1]), c[2])
                     else:
-                        raise TypeError('item ' + str(c) +
-                                        ' in condition list malformed')
+                        raise TypeError(
+                            "item " + str(c) + " in condition list malformed"
+                        )
 
-            if allowed is None: pass
+            if allowed is None:
+                pass
             elif isinstance(allowed, list):
-                assert 0 not in allowed, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                assert 0 not in allowed, "multiclass labels are from 1...,"
+                "please do not use zero or bad things will happen!"
                 P.set_alloweds(allowed)
             else:
-                raise TypeError('allowed argument wrong type')
+                raise TypeError("allowed argument wrong type")
 
-            if learner_id != 0: P.set_learner_id(learner_id)
+            if learner_id != 0:
+                P.set_learner_id(learner_id)
 
             p = P.predict()
             return p
 
         sch.predict = predict
         num_actions = sch.get_num_actions()
-        return search_task(self, sch,
-                           num_actions) if task_data is None else search_task(
-                               self, sch, num_actions, task_data)
+        return (
+            search_task(self, sch, num_actions)
+            if task_data is None
+            else search_task(self, sch, num_actions, task_data)
+        )
 
 
-class namespace_id():
+class namespace_id:
     """The namespace_id class is simply a wrapper to convert between
     hash spaces referred to by character (eg 'x') versus their index
     in a particular example. Mostly used internally, you shouldn't
     really need to touch this."""
+
     def __init__(self, ex, id):
         """Given an example and an id, construct a namespace_id.
 
@@ -674,28 +716,30 @@ class namespace_id():
         """
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
-                raise Exception('namespace ' + str(id) + ' out of bounds')
+                raise Exception("namespace " + str(id) + " out of bounds")
             self.id = id
             self.ord_ns = ex.namespace(id)
             self.ns = chr(self.ord_ns)
         elif isinstance(id, str):  # you've specified a namespace by string
             if len(id) == 0:
-                id = ' '
-            self.id = None  # we don't know and we don't want to do the linear search requered to find it
+                id = " "
+            self.id = None  # we don't know and we don't want to do the linear search required to find it
             self.ns = id[0]
             self.ord_ns = ord(self.ns)
         else:
             raise Exception(
-                "ns_to_characterord failed because id type is unknown: " +
-                str(type(id)))
+                "ns_to_characterord failed because id type is unknown: "
+                + str(type(id))
+            )
 
 
-class example_namespace():
+class example_namespace:
     """The example_namespace class is a helper class that allows you
     to extract namespaces from examples and operate at a namespace
     level rather than an example level. Mainly this is done to enable
     indexing like ex['x'][0] to get the 0th feature in namespace 'x'
     in example ex."""
+
     def __init__(self, ex, ns, ns_hash=None):
         """Construct an example_namespace
 
@@ -736,7 +780,7 @@ class example_namespace():
         for i in range(self.num_features_in()):
             yield self[i]
 
-    def push_feature(self, feature, v=1.):
+    def push_feature(self, feature, v=1.0):
         """Add an unhashed feature to the current namespace (fails if
         setup has already run on this example).
 
@@ -778,6 +822,7 @@ class example_namespace():
 
 class abstract_label:
     """An abstract class for a VW label."""
+
     def __init__(self):
         pass
 
@@ -788,9 +833,10 @@ class abstract_label:
 
 class simple_label(abstract_label):
     """Class for simple VW label"""
-    def __init__(self, label=0., weight=1., initial=0., prediction=0.):
+
+    def __init__(self, label=0.0, weight=1.0, initial=0.0, prediction=0.0):
         if not isinstance(label, (example, float)):
-            raise TypeError('Label should be float or an example.')
+            raise TypeError("Label should be float or an example.")
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
@@ -808,16 +854,17 @@ class simple_label(abstract_label):
 
     def __str__(self):
         s = str(self.label)
-        if self.weight != 1.:
-            s += ':' + str(self.weight)
+        if self.weight != 1.0:
+            s += ":" + str(self.weight)
         return s
 
 
 class multiclass_label(abstract_label):
     """Class for multiclass VW label with prediction"""
-    def __init__(self, label=1, weight=1., prediction=1):
+
+    def __init__(self, label=1, weight=1.0, prediction=1):
         if not isinstance(label, (example, int)):
-            raise TypeError('Label should be integer or an example.')
+            raise TypeError("Label should be integer or an example.")
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
@@ -833,13 +880,14 @@ class multiclass_label(abstract_label):
 
     def __str__(self):
         s = str(self.label)
-        if self.weight != 1.:
-            s += ':' + str(self.weight)
+        if self.weight != 1.0:
+            s += ":" + str(self.weight)
         return s
 
 
 class multiclass_probabilities_label(abstract_label):
     """Class for multiclass VW label with probabilities"""
+
     def __init__(self, label, prediction=None):
         abstract_label.__init__(self)
         if isinstance(label, example):
@@ -853,12 +901,13 @@ class multiclass_probabilities_label(abstract_label):
     def __str__(self):
         s = []
         for label, prediction in enumerate(self.prediction):
-            s.append('{l}:{p}'.format(l=label + 1, p=prediction))
-        return ' '.join(s)
+            s.append("{l}:{p}".format(l=label + 1, p=prediction))
+        return " ".join(s)
 
 
 class cost_sensitive_label(abstract_label):
     """Class for cost sensative VW label"""
+
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
         if isinstance(costs, example):
@@ -869,11 +918,9 @@ class cost_sensitive_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self,
-                         label,
-                         cost=0.,
-                         partial_prediction=0.,
-                         wap_value=0.):
+            def __init__(
+                self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0
+            ):
                 self.label = label
                 self.cost = cost
                 self.partial_prediction = partial_prediction
@@ -882,18 +929,21 @@ class cost_sensitive_label(abstract_label):
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
         for i in range(ex.get_costsensitive_num_costs()):
-            wc = wclass(ex.get_costsensitive_class(i),
-                        ex.get_costsensitive_cost(i),
-                        ex.get_costsensitive_partial_prediction(i),
-                        ex.get_costsensitive_wap_value(i))
+            wc = wclass(
+                ex.get_costsensitive_class(i),
+                ex.get_costsensitive_cost(i),
+                ex.get_costsensitive_partial_prediction(i),
+                ex.get_costsensitive_wap_value(i),
+            )
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join(["{}:{}".format(c.label, c.cost) for c in self.costs])
+        return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
 class cbandits_label(abstract_label):
     """Class for contextual bandits VW label"""
+
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
         if isinstance(costs, example):
@@ -904,17 +954,20 @@ class cbandits_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self,
-                         action=None,
-                         cost=0.,
-                         partial_prediction=0.,
-                         probability=0.,
-                         **kwargs):
-                if kwargs.get('label', False):
-                    action = kwargs['label']
+            def __init__(
+                self,
+                action=None,
+                cost=0.0,
+                partial_prediction=0.0,
+                probability=0.0,
+                **kwargs
+            ):
+                if kwargs.get("label", False):
+                    action = kwargs["label"]
                     warnings.warn(
-                    "label has been deprecated. Please use 'action' instead.",
-                    DeprecationWarning)
+                        "label has been deprecated. Please use 'action' instead.",
+                        DeprecationWarning,
+                    )
                 self.label = action
                 self.action = action
                 self.cost = cost
@@ -924,14 +977,21 @@ class cbandits_label(abstract_label):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            wc = wclass(ex.get_cbandits_class(i), ex.get_cbandits_cost(i),
-                        ex.get_cbandits_partial_prediction(i),
-                        ex.get_cbandits_probability(i))
+            wc = wclass(
+                ex.get_cbandits_class(i),
+                ex.get_cbandits_cost(i),
+                ex.get_cbandits_partial_prediction(i),
+                ex.get_cbandits_probability(i),
+            )
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join(["{}:{}:{}".format(c.action, c.cost, c.probability)
-                for c in self.costs])
+        return " ".join(
+            [
+                "{}:{}:{}".format(c.action, c.cost, c.probability)
+                for c in self.costs
+            ]
+        )
 
 
 class example(pylibvw.example):
@@ -939,10 +999,13 @@ class example(pylibvw.example):
     pylibvw.example. Most of the wrapping is to make the interface
     easier to use (by making the types safer via namespace_id) and
     also with added python-specific functionality."""
-    def __init__(self,
-                 vw,
-                 initStringOrDictOrRawExample=None,
-                 labelType=pylibvw.vw.lDefault):
+
+    def __init__(
+        self,
+        vw,
+        initStringOrDictOrRawExample=None,
+        labelType=pylibvw.vw.lDefault,
+    ):
         """Construct a new example from vw.
 
         Parameters
@@ -982,19 +1045,21 @@ class example(pylibvw.example):
 
         """
 
-        while hasattr(initStringOrDictOrRawExample, '__call__'):
+        while hasattr(initStringOrDictOrRawExample, "__call__"):
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
         if initStringOrDictOrRawExample is None:
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
         elif isinstance(initStringOrDictOrRawExample, str):
-            pylibvw.example.__init__(self, vw, labelType,
-                                     initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, labelType, initStringOrDictOrRawExample
+            )
             self.setup_done = True
         elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
-            pylibvw.example.__init__(self, vw, labelType,
-                                     initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, labelType, initStringOrDictOrRawExample
+            )
         elif isinstance(initStringOrDictOrRawExample, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
@@ -1004,7 +1069,7 @@ class example(pylibvw.example):
             self.setup_done = False
         else:
             raise TypeError(
-                'expecting string or dict as argument for example construction'
+                "expecting string or dict as argument for example construction"
             )
 
         self.vw = vw
@@ -1099,7 +1164,8 @@ class example(pylibvw.example):
         features constructed, etc.), do so."""
         if self.setup_done:
             raise Exception(
-                'Trying to setup_example on an example that is already setup')
+                "Trying to setup_example on an example that is already setup"
+            )
         self.vw.setup_example(self)
         self.setup_done = True
 
@@ -1108,7 +1174,8 @@ class example(pylibvw.example):
          continue editing the examples."""
         if not self.setup_done:
             raise Exception(
-                'Trying to unsetup_example that has not yet been setup')
+                "Trying to unsetup_example that has not yet been setup"
+            )
         self.vw.unsetup_example(self)
         self.setup_done = False
 
@@ -1186,10 +1253,11 @@ class example(pylibvw.example):
             if ns_hash is None:
                 ns_hash = self.vw.hash_space(self.get_ns(ns).ns)
             return self.vw.hash_feature(feature, ns_hash)
-        raise Exception("cannot extract feature of type: " +
-                        str(type(feature)))
+        raise Exception(
+            "cannot extract feature of type: " + str(type(feature))
+        )
 
-    def push_hashed_feature(self, ns, f, v=1.):
+    def push_hashed_feature(self, ns, f, v=1.0):
         """Add a hashed feature to a given namespace.
 
         Parameters
@@ -1202,10 +1270,11 @@ class example(pylibvw.example):
         v : float
             The value of the feature, be default is 1.0
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         pylibvw.example.push_hashed_feature(self, self.get_ns(ns).ord_ns, f, v)
 
-    def push_feature(self, ns, feature, v=1., ns_hash=None):
+    def push_feature(self, ns, feature, v=1.0, ns_hash=None):
         """Add an unhashed feature to a given namespace
 
         Parameters
@@ -1239,7 +1308,8 @@ class example(pylibvw.example):
             True if feature was removed else False as no feature was there to
             pop
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         return pylibvw.example.pop_feature(self, self.get_ns(ns).ord_ns)
 
     def push_namespace(self, ns):
@@ -1254,7 +1324,8 @@ class example(pylibvw.example):
             namespace which is to be pushed onto example
 
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         pylibvw.example.push_namespace(self, self.get_ns(ns).ord_ns)
 
     def pop_namespace(self):
@@ -1267,7 +1338,8 @@ class example(pylibvw.example):
             True if namespace was removed else False as no namespace was there
             to pop
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         return pylibvw.example.pop_namespace(self)
 
     def ensure_namespace_exists(self, ns):
@@ -1279,9 +1351,11 @@ class example(pylibvw.example):
         ns : namespace
             If namespace exists does, do nothing. If it doesn't, add it.
         """
-        if self.setup_done: self.unsetup_example()
-        return pylibvw.example.ensure_namespace_exists(self,
-                                                       self.get_ns(ns).ord_ns)
+        if self.setup_done:
+            self.unsetup_example()
+        return pylibvw.example.ensure_namespace_exists(
+            self, self.get_ns(ns).ord_ns
+        )
 
     def push_features(self, ns, featureList):
         """Push a list of features to a given namespace.
@@ -1314,8 +1388,9 @@ class example(pylibvw.example):
         """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        self.push_feature_list(self.vw, ns.ord_ns,
-                               featureList)  # much faster just to do it in C++
+        self.push_feature_list(
+            self.vw, ns.ord_ns, featureList
+        )  # much faster just to do it in C++
         # ns_hash = self.vw.hash_space( ns.ns )
         # for feature in featureList:
         #     if isinstance(feature, int) or isinstance(feature, str):
@@ -1335,7 +1410,8 @@ class example(pylibvw.example):
         """Iterate over all feature/value pairs in this example (all
         namespace included)."""
         for ns_id in range(
-                self.num_namespaces()):  # iterate over every namespace
+            self.num_namespaces()
+        ):  # iterate over every namespace
             ns = self.get_ns(ns_id)
             for i in range(self.num_features_in(ns)):
                 f = self.feature(ns, i)
@@ -1354,3 +1430,943 @@ class example(pylibvw.example):
             simple_label
         """
         return label_class(self)
+
+
+def _get_col_or_value(x, df):
+    """If x is of type _Col returns the column to which x refers to, else
+    returns the string value of x.
+
+    Parameters
+    ----------
+    x: object
+        The value.
+    df: pandas.DataFrame
+        The dataframe from which to select the column (if x is of type _Col).
+    """
+    if isinstance(x, _Col):
+        return x.get_col(df)
+    else:
+        return str(x)
+
+
+class _Col:
+    """_Col class. It refers to a column of a dataframe."""
+
+    def __init__(self, colname, expected_type, min_value=None):
+        """Initialize a _Col instance
+
+        Parameters
+        ----------
+        colname: str/int/float
+            The column name.
+        expected_type: tuple
+            The expected type of the column.
+        min_value: int/float
+            The minimum value to which the column must be superior or equal.
+        """
+        self.colname = colname
+        self.expected_type = expected_type
+        self.min_value = min_value
+
+    def get_col(self, df):
+        """Returns the column 'colname' from the dataframe 'df'.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to pull the column 'colname'.
+
+        Raises
+        ------
+        KeyError
+            If the column is not found in the dataframe.
+
+        Returns
+        -------
+        out : pandas.Series
+            The column 'colname' from the dataframe 'df'.
+        """
+        try:
+            out = df[self.colname]
+        except KeyError:
+            raise KeyError(
+                "column '{colname}' not found in dataframe".format(
+                    colname=self.colname
+                )
+            )
+        else:
+            return out.fillna("").apply(str)
+
+    def check_col_type(self, df):
+        """Check if the type of the column is valid.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to check the column.
+
+        Raises
+        ------
+        TypeError
+            If the type of the column is not valid.
+        """
+        expected_type = list(self.expected_type)
+        if str in expected_type:
+            expected_type.append(object)
+
+        col_type = df[self.colname].dtype
+        if not (col_type in expected_type):
+            raise TypeError(
+                "column '{colname}' should be either of the following type(s): {type_name}.".format(
+                    colname=self.colname,
+                    type_name=str([x.__name__ for x in expected_type])[1:-1],
+                )
+            )
+
+    def check_col_value(self, df):
+        """Check if the value range of the column is valid.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to check the column.
+
+        Raises
+        ------
+        ValueError
+            If the values of the column are not valid.
+
+        """
+        if self.min_value is None:
+            pass
+        else:
+            col_value = df[self.colname]
+            if not (col_value >= self.min_value).all():
+                raise ValueError(
+                    "column '{colname}' must be >= {min_value}.".format(
+                        colname=self.colname, min_value=self.min_value
+                    )
+                )
+
+
+class AttributeDescriptor(object):
+    """This descriptor class enforces type checking and value checking for the
+    attributes of the (managed) classes SimpleLabel, Feature, etc.
+
+    If the attribute represents a column, no type or value checking are
+    performed (since the dataframe and the subsequent column is not known yet)
+    but the type and value requirements are passed to the _Col instance for
+    future usage in the DFtoVW constructor.
+
+    In the managed class, the optional presence of a column for an attribute is
+    indicated using *_from_df attribute. The *_from_df attribute should be set
+    before the actual attribute to take effect.
+    """
+
+    def __init__(self, attribute_name, expected_type, min_value=None):
+        """Initialize an AttributeDescriptor instance
+
+        Parameters
+        ----------
+        attribute_name: str
+            The name of the attribute.
+        expected_type: tuple
+            The expected type of the attribute.
+        min_value: str/int/float
+            The minimum value of the attribute.
+
+        Raises
+        ------
+        TypeError
+            If one of the arguments passed is not of valid type.
+        """
+        if not isinstance(attribute_name, str):
+            raise TypeError("Argument 'attribute_name' must be a string")
+        self.attribute_name = attribute_name
+        if not isinstance(expected_type, tuple):
+            raise TypeError("Argument 'expected_type' must be a tuple")
+        self.expected_type = expected_type
+        self.min_value = min_value
+
+    def __set__(self, instance, arg):
+        """Implement set protocol to enforce type (and value range) checking
+        for managed class such as SimpleLabel, Feature, etc.
+
+        Parameters
+        ----------
+        instance: object
+            The managed instance.
+        arg: str/int/float
+            The argument to set (if the checks are passed).
+        """
+        # initialize empty set that register the column names (for _Col arg)
+        if "columns" not in instance.__dict__:
+            instance.__dict__["columns"] = set()
+
+        # set instance attribute to None if arg is None
+        if arg is None:
+            instance.__dict__[self.attribute_name] = arg
+        else:
+            # get the *_from_df argument value if it exists in the instance
+            try:
+                from_df = getattr(
+                    instance, "{}_from_df".format(self.attribute_name)
+                )
+            except AttributeError:
+                from_df = False
+
+            # If instance has *_from_df attribute, store in instance as _Col type
+            if from_df:
+                self.initialize_col_type(instance, arg)
+            # else process to type and value range checking
+            else:
+                # validate type
+                valid_type = isinstance(arg, self.expected_type)
+
+                # validate value
+                if self.min_value is not None and valid_type:
+                    valid_value = arg >= self.min_value
+                else:
+                    valid_value = True
+
+                # store in instance if type and value are valid
+                if valid_type and valid_value:
+                    instance.__dict__[self.attribute_name] = arg
+                else:
+                    self.generate_error(instance, valid_type, valid_value)
+
+    def initialize_col_type(self, instance, colname):
+        """Initialize the attribute as a _Col type
+
+        Parameters
+        ----------
+        instance: object
+            The managed instance.
+        colname: str/int/float
+            The colname used for the _Col instance.
+        """
+
+        instance.__dict__["columns"].add(colname)
+        instance.__dict__[self.attribute_name] = _Col(
+            colname=colname,
+            expected_type=self.expected_type,
+            min_value=self.min_value,
+        )
+
+    def generate_error(self, instance, valid_type, valid_value):
+        """Generate message error for the attribute
+
+        Parameters
+        ----------
+        instance: object
+            The managed class.
+        valid_type: bool
+            True if the type if valid, False otherwise.
+        valid_value: bool
+            True if the value range if valid, False otherwise.
+
+        Raises
+        ------
+        TypeError
+            If the type is not valid.
+        ValueRange
+            If the value range is not valid.
+        """
+        class_name = type(instance).__name__
+
+        if not valid_type:
+            raise TypeError(
+                "In '{class_name}', when {from_df_false}, argument '{attribute_name}' should be either of the following type(s): {type_name_msg}.".format(
+                    class_name=class_name,
+                    from_df_false=self.attribute_name + "_from_df=False",
+                    attribute_name=self.attribute_name,
+                    type_name_msg=str(
+                        [x.__name__ for x in self.expected_type]
+                    )[1:-1],
+                )
+            )
+
+        if not valid_value:
+            raise ValueError(
+                "In '{class_name}', argument '{attribute_name}' must be >= {min_value}.".format(
+                    class_name=class_name,
+                    attribute_name=self.attribute_name,
+                    min_value=self.min_value,
+                )
+            )
+
+
+class SimpleLabel(object):
+    """The simple label type for the constructor of DFtoVW."""
+
+    name = AttributeDescriptor("name", expected_type=(int, float))
+
+    def __init__(self, name, name_from_df=True):
+        """Initialize a SimpleLabel instance.
+
+        Parameters
+        ----------
+        name : str/int/float
+            The name of the column. If name_from_df=False, it should be of type
+            int or float.
+        name_from_df: bool (default: True)
+            True if the name refers to a column in the dataframe and False if
+            the name is a constant.
+
+        Returns
+        -------
+        self : SimpleLabel
+        """
+        self.name_from_df = name_from_df
+        self.name = name
+
+    def process(self, df):
+        """Returns the SimpleLabel string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column.
+
+        Returns
+        -------
+        str or pandas.Series
+            The SimpleLabel string representation.
+        """
+        return _get_col_or_value(self.name, df)
+
+
+class Feature(object):
+    """The feature type for the constructor of DFtoVW"""
+
+    name = AttributeDescriptor("name", expected_type=(str, int, float))
+    value = AttributeDescriptor("value", expected_type=(str, int, float))
+
+    def __init__(
+        self, value, name=None, value_from_df=True, name_from_df=False
+    ):
+        """
+        Initialize a Feature instance.
+
+        Parameters
+        ----------
+        value : str/float/int
+            The value of the feature.
+        name : str/float/int, optional
+            The name of the feature.
+        value_from_df: bool (default: True)
+            True if the value refers to a column in the dataframe and False if
+            the value is a constant.
+        name_from_df: bool (default: False)
+            True if the name refers to a column in the dataframe and False if
+            the name is a constant.
+
+        Returns
+        -------
+        self : Feature
+        """
+        self.value_from_df = value_from_df
+        self.name_from_df = name_from_df
+        self.value = value
+        self.name = name
+
+    def process(self, df):
+        """Returns the Feature string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column(s).
+
+        Returns
+        -------
+        out : str or pandas.Series
+            The Feature string representation.
+        """
+        value_col = _get_col_or_value(self.value, df)
+        if self.name is None:
+            out = value_col
+        else:
+            name_col = _get_col_or_value(self.name, df)
+            out = name_col + ":" + value_col
+        return out
+
+
+class _Tag(object):
+    """A tag for the constructor of DFtoVW"""
+
+    tag = AttributeDescriptor("tag", expected_type=(str, int, float))
+
+    def __init__(self, tag, tag_from_df=True):
+        """
+        Initialize a Tag instance.
+
+        Parameters
+        ----------
+        tag : str/float/int
+            The value of the tag.
+        tag_from_df: bool (default: True)
+            True if the tag refers to a column in the dataframe and False if
+            the tag is a constant.
+
+        Returns
+        -------
+        self : _Tag
+        """
+        self.tag_from_df = tag_from_df
+        self.tag = tag
+
+    def process(self, df):
+        """Returns the _Tag string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column.
+
+        Returns
+        -------
+        out : str or pandas.Series
+            The Tag string representation.
+        """
+        return _get_col_or_value(self.tag, df)
+
+
+class Namespace(object):
+    """The namespace type for the constructor of DFtoVW.
+    The Namespace is a container for Feature object(s), and thus must
+    be composed of a Feature object or a list of Feature objects.
+    """
+
+    expected_type = dict(
+        name=(str, int, float), value=(int, float), features=(Feature,)
+    )
+
+    def __init__(self, features, name=None, value=None):
+        """Initialize a Namespace instance.
+
+        Parameters
+        ----------
+        features : Feature or list of Feature
+            A (list of) Feature object(s) that form the namespace.
+        name : str/int/float, optional
+            The name of the namespace.
+        value : int/float, optional
+            A constant that specify the scaling factor for the features of this
+            namespace.
+
+        Examples
+        --------
+        >>> from pyvw import Namespace, Feature
+        >>> ns_one_feature = Namespace(Feature("a"))
+        >>> ns_multi_features = Namespace([Feature("a"), Feature("b")])
+        >>> ns_one_feature_with_name = Namespace(Feature("a"), name="FirstNamespace")
+        >>> ns_one_feature_with_name_and_value = Namespace(Feature("a"), name="FirstNamespace", value=2)
+
+        Returns
+        -------
+        self : Namespace
+        """
+
+        if (value is not None) and (name is None):
+            raise ValueError(
+                "Namespace can't have a 'value' argument without a 'name' argument"
+            )
+
+        self.name = name
+        self.value = value
+        self.features = (
+            list(features) if isinstance(features, (list, set)) else [features]
+        )
+        self.check_attributes_type()
+
+    def check_attributes_type(self):
+        """Check if attributes are of valid type.
+
+        Raises
+        ------
+        TypeError
+            If one of the attribute is not valid.
+        """
+        for attribute_name in ["name", "value"]:
+            attribute_value = getattr(self, attribute_name)
+            if attribute_value is not None and not isinstance(
+                attribute_value, self.expected_type[attribute_name]
+            ):
+                raise TypeError(
+                    "In Namespace, argument '{attribute_name}' should be either of the following type(s): {types}".format(
+                        attribute_name=attribute_name,
+                        types=repr(
+                            [
+                                x.__name__
+                                for x in self.expected_type[attribute_name]
+                            ]
+                        )[1:-1],
+                    )
+                )
+
+        valid_feature = all(
+            [
+                isinstance(feature, self.expected_type["features"])
+                for feature in self.features
+            ]
+        )
+        if not valid_feature:
+            raise TypeError(
+                "In Namespace, argument 'features' should be a Feature or a list of Feature."
+            )
+
+    def process(self):
+        """Returns the Namespace string representation"""
+        out = ["|"]
+        if self.name is not None:
+            out += str(self.name)
+            if self.value is not None:
+                out += [":", str(self.value)]
+
+        return "".join(out)
+
+
+class DFtoVW:
+    """Convert a pandas DataFrame to a suitable VW format.
+    Instances of this class are built with classes such as SimpleLabel,
+    Feature or Namespace.
+
+    The class also provided a convenience constructor to initialize the class
+    based on the target/features column names only.
+    """
+
+    def __init__(
+        self,
+        df,
+        features=None,
+        namespaces=None,
+        label=None,
+        tag=None,
+        tag_from_df=True,
+    ):
+        """Initialize a DFtoVW instance.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe to convert to VW input format.
+        features: Feature/list of Feature
+            One or more Feature object(s).
+        namespaces : Namespace/list of Namespace
+            One or more Namespace object(s), each of being composed of one or
+            more Feature object(s).
+        label : SimpleLabel
+            The label.
+        tag :  str/int/float
+            The tag (used as identifiers for examples).
+        tag_from_df: bool (default: True)
+            True if the tag should refers to a column in the dataframe and
+            False if the tag should be constant.
+
+        Examples
+        --------
+        >>> from vowpalwabbit.pyvw import DFtoVW
+        >>> from pandas as pd
+
+        >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
+        >>> conv1 = DFtoVW(df=df,
+                           label=SimpleLabel("y"),
+                           features=Feature("a"))
+        >>> conv1.convert_df()
+
+        >>> conv2 = DFtoVW(df=df,
+                           label=SimpleLabel("y"),
+                           features=[Feature(col) for col in ["a", "b"]])
+        >>> conv2.convert_df()
+
+        >>> conv3 = DFtoVW(df=df,
+                           label=SimpleLabel("y"),
+                           namespaces=Namespace(
+                                   name="DoubleIt", value=2,
+                                   features=Feature(value="a", name="feat_a")))
+        >>> conv3.convert_df()
+
+        >>> conv4 = DFtoVW(df=df,
+                           label=SimpleLabel("y"),
+                           namespaces=[Namespace(name="NS1", features=[Feature(col) for col in ["a", "c"]]),
+                                       Namespace(name="NS2", features=Feature("b"))])
+        >>> conv4.convert_df()
+
+        Returns
+        -------
+        self : DFtoVW
+        """
+        self.df = df
+        self.n_rows = df.shape[0]
+        self.label = label
+        self.tag = _Tag(tag, tag_from_df) if tag else None
+
+        if features is not None:
+            self.check_features_type(features)
+
+        self.set_namespaces_or_features(namespaces, features)
+
+        self.check_label_type()
+        self.check_namespaces_type()
+
+        self.check_columns_existence_in_df()
+        self.check_columns_type_and_values()
+
+    @classmethod
+    def from_colnames(cls, y, x, df, label_type="simple_label"):
+        """Build DFtoVW instance using column names only.
+
+        Parameters
+        ----------
+        y : str/list of str
+            The column for the label.
+        x : str/list of str
+            The column(s) for the feature(s).
+        df : pandas.DataFrame
+            The dataframe used.
+        label_type: str (default: 'simple_label')
+            The type of the label.
+
+        Raises
+        ------
+        TypeError
+            If argument label is not of valid type.
+        ValueError
+            If argument label_type is not valid.
+
+        Examples
+        --------
+        >>> from vowpalwabbit.pyvw import DFtoVW
+        >>> from pandas as pd
+        >>> df = pd.DataFrame({"y": [1], "x": [2]})
+        >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
+        >>> conv.convert_df()
+
+        >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
+        >>> conv2 = DFtoVW.from_colnames(y="y", x=set(df2.columns) - set("y"), df=df2)
+        >>> conv2.convert_df()
+
+        Returns
+        -------
+        DFtoVW
+            A initialized DFtoVW instance.
+        """
+        dict_label_type = {
+            "simple_label": SimpleLabel,
+        }
+
+        if isinstance(y, list):
+            if len(y) == 1:
+                y = y[0]
+            else:
+                raise ValueError(
+                    "Argument 'y' should a list of one string (or a string)."
+                )
+        if not isinstance(y, str):
+            raise TypeError(
+                "Argument 'y' should be a string or a list of one string."
+            )
+
+        try:
+            label = dict_label_type[label_type](y)
+        except KeyError:
+            raise ValueError(
+                "'label_type' should be either of the following string: {label_types}".format(
+                    label_types=repr(list(dict_label_type.keys()))[1:-1]
+                )
+            )
+
+        x = list(x) if isinstance(x, (list, set)) else [x]
+        if not all(isinstance(xi, str) for xi in x):
+            raise TypeError(
+                "Argument 'x' should be a string or a list of string."
+            )
+
+        namespaces = Namespace(
+            features=[Feature(value=colname) for colname in x]
+        )
+        return cls(namespaces=namespaces, label=label, df=df)
+
+    def check_features_type(self, features):
+        """Check if the features argument is of type Feature.
+
+        Parameters
+        ----------
+        features: (list of) Feature,
+            The features argument to check.
+
+        Raises
+        ------
+        TypeError
+            If the features is not a Feature of a list of Feature.
+        """
+        if isinstance(features, list):
+            valid_feature = all(
+                [isinstance(feature, Feature) for feature in features]
+            )
+        else:
+            valid_feature = isinstance(features, Feature)
+        if not valid_feature:
+            raise TypeError(
+                "Argument 'features' should be a Feature or a list of Feature."
+            )
+
+    def set_namespaces_or_features(self, namespaces, features):
+        """Set namespaces attributes
+
+        Parameters
+        ----------
+        namespaces: Namespace / list of Namespace objects
+            The namespaces argument.
+        features: Feature / list of Feature objects
+            The features argument.
+
+        Raise
+        -----
+            ValueError:
+                If argument 'features' or 'namespaces' are not valid.
+        """
+        if (features is None) and (namespaces is None):
+            raise ValueError("Missing 'features' or 'namespace' argument")
+        if (features is not None) and (namespaces is not None):
+            raise ValueError(
+                "Arguments supplied for both 'features' and 'namespaces', only one of the these arguments should be supplied."
+            )
+
+        if features is not None:
+            namespaces = Namespace(features=features)
+
+        namespaces = (
+            list(namespaces)
+            if isinstance(namespaces, (list, set))
+            else [namespaces]
+        )
+
+        self.namespaces = namespaces
+
+    def check_label_type(self):
+        """Check label type.
+
+        Raises
+        ------
+        TypeError
+            If label is not of type SimpleLabel.
+        """
+        available_labels = (SimpleLabel, )
+
+        if self.label is None:
+            pass
+        else:
+            if not isinstance(self.label, available_labels):
+                raise TypeError(
+                    "Argument 'label' should be either of the following type: {label_types}.".format(
+                        label_types=repr(
+                            [x.__name__ for x in available_labels]
+                        )[1:-1]
+                    )
+                )
+
+    def check_namespaces_type(self):
+        """Check if namespaces arguments are of type Namespace.
+
+        Raises
+        ------
+        TypeError
+            If namespaces are not of type Namespace or list of Namespace.
+        """
+        wrong_type_namespaces = [
+            not isinstance(namespace, Namespace)
+            for namespace in self.namespaces
+        ]
+        if any(wrong_type_namespaces):
+            raise TypeError(
+                "Argument 'namespaces' should be a Namespace or a list of Namespace."
+            )
+
+    def check_columns_existence_in_df(self):
+        """Check if the columns are in the dataframe."""
+        absent_cols = {}
+        df_colnames = set(self.df.columns)
+
+        try:
+            missing_cols = self.label.columns
+        except AttributeError:
+            pass
+        else:
+            if missing_cols is not None:
+                type_label = type(self.label).__name__
+                absent_cols[type_label] = list(missing_cols - df_colnames)
+
+        try:
+            missing_cols = self.tag.columns
+        except AttributeError:
+            pass
+        else:
+            if missing_cols is not None:
+                absent_cols["tag"] = list(missing_cols - df_colnames)
+
+        all_features = [
+            feature
+            for namespace in self.namespaces
+            for feature in namespace.features
+        ]
+        missing_features_cols = []
+        for feature in all_features:
+            try:
+                missing_cols = feature.columns
+            except AttributeError:
+                pass
+            else:
+                if missing_cols is not None:
+                    missing_features_cols += list(missing_cols - df_colnames)
+
+        absent_cols["Feature"] = sorted(list(set(missing_features_cols)))
+
+        absent_cols = {
+            key: value
+            for (key, value) in absent_cols.items()
+            if len(value) > 0
+        }
+        self.generate_missing_col_error(absent_cols)
+
+    def generate_missing_col_error(self, absent_cols_dict):
+        """Generate error if some columns are missing
+
+        Raises
+        ------
+        ValueError
+            If one or more columns are not in the dataframe.
+        """
+        if absent_cols_dict:
+            msg_error = ""
+            for attribute_name, missing_cols in absent_cols_dict.items():
+                missing_cols = (
+                    repr(missing_cols)[1:-1]
+                    if isinstance(missing_cols, list)
+                    else missing_cols
+                )
+                if len(msg_error) > 0:
+                    msg_error += " "
+                msg_error += "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
+                    attribute=attribute_name, colnames=missing_cols,
+                )
+            raise ValueError(msg_error)
+
+    def check_columns_type_and_values(self):
+        """Check columns type and values range"""
+        for instance in [self.tag, self.label]:
+            self.check_instance_columns(instance)
+
+        for namespace in self.namespaces:
+            for feature in namespace.features:
+                self.check_instance_columns(feature)
+
+    def check_instance_columns(self, instance):
+        """Check the columns type and values of a given instance.
+        The method iterate through the attributes and look for _Col type
+        attribute. Once found, the method use the _Col methods to check the
+        type and the value range of the column. Also, the instance type in
+        which the errors occur are prepend to the error message to be more
+        explicit about where the error occurs in the formula.
+
+        Raises
+        ------
+        TypeError
+            If a column is not of valid type.
+        ValueError
+            If a column values are not in the valid range.
+        """
+        if instance is None:
+            pass
+        else:
+            class_name = type(instance).__name__
+            for attribute_name in vars(instance):
+                attribute_value = getattr(instance, attribute_name)
+                if isinstance(attribute_value, _Col):
+                    # Testing column type
+                    try:
+                        attribute_value.check_col_type(self.df)
+                    except TypeError as type_error:
+                        type_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
+                            class_name=class_name,
+                            attribute=attribute_name,
+                            error=str(type_error),
+                        )
+                        raise TypeError(type_error_msg)
+                    # Testing column value range
+                    try:
+                        attribute_value.check_col_value(self.df)
+                    except ValueError as value_error:
+                        value_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
+                            class_name=class_name,
+                            attribute=attribute_name,
+                            error=str(value_error),
+                        )
+                        raise ValueError(value_error_msg)
+
+    def convert_df(self):
+        """Main method that converts the dataframe to the VW format.
+
+        Returns
+        -------
+        list
+            The list of parsed lines in VW format.
+        """
+        self.out = self.empty_col()
+
+        if not all([x is None for x in [self.label, self.tag]]):
+            self.out += self.process_label_and_tag()
+
+        for (i, namespace) in enumerate(self.namespaces):
+            to_add = namespace.process() + self.process_features(
+                namespace.features
+            )
+            self.out += (
+                (to_add + " ") if (i < len(self.namespaces) - 1) else to_add
+            )
+
+        return self.out.to_list()
+
+    def empty_col(self):
+        """Create an empty string column.
+
+        Returns
+        -------
+        pandas.Series
+            A column of empty string with as much rows as the input dataframe.
+        """
+        return pd.Series([""] * self.n_rows)
+
+    def process_label_and_tag(self):
+        """Process the label and tag into a unique column.
+
+        Returns
+        -------
+        out : pandas.Series
+            A column where each row is the processed label and tag.
+        """
+        out = self.empty_col()
+        if self.label is not None:
+            out += self.label.process(self.df) + " "
+        if self.tag is not None:
+            out += self.tag.process(self.df)
+        return out
+
+    def process_features(self, features):
+        """Process the features (of a namespace) into a unique column.
+
+        Parameters
+        ----------
+        features : list of Feature
+            The list of Feature objects.
+
+        Returns
+        -------
+        out : pandas.Series
+            The column of the processed features.
+        """
+        out = self.empty_col()
+        for feature in features:
+            out += " " + feature.process(self.df)
+        return out

@@ -16,6 +16,7 @@
 #include <string>
 #include <array>
 #include <memory>
+#include <atomic>
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -150,9 +151,9 @@ struct shared_data
   double multiclass_log_loss;
   double holdout_multiclass_log_loss;
 
-  bool is_more_than_two_labels_observed;
-  float first_observed_label;
-  float second_observed_label;
+  std::atomic<bool> is_more_than_two_labels_observed;
+  std::atomic<float> first_observed_label;
+  std::atomic<float> second_observed_label;
 
   // Column width, precision constants:
   static constexpr int col_avg_loss = 8;
@@ -449,11 +450,7 @@ struct vw
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<namespace_index> > interactions;
-  // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::vector<namespace_index> > pairs;  // pairs of features to cross.
-  // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::vector<namespace_index> > triples;  // triples of features to cross.
+  std::vector<std::vector<namespace_index>> interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;

@@ -29,12 +29,6 @@
 
 struct vw;
 struct input_options;
-
-struct example_initializer
-{
-  example* operator()(example* ex);
-};
-
 struct parser
 {
   parser(size_t ring_size, bool strict_parse_)
@@ -51,8 +45,6 @@ struct parser
     this->lp = simple_label;
 
     // Free parser must still be used for the following fields.
-    this->words = v_init<VW::string_view>();
-    this->parse_name = v_init<VW::string_view>();
     this->gram_mask = v_init<size_t>();
     this->ids = v_init<size_t>();
     this->counts = v_init<size_t>();
@@ -62,8 +54,6 @@ struct parser
   {
     delete input;
     delete output;
-    words.delete_v();
-    parse_name.delete_v();
     gram_mask.delete_v();
     ids.delete_v();
     counts.delete_v();
@@ -74,9 +64,9 @@ struct parser
   parser& operator=(const parser&) = delete;
 
   // helper(s) for text parsing
-  v_array<VW::string_view> words;
+  std::vector<VW::string_view> words;
 
-  VW::object_pool<example, example_initializer> example_pool;
+  VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
   io_buf* input = nullptr;  // Input source(s)
@@ -90,6 +80,9 @@ struct parser
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
   io_buf* output = nullptr;  // Where to output the cache.
+  std::string currentname;
+  std::string finalname;
+
   bool write_cache = false;
   bool sort_features = false;
   bool sorted_cache = false;
@@ -113,7 +106,7 @@ struct parser
   size_t finished_count;   // the number of finished examples;
   int bound_sock = 0;
 
-  v_array<VW::string_view> parse_name;
+  std::vector<VW::string_view> parse_name;
 
   label_parser lp;  // moved from vw
 

@@ -13,6 +13,7 @@ add_executable(vw-unit-test.out
   options_boost_po_test.cc
   options_test.cc
   prediction_test.cc
+  initialize_test.cc
   scope_exit_test.cc
   slates_parser_test.cc
   slates_test.cc
@@ -21,6 +22,7 @@ add_executable(vw-unit-test.out
   test_common.cc
   test_common.h
   tokenize_tests.cc
+  chain_hashing.cc
 )
 
 # Add the include directories from vw target for testing

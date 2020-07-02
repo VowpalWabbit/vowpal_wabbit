@@ -75,7 +75,7 @@ void clear_all(ccb& data)
 // split the slots, the actions and the shared example from the multiline example
 bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
-  for (auto ex : examples)
+  for (auto* ex : examples)
   {
     switch (ex->l.conditional_contextual_bandit.type)
     {
@@ -113,7 +113,7 @@ bool sanity_checks(ccb& data)
 
   if (is_learn)
   {
-    for (auto slot : data.slots)
+    for (auto* slot : data.slots)
     {
       if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
           slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
@@ -258,7 +258,7 @@ void remove_slot_id(example* shared)
 
   if (audit)
   {
-    shared->feature_space[ccb_id_namespace].space_names.pop();
+    shared->feature_space[ccb_id_namespace].space_names.pop_back();
   }
 }
 
@@ -274,7 +274,7 @@ void remove_slot_features(example* shared, example* slot)
 
     if (index == default_namespace)  // slot default namespace has a special namespace in shared
     {
-      LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[32]);
+      LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]);
     }
     else
     {
@@ -284,8 +284,8 @@ void remove_slot_features(example* shared, example* slot)
 }
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
-void calculate_and_insert_interactions(
-    example* shared, std::vector<example*> actions, std::vector<std::vector<namespace_index>>& generated_interactions)
+void calculate_and_insert_interactions(example* shared, const std::vector<example*>& actions,
+    std::vector<std::vector<namespace_index>>& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
@@ -332,7 +332,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
-  // Retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
+  // Retrieve the list of actions explicitly available for the slot (if the list is empty, then all actions are possible)
   auto& explicit_includes = slot->l.conditional_contextual_bandit.explicit_included_actions;
   if (!explicit_includes.empty())
   {
@@ -426,7 +426,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         std::back_inserter(data.generated_interactions));
     calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
     data.shared->interactions = &data.generated_interactions;
-    for (auto ex : data.actions)
+    for (auto* ex : data.actions)
     {
       ex->interactions = &data.generated_interactions;
     }
@@ -457,7 +457,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     }
 
     data.shared->interactions = data.original_interactions;
-    for (auto ex : data.actions)
+    for (auto* ex : data.actions)
     {
       ex->interactions = data.original_interactions;
     }
@@ -500,7 +500,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
   {
     counter++;
 
-    auto outcome = slot->l.conditional_contextual_bandit.outcome;
+    auto* outcome = slot->l.conditional_contextual_bandit.outcome;
     if (outcome == nullptr)
     {
       label_ss << delim << "?";
@@ -534,7 +534,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   float loss = 0.;
 
   // Should this be done for shared, action and slot?
-  for (auto ec : ec_seq)
+  for (auto* ec : ec_seq)
   {
     num_features += ec->num_features;
 
@@ -549,7 +549,7 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
   auto preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
-    auto outcome = slots[i]->l.conditional_contextual_bandit.outcome;
+    auto* outcome = slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
       num_labelled++;
@@ -627,7 +627,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  auto base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
   all.label_type = label_type_t::ccb;
 
