@@ -142,7 +142,7 @@ dist/
 python/examples/*.model
 doc/html
 
-*/example_generated.h
+vowpalwabbit/parser/flatbuffer/generated/example_generated.h
 
 #Test stderr/predict files
 test/flatbuffer/*.predict
