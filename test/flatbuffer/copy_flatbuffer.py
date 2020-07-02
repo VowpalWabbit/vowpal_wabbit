@@ -22,12 +22,18 @@ def extract_something(lines, something):
 predsets = extract_something(lines.split('\n'), 'pred-sets/ref')
 testsets = extract_something(lines.split('\n'), 'test-sets/ref')
 trainsets = extract_something(lines.split('\n'), 'train-sets/ref')
+models = extract_something(lines.split('\n'), 'models')
+modelsets = extract_something(lines.split('\n'), 'model-sets')
 
 print(len(predsets) + len(testsets) + len(trainsets))
 
-for i in predsets:
-    os.system('cp ../{} {}'.format(i, i))
-for i in trainsets:
-    os.system('cp ../{} {}'.format(i, i))
-for i in testsets:
-    os.system('cp ../{} {}'.format(i, i))
+# for i in predsets:
+#     os.system('cp ../{} {}'.format(i, i))
+# for i in trainsets:
+#     os.system('cp ../{} {}'.format(i, i))
+# for i in testsets:
+#     os.system('cp ../{} {}'.format(i, i))
+
+def extract_commands(lines):
+    lines = lines.split('__DATA__')[-1]
+    commands = lines.split('\n# Test')
