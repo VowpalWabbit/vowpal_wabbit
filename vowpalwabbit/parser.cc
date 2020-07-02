@@ -138,15 +138,15 @@ void reset_source(vw& all, size_t numbits)
     all.p->output->close_file();
 
     // This deletes the file from disk.
-    remove(all.p->output->finalname.begin());
+    remove(all.p->finalname.c_str());
 
     // Rename the cache file to the final name.
-    if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
-      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
-                                                                          << all.p->output->finalname);
+    if (0 != rename(all.p->currentname.c_str(), all.p->finalname.c_str()))
+      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->currentname << " to "
+                                                                          << all.p->finalname);
     input->close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file_reader(all.p->output->finalname.cbegin()));
+    input->add_file(VW::io::open_file_reader(all.p->finalname));    all.p->reader = read_cached_features;
     all.p->reader = read_cached_features;
   }
 
@@ -179,7 +179,7 @@ void reset_source(vw& all, size_t numbits)
       all.final_prediction_sink.push_back(socket->get_writer());
       all.p->input->add_file(socket->get_reader());
 
-      if (isbinary(*(all.p->input)))
+      if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
 IGNORE_DEPRECATED_USAGE_START
@@ -219,16 +219,14 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
     return;
   }
 
-  std::string temp = newname + std::string(".writing");
-  push_many(output->currentname, temp.c_str(), temp.length() + 1);
-
+  all.p->currentname = newname + std::string(".writing");
   try
   {
-    output->add_file(VW::io::open_file_writer(temp));
+    output->add_file(VW::io::open_file_writer(all.p->currentname));
   }
   catch (const std::exception&)
   {
-    all.trace_message << "can't create cache file !" << temp << endl;
+    all.trace_message << "can't create cache file !" << all.p->currentname << endl;
     return;
   }
 
@@ -240,7 +238,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   output->bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
   output->flush();
 
-  push_many(output->finalname, newname.c_str(), newname.length() + 1);
+  all.p->finalname = newname;
   all.p->write_cache = true;
   if (!quiet)
     all.trace_message << "creating cache_file = " << newname << endl;
@@ -295,7 +293,6 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   {
     if (!quiet)
       all.trace_message << "using no cache" << endl;
-    all.p->output->space.delete_v();
   }
 }
 
@@ -502,7 +499,7 @@ IGNORE_DEPRECATED_USAGE_END
       all.p->reader = read_features_string;
     else
     {
-      if (isbinary(*(all.p->input)))
+      if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
 IGNORE_DEPRECATED_USAGE_START
@@ -613,7 +610,6 @@ IGNORE_DEPRECATED_USAGE_END
   if (passes > 1 && !all.p->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  all.p->input->count = all.p->input->num_files();
   if (!quiet && !all.daemon)
     all.trace_message << "num sources = " << all.p->input->num_files() << endl;
 }
@@ -716,6 +712,9 @@ example& get_unused_example(vw* all)
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
+  IGNORE_DEPRECATED_USAGE_START
+  ex->in_use = true;
+  IGNORE_DEPRECATED_USAGE_END
   return *ex;
 }
 
@@ -896,12 +895,9 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<VW::string_view> words = v_init<VW::string_view>();
-
+  std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
-  words.clear();
-  words.delete_v();
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -923,6 +919,9 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
+  IGNORE_DEPRECATED_USAGE_START
+  ec.in_use = false;
+  IGNORE_DEPRECATED_USAGE_END
   all.p->example_pool.return_object(&ec);
 }
 
@@ -1003,18 +1002,6 @@ size_t get_feature_number(example* ec) { return ec->num_features; }
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
 
-example* example_initializer::operator()(example* ex)
-{
-  memset(&ex->l, 0, sizeof(polylabel));
-  ex->passthrough = nullptr;
-  ex->tag = v_init<char>();
-  ex->indices = v_init<namespace_index>();
-IGNORE_DEPRECATED_USAGE_START
-  ex->in_use = true;
-IGNORE_DEPRECATED_USAGE_END
-  memset(ex->feature_space.data(), 0, ex->feature_space.size() * sizeof(ex->feature_space[0]));
-  return ex;
-}
 
 void adjust_used_index(vw&)
 { /* no longer used */

@@ -23,6 +23,7 @@ add_executable(vw-unit-test.out
   test_common.h
   tokenize_tests.cc
   flatbuffer_parser_test.cc
+  chain_hashing.cc
 )
 
 # Add the include directories from vw target for testing

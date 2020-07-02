@@ -238,9 +238,11 @@ void save_load_header(
 
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
       {
-        // -q, --cubic and --interactions are not saved in vw::file_options
-        uint32_t pair_len = (uint32_t)all.pairs.size();
+        if (!read)
+          THROW("cannot write legacy format");
 
+        // -q, --cubic and --interactions are not saved in vw::file_options
+        uint32_t pair_len = 0;
         msg << pair_len << " pairs: ";
         bytes_read_write +=
             bin_text_read_write_fixed_validated(model_file, (char*)&pair_len, sizeof(pair_len), "", read, msg, text);
@@ -250,28 +252,19 @@ void save_load_header(
         {
           char pair[3] = {0, 0, 0};
 
-          if (!read)
-          {
-            memcpy(pair, all.pairs[i].data(), sizeof(all.pairs[i])*2);
-            // Copies data to stringstream regardless of existence of null characters.
-            // This might result in unintuitive behavior i.e. copy data after nulls as well.
-            msg.write(reinterpret_cast<char*>(all.pairs[i].data()), sizeof(all.pairs[i]));
-            msg << " ";
-          }
-
+          // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
-          if (read)
+          std::vector<namespace_index> temp(pair, *(&pair + 1));
+          if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
           {
-            std::vector<namespace_index> temp(pair, pair+std::strlen(pair));
-            if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-              all.pairs.emplace_back(temp.begin(), temp.end());
+            all.interactions.emplace_back(temp.begin(), temp.end());
           }
         }
 
         msg << "\n";
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
-        uint32_t triple_len = (uint32_t)all.triples.size();
+        uint32_t triple_len = 0;
 
         msg << triple_len << " triples: ";
         bytes_read_write += bin_text_read_write_fixed_validated(
@@ -282,20 +275,13 @@ void save_load_header(
         {
           char triple[4] = {0, 0, 0, 0};
 
-          if (!read)
-          {
-            // Copies data to stringstream regardless of existence of null characters.
-            // This might result in unintuitive behavior i.e. copy data after nulls as well.
-            msg.write(reinterpret_cast<char*>(all.triples[i].data()), sizeof(all.triples[i]));
-            msg << " ";
-            memcpy(triple, all.triples[i].data(), sizeof(all.triples[i])*3);
-          }
+          // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
-          if (read)
+
+          std::vector<namespace_index> temp(triple, *(&triple + 1));
+          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
           {
-            std::vector<namespace_index> temp(triple, triple + std::strlen(triple));
-            if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-              all.triples.emplace_back(temp.begin(), temp.end());
+            all.interactions.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -305,8 +291,11 @@ void save_load_header(
         if (all.model_file_ver >=
             VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
         {
+          if (!read)
+            THROW("cannot write legacy format");
+
           // the only version that saves interacions among pairs and triples
-          uint32_t len = (uint32_t)all.interactions.size();
+          uint32_t len = 0;
 
           msg << len << " interactions: ";
           bytes_read_write +=
@@ -314,27 +303,21 @@ void save_load_header(
 
           for (size_t i = 0; i < len; i++)
           {
+            // Only the read path is implemented since this is for old version read support.
             uint32_t inter_len = 0;
-            if (!read)
-            {
-              inter_len = (uint32_t)all.interactions[i].size();
-              msg << "len: " << inter_len << " ";
-            }
             bytes_read_write += bin_text_read_write_fixed_validated(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
-            if (!read)
-            {
-              memcpy(buff2, all.interactions[i].data(), inter_len);
 
-              msg << "interaction: ";
-            // Copies data to stringstream regardless of existence of null characters.
-            // This might result in unintuitive behavior i.e. copy data after nulls as well.
-              msg.write(reinterpret_cast<char*>(all.interactions[i].data()), inter_len);
+
+            auto size = bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
+            bytes_read_write += size;
+            if(size != inter_len)
+            {
+              THROW("Failed to read interaction from model file.");
             }
 
-            bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
-
-            if (read)
+            std::vector<namespace_index> temp(buff2, buff2 + size);
+            if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
             {
               all.interactions.emplace_back(buff2, buff2 + inter_len);
             }
@@ -342,12 +325,6 @@ void save_load_header(
 
           msg << "\n";
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
-        }
-        else  // < VERSION_FILE_WITH_INTERACTIONS
-        {
-          // pairs and triples may be restored but not reflected in interactions
-          all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
-          all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
         }
       }
 
@@ -492,7 +469,7 @@ void save_load_header(
       {
         uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
             ? model_file.hash()
-            : (uint32_t)uniform_hash(model_file.space.begin(), bytes_read_write, 0);
+            : (uint32_t)uniform_hash(model_file.buffer_start(), bytes_read_write, 0);
 
         uint32_t check_sum_saved = check_sum;
 

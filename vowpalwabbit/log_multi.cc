@@ -21,22 +21,19 @@ class node_pred
   uint32_t label;
   uint32_t label_count;
 
-  bool operator==(node_pred v) { return (label == v.label); }
+  bool operator==(node_pred v) const { return (label == v.label); }
 
-  bool operator>(node_pred v)
+  bool operator>(node_pred v) const
   {
-    if (label > v.label)
-      return true;
-    return false;
+    return label > v.label;
   }
 
-  bool operator<(node_pred v)
+  bool operator<(node_pred v) const
   {
-    if (label < v.label)
-      return true;
-    return false;
+    return label < v.label;
   }
 
+  node_pred() = default;
   node_pred(uint32_t l)
   {
     label = l;
@@ -47,7 +44,9 @@ class node_pred
   }
 };
 
-typedef struct
+static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
+
+struct node
 {
   // everyone has
   uint32_t parent;           // the parent node
@@ -68,7 +67,7 @@ typedef struct
   // leaf has
   uint32_t max_count;        // the number of samples of the most common label
   uint32_t max_count_label;  // the most common label
-} node;
+};
 
 struct log_multi
 {

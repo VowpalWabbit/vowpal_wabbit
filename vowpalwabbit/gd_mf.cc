@@ -47,7 +47,11 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (auto& i : all.pairs)
+  for (const auto& i : all.interactions)
+  {
+    if (i.size() != 2)
+      THROW("can only use pairs in matrix factorization");
+
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     {
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
@@ -70,8 +74,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
           }
       }
     }
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
+  }
   std::cout << std::endl;
 }
 
@@ -96,8 +99,11 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
 
-  for (auto& i : d.all->pairs)
+  for (const auto& i : d.all->interactions)
   {
+    if (i.size() != 2)
+      THROW("can only use pairs in matrix factorization");
+
     ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
     ec.num_features += ec.feature_space[(int)i[1]].size() * d.rank;
@@ -117,8 +123,10 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (auto& i : d.all->pairs)
+  for (const auto& i : d.all->interactions)
   {
+    // The check for non-pair interactions is done in the previous loop
+
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
       for (uint64_t k = 1; k <= d.rank; k++)
@@ -143,9 +151,6 @@ float mf_predict(gdmf& d, example& ec, T& weights)
       }
     }
   }
-
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
 
   // d.scalars has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ...
 
@@ -197,8 +202,11 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
-  for (auto& i : all.pairs)
+  for (const auto& i : all.interactions)
   {
+    if (i.size() != 2)
+      THROW("can only use pairs in matrix factorization");
+
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
       // update l^k weights
@@ -219,8 +227,6 @@ void mf_train(gdmf& d, example& ec, T& weights)
       }
     }
   }
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
 }
 
 void mf_train(gdmf& d, example& ec)
