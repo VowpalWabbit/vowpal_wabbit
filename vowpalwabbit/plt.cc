@@ -337,14 +337,14 @@ base_learner* plt_setup(options_i& options, vw& all)
   tree->all = &all;
 
   // calculate number of tree nodes
-  double a = std::pow(tree->kary, std::floor(std::log(tree->k) / std::log(tree->kary)));
-  double b = tree->k - a;
-  double c = std::ceil(b / (tree->kary - 1.0));
-  double d = (tree->kary * a - 1.0) / (tree->kary - 1.0);
-  double e = tree->k - (a - c);
+  const double a = std::pow(tree->kary, std::floor(std::log(tree->k) / std::log(tree->kary)));
+  const double b = tree->k - a;
+  const double c = std::ceil(b / (tree->kary - 1.0));
+  const double d = (tree->kary * a - 1.0) / (tree->kary - 1.0);
+  const double e = tree->k - (a - c);
   tree->t = static_cast<uint32_t>(e + d);
   tree->ti = tree->t - tree->k;
-
+  
   if (!all.logger.quiet)
   {
     all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
