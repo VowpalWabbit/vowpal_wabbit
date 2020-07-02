@@ -37,7 +37,7 @@ struct plt
   uint32_t kary;  // kary tree
 
   // for training
-  v_array<float> nodes_time;  // in case of sgd, this stores individual t for each node
+  v_array<float> nodes_time;                    // in case of sgd, this stores individual t for each node
   std::unordered_set<uint32_t> positive_nodes;  // container for positive nodes
   std::unordered_set<uint32_t> negative_nodes;  // container for negative nodes
 
@@ -45,7 +45,7 @@ struct plt
   float threshold;
   uint32_t top_k;
   v_array<polyprediction> node_preds;  // for storing results of base.multipredict
-  std::vector<node> node_queue; // container for queue used for both types of predictions
+  std::vector<node> node_queue;        // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
@@ -164,21 +164,18 @@ void predict(plt& p, single_learner& base, example& ec)
   p.true_labels.clear();
   for (auto label : ec.l.multilabels.label_v)
   {
-    if (label < p.k)
-      p.true_labels.insert(label);
+    if (label < p.k) p.true_labels.insert(label);
     else
-      std::cout << "label " << label << " is not in {0," << p.k - 1
-                << "} Model can't predict it." << std::endl;
+      std::cout << "label " << label << " is not in {0," << p.k - 1 << "} Model can't predict it." << std::endl;
   }
 
-  p.node_queue.clear(); // clear node queue
+  p.node_queue.clear();  // clear node queue
 
   // prediction with threshold
   if (threshold)
   {
     float cp_root = predict_node(0, base, ec);
-    if (cp_root > p.threshold)
-      p.node_queue.push_back({0, cp_root}); // here queue is used for dfs search
+    if (cp_root > p.threshold) p.node_queue.push_back({0, cp_root});  // here queue is used for dfs search
 
     while (!p.node_queue.empty())
     {
@@ -194,8 +191,7 @@ void predict(plt& p, single_learner& base, example& ec)
         float cp_child = node.p * (1.f / (1.f + exp(-p.node_preds[i].scalar)));
         if (cp_child > p.threshold)
         {
-          if (n_child < p.ti)
-            p.node_queue.push_back({n_child, cp_child});
+          if (n_child < p.ti) p.node_queue.push_back({n_child, cp_child});
           else
           {
             uint32_t l = n_child - p.ti;
@@ -210,8 +206,7 @@ void predict(plt& p, single_learner& base, example& ec)
       uint32_t tp = 0;
       for (auto pred_label : preds.label_v)
       {
-        if (p.true_labels.count(pred_label))
-          ++tp;
+        if (p.true_labels.count(pred_label)) ++tp;
       }
       p.tp += tp;
       p.fp += preds.label_v.size() - tp;
@@ -223,7 +218,7 @@ void predict(plt& p, single_learner& base, example& ec)
   // top-k prediction
   else
   {
-    p.node_queue.push_back({0, predict_node(0, base, ec)}); // here queue is used as priority queue
+    p.node_queue.push_back({0, predict_node(0, base, ec)});  // here queue is used as priority queue
     std::push_heap(p.node_queue.begin(), p.node_queue.end());
 
     while (!p.node_queue.empty())
@@ -249,8 +244,7 @@ void predict(plt& p, single_learner& base, example& ec)
       {
         uint32_t l = node.n - p.ti;
         preds.label_v.push_back(l);
-        if (preds.label_v.size() >= p.top_k)
-          break;
+        if (preds.label_v.size() >= p.top_k) break;
       }
     }
 
@@ -259,8 +253,7 @@ void predict(plt& p, single_learner& base, example& ec)
     {
       for (size_t i = 0; i < p.top_k; ++i)
       {
-        if (p.true_labels.count(preds.label_v[i]))
-          ++p.tp_at[i];
+        if (p.true_labels.count(preds.label_v[i])) ++p.tp_at[i];
       }
       ++p.ec_count;
       p.true_count += p.true_labels.size();
@@ -339,8 +332,7 @@ base_learner* plt_setup(options_i& options, vw& all)
                .help("predict top-<k> labels instead of labels above threshold"));
   options.add_and_parse(new_options);
 
-  if (!options.was_supplied("plt"))
-    return nullptr;
+  if (!options.was_supplied("plt")) return nullptr;
 
   tree->all = &all;
 
@@ -357,8 +349,7 @@ base_learner* plt_setup(options_i& options, vw& all)
   {
     all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)
-      if (tree->top_k > 0)
-        all.trace_message << "top_k = " << tree->top_k << std::endl;
+      if (tree->top_k > 0) all.trace_message << "top_k = " << tree->top_k << std::endl;
       else
         all.trace_message << "threshold = " << tree->threshold << std::endl;
   }
@@ -367,8 +358,7 @@ base_learner* plt_setup(options_i& options, vw& all)
   tree->nodes_time.resize(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_preds.resize(tree->kary);
-  if (tree->top_k > 0)
-    tree->tp_at.resize(tree->top_k);
+  if (tree->top_k > 0) tree->tp_at.resize(tree->top_k);
 
   learner<plt, example>* l;
   if (tree->top_k > 0)
