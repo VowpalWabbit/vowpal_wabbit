@@ -71,9 +71,9 @@ static constexpr std::array<float, VALUES_BELOW_ZERO> pow_10_negative_lookup_tab
 
 }  // namespace details
 
-// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard
+// std::array::operator[] const is made constexpr in C++14, so this can only be guaranteed to be constexpr when this standard
 // is used.
-VW_STD17_CONSTEXPR inline float fast_pow10(int8_t pow)
+VW_STD14_CONSTEXPR inline float fast_pow10(int8_t pow)
 {
   // If the power would be above the range float can represent, return inf.
   return pow > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
