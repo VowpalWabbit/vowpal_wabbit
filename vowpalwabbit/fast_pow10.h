@@ -52,23 +52,6 @@ struct make_index_sequence<0, Integers...> : index_sequence<Integers...>
 {
 };
 
-template <std::size_t ArrayOneLength, std::size_t... IndexSeqOne, std::size_t ArrayTwoLength,
-    std::size_t... IndexSeqTwo>
-constexpr std::array<float, ArrayOneLength + ArrayTwoLength> conatenate_arrays(
-    const std::array<float, ArrayOneLength>& array_one, const std::array<float, ArrayTwoLength>& array_two,
-    index_sequence<IndexSeqOne...> /*index_sequence_one*/, index_sequence<IndexSeqTwo...> /*index_sequence_two*/)
-{
-  return {array_one[IndexSeqOne]..., array_two[IndexSeqTwo]...};
-}
-
-template <std::size_t ArrayOneLength, std::size_t ArrayTwoLength>
-constexpr std::array<float, ArrayOneLength + ArrayTwoLength> conatenate_arrays(
-    const std::array<float, ArrayOneLength>& array_one, const std::array<float, ArrayTwoLength>& array_two)
-{
-  return conatenate_arrays(
-      array_one, array_two, make_index_sequence<ArrayOneLength>{}, make_index_sequence<ArrayTwoLength>{});
-}
-
 template <std::size_t ArrayLength, std::size_t... IntegerSequence>
 constexpr std::array<float, ArrayLength> gen_negative_pow10s(index_sequence<IntegerSequence...> /*integer_sequence*/)
 {
@@ -81,15 +64,10 @@ constexpr std::array<float, ArrayLength> gen_positive_pow10s(index_sequence<Inte
   return {constexpr_int_pow10(IntegerSequence)...};
 }
 
-template <std::size_t VALS_BELOW_ZERO, std::size_t VALS_ABOVE_ZERO>
-constexpr std::array<float, VALS_BELOW_ZERO + VALS_ABOVE_ZERO> gen_pow_table()
-{
-  return conatenate_arrays(gen_negative_pow10s<VALS_BELOW_ZERO>(make_index_sequence<VALS_BELOW_ZERO>{}),
-      gen_positive_pow10s<VALS_ABOVE_ZERO>(make_index_sequence<VALS_ABOVE_ZERO>{}));
-}
-
-static constexpr std::array<float, VALUES_BELOW_ZERO + VALUES_ABOVE_ZERO + 1> pow_10_lookup_table =
-    gen_pow_table<VALUES_BELOW_ZERO, VALUES_ABOVE_ZERO + 1>();
+static constexpr std::array<float, VALUES_ABOVE_AND_INCLUDING_ZERO> pow_10_positive_lookup_table =
+    gen_positive_pow10s<VALUES_ABOVE_AND_INCLUDING_ZERO>(make_index_sequence<VALUES_ABOVE_AND_INCLUDING_ZERO>{});
+static constexpr std::array<float, VALUES_BELOW_ZERO> pow_10_negative_lookup_table =
+    gen_negative_pow10s<VALUES_BELOW_ZERO>(make_index_sequence<VALUES_BELOW_ZERO>{});
 
 }  // namespace details
 
@@ -101,13 +79,9 @@ VW_STD17_CONSTEXPR inline float fast_pow10(int8_t pow)
   return pow > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
                                           : (pow < -1 * details::VALUES_BELOW_ZERO)
           ? 0.f
-          : details::pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(details::VALUES_BELOW_ZERO)];
+          : pow >= 0 ? details::pow_10_positive_lookup_table[static_cast<size_t>(pow)]
+                     : details::pow_10_negative_lookup_table[static_cast<size_t>(pow) +
+                           static_cast<size_t>(details::VALUES_BELOW_ZERO)];
 }
 
-// std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard
-// is used. Undefined behavior if pow is > 38 or < -45
-VW_STD17_CONSTEXPR inline float fast_pow10_unsafe(int8_t pow)
-{
-  return details::pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(details::VALUES_BELOW_ZERO)];
-}
 }  // namespace VW
