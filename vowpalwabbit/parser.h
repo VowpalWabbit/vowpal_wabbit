@@ -83,10 +83,13 @@ struct parser
   VW::ptr_queue<example> ready_parsed_examples;
 
   io_buf* input = nullptr;  // Input source(s)
+
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
   int (*reader)(vw*, v_array<example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
+
+  size_t (*input_file_reader)(vw* vw, char*& line, v_array<example*>&);
 
   shared_data* _shared_data = nullptr;
 
