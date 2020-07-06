@@ -1,115 +1,113 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
-#include <limits>
 #include <array>
+#include <cfloat>
 #include <cstdint>
+#include <limits>
 
 #include "future_compat.h"
 
-const constexpr int8_t VALUES_BELOW_ZERO = 44;
-const constexpr int8_t VALUES_ABOVE_ZERO = 38;
-
-static constexpr std::array<float, VALUES_BELOW_ZERO + 1 + VALUES_ABOVE_ZERO> pow_10_lookup_table = {
-    1e-44f,
-    1e-43f,
-    1e-42f,
-    1e-41f,
-    1e-40f,
-    1e-39f,
-    1e-38f,
-    1e-37f,
-    1e-36f,
-    1e-35f,
-    1e-34f,
-    1e-33f,
-    1e-32f,
-    1e-31f,
-    1e-30f,
-    1e-29f,
-    1e-28f,
-    1e-27f,
-    1e-26f,
-    1e-25f,
-    1e-24f,
-    1e-23f,
-    1e-22f,
-    1e-21f,
-    1e-20f,
-    1e-19f,
-    1e-18f,
-    1e-17f,
-    1e-16f,
-    1e-15f,
-    1e-14f,
-    1e-13f,
-    1e-12f,
-    1e-11f,
-    1e-10f,
-    1e-9f,
-    1e-8f,
-    1e-7f,
-    1e-6f,
-    1e-5f,
-    1e-4f,
-    1e-3f,
-    1e-2f,
-    1e-1f,
-    1e0f,
-    1e1f,
-    1e2f,
-    1e3f,
-    1e4f,
-    1e5f,
-    1e6f,
-    1e7f,
-    1e8f,
-    1e9f,
-    1e10f,
-    1e11f,
-    1e12f,
-    1e13f,
-    1e14f,
-    1e15f,
-    1e16f,
-    1e17f,
-    1e18f,
-    1e19f,
-    1e20f,
-    1e21f,
-    1e22f,
-    1e23f,
-    1e24f,
-    1e25f,
-    1e26f,
-    1e27f,
-    1e28f,
-    1e29f,
-    1e30f,
-    1e31f,
-    1e32f,
-    1e33f,
-    1e34f,
-    1e35f,
-    1e36f,
-    1e37f,
-    1e38f,
-};
-
 namespace VW
 {
+namespace details
+{
+constexpr float POW10_BASE = 10.f;
+const constexpr uint8_t VALUES_BELOW_ZERO = FLT_MIN_10_EXP * -1;
+// We add one to this because 0 isn't counted in FLT_MAX_10_EXP, but it takes a slot.
+const constexpr uint8_t VALUES_ABOVE_AND_INCLUDING_ZERO = FLT_MAX_10_EXP + 1;
+const constexpr uint8_t VALUES_ABOVE_ZERO = FLT_MAX_10_EXP;
+
+constexpr float constexpr_int_pow10(uint8_t pow)
+{
+  return pow > VALUES_ABOVE_AND_INCLUDING_ZERO ? std::numeric_limits<float>::infinity()
+                                               : pow == 0 ? 1 : POW10_BASE * constexpr_int_pow10(pow - 1);
+}
+
+constexpr float constexpr_negative_int_pow10(uint8_t pow)
+{
+  return pow > VALUES_BELOW_ZERO ? 0.f : pow == 0 ? 1 : constexpr_negative_int_pow10(pow - 1) / POW10_BASE;
+}
+
+constexpr float constexpr_negative_int_pow10_with_offset(uint8_t pow, uint8_t offset)
+{
+  return constexpr_negative_int_pow10(offset - pow);
+}
+
+template <std::size_t... Integers>
+class index_sequence
+{
+};
+
+template <std::size_t CurrentNum, std::size_t... Integers>
+struct make_index_sequence : make_index_sequence<CurrentNum - 1, CurrentNum - 1, Integers...>
+{
+};
+
+template <std::size_t... Integers>
+struct make_index_sequence<0, Integers...> : index_sequence<Integers...>
+{
+};
+
+template <std::size_t ArrayOneLength, std::size_t... IndexSeqOne, std::size_t ArrayTwoLength,
+    std::size_t... IndexSeqTwo>
+constexpr std::array<float, ArrayOneLength + ArrayTwoLength> conatenate_arrays(
+    const std::array<float, ArrayOneLength>& array_one, const std::array<float, ArrayTwoLength>& array_two,
+    index_sequence<IndexSeqOne...> /*index_sequence_one*/, index_sequence<IndexSeqTwo...> /*index_sequence_two*/)
+{
+  return {array_one[IndexSeqOne]..., array_two[IndexSeqTwo]...};
+}
+
+template <std::size_t ArrayOneLength, std::size_t ArrayTwoLength>
+constexpr std::array<float, ArrayOneLength + ArrayTwoLength> conatenate_arrays(
+    const std::array<float, ArrayOneLength>& array_one, const std::array<float, ArrayTwoLength>& array_two)
+{
+  return conatenate_arrays(
+      array_one, array_two, make_index_sequence<ArrayOneLength>{}, make_index_sequence<ArrayTwoLength>{});
+}
+
+template <std::size_t ArrayLength, std::size_t... IntegerSequence>
+constexpr std::array<float, ArrayLength> gen_negative_pow10s(index_sequence<IntegerSequence...> /*integer_sequence*/)
+{
+  return {constexpr_negative_int_pow10_with_offset(IntegerSequence, ArrayLength)...};
+}
+
+template <std::size_t ArrayLength, std::size_t... IntegerSequence>
+constexpr std::array<float, ArrayLength> gen_positive_pow10s(index_sequence<IntegerSequence...> /*integer_sequence*/)
+{
+  return {constexpr_int_pow10(IntegerSequence)...};
+}
+
+template <std::size_t VALS_BELOW_ZERO, std::size_t VALS_ABOVE_ZERO>
+constexpr std::array<float, VALS_BELOW_ZERO + VALS_ABOVE_ZERO> gen_pow_table()
+{
+  return conatenate_arrays(gen_negative_pow10s<VALS_BELOW_ZERO>(make_index_sequence<VALS_BELOW_ZERO>{}),
+      gen_positive_pow10s<VALS_ABOVE_ZERO>(make_index_sequence<VALS_ABOVE_ZERO>{}));
+}
+
+static constexpr std::array<float, VALUES_BELOW_ZERO + VALUES_ABOVE_ZERO + 1> pow_10_lookup_table =
+    gen_pow_table<VALUES_BELOW_ZERO, VALUES_ABOVE_ZERO + 1>();
+
+}  // namespace details
+
 // std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard
 // is used.
 VW_STD17_CONSTEXPR inline float fast_pow10(int8_t pow)
 {
   // If the power would be above the range float can represent, return inf.
-  return pow > VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
-                                 : (pow < -1 * VALUES_BELOW_ZERO) ? 0.f : pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(VALUES_BELOW_ZERO)];
+  return pow > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
+                                          : (pow < -1 * details::VALUES_BELOW_ZERO)
+          ? 0.f
+          : details::pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(details::VALUES_BELOW_ZERO)];
 }
 
 // std::array::operator[] is made constexpr in C++17, so this can only be guaranteed to be constexpr when this standard
 // is used. Undefined behavior if pow is > 38 or < -45
 VW_STD17_CONSTEXPR inline float fast_pow10_unsafe(int8_t pow)
 {
-  return pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(VALUES_BELOW_ZERO)];
+  return details::pow_10_lookup_table[static_cast<size_t>(pow) + static_cast<size_t>(details::VALUES_BELOW_ZERO)];
 }
 }  // namespace VW
