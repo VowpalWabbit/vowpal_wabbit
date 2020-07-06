@@ -146,6 +146,8 @@ void reset_source(vw& all, size_t numbits)
     // Now open the written cache as the new input file.
     input->add_file(VW::io::open_file_reader(all.p->output->finalname.cbegin()));
     all.p->reader = read_cached_features;
+    all.p->input_file_reader = read_input_file_binary;
+
   }
 
   if (all.p->resettable == true)
@@ -180,6 +182,7 @@ void reset_source(vw& all, size_t numbits)
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
+        all.p->input_file_reader = read_input_file_binary;
 IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
 IGNORE_DEPRECATED_USAGE_END
@@ -188,6 +191,7 @@ IGNORE_DEPRECATED_USAGE_END
       else
       {
         all.p->reader = read_features_string;
+        all.p->input_file_reader = read_input_file_ascii;
 IGNORE_DEPRECATED_USAGE_START
         all.print = print_result;
 IGNORE_DEPRECATED_USAGE_END
@@ -279,6 +283,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
         if (!quiet)
           all.trace_message << "using cache_file = " << file.c_str() << endl;
         all.p->reader = read_cached_features;
+        all.p->input_file_reader = read_input_file_binary;
         if (c == all.num_bits)
           all.p->sorted_cache = true;
         else
@@ -294,6 +299,10 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     if (!quiet)
       all.trace_message << "using no cache" << endl;
     all.p->output->space.delete_v();
+    all.p->input_file_reader = read_input_file_ascii;
+  } 
+  else {
+    all.p->input_file_reader = read_input_file_binary;
   }
 }
 
@@ -304,6 +313,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
+ 
   all.p->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
@@ -496,13 +506,16 @@ IGNORE_DEPRECATED_USAGE_END
     if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
-    if (all.active)
+    if (all.active) {
       all.p->reader = read_features_string;
+      all.p->input_file_reader = read_input_file_ascii;
+    }
     else
     {
       if (isbinary(*(all.p->input)))
       {
         all.p->reader = read_cached_features;
+        all.p->input_file_reader = read_input_file_binary;
 IGNORE_DEPRECATED_USAGE_START
         all.print = binary_print_result;
 IGNORE_DEPRECATED_USAGE_END
@@ -511,6 +524,7 @@ IGNORE_DEPRECATED_USAGE_END
       else
       {
         all.p->reader = read_features_string;
+        all.p->input_file_reader = read_input_file_ascii;
       }
       all.p->sorted_cache = true;
     }
@@ -577,12 +591,14 @@ IGNORE_DEPRECATED_USAGE_END
         if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
+        //  all.p->input_file_reader = read_input_file_ascii;
           all.p->text_reader = &line_to_examples_json<true>;
           all.p->audit = true;
         }
         else
         {
           all.p->reader = &read_features_json<false>;
+       //   all.p->input_file_reader = read_input_file_ascii;
           all.p->text_reader = &line_to_examples_json<false>;
           all.p->audit = false;
         }
@@ -592,6 +608,7 @@ IGNORE_DEPRECATED_USAGE_END
       else
       {
         all.p->reader = read_features_string;
+        all.p->input_file_reader = read_input_file_ascii;
         all.p->text_reader = VW::read_lines;
       }
 
@@ -606,6 +623,7 @@ IGNORE_DEPRECATED_USAGE_END
   all.p->input->count = all.p->input->num_files();
   if (!quiet && !all.daemon)
     all.trace_message << "num sources = " << all.p->input->num_files() << endl;
+
 }
 
 void lock_done(parser& p)
