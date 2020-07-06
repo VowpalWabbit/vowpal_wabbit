@@ -9,15 +9,13 @@ class io_item {
   public:
 
       std::vector<char> message;
-      int num_chars_init;
 
       io_item(){
-          num_chars_init = 0;
+
       }
 
-      io_item(std::vector<char> myMsg, int myNumCharsInit){
+      io_item(std::vector<char> myMsg){
           message = myMsg;
-          num_chars_init = myNumCharsInit;
       }
 
       ~io_item() {}
@@ -43,26 +41,9 @@ struct io_state {
     {
     }
 
-    io_state operator=(const io_state &toCopy){
-        io_lines = toCopy.io_lines;
-        done_with_io.store(toCopy.done_with_io);
-        return *this;
-    }
-
-    io_state(io_state&& iostate_to_move)
-    {
-      //if io_lines is not the null pointer, delete the memory it pointed to before reassigning
-      if(io_lines){
-        delete io_lines;
-      }
-      io_lines = iostate_to_move.io_lines;
-      done_with_io.store(iostate_to_move.done_with_io);
-    }
-
-    io_state(const io_state &toCopy){
-        io_lines = toCopy.io_lines;
-        done_with_io.store(toCopy.done_with_io);
-    }
+    io_state operator=(const io_state &) = delete;
+    io_state(io_state&&) = delete;
+    io_state(const io_state&) = delete;
 
     inline void set_done_io(bool done_io){
       done_with_io.store(done_io);
@@ -73,15 +54,17 @@ struct io_state {
     }
 
 
-    ~io_state() {}
+    ~io_state() {
 
-    inline bool add_to_queue(char *line, io_buf *input){
+      delete io_lines;
+      
+    }
 
-      std::unique_lock<std::mutex> cv_lock(cv_mutex);
+    inline bool add_to_queue(char *line, size_t num_chars_initial){
+
+      std::cout << "add_to-queue line: " << line << std::endl;
 
       bool finish = false;
-
-      size_t num_chars_initial = readto(*input, line, '\n');
 
       std::vector<char> byte_array;
       byte_array.resize(num_chars_initial); // Note: This byte_array is NOT null terminated!
@@ -93,7 +76,7 @@ struct io_state {
       memcpy(byte_array.data(), line, num_chars_initial);
       {
         std::lock_guard<std::mutex> lck(io_queue_lock);
-        io_lines->emplace(std::move(byte_array), num_chars_initial); // in-place construction and no copying. very efficient!
+        io_lines->emplace(std::move(byte_array));
       }
 
       has_input_cv.notify_all();
@@ -105,12 +88,31 @@ struct io_state {
     //Pops a line of input from the input queue
     inline io_item pop_io_queue(){
       
-      std::lock_guard<std::mutex> lck(io_queue_lock);
+      std::unique_lock<std::mutex> lck(io_queue_lock);
+
+      std::cout << "pop io queue" << std::endl;
 
       io_item front;
+
+      if(io_lines->size() == 0 && done_with_io) {
+        std::cout << "condition L130" << std::endl;
+
+        return io_item();
+      }
+
+      while(!done_with_io && io_lines->size() == 0){
+    
+        std::cout << "wait" << std::endl;
+        has_input_cv.wait(lck);
+      
+      }
+
+      std::cout << "io_lines size (pop io queue): " << io_lines->size() << std::endl;
       
       if(io_lines->size() > 0)
       {
+
+        std::cout << "get front" << std::endl;
 
         front = io_lines->front();
 
