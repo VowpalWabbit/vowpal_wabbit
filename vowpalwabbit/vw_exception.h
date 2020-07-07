@@ -117,7 +117,7 @@ inline std::string strerror_to_string(int error_number)
   constexpr auto BUFFER_SIZE = 256;
   std::array<char, BUFFER_SIZE> error_message_buffer;
   auto result = strerror_s(error_message_buffer.data(), error_message_buffer.size() - 1, error_number);
-  if (result != 0) { return "unknown"; }
+  if (result != 0) { return "unknown message for errno: " + std::to_string(error_number); }
 
   auto length = std::strlen(error_message_buffer.data());
   return std::string(error_message_buffer.data(), length);
@@ -131,7 +131,7 @@ inline std::string strerror_to_string(int error_number)
     return std::string(message_buffer, length);
   #else
     auto result = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
-    if (result != 0) { return "unknown"; }
+  if (result != 0) { return "unknown message for errno: " + std::to_string(error_number); }
     auto length = std::strlen(error_message_buffer.data());
     return std::string(error_message_buffer.data(), length);
   #endif
@@ -140,7 +140,7 @@ inline std::string strerror_to_string(int error_number)
   locale_t locale = newlocale(LC_ALL_MASK, "", static_cast<locale_t>(0));
 
   if (locale == static_cast<locale_t>(0)) {
-    return "Failed to create locale";
+    return "Failed to create locale when getting error message for errno: " + std::to_string(error_number);
   }
 
   // Even if error_number is unknown, will return a "Unknown error nnn" message.
