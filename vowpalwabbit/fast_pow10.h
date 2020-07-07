@@ -11,6 +11,16 @@
 
 #include "future_compat.h"
 
+// The reason for this implementation is that for specific scenarios using a
+// lookup table can drastically improve performance over the generic std::pow
+// implemenation. In the parseFloat function there is a place where we raise 10
+// to some whole number and store the result in a float. This means there can
+// only be approximately 80 values possible for this calculation. This can
+// result in approximately a 50% reduction in runtime, which is why all of this
+// complicated work was done. Furthermore, care was taken to be able to build
+// this lookup table at compiletime that adheres to the systems defined bounds
+// for float precision (see FLT_MIN_10_EXP and FLT_MAX_10_EXP)
+
 namespace VW
 {
 namespace details
@@ -21,20 +31,22 @@ const constexpr uint8_t VALUES_BELOW_ZERO = FLT_MIN_10_EXP * -1;
 const constexpr uint8_t VALUES_ABOVE_AND_INCLUDING_ZERO = FLT_MAX_10_EXP + 1;
 const constexpr uint8_t VALUES_ABOVE_ZERO = FLT_MAX_10_EXP;
 
-constexpr float constexpr_int_pow10(uint8_t pow)
+constexpr float constexpr_int_pow10(uint8_t exponent)
 {
-  return pow > VALUES_ABOVE_AND_INCLUDING_ZERO ? std::numeric_limits<float>::infinity()
-                                               : pow == 0 ? 1 : POW10_BASE * constexpr_int_pow10(pow - 1);
+  return exponent > VALUES_ABOVE_AND_INCLUDING_ZERO ? std::numeric_limits<float>::infinity()
+                                               : exponent == 0 ? 1 : POW10_BASE * constexpr_int_pow10(exponent - 1);
 }
 
-constexpr float constexpr_negative_int_pow10(uint8_t pow)
+constexpr float constexpr_negative_int_pow10(uint8_t exponent)
 {
-  return pow > VALUES_BELOW_ZERO ? 0.f : pow == 0 ? 1 : constexpr_negative_int_pow10(pow - 1) / POW10_BASE;
+  return exponent > VALUES_BELOW_ZERO ? 0.f : exponent == 0 ? 1 : constexpr_negative_int_pow10(exponent - 1) / POW10_BASE;
 }
 
-constexpr float constexpr_negative_int_pow10_with_offset(uint8_t pow, uint8_t offset)
+// This function is a simple workaround for the fact it is tricky to generate compile time sequences of numbers that count down to zero from a number instead of up to a number.
+// Please feel free to remove this if a decreasing sequence can be used instead
+constexpr float constexpr_negative_int_pow10_with_offset(uint8_t exponent, uint8_t offset)
 {
-  return constexpr_negative_int_pow10(offset - pow);
+  return constexpr_negative_int_pow10(offset - exponent);
 }
 
 template <std::size_t... Integers>
@@ -73,14 +85,14 @@ static constexpr std::array<float, VALUES_BELOW_ZERO> pow_10_negative_lookup_tab
 
 // std::array::operator[] const is made constexpr in C++14, so this can only be guaranteed to be constexpr when this standard
 // is used.
-VW_STD14_CONSTEXPR inline float fast_pow10(int8_t pow)
+VW_STD14_CONSTEXPR inline float fast_pow10(int8_t exponent)
 {
-  // If the power would be above the range float can represent, return inf.
-  return pow > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
-                                          : (pow < -1 * details::VALUES_BELOW_ZERO)
+  // If the result would be above the range float can represent, return inf.
+  return exponent > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
+                                          : (exponent < -1 * details::VALUES_BELOW_ZERO)
           ? 0.f
-          : pow >= 0 ? details::pow_10_positive_lookup_table[static_cast<size_t>(pow)]
-                     : details::pow_10_negative_lookup_table[static_cast<size_t>(pow) +
+          : exponent >= 0 ? details::pow_10_positive_lookup_table[static_cast<size_t>(exponent)]
+                     : details::pow_10_negative_lookup_table[static_cast<size_t>(exponent) +
                            static_cast<size_t>(details::VALUES_BELOW_ZERO)];
 }
 
