@@ -1600,8 +1600,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0)
     {
-      // VW::return_multiple_example(*all, examples);
-      // examples.push_back(&VW::get_unused_example(all));
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
       return false;
     }
   }

@@ -26,7 +26,8 @@ var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
 	188, // possibly float delta
 	195, //--onethread is a shell option, not available via library
 	203, // Cluster mode test
-	204 // Testing option usage
+	204, // Testing option usage
+    213 // DSJSON not supported
 	};
 
 var outputModels = new Dictionary<string, TestCase>();
