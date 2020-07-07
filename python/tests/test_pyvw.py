@@ -5,6 +5,7 @@ from vowpalwabbit.pyvw import vw
 from vowpalwabbit.pyvw import (
     DFtoVW,
     SimpleLabel,
+    MultiClass,
     Feature,
     Namespace,
 )
@@ -452,6 +453,15 @@ def test_without_target_multiple_features():
     assert first_line == "| 2 3"
 
 
+def test_multiclass():
+    df = pd.DataFrame({"a": [1], "b": [0.5], "c": ["x"]})
+    conv = DFtoVW(
+        df=df, label=MultiClass(name="a", weight="b"), features=Feature("c")
+    )
+    first_line = conv.convert_df()[0]
+    assert first_line == "1 0.5 | x"
+
+
 def test_absent_col_error():
     with pytest.raises(ValueError) as value_error:
         df = pd.DataFrame({"a": [1]})
@@ -477,4 +487,52 @@ def test_wrong_feature_type_error():
     with pytest.raises(TypeError) as type_error:
         DFtoVW(df=df, label=SimpleLabel("y"), features="x")
     expected = "Argument 'features' should be a Feature or a list of Feature."
+    assert expected == str(type_error.value)
+
+
+def test_multiclass_non_positive_label_error():
+    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
+    with pytest.raises(ValueError) as value_error:
+        DFtoVW(
+            df=df,
+            label=MultiClass(name="a", weight="b"),
+            features=Feature("c"),
+        )
+    expected = "In argument 'name' of 'MultiClass', column 'a' must be >= 1."
+    assert expected == str(value_error.value)
+
+
+def test_multiclass_negative_weight_error():
+    df = pd.DataFrame({"y": [1], "w": [-0.5], "x": [2]})
+    with pytest.raises(ValueError) as value_error:
+        DFtoVW(
+            df=df,
+            label=MultiClass(name="y", weight="w"),
+            features=Feature("x"),
+        )
+    expected = "In argument 'weight' of 'MultiClass', column 'w' must be >= 0."
+    assert expected == str(value_error.value)
+
+
+def test_multiclass_non_positive_constant_label_error():
+    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
+    with pytest.raises(ValueError) as value_error:
+        DFtoVW(
+            df=df,
+            label=MultiClass(name=-1, weight="b", name_from_df=False),
+            features=Feature("c"),
+        )
+    expected = "In 'MultiClass', argument 'name' must be >= 1."
+    assert expected == str(value_error.value)
+
+
+def test_multiclass_constant_label_type_error():
+    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
+    with pytest.raises(TypeError) as type_error:
+        DFtoVW(
+            df=df,
+            label=MultiClass(name="a", weight="b", weight_from_df=False),
+            features=Feature("c"),
+        )
+    expected = "In 'MultiClass', when weight_from_df=False, argument 'weight' should be either of the following type(s): 'int', 'float'."
     assert expected == str(type_error.value)
