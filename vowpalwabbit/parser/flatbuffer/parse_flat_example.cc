@@ -88,7 +88,7 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
     push_many(ae->tag, tag.begin(), tag.size());
   }
 
-  for (int i=0; i < eg->namespaces()->size(); i++){
+  for (size_t i = 0; i < eg->namespaces()->size(); i++){
     parse_namespaces(all, ae, eg->namespaces()->Get(i));
   }
 }
@@ -106,9 +106,9 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
     temp_index = ns->hash();
   }
 
-  features& fs = ae->feature_space[temp_index];
+  auto& fs = ae->feature_space[temp_index];
 
-  for (int j=0; j<ns->features()->size(); j++){
+  for (size_t j = 0; j < ns->features()->size(); j++){
     parse_features(all, ae, fs, ns->features()->Get(j));
   }
 }

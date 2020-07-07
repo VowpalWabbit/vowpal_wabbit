@@ -51,7 +51,7 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     l->conditional_contextual_bandit.type = CCB::example_type::slot;
 
     if (label->explicit_included_actions() != nullptr){
-      for (auto i=0;i<label->explicit_included_actions()->Length();i++){
+      for (size_t i = 0; i < label->explicit_included_actions()->Length(); i++){
         l->conditional_contextual_bandit.explicit_included_actions.push_back(label->explicit_included_actions()->Get(i));
       }
     }
@@ -74,7 +74,7 @@ void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
 {
   l->cb_eval.action = label->action();
   l->cb_eval.event.weight = label->event()->weight();
-  for (auto i=0;i<label->event()->costs()->Length();i++){
+  for (size_t i = 0; i < label->event()->costs()->Length(); i++){
     CB::cb_class f;
     f.cost = label->event()->costs()->Get(i)->cost();
     f.action = label->event()->costs()->Get(i)->action();
@@ -86,7 +86,7 @@ void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
 
 void parser::parse_cs_label(polylabel* l, const CS_Label* label)
 {
-  for (auto i=0;i<label->costs()->Length();i++){
+  for (size_t i = 0; i < label->costs()->Length(); i++){
     COST_SENSITIVE::wclass f;
     f.x = label->costs()->Get(i)->x();
     f.partial_prediction = label->costs()->Get(i)->partial_pred();
@@ -105,7 +105,7 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
 
 void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
 {
-  for (auto i=0;i<label->labels()->Length();i++)
+  for (size_t i = 0; i < label->labels()->Length(); i++)
     l->multilabels.label_v.push_back(label->labels()->Get(i));
 }
 

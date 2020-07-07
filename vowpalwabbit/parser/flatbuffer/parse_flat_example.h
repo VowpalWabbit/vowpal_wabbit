@@ -31,7 +31,7 @@ private:
     const VW::parsers::flatbuffer::ExampleCollection* _data;
     std::string _filename;
     uint8_t* _flatbuffer_pointer;
-    int _example_index;
+    size_t _example_index;
     uint64_t _c_hash;
     
     void parse_example(vw* all, example* ae, const Example* eg);
