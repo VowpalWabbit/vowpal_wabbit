@@ -30,39 +30,39 @@
 
 // The following section handles silencing specific warnings in the codebase. This section doesn't need to be modified, skip to the next block to add warnings.
 #if defined(_MSC_VER)
-    #define VW_DISABLE_WARNING_PUSH           __pragma(warning( push ))
-    #define VW_DISABLE_WARNING_POP            __pragma(warning( pop ))
-    #define VW_DISABLE_WARNING(warningNumber) __pragma(warning( disable : warningNumber ))
+    #define VW_WARNING_STATE_PUSH           __pragma(warning( push ))
+    #define VW_WARNING_STATE_POP            __pragma(warning( pop ))
+    #define VW_WARNING_DISABLE(warningNumber) __pragma(warning( disable : warningNumber ))
 #elif defined(__GNUC__)
     #define DO_PRAGMA(X) _Pragma(#X)
-    #define VW_DISABLE_WARNING_PUSH           DO_PRAGMA(GCC diagnostic push)
-    #define VW_DISABLE_WARNING_POP            DO_PRAGMA(GCC diagnostic pop)
-    #define VW_DISABLE_WARNING(warningName)   DO_PRAGMA(GCC diagnostic ignored #warningName)
+    #define VW_WARNING_STATE_PUSH           DO_PRAGMA(GCC diagnostic push)
+    #define VW_WARNING_STATE_POP            DO_PRAGMA(GCC diagnostic pop)
+    #define VW_WARNING_DISABLE(warningName)   DO_PRAGMA(GCC diagnostic ignored #warningName)
 #elif defined(__clang__)
     #define DO_PRAGMA(X) _Pragma(#X)
-    #define VW_DISABLE_WARNING_PUSH           DO_PRAGMA(clang diagnostic push)
-    #define VW_DISABLE_WARNING_POP            DO_PRAGMA(clang diagnostic pop)
-    #define VW_DISABLE_WARNING(warningName)   DO_PRAGMA(clang diagnostic ignored #warningName)
+    #define VW_WARNING_STATE_PUSH           DO_PRAGMA(clang diagnostic push)
+    #define VW_WARNING_STATE_POP            DO_PRAGMA(clang diagnostic pop)
+    #define VW_WARNING_DISABLE(warningName)   DO_PRAGMA(clang diagnostic ignored #warningName)
 #else
-    #define VW_DISABLE_WARNING_PUSH
-    #define VW_DISABLE_WARNING_POP
-    #define VW_DISABLE_WARNING(warningName)
+    #define VW_WARNING_STATE_PUSH
+    #define VW_WARNING_STATE_POP
+    #define VW_WARNING_DISABLE(warningName)
 #endif
 
 // Add new ignored warnings here:
 #if defined(_MSC_VER)
-    #define VW_DISABLE_WARNING_DEPRECATED_USAGE    VW_DISABLE_WARNING(4996)
-    #define VW_DISABLE_WARNING_CLASS_MEMACCESS
+    #define VW_WARNING_DISABLE_DEPRECATED_USAGE    VW_WARNING_DISABLE(4996)
+    #define VW_WARNING_DISABLE_CLASS_MEMACCESS
 #elif defined(__GNUC__) || defined(__clang__)
-    #define VW_DISABLE_WARNING_DEPRECATED_USAGE   VW_DISABLE_WARNING(-Wdeprecated-declarations)
+    #define VW_WARNING_DISABLE_DEPRECATED_USAGE   VW_WARNING_DISABLE(-Wdeprecated-declarations)
 
     // This warning was added in GCC 8
     #if __GNUC__ >= 8
-        #define VW_DISABLE_WARNING_CLASS_MEMACCESS    VW_DISABLE_WARNING(-Wclass-memaccess)
+        #define VW_WARNING_DISABLE_CLASS_MEMACCESS    VW_WARNING_DISABLE(-Wclass-memaccess)
     #else
-        #define VW_DISABLE_WARNING_CLASS_MEMACCESS
+        #define VW_WARNING_DISABLE_CLASS_MEMACCESS
     #endif
 #else
-    #define VW_DISABLE_WARNING_DEPRECATED_USAGE
-    #define VW_DISABLE_WARNING_CLASS_MEMACCESS
+    #define VW_WARNING_DISABLE_DEPRECATED_USAGE
+    #define VW_WARNING_DISABLE_CLASS_MEMACCESS
 #endif

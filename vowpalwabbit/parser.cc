@@ -180,19 +180,19 @@ void reset_source(vw& all, size_t numbits)
       if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_DEPRECATED_USAGE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = binary_print_result;
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
         all.p->reader = read_features_string;
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_DEPRECATED_USAGE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = print_result;
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
         all.print_by_ref = print_result_by_ref;
       }
     }
@@ -482,10 +482,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int one = 1;
     setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_DEPRECATED_USAGE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
     all.print = print_result;
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
     all.print_by_ref = print_result_by_ref;
 
     auto socket = VW::io::wrap_socket_descriptor(f_a);
@@ -503,10 +503,10 @@ VW_DISABLE_WARNING_POP
       if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_DEPRECATED_USAGE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = binary_print_result;
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
@@ -706,10 +706,10 @@ example& get_unused_example(vw* all)
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_DEPRECATED_USAGE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
   ex->in_use = true;
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -914,10 +914,10 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_DEPRECATED_USAGE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
   ec.in_use = false;
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
   all.p->example_pool.return_object(&ec);
 }
 

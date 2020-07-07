@@ -55,8 +55,8 @@ typedef union
   float prob;  // for --probabilities --csoaa_ldf=mc
 } polyprediction;
 
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_DEPRECATED_USAGE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
 {
   example();
@@ -101,7 +101,7 @@ struct example : public example_predict  // core example datatype.
       "Standalone examples are by definition always in use.")
   bool in_use = true;
 };
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
 
 struct vw;
 

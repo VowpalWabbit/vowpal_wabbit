@@ -21,11 +21,11 @@
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
-VW_DISABLE_WARNING_PUSH
-VW_DISABLE_WARNING_CLASS_MEMACCESS
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
-VW_DISABLE_WARNING_POP
+VW_WARNING_STATE_POP
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #pragma managed(pop)
