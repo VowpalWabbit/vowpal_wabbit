@@ -10,7 +10,7 @@
 // forward declarations
 struct example;
 using multi_ex = std::vector<example*>;
-template <class T>
+template <class T, typename Enable>
 struct v_array;
 struct random_state;
 struct vw;

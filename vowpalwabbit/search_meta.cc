@@ -7,6 +7,7 @@
 #include "reductions.h"
 #include "vw.h"
 #include "search.h"
+#include "debug_print.h"
 
 using namespace VW::config;
 
@@ -123,7 +124,7 @@ void run(Search::search& sch, multi_ex& ec)
         branch.insert(branch.end(), std::begin(d.trajectory), std::end(d.trajectory));
         branch.push_back(std::make_pair(a, a_cost));
         d.branches.push_back(std::make_pair(delta, branch));
-        //cdbg << "adding branch: " << delta << " -> " << branch << std::endl;
+        cdbg << "adding branch: " << delta << " -> " << branch << std::endl;
       })
       .post_prediction([](Search::search& sch, size_t /*t*/, action a, float a_cost) -> void {
         task_data& d = *sch.get_metatask_data<task_data>();

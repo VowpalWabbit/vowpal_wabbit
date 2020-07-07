@@ -64,6 +64,7 @@ set(vw_all_headers
   crossplat_compat.h
   cs_active.h
   csoaa.h
+  debug_print.h
   decision_scores.h
   distributionally_robust.h
   ect.h

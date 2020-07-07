@@ -194,7 +194,7 @@ struct search_private
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
-  std::vector<example> learn_ec_copy;               // copy of example(s) at learn_t
+  std::vector<example> learn_ec_copy;           // copy of example(s) at learn_t
   example* learn_ec_ref;                        // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt;                      // how many are there (for LDF mode only; otherwise 1)
   v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
@@ -1260,7 +1260,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     size_t cur_t = priv.t + priv.meta_t - 1;
     while (priv.active_known.size() <= cur_t)
     {
-      priv.active_known.push_back(std::vector<std::pair<CS::wclass&, bool>>());
+      priv.active_known.push_back({});
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].clear();
