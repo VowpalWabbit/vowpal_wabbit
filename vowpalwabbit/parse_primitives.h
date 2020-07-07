@@ -14,8 +14,6 @@
 #include "hashstring.h"
 #include "vw_string_view.h"
 
-std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss);
-
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
 void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty = false)
