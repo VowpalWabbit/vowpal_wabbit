@@ -67,7 +67,6 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
     std::stringstream msg;
     if (!quiet)
     {
-
       msg << "connect attempt " << count << " failed: " << VW::strerror_to_string(errno);
       cerr << msg.str() << endl;
     }
@@ -214,7 +213,8 @@ void AllReduceSockets::all_reduce_init()
       {
         if (listen(sock, kid_count) < 0)
         {
-          if (!quiet) cerr << "listen: " << VW::strerror_to_string(errno) << endl;
+          if (!quiet)
+            cerr << "listen: " << VW::strerror_to_string(errno) << endl;
           CLOSESOCK(sock);
           sock = getsock();
         }
@@ -339,7 +339,7 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n)
       int read_size = recv(socks.parent, buffer + parent_read_pos, (int)count, 0);
       if (read_size == -1)
       {
-        THROW(" recv from parent: " << VW::strerror_to_string(errno));
+        THROW("recv from parent: " << VW::strerror_to_string(errno));
       }
       parent_read_pos += read_size;
     }
