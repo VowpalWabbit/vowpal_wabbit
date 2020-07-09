@@ -63,6 +63,9 @@
     <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="power_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

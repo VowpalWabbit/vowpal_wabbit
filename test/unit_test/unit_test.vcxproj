@@ -35,6 +35,7 @@
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
+    <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
     <ClCompile Include="slates_parser_test.cc" />
