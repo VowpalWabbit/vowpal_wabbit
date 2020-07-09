@@ -3,6 +3,7 @@ add_executable(vw-unit-test.out
   ccb_parser_test.cc
   ccb_test.cc
   dsjson_parser_test.cc
+  error_test.cc
   example_header_test.cc
   explore_test.cc
   guard_test.cc
