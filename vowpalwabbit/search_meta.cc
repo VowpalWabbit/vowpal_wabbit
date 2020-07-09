@@ -158,7 +158,7 @@ void run(Search::search& sch, multi_ex& ec)
     d.total_cost = 0.;
     d.output_string = nullptr;
 
-    //cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << std::endl;
+    cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << std::endl;
     sch.base_task(ec)
         .foreach_action([](Search::search& /*sch*/, size_t /*t*/, float /*min_cost*/, action /*a*/, bool /*taken*/,
                             float /*a_cost*/) -> void {})
