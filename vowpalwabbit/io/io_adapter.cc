@@ -72,6 +72,8 @@ struct file_adapter : public writer, public reader
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
   void reset() override;
+  size_t get_data_size() override;
+
 
 private:
   int _file_descriptor;
@@ -309,6 +311,15 @@ file_adapter::~file_adapter()
 #else
   ::close(_file_descriptor);
 #endif
+}
+
+size_t file_adapter::get_data_size() {
+
+  off_t currentPos = lseek(_file_descriptor, (size_t)0, SEEK_CUR);
+  size_t size = lseek(_file_descriptor,(size_t)0, SEEK_END);
+  lseek(_file_descriptor, currentPos, SEEK_SET);// seek back to the beginning of file
+
+  return size;
 }
 
 //
