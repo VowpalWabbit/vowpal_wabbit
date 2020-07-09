@@ -1838,16 +1838,20 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/slates_simple.stderr
     pred-sets/ref/slates_simple.predict
 
-# Test 213: check plt training
+# Test 213: Regression test for crash on unlabelled data
+{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
+    train-sets/ref/slates_simple_unlabeled.stderr
+
+# Test 214: check plt training
 {VW} -d train-sets/multilabel -f plt.model --plt 10 --sgd
     train-sets/ref/plt_multilabel.stderr
 
-# Test 214: check default plt prediction
+# Test 215: check default plt prediction
 {VW} -t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict
     train-sets/ref/plt_multilabel_predict.stderr
     pred-sets/ref/plt_multilabel.predict
 
-# Test 215: check plt top-1 prediction
+# Test 216: check plt top-1 prediction
 {VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
     train-sets/ref/plt_top1_multilabel_predict.stderr
     pred-sets/ref/plt_top1_multilabel.predict
