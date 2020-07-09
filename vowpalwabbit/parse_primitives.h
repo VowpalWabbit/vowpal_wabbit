@@ -142,10 +142,8 @@ inline float float_of_string(VW::string_view s)
   return f;
 }
 
-inline int int_of_string(VW::string_view s)
+inline int int_of_string(VW::string_view s, char*& end)
 {
-  char* end = nullptr;
-
   // can't use stol because that throws an exception. Use strtol instead.
   int i = strtol(s.begin(), &end, 10);
   if (end <= s.begin() && s.size() > 0)
@@ -156,4 +154,10 @@ inline int int_of_string(VW::string_view s)
   }
 
   return i;
+}
+
+inline int int_of_string(VW::string_view s)
+{
+  char* end = nullptr;
+  return int_of_string(s, end);
 }

@@ -79,16 +79,33 @@ void parse_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>
     case 0:
       break;
     case 1:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      if (sd->ldict) { ld->label = (uint32_t)sd->ldict->get(words[0]); }
+      else
+      {
+        char* char_after_int = nullptr;
+        ld->label = int_of_string(words[0], char_after_int);
+        if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
+        {
+          THROW("malformed example: label has trailing character(s): " << *char_after_int);
+        }
+      }
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
+      if (sd->ldict) { ld->label = (uint32_t)sd->ldict->get(words[0]); }
+      else
+      {
+        char* char_after_int = nullptr;
+        ld->label = int_of_string(words[0], char_after_int);
+        if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
+        {
+          THROW("malformed example: label has trailing character(s): " << *char_after_int);
+        }
+      }
       ld->weight = float_of_string(words[1]);
       break;
     default:
-      std::cerr << "malformed example!\n";
-      std::cerr << "words.size() = " << words.size() << std::endl;
+      THROW("malformed example, words.size() = " << words.size());
   }
   if (ld->label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
