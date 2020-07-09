@@ -2593,7 +2593,7 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
   FILE* f = fopen(filename, "r");
   if (f == nullptr)
-    THROW("error: could not read file " << filename << " (" << strerror(errno)
+    THROW("error: could not read file " << filename << " (" << VW::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
   bool* bg = calloc_or_throw<bool>(((size_t)(A + 1)) * (A + 1));
