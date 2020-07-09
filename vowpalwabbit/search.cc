@@ -335,7 +335,7 @@ struct search_private
       // destroy copied examples if we needed them
       if (!examples_dont_change)
       {
-        void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;         
+        void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
         for (example& ec : learn_ec_copy) { ec.delete_unions(delete_label, nullptr); }
       }
       learn_condition_on_names.delete_v();
@@ -1727,7 +1727,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
         priv.learn_ec_copy.resize(ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, priv.learn_ec_copy.data() + i, ecs + i, label_size, label_copy_fn);
+          VW::copy_example_data(priv.all->audit, &priv.learn_ec_copy[i], ecs + i, label_size, label_copy_fn);
 
         priv.learn_ec_ref = priv.learn_ec_copy.data();
       }
