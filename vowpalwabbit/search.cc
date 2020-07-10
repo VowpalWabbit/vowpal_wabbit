@@ -3379,7 +3379,15 @@ predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, false);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
 }
-
+predictor& predictor::add_allowed(v_array<std::pair<action, float>>& a)
+{
+  for (size_t i = 0; i < a.size(); i++)
+  {
+    add_to(allowed_actions, allowed_is_pointer, a[i].first, false);
+    add_to(allowed_actions_cost, allowed_cost_is_pointer, a[i].second, false);
+  }
+  return *this;
+}
 predictor& predictor::add_allowed(std::vector<std::pair<action, float>>& a)
 {
   for (size_t i = 0; i < a.size(); i++)
@@ -3401,7 +3409,11 @@ predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
 }
-
+predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
+{
+  erase_alloweds();
+  return add_allowed(a);
+}
 predictor& predictor::set_allowed(std::vector<std::pair<action, float>>& a)
 {
   erase_alloweds();
