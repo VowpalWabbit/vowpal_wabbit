@@ -62,6 +62,7 @@
 #include "log_multi.h"
 #include "recall_tree.h"
 #include "memory_tree.h"
+#include "plt.h"
 #include "stagewise_poly.h"
 #include "active.h"
 #include "active_cover.h"
@@ -1266,6 +1267,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(memory_tree_setup);
   all.reduction_stack.push(classweight_setup);
   all.reduction_stack.push(multilabel_oaa_setup);
+  all.reduction_stack.push(plt_setup);
 
   all.reduction_stack.push(cs_active_setup);
   all.reduction_stack.push(CSOAA::csoaa_setup);

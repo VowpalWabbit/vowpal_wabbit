@@ -13,6 +13,7 @@
 #include "v_array.h"
 #include "hashstring.h"
 #include "vw_string_view.h"
+#include "fast_pow10.h"
 
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
@@ -109,7 +110,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
   }
   if (*p == ' ' || *p == '\n' || *p == '\t' || p == endLine)  // easy case succeeded.
   {
-    acc *= powf(10, (float)(exp_acc - num_dec));
+    acc *= VW::fast_pow10(exp_acc - num_dec);
     end_idx = p - start;
     return s * acc;
   }

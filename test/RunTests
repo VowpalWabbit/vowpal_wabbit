@@ -1842,4 +1842,18 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
     train-sets/ref/slates_simple_unlabeled.stderr
 
+# Test 214: check plt training
+{VW} -d train-sets/multilabel -f plt.model --plt 10 --sgd
+    train-sets/ref/plt_multilabel.stderr
+
+# Test 215: check default plt prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict
+    train-sets/ref/plt_multilabel_predict.stderr
+    pred-sets/ref/plt_multilabel.predict
+
+# Test 216: check plt top-1 prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
+    train-sets/ref/plt_top1_multilabel_predict.stderr
+    pred-sets/ref/plt_top1_multilabel.predict
+
 # Do not delete this line or the empty line above it
