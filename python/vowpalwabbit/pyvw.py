@@ -2113,7 +2113,7 @@ class DFtoVW:
         """
         dict_label_type = {
             "simple_label": SimpleLabel,
-            "multi_class": MulticlassLabel,
+            "multiclass": MulticlassLabel,
         }
 
         if isinstance(y, list):
