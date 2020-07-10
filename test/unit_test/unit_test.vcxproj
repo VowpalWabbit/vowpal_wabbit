@@ -24,6 +24,7 @@
     <ClCompile Include="ccb_parser_test.cc" />
     <ClCompile Include="distributionally_robust_test.cc" />
     <ClCompile Include="dsjson_parser_test.cc" />
+    <ClCompile Include="error_test.cc" />
     <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="guard_test.cc" />
@@ -34,6 +35,7 @@
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
+    <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
     <ClCompile Include="slates_parser_test.cc" />

@@ -6,8 +6,15 @@
 #ifndef VW_NOEXCEPT
 #include <stdexcept>
 #include <sstream>
+#include <array>
+#include <string>
 
 #include <cstring>
+#include <string.h>
+
+#ifndef _WIN32
+#include <locale.h>
+#endif
 
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -104,6 +111,45 @@ class strict_parse_exception : public vw_exception
   ~strict_parse_exception() noexcept override = default;
 };
 
+inline std::string strerror_to_string(int error_number)
+{
+#ifdef _WIN32
+  constexpr auto BUFFER_SIZE = 256;
+  std::array<char, BUFFER_SIZE> error_message_buffer;
+  auto result = strerror_s(error_message_buffer.data(), error_message_buffer.size() - 1, error_number);
+  if (result != 0) { return "unknown message for errno: " + std::to_string(error_number); }
+
+  auto length = std::strlen(error_message_buffer.data());
+  return std::string(error_message_buffer.data(), length);
+#elif __APPLE__
+  constexpr auto BUFFER_SIZE = 256;
+  std::array<char, BUFFER_SIZE> error_message_buffer;
+  #if defined(__GLIBC__) && defined(_GNU_SOURCE)
+    // You must use the returned bffer and not the passed in buffer the GNU version.
+    char* message_buffer = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
+    auto length = std::strlen(message_buffer);
+    return std::string(message_buffer, length);
+  #else
+    auto result = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
+  if (result != 0) { return "unknown message for errno: " + std::to_string(error_number); }
+    auto length = std::strlen(error_message_buffer.data());
+    return std::string(error_message_buffer.data(), length);
+  #endif
+#else
+  // Passing "" for the locale means use the default system locale
+  locale_t locale = newlocale(LC_ALL_MASK, "", static_cast<locale_t>(0));
+
+  if (locale == static_cast<locale_t>(0)) {
+    return "Failed to create locale when getting error message for errno: " + std::to_string(error_number);
+  }
+
+  // Even if error_number is unknown, will return a "Unknown error nnn" message.
+  std::string message = strerror_l(error_number, locale);
+  freelocale(locale);
+  return message;
+#endif
+}
+
 #ifdef _WIN32
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
@@ -130,11 +176,7 @@ bool launchDebugger();
   {                                                              \
     std::stringstream __msg;                                     \
     __msg << args;                                               \
-    char __errmsg[256];                                          \
-    if (strerror_s(__errmsg, sizeof __errmsg, errno) != 0)       \
-      __msg << ", errno = unknown";                              \
-    else                                                         \
-      __msg << ", errno = " << __errmsg;                         \
+    __msg << ", errno = " << VW::strerror_to_string(errno);          \
     throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #else
@@ -142,11 +184,7 @@ bool launchDebugger();
   {                                                              \
     std::stringstream __msg;                                     \
     __msg << args;                                               \
-    char __errmsg[256];                                          \
-    if (strerror_r(errno, __errmsg, sizeof __errmsg) != 0)       \
-      __msg << "errno = unknown";                                \
-    else                                                         \
-      __msg << "errno = " << __errmsg;                           \
+    __msg << ", errno = " << VW::strerror_to_string(errno);          \
     throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
   }
 #endif

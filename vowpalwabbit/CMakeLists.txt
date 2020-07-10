@@ -123,6 +123,7 @@ set(vw_all_headers
   parse_slates_example_json.h
   parser.h
   parser/flatbuffer/parse_flat_example.h
+  plt.h
   print.h
   queue.h
   rand48.h
@@ -244,6 +245,7 @@ set(vw_all_sources
   parser.cc
   parser/flatbuffer/parse_flat_example.cc
   parser/flatbuffer/parse_label.cc
+  plt.cc
   print.cc
   rand48.cc
   recall_tree.cc
