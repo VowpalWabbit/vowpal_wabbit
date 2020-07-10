@@ -388,10 +388,10 @@ VW_WARNING_STATE_POP
   void init_driver() { init_fd.func(init_fd.data); }
   void set_init_driver(void (*f)(T&))
   {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
-    VW_WARNING_STATE_POP
+VW_WARNING_STATE_POP
   }
 
   // called after learn example for each example.  Explicitly not recursive.
