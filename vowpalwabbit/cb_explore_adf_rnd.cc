@@ -106,7 +106,7 @@ void cb_explore_adf_rnd::finish_bonuses()
 
 void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, float max_bonus)
 {
-  constexpr float eulergamma = 0.57721566490153286;
+  constexpr float eulergamma = 0.57721566490153286f;
   for (auto& p : preds)
   {
     p.score -= eulergamma * (bonuses[p.action] - max_bonus);
@@ -264,7 +264,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   float max_bonus = std::max(1e-3f, *std::max_element(bonuses.begin(), bonuses.end()));
   compute_ci(preds, max_bonus);
   exploration::generate_softmax(
-      -1.0 / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+      -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 

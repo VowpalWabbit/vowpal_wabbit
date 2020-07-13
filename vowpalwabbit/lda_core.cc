@@ -923,7 +923,7 @@ void learn_batch(lda &l)
   float additional = (float)(l.all->length()) * l.lda_rho;
   for (size_t i = 0; i < l.all->lda; i++) l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
 
-  uint64_t last_weight_index = -1;
+  auto last_weight_index = static_cast<uint64_t>(-1);
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
   {
     if (last_weight_index == s->f.weight_index)

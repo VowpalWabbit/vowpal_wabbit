@@ -110,7 +110,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
   }
   if (*p == ' ' || *p == '\n' || *p == '\t' || p == endLine)  // easy case succeeded.
   {
-    acc *= VW::fast_pow10(exp_acc - num_dec);
+    acc *= VW::fast_pow10(static_cast<int8_t>(exp_acc - num_dec));
     end_idx = p - start;
     return s * acc;
   }

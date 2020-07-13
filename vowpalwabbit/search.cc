@@ -1459,9 +1459,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   memset(here, 0, sz);
   *here = (unsigned char)sz;
   here += sizeof(size_t);
-  *here = mytag;
+  *here = static_cast<uint8_t>(mytag);
   here += sizeof(ptag);
-  *here = policy;
+  *here = static_cast<uint8_t>(policy);
   here += sizeof(int);
   *here = (unsigned char)learner_id;
   here += sizeof(size_t);
@@ -1469,9 +1469,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   here += sizeof(size_t);
   for (size_t i = 0; i < condition_on_cnt; i++)
   {
-    *here = condition_on[i];
+    *here = static_cast<uint8_t>(condition_on[i]);
     here += sizeof(ptag);
-    *here = condition_on_actions[i].a;
+    *here = static_cast<uint8_t>(condition_on_actions[i].a);
     here += sizeof(action);
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
@@ -3441,7 +3441,7 @@ predictor& predictor::add_condition_range(ptag hi, ptag count, char name0)
   {
     if (i > hi)
       break;
-    char name = name0 + i;
+    char name = name0 + static_cast<char>(i);
     condition_on_tags.push_back(hi - i);
     condition_on_names.push_back(name);
   }
