@@ -1838,44 +1838,64 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/slates_simple.stderr
     pred-sets/ref/slates_simple.predict
 
-# Test 213: Flatbuffer Simple Label Test
+# Test 213: Regression test for crash on unlabelled data
+{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
+    train-sets/ref/slates_simple_unlabeled.stderr
+
+# Test 214: check plt training
+{VW} -d train-sets/multilabel -f plt.model --plt 10 --sgd
+    train-sets/ref/plt_multilabel.stderr
+
+# Test 215: check default plt prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict
+    train-sets/ref/plt_multilabel_predict.stderr
+    pred-sets/ref/plt_multilabel.predict
+
+# Test 216: check plt top-1 prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
+    train-sets/ref/plt_top1_multilabel_predict.stderr
+    pred-sets/# Test 213: Flatbuffer Simple Label Test
+    
+# Test 217: Flatbuffer Simple Label Test
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb \
     -f models/0001_1.model --invariant --flatbuffer\
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001_fb.stderr
 
-# Test 214: Flatbuffer CB Label Test
+# Test 218: Flatbuffer CB Label Test
 {VW} --cb 2 -d train-sets/cb.fb \
      --flatbuffer
         train-sets/ref/cb_fb.stderr
 
-# Test 215: Flatbuffer Multilabel Test
+# Test 219: Flatbuffer Multilabel Test
 {VW} --multilabel_oaa 10 -d train-sets/multilabel.fb \
      --flatbuffer
         train-sets/ref/multilabel_fb.stderr
 
-# Test 216: Flatbuffer Mutliclass Test
+# Test 220: Flatbuffer Mutliclass Test
 {VW} -d train-sets/multiclass.fb -k --ect 10 \
      --flatbuffer
          train-sets/ref/multiclass_fb.stderr
-
-# Test 217: Flatbuffer CS Test
+         
+# Test 221: Flatbuffer CS Test
 {VW} -k -d train-sets/cs.fb --invariant \
      --csoaa_ldf multiline --flatbuffer
          train-sets/ref/cs_fb.stderr
 
-# Test 218: Flatbuffer CB_eval test
+# Test 222: Flatbuffer CB_eval test
 {VW} -d train-sets/cb_eval.fb --cb 2 --eval \
      --flatbuffer
          train-sets/ref/cb_eval_fb.stderr
 
-# Test 219: Flatbuffer no label Test (LDA)
+# Test 223: Flatbuffer no label Test (LDA)
 {VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/no_label.fb --flatbuffer
          train-sets/ref/no_label_fb.stderr
 
-# Test 220: Flatbuffer CCB Label Test
+# Test 224: Flatbuffer CCB Label Test
 {VW} --ccb_explore_adf -d train-sets/ccb.fb \
      --flatbuffer
-         train-sets/ref/ccb_fb.stderr
+         train-sets/ref/ccb_fb.stderrref/plt_top1_multilabel.predict
+
+
 
 # Do not delete this line or the empty line above it
