@@ -162,7 +162,13 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
       THROW("Slates action labels must be of the form: slates action <slot_id>");
     }
 
-    ld.slot_id = int_of_string(words[2]);
+    char* char_after_int = nullptr;
+    ld.slot_id = int_of_string(words[2], char_after_int);
+    if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
+    {
+      THROW("Slot id seems to be malformed");
+    }
+
     ld.type = example_type::action;
   }
   else if (type == SLOT_TYPE)
