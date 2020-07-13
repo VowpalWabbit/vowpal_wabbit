@@ -102,6 +102,12 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
 
   {
     auto label = scoped_calloc_or_throw<VW::slates::label>();
+    BOOST_REQUIRE_THROW(parse_label(lp, &p, "slates action 1,1", *label.get()), VW::vw_exception);
+    lp.delete_label(label.get());
+  }
+
+  {
+    auto label = scoped_calloc_or_throw<VW::slates::label>();
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "slates slot 0:0,1:0.5", *label.get()), VW::vw_exception);
     lp.delete_label(label.get());
   }
