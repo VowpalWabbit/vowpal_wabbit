@@ -10,16 +10,16 @@
 #include <arpa/inet.h>
 #endif
 #include <sys/timeb.h>
-#include "../../vowpalwabbit/parse_args.h"
-#include "../../vowpalwabbit/parse_regressor.h"
-#include "../../vowpalwabbit/accumulate.h"
-#include "../../vowpalwabbit/best_constant.h"
-#include "../../vowpalwabbit/vw_exception.h"
+#include "parse_args.h"
+#include "parse_regressor.h"
+#include "accumulate.h"
+#include "best_constant.h"
+#include "vw_exception.h"
 #include <fstream>
 
-#include "../../vowpalwabbit/vw.h"
-#include "../../vowpalwabbit/options.h"
-#include "../../vowpalwabbit/options_boost_po.h"
+#include "vw.h"
+#include "options.h"
+#include "options_boost_po.h"
 #include "vw_to_flat.h"
 
 using namespace VW::config;

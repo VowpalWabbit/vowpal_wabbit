@@ -598,7 +598,7 @@ VW_WARNING_STATE_POP
         all.flat_converter->init();
 
         all.p->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
-        all.p->text_reader = VW::parsers::flatbuffer::read_flatbuffer;
+        // all.p->text_reader = VW::parsers::flatbuffer::read_flatbuffer;
       }
       else
       {

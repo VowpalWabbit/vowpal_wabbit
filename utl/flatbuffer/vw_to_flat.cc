@@ -7,15 +7,15 @@
 #include <vector>
 
 #include "vw_to_flat.h"
-#include "../../vowpalwabbit/vw.h"
-#include "../../vowpalwabbit/options.h"
-#include "../../vowpalwabbit/parse_args.h"
-#include "../../vowpalwabbit/parse_regressor.h"
-#include "../../vowpalwabbit/accumulate.h"
-#include "../../vowpalwabbit/best_constant.h"
-#include "../../vowpalwabbit/vw_exception.h"
-#include "../../vowpalwabbit/options_boost_po.h"
-#include "../../vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
+#include "vw.h"
+#include "options.h"
+#include "parse_args.h"
+#include "parse_regressor.h"
+#include "accumulate.h"
+#include "best_constant.h"
+#include "vw_exception.h"
+#include "options_boost_po.h"
+#include "parser/flatbuffer/generated/example_generated.h"
 
 to_flat::to_flat() : _builder(1) {};
 
@@ -173,9 +173,9 @@ void to_flat::create_no_label(example* v, flatbuffers::Offset<void>& label, VW::
 void to_flat::convert_txt_to_flat(vw& all)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> examplecollection;
-  example* v = all.p->ready_parsed_examples.pop();
+  example* ae = all.p->ready_parsed_examples.pop();
   int examples = 0;
-  while (v!=nullptr && !v->end_pass)
+  while (ae!=nullptr && !ae->end_pass)
   {
     // Create Label for current example
     flatbuffers::Offset<void> label;
@@ -183,31 +183,31 @@ void to_flat::convert_txt_to_flat(vw& all)
     switch (all.label_type)
     {
     case label_type_t::nolabel:
-      to_flat::create_no_label(v, label, label_type);
+      to_flat::create_no_label(ae, label, label_type);
       break;
     case label_type_t::cb:
-      to_flat::create_cb_label(v, label, label_type);
+      to_flat::create_cb_label(ae, label, label_type);
       break;
     case label_type_t::ccb:
-      to_flat::create_ccb_label(v, label, label_type);
+      to_flat::create_ccb_label(ae, label, label_type);
       break;
     case label_type_t::multi:
-      to_flat::create_multi_label(v, label, label_type);
+      to_flat::create_multi_label(ae, label, label_type);
       break;
     case label_type_t::mc:
-      to_flat::create_mc_label(v, label, label_type);
+      to_flat::create_mc_label(ae, label, label_type);
       break;
     case label_type_t::cs:
-      to_flat::create_cs_label(v, label, label_type);
+      to_flat::create_cs_label(ae, label, label_type);
       break;
     case label_type_t::cb_eval:
-      to_flat::create_cb_eval_label(v, label, label_type);
+      to_flat::create_cb_eval_label(ae, label, label_type);
       break;
     case label_type_t::slates:
-      to_flat::create_slates_label(v, label, label_type);
+      to_flat::create_slates_label(ae, label, label_type);
       break;
     case label_type_t::simple:
-      to_flat::create_simple_label(v, label, label_type);
+      to_flat::create_simple_label(ae, label, label_type);
       break;
     default:
       THROW("Unknown label type");
@@ -216,31 +216,31 @@ void to_flat::convert_txt_to_flat(vw& all)
 
     uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
     if (multiplier != 1) {
-      for (features& fs : *v) {
+      for (features& fs : *ae) {
         for (auto& j : fs.indicies) {j /= multiplier;}
       }
     }
     std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
-    for (namespace_index& ns : v->indices)
+    for (const namespace_index& ns : ae->indices)
     {
       // Skip over constant namespace as that will be assigned while reading flatbuffer again
       if (ns==128) {continue;}
 
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
 
-      for (features::iterator& f : v->feature_space[ns]){
+      for (features::iterator& f : ae->feature_space[ns]){
         fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index()));
       }
       namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts));
     }
-    std::string tag(v->tag.begin(), v->tag.size());
+    std::string tag(ae->tag.begin(), ae->tag.size());
 
     auto flat_namespaces = _builder.CreateVector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>>(namespaces);
     auto flat_example = VW::parsers::flatbuffer::CreateExample(_builder, flat_namespaces, label_type, label.Union(), _builder.CreateString(tag.data()));
     examplecollection.push_back(flat_example);
 
     examples++;
-    v = all.p->ready_parsed_examples.pop();
+    ae = all.p->ready_parsed_examples.pop();
   }
 
   all.trace_message << "\nLabel type " << get_label_string(all.label_type) << std::endl;

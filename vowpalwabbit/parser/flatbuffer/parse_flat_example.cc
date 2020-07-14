@@ -95,25 +95,24 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
 
 void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
 {
-  uint8_t temp_index;
+  namespace_index temp_index;
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)){
     temp_index = (uint8_t)ns->name()->c_str()[0];
-    ae->indices.push_back(temp_index);
     _c_hash = all->p->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
   }
   else {
-    ae->indices.push_back(ns->hash());
     temp_index = ns->hash();
   }
+  ae->indices.push_back(temp_index);
 
   auto& fs = ae->feature_space[temp_index];
 
   for (size_t j = 0; j < ns->features()->size(); j++){
-    parse_features(all, ae, fs, ns->features()->Get(j));
+    parse_features(all, fs, ns->features()->Get(j));
   }
 }
 
-void parser::parse_features(vw* all, example* ae, features& fs, const Feature* feature)
+void parser::parse_features(vw* all, features& fs, const Feature* feature)
 {
   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME)){
     uint64_t word_hash = all->p->hasher(feature->name()->c_str(), feature->name()->Length(), _c_hash);

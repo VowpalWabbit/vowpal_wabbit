@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "../../vowpalwabbit/vw.h"
-#include "../../vowpalwabbit/parser/flatbuffer/generated/example_generated.h"
-#include "../../vowpalwabbit/simple_label.h"
+#include "vw.h"
+#include "parser/flatbuffer/generated/example_generated.h"
+#include "simple_label.h"
 #include "flatbuffers/flatbuffers.h"
 
 
