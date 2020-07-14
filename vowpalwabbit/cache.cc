@@ -68,24 +68,31 @@ size_t read_cached_feature(vw *all, std::vector<char>& line, size_t&)
   io_item result;
 
   result = (*all).p->_io_state.pop_io_queue();
-  std::cout << "r_c_f result.message.data(): " << result.message.data() << std::endl;
-  (*all).p->_io_state.add_to_queue(result.message.data(), result.message.size());
 
   line = std::move(result.message);
-  std::cout << "line in read_cached_feature: " << line.data() << std::endl;
-  std::cout << "line size r_c_f: " << line.size() << std::endl;
 
   return line.size();
+
+}
+
+
+void notify_examples_cache(vw& all, example *ex)
+{
+
+  if (ex && ex != nullptr) {
+    ex->done_parsing.store(true);
+  
+    all.p->example_parsed.notify_one();
+  }
 
 }
 
 int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 {
 
-  std::cout << "read_cached_features" << std::endl;
+  std::cout << "read_cached_feature single example" << std::endl;
 
   size_t total = all->p->lp.read_cached_label(all->p->_shared_data, &ae->l, *input);
-  std::cout << "total: " << total << std::endl;
 
   if (total == 0)
     return 0;
@@ -150,10 +157,13 @@ int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
     all->p->input->set(c);
   }
 
+  std::cout << "total: " << total << std::endl;
   return (int)total;
 }
 
 int read_cached_features(vw* all, v_array<example*>& examples) {
+
+  std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
 
   std::cout << "read_cached_features" << std::endl;
 
@@ -162,42 +172,50 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
   size_t num_chars;
   size_t num_chars_initial;
 
-  {
+  //{
 
-    //lock in p_d_l
-    std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
+   // std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
 
     //a line is popped off of the io queue in read_features
     num_chars_initial = read_cached_feature(all, line, num_chars);
 
     std::cout << "num_chars_initial: " << num_chars_initial << std::endl;
 
-    if(examples.size() > 0){
-      (*all).p->ready_parsed_examples.push(examples[0]);
-    }
-
- }
+ //}
 
  //convert to io_buf -> parse, using create_buffer_view.
 
   io_buf buf;
-//  if(line.size() > 0) {
+  if(line.size() > 0) {
     std::cout << "add file to buf" << std::endl;
     buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
- // }
-
-  std::cout << "(int)examples.size(): " << (int)examples.size() << std::endl;
+  }
 
   int total_num_read = 0;
-  for (int index = 0; index < (int)examples.size(); index++) {
-    example *ae = examples[index];
-    int new_num_read = read_cached_features_single_example(all, ae, &buf);
+
+  bool should_read = true;
+  while (should_read) {
+
+    if (examples.size() > 0) {
+       (*all).p->ready_parsed_examples.push(examples[0]);
+    }   
+
+    int new_num_read = read_cached_features_single_example(all, examples[0], &buf);
+    //notify here
     total_num_read += new_num_read;
+
+    if(new_num_read == 0) {
+      should_read = false;
+    } 
+
+    notify_examples_cache(*all, examples[0]);
+
   }
 
   std::cout << "total_num_read: " << total_num_read << std::endl;
 
   return total_num_read;
+
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
