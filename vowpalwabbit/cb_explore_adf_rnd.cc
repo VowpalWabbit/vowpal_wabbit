@@ -68,7 +68,7 @@ struct cb_explore_adf_rnd
   void base_learn_or_predict(VW::LEARNER::multi_learner&, multi_ex&, uint32_t);
 
  public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, size_t _numrnd, size_t _increment, vw* _all)
+  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, vw* _all)
       : epsilon(_epsilon)
       , alpha(_alpha)
       , sqrtinvlambda(std::sqrt(_invlambda))
