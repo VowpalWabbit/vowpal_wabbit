@@ -8,7 +8,7 @@ that we find useful to increase the productivitity of everyone involved.
 
 1. Make a proposal.
 1. Implement the proposal and its tests.
-1. Squash commits and write a good commit message.
+1. Write a good commit message.
 1. Start a pull request & address comments.
 1. Merge.
 
