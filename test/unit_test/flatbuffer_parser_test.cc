@@ -106,7 +106,6 @@ BOOST_AUTO_TEST_CASE(check_parsed_flatbuffer_examples)
   BOOST_CHECK_CLOSE(examples[0]->l.simple.weight, 1.f, FLOAT_TOL);
 
   BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
-  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].indicies[0], constant);
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
   VW::finish_example(*all, examples);
   VW::finish(*all);

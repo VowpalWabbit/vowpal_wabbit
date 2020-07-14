@@ -1854,7 +1854,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 216: check plt top-1 prediction
 {VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
     train-sets/ref/plt_top1_multilabel_predict.stderr
-    pred-sets/# Test 213: Flatbuffer Simple Label Test
+    pred-sets/ref/plt_top1_multilabel.predict
     
 # Test 217: Flatbuffer Simple Label Test
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb \
@@ -1894,8 +1894,6 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 224: Flatbuffer CCB Label Test
 {VW} --ccb_explore_adf -d train-sets/ccb.fb \
      --flatbuffer
-         train-sets/ref/ccb_fb.stderrref/plt_top1_multilabel.predict
-
-
+         train-sets/ref/ccb_fb.stderr
 
 # Do not delete this line or the empty line above it
