@@ -165,7 +165,7 @@ void reset_source(vw& all, size_t numbits)
       socklen_t size = sizeof(client_address);
       int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
       if (f < 0)
-        THROW("accept: " << strerror(errno));
+        THROW("accept: " << VW::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
       int one = 1;
@@ -180,17 +180,19 @@ void reset_source(vw& all, size_t numbits)
       if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = binary_print_result;
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
         all.p->reader = read_features_string;
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = print_result;
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
         all.print_by_ref = print_result_by_ref;
       }
     }
@@ -319,19 +321,19 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (all.p->bound_sock < 0)
     {
       std::stringstream msg;
-      msg << "socket: " << strerror(errno);
+      msg << "socket: " << VW::strerror_to_string(errno);
       all.oc.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.oc.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      all.oc.trace_message << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.oc.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      all.oc.trace_message << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -355,7 +357,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.oc.trace_message << "getsockname: " << strerror(errno) << endl;
+        all.oc.trace_message << "getsockname: " << VW::strerror_to_string(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
@@ -480,9 +482,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int one = 1;
     setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
     all.print = print_result;
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
     all.print_by_ref = print_result_by_ref;
 
     auto socket = VW::io::wrap_socket_descriptor(f_a);
@@ -500,9 +503,10 @@ IGNORE_DEPRECATED_USAGE_END
       if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = binary_print_result;
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
         all.print_by_ref = binary_print_result_by_ref;
       }
       else
@@ -702,9 +706,10 @@ example& get_unused_example(vw* all)
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-  IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
   ex->in_use = true;
-  IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -911,9 +916,10 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
   ec.in_use = false;
-  IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
   all.p->example_pool.return_object(&ec);
 }
 

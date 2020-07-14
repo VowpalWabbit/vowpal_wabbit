@@ -31,7 +31,7 @@ void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, con
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
   if (t != len)
-    std::cerr << "write error: " << strerror(errno) << std::endl;
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
 }
 
 void delete_action_scores(void* v)

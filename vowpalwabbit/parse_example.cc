@@ -501,7 +501,6 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
       label_space.remove_prefix(tab_idx + 1);
     }
 
-    std::vector<VW::string_view> tokenized;
     tokenize(' ', label_space, all->p->words);
     if (all->p->words.size() > 0 &&
         (all->p->words.back().end() == label_space.end() ||

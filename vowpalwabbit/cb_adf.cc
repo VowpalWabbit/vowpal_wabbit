@@ -344,7 +344,7 @@ void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& fi
   {
     ssize_t t = sink->write(temp, 1);
     if (t != 1)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 

@@ -356,7 +356,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 
       base.learn(*ec1);
     }
-    
+
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
@@ -556,7 +556,7 @@ void global_print_newline(vw& all)
     ssize_t t;
     t = sink->write(temp, 1);
     if (t != 1)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
