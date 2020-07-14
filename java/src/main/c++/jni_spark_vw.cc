@@ -1,7 +1,6 @@
 #include "jni_spark_vw.h"
 #include "vw_exception.h"
 #include "best_constant.h"
-#include "vector_io_buf.h"
 #include "util.h"
 #include "options_serializer_boost_po.h"
 #include <algorithm>
@@ -39,7 +38,6 @@ CriticalArrayGuard::~CriticalArrayGuard()
 
 void* CriticalArrayGuard::data() { return _arr0; }
 
-// Example util
 // VW
 JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initialize(JNIEnv* env, jclass, jstring args)
 {
@@ -64,10 +62,10 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   try
   {
     int size = env->GetArrayLength(model);
-    char* model0 = (char*)modelGuard.data();
+    auto* model0 = reinterpret_cast<const char*>(modelGuard.data());
 
-    // wrap the model inside a vector
-    vector_io_buf buffer(model0, size);
+    io_buf buffer;
+    buffer.add_file(VW::io::create_buffer_view(model0, size));
 
     return (jlong)VW::initialize(g_args.c_str(), &buffer);
   }
@@ -160,7 +158,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRem
     {
       all->do_reset_source = true;
       VW::start_parser(*all);
-      LEARNER::generic_driver(*all);
+      VW::LEARNER::generic_driver(*all);
       VW::end_parser(*all);
     }
   }
@@ -176,14 +174,16 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
 
   try
   {  // save in stl::vector
-    vector_io_buf buffer;
+    auto model_buffer = std::make_shared<std::vector<char>>();
+    io_buf buffer;
+    buffer.add_file(VW::io::create_vector_writer(model_buffer));
     VW::save_predictor(*all, buffer);
 
     // copy to Java
-    jbyteArray ret = env->NewByteArray(buffer._buffer.size());
+    jbyteArray ret = env->NewByteArray(model_buffer->size());
     CHECK_JNI_EXCEPTION(nullptr);
 
-    env->SetByteArrayRegion(ret, 0, buffer._buffer.size(), (const jbyte*)&buffer._buffer[0]);
+    env->SetByteArrayRegion(ret, 0, model_buffer->size(), (const jbyte*)&model_buffer->data()[0]);
     CHECK_JNI_EXCEPTION(nullptr);
 
     return ret;
@@ -374,23 +374,6 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_makeEmpty(JNIEnv* env, jobject exampleObj)
-{
-  INIT_VARS
-
-  try
-  {
-    char empty = '\0';
-    VW::read_line(*all, ex, &empty);
-
-    // VW::setup_example(*all, ex);
-  }
-  catch (...)
-  {
-    rethrow_cpp_exception_as_java_exception(env);
-  }
-}
-
 void addNamespaceIfNotExists(vw* all, example* ex, char ns)
 {
   if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end())
@@ -559,37 +542,6 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setConditionalContextualBanditLabel(JNIEnv* env,
-    jobject exampleObj, jint type, jintArray actions, jdoubleArray costs, jdoubleArray probabilities,
-    jdoubleArray actionIdsToInclude)
-{
-  INIT_VARS
-
-  try
-  {
-    CCB::label* ld = &ex->l.conditional_contextual_bandit;
-
-    switch (type)
-    {
-      case 0:  // shared
-        ld->type = CCB::example_type::shared;
-        break;
-
-      case 1:  // action
-        // TODO
-        break;
-
-      case 2:  // slot
-        // TODO
-        break;
-    }
-  }
-  catch (...)
-  {
-    rethrow_cpp_exception_as_java_exception(env);
-  }
-}
-
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_getPrediction(JNIEnv* env, jobject exampleObj)
 {
   INIT_VARS
@@ -608,7 +560,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_learn(JNI
     all->learn(*ex);
 
     // as this is not a ring-based example it is not free'd
-    LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
+    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
   }
   catch (...)
   {
@@ -627,7 +579,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
     all->predict(*ex);
 
     // as this is not a ring-based example it is not free'd
-    LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
+    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
 
     return getJavaPrediction(env, all, ex);
   }

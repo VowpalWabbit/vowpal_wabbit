@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "cb_explore_adf_bag.h"
 
 #include "cb_explore_adf_common.h"
@@ -40,12 +44,12 @@ struct cb_explore_adf_bag
   ~cb_explore_adf_bag();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
  private:
   template <bool is_learn>
-  void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
 cb_explore_adf_bag::cb_explore_adf_bag(
@@ -55,7 +59,7 @@ cb_explore_adf_bag::cb_explore_adf_bag(
 }
 
 template <bool is_learn>
-void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -76,9 +80,9 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
     uint32_t count = is_learn ? ((_greedify && i == 0) ? 1 : BS::weight_gen(_random_state)) : 0;
 
     if (is_learn && count > 0)
-      LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+      VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
     else
-      LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
+      VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
 
     assert(preds.size() == num_actions);
     for (auto e : preds) _scores[e.action] += e.score;
@@ -92,7 +96,7 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
       _top_actions[preds[0].action] += 1.f;
     if (is_learn)
       for (uint32_t j = 1; j < count; j++)
-        LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+        VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
   }
 
   _action_probs.clear();
@@ -111,7 +115,7 @@ void cb_explore_adf_bag::predict_or_learn_impl(LEARNER::multi_learner& base, mul
 
 cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
 
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -124,7 +128,7 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("bag", bag_size).keep().help("bagging-based exploration"))
       .add(make_option("greedify", greedify).keep().help("always update first policy once in bagging"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
@@ -142,15 +146,15 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   size_t problem_multiplier = bag_size;
-  LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
   auto data = scoped_calloc_or_throw<explore_type>(epsilon, bag_size, greedify, first_only, all.get_random_state());
 
-  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

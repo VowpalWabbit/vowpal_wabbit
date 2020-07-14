@@ -1,11 +1,9 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 
 #include "cb_explore_adf_common.h"
@@ -22,7 +20,7 @@ namespace cb_explore_adf
 {
 namespace cover
 {
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 }  // namespace cover
 }  // namespace cb_explore_adf
 }  // namespace VW

@@ -1,14 +1,12 @@
-/*
-  Copyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <cfloat>
 #include <cerrno>
 #include <algorithm>
 
 #include "reductions.h"
-#include "v_hashmap.h"
 #include "label_dictionary.h"
 #include "vw.h"
 #include "cb_algs.h"
@@ -17,7 +15,7 @@
 #include "vw_versions.h"
 #include "explore.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
@@ -53,40 +51,28 @@ struct cb_adf
 
  public:
   template <bool is_learn>
-  void do_actual_learning(LEARNER::multi_learner& base, multi_ex& ec_seq);
+  void do_actual_learning(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
-  cb_adf(shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
-      : _sd(sd), _model_file_ver(model_file_ver), _rank_all(rank_all), _clip_p(clip_p), _no_predict(no_predict)
+  cb_adf(
+      shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
+      : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
   {
     _gen_cs.cb_type = cb_type;
   }
 
-  void set_scorer(LEARNER::single_learner* scorer)
-  {
-    _gen_cs.scorer = scorer;
-  }
+  void set_scorer(VW::LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
 
-  bool get_rank_all() const
-  {
-    return _rank_all;
-  }
+  bool get_rank_all() const { return _rank_all; }
 
-  const cb_to_cs_adf& get_gen_cs() const
-  {
-    return _gen_cs;
-  }
+  const cb_to_cs_adf& get_gen_cs() const { return _gen_cs; }
 
-  const VW::version_struct* get_model_file_ver() const
-  {
-    return _model_file_ver;
-  }
+  const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 
   ~cb_adf()
   {
     _cb_labels.delete_v();
-    for (auto& prepped_cs_label : _prepped_cs_labels)
-      prepped_cs_label.costs.delete_v();
+    for (auto& prepped_cs_label : _prepped_cs_labels) prepped_cs_label.costs.delete_v();
     _prepped_cs_labels.delete_v();
     _cs_labels.costs.delete_v();
     _backup_weights.delete_v();
@@ -110,8 +96,7 @@ struct cb_adf
 
 CB::cb_class get_observed_cost(multi_ex& examples)
 {
-  CB::label ld;
-  ld.costs = v_init<cb_class>();
+  CB::label* ld = nullptr;
   int index = -1;
   CB::cb_class known_cost;
 
@@ -120,7 +105,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   {
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
     {
-      ld = ec->l.cb;
+      ld = &ec->l.cb;
       index = (int)i;
     }
     ++i;
@@ -135,7 +120,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
     // throw exception();
   }
 
-  known_cost = ld.costs[0];
+  known_cost = ld->costs[0];
   known_cost.action = index;
   return known_cost;
 }
@@ -194,8 +179,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 
   // Lambda is -1 in the call to generate_softmax because in vw, lower score is better; for softmax higher score is
   // better.
-  generate_softmax(
-      -1.0, begin_scores(_a_s), end_scores(_a_s), begin_scores(_prob_s), end_scores(_prob_s));
+  generate_softmax(-1.0, begin_scores(_a_s), end_scores(_a_s), begin_scores(_prob_s), end_scores(_prob_s));
 
   // TODO: Check Marco's example that causes VW to report prob > 1.
 
@@ -217,9 +201,9 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
     _backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action]->weight = example_weight * (1.0f - action_score.score);
+      examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
     else
-      examples[current_action]->weight = example_weight * action_score.score;
+      examples[current_action]->weight *= example_weight * action_score.score;
 
     if (examples[current_action]->weight <= 1e-15)
       examples[current_action]->weight = 0;
@@ -266,13 +250,11 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   uint32_t nf = (uint32_t)examples[_gen_cs.mtr_example]->num_features;
   float old_weight = examples[_gen_cs.mtr_example]->weight;
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p *
-      ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
+  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
-  GEN_CS::call_cs_ldf<true>(
-      base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  GEN_CS::call_cs_ldf<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
@@ -354,16 +336,15 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(const v_array<int>& final_prediction_sink)
+void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
-  for (auto f : final_prediction_sink)
+  for (auto& sink : final_prediction_sink)
   {
-    ssize_t t;
-    t = io_buf::write_file_or_socket(f, temp, 1);
+    ssize_t t = sink->write(temp, 1);
     if (t != 1)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -399,13 +380,16 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)action, 0, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    all.print_by_ref(sink.get(), (float)action, 0, ec.tag);
+  }
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -413,7 +397,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -421,17 +405,16 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  label& ld = ec.l.cb;
-  v_array<CB::cb_class> costs = ld.costs;
+  const auto& costs = ec.l.cb.costs;
 
   if (example_is_newline_not_header(ec))
     return;
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -441,7 +424,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -457,8 +440,8 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
     {
       output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
-      if (all.raw_prediction > 0)
-        all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+      if (all.raw_prediction != nullptr)
+        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
     }
   }
 }
@@ -479,21 +462,17 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
     return;
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), "", read, msg, text);
 
   msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
 }
 
-void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq)
-{
-  c.do_actual_learning<true>(base, ec_seq);
-}
+void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<true>(base, ec_seq); }
 
-void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq)
-{
-  c.do_actual_learning<false>(base, ec_seq);
-}
+void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<false>(base, ec_seq); }
 
 }  // namespace CB_ADF
 using namespace CB_ADF;
@@ -514,7 +493,10 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
-      .add(make_option("clip_p", clip_p).keep().default_value(0.f).help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
+      .add(make_option("clip_p", clip_p)
+               .keep()
+               .default_value(0.f)
+               .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
@@ -556,7 +538,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   }
 
   if (clip_p > 0.f && cb_type == CB_TYPE_SM)
-    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped." << std::endl;
+    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
+                      << std::endl;
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
@@ -584,11 +567,11 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   auto base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  all.label_type = label_type_t::cb;
 
   cb_adf* bare = ld.get();
-  learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn,
-      predict, problem_multiplier, prediction_type::action_scores);
+  learner<cb_adf, multi_ex>& l =
+      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

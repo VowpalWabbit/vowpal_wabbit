@@ -1,3 +1,6 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <cstring>
 #include <cfloat>
 #include "reductions.h"
@@ -5,7 +8,7 @@
 #include "vw_exception.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQstate
@@ -171,13 +174,13 @@ base_learner* lrq_setup(options_i& options, vw& all)
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (auto & lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
   lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
     all.trace_message << "creating low rank quadratic features for pairs: ";
     if (lrq->dropout)
@@ -186,7 +189,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
   for (std::string const& i : lrq->lrpairs)
   {
-    if (!all.quiet)
+    if (!all.logger.quiet)
     {
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
@@ -203,7 +206,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
     maxk = std::max(k, k);
   }
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << std::endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);

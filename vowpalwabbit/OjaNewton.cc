@@ -1,17 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.    Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <string>
 #include "gd.h"
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
-#include <math.h>
+#include <cmath>
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 #define NORM2 (m + 1)
@@ -394,7 +392,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec)
   ON.data.prediction = 0;
   GD::foreach_feature<update_data, make_pred>(*ON.all, ec, ON.data);
   ec.partial_prediction = (float)ON.data.prediction;
-  ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ON.all->logger, ec.partial_prediction);
 }
 
 void update_Z_and_wbar(update_data& data, float x, float& wref)
@@ -452,8 +450,6 @@ void update_normalization(update_data& data, float x, float& wref)
 
 void learn(OjaNewton& ON, base_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // predict
   predict(ON, base, ec);
 
@@ -517,7 +513,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
     ON.initialize_Z(all.weights);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = all.save_resume;
     std::stringstream msg;

@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -12,7 +16,7 @@
 #include "vw.h"
 #include "v_array.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace memory_tree_ns
@@ -20,24 +24,15 @@ namespace memory_tree_ns
 ///////////////////////Helper//////////////////////////////
 //////////////////////////////////////////////////////////
 template <typename T>
-void remove_at_index(v_array<T>& array, uint32_t index)
+void remove_at_index(std::vector<T>& array, uint32_t index)
 {
   if (index >= array.size())
   {
     std::cout << "ERROR: index is larger than the size" << std::endl;
     return;
   }
-  if (index == array.size() - 1)
-  {
-    array.pop();
-    return;
-  }
-  for (size_t i = index + 1; i < array.size(); i++)
-  {
-    array[i - 1] = array[i];
-  }
-  array.pop();
-  return;
+
+  array.erase(array.begin() + index);
 }
 
 void copy_example_data(example* dst, example* src, bool oas = false)  // copy example data.
@@ -67,11 +62,13 @@ inline void free_example(example* ec)
 void diag_kronecker_prod_fs_test(
     features& f1, features& f2, features& prod_f, float& total_sum_feat_sq, float norm_sq1, float norm_sq2)
 {
-  prod_f.delete_v();
+  // originally called delete_v, but that doesn't seem right. Clearing instead
+  //prod_f.~features();
+  prod_f.clear();
   if (f2.indicies.size() == 0)
     return;
 
-  float denominator = pow(norm_sq1 * norm_sq2, 0.5f);
+  float denominator = std::pow(norm_sq1 * norm_sq2, 0.5f);
   size_t idx1 = 0;
   size_t idx2 = 0;
 
@@ -148,7 +145,7 @@ struct node
   double nl;  // number of examples routed to left.
   double nr;  // number of examples routed to right.
 
-  v_array<uint32_t> examples_index;
+  std::vector<uint32_t> examples_index;
 
   node()  // construct:
   {
@@ -161,7 +158,12 @@ struct node
     right = 0;
     nl = 0.001;  // initilze to 1, as we need to do nl/nr.
     nr = 0.001;
-    examples_index = v_init<uint32_t>();
+    // examples_index = v_init<uint32_t>();
+  }
+
+  ~node()
+  {
+    // examples_index.delete_v();
   }
 };
 
@@ -171,7 +173,8 @@ struct memory_tree
   vw* all;
   std::shared_ptr<rand_state> _random_state;
 
-  v_array<node> nodes;         // array of nodes.
+  std::vector<node> nodes;         // array of nodes.
+  // v_array<node> nodes;         // array of nodes.
   v_array<example*> examples;  // array of example points
 
   size_t max_leaf_examples;
@@ -213,7 +216,7 @@ struct memory_tree
 
   memory_tree()
   {
-    nodes = v_init<node>();
+    // nodes = v_init<node>();
     examples = v_init<example*>();
     alpha = 0.5;
     routers_used = 0;
@@ -229,8 +232,7 @@ struct memory_tree
 
   ~memory_tree()
   {
-    for (auto& node : nodes) node.examples_index.delete_v();
-    nodes.delete_v();
+    // nodes.delete_v();
     for (auto ex : examples) free_example(ex);
     examples.delete_v();
     if (kprod_ec)
@@ -269,7 +271,7 @@ float normalized_linear_prod(memory_tree& b, example* ec1, example* ec2)
 {
   flat_example* fec1 = flatten_sort_example(*b.all, ec1);
   flat_example* fec2 = flatten_sort_example(*b.all, ec2);
-  float norm_sqrt = pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
+  float norm_sqrt = std::pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
   float linear_prod = linear_kernel(fec1, fec2);
   // fec1->fs.delete_v();
   // fec2->fs.delete_v();
@@ -303,13 +305,13 @@ void init_tree(memory_tree& b)
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
   std::cout << "tree initiazliation is done...." << std::endl
-       << "max nodes " << b.max_nodes << std::endl
-       << "tree size: " << b.nodes.size() << std::endl
-       << "max number of unique labels: " << b.max_num_labels << std::endl
-       << "learn at leaf: " << b.learn_at_leaf << std::endl
-       << "num of dream operations per example: " << b.dream_repeats << std::endl
-       << "current_pass: " << b.current_pass << std::endl
-       << "oas: " << b.oas << std::endl;
+            << "max nodes " << b.max_nodes << std::endl
+            << "tree size: " << b.nodes.size() << std::endl
+            << "max number of unique labels: " << b.max_num_labels << std::endl
+            << "learn at leaf: " << b.learn_at_leaf << std::endl
+            << "num of dream operations per example: " << b.dream_repeats << std::endl
+            << "current_pass: " << b.current_pass << std::endl
+            << "oas: " << b.oas << std::endl;
 }
 
 // rout based on the prediction
@@ -344,8 +346,8 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
                                                                                                                   : 1.f;
     else
     {
-     std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
-     std::cout << "Error:  nl = 0, and nr = 0, exit...";
+      std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
+      std::cout << "Error:  nl = 0, and nr = 0, exit...";
       exit(0);
     }
 
@@ -503,8 +505,8 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       b.examples[ec_pos]->l.multilabels = multilabels;
     }
   }
-  b.nodes[cn].examples_index.delete_v();                                                  // empty the cn's example list
-  b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001);  // avoid to set nl to zero
+  b.nodes[cn].examples_index.clear();                                                    // empty the cn's example list
+  b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001);   // avoid to set nl to zero
   b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
@@ -1027,11 +1029,11 @@ void learn(memory_tree& b, single_learner& base, example& ec)
     if (b.iter % 5000 == 0)
     {
       if (b.oas == false)
-       std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
-             << ", total num queires so far: " << b.total_num_queries << ", max depth: " << b.max_depth
-             << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
+        std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
+                  << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
+                  << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       else
-       std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
     }
 
     clock_t begin = clock();
@@ -1075,7 +1077,7 @@ void end_pass(memory_tree& b)
 {
   b.current_pass++;
   std::cout << "######### Current Pass: " << b.current_pass
-       << ", with number of memories strored so far: " << b.examples.size() << std::endl;
+            << ", with number of memories strored so far: " << b.examples.size() << std::endl;
 }
 
 ///////////////////Save & Load//////////////////////////////////////
@@ -1167,7 +1169,7 @@ void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::s
 void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     if (read)
       b.test_mode = true;
@@ -1214,7 +1216,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
       }
     }
     for (uint32_t i = 0; i < n_examples; i++) save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
-    //std::cout<<"done loading...."<< std::endl;
+    // std::cout<<"done loading...."<< std::endl;
   }
 }
 //////////////////////////////End of Save & Load///////////////////////////////
@@ -1242,7 +1244,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .default_value(1)
                .help("number of dream operations per example (default = 1)"))
       .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
-      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (defualt = True)"))
+      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (default = True)"))
       .add(make_option("oas", tree->oas).help("use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
@@ -1263,7 +1265,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
 
   init_tree(*tree);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "memory_tree:"
                       << " "
                       << "max_nodes = " << tree->max_nodes << " "
@@ -1290,10 +1292,10 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
     learner<memory_tree, example>& l = init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type::multilabels);
+        tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type_t::multilabels);
 
     // all.p->lp = MULTILABEL::multilabel;
-    // all.label_type = label_type::multi;
+    // all.label_type = label_type_t::multi;
     // all.delete_prediction = MULTILABEL::multilabel.delete_label;
     // srand(time(0));
     l.set_end_pass(end_pass);
@@ -1301,7 +1303,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     // l.set_end_pass(end_pass);
 
     all.p->lp = MULTILABEL::multilabel;
-    all.label_type = label_type::multi;
+    all.label_type = label_type_t::multi;
     all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
     return make_base(l);

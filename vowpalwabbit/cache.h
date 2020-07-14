@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 #include "v_array.h"
 #include "io_buf.h"
@@ -19,5 +18,5 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
 
 namespace VW
 {
-  uint32_t convert(size_t number);
+uint32_t convert(size_t number);
 }

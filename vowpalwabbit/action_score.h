@@ -1,4 +1,13 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
+
+#include "io/io_adapter.h"
+#include <iterator>
+#include "v_array.h"
+
 namespace ACTION_SCORE
 {
 struct action_score
@@ -70,7 +79,7 @@ inline int score_comp(const void* p1, const void* p2)
 
 inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2, p1); }
 
-void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&);
+void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>&);
 
 void delete_action_scores(void* v);
 }  // namespace ACTION_SCORE

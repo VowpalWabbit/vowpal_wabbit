@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <cstdio>
@@ -252,7 +251,8 @@ class beam
           if (is_equivalent(A[i].data, A[j].data))
           {
             A[j].active = false;  // TODO: if kbest is on, do recomb_friends
-            // std::cerr << "equivalent " << i << "," << j << ": " << ((size_t)A[i].data) << " and " << ((size_t)A[j].data)
+            // std::cerr << "equivalent " << i << "," << j << ": " << ((size_t)A[i].data) << " and " <<
+            // ((size_t)A[j].data)
             // << std::endl;
           }
         }

@@ -1,8 +1,6 @@
-/*
- Copyright (c) by respective owners including Yahoo!, Microsoft, and
- individual contributors. All rights reserved.  Released under a BSD (revised)
- license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 /*
  * Implementation of online boosting algorithms from
@@ -10,11 +8,11 @@
  *    ICML-2015.
  */
 
-#include <float.h>
-#include <limits.h>
-#include <math.h>
+#include <cfloat>
+#include <climits>
+#include <cmath>
 #include "correctedMath.h"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -24,7 +22,7 @@
 #include "vw.h"
 #include "rand48.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 using std::cerr;
@@ -74,7 +72,7 @@ struct boosting
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -142,7 +140,7 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -200,7 +198,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, examp
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -294,7 +292,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
 
 void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
@@ -358,7 +356,7 @@ void return_example(vw& all, boosting& /* a */, example& ec)
 
 void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
@@ -381,7 +379,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
 
-  if (!o.all->quiet)
+  if (!o.all->logger.quiet)
   {
     if (read)
       cerr << "Loading alpha: " << endl;
@@ -393,7 +391,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   }
 }
 
-LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 {
   free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
   option_group_definition new_options("Boosting");
@@ -418,9 +416,9 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     cerr << "Number of weak learners = " << data->N << endl;
-  if (!all.quiet)
+  if (!all.logger.quiet)
     cerr << "Gamma = " << data->gamma << endl;
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));

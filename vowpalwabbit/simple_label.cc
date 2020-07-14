@@ -1,17 +1,22 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <cstring>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 
 #include "cache.h"
 #include "accumulate.h"
 #include "best_constant.h"
-
+#include "vw_string_view.h"
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   memcpy(&ld->label, c, sizeof(ld->label));
-  //  std::cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label << std::endl;
+  //  std::cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<
+  //  std::endl;
   c += sizeof(ld->label);
   memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);
@@ -75,7 +80,7 @@ bool test_label(void* v)
 
 void delete_simple_label(void*) {}
 
-void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
+void parse_simple_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>& words)
 {
   label_data* ld = (label_data*)v;
 
@@ -84,21 +89,21 @@ void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& w
     case 0:
       break;
     case 1:
-      ld->label = float_of_substring(words[0]);
+      ld->label = float_of_string(words[0]);
       break;
     case 2:
-      ld->label = float_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
+      ld->label = float_of_string(words[0]);
+      ld->weight = float_of_string(words[1]);
       break;
     case 3:
-      ld->label = float_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
-      ld->initial = float_of_substring(words[2]);
+      ld->label = float_of_string(words[0]);
+      ld->weight = float_of_string(words[1]);
+      ld->initial = float_of_string(words[2]);
       break;
     default:
-     std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
-     std::cout << std::endl;
+      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
+      for (const auto & word : words) std::cout << word;
+      std::cout << std::endl;
   }
   count_label(sd, ld->label);
 }
@@ -108,8 +113,8 @@ label_parser simple_label = {default_simple_label, parse_simple_label, cache_sim
 
 void print_update(vw& all, example& ec)
 {
-  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
-      !all.bfgs)
+  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
+      !all.logger.quiet && !all.bfgs)
   {
     all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
         all.progress_add, all.progress_arg);
@@ -124,11 +129,10 @@ void output_and_account_example(vw& all, example& ec)
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
+  for (auto& f : all.final_prediction_sink)
   {
-    int f = (int)all.final_prediction_sink[i];
-    all.print(f, ec.pred.scalar, 0, ec.tag);
+    all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag);
   }
 
   print_update(all, ec);

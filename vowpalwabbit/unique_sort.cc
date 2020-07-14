@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "example.h"
 #include "unique_sort.h"
 #include <algorithm>
@@ -23,7 +21,7 @@ void unique_features(features& fs, int max)
         last_index.value() = i.value();
         last_index.index() = i.index();
         if (!fs.space_names.empty())
-          last_index.audit() = i.audit();
+          *last_index.audit() = *i.audit();
       }
 
   ++last_index;

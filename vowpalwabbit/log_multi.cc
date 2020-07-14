@@ -1,16 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved. Released under a BSD (revised)
-license as described in the file LICENSE.node
-*/
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
 #include <sstream>
 
 #include "reductions.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 class node_pred
@@ -22,22 +21,19 @@ class node_pred
   uint32_t label;
   uint32_t label_count;
 
-  bool operator==(node_pred v) { return (label == v.label); }
+  bool operator==(node_pred v) const { return (label == v.label); }
 
-  bool operator>(node_pred v)
+  bool operator>(node_pred v) const
   {
-    if (label > v.label)
-      return true;
-    return false;
+    return label > v.label;
   }
 
-  bool operator<(node_pred v)
+  bool operator<(node_pred v) const
   {
-    if (label < v.label)
-      return true;
-    return false;
+    return label < v.label;
   }
 
+  node_pred() = default;
   node_pred(uint32_t l)
   {
     label = l;
@@ -48,7 +44,9 @@ class node_pred
   }
 };
 
-typedef struct
+static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
+
+struct node
 {
   // everyone has
   uint32_t parent;           // the parent node
@@ -69,7 +67,7 @@ typedef struct
   // leaf has
   uint32_t max_count;        // the number of samples of the most common label
   uint32_t max_count_label;  // the most common label
-} node;
+};
 
 struct log_multi
 {
@@ -158,7 +156,7 @@ inline void update_min_count(log_multi& b, uint32_t node)
 
 void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
-  for (uint32_t i = 0; i < depth; i++)std::cout << "\t";
+  for (uint32_t i = 0; i < depth; i++) std::cout << "\t";
   std::cout << node.min_count << " " << node.left << " " << node.right;
   std::cout << " label = " << node.max_count_label << " labels = ";
   for (size_t i = 0; i < node.preds.size(); i++)
@@ -396,7 +394,7 @@ void save_node_stats(log_multi& d)
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     msg << "k = " << b.k;

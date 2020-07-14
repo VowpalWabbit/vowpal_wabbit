@@ -1,17 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 /*
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
 */
 
 #include <iostream>
-#include <sys/timeb.h>
 #include <cmath>
-#include <stdint.h>
+#include <cstdint>
 #include "global_data.h"
 #include "vw_allreduce.h"
 
@@ -121,7 +119,7 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
     all.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
-  
+
   uint32_t length = 1 << all.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 

@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 // This implements the allreduce function of MPI.
 #pragma once
@@ -13,7 +11,9 @@ license as described in the file LICENSE.
 #ifdef _WIN32
 #define NOMINMAX
 #include <WinSock2.h>
+#include <Windows.h>
 #include <WS2tcpip.h>
+#include <io.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
@@ -44,6 +44,7 @@ typedef int socket_t;
 #include <future>
 #endif
 #include "vw_exception.h"
+#include "vwvis.h"
 #include <cassert>
 
 constexpr size_t ar_buf_size = 1 << 16;

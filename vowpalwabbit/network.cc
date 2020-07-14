@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #ifdef _WIN32
 #define NOMINMAX
 #include <WinSock2.h>
@@ -13,15 +11,12 @@ license as described in the file LICENSE.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#endif
-#include <errno.h>
-#ifndef _WIN32
 #include <netdb.h>
-#include <strings.h>
 #endif
-#include <string.h>
 
-#include <stdlib.h>
+#include <cstring>
+#include <cerrno>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <sstream>

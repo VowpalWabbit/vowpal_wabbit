@@ -1,7 +1,10 @@
-#include "float.h"
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
 #include "gd.h"
 #include "vw.h"
-
 
 namespace MULTILABEL
 {
@@ -90,7 +93,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
   labels* ld = (labels*)v;
 
@@ -102,16 +105,15 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     case 1:
       tokenize(',', words[0], p->parse_name);
 
-      for (size_t i = 0; i < p->parse_name.size(); i++)
+      for (const auto & parse_name : p->parse_name)
       {
-        *(p->parse_name[i].end) = '\0';
-        uint32_t n = atoi(p->parse_name[i].begin);
+        uint32_t n = int_of_string(parse_name);
         ld->label_v.push_back(n);
       }
       break;
     default:
       std::cerr << "example with an odd label, what is ";
-      for (size_t i = 0; i < words.size(); i++) std::cerr << words[i].begin << " ";
+      for (const auto & word : words) std::cerr << word << " ";
       std::cerr << std::endl;
   }
 }
@@ -121,7 +123,7 @@ label_parser multilabel = {default_label, parse_label, cache_label, read_cached_
 
 void print_update(vw& all, bool is_test, example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -176,8 +178,9 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
-    if (sink >= 0)
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (sink != nullptr)
     {
       std::stringstream ss;
 
@@ -188,8 +191,9 @@ void output_example(vw& all, example& ec)
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text(sink, ss.str(), ec.tag);
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
     }
+  }
 
   print_update(all, test_label(&ec.l.multilabels), ec);
 }

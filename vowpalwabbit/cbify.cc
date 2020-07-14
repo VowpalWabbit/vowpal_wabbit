@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw.h"
@@ -6,7 +10,7 @@
 
 #include <vector>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 // using namespace COST_SENSITIVE;
@@ -40,7 +44,7 @@ struct cbify
   std::vector<ACTION_SCORE::action_scores> cb_as;
 
   ~cbify()
-  {   
+  {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
 
@@ -303,8 +307,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
-  COST_SENSITIVE::label& ld = ec.l.cs;
-  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  const auto& costs = ec.l.cs.costs;
 
   if (example_is_newline(ec))
     return;
@@ -334,9 +337,9 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (const auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -347,7 +350,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
@@ -363,10 +366,10 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   bool hit_loss = false;
   for (example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq));
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     v_array<char> empty = {nullptr, nullptr, nullptr, 0};
-    all.print_text(all.raw_prediction, "", empty);
+    all.print_text_by_ref(all.raw_prediction.get(), "", empty);
   }
 }
 
@@ -488,7 +491,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   multi_learner* base = as_multiline(setup_base(options, all));
   learner<cbify, multi_ex>& l = init_learner(
-      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass);
+      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type_t::multiclass);
 
   l.set_finish_example(finish_multiline_example);
   all.p->lp = COST_SENSITIVE::cs_label;

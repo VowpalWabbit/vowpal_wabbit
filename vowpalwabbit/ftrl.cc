@@ -1,13 +1,11 @@
-/*
-   Copyright (c) by respective owners including Yahoo!, Microsoft, and
-   individual contributors. All rights reserved.  Released under a BSD (revised)
-   license as described in the file LICENSE.
-   */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <string>
 #include "correctedMath.h"
 #include "gd.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 #define W_XT 0  // current parameter
@@ -79,7 +77,7 @@ template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit)
     GD::print_audit_features(*(b.all), ec);
 }
@@ -104,7 +102,7 @@ void multipredict(
   if (all.sd->contraction != 1.)
     for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
+    for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
@@ -184,7 +182,7 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
 
   // COCOB update without sigmoid
   if (w[W_MG] * w_mx > 0)
-    w_xt = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]));
+    w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
 
   d.predict += w_xt * x;
   if (w_mx > 0)
@@ -210,7 +208,7 @@ void inner_update_cb_post(update_data& d, float x, float& wref)
   // If a new Lipschitz constant and/or magnitude of x is found, the w is
   // recalculated and used in the update of the wealth below.
   if (w[W_MG] * w[W_MX] > 0)
-    w[W_XT] = (d.ftrl_alpha + w[W_WE]) * w[W_ZT] / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]));
+    w[W_XT] = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w[W_MX] * (w[W_MG] * w[W_MX] + w[W_G2]))) * w[W_ZT];
   else
     w[W_XT] = 0;
 
@@ -231,7 +229,7 @@ void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
 
   ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
@@ -240,7 +238,7 @@ void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 
   GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
   ec.partial_prediction = b.data.predict;
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_after_prediction_proximal(ftrl& b, example& ec)
@@ -267,8 +265,6 @@ void update_after_prediction_cb(ftrl& b, example& ec)
 template <bool audit>
 void learn_proximal(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // predict with confidence
   predict<audit>(a, base, ec);
 
@@ -278,8 +274,6 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
 
 void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
 
@@ -289,8 +283,6 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
 
 void learn_cb(ftrl& a, single_learner& base, example& ec)
 {
-  assert(ec.in_use);
-
   // update state based on the example and predict
   update_state_and_predict_cb(a, base, ec);
 
@@ -304,7 +296,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
   if (read)
     initialize_regressor(*all);
 
-  if (!model_file.files.empty())
+  if (model_file.num_files() != 0)
   {
     bool resume = all->save_resume;
     std::stringstream msg;
@@ -407,7 +399,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->data.l1_lambda = b->all->l1_lambda;
   b->data.l2_lambda = b->all->l2_lambda;
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
   {
     std::cerr << "Enabling FTRL based optimization" << std::endl;
     std::cerr << "Algorithm used: " << algorithm_name << std::endl;

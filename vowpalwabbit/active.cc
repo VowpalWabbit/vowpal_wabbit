@@ -1,12 +1,17 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <cerrno>
+#include <cfloat>
+
 #include "reductions.h"
 #include "rand48.h"
-#include <cfloat>
 #include "vw.h"
 #include "active.h"
 #include "vw_exception.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
@@ -84,21 +89,31 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(int f, float res, float weight, v_array<char> tag)
+void active_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag)
 {
-  if (f >= 0)
+  if (f == nullptr)
   {
-    std::stringstream ss;
-    ss << std::fixed << res;
-    if (!print_tag(ss, tag))
-      ss << ' ';
-    if (weight >= 0)
-      ss << " " << std::fixed << weight;
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+    return;
+  }
+
+  std::stringstream ss;
+  ss << std::fixed << res;
+  if (!print_tag_by_ref(ss, tag))
+  {
+    ss << ' ';
+  }
+
+  if (weight >= 0)
+  {
+    ss << " " << std::fixed << weight;
+  }
+  ss << '\n';
+  const auto ss_str = ss.str();
+  ssize_t len = ss_str.size();
+  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -115,10 +130,10 @@ void output_and_account_example(vw& all, active& a, example& ec)
   if (ld.label == FLT_MAX)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
-  all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (auto i : all.final_prediction_sink)
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
+  for (auto& i : all.final_prediction_sink)
   {
-    active_print_result(i, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i.get(), ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);

@@ -7,7 +7,7 @@ Reading datafile = train-sets/malformed.dat
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-vw example #0(parse_example.cc:85): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+vw example #0(parse_example.cc:88): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
 
-vw (parse_example.cc:85): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+vw (parse_example.cc:88): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
 

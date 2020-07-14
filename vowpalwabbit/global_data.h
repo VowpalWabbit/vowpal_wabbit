@@ -1,21 +1,23 @@
-
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 #include <iostream>
 #include <iomanip>
 #include <vector>
 #include <map>
 #include <cfloat>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
 #include <stack>
+#include <unordered_map>
+#include <string>
 #include <array>
+#include <memory>
+#include <atomic>
+#include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
@@ -32,101 +34,83 @@ license as described in the file LICENSE.
 #include "array_parameters.h"
 #include "parse_primitives.h"
 #include "loss_functions.h"
-#include "comp_io.h"
 #include "example.h"
 #include "config.h"
 #include "learner.h"
-#include "v_hashmap.h"
 #include <time.h>
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
 #include "constant.h"
 #include "rand48.h"
+#include "hashstring.h"
+#include "decision_scores.h"
+#include "feature_group.h"
 
 #include "options.h"
 #include "version.h"
-#include <memory>
 
 typedef float weight;
 
-typedef v_hashmap<substring, features*> feature_dict;
+typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
 
 struct dictionary_info
 {
-  char* name;
+  std::string name;
   uint64_t file_hash;
-  feature_dict* dict;
+  std::shared_ptr<feature_dict> dict;
 };
-
-inline void deleter(substring ss, uint64_t /* label */) { free_it(ss.begin); }
 
 class namedlabels
 {
  private:
-  std::vector<substring> id2name;
-  v_hashmap<substring, uint64_t> name2id;
-  uint32_t K;
+  // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
+  std::string m_label_list;
+  std::vector<VW::string_view> m_id2name;
+  std::unordered_map<VW::string_view, uint32_t> m_name2id;
+  uint32_t m_K;
 
  public:
-  namedlabels(std::string label_list)
+  namedlabels(const std::string& label_list) : m_label_list(label_list)
   {
-    char* temp = calloc_or_throw<char>(1 + label_list.length());
-    memcpy(temp, label_list.c_str(), strlen(label_list.c_str()));
-    substring ss = {temp, nullptr};
-    ss.end = ss.begin + label_list.length();
-    tokenize(',', ss, id2name);
+    tokenize(',', m_label_list, m_id2name);
 
-    K = (uint32_t)id2name.size();
-    name2id.delete_v();  // delete automatically allocated vector.
-    name2id.init(4 * K + 1, 0, substring_equal);
-    for (size_t k = 0; k < K; k++)
+    m_K = static_cast<uint32_t>(m_id2name.size());
+    m_name2id.max_load_factor(0.25);
+    m_name2id.reserve(m_K);
+
+    for (uint32_t k = 0; k < m_K; k++)
     {
-      substring& l = id2name[k];
-      uint64_t hash = uniform_hash((unsigned char*)l.begin, l.end - l.begin, 378401);
-      uint64_t id = name2id.get(l, hash);
-      if (id != 0)  // TODO: memory leak: char* temp
+      const VW::string_view& l = m_id2name[static_cast<size_t>(k)];
+      auto iter = m_name2id.find(l);
+      if (iter != m_name2id.end())
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
-      size_t len = l.end - l.begin;
-      substring l_copy = {calloc_or_throw<char>(len), nullptr};
-      memcpy(l_copy.begin, l.begin, len * sizeof(char));
-      l_copy.end = l_copy.begin + len;
-      name2id.put(l_copy, hash, k + 1);
+      m_name2id.emplace(l, k + 1);
     }
   }
 
-  ~namedlabels()
-  {
-    if (id2name.size() > 0)
-      free(id2name[0].begin);
-    name2id.iter(deleter);
-    name2id.delete_v();
-  }
+  uint32_t getK() { return m_K; }
 
-  uint32_t getK() { return K; }
-
-  uint64_t get(substring& s)
+  uint32_t get(VW::string_view s) const
   {
-    uint64_t hash = uniform_hash((unsigned char*)s.begin, s.end - s.begin, 378401);
-    uint64_t v = name2id.get(s, hash);
-    if (v == 0)
+    auto iter = m_name2id.find(s);
+    if (iter == m_name2id.end())
     {
-      std::cerr << "warning: missing named label '";
-      for (char* c = s.begin; c != s.end; c++) std::cerr << *c;
-      std::cerr << '\'' << std::endl;
+      std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
+      return 0;
     }
-    return v;
+    return iter->second;
   }
 
-  substring get(uint32_t v)
+  VW::string_view get(uint32_t v) const
   {
-    if ((v == 0) || (v > K))
+    static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is smaller than 32-bits. Potential overflow issues.");
+    if ((v == 0) || (v > m_K))
     {
-      substring ss = {nullptr, nullptr};
-      return ss;
+      return VW::string_view();
     }
     else
-      return id2name[v - 1];
+      return m_id2name[static_cast<size_t>(v - 1)];
   }
 };
 
@@ -167,9 +151,9 @@ struct shared_data
   double multiclass_log_loss;
   double holdout_multiclass_log_loss;
 
-  bool is_more_than_two_labels_observed;
-  float first_observed_label;
-  float second_observed_label;
+  std::atomic<bool> is_more_than_two_labels_observed;
+  std::atomic<float> first_observed_label;
+  std::atomic<float> second_observed_label;
 
   // Column width, precision constants:
   static constexpr int col_avg_loss = 8;
@@ -337,10 +321,7 @@ enum AllReduceType
 
 class AllReduce;
 
-// avoid name clash
-namespace label_type
-{
-enum label_type_t
+enum class label_type_t
 {
   simple,
   cb,       // contextual-bandit
@@ -348,9 +329,9 @@ enum label_type_t
   cs,       // cost-sensitive
   multi,
   mc,
-  ccb  // conditional contextual-bandit
+  ccb,  // conditional contextual-bandit
+  slates
 };
-}
 
 struct rand_state
 {
@@ -362,8 +343,21 @@ struct rand_state
   rand_state(uint64_t initial) : random_state(initial) {}
   constexpr uint64_t get_current_state() const noexcept { return random_state; }
   float get_and_update_random() { return merand48(random_state); }
+  float get_and_update_gaussian() { return merand48_boxmuller(random_state); }
   float get_random() const { return merand48_noadvance(random_state); }
   void set_random_state(uint64_t initial) noexcept { random_state = initial; }
+};
+
+struct vw_logger
+{
+  bool quiet;
+
+  vw_logger()
+    : quiet(false) {
+  }
+
+  vw_logger(const vw_logger& other) = delete;
+  vw_logger& operator=(const vw_logger& other) = delete;
 };
 
 struct vw
@@ -380,9 +374,11 @@ struct vw
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
-  LEARNER::base_learner* l;               // the top level learner
-  LEARNER::single_learner* scorer;        // a scoring function
-  LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  bool chain_hash = false;
+
+  VW::LEARNER::base_learner* l;               // the top level learner
+  VW::LEARNER::single_learner* scorer;        // a scoring function
+  VW::LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -431,7 +427,7 @@ struct vw
 
   uint32_t wpp;
 
-  int stdout_fileno;
+  std::unique_ptr<VW::io::writer> stdout_adapter;
 
   std::vector<std::string> initial_regressors;
 
@@ -454,38 +450,38 @@ struct vw
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::string> interactions;
-  // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> pairs;  // pairs of features to cross.
-  // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::string> triples;  // triples of features to cross.
+  std::vector<std::vector<namespace_index>> interactions;
   bool ignore_some;
-  std::array<bool, NUM_NAMESPACES> ignore; // a set of namespaces to ignore
+  std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
   std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
 
-  bool redefine_some;           // --redefine param was used
-  std::array<unsigned char, NUM_NAMESPACES> redefine; // keeps new chars for namespaces
+  bool redefine_some;                                  // --redefine param was used
+  std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
   std::vector<std::string> ngram_strings;
   std::vector<std::string> skip_strings;
-  std::array<uint32_t, NUM_NAMESPACES> ngram;                       // ngrams to generate.
-  std::array<uint32_t, NUM_NAMESPACES> skips;                       // skips in ngrams.
-  std::vector<std::string> limit_strings;    // descriptor of feature limits
-  std::array<uint32_t, NUM_NAMESPACES> limit;                       // count to limit features by
-  std::array<uint64_t, NUM_NAMESPACES> affix_features;              // affixes to generate (up to 16 per namespace - 4 bits per affix)
-  std::array<bool, NUM_NAMESPACES> spelling_features;               // generate spelling features for which namespace
-  std::vector<std::string> dictionary_path;  // where to look for dictionaries
+  std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
+  std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
+  std::vector<std::string> limit_strings;      // descriptor of feature limits
+  std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
+  std::array<uint64_t, NUM_NAMESPACES>
+      affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
+  std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
+  std::vector<std::string> dictionary_path;            // where to look for dictionaries
 
+  // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
+  // use shared pointers to avoid the question of ownership
+  std::vector<dictionary_info> loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
   // This array is required to be value initialized so that the std::vectors are constructed.
-  std::array<std::vector<feature_dict*>, NUM_NAMESPACES> namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
-  std::vector<dictionary_info> loaded_dictionaries;        // which dictionaries have we loaded from a file to memory?
+  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
+      namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
   void (*delete_prediction)(void*);
+  vw_logger logger;
   bool audit;     // should I print lots of debugging information?
-  bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?
   bool active;
-  bool invariant_updates;   // Should we use importance aware/safe updates
+  bool invariant_updates;  // Should we use importance aware/safe updates
   uint64_t random_seed;
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
@@ -510,19 +506,26 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
-  v_array<int> final_prediction_sink;  // set to send global predictions to.
-  int raw_prediction;                  // file descriptors for text output.
+  std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
+  std::unique_ptr<VW::io::writer> raw_prediction;                  // file descriptors for text output.
 
-  void (*print)(int, float, float, v_array<char>);
-  void (*print_text)(int, std::string, v_array<char>);
+  VW_DEPRECATED("print has been deprecated, use print_by_ref")
+  void (*print)(VW::io::writer*, float, float, v_array<char>);
+  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&);
+  VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
+  void (*print_text)(VW::io::writer*, std::string, v_array<char>);
+  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
   loss_function* loss;
 
+  VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   bool stdin_off;
+
+  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
 
   // runtime accounting variables.
   float initial_t;
@@ -543,11 +546,12 @@ struct vw
   bool progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;  // next update progress dump multiplier
 
-  std::map<std::string, size_t> name_index_map;
+  std::map<uint64_t, std::string> index_name_map;
 
-  label_type::label_type_t label_type;
+  label_type_t label_type;
 
   vw();
+  ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
 
   vw(const vw&) = delete;
@@ -559,10 +563,20 @@ struct vw
   vw& operator=(const vw&&) = delete;
 };
 
-void print_result(int f, float res, float weight, v_array<char> tag);
-void binary_print_result(int f, float res, float weight, v_array<char> tag);
+VW_DEPRECATED("Use print_result_by_ref instead")
+void print_result(VW::io::writer* f, float res, float weight, v_array<char> tag);
+void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
+
+VW_DEPRECATED("Use binary_print_result_by_ref instead")
+void binary_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag);
+void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
+
 void noop_mm(shared_data*, float label);
-void get_prediction(int sock, float& res, float& weight);
-void compile_gram(std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
+void get_prediction(VW::io::reader* f, float& res, float& weight);
+void compile_gram(
+    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
+
+VW_DEPRECATED("Use print_tag_by_ref instead")
 int print_tag(std::stringstream& ss, v_array<char> tag);
+int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);

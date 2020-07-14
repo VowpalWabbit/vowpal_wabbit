@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <sstream>
 #include <cfloat>
 #include "reductions.h"
@@ -18,11 +16,6 @@ struct interact
   float n1_feat_sq;
   float total_sum_feat_sq;
   size_t num_features;
-
-  ~interact()
-  {
-    feat_store.delete_v();
-  }
 };
 
 bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
@@ -69,13 +62,15 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features." << std::endl;
+      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features."
+                << std::endl;
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features." << std::endl;
+      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features."
+                << std::endl;
       return;
     }
 
@@ -95,7 +90,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 }
 
 template <bool is_learn, bool print_all>
-void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& ec)
 {
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
@@ -154,7 +149,7 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   ec.num_features = in.num_features;
 }
 
-LEARNER::base_learner* interact_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
   std::string s;
   option_group_definition new_options("Interact via elementwise multiplication");
@@ -175,12 +170,12 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
-  if (!all.quiet)
+  if (!all.logger.quiet)
     std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
   data->all = &all;
 
-  LEARNER::learner<interact, example>* l;
-  l = &LEARNER::init_learner(
+  VW::LEARNER::learner<interact, example>* l;
+  l = &VW::LEARNER::init_learner(
       data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   return make_base(*l);

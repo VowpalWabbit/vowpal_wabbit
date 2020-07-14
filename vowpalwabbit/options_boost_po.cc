@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "options_boost_po.h"
 #include "parse_primitives.h"
 
@@ -9,12 +13,11 @@
 
 using namespace VW::config;
 
-bool is_number(const std::string& s)
+bool is_number(const VW::string_view& s)
 {
-  substring ss = {const_cast<char*>(s.c_str()), const_cast<char*>(s.c_str()) + s.size()};
-  auto endptr = ss.end;
-  auto f = parseFloat(ss.begin, &endptr);
-  if ((endptr == ss.begin && ss.begin != ss.end) || std::isnan(f))
+  size_t endidx = 0;
+  auto f = parseFloat(s.begin(), endidx, s.end());
+  if ((endidx == 0 && !s.empty()) || std::isnan(f))
   {
     return false;
   }
@@ -75,7 +78,8 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
     for (auto const& option : parsed_options.options)
     {
-      // If the supplied option is interpreted as a number, then ignore it. There are no options like this and it is just a false positive.
+      // If the supplied option is interpreted as a number, then ignore it. There are no options like this and it is
+      // just a false positive.
       if (is_number(option.string_key))
       {
         m_ignore_supplied.insert(option.string_key);
@@ -127,7 +131,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   }
 }
 
-bool options_boost_po::was_supplied(const std::string& key)
+bool options_boost_po::was_supplied(const std::string& key) const
 {
   // Best check, only valid after options parsed.
   if (m_supplied_options.count(key) > 0)
@@ -140,7 +144,7 @@ bool options_boost_po::was_supplied(const std::string& key)
   return it != m_command_line.end();
 }
 
-std::string options_boost_po::help() { return m_help_stringstream.str(); }
+std::string options_boost_po::help() const { return m_help_stringstream.str(); }
 
 std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
 {
@@ -152,15 +156,34 @@ std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
   return output_values;
 }
 
-std::shared_ptr<base_option> VW::config::options_boost_po::get_option(const std::string& key)
+std::vector<std::shared_ptr<const base_option>> VW::config::options_boost_po::get_all_options() const
 {
-  auto it = m_options.find(key);
-  if (it != m_options.end())
-  {
-    return it->second;
-  }
+  std::vector<std::shared_ptr<const base_option>> output_values;
+  output_values.reserve(m_options.size());
+  for (const auto& kv : m_options) { output_values.push_back(kv.second); }
+  return output_values;
+}
+
+// This function is called by both the const and non-const version. The const version will implicitly upgrade the
+// shared_ptr to const
+std::shared_ptr<base_option> internal_get_option(
+    const std::string& key, const std::map<std::string, std::shared_ptr<VW::config::base_option>>& options)
+{
+  auto it = options.find(key);
+  if (it != options.end()) { return it->second; }
 
   throw std::out_of_range(key + " was not found.");
+}
+
+std::shared_ptr<base_option> VW::config::options_boost_po::get_option(const std::string& key)
+{
+  return internal_get_option(key, m_options);
+}
+
+std::shared_ptr<const base_option> VW::config::options_boost_po::get_option(const std::string& key) const
+{
+  // shared_ptr can implicitly upgrade to const from non-const
+  return internal_get_option(key, m_options);
 }
 
 // Check all supplied arguments against defined args.
@@ -169,9 +192,7 @@ void options_boost_po::check_unregistered()
   for (auto const& supplied : m_supplied_options)
   {
     if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0)
-    {
-      THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'");
-    }
+    { THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'"); }
   }
 }
 

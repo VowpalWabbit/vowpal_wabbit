@@ -1,3 +1,6 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "gd.h"
 #include <cfloat>
 #include "reductions.h"
@@ -19,7 +22,7 @@ void print_feature(vw& /* all */, float value, uint64_t index)
   cout << " ";
 }
 
-void learn(print& p, LEARNER::base_learner&, example& ec)
+void learn(print& p, VW::LEARNER::base_learner&, example& ec)
 {
   label_data& ld = ec.l.simple;
   if (ld.label != FLT_MAX)
@@ -42,7 +45,7 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
   cout << std::endl;
 }
 
-LEARNER::base_learner* print_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* print_setup(options_i& options, vw& all)
 {
   bool print_option = false;
   option_group_definition new_options("Print psuedolearner");
@@ -57,6 +60,6 @@ LEARNER::base_learner* print_setup(options_i& options, vw& all)
 
   all.weights.stride_shift(0);
 
-  LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1);
+  VW::LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1);
   return make_base(ret);
 }

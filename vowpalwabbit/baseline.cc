@@ -1,15 +1,14 @@
-/*
-  Copyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
-#include <float.h>
-#include <errno.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cfloat>
+#include <cerrno>
 
 #include "reductions.h"
 #include "vw.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace
@@ -217,7 +216,6 @@ base_learner* baseline_setup(options_i& options, vw& all)
   data->ec = VW::alloc_examples(simple_label.label_size, 1);
   data->ec->interactions = &all.interactions;
 
-  data->ec->in_use = true;
   data->all = &all;
 
   auto loss_function_type = all.loss->getType();

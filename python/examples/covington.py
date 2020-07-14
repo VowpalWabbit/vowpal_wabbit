@@ -40,14 +40,17 @@ class CovingtonDepParser(pyvw.SearchTask):
 
                 # construct an example
                 dir = 'l' if m < n else 'r'
-                ex = lambda: self.vw.example({'a': [wordN, dir + '_' + wordN], 'b': [wordM, dir + '_' + wordN], 'p': [wordN + '_' + wordM, dir + '_' + wordN + '_' + wordM],
-                                              'd': [ str(m-n <= d) + '<=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] +
-                                                   [ str(m-n >= d) + '>=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] })
+                ex = self.vw.example({'a': [wordN, dir + '_' + wordN], 
+                                      'b': [wordM, dir + '_' + wordN], 
+                                      'p': [wordN + '_' + wordM, dir + '_' + wordN + '_' + wordM],
+                                      'd': [ str(m-n <= d) + '<=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] +
+                                           [ str(m-n >= d) + '>=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] })
                 pred = self.sch.predict(examples  = ex,
                                         my_tag    = (m+1)*N + n + 1,
                                         oracle    = isParent,
                                         condition = [ (max(0, (m  )*N + n + 1), 'p'),
                                                       (max(0, (m+1)*N + n    ), 'q') ])
+                vw.finish_example([ex]) # must pass the example in as a list because search is a MultiEx reduction
                 if pred == 2:
                     output[n] = m
                     break
@@ -86,7 +89,12 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
 
             # truth
             parN = sentence[n][1]
-            oracle = parN+1 if parN < n else parN   # have to -1 because we excluded n==m from list
+
+            # Mapping:
+            # -1      => 1
+            # 0...n-1 => 2...n+1
+            # n+1...N => n+2 ...N+1
+            oracle = parN+2 if parN < n else parN + 1   # have to -1 because we excluded n==m from list
 
             # make a prediction
             pred = self.sch.predict(examples  = examples,
@@ -94,7 +102,13 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
                                     oracle    = oracle,
                                     condition = [ (n, 'p'), (n-1, 'q') ] )
 
-            output[n] = pred-1 if pred < n else pred # have to +1 because n==m excluded
+            vw.finish_example(examples)
+
+            # Reverse mapping:
+            # 1 => -1
+            # 2...n+1 => 0...n-1
+            # n+2...N+1 => n+1...N
+            output[n] = pred-2 if pred <= n + 1 else pred - 1 # have to +1 because n==m excluded
 
         return output
 
@@ -111,12 +125,13 @@ print('testing non-LDF')
 print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
 print('should have printed [ 1 2 -1 4 2 ]')
 
+# BUG: There is a bug in LDF mode which causes this to fail. Currently under investigation.
 # demo the ldf version:
-print('training LDF')
-vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet")
-task = vw.init_search_task(CovingtonDepParserLDF)
-for p in range(100): # do two passes over the training data
-    task.learn(my_dataset)
-print('testing LDF')
-print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
-print('should have printed [ 1 2 -1 4 2 ]')
+#print('training LDF')
+#vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet")
+#task = vw.init_search_task(CovingtonDepParserLDF)
+#for p in range(100): # do two passes over the training data
+#    task.learn(my_dataset)
+#print('testing LDF')
+#print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
+#print('should have printed [ 1 2 -1 4 2 ]')

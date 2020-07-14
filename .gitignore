@@ -121,6 +121,7 @@ python/docs/build
 /cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs
 /cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
 /cs/unittest/RunTests.cs
+/cs/unittest/TestMarshalNumeric.cs
 vowpalwabbit/vw.VC.VC.opendb
 vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
@@ -136,3 +137,7 @@ reinforcement_learning/unit_test/rlclient-test.out
 cs/azure_service/azure_service.ccproj.user
 
 build
+dist/
+*.model
+python/examples/*.model
+doc/html

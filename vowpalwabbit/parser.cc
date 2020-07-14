@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <sys/types.h>
 
 #ifndef _WIN32
@@ -22,6 +20,8 @@ license as described in the file LICENSE.
 #include <Windows.h>
 #include <io.h>
 typedef int socklen_t;
+//windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
+#define SOL_TCP IPPROTO_TCP
 
 int daemon(int /*a*/, int /*b*/)
 {
@@ -41,7 +41,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <netdb.h>
 #endif
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <netinet/in.h>
 #endif
 
@@ -59,6 +59,12 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
+#include "io/io_adapter.h"
+
+// OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
+#if !defined(SOL_TCP) && defined(IPPROTO_TCP)
+#define SOL_TCP IPPROTO_TCP
+#endif
 
 using std::endl;
 
@@ -79,16 +85,9 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-void set_compressed(parser* par)
-{
-  finalize_source(par);
-  delete par->input;
-  par->input = new comp_io_buf;
-  delete par->output;
-  par->output = new comp_io_buf;
-}
+void set_compressed(parser* /*par*/) {}
 
-uint32_t cache_numbits(io_buf* buf, int filepointer)
+uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
@@ -127,33 +126,28 @@ void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.p->input;
   input->current = 0;
+
+  // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.p->write_cache)
   {
     all.p->output->flush();
+    // Turn off write_cache as we are now reading it instead of writing!
     all.p->write_cache = false;
     all.p->output->close_file();
-    remove(all.p->output->finalname.begin());
 
-    if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
-      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to "
-                                                                          << all.p->output->finalname);
+    // This deletes the file from disk.
+    remove(all.p->finalname.c_str());
 
-    while (input->num_files() > 0)
-      if (input->compressed())
-        input->close_file();
-      else
-      {
-        int fd = input->files.pop();
-        const auto& fps = all.final_prediction_sink;
-
-        // If the current popped file is not in the list of final predictions sinks, close it.
-        if (std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
-          io_buf::close_file_or_socket(fd);
-      }
-    input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
-                                                                                      // open_file
+    // Rename the cache file to the final name.
+    if (0 != rename(all.p->currentname.c_str(), all.p->finalname.c_str()))
+      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->currentname << " to "
+                                                                          << all.p->finalname);
+    input->close_files();
+    // Now open the written cache as the new input file.
+    input->add_file(VW::io::open_file_reader(all.p->finalname));    all.p->reader = read_cached_features;
     all.p->reader = read_cached_features;
   }
+
   if (all.p->resettable == true)
   {
     if (all.daemon)
@@ -161,92 +155,90 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.p->output_lock);
-        all.p->output_done.wait(lock, [&] { return all.p->ready_parsed_examples.size() == 0; });
+        all.p->output_done.wait(lock, [&] { return all.p->finished_examples == all.p->end_parsed_examples && all.p->ready_parsed_examples.size() == 0; });
       }
 
-      // close socket, erase final prediction sink and socket
-      io_buf::close_file_or_socket(all.p->input->files[0]);
       all.final_prediction_sink.clear();
-      all.p->input->files.clear();
+      all.p->input->close_files();
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
       if (f < 0)
-        THROW("accept: " << strerror(errno));
+        THROW("accept: " << VW::strerror_to_string(errno));
+
+      // Disable Nagle delay algorithm due to daemon mode's interactive workload
+      int one = 1;
+      setsockopt(f, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
       // note: breaking cluster parallel online learning by dropping support for id
 
-      all.final_prediction_sink.push_back((size_t)f);
-      all.p->input->files.push_back(f);
+      auto socket = VW::io::wrap_socket_descriptor(f);
+      all.final_prediction_sink.push_back(socket->get_writer());
+      all.p->input->add_file(socket->get_reader());
 
-      if (isbinary(*(all.p->input)))
+      if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = binary_print_result;
+VW_WARNING_STATE_POP
+        all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
         all.p->reader = read_features_string;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = print_result;
+VW_WARNING_STATE_POP
+        all.print_by_ref = print_result_by_ref;
       }
     }
     else
     {
-      for (size_t i = 0; i < input->files.size(); i++)
+      for (auto& file : input->input_files)
       {
-        input->reset_file(input->files[i]);
-        if (cache_numbits(input, input->files[i]) < numbits)
+        input->reset_file(file.get());
+        if (cache_numbits(input, file.get()) < numbits)
           THROW("argh, a bug in caching of some sort!");
       }
     }
   }
 }
 
-void finalize_source(parser* p)
-{
-#ifdef _WIN32
-  int f = _fileno(stdin);
-#else
-  int f = fileno(stdin);
-#endif
-  while (!p->input->files.empty() && p->input->files.last() == f) p->input->files.pop();
-  p->input->close_files();
-
-  delete p->input;
-  p->input = nullptr;
-  p->output->close_files();
-  delete p->output;
-  p->output = nullptr;
-}
+void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
   io_buf* output = all.p->output;
-  if (output->files.size() != 0)
+  if (output->num_files() != 0)
   {
     all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
-  std::string temp = newname + std::string(".writing");
-  push_many(output->currentname, temp.c_str(), temp.length() + 1);
-
-  int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
-  if (f == -1)
+  all.p->currentname = newname + std::string(".writing");
+  try
   {
-    all.trace_message << "can't create cache file !" << endl;
+    output->add_file(VW::io::open_file_writer(all.p->currentname));
+  }
+  catch (const std::exception&)
+  {
+    all.trace_message << "can't create cache file !" << all.p->currentname << endl;
     return;
   }
 
   size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
 
-  output->write_file(f, &v_length, sizeof(v_length));
-  output->write_file(f, VW::version.to_string().c_str(), v_length);
-  output->write_file(f, "c", 1);
-  output->write_file(f, &all.num_bits, sizeof(all.num_bits));
+  output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
+  output->bin_write_fixed(VW::version.to_string().c_str(), v_length);
+  output->bin_write_fixed("c", 1);
+  output->bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
+  output->flush();
 
-  push_many(output->finalname, newname.c_str(), newname.length() + 1);
+  all.p->finalname = newname;
   all.p->write_cache = true;
   if (!quiet)
     all.trace_message << "creating cache_file = " << newname << endl;
@@ -258,21 +250,22 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
   for (auto& file : cache_files)
   {
-    int f = -1;
+    bool cache_file_opened = false;
     if (!kill_cache)
       try
       {
-        f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
+        all.p->input->add_file(VW::io::open_file_reader(file));
+        cache_file_opened = true;
       }
       catch (const std::exception&)
       {
-        f = -1;
+        cache_file_opened = false;
       }
-    if (f == -1)
+    if (cache_file_opened == false)
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.p->input, f);
+      uint64_t c = cache_numbits(all.p->input, all.p->input->input_files.back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -300,7 +293,6 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   {
     if (!quiet)
       all.trace_message << "using no cache" << endl;
-    all.p->output->space.delete_v();
   }
 }
 
@@ -314,7 +306,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   all.p->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
-  if (all.daemon || all.active)
+  // default text reader
+  all.p->text_reader = VW::read_lines;
+
+  if (!all.no_daemon && (all.daemon || all.active))
   {
 #ifdef _WIN32
     WSAData wsaData;
@@ -326,19 +321,19 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (all.p->bound_sock < 0)
     {
       std::stringstream msg;
-      msg << "socket: " << strerror(errno);
+      msg << "socket: " << VW::strerror_to_string(errno);
       all.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -362,7 +357,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.trace_message << "getsockname: " << strerror(errno) << endl;
+        all.trace_message << "getsockname: " << VW::strerror_to_string(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
@@ -389,8 +384,17 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
+#ifdef _WIN32
+#pragma warning(push)          // This next line is inappropriately triggering the Windows-side warning about getpid()
+#pragma warning(disable: 4996) // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
+#endif
+
       pid_file << getpid() << endl;
       pid_file.close();
+
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
     }
 
     if (all.daemon && !all.active)
@@ -408,6 +412,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;
+      all.p->_shared_data = sd;
 
       // create children
       size_t num_children = all.num_children;
@@ -419,7 +424,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         // store fork value and run child process if child
         if ((children[i] = fork()) == 0)
         {
-          all.quiet |= (i > 0);
+          all.logger.quiet |= (i > 0);
           goto child;
         }
       }
@@ -452,7 +457,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           {
             if ((children[i] = fork()) == 0)
             {
-              all.quiet |= (i > 0);
+              all.logger.quiet |= (i > 0);
               goto child;
             }
             break;
@@ -467,32 +472,42 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    all.p->max_fd = 0;
-    if (!all.quiet)
+    if (!all.logger.quiet)
       all.trace_message << "calling accept" << endl;
-    int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
-    if (f < 0)
+    auto f_a = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
+    if (f_a < 0)
       THROWERRNO("accept");
 
-    all.p->label_sock = f;
+    // Disable Nagle delay algorithm due to daemon mode's interactive workload
+    int one = 1;
+    setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
     all.print = print_result;
+VW_WARNING_STATE_POP
+    all.print_by_ref = print_result_by_ref;
 
-    all.final_prediction_sink.push_back((size_t)f);
+    auto socket = VW::io::wrap_socket_descriptor(f_a);
 
-    all.p->input->files.push_back(f);
-    all.p->max_fd = std::max(f, all.p->max_fd);
-    if (!all.quiet)
+    all.final_prediction_sink.push_back(socket->get_writer());
+
+    all.p->input->add_file(socket->get_reader());
+    if (!all.logger.quiet)
       all.trace_message << "reading data from port " << port << endl;
 
-    all.p->max_fd++;
     if (all.active)
       all.p->reader = read_features_string;
     else
     {
-      if (isbinary(*(all.p->input)))
+      if (all.p->input->isbinary())
       {
         all.p->reader = read_cached_features;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
         all.print = binary_print_result;
+VW_WARNING_STATE_POP
+        all.print_by_ref = binary_print_result_by_ref;
       }
       else
       {
@@ -504,7 +519,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   }
   else
   {
-    if (!all.p->input->files.empty())
+    if (all.p->input->num_files() != 0)
     {
       if (!quiet)
         all.trace_message << "ignoring text input in favor of cache input" << endl;
@@ -514,11 +529,36 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       std::string temp = all.data_filename;
       if (!quiet)
         all.trace_message << "Reading datafile = " << temp << endl;
+
+      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+
       try
       {
-        all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
+        std::unique_ptr<VW::io::reader> adapter;
+        if (temp != "")
+        {
+          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp)
+                                          : VW::io::open_file_reader(temp);
+        }
+        else if (!all.stdin_off)
+        {
+          // Should try and use stdin
+          if (should_use_compressed)
+          {
+            adapter = VW::io::open_compressed_stdin();
+          }
+          else
+          {
+            adapter = VW::io::open_stdin();
+          }
+        }
+
+        if (adapter)
+        {
+          all.p->input->add_file(std::move(adapter));
+        }
       }
-      catch (std::exception const& ex)
+      catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (!temp.empty())
@@ -527,13 +567,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         }
         else
         {
-          throw ex;
+          throw;
         }
       }
 
       if (input_options.json || input_options.dsjson)
       {
-
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
@@ -558,15 +597,15 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       }
 
       all.p->resettable = all.p->write_cache;
+      all.chain_hash = input_options.chain_hash;
     }
   }
 
   if (passes > 1 && !all.p->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.p->input->num_files() << endl;
 }
 
 void lock_done(parser& p)
@@ -666,8 +705,11 @@ example& get_unused_example(vw* all)
 {
   parser* p = all->p;
   auto ex = p->example_pool.get_object();
-  ex->in_use = true;
   p->begin_parsed_examples++;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+  ex->in_use = true;
+VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -692,12 +734,14 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
 
-  ae->example_counter = (size_t)(all.p->end_parsed_examples);
+  ae->example_counter = (size_t)(all.p->end_parsed_examples.load());
   if (!all.p->emptylines_separate_examples)
     all.p->in_pass_counter++;
 
+  // Determine if this example is part of the holdout set.
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
       all.p->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
+  // If this example has a test only label then it is true regardless.
   ae->test_only |= all.p->lp.test_label(&ae->l);
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
@@ -732,7 +776,7 @@ void setup_example(vw& all, example* ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (features& fs : *ae)
+  for (const features& fs : *ae)
   {
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
@@ -756,7 +800,7 @@ example* new_unused_example(vw& all)
   example* ec = &get_unused_example(&all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
-  ec->example_counter = (size_t)all.p->begin_parsed_examples;
+  ec->example_counter = (size_t)all.p->begin_parsed_examples.load();
   return ec;
 }
 example* read_example(vw& all, char* example_line)
@@ -846,13 +890,9 @@ void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 
 void parse_example_label(vw& all, example& ec, std::string label)
 {
-  v_array<substring> words = v_init<substring>();
-  char* cstr = (char*)label.c_str();
-  substring str = {cstr, cstr + label.length()};
-  tokenize(' ', str, words);
-  all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
-  words.clear();
-  words.delete_v();
+  std::vector<VW::string_view> words;
+  tokenize(' ', label, words);
+  all.p->lp.parse_label(all.p, all.p->_shared_data, &ec.l, words);
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -869,13 +909,15 @@ void clean_example(vw& all, example& ec, bool rewind)
 {
   if (rewind)
   {
-    assert(all.p->begin_parsed_examples > 0);
+    assert(all.p->begin_parsed_examples.load() > 0);
     all.p->begin_parsed_examples--;
   }
 
   empty_example(all, ec);
-  assert(ec.in_use);
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
   ec.in_use = false;
+VW_WARNING_STATE_POP
   all.p->example_pool.return_object(&ec);
 }
 
@@ -889,12 +931,13 @@ void finish_example(vw& all, example& ec)
 
   {
     std::lock_guard<std::mutex> lock(all.p->output_lock);
+    ++all.p->finished_examples;
     all.p->output_done.notify_one();
   }
 }
 }  // namespace VW
 
-void thread_dispatch(vw& all, v_array<example*> examples)
+void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
   all.p->end_parsed_examples += examples.size();
   for (auto example : examples)
@@ -955,50 +998,43 @@ size_t get_feature_number(example* ec) { return ec->num_features; }
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
 
-example* example_initializer::operator()(example* ex)
-{
-  memset(&ex->l, 0, sizeof(polylabel));
-  ex->in_use = false;
-  ex->passthrough = nullptr;
-  ex->tag = v_init<char>();
-  ex->indices = v_init<namespace_index>();
-  memset(&ex->feature_space, 0, sizeof(ex->feature_space));
-  return ex;
-}
 
-void adjust_used_index(vw&) { /* no longer used */ }
+void adjust_used_index(vw&)
+{ /* no longer used */
+}
 
 namespace VW
 {
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
+
 void free_parser(vw& all)
 {
-  all.p->words.delete_v();
-  all.p->name.delete_v();
+  // It is possible to exit early when the queue is not yet empty.
 
-  if (!all.ngram_strings.empty())
-    all.p->gram_mask.delete_v();
-
-  io_buf* output = all.p->output;
-  if (output != nullptr)
+  while(all.p->ready_parsed_examples.size() > 0)
   {
-    output->finalname.delete_v();
-    output->currentname.delete_v();
+    auto* current  = all.p->ready_parsed_examples.pop();
+    // this function also handles examples that were not from the pool.
+    VW::finish_example(all, *current);
   }
 
+  // There should be no examples in flight at this point.
+  assert(all.p->ready_parsed_examples.size() == 0);
+
+  std::vector<example*> drain_pool;
+  drain_pool.reserve(all.p->example_pool.size());
   while (!all.p->example_pool.empty())
   {
     example* temp = all.p->example_pool.get_object();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
+    temp->delete_unions(all.p->lp.delete_label, all.delete_prediction);
+    drain_pool.push_back(temp);
+  }
+  for(auto* example_ptr : drain_pool)
+  {
+    all.p->example_pool.return_object(example_ptr);
   }
 
-  while (all.p->ready_parsed_examples.size() != 0)
-  {
-    example* temp = all.p->ready_parsed_examples.pop();
-    VW::dealloc_example(all.p->lp.delete_label, *temp, all.delete_prediction);
-  }
-  all.p->counts.delete_v();
 }
 
 namespace VW

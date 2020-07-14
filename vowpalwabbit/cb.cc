@@ -1,16 +1,17 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <cfloat>
+#include <algorithm>
 
 #include "example.h"
 #include "parse_primitives.h"
 #include "vw.h"
 #include "vw_exception.h"
+#include "vw_string_view.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 
 namespace CB
 {
@@ -49,9 +50,10 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   return total;
 }
 
-float weight(void* v) {
-    CB::label* ld = (CB::label*)v;
-    return ld->weight;
+float weight(void* v)
+{
+  CB::label* ld = (CB::label*)v;
+  return ld->weight;
 }
 
 char* bufcache_label(CB::label* ld, char* c)
@@ -108,7 +110,7 @@ void copy_label(void* dst, void* src)
   ldD->weight = ldS->weight;
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
@@ -120,21 +122,23 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
     tokenize(':', word, p->parse_name);
 
     if (p->parse_name.empty() || p->parse_name.size() > 3)
-      THROW("malformed cost specification: " << p->parse_name);
+    {
+      THROW("malformed cost specification: " << word);
+    }
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)hashstring(p->parse_name[0], 0);
+    f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
     f.cost = FLT_MAX;
 
     if (p->parse_name.size() > 1)
-      f.cost = float_of_substring(p->parse_name[1]);
+      f.cost = float_of_string(p->parse_name[1]);
 
     if (std::isnan(f.cost))
       THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
     f.probability = .0;
     if (p->parse_name.size() > 2)
-      f.probability = float_of_substring(p->parse_name[2]);
+      f.probability = float_of_string(p->parse_name[2]);
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
@@ -149,7 +153,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
       std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << std::endl;
       f.probability = .0;
     }
-    if (substring_equal(p->parse_name[0], "shared"))
+    if (p->parse_name[0] == "shared")
     {
       if (p->parse_name.size() == 1)
       {
@@ -168,7 +172,7 @@ label_parser cb_label = {default_label, parse_label, cache_label, read_cached_la
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
+  const auto& costs = ec.l.cb.costs;
   if (costs.size() != 1)
     return false;
   if (costs[0].probability == -1.f)
@@ -178,7 +182,7 @@ bool ec_is_example_header(example const& ec)  // example headers just have "shar
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     size_t num_features = ec.num_features;
 
@@ -217,7 +221,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
-float weight(void* v) {
+float weight(void* v)
+{
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
   return ld->event.weight;
 }
@@ -271,22 +276,22 @@ void copy_label(void* dst, void* src)
   ldD->action = ldS->action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 
   if (words.size() < 2)
     THROW("Evaluation can not happen without an action and an exploration");
 
-  ld->action = (uint32_t)hashstring(words[0], 0);
+  ld->action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
 
-  words.begin()++;
-
+  // Removing the first element of a vector is not efficient at all, every element must be copied/moved.
+  const auto stashed_first_token = std::move(words[0]);
+  words.erase(words.begin());
   CB::parse_label(p, sd, &(ld->event), words);
-
-  words.begin()--;
+  words.insert(words.begin(), std::move(stashed_first_token));
 }
 
-label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
-    copy_label, test_label, sizeof(CB_EVAL::label)};
+label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
+    test_label, sizeof(CB_EVAL::label)};
 }  // namespace CB_EVAL

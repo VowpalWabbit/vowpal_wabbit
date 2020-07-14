@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include "global_data.h"
@@ -27,12 +31,12 @@ inline constexpr bool is_printable_namespace(const unsigned char ns)
 // exand all wildcard namespaces in vector<string>
 // req_length must be 0 if interactions of any length are allowed, otherwise contains required length
 // err_msg will be printed plus exception will be thrown if req_length != 0 and mismatch interaction length.
-std::vector<std::string> expand_interactions(
-    const std::vector<std::string>& vec, const size_t required_length, const std::string& err_msg);
+std::vector<std::vector<namespace_index>> expand_interactions(
+    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg);
 
 // remove duplicate interactions and sort namespaces in them (if required)
 void sort_and_filter_duplicate_interactions(
-    std::vector<std::string>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
+    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
 
 /*
  *  Feature combinations generation

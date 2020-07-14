@@ -1,15 +1,15 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "constant.h"
 #include "feature_group.h"
 #include <vector>
 #include <string>
+
+const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make_pair("", "");
 
 namespace INTERACTIONS
 {
@@ -78,7 +78,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   {
     for (; begin != end; ++begin)
     {
-      audit_func(dat, begin.audit().get());
+      audit_func(dat, begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit()->get());
       call_T<R, T>(dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
     }
@@ -95,7 +95,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(std::vector<std::string>& interactions, bool permutations, example_predict& ec,
+inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
     R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
@@ -128,10 +128,10 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
 
     if (len == 2)  // special case of pairs
     {
-      features& first = features_data[(uint8_t)ns[0]];
+      features& first = features_data[ns[0]];
       if (first.nonempty())
       {
-        features& second = features_data[(uint8_t)ns[1]];
+        features& second = features_data[ns[1]];
         if (second.nonempty())
         {
           const bool same_namespace = (!permutations && (ns[0] == ns[1]));
@@ -140,7 +140,9 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
           {
             feature_index halfhash = FNV_prime * (uint64_t)first.indicies[i];
             if (audit)
-              audit_func(dat, first.space_names[i].get());
+            {
+              audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+            }
             // next index differs for permutations and simple combinations
             feature_value ft_value = first.values[i];
             features::features_value_index_audit_range range = second.values_indices_audit();
@@ -159,13 +161,13 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
     }
     else if (len == 3)  // special case for triples
     {
-      features& first = features_data[(uint8_t)ns[0]];
+      features& first = features_data[ns[0]];
       if (first.nonempty())
       {
-        features& second = features_data[(uint8_t)ns[1]];
+        features& second = features_data[ns[1]];
         if (second.nonempty())
         {
-          features& third = features_data[(uint8_t)ns[2]];
+          features& third = features_data[ns[2]];
           if (third.nonempty())
           {  // don't compare 1 and 3 as interaction is sorted
             const bool same_namespace1 = (!permutations && (ns[0] == ns[1]));
@@ -174,7 +176,9 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
             for (size_t i = 0; i < first.indicies.size(); ++i)
             {
               if (audit)
-                audit_func(dat, first.space_names[i].get());
+              {
+                audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+              }
               const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
               const float& first_ft_value = first.values[i];
               size_t j = 0;
@@ -184,7 +188,9 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
               for (; j < second.indicies.size(); ++j)
               {  // f3 x k*(f2 x k*f1)
                 if (audit)
-                  audit_func(dat, second.space_names[j].get());
+                {
+                  audit_func(dat, i < second.space_names.size() ? second.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+                }
                 feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
 
@@ -214,7 +220,7 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
       // preparing state data
       feature_gen_data* fgd = state_data.begin();
       feature_gen_data* fgd2;  // for further use
-      for (namespace_index n : ns)
+      for (auto n : ns)
       {
         features& ft = features_data[(int32_t)n];
         const size_t ft_cnt = ft.indicies.size();

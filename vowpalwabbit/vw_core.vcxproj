@@ -29,7 +29,7 @@
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
@@ -124,19 +124,20 @@
     <ClInclude Include="cache.h" />
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="cb_algs.h" />
+    <ClInclude Include="cb_dro.h" />
     <ClInclude Include="cb_explore_adf_bag.h" />
     <ClInclude Include="cb_explore_adf_common.h" />
     <ClInclude Include="cb_explore_adf_cover.h" />
     <ClInclude Include="cb_explore_adf_first.h" />
     <ClInclude Include="cb_explore_adf_greedy.h" />
     <ClInclude Include="cb_explore_adf_regcb.h" />
+    <ClInclude Include="cb_explore_adf_rnd.h" />
     <ClInclude Include="cb_explore_adf_softmax.h" />
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="classweight.h" />
-    <ClInclude Include="comp_io.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -144,6 +145,8 @@
     <ClInclude Include="crossplat_compat.h" />
     <ClInclude Include="cs_active.h" />
     <ClInclude Include="csoaa.h" />
+    <ClInclude Include="decision_scores.h" />
+    <ClInclude Include="distributionally_robust.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="explore_eval.h" />
@@ -153,9 +156,11 @@
     <ClInclude Include="gd.h" />
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="global_data.h" />
+    <ClInclude Include="guard.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="interactions.h" />
+    <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="lda_core.h" />
@@ -189,8 +194,9 @@
     <ClInclude Include="parse_example.h" />
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
+    <ClInclude Include="parse_slates_example_json.h" />
     <ClInclude Include="parser.h" />
-    <ClInclude Include="primitives.h" />
+    <ClInclude Include="plt.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
@@ -207,17 +213,21 @@
     <ClInclude Include="sender.h" />
     <ClInclude Include="shared_feature_merger.h" />
     <ClInclude Include="simple_label.h" />
+    <ClInclude Include="slates_label.h" />
+    <ClInclude Include="slates.h" />
     <ClInclude Include="spanning_tree.h" />
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
+    <ClInclude Include="tag_utils.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="v_array.h" />
-    <ClInclude Include="v_hashmap.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
+    <ClInclude Include="vw_math.h" />
+    <ClInclude Include="vw_string_view.h" />
     <ClInclude Include="vw_validate.h" />
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="vw.h" />
@@ -241,11 +251,13 @@
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb_adf.cc" />
     <ClCompile Include="cb_algs.cc" />
+    <ClCompile Include="cb_dro.cc" />
     <ClCompile Include="cb_explore_adf_bag.cc" />
     <ClCompile Include="cb_explore_adf_cover.cc" />
     <ClCompile Include="cb_explore_adf_first.cc" />
     <ClCompile Include="cb_explore_adf_greedy.cc" />
     <ClCompile Include="cb_explore_adf_regcb.cc" />
+    <ClCompile Include="cb_explore_adf_rnd.cc" />
     <ClCompile Include="cb_explore_adf_softmax.cc" />
     <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="cb_sample.cc" />
@@ -253,15 +265,18 @@
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="classweight.cc" />
-    <ClCompile Include="comp_io.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
+    <ClCompile Include="decision_scores.cc" />
+    <ClCompile Include="distributionally_robust.cc" />
     <ClCompile Include="ect.cc" />
+    <ClCompile Include="example_predict.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
+    <ClCompile Include="feature_group.cc" />
     <ClCompile Include="ftrl.cc" />
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="gd.cc" />
@@ -269,6 +284,7 @@
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interactions.cc" />
+    <ClCompile Include="io/io_adapter.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="label_dictionary.cc" />
@@ -298,7 +314,7 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
-    <ClCompile Include="primitives.cc" />
+    <ClCompile Include="plt.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
@@ -314,9 +330,12 @@
     <ClCompile Include="sender.cc" />
     <ClCompile Include="shared_feature_merger.cc" />
     <ClCompile Include="simple_label.cc" />
+    <ClCompile Include="slates_label.cc" />
+    <ClCompile Include="slates.cc" />
     <ClCompile Include="spanning_tree.cc" />
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
+    <ClCompile Include="tag_utils.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="version.cc" />

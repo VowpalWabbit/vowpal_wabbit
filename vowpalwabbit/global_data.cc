@@ -1,20 +1,20 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
-#include <stdio.h>
-#include <float.h>
-#include <errno.h>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include <cstdio>
+#include <cfloat>
+#include <cerrno>
 #include <iostream>
 #include <sstream>
-#include <math.h>
-#include <assert.h>
+#include <cmath>
+#include <cassert>
 
 #include "global_data.h"
 #include "gd.h"
 #include "vw_exception.h"
-
+#include "future_compat.h"
+#include "vw_allreduce.h"
 
 struct global_prediction
 {
@@ -22,21 +22,17 @@ struct global_prediction
   float weight;
 };
 
-size_t really_read(int sock, void* in, size_t count)
+size_t really_read(VW::io::reader* sock, void* in, size_t count)
 {
   char* buf = (char*)in;
   size_t done = 0;
-  int r = 0;
+  ssize_t r = 0;
   while (done < count)
   {
-    if ((r =
-#ifdef _WIN32
-                recv(sock, buf, (unsigned int)(count - done), 0)
-#else
-                read(sock, buf, (unsigned int)(count - done))
-#endif
-                ) == 0)
+    if ((r = sock->read(buf, static_cast<unsigned int>(count - done))) == 0)
+    {
       return 0;
+    }
     else if (r < 0)
     {
       THROWERRNO("read(" << sock << "," << count << "-" << done << ")");
@@ -50,36 +46,35 @@ size_t really_read(int sock, void* in, size_t count)
   return done;
 }
 
-void get_prediction(int sock, float& res, float& weight)
+void get_prediction(VW::io::reader* f, float& res, float& weight)
 {
   global_prediction p;
-  really_read(sock, &p, sizeof(p));
+  really_read(f, &p, sizeof(p));
   res = p.p;
   weight = p.weight;
 }
 
-void send_prediction(int sock, global_prediction p)
+void send_prediction(VW::io::writer* f, global_prediction p)
 {
-  if (
-#ifdef _WIN32
-      send(sock, reinterpret_cast<const char*>(&p), sizeof(p), 0)
-#else
-      write(sock, &p, sizeof(p))
-#endif
-      < (int)sizeof(p))
-    THROWERRNO("send_prediction write(" << sock << ")");
+  if (f->write(reinterpret_cast<const char*>(&p), sizeof(p)) < static_cast<int>(sizeof(p)))
+    THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result(int f, float res, float weight, v_array<char>)
+void binary_print_result(VW::io::writer* f, float res, float weight, v_array<char> array)
 {
-  if (f >= 0)
+  binary_print_result_by_ref(f, res, weight, array);
+}
+
+void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&)
+{
+  if (f != nullptr)
   {
     global_prediction ps = {res, weight};
     send_prediction(f, ps);
   }
 }
 
-int print_tag(std::stringstream& ss, v_array<char> tag)
+int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
 {
   if (tag.begin() != tag.end())
   {
@@ -89,42 +84,70 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   return tag.begin() != tag.end();
 }
 
-void print_result(int f, float res, float, v_array<char> tag)
+int print_tag(std::stringstream& ss, v_array<char> tag)
 {
-  if (f >= 0)
+  return print_tag_by_ref(ss, tag);
+}
+
+void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
+{
+  print_result_by_ref(f, res, unused, tag);
+}
+
+void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag)
+{
+  if (f != nullptr)
   {
     std::stringstream ss;
     auto saved_precision = ss.precision();
     if (floorf(res) == res)
       ss << std::setprecision(0);
     ss << std::fixed << res << std::setprecision(saved_precision);
-    print_tag(ss, tag);
+    print_tag_by_ref(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
     {
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
     }
   }
 }
 
-void print_raw_text(int f, std::string s, v_array<char> tag)
+void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
 {
-  if (f < 0)
+  if (f == nullptr)
     return;
 
   std::stringstream ss;
   ss << s;
-  print_tag(ss, tag);
+  print_tag_by_ref(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
-  ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+  ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
   if (t != len)
   {
-    std::cerr << "write error: " << strerror(errno) << std::endl;
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
+
+void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
+{
+  if (f == nullptr)
+    return;
+
+  std::stringstream ss;
+  ss << s;
+  print_tag_by_ref(ss, tag);
+  ss << '\n';
+  ssize_t len = ss.str().size();
+  ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+  }
+}
+
 
 void set_mm(shared_data* sd, float label)
 {
@@ -141,9 +164,9 @@ void vw::learn(example& ec)
     THROW("This reduction does not support single-line examples.");
 
   if (ec.test_only || !training)
-    LEARNER::as_singleline(l)->predict(ec);
+    VW::LEARNER::as_singleline(l)->predict(ec);
   else
-    LEARNER::as_singleline(l)->learn(ec);
+    VW::LEARNER::as_singleline(l)->learn(ec);
 }
 
 void vw::learn(multi_ex& ec)
@@ -152,9 +175,9 @@ void vw::learn(multi_ex& ec)
     THROW("This reduction does not support multi-line example.");
 
   if (!training)
-    LEARNER::as_multiline(l)->predict(ec);
+    VW::LEARNER::as_multiline(l)->predict(ec);
   else
-    LEARNER::as_multiline(l)->learn(ec);
+    VW::LEARNER::as_multiline(l)->learn(ec);
 }
 
 void vw::predict(example& ec)
@@ -162,7 +185,11 @@ void vw::predict(example& ec)
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
-  LEARNER::as_singleline(l)->predict(ec);
+  // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
+  // to predict it would otherwise be incorrectly labelled as test_only = false.
+  ec.test_only = true;
+
+  VW::LEARNER::as_singleline(l)->predict(ec);
 }
 
 void vw::predict(multi_ex& ec)
@@ -170,7 +197,14 @@ void vw::predict(multi_ex& ec)
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
-  LEARNER::as_multiline(l)->predict(ec);
+  // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
+  // to predict it would otherwise be incorrectly labelled as test_only = false.
+  for (auto& ex : ec)
+  {
+    ex->test_only = true;
+  }
+
+  VW::LEARNER::as_multiline(l)->predict(ec);
 }
 
 void vw::finish_example(example& ec)
@@ -178,7 +212,7 @@ void vw::finish_example(example& ec)
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
-  LEARNER::as_singleline(l)->finish_example(*this, ec);
+  VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
 void vw::finish_example(multi_ex& ec)
@@ -186,10 +220,11 @@ void vw::finish_example(multi_ex& ec)
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
-  LEARNER::as_multiline(l)->finish_example(*this, ec);
+  VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
+void compile_gram(
+    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)
   {
@@ -259,6 +294,9 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
 vw::vw()
 {
   sd = &calloc_or_throw<shared_data>();
@@ -269,7 +307,7 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
-  label_type = label_type::simple;
+  label_type = label_type_t::simple;
 
   l = nullptr;
   scorer = nullptr;
@@ -305,10 +343,10 @@ vw::vw()
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;
-  raw_prediction = -1;
   print = print_result;
   print_text = print_raw_text;
+  print_by_ref = print_result_by_ref;
+  print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
   random_seed = 0;
   random_weights = false;
@@ -318,11 +356,7 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
-#ifdef _WIN32
-  stdout_fileno = _fileno(stdout);
-#else
-  stdout_fileno = fileno(stdout);
-#endif
+  stdout_adapter = VW::io::open_stdout();
 
   searchstr = nullptr;
 
@@ -379,4 +413,39 @@ vw::vw()
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
+}
+VW_WARNING_STATE_POP
+
+vw::~vw()
+{
+  if (l != nullptr)
+  {
+    l->finish();
+    free(l);
+  }
+
+  // Check if options object lifetime is managed internally.
+  if (should_delete_options)
+    delete options;
+
+  // TODO: migrate all finalization into parser destructor
+  if (p != nullptr)
+  {
+    free_parser(*this);
+    delete p;
+  }
+
+  const bool seeded = weights.seeded() > 0;
+  if (!seeded)
+  {
+    if (sd->ldict)
+    {
+      sd->ldict->~namedlabels();
+      free(sd->ldict);
+    }
+    free(sd);
+  }
+
+  delete loss;
+  delete all_reduce;
 }

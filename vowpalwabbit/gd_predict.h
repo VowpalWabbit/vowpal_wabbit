@@ -1,8 +1,6 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #pragma once
 
 #include "interactions_predict.h"
@@ -42,7 +40,7 @@ inline void dummy_func(R&, const audit_strings*)
 
 template <class R, class S, void (*T)(R&, float, S), class W>  // nullptr func can't be used as template param in old
                                                                // compilers
-inline void generate_interactions(std::vector<std::string>& interactions, bool permutations, example_predict& ec,
+inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
     R& dat,
     W& weights)  // default value removed to eliminate
                  // ambiguity in old complers
@@ -54,7 +52,7 @@ inline void generate_interactions(std::vector<std::string>& interactions, bool p
 // where S is EITHER float& feature_weight OR uint64_t feature_index
 template <class R, class S, void (*T)(R&, float, S), class W>
 inline void foreach_feature(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
-    std::vector<std::string>& interactions, bool permutations, example_predict& ec, R& dat)
+    std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, R& dat)
 {
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
@@ -76,7 +74,7 @@ inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
 
 template <class W>
 inline float inline_predict(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
-    std::vector<std::string>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
+    std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
 {
   foreach_feature<float, const float&, vec_add, W>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);

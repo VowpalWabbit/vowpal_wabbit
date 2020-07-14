@@ -1,16 +1,14 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
+#include "vw_allreduce.h"
 #include "vw_clr.h"
 #include "vowpalwabbit.h"
 #include "best_constant.h"
 #include "parser.h"
 #include "hash.h"
 #include "vw_example.h"
-#include "vw_allreduce.h"
 #include "vw_builder.h"
 #include "clr_io.h"
 #include "lda_core.h"
@@ -64,8 +62,7 @@ void VowpalWabbit::Driver()
 void VowpalWabbit::RunMultiPass()
 { if (m_vw->numpasses > 1)
   { try
-    { adjust_used_index(*m_vw);
-      m_vw->do_reset_source = true;
+    { m_vw->do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
       VW::end_parser(*m_vw);

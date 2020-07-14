@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
@@ -68,7 +67,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
-  size_t total = all->p->lp.read_cached_label(all->sd, &ae->l, *input);
+  size_t total = all->p->lp.read_cached_label(all->p->_shared_data, &ae->l, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input, ae) == 0)

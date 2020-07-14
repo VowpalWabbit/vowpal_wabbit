@@ -1,9 +1,13 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include <string>
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct LRQFAstate
@@ -130,7 +134,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   }
 }
 
-LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
 {
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");

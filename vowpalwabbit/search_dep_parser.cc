@@ -1,8 +1,6 @@
-/*
-  Copyright (c) by respective owners including Yahoo!, Microsoft, and
-  individual contributors. All rights reserved.  Released under a BSD (revised)
-  license as described in the file LICENSE.
-*/
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include "search_dep_parser.h"
 #include "gd.h"
 #include "cost_sensitive.h"
@@ -87,17 +85,14 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   else
     sch.set_num_learners(3);
 
-  const char *pair[] = {
-      "BC", "BE", "BB", "CC", "DD", "EE", "FF", "GG", "EF", "BH", "BJ", "EL", "dB", "dC", "dD", "dE", "dF", "dG", "dd"};
-  const char *triple[] = {"EFG", "BEF", "BCE", "BCD", "BEL", "ELM", "BHI", "BCC", "BEJ", "BEH", "BJK", "BEN"};
-  std::vector<std::string> newpairs(pair, pair + 19);
-  std::vector<std::string> newtriples(triple, triple + 12);
-  all.pairs.swap(newpairs);
-  all.triples.swap(newtriples);
+  std::vector<std::vector<namespace_index>> newpairs {
+      {'B','C'}, {'B','E'}, {'B','B'}, {'C','C'}, {'D','D'}, {'E','E'}, {'F','F'}, {'G','G'}, {'E','F'}, {'B','H'}, {'B','J'}, {'E','L'}, {'d','B'}, {'d','C'}, {'d','D'}, {'d','E'}, {'d','F'}, {'d','G'}, {'d','d'}};
+  std::vector<std::vector<namespace_index>> newtriples {{'E','F','G'}, {'B','E','F'}, {'B','C','E'}, {'B','C','D'}, {'B','E','L'}, {'E','L','M'}, {'B','H','I'}, {'B','C','C'}, {'B','E','J'}, {'B','E','H'}, {'B','J','K'}, {'B','E','N'}};
 
   all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
-  all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
+  all.interactions.insert(std::end(all.interactions), std::begin(newpairs), std::end(newpairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(newtriples), std::end(newtriples));
+
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
   else
@@ -249,9 +244,12 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   uint64_t mask = sch.get_mask();
   uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
 
-  v_array<uint32_t> &stack = data->stack, &tags = data->tags, *children = data->children, &temp = data->temp;
+  auto& stack = data->stack;
+  auto& tags = data->tags;
+  auto& children = data->children;
+  auto& temp = data->temp;
   example **ec_buf = data->ec_buf;
-  example &ex = *(data->ex);
+  example& ex = *(data->ex);
 
   size_t n = ec.size();
   bool empty = stack.empty();
@@ -305,7 +303,7 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     add_feature(ex, temp[j] + additional_offset, val_namespace, mask, multiplier);
   }
   size_t count = 0;
-  for (features fs : *data->ex)
+  for (features& fs : *data->ex)
   {
     fs.sum_feat_sq = (float)fs.size();
     count += fs.size();
@@ -319,11 +317,11 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   data->ex->total_sum_feat_sq = (float)count + new_weight;
 }
 
-void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uint64_t idx, uint64_t n,
+void get_valid_actions(Search::search& sch, v_array<uint32_t>& valid_action, uint64_t idx, uint64_t n,
     uint64_t stack_depth, uint64_t state)
 {
-  task_data *data = sch.get_task_data<task_data>();
-  uint32_t &sys = data->transition_system;
+  task_data* data = sch.get_task_data<task_data>();
+  uint32_t& sys = data->transition_system;
   v_array<uint32_t> &stack = data->stack, &heads = data->heads, &temp = data->temp;
   valid_action.clear();
   if (sys == arc_hybrid)
@@ -370,7 +368,7 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uin
   }
 }
 
-bool is_valid(uint64_t action, v_array<uint32_t> valid_actions)
+bool is_valid(uint64_t action, const v_array<uint32_t>& valid_actions)
 {
   for (size_t i = 0; i < valid_actions.size(); i++)
     if (valid_actions[i] == action)
@@ -381,8 +379,10 @@ bool is_valid(uint64_t action, v_array<uint32_t> valid_actions)
 void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads,
-                    heads = data->heads;
+  auto& action_loss = data->action_loss;
+  auto& stack = data->stack;
+  auto& gold_heads = data->gold_heads;
+  auto& heads = data->heads;
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
   for (size_t i = 1; i <= 4; i++) action_loss[i] = 0;
@@ -419,9 +419,9 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
     action_loss[REDUCE_RIGHT] += 1;
 }
 
-void get_hybrid_action_cost(Search::search &sch, size_t idx, uint64_t n)
+void get_hybrid_action_cost(Search::search& sch, size_t idx, uint64_t n)
 {
-  task_data *data = sch.get_task_data<task_data>();
+  task_data* data = sch.get_task_data<task_data>();
   v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads;
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
@@ -451,13 +451,14 @@ void get_hybrid_action_cost(Search::search &sch, size_t idx, uint64_t n)
       action_loss[REDUCE_RIGHT] += 1;
 }
 
-void get_cost_to_go_losses(
-    Search::search &sch, v_array<std::pair<action, float>> &gold_action_losses, uint32_t left_label, uint32_t right_label)
+void get_cost_to_go_losses(Search::search &sch, v_array<std::pair<action, float>> &gold_action_losses,
+    uint32_t left_label, uint32_t right_label)
 {
   task_data *data = sch.get_task_data<task_data>();
   bool &one_learner = data->one_learner;
   uint32_t &sys = data->transition_system;
-  v_array<uint32_t> &action_loss = data->action_loss, &valid_actions = data->valid_actions;
+  auto& action_loss = data->action_loss;
+  auto& valid_actions = data->valid_actions;
   uint32_t &num_label = data->num_label;
   gold_action_losses.clear();
 
@@ -489,8 +490,10 @@ void get_cost_to_go_losses(
 void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t /* n */, v_array<action> &gold_actions)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads = data->gold_heads,
-                    &valid_actions = data->valid_actions;
+  auto& action_loss = data->action_loss;
+  auto& stack = data->stack;
+  auto& gold_heads = data->gold_heads;
+  auto& valid_actions = data->valid_actions;
   gold_actions.clear();
   size_t size = stack.size();
   size_t last = (size == 0) ? 0 : stack.last();
@@ -556,8 +559,10 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
 void setup(Search::search &sch, multi_ex &ec)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &gold_heads = data->gold_heads, &heads = data->heads, &gold_tags = data->gold_tags,
-                    &tags = data->tags;
+  auto& gold_heads = data->gold_heads;
+  auto& heads = data->heads;
+  auto& gold_tags = data->gold_tags;
+  auto& tags = data->tags;
   size_t n = ec.size();
   heads.resize(n + 1);
   tags.resize(n + 1);
@@ -567,7 +572,7 @@ void setup(Search::search &sch, multi_ex &ec)
   gold_tags.push_back(0);
   for (size_t i = 0; i < n; i++)
   {
-    v_array<COST_SENSITIVE::wclass> &costs = ec[i]->l.cs.costs;
+    const auto& costs = ec[i]->l.cs.costs;
     uint32_t head, tag;
     if (data->old_style_labels)
     {
@@ -600,9 +605,9 @@ void run(Search::search &sch, multi_ex &ec)
   v_array<uint32_t> &gold_action_temp = data->gold_action_temp;
   v_array<std::pair<action, float>> &gold_action_losses = data->gold_action_losses;
   v_array<action> &gold_actions = data->gold_actions;
-  bool &cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
-  uint32_t &num_label = data->num_label;
-  uint32_t &sys = data->transition_system;
+  bool& cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
+  uint32_t& num_label = data->num_label;
+  uint32_t& sys = data->transition_system;
   uint32_t n = (uint32_t)ec.size();
   uint32_t left_label, right_label;
   stack.clear();
@@ -724,7 +729,8 @@ void run(Search::search &sch, multi_ex &ec)
         {
           gold_action_losses.clear();
           for (size_t i = 1; i <= data->num_label; i++)
-            gold_action_losses.push_back(std::make_pair((action)i, i != (a_id == REDUCE_LEFT ? left_label : right_label)));
+            gold_action_losses.push_back(
+                std::make_pair((action)i, i != (a_id == REDUCE_LEFT ? left_label : right_label)));
           t_id = P.set_tag((ptag)count)
                      .set_input(*(data->ex))
                      .set_allowed(gold_action_losses)

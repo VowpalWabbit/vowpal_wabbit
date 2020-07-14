@@ -1,9 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
 #ifdef _WIN32
 #define NOMINMAX
 #include <WinSock2.h>
@@ -19,6 +17,7 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include <fstream>
 
+#include "vw.h"
 #include "options.h"
 #include "options_boost_po.h"
 
@@ -43,7 +42,7 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  if (!all->quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"
@@ -75,9 +74,13 @@ int main(int argc, char* argv[])
     // support multiple vw instances for training of the same datafile for the same instance
     std::vector<std::unique_ptr<options_boost_po>> arguments;
     std::vector<vw*> alls;
-    if (argc == 3 && !strcmp(argv[1], "--args"))
+    if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
+      if (!arg_file)
+      {
+        THROW("Could not open file: " << argv[2]);
+      }
 
       int line_count = 1;
       std::string line;
@@ -87,12 +90,11 @@ int main(int argc, char* argv[])
         sstr << line << " -f model." << (line_count++);
         sstr << " --no_stdin";  // can't use stdin with multiple models
 
-        std::cout << sstr.str() << std::endl;
-        std::string str = sstr.str();
-        const char* new_args = str.c_str();
+        const std::string new_args = sstr.str();
+        std::cout << new_args << std::endl;
 
         int l_argc;
-        char** l_argv = VW::get_argv_from_string(new_args, l_argc);
+        char** l_argv = VW::to_argv(new_args, l_argc);
 
         std::unique_ptr<options_boost_po> ptr(new options_boost_po(l_argc, l_argv));
         ptr->add_and_parse(driver_config);
@@ -110,23 +112,20 @@ int main(int argc, char* argv[])
 
     vw& all = *alls[0];
 
-    // struct timeb t_start, t_end;
-    // ftime(&t_start);
-
     if (should_use_onethread)
     {
       if (alls.size() == 1)
-        LEARNER::generic_driver_onethread(all);
+        VW::LEARNER::generic_driver_onethread(all);
       else
-        throw "--onethread doesn't make sense with multiple learners";
+        THROW("--onethread doesn't make sense with multiple learners");
     }
     else
     {
       VW::start_parser(all);
       if (alls.size() == 1)
-        LEARNER::generic_driver(all);
+        VW::LEARNER::generic_driver(all);
       else
-        LEARNER::generic_driver(alls);
+        VW::LEARNER::generic_driver(alls);
       VW::end_parser(all);
     }
 

@@ -1,20 +1,12 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 #include <fstream>
 #include <sstream>
-#include <float.h>
-#ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#else
-#include <netdb.h>
-#endif
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cfloat>
+#include <cstring>
+#include <cstdio>
+#include <cassert>
 #include <memory>
 
 #include "parse_example.h"
@@ -34,7 +26,7 @@ license as described in the file LICENSE.
 #define SVM_KER_RBF 1
 #define SVM_KER_POLY 2
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 using std::endl;
@@ -148,7 +140,7 @@ struct svm_params
 
 void svm_example::init_svm_example(flat_example* fec)
 {
-  ex = *fec;
+  ex = std::move(*fec);
   free(fec);
 }
 
@@ -156,9 +148,11 @@ svm_example::~svm_example()
 {
   krow.delete_v();
   // free flatten example contents
-  flat_example* fec = &calloc_or_throw<flat_example>();
-  *fec = ex;
-  free_flatten_example(fec);  // free contents of flat example and frees fec.
+  //flat_example* fec = &calloc_or_throw<flat_example>();
+  //*fec = ex;
+  //free_flatten_example(fec);  // free contents of flat example and frees fec.
+  if (ex.tag_len > 0)
+    free(ex.tag);
 }
 
 float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type);
@@ -337,7 +331,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   // TODO: check about initialization
 
   // params.all->opts_n_args.trace_message<<"Save load svm "<<read<<" "<<text<< endl;
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream msg;
   bin_text_read_write_fixed(model_file, (char*)&(model->num_support), sizeof(model->num_support), "", read, msg, text);
@@ -422,7 +416,7 @@ float poly_kernel(const flat_example* fec1, const flat_example* fec2, int power)
 {
   float dotprod = linear_kernel(fec1, fec2);
   // std::cerr<<"Bandwidth = "<<bandwidth<< endl;
-  //std::cout<<pow(1 + dotprod, power)<< endl;
+  // std::cout<<pow(1 + dotprod, power)<< endl;
   return pow(1 + dotprod, power);
 }
 
@@ -447,7 +441,7 @@ float kernel_function(const flat_example* fec1, const flat_example* fec2, void* 
   return 0;
 }
 
-float dense_dot(float* v1, v_array<float> v2, size_t n)
+float dense_dot(float* v1, const v_array<float>& v2, size_t n)
 {
   float dot_prod = 0.;
   for (size_t i = 0; i < n; i++) dot_prod += v1[i] * v2[i];
@@ -460,7 +454,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   for (size_t i = 0; i < n; i++)
   {
     ec_arr[i]->compute_kernels(params);
-    //std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
+    // std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
       scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
     else
@@ -635,7 +629,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   }
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
-  sizes[all.all_reduce->node] = b->head - b->space.begin();
+  sizes[all.all_reduce->node] = b->unflushed_bytes_count();
   // params.all->opts_n_args.trace_message<<"Sizes = "<<sizes[all.node]<<" ";
   all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
@@ -651,13 +645,12 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   if (total_sum > 0)
   {
     queries = calloc_or_throw<char>(total_sum);
-    memcpy(queries + prev_sum, b->space.begin(), b->head - b->space.begin());
-    b->space.delete_v();
-    all_reduce<char, copy_char>(all, queries, total_sum);
+    size_t bytes_copied = b->copy_to(queries + prev_sum, total_sum - prev_sum);
+    if(bytes_copied < b->unflushed_bytes_count())
+      THROW("kernel_svm: Failed to alloc enough space.");
 
-    b->space.begin() = queries;
-    b->head = b->space.begin();
-    b->space.end() = &queries[total_sum * sizeof(char)];
+    all_reduce<char, copy_char>(all, queries, total_sum);
+    b->replace_buffer(queries, total_sum);
 
     size_t num_read = 0;
     params.pool_pos = 0;
@@ -680,7 +673,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
       else
         break;
 
-      num_read += b->head - b->space.begin();
+      num_read += b->unflushed_bytes_count();
       if (num_read == prev_sum)
         params.local_begin = i + 1;
       if (num_read == prev_sum + sizes[all.all_reduce->node])
@@ -780,7 +773,7 @@ void train(svm_params& params)
       if (model_pos >= 0)
       {
         bool overshoot = update(params, model_pos);
-        //std::cout<<model_pos<<":alpha = "<<model->alpha[model_pos]<< endl;
+        // std::cout<<model_pos<<":alpha = "<<model->alpha[model_pos]<< endl;
 
         double* subopt = calloc_or_throw<double>(model->num_support);
         for (size_t j = 0; j < params.reprocess; j++)
@@ -864,7 +857,7 @@ void learn(svm_params& params, single_learner&, example& ec)
   }
 }
 
-LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 {
   auto params = scoped_calloc_or_throw<svm_params>();
   std::string kernel_type;

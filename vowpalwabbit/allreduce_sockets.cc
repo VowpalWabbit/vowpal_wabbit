@@ -1,8 +1,7 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 /*
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
@@ -68,7 +67,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
     std::stringstream msg;
     if (!quiet)
     {
-      msg << "connect attempt " << count << " failed: " << strerror(errno);
+      msg << "connect attempt " << count << " failed: " << VW::strerror_to_string(errno);
       cerr << msg.str() << endl;
     }
 #ifdef _WIN32
@@ -95,7 +94,7 @@ socket_t AllReduceSockets::getsock()
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
   {
     if (!quiet)
-      cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      cerr << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
   }
 #endif
 
@@ -104,7 +103,7 @@ socket_t AllReduceSockets::getsock()
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
   {
     if (!quiet)
-      cerr << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      cerr << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
   }
 
   return sock;
@@ -215,7 +214,7 @@ void AllReduceSockets::all_reduce_init()
         if (listen(sock, kid_count) < 0)
         {
           if (!quiet)
-            cerr << "listen: " << strerror(errno) << endl;
+            cerr << "listen: " << VW::strerror_to_string(errno) << endl;
           CLOSESOCK(sock);
           sock = getsock();
         }
@@ -240,7 +239,7 @@ void AllReduceSockets::all_reduce_init()
     if (nullptr == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN))
     {
       if (!quiet)
-        cerr << "read parent_ip=" << parent_ip << "(inet_ntop: " << strerror(errno) << ")" << endl;
+        cerr << "read parent_ip=" << parent_ip << "(inet_ntop: " << VW::strerror_to_string(errno) << ")" << endl;
     }
     else
     {
@@ -340,7 +339,7 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n)
       int read_size = recv(socks.parent, buffer + parent_read_pos, (int)count, 0);
       if (read_size == -1)
       {
-        THROW(" recv from parent: " << strerror(errno));
+        THROW("recv from parent: " << VW::strerror_to_string(errno));
       }
       parent_read_pos += read_size;
     }
