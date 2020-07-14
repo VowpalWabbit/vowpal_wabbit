@@ -23,12 +23,14 @@ size_t read_features(vw *all, std::vector<char>& line, size_t&)
   std::cout << "read_features TEXT" <<  std::endl;
   io_item result;
 
-  char *result_msg = (char *)result.message.data();
   result = (*all).p->_io_state.pop_io_queue();
 
-  line = std::move(result.message);
-
-  return line.size();
+  if(result.message.size() > 0) {
+    line = std::move(result.message);
+    return line.size();
+  } else {
+    return 0;
+  }
 
 }
 
@@ -71,15 +73,12 @@ int read_features_string(vw* all, v_array<example*>& examples)
     if(examples.size() > 0){
       (*all).p->ready_parsed_examples.push(examples[0]);
     }
-    
-    //std::cout << "ready parsed examples size: " << (*all).p->ready_parsed_examples.size() << std::endl;
+
  }
 
   // Beginning of parsing  - substring to example conversion
   char *stripped_line = line.data();
-  //std::cout << "stripped_line: " << stripped_line << std::endl;
   num_chars = strip_features_string(stripped_line, num_chars_initial);
- // std::cout << "stripped_line: " << stripped_line << std::endl;
 
   VW::string_view example(stripped_line, num_chars);
   substring_to_example(all, examples[0], example);
@@ -623,6 +622,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   //delete v words and parse_name
   //words_localcpy.delete_v();
  // parse_name_localcpy.delete_v();
+  //notify_examples_cv(*all, ae);
 }
 
 namespace VW
