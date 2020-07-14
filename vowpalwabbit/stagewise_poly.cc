@@ -692,7 +692,7 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->sum_sparsity_sync = 0;
   poly->sum_input_sparsity_sync = 0;
   poly->num_examples_sync = 0;
-  poly->last_example_counter = static_cast<uint64_t>(-1);
+  poly->last_example_counter = std::numeric_limits<uint64_t>::max();
   poly->numpasses = 1;
   poly->update_support = false;
   poly->original_ec = nullptr;
