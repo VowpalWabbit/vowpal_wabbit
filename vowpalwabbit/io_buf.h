@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "v_array.h"
-#include "hash.h"
+#include "../explore/hash.h"
 #include "vw_exception.h"
 #include "io/io_adapter.h"
 
@@ -232,6 +232,16 @@ public:
     }
     return len;
   }
+
+
+  size_t read_all_data(char*& buffer, size_t& size) {
+
+    //how to get the list of input files?
+    size = input_files[current]->get_data_size();
+    return buf_read(buffer, size);
+
+  }
+
 };
 
 bool isbinary(io_buf& i);
