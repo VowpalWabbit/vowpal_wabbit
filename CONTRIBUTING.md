@@ -28,11 +28,11 @@ potential pitfalls before too much time is spent on your part.
 * Start on a new topic branch off of master.
 * Instructions for getting Vowpal Wabbit building and running the tests are in the
   [Wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki).
-* Aim for each pull request to have one goal. If the commit starts to get
-  too large, consider splitting it into multiple, independent pull requests.
+* Aim for each pull request to have one goal. If the PR starts to get too large,
+  consider splitting it into multiple, independent pull requests.
     * Some changes are more naturally authored in the same pull request. This is
       fine, though we find this to be a rare occurrence. These sort of changes
-      are harder to review and interate on with GitHub's tooling.
+      are harder to review.
 * Aim to add tests that exercise the new behaviour and make sure that all the 
   tests continue to pass.
 
