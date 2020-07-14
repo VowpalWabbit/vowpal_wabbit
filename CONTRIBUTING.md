@@ -1,8 +1,8 @@
 # Contributing
 
 Vowpal Wabbit welcomes contributions from the community. Consider this document
-as a guideline rather than strict rules. This are just a set of suggestions that
-we find useful to increase productivitity for everyone involved.
+as a guideline rather than strict rules. These are just a set of suggestions
+that we find useful to increase the productivitity of everyone involved.
 
 ## Process
 
