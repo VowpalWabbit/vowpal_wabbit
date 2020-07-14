@@ -40,5 +40,3 @@ class VowpalWabbitExampleWrapper
 
   VowpalWabbitExampleWrapper(vw* all, example* example) : _all(all), _example(example) {}
 };
-
-jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex);

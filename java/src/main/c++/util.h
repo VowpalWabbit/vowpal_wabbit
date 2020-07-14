@@ -1,6 +1,6 @@
 #include <jni.h>
 
-// Java JNI exception check (if another JNI function is invoked it segfauls)
+// Java JNI exception check (if another JNI function is invoked it segfaults)
 #define CHECK_JNI_EXCEPTION(ret) \
   if (env->ExceptionCheck())     \
     return ret;

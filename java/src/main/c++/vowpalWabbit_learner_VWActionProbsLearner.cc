@@ -7,7 +7,7 @@ jobject action_probs_prediction(example *vec, JNIEnv *env)
   jclass action_prob_class = env->FindClass("vowpalWabbit/responses/ActionProb");
   jmethodID action_prob_constructor = env->GetMethodID(action_prob_class, "<init>", "(IF)V");
 
-  // The action_probs prediction_type_t is just a placeholder identifying when the action_scores
+  // The action_probs prediction_type_t is just a placeholder identifying when the aciton_scores
   // should be treated as probabilities or scores.  That is why this function references a_s yet returns
   // ActionProbs to the Java side.
   ACTION_SCORE::action_scores a_s = vec->pred.a_s;
