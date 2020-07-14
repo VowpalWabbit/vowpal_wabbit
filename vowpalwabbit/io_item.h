@@ -62,16 +62,10 @@ struct io_state {
 
     inline bool add_to_queue(char *line, size_t num_chars_initial){
 
-      std::cout << "add_to-queue line: " << line << std::endl;
-
       bool finish = false;
 
       std::vector<char> byte_array;
       byte_array.resize(num_chars_initial); // Note: This byte_array is NOT null terminated!
-
-      if(num_chars_initial < 1){
-          finish = true;
-      }
 
       memcpy(byte_array.data(), line, num_chars_initial);
       {
@@ -79,7 +73,13 @@ struct io_state {
         io_lines->emplace(std::move(byte_array));
       }
 
+      if(num_chars_initial < 1){
+          finish = true;
+      }
+
       has_input_cv.notify_all();
+
+      std::cout << "has input cv notifyall" << std::endl;
 
       return finish;
 
@@ -96,8 +96,7 @@ struct io_state {
 
       if(io_lines->size() == 0 && done_with_io) {
         std::cout << "condition L130" << std::endl;
-
-        return io_item();
+        return front;
       }
 
       while(!done_with_io && io_lines->size() == 0){
@@ -106,8 +105,6 @@ struct io_state {
         has_input_cv.wait(lck);
       
       }
-
-      std::cout << "io_lines size (pop io queue): " << io_lines->size() << std::endl;
       
       if(io_lines->size() > 0)
       {
