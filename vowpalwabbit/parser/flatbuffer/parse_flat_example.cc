@@ -54,9 +54,10 @@ void parser::init()
   infile.seekg(0,std::ios::end);
   int length = infile.tellg();
   infile.seekg(0,std::ios::beg);
-  std::unique_ptr<char> buffer_pointer(new char[length]);
-  infile.read(buffer_pointer.get(), length);
-  _flatbuffer_pointer = reinterpret_cast<u_int8_t*>(buffer_pointer.get());
+  buffer.resize(length);
+  infile.read(buffer.data(), length);
+  _flatbuffer_pointer = reinterpret_cast<u_int8_t*>(buffer.data());
+
   infile.close();
 
   _data = VW::parsers::flatbuffer::GetExampleCollection(_flatbuffer_pointer);
