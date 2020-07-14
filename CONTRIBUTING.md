@@ -72,7 +72,7 @@ issues, please mention this in a comment, and one of the maintainers will
 help.
 
 The project maintainers will review your changes. We aim to review all
-changes within three business days after a complete successfull run of all the
+changes within three business days after a complete successful run of all the
 "Checks".
 
 Address any review comments by adding commits that address the comments.
