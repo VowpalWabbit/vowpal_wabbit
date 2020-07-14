@@ -275,7 +275,7 @@ void finish_example(vw& all, plt& /*p*/, example& ec)
 void finish(plt& p)
 {
   // print results in test mode
-  if (!p.all->training && p.ec_count > 0)
+  if (!p.all->gs.training && p.ec_count > 0)
   {
     // top-k predictions
     if (p.top_k > 0)
@@ -302,7 +302,7 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() > 0)
   {
-    bool resume = p.all->save_resume;
+    bool resume = p.all->oc.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
@@ -347,20 +347,20 @@ base_learner* plt_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
-    if (!all.training)
+    all.oc.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    if (!all.gs.training)
     {
-      if (tree->top_k > 0) { all.trace_message << "top_k = " << tree->top_k << std::endl; }
+      if (tree->top_k > 0) { all.oc.trace_message << "top_k = " << tree->top_k << std::endl; }
       else
       {
-        all.trace_message << "threshold = " << tree->threshold << std::endl;
+        all.oc.trace_message << "threshold = " << tree->threshold << std::endl;
       }
     }
   }
 
   // resize v_arrays
   tree->nodes_time.resize(tree->t);
-  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
+  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.gs.initial_t);
   tree->node_preds.resize(tree->kary);
   if (tree->top_k > 0) tree->tp_at.resize(tree->top_k);
 
@@ -373,7 +373,7 @@ base_learner* plt_setup(options_i& options, vw& all)
         tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t, prediction_type_t::multilabels);
 
   all.p->lp = MULTILABEL::multilabel;
-  all.label_type = label_type_t::multi;
+  all.gs.label_type = label_type_t::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
   // force logistic loss for base classifiers
