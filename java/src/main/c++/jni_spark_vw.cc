@@ -53,7 +53,6 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
     return 0;
   }
 }
@@ -77,7 +76,6 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
     return 0;
   }
 }
@@ -128,7 +126,6 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
     return nullptr;
   }
 }
@@ -154,8 +151,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
-    return 0;
+    return nullptr;
   }
 }
 
@@ -202,8 +198,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
-    return 0;
+    return nullptr;
   }
 }
 
@@ -354,7 +349,6 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
     return 0;
   }
 }
@@ -545,7 +539,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
     CB::cb_class f;
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)uniform_hash("shared", 6, 0);
+    f.action = (uint32_t)uniform_hash("shared", 6 /*length of string*/, 0);
     f.cost = FLT_MAX;
     f.probability = -1.f;
 
@@ -601,8 +595,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
-    return 0;
+    return nullptr;
   }
 }
 
@@ -633,7 +626,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
 
         CB::cb_class& f = ld->costs[0];
 
-        // ignore validation of action which is uniform_hash("shared")
+        // Ignore checking if f.action == uniform_hash("shared")
         if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)
           ostr << "shared";
         else
@@ -672,8 +665,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
-    // return null
-    return 0;
+    return nullptr;
   }
 }
 
