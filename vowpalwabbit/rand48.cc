@@ -13,16 +13,16 @@
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++11-long-long"
 #endif
-constexpr uint64_t _a = 0xeece66d5deece66dULL;
-constexpr uint64_t _c = 2147483647;
+constexpr uint64_t CONSTANT_A = 0xeece66d5deece66dULL;
+constexpr uint64_t CONSTANT_C = 2147483647;
 
-constexpr int bias = 127 << 23;
+constexpr int BIAS = 127 << 23;
 
 float merand48(uint64_t& initial)
 {
   static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
-  initial = _a * initial + _c;
-  int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias;
+  initial = CONSTANT_A * initial + CONSTANT_C;
+  int32_t temp = ((initial >> 25) & 0x7FFFFF) | BIAS;
   return reinterpret_cast<float&>(temp) - 1;
 }
 
