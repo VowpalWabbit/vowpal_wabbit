@@ -593,18 +593,18 @@ float lda::powf(float x, float p)
   }
 }
 
-void lda::expdigammify(vw &all, float *gamma)
+void lda::expdigammify(vw &all_, float *gamma)
 {
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_FAST_APPROX>(all_, gamma, underflow_threshold, 0.0f);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_PRECISE>(all_, gamma, underflow_threshold, 0.0f);
       break;
     case USE_SIMD:
-      ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
       break;
     default:
       std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
@@ -612,18 +612,18 @@ void lda::expdigammify(vw &all, float *gamma)
   }
 }
 
-void lda::expdigammify_2(vw &all, float *gamma, float *norm)
+void lda::expdigammify_2(vw &all_, float *gamma, float *norm)
 {
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all_, gamma, norm, underflow_threshold);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_PRECISE>(all_, gamma, norm, underflow_threshold);
       break;
     case USE_SIMD:
-      ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_SIMD>(all_, gamma, norm, underflow_threshold);
       break;
     default:
       std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -1175,9 +1175,8 @@ void compute_coherence_metrics(lda &l, T &weights)
       }
       else
       {
-        std::vector<word_doc_frequency> vec = {{f2, 0}};
-        coWordsDFSet.insert(std::make_pair(f1, vec));
-        // printf(" insert %d %d\n", f1, f2);
+        std::vector<word_doc_frequency> tmp_vec = {{f2, 0}};
+        coWordsDFSet.insert(std::make_pair(f1, tmp_vec));
       }
     }
   }

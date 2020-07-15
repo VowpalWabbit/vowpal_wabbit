@@ -251,13 +251,13 @@ void unsubtract_example(example* ec)
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
   COST_SENSITIVE::label ld = ec.l.cs;
-  label_data simple_label;
-  simple_label.initial = 0.;
-  simple_label.label = FLT_MAX;
+  label_data simple_lbl;
+  simple_lbl.initial = 0.;
+  simple_lbl.label = FLT_MAX;
 
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
-  ec.l.simple = simple_label;
+  ec.l.simple = simple_lbl;
   uint64_t old_offset = ec.ft_offset;
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -302,7 +302,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 
     // save original variables
     COST_SENSITIVE::label save_cs_label = ec1->l.cs;
-    label_data& simple_label = ec1->l.simple;
+    label_data& simple_lbl = ec1->l.simple;
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1)
@@ -336,8 +336,8 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
       float old_weight = ec1->weight;
       uint64_t old_offset = ec1->ft_offset;
-      simple_label.initial = 0.;
-      simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
+      simple_lbl.initial = 0.;
+      simple_lbl.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
@@ -382,26 +382,26 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
-    label_data simple_label;
+    label_data simple_lbl;
 
-    simple_label.initial = 0.;
+    simple_lbl.initial = 0.;
     float old_weight = ec->weight;
     if (!data.treat_as_classifier)  // treat like regression
-      simple_label.label = costs[0].x;
+      simple_lbl.label = costs[0].x;
     else  // treat like classification
     {
       if (costs[0].x <= min_cost)
       {
-        simple_label.label = -1.;
+        simple_lbl.label = -1.;
         ec->weight = old_weight * (max_cost - min_cost);
       }
       else
       {
-        simple_label.label = 1.;
+        simple_lbl.label = 1.;
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    ec->l.simple = simple_label;
+    ec->l.simple = simple_lbl;
 
     // Prepare examples for learning
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
