@@ -177,6 +177,12 @@ if ! $NETCAT $DELAY_OPT localhost $PORT < /dev/null
 then
   DELAY_OPT="-i 1"
 fi
+
+if ! $NETCAT $DELAY_OPT localhost $JSON_PORT < /dev/null
+then
+  DELAY_OPT="-i 1"
+fi
+
 $NETCAT $DELAY_OPT localhost $PORT < $TRAINSET > $PREDOUT
 $NETCAT $DELAY_OPT localhost $JSON_PORT < $TRAINSET_JSON > $PREDOUT_JSON
 
