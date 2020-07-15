@@ -34,7 +34,7 @@ int open_socket(const char* host)
   hostent* he;
   if (colon != nullptr)
   {
-    port = atoi(colon + 1);
+    port = static_cast<short unsigned int>(atoi(colon + 1));
     std::string hostname(host, colon - host);
     he = gethostbyname(hostname.c_str());
   }

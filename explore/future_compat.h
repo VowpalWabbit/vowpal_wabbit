@@ -55,14 +55,17 @@
 #if defined(_MSC_VER)
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE    VW_WARNING_DISABLE(4996)
     #define VW_WARNING_DISABLE_CLASS_MEMACCESS
+    #define VW_WARNING_DISABLE_CAST_FUNC_TYPE
 #elif defined(__GNUC__) || defined(__clang__)
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE   VW_WARNING_DISABLE(-Wdeprecated-declarations)
 
     // This warning was added in GCC 8
     #if __GNUC__ >= 8
         #define VW_WARNING_DISABLE_CLASS_MEMACCESS    VW_WARNING_DISABLE(-Wclass-memaccess)
+        #define VW_WARNING_DISABLE_CAST_FUNC_TYPE    VW_WARNING_DISABLE(-Wcast-function-type)
     #else
         #define VW_WARNING_DISABLE_CLASS_MEMACCESS
+        #define VW_WARNING_DISABLE_CAST_FUNC_TYPE
     #endif
 #else
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE

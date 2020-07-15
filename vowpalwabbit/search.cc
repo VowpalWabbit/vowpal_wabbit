@@ -194,7 +194,7 @@ struct search_private
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
-  v_array<example> learn_ec_copy;               // copy of example(s) at learn_t
+  std::vector<example> learn_ec_copy;           // copy of example(s) at learn_t
   example* learn_ec_ref;                        // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt;                      // how many are there (for LDF mode only; otherwise 1)
   v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
@@ -280,8 +280,8 @@ struct search_private
   v_array<size_t> timesteps;
   polylabel learn_losses;
   polylabel gte_label;
-  v_array<std::pair<float, size_t>> active_uncertainty;
-  v_array<v_array<std::pair<CS::wclass&, bool>>> active_known;
+  std::vector<std::pair<float, size_t>> active_uncertainty;
+  std::vector<std::vector<std::pair<CS::wclass&, bool>>> active_known;
   bool force_setup_ec_ref;
   bool active_csoaa;
   float active_csoaa_verify;
@@ -319,9 +319,6 @@ struct search_private
       condition_on_actions.delete_v();
       learn_allowed_actions.delete_v();
       ldf_test_label.costs.delete_v();
-      active_uncertainty.delete_v();
-      for (size_t i = 0; i < active_known.size(); i++) active_known[i].delete_v();
-      active_known.delete_v();
 
       if (cb_learner)
         allowed_actions_cache->cb.costs.delete_v();
@@ -339,8 +336,7 @@ struct search_private
       if (!examples_dont_change)
       {
         void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-        for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
-        learn_ec_copy.delete_v();
+        for (example& ec : learn_ec_copy) { ec.delete_unions(delete_label, nullptr); }
       }
       learn_condition_on_names.delete_v();
       learn_condition_on.delete_v();
@@ -1264,8 +1260,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     size_t cur_t = priv.t + priv.meta_t - 1;
     while (priv.active_known.size() <= cur_t)
     {
-      priv.active_known.push_back(v_array<std::pair<CS::wclass&, bool>>());
-      priv.active_known[priv.active_known.size() - 1] = v_init<std::pair<CS::wclass&, bool>>();
+      priv.active_known.push_back({});
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].clear();
@@ -1464,9 +1459,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   memset(here, 0, sz);
   *here = (unsigned char)sz;
   here += sizeof(size_t);
-  *here = mytag;
+  *here = static_cast<uint8_t>(mytag);
   here += sizeof(ptag);
-  *here = policy;
+  *here = static_cast<uint8_t>(policy);
   here += sizeof(int);
   *here = (unsigned char)learner_id;
   here += sizeof(size_t);
@@ -1474,9 +1469,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   here += sizeof(size_t);
   for (size_t i = 0; i < condition_on_cnt; i++)
   {
-    *here = condition_on[i];
+    *here = static_cast<uint8_t>(condition_on[i]);
     here += sizeof(ptag);
-    *here = condition_on_actions[i].a;
+    *here = static_cast<uint8_t>(condition_on_actions[i].a);
     here += sizeof(action);
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
@@ -1730,11 +1725,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
         void (*label_copy_fn)(void*, void*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
 
-        ensure_size(priv.learn_ec_copy, ec_cnt);
+        priv.learn_ec_copy.resize(ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, priv.learn_ec_copy.begin() + i, ecs + i, label_size, label_copy_fn);
+          VW::copy_example_data(priv.all->audit, &priv.learn_ec_copy[i], ecs + i, label_size, label_copy_fn);
 
-        priv.learn_ec_ref = priv.learn_ec_copy.begin();
+        priv.learn_ec_ref = priv.learn_ec_copy.data();
       }
 
       // copy conditioning stuff and allowed actions
@@ -2117,7 +2112,7 @@ void run_task(search& sch, multi_ex& ec)
 }
 
 void verify_active_csoaa(
-    COST_SENSITIVE::label& losses, v_array<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
+    COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
 {
   float threshold = multiplier / std::sqrt((float)t);
   cdbg << "verify_active_csoaa, losses = [";
@@ -2533,8 +2528,8 @@ void search_initialize(vw* all, search& sch)
 
   sch.task_data = nullptr;
 
-  priv.active_uncertainty = v_init<std::pair<float, size_t>>();
-  priv.active_known = v_init<v_array<std::pair<CS::wclass&, bool>>>();
+  priv.active_uncertainty.clear();
+  priv.active_known.clear();
 
   CS::cs_label.default_label(&priv.empty_cs_label);
 
@@ -3446,7 +3441,7 @@ predictor& predictor::add_condition_range(ptag hi, ptag count, char name0)
   {
     if (i > hi)
       break;
-    char name = name0 + i;
+    char name = name0 + static_cast<char>(i);
     condition_on_tags.push_back(hi - i);
     condition_on_names.push_back(name);
   }
