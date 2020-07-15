@@ -233,7 +233,7 @@ void reset_source(vw& all, size_t numbits)
       all.final_prediction_sink.push_back(socket->get_writer());
       all.p->input->add_file(socket->get_reader());
 
-      set_daemon_reader(all, false);
+      set_daemon_reader(all);
     }
     else
     {
