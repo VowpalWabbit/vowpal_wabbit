@@ -1137,9 +1137,6 @@ echo "" | {VW}
 # Test 61: daemon test
 ./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
-# Test 61: daemon test
-./daemon-test.sh --json
-    test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
 {VW} --ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat
@@ -1858,5 +1855,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
     train-sets/ref/plt_top1_multilabel_predict.stderr
     pred-sets/ref/plt_top1_multilabel.predict
+
+# Test 217: daemon test with json
+./daemon-test.sh --json
+    test-sets/ref/vw-daemon.stdout
 
 # Do not delete this line or the empty line above it
