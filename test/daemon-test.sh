@@ -11,11 +11,8 @@ MODEL=$NAME.model
 TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
-TRAINSET_JSON="$NAME"_json.train
-PREDOUT_JSON="$NAME"_json.predict
 NETCAT_STATUS=$NAME.netcat-status
 PORT=54248
-JSON_PORT=54249
 
 while [ $# -gt 0 ]
 do
@@ -23,11 +20,26 @@ do
         --foreground)
             Foreground="$1"
             ;;
+        --json)
+            JSON="$1"
+            ;;    
         *)
             echo "$NAME: unknown argument $1"
             exit 1
             ;;
     esac
+    if [ -n "$2" ];
+    then
+        case "$2" in
+            --json)
+                JSON="$2"
+                ;;
+            *)
+                echo "$NAME: unknown argument $2"
+                exit 1
+                ;;
+        esac
+    fi
     shift
 done
 
@@ -63,20 +75,18 @@ else
 fi
 
 # A command (+pattern) that is unlikely to match anything but our own test
-DaemonCmd="$VW -t -i $MODEL --daemon $Foreground --num_children 1 --quiet --port $PORT"
-DaemonCmdJson="$VW -t -i $MODEL --daemon $Foreground --num_children 1 --quiet --port $JSON_PORT --json"
+DaemonCmd="$VW -t -i $MODEL --daemon $Foreground --num_children 1 --quiet --port $PORT $JSON"
 # libtool may wrap vw with '.libs/lt-vw' so we need to be flexible
 # on the exact process pattern we try to kill.
 DaemonPat=`echo $DaemonCmd | sed 's/^[^ ]*vw /.*vw /'`
-DaemonPatJson=`echo $DaemonCmdJson | sed 's/^[^ ]*vw /.*vw /'`
 
 stop_daemon() {
     # Make sure we are not running. May ignore 'error' that we're not
-    $PKILL -9 -f "$1" 2>&1 | grep -q 'no process found'
+    $PKILL -9 -f "$DaemonPat" 2>&1 | grep -q 'no process found'
 
     # relinquish CPU by forcing some context switches to be safe
     # (let existing vw daemon procs die)
-    if echo "$1" | grep -q -v -- --foreground; then
+    if echo "$DaemonPat" | grep -q -v -- --foreground; then
         wait
     else
         sleep 0.1
@@ -85,10 +95,10 @@ stop_daemon() {
 
 start_daemon() {
     # echo starting daemon
-    $1 </dev/null >/dev/null &
+    $DaemonCmd </dev/null >/dev/null &
     PID=$!
     # give it time to be ready
-    if echo "$1" | grep -q -v -- --foreground; then
+    if echo "$DaemonCmd" | grep -q -v -- --foreground; then
         wait; wait; wait
     else
         sleep 0.1
@@ -97,25 +107,34 @@ start_daemon() {
 }
 
 cleanup() {
-    /bin/rm -f $MODEL $TRAINSET $PREDREF $PREDOUT $NETCAT_STATUS $TRAINSET_JSON $PREDOUT_JSON
-    stop_daemon $DaemonPat
-    stop_daemon $DaemonPatJson
+    /bin/rm -f $MODEL $TRAINSET $PREDREF $PREDOUT $NETCAT_STATUS
+    stop_daemon
 }
 
 # -- main
 cleanup
 
+txt_dataset() {
 # prepare training set
 cat > $TRAINSET <<EOF
 0.55 1 '1| a
 0.99 1 '2| b c
 EOF
+}
 
+json_dataset() {
 # prepare training set json
-cat > $TRAINSET_JSON <<EOF
+cat > $TRAINSET <<EOF
 {"_label":{"Label":1, "Weight":0.55}, "_tag":"'1", "a":true}
 {"_label":{"Label":1, "Weight":0.99}, "_tag":"'2", "b":true, "c":true}
 EOF
+}
+
+if [ -n "$JSON" ]; then
+    json_dataset
+else
+    txt_dataset
+fi
 
 # prepare expected predict output
 cat > $PREDREF <<EOF
@@ -124,47 +143,28 @@ cat > $PREDREF <<EOF
 EOF
 
 # Train
-$VW -b 10 --quiet -d $TRAINSET -f $MODEL
+$VW -b 10 --quiet -d $TRAINSET -f $MODEL $JSON
 
-DaemonPid=`start_daemon "$DaemonCmd"`
-DaemonPidJson=`start_daemon "$DaemonCmdJson"`
+DaemonPid=`start_daemon`
 
 # Test --foreground argument
 PidsAreEqual=false
-JsonPidsAreEqual=false
 for ProcessPid in $(pgrep -f "$DaemonPat" 2>&1)
 do
     if [ $DaemonPid -eq $ProcessPid ]; then
         PidsAreEqual=true
     fi
 done
-for ProcessPidJson in $(pgrep -f "$DaemonPatJson" 2>&1)
-do
-    if [ $DaemonPidJson -eq $ProcessPidJson ]; then
-        JsonPidsAreEqual=true
-    fi
-done
-
 if [ $Foreground ]; then
     if ! $PidsAreEqual ; then
         echo "$NAME FAILED: --foreground, but vw has run in the background"
-        stop_daemon $DaemonPat
-        exit 1
-    fi
-    if ! $JsonPidsAreEqual ; then
-        echo "$NAME FAILED: --foreground, but vw has run in the background"
-        stop_daemon $DaemonPatJson
+        stop_daemon
         exit 1
     fi
 else
     if $PidsAreEqual ; then
         echo "$NAME FAILED: vw has not run in the background"
-        stop_daemon $DaemonPat
-        exit 1
-    fi
-    if $JsonPidsAreEqual ; then
-        echo "$NAME FAILED: vw has not run in the background"
-        stop_daemon $DaemonPatJson
+        stop_daemon
         exit 1
     fi
 fi
@@ -178,65 +178,23 @@ then
   DELAY_OPT="-i 1"
 fi
 
-if ! $NETCAT $DELAY_OPT localhost $JSON_PORT < /dev/null
-then
-  DELAY_OPT="-i 1"
-fi
-
 $NETCAT $DELAY_OPT localhost $PORT < $TRAINSET > $PREDOUT
-$NETCAT $DELAY_OPT localhost $JSON_PORT < $TRAINSET_JSON > $PREDOUT_JSON
 
-#wait
-
-# JohnLangford: I'm unable to make the following work on Ubuntu 16.04.  Without -q 1, netcat appears to sometimes early terminate with STATUS an empty string.
-# However, GNU netcat does not know -q, so let's do a work-around
-#touch $PREDOUT
-#( $NETCAT localhost $PORT < $TRAINSET > $PREDOUT; STATUS=$?; echo $STATUS > $NETCAT_STATUS ) &
-# Wait until we recieve a prediction from the vw daemon then kill netcat
-#until [ `wc -l < $PREDOUT` -eq 2 ]; do
-#    if [ -f $NETCAT_STATUS ]; then
-#        STATUS=`cat $NETCAT_STATUS`
-#        if [ $STATUS -ne 0 ]; then
-#            echo "$NAME: netcat failed with status code $STATUS"
-#            stop_daemon
-#            exit 1
-#        fi
-#    fi
-#done
 $PKILL -9 $NETCAT
 
 # We should ignore small (< $Epsilon) floating-point differences (fuzzy compare)
 diff <(cut -c-5 $PREDREF) <(cut -c-5 $PREDOUT)
 case $? in
     0)  echo "$NAME: OK"
-        ;;
-    1)  echo "$NAME FAILED: see $PREDREF vs $PREDOUT"
-        stop_daemon $DaemonPat
-        stop_daemon $DaemonPatJson
-        exit 1
-        ;;
-    *)  echo "$NAME: diff failed - something is fishy"
-        stop_daemon $DaemonPat
-        stop_daemon $DaemonPatJson
-        exit 2
-        ;;
-esac
-
-# We should ignore small (< $Epsilon) floating-point differences (fuzzy compare)
-diff <(cut -c-5 $PREDREF) <(cut -c-5 $PREDOUT_JSON)
-case $? in
-    0)  echo "$NAME: JSON OK"
         cleanup
         exit 0
         ;;
-    1)  echo "$NAME FAILED: see $PREDREF vs $PREDOUT_JSON"
-        stop_daemon $DaemonPat
-        stop_daemon $DaemonPatJson
+    1)  echo "$NAME FAILED: see $PREDREF vs $PREDOUT"
+        stop_daemon
         exit 1
         ;;
     *)  echo "$NAME: diff failed - something is fishy"
-        stop_daemon $DaemonPat
-        stop_daemon $DaemonPatJson
+        stop_daemon
         exit 2
         ;;
 esac
