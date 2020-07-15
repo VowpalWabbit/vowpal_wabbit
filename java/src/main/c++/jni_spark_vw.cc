@@ -3,8 +3,11 @@
 #include "best_constant.h"
 #include "util.h"
 #include "options_serializer_boost_po.h"
+#include "learner.h"
 #include <algorithm>
 #include <exception>
+
+jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex);
 
 // Guards
 StringGuard::StringGuard(JNIEnv* env, jstring source) : _env(env), _source(source), _cstr(nullptr)
@@ -50,6 +53,8 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return 0;
   }
 }
 
@@ -72,6 +77,8 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return 0;
   }
 }
 
@@ -121,6 +128,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return nullptr;
   }
 }
 
@@ -145,6 +154,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return 0;
   }
 }
 
@@ -191,6 +202,8 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return 0;
   }
 }
 
@@ -341,6 +354,8 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return 0;
   }
 }
 
@@ -586,6 +601,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return 0;
   }
 }
 
@@ -655,6 +672,8 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    // return null
+    return 0;
   }
 }
 
@@ -670,7 +689,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
   jmethodID ctr;
   switch (all->l->pred_type)
   {
-    case prediction_type::prediction_type_t::scalar:
+    case prediction_type_t::scalar:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -679,7 +698,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
 
-    case prediction_type::prediction_type_t::prob:
+    case prediction_type_t::prob:
       predClass = env->FindClass("java/lang/Float");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -688,7 +707,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-    case prediction_type::prediction_type_t::multiclass:
+    case prediction_type_t::multiclass:
       predClass = env->FindClass("java/lang/Integer");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -697,22 +716,22 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.multiclass);
 
-    case prediction_type::prediction_type_t::scalars:
+    case prediction_type_t::scalars:
       return scalars_predictor(ex, env);
 
-    case prediction_type::prediction_type_t::action_probs:
+    case prediction_type_t::action_probs:
       return action_probs_prediction(ex, env);
 
-    case prediction_type::prediction_type_t::action_scores:
+    case prediction_type_t::action_scores:
       return action_scores_prediction(ex, env);
 
-    case prediction_type::prediction_type_t::multilabels:
+    case prediction_type_t::multilabels:
       return multilabel_predictor(ex, env);
 
     default:
     {
       std::ostringstream ostr;
-      ostr << "prediction type '" << all->l->pred_type << "' is not supported";
+      ostr << "prediction type '" << to_string(all->l->pred_type) << "' is not supported";
 
       env->ThrowNew(env->FindClass("java/lang/UnsupportedOperationException"), ostr.str().c_str());
       return nullptr;
