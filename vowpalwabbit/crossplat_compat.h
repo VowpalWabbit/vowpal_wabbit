@@ -36,7 +36,7 @@ inline void string_cpy(char *dest, size_t dest_size, const char *src, int *error
 #endif
 }
 
-inline void fopen_(FILE **pf, const char *filename, const char *mode, int *error_no = nullptr)
+inline void file_open(FILE **pf, const char *filename, const char *mode, int *error_no = nullptr)
 {
 #ifdef _WIN32
   // fopen_s returns an errno_t
