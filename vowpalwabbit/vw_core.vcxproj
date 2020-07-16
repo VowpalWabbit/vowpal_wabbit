@@ -193,7 +193,7 @@
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="options.h" />
-    <ClInclude Include="parser\flatbuffer\parse_flat_example.h" />
+    <ClInclude Include="parser\flatbuffer\parse_example_flatbuffer.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example_json.h" />
@@ -317,7 +317,7 @@
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
     <ClCompile Include="parser\flatbuffer\endian.cc" />
-    <ClCompile Include="parser\flatbuffer\parse_flat_example.cc" />
+    <ClCompile Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
     <ClCompile Include="parser\flatbuffer\preamble.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />

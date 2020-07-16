@@ -122,7 +122,7 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
-  parser/flatbuffer/parse_flat_example.h
+  parser/flatbuffer/parse_example_flatbuffer.h
   plt.h
   print.h
   queue.h
@@ -243,7 +243,7 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  parser/flatbuffer/parse_flat_example.cc
+  parser/flatbuffer/parse_example_flatbuffer.cc
   parser/flatbuffer/parse_label.cc
   plt.cc
   print.cc

@@ -14,7 +14,6 @@ class to_flat{
   public:
     std::string output_flatbuffer_name;
     void convert_txt_to_flat(vw& all);
-    to_flat();
   private:
     flatbuffers::FlatBufferBuilder _builder;
     void create_simple_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);

@@ -6,7 +6,7 @@
 #include "test_common.h"
 
 #include <vector>
-#include "parser/flatbuffer/parse_flat_example.h"
+#include "parser/flatbuffer/parse_example_flatbuffer.h"
 #include "parser/flatbuffer/generated/example_generated.h"
 #include "constant.h"
 
