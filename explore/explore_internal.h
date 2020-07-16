@@ -14,10 +14,10 @@
 
 namespace exploration
 {
-  const uint64_t CONSTANT_A = 0xeece66d5deece66dULL;
-  const uint64_t CONSTANT_C = 2147483647;
+  constexpr uint64_t CONSTANT_A = 0xeece66d5deece66dULL;
+  constexpr uint64_t CONSTANT_C = 2147483647;
 
-  const int BIAS = 127 << 23u;
+  constexpr int BIAS = 127 << 23u;
 
   union int_float
   {
