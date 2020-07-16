@@ -51,8 +51,8 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     l->conditional_contextual_bandit.type = CCB::example_type::slot;
 
     if (label->explicit_included_actions() != nullptr){
-      for (size_t i = 0; i < label->explicit_included_actions()->Length(); i++){
-        l->conditional_contextual_bandit.explicit_included_actions.push_back(label->explicit_included_actions()->Get(i));
+      for (const auto& exp_included_action : *(label->explicit_included_actions())){
+        l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action);
       }
     }
     else if (label->outcome() != nullptr){
