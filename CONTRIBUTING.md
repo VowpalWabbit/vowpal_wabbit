@@ -6,11 +6,11 @@ that we find useful to increase the productivitity of everyone involved.
 
 ## Process
 
-1. Make a proposal
-1. Implement the proposal and its tests
-1. Write a good commit message
-1. Start a pull request & address comments
-1. Merge
+1. [Make a proposal](#proposal)
+1. [Implement the proposal and its tests](#implementation)
+1. [Write a good commit message](#suggested-commit-structure)
+1. [Start a pull request & address comments](#pull-request)
+1. [Merge](#merge)
 
 ### Proposal
 
@@ -24,17 +24,17 @@ potential pitfalls before too much time is spent on your part.
 
 ### Implementation
 
-* Fork the repository on GitHub.
-* Start on a new topic branch off of master.
+* Fork the repository on GitHub
+* Start on a new topic branch off of master
 * Instructions for getting Vowpal Wabbit building and running the tests are in the
-  [Wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki).
+  [Wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki)
 * Aim for each pull request to have one goal. If the PR starts to get too large,
-  consider splitting it into multiple, independent pull requests.
+  consider splitting it into multiple, independent pull requests
     * Some changes are more naturally authored in the same pull request. This is
       fine, though we find this to be a rare occurrence. These sort of changes
-      are harder to review.
+      are harder to review
 * Aim to add tests that exercise the new behaviour and make sure that all the 
-  tests continue to pass.
+  tests continue to pass
 
 ### Suggested commit structure
 
@@ -71,9 +71,8 @@ appropriate fixes. If you think the failures are due to infrastructure
 issues, please mention this in a comment, and one of the maintainers will
 help.
 
-The project maintainers will review your changes. We aim to review all
-changes within three business days after a complete successful run of all the
-"Checks".
+The project maintainers will review your changes after a complete successful run
+of all the the "Checks".
 
 Address any review comments by adding commits that address the comments.
 Don't worry about having fixup/tiny commits at this stage. They'll get
