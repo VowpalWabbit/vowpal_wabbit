@@ -141,22 +141,28 @@ int main(int argc, char* argv[])
   }
 
   FILE* fB;
+  int errnofb;
   FILE* fU;
+  int errnofu;
   FILE* fI;
+  int errnofi;
 
-  if ((fB = fopen(blacklistfilename.c_str(), "r")) == NULL)
+  VW::fopen(&fB, blacklistfilename.c_str(), "r", &errnofb);
+  if (errnofb != 0)
   {
     fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), strerror(errno));
     cerr << desc << endl;
     exit(2);
   }
-  if ((fU = fopen(userfilename.c_str(), "r")) == NULL)
+  VW::fopen(&fU, userfilename.c_str(), "r", &errnofu);
+  if (errnofu != 0)
   {
     fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), strerror(errno));
     cerr << desc << endl;
     exit(2);
   }
-  if ((fI = fopen(itemfilename.c_str(), "r")) == NULL)
+  VW::fopen(&fI, itemfilename.c_str(), "r", &errnofi);
+  if (errnofi != 0)
   {
     fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), strerror(errno));
     cerr << desc << endl;

@@ -300,13 +300,14 @@ void parse_affix_argument(vw& all, std::string str)
   if (str.length() == 0)
     return;
   char* cstr = calloc_or_throw<char>(str.length() + 1);
-  strcpy(cstr, str.c_str());
+  VW::strcpy(cstr, str.length(), str.c_str());
 
-  char* p = strtok(cstr, ",");
+  char *next_token;
+  char* p = strtok_s(cstr, ",", &next_token);
 
   try
   {
-    while (p != 0)
+    while (p)
     {
       char* q = p;
       uint16_t prefix = 1;
@@ -339,7 +340,7 @@ void parse_affix_argument(vw& all, std::string str)
       all.affix_features[ns] <<= 4;
       all.affix_features[ns] |= afx;
 
-      p = strtok(nullptr, ",");
+      p = strtok_s(nullptr, ",", &next_token);
     }
   }
   catch (...)
@@ -983,10 +984,19 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (directory_exists("."))
       all.dictionary_path.push_back(".");
 
-    const std::string PATH = getenv("PATH");
+    
 #if _WIN32
+    std::string PATH;
+    char* buf = nullptr;
+    size_t buf_size = 0;
+    if (_dupenv_s(&buf, &buf_size, "PATH") == 0 && buf != nullptr)
+    {
+      PATH = std::move(std::string{buf, buf_size});
+      free(buf);
+    }
     const char delimiter = ';';
 #else
+    const std::string PATH = getenv("PATH");
     const char delimiter = ':';
 #endif
     if (!PATH.empty())
@@ -1615,7 +1625,7 @@ char** to_argv_escaped(std::string const& s, int& argc)
   for (size_t i = 0; i < tokens.size(); i++)
   {
     argv[i + 1] = calloc_or_throw<char>(tokens[i].length() + 1);
-    sprintf(argv[i + 1], "%s", tokens[i].data());
+    sprintf_s(argv[i + 1], (tokens[i].length() + 1), "%s", tokens[i].data());
   }
 
   argc = static_cast<int>(tokens.size() + 1);

@@ -15,6 +15,7 @@
 #include "rand48.h"
 #include "vw.h"
 #include "v_array.h"
+#include "future_compat.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -376,6 +377,8 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
 
 // train the node with id cn, using the statistics stored in the node to
 // formulate a binary classificaiton example.
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_POTENTIALLY_UNINITIALIZED
 float train_node(memory_tree& b, single_learner& base, example& ec, const uint64_t cn)
 {
   // predict, learn and predict
@@ -412,7 +415,6 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
 
   base.predict(ec, b.nodes[cn].base_router);
   float save_binary_scalar = ec.pred.scalar;
-
   if (b.oas == false)
   {
     ec.l.multi = mc;
@@ -423,6 +425,7 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
     ec.pred.multilabels = preds;
     ec.l.multilabels = multilabels;
   }
+
   ec.weight = ec_input_weight;
 
   return save_binary_scalar;
@@ -512,9 +515,9 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
   {
     b.max_ex_in_leaf = (size_t)std::max(b.nodes[cn].nl, b.nodes[cn].nr);
-    // std::cout<<b.max_ex_in_leaf<< std::endl;
   }
 }
+VW_WARNING_STATE_POP
 
 int compare_label(const void* a, const void* b) { return *(uint32_t*)a - *(uint32_t*)b; }
 
@@ -664,7 +667,8 @@ float F1_score_for_two_examples(example& ec1, example& ec2)
     // return v2; //only precision
     return 2.f * (v1 * v2 / (v1 + v2));
 }
-
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_POTENTIALLY_UNINITIALIZED
 void predict(memory_tree& b, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc;
@@ -734,7 +738,6 @@ void predict(memory_tree& b, single_learner& base, example& ec)
 
 float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, example& ec, float weight = 1.f)
 {
-  // example& ec = *b.examples[ec_array_index];
   MULTICLASS::label_t mc;
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
@@ -798,6 +801,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
 
   return reward;
 }
+VW_WARNING_STATE_POP
 
 void learn_at_leaf_random(
     memory_tree& b, single_learner& base, const uint64_t& leaf_id, example& ec, const float& weight)
@@ -823,6 +827,8 @@ void learn_at_leaf_random(
   return;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_POTENTIALLY_UNINITIALIZED
 void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, uint64_t cn,
     v_array<uint64_t>& path, bool insertion)
 {
@@ -868,7 +874,6 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
     ec.l.multilabels = multilabels;
   }
 
-  // std::cout<<"at route to leaf: "<<path.size()<< std::endl;
   if (insertion == true)
   {
     b.nodes[cn].examples_index.push_back(ec_array_index);
@@ -951,6 +956,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
   }
   path_to_leaf.delete_v();
 }
+VW_WARNING_STATE_POP
 
 // using reward signals
 void update_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec)

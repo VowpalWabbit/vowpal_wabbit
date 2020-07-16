@@ -1760,7 +1760,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         else
         {
           ensure_size(priv.learn_condition_on_names, strlen(condition_on_names) + 1);
-          strcpy(priv.learn_condition_on_names.begin(), condition_on_names);
+          VW::strcpy(priv.learn_condition_on_names.begin(), (strlen(condition_on_names) + 1), condition_on_names);
         }
       }
 
@@ -2586,14 +2586,16 @@ void search_finish(search& sch)
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
-  FILE* f = fopen(filename, "r");
-  if (f == nullptr)
+  FILE* f;
+  int err;
+  VW::fopen(&f, filename, "r", &err);
+  if (err != 0)
     THROW("error: could not read file " << filename << " (" << VW::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
   bool* bg = calloc_or_throw<bool>(((size_t)(A + 1)) * (A + 1));
   int rd, from, to, count = 0;
-  while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0)
+  while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > (int)A))
     {

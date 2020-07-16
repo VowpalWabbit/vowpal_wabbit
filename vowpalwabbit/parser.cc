@@ -26,7 +26,6 @@ typedef int socklen_t;
 int daemon(int /*a*/, int /*b*/)
 {
   exit(0);
-  return 0;
 }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
