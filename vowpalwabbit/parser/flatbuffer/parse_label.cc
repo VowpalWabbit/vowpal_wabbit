@@ -74,24 +74,24 @@ void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
 {
   l->cb_eval.action = label->action();
   l->cb_eval.event.weight = label->event()->weight();
-  for (size_t i = 0; i < label->event()->costs()->Length(); i++){
+  for (const auto& cb_cost : *(label->event()->costs())){
     CB::cb_class f;
-    f.cost = label->event()->costs()->Get(i)->cost();
-    f.action = label->event()->costs()->Get(i)->action();
-    f.probability = label->event()->costs()->Get(i)->probability();
-    f.partial_prediction = label->event()->costs()->Get(i)->partial_pred();
+    f.cost = cb_cost->cost();
+    f.action = cb_cost->action();
+    f.probability = cb_cost->probability();
+    f.partial_prediction = cb_cost->partial_pred();
     l->cb_eval.event.costs.push_back(f);
   }
 }
 
 void parser::parse_cs_label(polylabel* l, const CS_Label* label)
 {
-  for (size_t i = 0; i < label->costs()->Length(); i++){
+  for (auto const& cost : *(label->costs())){
     COST_SENSITIVE::wclass f;
-    f.x = label->costs()->Get(i)->x();
-    f.partial_prediction = label->costs()->Get(i)->partial_pred();
-    f.wap_value = label->costs()->Get(i)->wap_value();
-    f.class_index = label->costs()->Get(i)->class_index();
+    f.x = cost->x();
+    f.partial_prediction = cost->partial_pred();
+    f.wap_value = cost->wap_value();
+    f.class_index = cost->class_index();
     l->cs.costs.push_back(f); 
   }
 }
@@ -105,8 +105,8 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
 
 void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
 {
-  for (size_t i = 0; i < label->labels()->Length(); i++)
-    l->multilabels.label_v.push_back(label->labels()->Get(i));
+  for (auto const& lab : *(label->labels()))
+    l->multilabels.label_v.push_back(lab);
 }
 
 void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
