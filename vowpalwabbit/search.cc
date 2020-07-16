@@ -2611,14 +2611,16 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 
   v_array<CS::label> allowed = v_init<CS::label>();
 
-  for (size_t from = 0; from < A; from++)
+  // from
+  for (size_t i = 0; i < A; i++)
   {
     v_array<CS::wclass> costs = v_init<CS::wclass>();
 
-    for (size_t to = 0; to < A; to++)
-      if (bg[from * (A + 1) + to])
+    // to
+    for (size_t j = 0; j < A; j++)
+      if (bg[i * (A + 1) + j])
       {
-        CS::wclass c = {FLT_MAX, (action)to, 0., 0.};
+        CS::wclass c = {FLT_MAX, (action)j, 0., 0.};
         costs.push_back(c);
       }
 
@@ -3018,7 +3020,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   // action "1" is at index 0. Map action to its appropriate index. In particular, this fixes an
   // issue where the predicted action is the last, and there is no example header, causing an index
   // beyond the end of the array (usually resulting in a segfault at some point.)
-  size_t action_index = a - COST_SENSITIVE::ec_is_example_header(ecs[0]) ? 0 : 1;
+  size_t action_index = (a - COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 0 : 1;
 
   if ((mytag != 0) && ecs[action_index].l.cs.costs.size() > 0)
   {
@@ -3409,11 +3411,14 @@ predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
 }
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
 {
   erase_alloweds();
   return add_allowed(a);
 }
+VW_WARNING_STATE_POP
 predictor& predictor::set_allowed(std::vector<std::pair<action, float>>& a)
 {
   erase_alloweds();

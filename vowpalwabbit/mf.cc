@@ -168,7 +168,7 @@ void learn(mf& data, single_learner& base, example& ec)
       {
         features& fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
-        for (size_t i = 0; i < fs.size(); ++i) fs.values[i] *= data.sub_predictions[2 * k - 1];
+        for (size_t j = 0; j < fs.size(); ++j) fs.values[j] *= data.sub_predictions[2 * k - 1];
 
         // update r^k using base learner
         base.update(ec, k + data.rank);

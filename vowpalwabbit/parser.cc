@@ -867,7 +867,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   len = ec->indices.size();
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
-  int fs_count = 0;
+  size_t fs_count = 0;
 
   for (size_t idx = 0; idx < len; ++idx)
   {
@@ -877,7 +877,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     uint32_t stride_shift = all.weights.stride_shift();
-    int f_count = 0;
+    size_t f_count = 0;
     for (features::iterator& f : ec->feature_space[i])
     {
       feature t = {f.value(), f.index()};
