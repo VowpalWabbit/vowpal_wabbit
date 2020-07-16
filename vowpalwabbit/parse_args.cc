@@ -300,7 +300,7 @@ void parse_affix_argument(vw& all, std::string str)
   if (str.length() == 0)
     return;
   char* cstr = calloc_or_throw<char>(str.length() + 1);
-  VW::strcpy(cstr, str.length(), str.c_str());
+  VW::string_cpy(cstr, str.length(), str.c_str());
 
   char *next_token;
   char* p = strtok_s(cstr, ",", &next_token);

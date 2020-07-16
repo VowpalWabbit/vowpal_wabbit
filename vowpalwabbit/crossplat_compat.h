@@ -22,49 +22,36 @@ constexpr uint64_t UINT64_ONE = 1i64;
 constexpr uint64_t UINT64_32ONES = 0x00000000ffffffffi64;
 #endif
 
-
 namespace VW
 {
-    inline void strcpy(char *dest, size_t dest_size, const char *src, int* error_no = nullptr)
-    {
-    #ifdef _WIN32
-        // strcpy_s returns an errno_t
-        auto err = strcpy_s(dest, dest_size, src);
-        if (error_no)
-        {
-            *error_no = err;
-        }
-    #else
-        strncpy(dest, src, dest_size);
-        if (error_no)
-        {
-            *error_no = 0;
-        }
-    #endif
-    }
-
-    inline void file_open(FILE **pf, const char *filename, const char *mode, int* error_no = nullptr)
-    {
-    #ifdef _WIN32
-        // fopen_s returns an errno_t
-        auto err = fopen_s(pf, filename, mode);
-        if (error_no)
-        {
-            *error_no = err;
-        }
-    #else
-        *pf = fopen(filename, mode);
-        if (error_no)
-        {
-            if (*pf != nullptr)
-            {
-                *error_no = 0;
-            }
-            else
-            {
-                *error_no = 1;
-            }
-        }
-    #endif
-    }
+inline void string_cpy(char *dest, size_t dest_size, const char *src, int *error_no = nullptr)
+{
+#ifdef _WIN32
+  // strcpy_s returns an errno_t
+  auto err = strcpy_s(dest, dest_size, src);
+  if (error_no) { *error_no = err; }
+#else
+  strncpy(dest, src, dest_size);
+  if (error_no) { *error_no = 0; }
+#endif
 }
+
+inline void fopen_(FILE **pf, const char *filename, const char *mode, int *error_no = nullptr)
+{
+#ifdef _WIN32
+  // fopen_s returns an errno_t
+  auto err = fopen_s(pf, filename, mode);
+  if (error_no) { *error_no = err; }
+#else
+  *pf = fopen(filename, mode);
+  if (error_no)
+  {
+    if (*pf != nullptr) { *error_no = 0; }
+    else
+    {
+      *error_no = 1;
+    }
+  }
+#endif
+}
+}  // namespace VW

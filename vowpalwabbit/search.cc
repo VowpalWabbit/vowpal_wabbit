@@ -1760,7 +1760,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         else
         {
           ensure_size(priv.learn_condition_on_names, strlen(condition_on_names) + 1);
-          VW::strcpy(priv.learn_condition_on_names.begin(), (strlen(condition_on_names) + 1), condition_on_names);
+          VW::string_cpy(priv.learn_condition_on_names.begin(), (strlen(condition_on_names) + 1), condition_on_names);
         }
       }
 
