@@ -352,7 +352,7 @@ void save_node_stats(log_multi& d)
   uint32_t total;
   log_multi* b = &d;
 
-  VW::fopen(&fp, "atxm_debug.csv", "wt");
+  VW::file_open(&fp, "atxm_debug.csv", "wt");
 
   for (i = 0; i < b->nodes.size(); i++)
   {

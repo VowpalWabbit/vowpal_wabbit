@@ -7,11 +7,13 @@
 #include <cstring>
 #include <string.h>
 #include <stdio.h>
+#include <cstdio>
 
 #ifndef _WIN32
 #define sprintf_s snprintf
 #define vsprintf_s vsnprintf
-#define strtok_r strtok_s
+#define strtok_s strtok_r
+#define fscanf_s fscanf
 
 constexpr uint64_t UINT64_ZERO = 0ULL;
 constexpr uint64_t UINT64_ONE = 1ULL;
@@ -33,11 +35,15 @@ namespace VW
             *error_no = err;
         }
     #else
-        strncpy(dest, src);
+        strncpy(dest, src, dest_size);
+        if (error_no)
+        {
+            *error_no = 0;
+        }
     #endif
     }
 
-    inline void fopen(FILE **pf, const char *filename, const char *mode, int* error_no = nullptr)
+    inline void file_open(FILE **pf, const char *filename, const char *mode, int* error_no = nullptr)
     {
     #ifdef _WIN32
         // fopen_s returns an errno_t

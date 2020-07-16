@@ -2588,7 +2588,7 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
   FILE* f;
   int err;
-  VW::fopen(&f, filename, "r", &err);
+  VW::file_open(&f, filename, "r", &err);
   if (err != 0)
     THROW("error: could not read file " << filename << " (" << VW::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");

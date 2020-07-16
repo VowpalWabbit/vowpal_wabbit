@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   dense_parameters& weights = model->weights.dense_weights;
 
   FILE* file;
-  VW::fopen(&file, infile.c_str(), "r");
+  VW::file_open(&file, infile.c_str(), "r");
   char* line = NULL;
   size_t len = 0;
   ssize_t read;
