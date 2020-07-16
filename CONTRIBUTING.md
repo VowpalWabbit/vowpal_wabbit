@@ -72,7 +72,7 @@ issues, please mention this in a comment, and one of the maintainers will
 help.
 
 The project maintainers will review your changes after a complete successful run
-of all the the "Checks".
+of all the "Checks".
 
 Address any review comments by adding commits that address the comments.
 Don't worry about having fixup/tiny commits at this stage. They'll get
