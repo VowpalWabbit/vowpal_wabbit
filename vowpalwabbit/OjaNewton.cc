@@ -97,12 +97,12 @@ struct OjaNewton
     {
       for (int k = 1; k <= j - 1; k++)
       {
-        double tmp = 0;
+        double temp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-          tmp += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[k];
+          temp += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[k];
         for (uint32_t i = 0; i < length; i++)
-          (&(weights.strided_index(i)))[j] -= (float)tmp * (&(weights.strided_index(i)))[k];
+          (&(weights.strided_index(i)))[j] -= (float)temp * (&(weights.strided_index(i)))[k];
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
@@ -129,15 +129,15 @@ struct OjaNewton
     for (int i = 1; i <= m; i++)
     {
       float gamma = fmin(learning_rate_cnt / t, 1.f);
-      float tmp = data.AZx[i] * data.sketch_cnt;
+      float temp = data.AZx[i] * data.sketch_cnt;
 
       if (t == 1)
       {
-        ev[i] = gamma * tmp * tmp;
+        ev[i] = gamma * temp * temp;
       }
       else
       {
-        ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * tmp * tmp;
+        ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * temp * temp;
       }
     }
   }
@@ -165,14 +165,14 @@ struct OjaNewton
 
   void update_K()
   {
-    float tmp = data.norm2_x * data.sketch_cnt * data.sketch_cnt;
+    float temp = data.norm2_x * data.sketch_cnt * data.sketch_cnt;
     for (int i = 1; i <= m; i++)
     {
       for (int j = 1; j <= m; j++)
       {
         K[i][j] += data.delta[i] * data.Zx[j] * data.sketch_cnt;
         K[i][j] += data.delta[j] * data.Zx[i] * data.sketch_cnt;
-        K[i][j] += data.delta[i] * data.delta[j] * tmp;
+        K[i][j] += data.delta[i] * data.delta[j] * temp;
       }
     }
   }
@@ -230,12 +230,12 @@ struct OjaNewton
   {
     for (int j = 1; j <= m; j++)
     {
-      float tmp = 0;
+      float temp = 0;
       for (int i = j; i <= m; i++)
       {
-        tmp += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
+        temp += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
       }
-      b[j] += tmp * data.g;
+      b[j] += temp * data.g;
     }
   }
 

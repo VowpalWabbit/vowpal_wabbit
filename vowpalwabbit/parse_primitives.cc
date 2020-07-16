@@ -63,23 +63,3 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
   }
   return tokens;
 }
-
-std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss)
-{
-  VW::string_view* it = ss.cbegin();
-
-  if (it == ss.cend())
-  {
-    return os;
-  }
-
-  os << *it;
-
-  for (it++; it != ss.cend(); it++)
-  {
-    os << ",";
-    os << *it;
-  }
-
-  return os;
-}

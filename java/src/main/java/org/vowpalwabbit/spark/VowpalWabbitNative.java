@@ -36,6 +36,22 @@ public class VowpalWabbitNative implements Closeable {
     private static native long initializeFromModel(String args, byte[] model);
 
     /**
+     * Invoke multi-line learning.
+     * 
+     * @param examples the examples to learn from.
+     * @return the one-step ahead prediction.
+     */
+    public native Object learn(VowpalWabbitExample[] examples);
+
+    /**
+     * Invoke multi-line prediction.
+     * 
+     * @param examples the example to predict for.
+     * @return the prediction.
+     */
+    public native Object predict(VowpalWabbitExample[] examples);
+
+    /**
      * Perform remaining passes.
      */
     public native void performRemainingPasses();

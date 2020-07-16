@@ -967,7 +967,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t i = 0; i < 256; i++) all.redefine[i] = new_namespace;
+            for (size_t j = 0; j < 256; j++) all.redefine[j] = new_namespace;
             break;  // break processing S
           }
         }

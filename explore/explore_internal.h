@@ -14,10 +14,10 @@
 
 namespace exploration
 {
-  const uint64_t a = 0xeece66d5deece66dULL;
-  const uint64_t c = 2147483647;
+  constexpr uint64_t CONSTANT_A = 0xeece66d5deece66dULL;
+  constexpr uint64_t CONSTANT_C = 2147483647;
 
-  const int bias = 127 << 23u;
+  constexpr int BIAS = 127 << 23u;
 
   union int_float
   {
@@ -28,9 +28,9 @@ namespace exploration
   // uniform random between 0 and 1
   inline float uniform_random_merand48(uint64_t initial)
   {
-    initial = a * initial + c;
+    initial = CONSTANT_A * initial + CONSTANT_C;
     int_float temp;
-    temp.i = ((initial >> 25) & 0x7FFFFF) | bias;
+    temp.i = ((initial >> 25) & 0x7FFFFF) | BIAS;
     return temp.f - 1;
   }
 

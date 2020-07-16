@@ -129,52 +129,52 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
     v_array<v_array<uint32_t>> new_tournaments = v_init<v_array<uint32_t>>();
     tournaments = e.all_levels[level];
 
-    for (size_t t = 0; t < tournaments.size(); t++)
+    for (size_t i = 0; i < tournaments.size(); i++)
     {
       v_array<uint32_t> empty = v_init<uint32_t>();
       new_tournaments.push_back(empty);
     }
 
-    for (size_t t = 0; t < tournaments.size(); t++)
+    for (size_t i = 0; i < tournaments.size(); i++)
     {
-      for (size_t j = 0; j < tournaments[t].size() / 2; j++)
+      for (size_t j = 0; j < tournaments[i].size() / 2; j++)
       {
         uint32_t id = node++;
-        uint32_t left = tournaments[t][2 * j];
-        uint32_t right = tournaments[t][2 * j + 1];
+        uint32_t left = tournaments[i][2 * j];
+        uint32_t right = tournaments[i][2 * j + 1];
 
-        direction d = {id, t, 0, 0, left, right, false};
+        direction d = {id, i, 0, 0, left, right, false};
         e.directions.push_back(d);
         uint32_t direction_index = (uint32_t)e.directions.size() - 1;
-        if (e.directions[left].tournament == t)
+        if (e.directions[left].tournament == i)
           e.directions[left].winner = direction_index;
         else
           e.directions[left].loser = direction_index;
-        if (e.directions[right].tournament == t)
+        if (e.directions[right].tournament == i)
           e.directions[right].winner = direction_index;
         else
           e.directions[right].loser = direction_index;
         if (e.directions[left].last)
           e.directions[left].winner = direction_index;
 
-        if (tournaments[t].size() == 2 && (t == 0 || tournaments[t - 1].empty()))
+        if (tournaments[i].size() == 2 && (i == 0 || tournaments[i - 1].empty()))
         {
           e.directions[direction_index].last = true;
-          if (t + 1 < tournaments.size())
-            new_tournaments[t + 1].push_back(id);
+          if (i + 1 < tournaments.size())
+            new_tournaments[i + 1].push_back(id);
           else  // winner eliminated.
             e.directions[direction_index].winner = 0;
           e.final_nodes.push_back((uint32_t)(e.directions.size() - 1));
         }
         else
-          new_tournaments[t].push_back(id);
-        if (t + 1 < tournaments.size())
-          new_tournaments[t + 1].push_back(id);
+          new_tournaments[i].push_back(id);
+        if (i + 1 < tournaments.size())
+          new_tournaments[i + 1].push_back(id);
         else  // loser eliminated.
           e.directions[direction_index].loser = 0;
       }
-      if (tournaments[t].size() % 2 == 1)
-        new_tournaments[t].push_back(tournaments[t].last());
+      if (tournaments[i].size() % 2 == 1)
+        new_tournaments[i].push_back(tournaments[i].last());
     }
     e.all_levels.push_back(new_tournaments);
     level++;
@@ -285,7 +285,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
   {
     for (uint32_t j = 0; j < e.tournaments_won.size() / 2; j++)
     {
-      bool left = e.tournaments_won[j * 2];
+      left = e.tournaments_won[j * 2];
       bool right = e.tournaments_won[j * 2 + 1];
       if (left == right)  // no query to do
         e.tournaments_won[j] = left;

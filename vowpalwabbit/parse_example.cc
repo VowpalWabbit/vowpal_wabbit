@@ -285,7 +285,7 @@ class TC_parser
         }
 
         VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        uint64_t word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
+        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
