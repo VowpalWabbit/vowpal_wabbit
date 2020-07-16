@@ -6,12 +6,12 @@
 #include <iostream>
 #include <cfloat>
 
-#include "../../global_data.h"
-#include "../../example.h"
-#include "../../constant.h"
-#include "../../cb.h"
-#include "../../action_score.h"
-#include "../../best_constant.h"
+#include "global_data.h"
+#include "example.h"
+#include "constant.h"
+#include "cb.h"
+#include "action_score.h"
+#include "best_constant.h"
 #include "parse_example_flatbuffer.h"
 #include "generated/example_generated.h"
 
