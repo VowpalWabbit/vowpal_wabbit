@@ -125,8 +125,8 @@ EOF
 json_dataset() {
 # prepare training set json
 cat > $TRAINSET <<EOF
-{"_label":{"Label":1, "Weight":0.55}, "_tag":"'1", "a":true}
-{"_label":{"Label":1, "Weight":0.99}, "_tag":"'2", "b":true, "c":true}
+{"_label":{"Weight":1, "Label":0.55}, "_tag":"1", "a":true}
+{"_label":{"Weight":1, "Label":0.99}, "_tag":"2", "b":true, "c":true}
 EOF
 }
 
@@ -173,10 +173,6 @@ fi
 # OpenBSD netcat quits immediately after stdin EOF
 # nc.traditional does not, so let's use -q 1. -q is not supported on Mac so let's workaround it with -i
 DELAY_OPT="-q 1"
-if ! $NETCAT $DELAY_OPT localhost $PORT < /dev/null
-then
-  DELAY_OPT="-i 1"
-fi
 
 $NETCAT $DELAY_OPT localhost $PORT < $TRAINSET > $PREDOUT
 
