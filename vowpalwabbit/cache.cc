@@ -172,16 +172,10 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
   size_t num_chars;
   size_t num_chars_initial;
 
-  //{
+  //a line is popped off of the io queue in read_features
+  num_chars_initial = read_cached_feature(all, line, num_chars);
 
-   // std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
-
-    //a line is popped off of the io queue in read_features
-    num_chars_initial = read_cached_feature(all, line, num_chars);
-
-    std::cout << "num_chars_initial: " << num_chars_initial << std::endl;
-
- //}
+  std::cout << "num_chars_initial: " << num_chars_initial << std::endl;
 
  //convert to io_buf -> parse, using create_buffer_view.
 
@@ -193,15 +187,22 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
 
   int total_num_read = 0;
 
-  bool should_read = true;
+  std::atomic<bool> should_read(true);
+
   while (should_read) {
+
+    while (examples.size() > 0) {
+      examples.pop();
+    }
+
+    examples.push_back(&VW::get_unused_example(all));
 
     if (examples.size() > 0) {
        (*all).p->ready_parsed_examples.push(examples[0]);
-    }   
+   }   
 
     int new_num_read = read_cached_features_single_example(all, examples[0], &buf);
-    //notify here
+    std::cout << "new_num_read: " << new_num_read << std::endl;
     total_num_read += new_num_read;
 
     if(new_num_read == 0) {
@@ -213,6 +214,8 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
   }
 
   std::cout << "total_num_read: " << total_num_read << std::endl;
+
+  all->p->done = true; 
 
   return total_num_read;
 
