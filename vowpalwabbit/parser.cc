@@ -124,6 +124,62 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   return cache_numbits;
 }
 
+void set_cache_reader(vw& all)
+{
+  all.p->reader = read_cached_features;
+}
+
+void set_string_reader(vw& all)
+{
+  all.p->reader = read_features_string;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+    all.print = print_result;
+VW_WARNING_STATE_POP
+    all.print_by_ref = print_result_by_ref;
+}
+
+void set_json_reader(vw& all, bool dsjson = false)
+{
+  // TODO: change to class with virtual method
+  // --invert_hash requires the audit parser version to save the extra information.
+  if (all.audit || all.hash_inv)
+  {
+    all.p->reader = &read_features_json<true>;
+    all.p->text_reader = &line_to_examples_json<true>;
+    all.p->audit = true;
+  }
+  else
+  {
+    all.p->reader = &read_features_json<false>;
+    all.p->text_reader = &line_to_examples_json<false>;
+    all.p->audit = false;
+  }
+
+  all.p->decision_service_json = dsjson;
+}
+
+void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
+{
+  if (all.p->input->isbinary())
+  {
+    all.p->reader = read_cached_features;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+    all.print = binary_print_result;
+VW_WARNING_STATE_POP
+    all.print_by_ref = binary_print_result_by_ref;
+  }
+  else if (json || dsjson)
+  {
+    set_json_reader(all, dsjson);
+  }
+  else
+  {
+    set_string_reader(all);
+  }
+}
+
 void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.p->input;
@@ -146,8 +202,8 @@ void reset_source(vw& all, size_t numbits)
                                                                           << all.p->finalname);
     input->close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file_reader(all.p->finalname));    all.p->reader = read_cached_features;
-    all.p->reader = read_cached_features;
+    input->add_file(VW::io::open_file_reader(all.p->finalname));
+    set_cache_reader(all);
   }
 
   if (all.p->resettable == true)
@@ -179,24 +235,7 @@ void reset_source(vw& all, size_t numbits)
       all.final_prediction_sink.push_back(socket->get_writer());
       all.p->input->add_file(socket->get_reader());
 
-      if (all.p->input->isbinary())
-      {
-        all.p->reader = read_cached_features;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-        all.print = binary_print_result;
-VW_WARNING_STATE_POP
-        all.print_by_ref = binary_print_result_by_ref;
-      }
-      else
-      {
-        all.p->reader = read_features_string;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-        all.print = print_result;
-VW_WARNING_STATE_POP
-        all.print_by_ref = print_result_by_ref;
-      }
+      set_daemon_reader(all);
     }
     else
     {
@@ -280,7 +319,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       {
         if (!quiet)
           all.trace_message << "using cache_file = " << file.c_str() << endl;
-        all.p->reader = read_cached_features;
+        set_cache_reader(all);
         if (c == all.num_bits)
           all.p->sorted_cache = true;
         else
@@ -484,12 +523,6 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int one = 1;
     setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-    all.print = print_result;
-VW_WARNING_STATE_POP
-    all.print_by_ref = print_result_by_ref;
-
     auto socket = VW::io::wrap_socket_descriptor(f_a);
 
     all.final_prediction_sink.push_back(socket->get_writer());
@@ -499,22 +532,13 @@ VW_WARNING_STATE_POP
       all.trace_message << "reading data from port " << port << endl;
 
     if (all.active)
-      all.p->reader = read_features_string;
+    {
+      set_string_reader(all);
+    }
     else
     {
-      if (all.p->input->isbinary())
-      {
-        all.p->reader = read_cached_features;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-        all.print = binary_print_result;
-VW_WARNING_STATE_POP
-        all.print_by_ref = binary_print_result_by_ref;
-      }
-      else
-      {
-        all.p->reader = read_features_string;
-      }
+      all.p->sorted_cache = true;
+      set_daemon_reader(all, input_options.json, input_options.dsjson);
       all.p->sorted_cache = true;
     }
     all.p->resettable = all.p->write_cache || all.daemon;
@@ -575,22 +599,7 @@ VW_WARNING_STATE_POP
 
       if (input_options.json || input_options.dsjson)
       {
-        // TODO: change to class with virtual method
-        // --invert_hash requires the audit parser version to save the extra information.
-        if (all.audit || all.hash_inv)
-        {
-          all.p->reader = &read_features_json<true>;
-          all.p->text_reader = &line_to_examples_json<true>;
-          all.p->audit = true;
-        }
-        else
-        {
-          all.p->reader = &read_features_json<false>;
-          all.p->text_reader = &line_to_examples_json<false>;
-          all.p->audit = false;
-        }
-
-        all.p->decision_service_json = input_options.dsjson;
+        set_json_reader(all, input_options.dsjson);
       }
       else if (input_options.flatbuffer)
       {
@@ -602,8 +611,7 @@ VW_WARNING_STATE_POP
       }
       else
       {
-        all.p->reader = read_features_string;
-        all.p->text_reader = VW::read_lines;
+        set_string_reader(all);
       }
 
       all.p->resettable = all.p->write_cache;
@@ -869,7 +877,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   len = ec->indices.size();
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
-  int fs_count = 0;
+  size_t fs_count = 0;
 
   for (size_t idx = 0; idx < len; ++idx)
   {
@@ -879,7 +887,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     uint32_t stride_shift = all.weights.stride_shift();
-    int f_count = 0;
+    size_t f_count = 0;
     for (features::iterator& f : ec->feature_space[i])
     {
       feature t = {f.value(), f.index()};

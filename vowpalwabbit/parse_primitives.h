@@ -15,8 +15,6 @@
 #include "vw_string_view.h"
 #include "fast_pow10.h"
 
-std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss);
-
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
 void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty = false)
@@ -112,7 +110,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
   }
   if (*p == ' ' || *p == '\n' || *p == '\t' || p == endLine)  // easy case succeeded.
   {
-    acc *= VW::fast_pow10(exp_acc - num_dec);
+    acc *= VW::fast_pow10(static_cast<int8_t>(exp_acc - num_dec));
     end_idx = p - start;
     return s * acc;
   }

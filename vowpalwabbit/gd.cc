@@ -807,7 +807,7 @@ void save_load_online_state(
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 3, "");
         uint32_t stride = 1 << weights.stride_shift();
         weight* v = &weights.strided_index(i);
-        for (size_t i = 0; i < stride; i++) v[i] = buff[i];
+        for (size_t j = 0; j < stride; j++) v[j] = buff[j];
       }
     } while (brw > 0);
   else  // write binary or text

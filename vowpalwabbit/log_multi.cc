@@ -426,7 +426,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
       msg << " parent = " << n.parent;
       bin_text_read_write_fixed(model_file, (char*)&n.parent, sizeof(n.parent), "", read, msg, text);
 
-      uint32_t temp = (uint32_t)n.preds.size();
+      temp = (uint32_t)n.preds.size();
 
       msg << " preds = " << temp;
       bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
