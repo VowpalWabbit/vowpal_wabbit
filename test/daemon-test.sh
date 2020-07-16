@@ -171,8 +171,9 @@ fi
 
 # Test on train-set
 # OpenBSD netcat quits immediately after stdin EOF
-# nc.traditional does not, so let's use -q 1. -q is not supported on Mac so let's workaround it with -i
-DELAY_OPT="-q 1"
+# nc.traditional does not, so let's use -w 1 which will silently close the connection if the connection
+# or stdin are silent for more than 1 second
+DELAY_OPT="-w 1"
 
 $NETCAT $DELAY_OPT localhost $PORT < $TRAINSET > $PREDOUT
 
