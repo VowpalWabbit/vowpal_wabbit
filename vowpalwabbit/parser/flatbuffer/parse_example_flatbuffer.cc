@@ -19,11 +19,6 @@ namespace VW {
 namespace parsers {
 namespace flatbuffer {
 
-void read_flatbuffer(vw* all, char* line, size_t len, v_array<example*>& examples)
-{
-  // Do something
-}
-
 int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
 {
   return (int) all->flat_converter->parse_examples(all, examples); // Get rid of this
