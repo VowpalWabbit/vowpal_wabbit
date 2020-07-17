@@ -54,12 +54,10 @@
 // Add new ignored warnings here:
 #if defined(_MSC_VER)
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE    VW_WARNING_DISABLE(4996)
-    #define VW_WARNING_DISABLE_POTENTIALLY_UNINITIALIZED    VW_WARNING_DISABLE(4701)
     #define VW_WARNING_DISABLE_CLASS_MEMACCESS
     #define VW_WARNING_DISABLE_CAST_FUNC_TYPE
 #elif defined(__GNUC__) || defined(__clang__)
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE   VW_WARNING_DISABLE(-Wdeprecated-declarations)
-    #define VW_WARNING_DISABLE_POTENTIALLY_UNINITIALIZED
 
     // This warning was added in GCC 8
     #if __GNUC__ >= 8
@@ -72,5 +70,4 @@
 #else
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE
     #define VW_WARNING_DISABLE_CLASS_MEMACCESS
-    #define VW_WARNING_DISABLE_POTENTIALLY_UNINITIALIZED
 #endif
