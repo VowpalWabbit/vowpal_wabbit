@@ -64,7 +64,7 @@ __attribute__((packed))
 size_t read_cached_feature(vw *all, std::vector<char>& line, size_t&)
 {
 
-  std::cout << "read_cached_feature" << std::endl;
+  //std::cout << "read_cached_feature" << std::endl;
   io_item result;
 
   result = (*all).p->_io_state.pop_io_queue();
@@ -90,7 +90,7 @@ void notify_examples_cache(vw& all, example *ex)
 int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 {
 
-  std::cout << "read_cached_feature single example" << std::endl;
+  //std::cout << "read_cached_feature single example" << std::endl;
 
   size_t total = all->p->lp.read_cached_label(all->p->_shared_data, &ae->l, *input);
 
@@ -181,7 +181,6 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
 
   io_buf buf;
   if(line.size() > 0) {
-    std::cout << "add file to buf" << std::endl;
     buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
   }
 
@@ -195,21 +194,24 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
       examples.pop();
     }
 
-    examples.push_back(&VW::get_unused_example(all));
+    example *ae = &VW::get_unused_example(all);
 
-    if (examples.size() > 0) {
-       (*all).p->ready_parsed_examples.push(examples[0]);
-   }   
-
-    int new_num_read = read_cached_features_single_example(all, examples[0], &buf);
-    std::cout << "new_num_read: " << new_num_read << std::endl;
+    int new_num_read = read_cached_features_single_example(all, ae, &buf);
     total_num_read += new_num_read;
 
     if(new_num_read == 0) {
       should_read = false;
-    } 
 
-    notify_examples_cache(*all, examples[0]);
+    } else {
+
+      examples.push_back(ae);
+       if (examples.size() > 0) {
+          (*all).p->ready_parsed_examples.push(ae);
+      }   
+
+      VW::setup_examples(*all, examples);
+      notify_examples_cache(*all, ae);
+    }
 
   }
 
