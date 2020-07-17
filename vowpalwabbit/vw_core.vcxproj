@@ -238,7 +238,6 @@
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="vw.h" />
     <ClInclude Include="warm_cb.h" />
-    <ClInclude Include="parser\flatbuffer\generated\Example_generated.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="accumulate.cc" />
@@ -316,9 +315,8 @@
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
-    <ClCompile Include="parser\flatbuffer\endian.cc" />
     <ClCompile Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
-    <ClCompile Include="parser\flatbuffer\preamble.cc" />
+    <ClCompile Include="parser\flatbuffer\parse_label.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
@@ -388,5 +386,4 @@
     <RemoveDir Directories="$(SolutionDir)parser\flatbuffer\generated" />
   </Target>
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
-</Project>
 </Project>
