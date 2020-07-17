@@ -24,34 +24,30 @@ constexpr uint64_t UINT64_32ONES = 0x00000000ffffffffi64;
 
 namespace VW
 {
-inline void string_cpy(char *dest, size_t dest_size, const char *src, int *error_no = nullptr)
+inline int string_cpy(char *dest, size_t dest_size, const char *src)
 {
 #ifdef _WIN32
   // strcpy_s returns an errno_t
-  auto err = strcpy_s(dest, dest_size, src);
-  if (error_no) { *error_no = err; }
+  return strcpy_s(dest, dest_size, src);
 #else
-  strncpy(dest, src, dest_size);
-  if (error_no) { *error_no = 0; }
+  (void)dest_size; // unused here
+  strcpy(dest, src);
+  return 0;
 #endif
 }
 
-inline void file_open(FILE **pf, const char *filename, const char *mode, int *error_no = nullptr)
+inline int file_open(FILE **pf, const char *filename, const char *mode)
 {
 #ifdef _WIN32
   // fopen_s returns an errno_t
-  auto err = fopen_s(pf, filename, mode);
-  if (error_no) { *error_no = err; }
+  return fopen_s(pf, filename, mode);
 #else
   *pf = fopen(filename, mode);
-  if (error_no)
+  if (*pf == nullptr)
   {
-    if (*pf != nullptr) { *error_no = 0; }
-    else
-    {
-      *error_no = 1;
-    }
+    return -1;
   }
+  return 0;
 #endif
 }
 }  // namespace VW

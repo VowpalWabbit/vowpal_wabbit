@@ -2587,9 +2587,7 @@ void search_finish(search& sch)
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
   FILE* f;
-  int err;
-  VW::file_open(&f, filename, "r", &err);
-  if (err != 0)
+  if (VW::file_open(&f, filename, "r") != 0)
     THROW("error: could not read file " << filename << " (" << VW::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 

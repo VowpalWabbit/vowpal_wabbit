@@ -141,30 +141,24 @@ int main(int argc, char* argv[])
   }
 
   FILE* fB;
-  int errnofb;
   FILE* fU;
-  int errnofu;
   FILE* fI;
-  int errnofi;
 
-  VW::file_open(&fB, blacklistfilename.c_str(), "r", &errnofb);
-  if (errnofb != 0)
+  if (VW::file_open(&fB, blacklistfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), strerror(errno));
+    fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), VW::strerror_to_string(errno).c_str());
     cerr << desc << endl;
     exit(2);
   }
-  VW::file_open(&fU, userfilename.c_str(), "r", &errnofu);
-  if (errnofu != 0)
+  if (VW::file_open(&fU, userfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), strerror(errno));
+    fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), VW::strerror_to_string(errno).c_str());
     cerr << desc << endl;
     exit(2);
   }
-  VW::file_open(&fI, itemfilename.c_str(), "r", &errnofi);
-  if (errnofi != 0)
+  if (VW::file_open(&fI, itemfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), strerror(errno));
+    fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), VW::strerror_to_string(errno).c_str());
     cerr << desc << endl;
     exit(2);
   }
