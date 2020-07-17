@@ -19,14 +19,6 @@ trainsets = extract_something(lines.split('\n'), 'train-sets/ref')
 models = extract_something(lines.split('\n'), 'models')
 modelsets = extract_something(lines.split('\n'), 'model-sets')
 
-# for i in predsets:
-#     os.system('cp ../{} {}'.format(i, i))
-# for i in trainsets:
-#     os.system('cp ../{} {}'.format(i, i))
-# for i in testsets:
-#     os.system('cp ../{} {}'.format(i, i))
-
-
 def extract_datafile(command):
     datafilename = re.search('-d [/a-zA-Z0-9_.-]*', command)
     if datafilename is not None:
@@ -34,7 +26,6 @@ def extract_datafile(command):
 
     else:
         return None
-    # return datafilename.group(1)
 
 def present(tags, command):
     for i in tags:
