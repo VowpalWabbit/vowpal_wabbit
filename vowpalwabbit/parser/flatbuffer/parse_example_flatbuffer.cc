@@ -6,14 +6,12 @@
 #include <iostream>
 #include <cfloat>
 
-#include "global_data.h"
-#include "example.h"
-#include "constant.h"
-#include "cb.h"
-#include "action_score.h"
-#include "best_constant.h"
+#include "../../global_data.h"
+#include "../../constant.h"
+#include "../../cb.h"
+#include "../../action_score.h"
+#include "../../best_constant.h"
 #include "parse_example_flatbuffer.h"
-#include "generated/example_generated.h"
 
 namespace VW {
 namespace parsers {
@@ -47,11 +45,11 @@ void parser::init()
   if (!infile.good()) THROW_EX(VW::vw_argument_invalid_value_exception, "Flatbuffer does not exist");
 
   infile.seekg(0,std::ios::end);
-  int length = infile.tellg();
+  auto length = infile.tellg();
   infile.seekg(0,std::ios::beg);
   buffer.resize(length);
   infile.read(buffer.data(), length);
-  _flatbuffer_pointer = reinterpret_cast<u_int8_t*>(buffer.data());
+  _flatbuffer_pointer = reinterpret_cast<uint8_t*>(buffer.data());
 
   infile.close();
 

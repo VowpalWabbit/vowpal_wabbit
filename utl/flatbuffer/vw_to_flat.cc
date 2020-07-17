@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "vw_to_flat.h"
-#include "vw.h"
 #include "options.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
@@ -15,7 +14,6 @@
 #include "best_constant.h"
 #include "vw_exception.h"
 #include "options_boost_po.h"
-#include "parser/flatbuffer/generated/example_generated.h"
 
 std::string to_flat::get_label_string(label_type_t label_type)
 {

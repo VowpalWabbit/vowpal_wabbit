@@ -50,7 +50,7 @@ sample_flatbuffer(flatbuilder& build, VW::parsers::flatbuffer::Label label_type)
 
   auto label = get_label(build, label_type);
 
-  fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(build._builder, "hello", 2.23, constant));
+  fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(build._builder, "hello", 2.23f, constant));
   namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(build._builder, nullptr, constant_namespace, &fts));
   examplecollection.push_back(VW::parsers::flatbuffer::CreateExampleDirect(build._builder, &namespaces, label_type, label));
 

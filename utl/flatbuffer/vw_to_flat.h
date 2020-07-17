@@ -7,7 +7,6 @@
 #include "vw.h"
 #include "parser/flatbuffer/generated/example_generated.h"
 #include "simple_label.h"
-#include "flatbuffers/flatbuffers.h"
 
 
 class to_flat{

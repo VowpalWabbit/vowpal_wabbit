@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include "vw.h"
-#include "example.h"
+#include "../../vw.h"
 #include "generated/example_generated.h"
 
 namespace VW {
@@ -31,7 +30,7 @@ private:
     std::string _filename;
     uint8_t* _flatbuffer_pointer;
     std::vector<char> buffer;
-    size_t _example_index;
+    uint32_t _example_index;
     uint64_t _c_hash;
     
     void parse_example(vw* all, example* ae, const Example* eg);

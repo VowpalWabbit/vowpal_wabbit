@@ -17,7 +17,6 @@
 #include "vw_exception.h"
 #include <fstream>
 
-#include "vw.h"
 #include "options.h"
 #include "options_boost_po.h"
 #include "vw_to_flat.h"
@@ -66,7 +65,6 @@ vw* setup(options_i& options)
 
 int main(int argc, char* argv[])
 {
-  bool should_use_onethread;
   option_group_definition driver_config("driver");
 
   to_flat converter;
@@ -75,15 +73,10 @@ int main(int argc, char* argv[])
   std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;
 
-  char *newargs[argc+1];
-  char *quiet = "--quiet";
-  for(int j = 0; j<argc; j++)
-    {
-      newargs[j] = argv[j];
-    }
-  newargs[argc] = quiet;
+  std::string q("--quiet");
+  argv[argc++] = const_cast<char*>(q.c_str());
   
-  std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc+1, newargs));
+  std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(*ptr));
   arguments.push_back(std::move(ptr));
