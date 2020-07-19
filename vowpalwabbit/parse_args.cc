@@ -580,28 +580,28 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
     {
       std::string substr = arg.substr(pos + NUMBER_OF_HEX_CHARS, NUMBER_OF_HEX_CHARS);
       char* p;
-      auto c = std::strtoul(substr.c_str(), &p, HEX_BASE);
+      auto c = static_cast<namespace_index>(std::strtoul(substr.c_str(), &p, HEX_BASE));
       if (*p == '\0')
       {
-        res += std::to_string(c);
+        res.push_back(c);
         pos += LENGTH_OF_HEX_TOKEN;
       }
       else
       {
         std::cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
-        res += arg[pos++];
+        res.push_back(arg[pos++]);
       }
     }
     else
     {
-      res += arg[pos++];
+      res.push_back(arg[pos++]);
     }
   }
-
+  
   // Copy last 2 characters
   while (pos < arg.size())
   {
-    res += arg[pos++];
+    res.push_back(arg[pos++]);
   }
 
   return res;
