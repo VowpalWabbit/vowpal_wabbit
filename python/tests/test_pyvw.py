@@ -382,47 +382,59 @@ def check_error_raises(type, argument):
         argument()
 
 
+first_line_process = []
+first_line_process.append(lambda a: a.convert_df()[0])
+first_line_process.append(lambda a: next(a.convert_next_df()))
+
+
 def test_from_colnames_constructor():
-    df = pd.DataFrame({"y": [1], "x": [2]})
-    conv = DFtoVW.from_colnames(y="y", x=["x"], df=df)
-    lines_list = conv.convert_df()
-    first_line = lines_list[0]
-    assert first_line == "1 | 2"
+    for p in first_line_process:
+        first_line = ""
+        df = pd.DataFrame({"y": [1], "x": [2]})
+        conv = DFtoVW.from_colnames(y="y", x=["x"], df=df)
+        first_line = p(conv)
+        assert first_line == "1 | 2"
 
 
 def test_feature_column_renaming_and_tag():
-    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
-    conv = DFtoVW(
-        label=SimpleLabel("y"),
-        tag="idx",
-        features=Feature(name="col_x", value="x"),
-        df=df,
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 id_1| col_x:2"
+    for p in first_line_process:
+        first_line = ""
+        df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
+        conv = DFtoVW(
+            label=SimpleLabel("y"),
+            tag="idx",
+            features=Feature(name="col_x", value="x"),
+            df=df,
+        )
+        first_line = p(conv)
+        assert first_line == "1 id_1| col_x:2"
 
 
 def test_constant_feature_value_with_empty_name():
-    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
-    conv = DFtoVW(
-        label=SimpleLabel("y"),
-        tag="idx",
-        features=Feature(name="", value=2, value_from_df=False),
-        df=df,
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 id_1| :2"
+    for p in first_line_process:
+        first_line = ""
+        df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
+        conv = DFtoVW(
+            label=SimpleLabel("y"),
+            tag="idx",
+            features=Feature(name="", value=2, value_from_df=False),
+            df=df,
+        )
+        first_line = p(conv)
+        assert first_line == "1 id_1| :2"
 
 
 def test_variable_feature_name():
-    df = pd.DataFrame({"y": [1], "x": [2], "a": ["col_x"]})
-    conv = DFtoVW(
-        label=SimpleLabel("y"),
-        features=Feature(name="a", value="x", name_from_df=True),
-        df=df,
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 | col_x:2"
+    for p in first_line_process:
+        first_line = ""
+        df = pd.DataFrame({"y": [1], "x": [2], "a": ["col_x"]})
+        conv = DFtoVW(
+            label=SimpleLabel("y"),
+            features=Feature(name="a", value="x", name_from_df=True),
+            df=df,
+        )
+        first_line = p(conv)
+        assert first_line == "1 | col_x:2"
 
 
 def test_multiple_lines():
@@ -431,35 +443,47 @@ def test_multiple_lines():
     lines_list = conv.convert_df()
     assert lines_list == ["1 | 1", "-1 | 2"]
 
+    lines_list = []
+    for r in conv.convert_next_df():
+        lines_list.append(r)
+
+    assert lines_list == ["1 | 1", "-1 | 2"]
+
 
 def test_multiple_named_namespaces():
-    df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
-    conv = DFtoVW(
-        df=df,
-        label=SimpleLabel("y"),
-        namespaces=[
-            Namespace(name="FirstNameSpace", features=Feature("a")),
-            Namespace(name="DoubleIt", value=2, features=Feature("b")),
-        ],
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 |FirstNameSpace 2 |DoubleIt:2 3"
+    for p in first_line_process:
+        first_line = ""
+        df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
+        conv = DFtoVW(
+            df=df,
+            label=SimpleLabel("y"),
+            namespaces=[
+                Namespace(name="FirstNameSpace", features=Feature("a")),
+                Namespace(name="DoubleIt", value=2, features=Feature("b")),
+            ],
+        )
+        first_line = p(conv)
+        assert first_line == "1 |FirstNameSpace 2 |DoubleIt:2 3"
 
 
 def test_without_target_multiple_features():
-    df = pd.DataFrame({"a": [2], "b": [3]})
-    conv = DFtoVW(df=df, features=[Feature(col) for col in ["a", "b"]])
-    first_line = conv.convert_df()[0]
-    assert first_line == "| 2 3"
+    for p in first_line_process:
+        first_line = ""
+        df = pd.DataFrame({"a": [2], "b": [3]})
+        conv = DFtoVW(df=df, features=[Feature(col) for col in ["a", "b"]])
+        first_line = p(conv)
+        assert first_line == "| 2 3"
 
 
 def test_multiclasslabel():
-    df = pd.DataFrame({"a": [1], "b": [0.5], "c": ["x"]})
-    conv = DFtoVW(
-        df=df, label=MulticlassLabel(name="a", weight="b"), features=Feature("c")
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 0.5 | x"
+    for p in first_line_process:
+        first_line = ""
+        df = pd.DataFrame({"a": [1], "b": [0.5], "c": ["x"]})
+        conv = DFtoVW(
+            df=df, label=MulticlassLabel(name="a", weight="b"), features=Feature("c")
+        )
+        first_line = p(conv)
+        assert first_line == "1 0.5 | x"
 
 
 def test_absent_col_error():

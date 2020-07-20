@@ -1444,7 +1444,10 @@ def _get_col_or_value(x, df):
         The dataframe from which to select the column (if x is of type _Col).
     """
     if isinstance(x, _Col):
-        return x.get_col(df)
+        if isinstance(df, pd.DataFrame):
+            return x.get_col(df)
+        else:
+            return x.get_attr(df)
     else:
         return str(x)
 
@@ -1467,6 +1470,12 @@ class _Col:
         self.colname = colname
         self.expected_type = expected_type
         self.min_value = min_value
+
+    def get_attr(self,df):
+        try:
+            return str(getattr(df, self.colname))
+        except:
+            return ""
 
     def get_col(self, df):
         """Returns the column 'colname' from the dataframe 'df'.
@@ -2388,6 +2397,33 @@ class DFtoVW:
 
         return self.out.to_list()
 
+    def convert_next_df(self):
+        """Main method that converts the dataframe to the VW format.
+
+        Returns
+        -------
+        list
+            The list of parsed lines in VW format.
+        """
+        
+        for row in self.df.itertuples():
+            out = ""
+
+            if self.label is not None:
+                out += self.label.process(row) + " "
+            if self.tag is not None:
+                out += self.tag.process(row)
+
+            for (i, namespace) in enumerate(self.namespaces):
+                to_add = namespace.process() + self.process_features(
+                    namespace.features, row
+                )
+                out += (
+                    (to_add + " ") if (i < len(self.namespaces) - 1) else to_add
+                )
+
+            yield out
+
     def empty_col(self):
         """Create an empty string column.
 
@@ -2413,7 +2449,7 @@ class DFtoVW:
             out += self.tag.process(self.df)
         return out
 
-    def process_features(self, features):
+    def process_features(self, features, df=None):
         """Process the features (of a namespace) into a unique column.
 
         Parameters
@@ -2426,7 +2462,13 @@ class DFtoVW:
         out : pandas.Series
             The column of the processed features.
         """
-        out = self.empty_col()
+
+        if df is None:
+            df = self.df
+            out = self.empty_col()
+        else:
+            out = ""
+
         for feature in features:
-            out += " " + feature.process(self.df)
+            out += " " + feature.process(df)
         return out
