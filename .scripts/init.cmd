@@ -36,24 +36,26 @@ IF NOT DEFINED vstestPath (
 )
 
 IF NOT DEFINED vcpkgPath (
-    IF NOT DEFINED vcpkginstalled (
-        ECHO ERROR: vcpkgPath is not configured, but vcpkginstalled is also not configured. Cannot find vcpkg.
+    IF NOT DEFINED VCPKG_INSTALLATION_ROOT (
+        ECHO ERROR: vcpkgPath is not configured, but VCPKG_INSTALLATION_ROOT is also not configured. Cannot find vcpkg.
         EXIT /b 1
     )
 
-    SET "vcpkgPath=%vcpkginstalled%vcpkg.exe"
-    SET "VcpkgIntegration=%vcpkginstalled%scripts\buildsystems\msbuild\vcpkg.targets"
-    SET "VcpkgProperties=%vcpkginstalled%scripts\buildsystems\msbuild\vcpkg.props"
+    SET "vcpkgPath=C:\vcpkg\vcpkg.exe"
+    SET "VcpkgIntegration=C:\vcpkg\scripts\buildsystems\msbuild\vcpkg.targets"
+    SET "VcpkgProperties=C:\vcpkg\scripts\buildsystems\msbuild\vcpkg.props"
 )
 
 IF NOT DEFINED flatcPath (
-    IF NOT DEFINED vcpkginstalled (
-        ECHO ERROR: flatcPath is not configured, but vcpkginstalled is also not configured. Cannot find vcpkg.
+    IF NOT DEFINED VCPKG_INSTALLATION_ROOT (
+        ECHO ERROR: flatcPath is not configured, but VCPKG_INSTALLATION_ROOT is also not configured. Cannot find vcpkg.
         EXIT /b 1
     )
 
-    SET "flatcPath=%vcpkginstalled%installed\x64-windows\tools\flatbuffers\flatc.exe"
+    SET "flatcPath=C:\vcpkg\installed\x64-windows\tools\flatbuffers\flatc.exe"
 )
+
+echo %VCPKG_INSTALLATION_ROOT%
 
 REM Repo-specific paths
 IF NOT DEFINED vwRoot (
