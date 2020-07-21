@@ -91,18 +91,17 @@ class dense_parameters
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
 
-  template <class R, class T>
-  void set_default(R& info)
+  template<typename Lambda>
+  void set_default(Lambda&& default_func)
   {
-    iterator iter = begin();
-    for (size_t i = 0; iter != end(); ++iter, i += stride()) T::func(*iter, info, iter.index());
-  }
-
-  template <class T>
-  void set_default()
-  {
-    iterator iter = begin();
-    for (size_t i = 0; iter != end(); ++iter, i += stride()) T::func(*iter, iter.index());
+    auto iter = begin();
+    for (size_t i = 0; iter != end(); ++iter, i += stride())
+    {
+      // These don't validate the passed in lambda but act as documentation of the expected function types.
+      static_assert(std::is_same<decltype(&(*iter)), weight*>::value, "First parameter to lambda must be weight*");
+      static_assert(std::is_same<decltype(iter.index()), uint64_t>::value, "First parameter to lambda must be uint64_t");
+      default_func(&(*iter), iter.index());
+    }
   }
 
   void set_zero(size_t offset)
