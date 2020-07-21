@@ -11,13 +11,7 @@
 template<class T>
 void check_weights_equal(T& first, T& second)
 {
-  auto secondIt = second.begin();
-  for (auto firstIt : first)
-  {
-    BOOST_CHECK_EQUAL(firstIt, *secondIt);
-    ++secondIt;
-  }
-  BOOST_CHECK_EQUAL(secondIt == second.end(), true);
+  BOOST_CHECK_EQUAL_COLLECTIONS(first.begin(), first.end(), second.begin(), second.end());
 }
 
 BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
