@@ -7,5 +7,7 @@ extraction:
   csharp:
     index:
       buildless: true
+configure:
   cpp:
-    - echo "testing PR update"
+    command:
+      - echo "testing PR update"
