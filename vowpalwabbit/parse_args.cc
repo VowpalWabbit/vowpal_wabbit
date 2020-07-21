@@ -557,22 +557,34 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 }
 
 }  // namespace VW
-// return a copy of std::string replacing \x00 sequences in it
+
+// Return a copy of std::string replacing \x00 sequences in it
 std::string spoof_hex_encoded_namespaces(const std::string& arg)
 {
+  constexpr size_t NUMBER_OF_HEX_CHARS = 2;
+  // "\x" + hex chars
+  constexpr size_t LENGTH_OF_HEX_TOKEN = 2 + NUMBER_OF_HEX_CHARS;
+  constexpr size_t HEX_BASE = 16;
+
+  // Too short to be hex encoded.
+  if (arg.size() < LENGTH_OF_HEX_TOKEN)
+  {
+    return arg;
+  }
+
   std::string res;
-  int pos = 0;
-  while (pos < (int)arg.size() - 3)
+  size_t pos = 0;
+  while (pos < arg.size() - (LENGTH_OF_HEX_TOKEN - 1))
   {
     if (arg[pos] == '\\' && arg[pos + 1] == 'x')
     {
-      std::string substr = arg.substr(pos + 2, 2);
+      std::string substr = arg.substr(pos + NUMBER_OF_HEX_CHARS, NUMBER_OF_HEX_CHARS);
       char* p;
-      unsigned char c = (unsigned char)strtoul(substr.c_str(), &p, 16);
+      auto c = static_cast<namespace_index>(std::strtoul(substr.c_str(), &p, HEX_BASE));
       if (*p == '\0')
       {
         res.push_back(c);
-        pos += 4;
+        pos += LENGTH_OF_HEX_TOKEN;
       }
       else
       {
@@ -581,11 +593,16 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
     }
     else
+    {
       res.push_back(arg[pos++]);
+    }
   }
-
-  while (pos < (int)arg.size())  // copy last 2 characters
+  
+  // Copy last 2 characters
+  while (pos < arg.size())
+  {
     res.push_back(arg[pos++]);
+  }
 
   return res;
 }
