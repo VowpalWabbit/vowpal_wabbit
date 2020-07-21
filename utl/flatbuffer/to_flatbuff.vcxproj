@@ -45,7 +45,7 @@
     <ProjectGuid>{0E6F1518-B32E-450A-B3B2-4B7C4DC2B1D4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>toflatbuff</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
