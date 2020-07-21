@@ -244,6 +244,11 @@ void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
   {
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
+    for(auto& action_scores : ec_seq[0]->pred.decision_scores)
+    {
+      action_scores.delete_v();
+    }
+    ec_seq[0]->pred.decision_scores.clear();
   }
 
   VW::finish_example(all, ec_seq);
