@@ -26,6 +26,27 @@
     <ClInclude Include="vw_to_flat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vowpalwabbit\parse_args.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vowpalwabbit\vw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vowpalwabbit\global_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="explore\explore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="explore\explore_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="explore\hash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="explore\future_compat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
