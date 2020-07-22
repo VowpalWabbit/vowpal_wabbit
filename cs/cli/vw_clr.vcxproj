@@ -30,7 +30,7 @@
          find the correct ruleset to use. -->
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
-  <Import Project="$(VcpkgProperties)" Condition="'$(Configuration)'=='Debug' And Exists('$(VcpkgIntegration)')"/>
+  <Import Project="$(VcpkgProperties)" Condition="'$(Configuration)'=='Debug' And Exists('$(VcpkgProperties)')"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
