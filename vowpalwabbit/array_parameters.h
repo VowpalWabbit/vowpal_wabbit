@@ -69,8 +69,6 @@ class sparse_parameters
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
   bool _delete;
-  void* default_data;
-  float* default_value;
   std::function<void(weight*, uint64_t)> _default_func;
 
  public:
@@ -85,13 +83,11 @@ class sparse_parameters
       , _delete(false)
       , _default_func(nullptr)
   {
-    default_value = calloc_mergable_or_throw<weight>(stride());
   }
 
   sparse_parameters()
-      : _map(), _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), default_data(nullptr), _default_func(nullptr)
+      : _map(), _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), _default_func(nullptr)
   {
-    default_value = calloc_mergable_or_throw<weight>(stride());
   }
 
   bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
