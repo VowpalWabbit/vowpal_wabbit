@@ -12,3 +12,6 @@ extraction:
       command:
         - echo "testing PR update"
         - .scripts/linux/install-flatbuffers.sh
+        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/usr/local/lib
+        - export CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:~/usr/local/include
+        - export PATH=$PATH:~/usr/local/bin
