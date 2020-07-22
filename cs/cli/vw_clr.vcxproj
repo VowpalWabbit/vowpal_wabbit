@@ -30,7 +30,7 @@
          find the correct ruleset to use. -->
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
-  <Import Project="$(VcpkgProperties)" />
+  <Import Project="$(VcpkgProperties)" Condition="'$(Configuration)'=='Debug' And Exists('$(VcpkgIntegration)')"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -193,7 +193,7 @@
     </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
+  <Import Project="$(VcpkgIntegration)" Condition="'$(Configuration)'=='Release' And Exists('$(VcpkgIntegration)')" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
     <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
