@@ -93,25 +93,25 @@ void initialize_regressor(vw& all, T& weights)
   else if (all.initial_weight != 0.)
   {
     auto initial_weight = all.initial_weight;
-      auto initial_value_weight_initializer = [initial_weight](
-        weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
-    weights.template set_default(initial_value_weight_initializer);
+    auto initial_value_weight_initializer = [initial_weight](
+      weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
+    weights.set_default(initial_value_weight_initializer);
   }
   else if (all.random_positive_weights)
   {
-    weights.template set_default(&initialize_weights_as_random_positive);
+    weights.set_default(&initialize_weights_as_random_positive);
   }
   else if (all.random_weights)
   {
-    weights.template set_default(&initialize_weights_as_random);
+    weights.set_default(&initialize_weights_as_random);
   }
   else if (all.normal_weights)
   {
-    weights.template set_default(&initialize_weights_as_polar_normal);
+    weights.set_default(&initialize_weights_as_polar_normal);
   }
   else if (all.tnormal_weights)
   {
-    weights.template set_default(&initialize_weights_as_polar_normal);
+    weights.set_default(&initialize_weights_as_polar_normal);
     truncate(all, weights);
   }
 }
