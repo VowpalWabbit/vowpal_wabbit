@@ -72,9 +72,9 @@ template <class T>
 void initialize_regressor(vw& all, T& weights)
 {
   // Regressor is already initialized.
-
   if (weights.not_null())
     return;
+  
   size_t length = ((size_t)1) << all.num_bits;
   try
   {

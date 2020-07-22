@@ -986,7 +986,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (all.weights.adaptive && all.initial_t > 0)
     {
       float init_weight = all.initial_weight;
-      float init_t = all.initial_weight;
+      float init_t = all.initial_t;
       auto initial_gd_weight_initializer = [init_weight, init_t](weight* weights, uint64_t /*index*/) {
         weights[0] = init_weight;
         weights[1] = init_t;
