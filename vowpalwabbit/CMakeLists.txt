@@ -298,10 +298,10 @@ target_include_directories(vw PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  ${FLATBUFFERS_INCLUDE_DIR}
+  ${FLATBUFFERS_INCLUDE_DIRS}
 )
 
-message(STATUS "including ${FLATBUFFERS_INCLUDE_DIR} in vw's included directories")
+message(STATUS "including ${FLATBUFFERS_INCLUDE_DIRS} in vw's included directories")
 
 target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
 # Only define if Clang is not used
