@@ -301,7 +301,6 @@ target_include_directories(vw PUBLIC
   ${FLATBUFFERS_INCLUDE_DIRS}
 )
 
-message(STATUS "including ${FLATBUFFERS_INCLUDE_DIRS} in vw's included directories")
 
 target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
 # Only define if Clang is not used
