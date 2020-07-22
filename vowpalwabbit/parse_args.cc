@@ -89,6 +89,7 @@
 #include "options.h"
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
+#include "named_labels.h"
 
 using std::cerr;
 using std::cout;
@@ -597,7 +598,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       res.push_back(arg[pos++]);
     }
   }
-  
+
   // Copy last 2 characters
   while (pos < arg.size())
   {
@@ -1088,8 +1089,8 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   if (options.was_supplied("named_labels"))
   {
-    all.sd->ldict = &calloc_or_throw<namedlabels>();
-    new (all.sd->ldict) namedlabels(named_labels);
+    all.sd->ldict = &calloc_or_throw<VW::named_labels>();
+    new (all.sd->ldict) VW::named_labels(named_labels);
     if (!all.logger.quiet)
       all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
