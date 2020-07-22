@@ -8,6 +8,6 @@ mkdir build
 cd build
 cmake .. -DFLATBUFFERS_BUILD_TESTS=Off -DFLATBUFFERS_INSTALL=On -DCMAKE_BUILD_TYPE=Release -DFLATBUFFERS_BUILD_FLATHASH=Off
 make -j `nproc`
-sudo make install
+make install
 cd ../../
 rm -rf flatbuffers
