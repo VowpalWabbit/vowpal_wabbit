@@ -97,9 +97,7 @@ class dense_parameters
     auto iter = begin();
     for (size_t i = 0; iter != end(); ++iter, i += stride())
     {
-      // These don't validate the passed in lambda but act as documentation of the expected function types.
-      static_assert(std::is_same<decltype(&(*iter)), weight*>::value, "First parameter to lambda must be weight*");
-      static_assert(std::is_same<decltype(iter.index()), uint64_t>::value, "First parameter to lambda must be uint64_t");
+      // Types are required to be weight* and uint64_t.
       default_func(&(*iter), iter.index());
     }
   }

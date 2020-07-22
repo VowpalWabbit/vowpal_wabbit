@@ -258,14 +258,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       uint32_t stride = all.weights.stride();
       auto weight_initializer = [stride](
                                     weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
-      if (all.weights.sparse)
-      {
-        all.weights.sparse_weights.set_default(weight_initializer);
-      }
-      else
-      {
-        all.weights.dense_weights.set_default(weight_initializer);
-      }
+
+      all.weights.set_default(weight_initializer);
     }
   }
 

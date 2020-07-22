@@ -240,6 +240,19 @@ class parameters
       return dense_weights[i];
   }
 
+  template <typename Lambda>
+  void set_default(Lambda&& default_func)
+  {
+    if (sparse)
+    {
+      sparse_weights.set_default(std::forward<Lambda>(default_func));
+    }
+    else
+    {
+      dense_weights.set_default(std::forward<Lambda>(default_func));
+    }
+  }
+
   inline uint32_t stride_shift() const
   {
     if (sparse)

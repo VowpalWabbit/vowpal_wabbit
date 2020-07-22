@@ -787,14 +787,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
       weights[lda] = init._initial;
     };
 
-    if (all.weights.sparse)
-    {
-      all.weights.sparse_weights.set_default(initial_lda_weight_initializer);
-    }
-    else
-    {
-      all.weights.dense_weights.set_default(initial_lda_weight_initializer);
-    }
+    all.weights.set_default(initial_lda_weight_initializer);
   }
   if (model_file.num_files() != 0)
   {

@@ -992,14 +992,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
         weights[1] = init_t;
       };
 
-      if (all.weights.sparse)
-      {
-        all.weights.sparse_weights.set_default(initial_gd_weight_initializer);
-      }
-      else
-      {
-        all.weights.dense_weights.set_default(initial_gd_weight_initializer);
-      }
+      all.weights.set_default(initial_gd_weight_initializer);
 
       // for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared
       // gradient=1 NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since
