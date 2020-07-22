@@ -26,8 +26,11 @@ public:
 
   named_labels(const named_labels& other);
   named_labels& operator=(const named_labels& other);
-  named_labels(named_labels&& other) noexcept = default;
-  named_labels& operator=(named_labels&& other) noexcept = default;
+
+  // If this object is moved then the internal pointers into the m_label_list string would be invalidated.
+  // If the data were to be on the heap it should be okay but a small string optimization would break this.
+  named_labels(named_labels&& other) noexcept = delete;
+  named_labels& operator=(named_labels&& other) noexcept = delete;
 
   uint32_t getK() const;
   uint32_t get(string_view s) const;
