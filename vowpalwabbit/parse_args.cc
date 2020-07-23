@@ -300,7 +300,7 @@ void parse_affix_argument(vw& all, std::string str)
   if (str.length() == 0)
     return;
   char* cstr = calloc_or_throw<char>(str.length() + 1);
-  VW::string_cpy(cstr, str.length(), str.c_str());
+  VW::string_cpy(cstr, (str.length() + 1), str.c_str());
 
   char *next_token;
   char* p = strtok_s(cstr, ",", &next_token);
@@ -1004,11 +1004,12 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     
 #if _WIN32
     std::string PATH;
-    char* buf = nullptr;
-    size_t buf_size = 0;
-    if (_dupenv_s(&buf, &buf_size, "PATH") == 0 && buf != nullptr)
+    char* buf;
+    size_t buf_size;
+    auto err = _dupenv_s(&buf, &buf_size, "PATH");
+    if (!err && buf_size != 0)
     {
-      PATH = std::move(std::string{buf, buf_size});
+      PATH = std::string(buf, buf_size);
       free(buf);
     }
     const char delimiter = ';';
