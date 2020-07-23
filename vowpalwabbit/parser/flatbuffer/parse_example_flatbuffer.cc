@@ -19,7 +19,7 @@ namespace flatbuffer {
 
 int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
 {
-  return (int) all->flat_converter->parse_examples(all, examples); // Get rid of this
+  return (int) all->flat_converter->parse_examples(all, examples);
 }
 
 parser::parser(std::string filename) : 
