@@ -10,5 +10,4 @@ extraction:
   cpp:
     configure:
       command:
-        - echo "testing PR update"
         - .scripts/linux/install-flatbuffers.sh
