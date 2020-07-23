@@ -1860,4 +1860,12 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 ./daemon-test.sh --json
     test-sets/ref/vw-daemon.stdout
 
+# Test 218: CCB first slot loss
+{VW} -d train-sets/ccb_losses.dsjson --ccb_explore_adf --epsilon 0 --cb_type ips --dsjson
+    train-sets/ref/ccb_1slot_loss.stderr
+
+# Test 219: CCB all slots loss
+{VW} -d train-sets/ccb_losses.dsjson --ccb_explore_adf --epsilon 0 --cb_type ips --dsjson --all_slots_loss
+    train-sets/ref/ccb_allslots_loss.stderr  
+
 # Do not delete this line or the empty line above it
