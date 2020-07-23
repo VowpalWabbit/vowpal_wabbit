@@ -117,8 +117,8 @@ namespace cs_unittest
             }
         }
 
-        [TestMethod]
-        [TestCategory("Vowpal Wabbit")]
+        // [TestMethod]
+        // [TestCategory("Vowpal Wabbit")]
         public void TestJsonDictThreading()
         {
             var jsonResolver = new RefResolve();
