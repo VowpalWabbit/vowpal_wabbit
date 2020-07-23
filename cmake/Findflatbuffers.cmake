@@ -26,8 +26,8 @@
 
 set(FLATBUFFERS_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 
-find_program(FLATBUFFERS_FLATC_EXECUTABLE NAMES flatc HINTS ~/usr/local/bin)
-find_path(FLATBUFFERS_INCLUDE_DIR NAMES flatbuffers/flatbuffers.h HINTS ~/usr/local/bin)
+find_program(FLATBUFFERS_FLATC_EXECUTABLE NAMES flatc HINTS $ENV{HOME}/usr/local/bin)
+find_path(FLATBUFFERS_INCLUDE_DIR NAMES flatbuffers/flatbuffers.h HINTS $ENV{HOME}/usr/local/include)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(flatbuffers
