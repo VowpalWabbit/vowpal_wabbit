@@ -302,7 +302,7 @@
     <ClCompile Include="multilabel_oaa.cc" />
     <ClCompile Include="multilabel.cc" />
     <ClCompile Include="mwt.cc" />
-    <ClInclude Include="named_labels.cc" />
+    <ClCompile Include="named_labels.cc" />
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="no_label.cc" />
