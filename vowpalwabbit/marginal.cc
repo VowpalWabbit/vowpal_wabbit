@@ -304,7 +304,12 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         msg << index << ":";
       }
       bin_text_read_write_fixed(io, (char*)&index, sizeof(index), "", read, msg, text);
-      float r1, c1, w1, r2, c2, w2;
+      float r1 = 0;
+      float c1 = 0;
+      float w1 = 0;
+      float r2 = 0;
+      float c2 = 0;
+      float w2 = 0;
       if (!read)
       {
         r1 = exp_iter->second.first.regret;
