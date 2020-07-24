@@ -15,6 +15,7 @@
 #include "vw_exception.h"
 #include "future_compat.h"
 #include "vw_allreduce.h"
+#include "named_labels.h"
 
 struct global_prediction
 {
@@ -440,7 +441,7 @@ vw::~vw()
   {
     if (sd->ldict)
     {
-      sd->ldict->~namedlabels();
+      sd->ldict->~named_labels();
       free(sd->ldict);
     }
     free(sd);
