@@ -43,8 +43,8 @@ class sparse_iterator
 
   sparse_iterator& operator=(const sparse_iterator& other) = default;
   sparse_iterator(const sparse_iterator& other) = default;
-  sparse_iterator& operator=(sparse_iterator&& other) = default;
-  sparse_iterator(sparse_iterator&& other) = default;
+  sparse_iterator& operator=(sparse_iterator&& other) noexcept = default;
+  sparse_iterator(sparse_iterator&& other) noexcept = default;
 
   uint64_t index() { return _iter->first; }
 
@@ -71,7 +71,25 @@ class sparse_parameters
   bool _delete;
   std::function<void(weight*, uint64_t)> _default_func;
 
- public:
+  // It is marked const so it can be used from both const and non const operator[]
+  // The map itself is mutable to facilitate this
+  inline weight* get_or_default_and_get(size_t i) const
+  {
+    uint64_t index = i & _weight_mask;
+    weight_map::iterator iter = _map.find(index);
+    if (iter == _map.end())
+    {
+      _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(stride())));
+      iter = _map.find(index);
+      if (_default_func != nullptr)
+      {
+        _default_func(iter->second, index);
+      }
+    }
+    return iter->second;
+  }
+
+public:
   typedef sparse_iterator<weight> iterator;
   typedef sparse_iterator<const weight> const_iterator;
 
@@ -92,8 +110,10 @@ class sparse_parameters
 
   bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
 
-  sparse_parameters(const sparse_parameters& other) { shallow_copy(other); }
-  sparse_parameters(sparse_parameters&&) = delete;
+  sparse_parameters(const sparse_parameters& other) = delete;
+  sparse_parameters& operator=(const sparse_parameters& other) = delete;
+  sparse_parameters& operator=(sparse_parameters&&) noexcept = delete;
+  sparse_parameters(sparse_parameters&&) noexcept = delete;
 
   weight* first() { THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr); }
 
@@ -123,35 +143,12 @@ class sparse_parameters
 
   inline weight& operator[](size_t i)
   {
-    uint64_t index = i & _weight_mask;
-    weight_map::iterator iter = _map.find(index);
-    if (iter == _map.end())
-    {
-      _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(stride())));
-      iter = _map.find(index);
-      if (_default_func != nullptr)
-      {
-        _default_func(iter->second, index);
-      }
-    }
-    return *(iter->second);
+    return *(get_or_default_and_get(i));
   }
 
   inline const weight& operator[](size_t i) const
   {
-    uint64_t index = i & _weight_mask;
-    weight_map::const_iterator iter = _map.find(index);
-    if (iter == _map.end())
-    {
-      _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(stride())));
-      iter = _map.find(index);
-      if (_default_func != nullptr)
-      {
-        _default_func(iter->second, index);
-      }
-    }
-
-    return *(iter->second);
+    return *(get_or_default_and_get(i));
   }
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
@@ -171,7 +168,6 @@ class sparse_parameters
     _stride_shift = input._stride_shift;
     _seeded = true;
   }
-
 
   template<typename Lambda>
   void set_default(Lambda&& default_func)
