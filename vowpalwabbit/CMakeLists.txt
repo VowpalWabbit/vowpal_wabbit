@@ -104,6 +104,7 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  named_labels.h
   network.h
   nn.h
   no_label.h
@@ -230,6 +231,7 @@ set(vw_all_sources
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
+  named_labels.cc
   network.cc
   nn.cc
   no_label.cc
