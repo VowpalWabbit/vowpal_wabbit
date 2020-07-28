@@ -5,7 +5,7 @@
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
-#include "future_compat.h"
+#include "../explore/future_compat.h"
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
@@ -85,11 +85,11 @@ struct parser
   io_buf* input = nullptr;  // Input source(s)
 
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
-  int (*reader)(vw*, v_array<example*>& examples);
+  int (*reader)(vw*, v_array<example*>& examples, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name);
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
 
-  size_t (*input_file_reader)(vw* vw, char*& line, v_array<example*>&);
+  bool (*input_file_reader)(vw* vw, char*& line, v_array<example*>&);
 
   shared_data* _shared_data = nullptr;
 
@@ -112,19 +112,12 @@ struct parser
   std::mutex output_lock;
   std::condition_variable output_done;
 
-  //for io_to_queue
-  //std::mutex io_queue_lock;
-
   //for multithreaded parsing
   //for reader function
   std::mutex parser_mutex;
   std::condition_variable example_parsed;
-  bool ready_parsed = false;
   //for cv notify and wait
   std::mutex example_cv_mutex;
-
-  //std::mutex substring_to_example_mutex;
-
 
   bool done = false;
   v_array<size_t> gram_mask;
@@ -168,4 +161,4 @@ void set_compressed(parser* par);
 
 void free_parser(vw& all);
 
-void notify_examples_cv(vw& all);
+void notify_examples_cv(vw& all, example *& ex);
