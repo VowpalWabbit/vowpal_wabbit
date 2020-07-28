@@ -17,17 +17,24 @@
 
 class io_item;
 
-size_t read_features(vw *all, std::vector<char>& line, size_t&)
+size_t read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*>& examples)
 {
 
-  std::cout << "read_features TEXT" <<  std::endl;
   io_item result;
 
-  result = (*all).p->_io_state.pop_io_queue();
+  {
+    std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
+    
+    result = std::move((*all).p->_io_state.pop_io_queue());
 
-  if(result.message.size() > 0) {
+    (*all).p->ready_parsed_examples.push(examples[0]);
+  }
+  
+  int message_size = result.message.size();
+
+  if(message_size > 0) {
     line = std::move(result.message);
-    return line.size();
+    return message_size;
   } else {
     return 0;
   }
@@ -55,33 +62,21 @@ size_t read_features(vw *all, std::vector<char>& line, size_t&)
 
 }
 
-int read_features_string(vw* all, v_array<example*>& examples)
+int read_features_string(vw* all, v_array<example*>& examples, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name)
 {
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
   size_t num_chars;
   size_t num_chars_initial;
 
-  {
+  //a line is popped off of the io queue in read_features
+  num_chars_initial = read_features(all, line, num_chars, examples);
 
-    //lock in p_d_l
-    std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
-
-    //a line is popped off of the io queue in read_features
-    num_chars_initial = read_features(all, line, num_chars);
-
-    if(examples.size() > 0){
-      (*all).p->ready_parsed_examples.push(examples[0]);
-    }
-
- }
-
-  // Beginning of parsing  - substring to example conversion
   char *stripped_line = line.data();
   num_chars = strip_features_string(stripped_line, num_chars_initial);
 
   VW::string_view example(stripped_line, num_chars);
-  substring_to_example(all, examples[0], example);
+  substring_to_example(all, examples[0], example, words, parse_name);
 
   return (int)num_chars_initial;
 }
@@ -433,7 +428,7 @@ class TC_parser
 
   inline void listFeatures()
   {
-    while ((_read_idx < _line.size()) && (_line[_read_idx] == ' ' || _line[_read_idx] == '\t'))
+   while ((_read_idx < _line.size()) && (_line[_read_idx] == ' ' || _line[_read_idx] == '\t'))
     {
       // listFeatures --> ' ' MaybeFeature ListFeatures
       ++_read_idx;
@@ -490,7 +485,7 @@ class TC_parser
     while ((_read_idx < _line.size()) && (_line[_read_idx] == '|'))  // ListNameSpace --> '|' NameSpace ListNameSpace
     {
       ++_read_idx;
-      nameSpace();
+     nameSpace();
     }
     if (_read_idx < _line.size() && _line[_read_idx] != '\r')
     {
@@ -520,63 +515,26 @@ class TC_parser
   }
 };
 
-void substring_to_example(vw* all, example* ae, VW::string_view example)
+void substring_to_example(vw* all, example* ae, VW::string_view example, v_array<VW::string_view>& words_localcpy, v_array<VW::string_view>& parse_name_localcpy)
 {
 
-   // copy of words and parse_name to store a local copy per thread
- // std::lock_guard<std::mutex> lck((*all).p->substring_to_example_mutex);
-
-  v_array<VW::string_view> words_localcpy = v_init<VW::string_view>();
-
-  v_array<VW::string_view> parse_name_localcpy = v_init<VW::string_view>();
-
-  //parse_name_localcpy.clear();
+  //words_localcpy.empty();
+  //parse_name_localcpy.empty();
 
   for (int i=0; i < (int)all->p->parse_name.size(); i++) {
 
+    //need this?
     parse_name_localcpy.push_back(all->p->parse_name[i]);
 
   }
-  
-  /*v_array<VW::string_view> words_localcpy = all->p->words;
-  v_array<VW::string_view> parse_name_localcpy = all->p->parse_name;*/
-
-
-//we clear words local cpy so we don't need to put in it right?
-  /*for (int i=0; i < (int)all->p->words.size(); i++) {
-
-    VW::string_view word_ptr = all->p->words[i];
-    //char *word = *word_ptr.data();
-    char *new_word = (char *) malloc(word_ptr.size() + 1);
-    strcpy(new_word, word_ptr.data());
-    VW::string_view new_word_ptr(new_word);
-    words_localcpy.push_back(new_word_ptr);
-
-  }
-
-  v_array<VW::string_view> parse_name_localcpy = v_init<VW::string_view>();
-
-  for (int i=0; i < (int)all->p->parse_name.size(); i++) {
-
-    VW::string_view parse_name_ptr = all->p->parse_name[i];
-    //char *parse_name = *parse_name_ptr.data();
-    char *new_parse_name = (char *) malloc(parse_name_ptr.size() + 1);
-    strcpy(new_parse_name, parse_name_ptr.data());
-    VW::string_view new_parse_name_ptr(new_parse_name);
-    words_localcpy.push_back(new_parse_name_ptr);
-
-  }*/
-  
-  /*for (int i=0; i < (int)all->p->words.size(); i++) {
-    words_localcpy.push_back(all->p->words[i]);
-
-  }*/
 
   all->p->lp.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
 
   words_localcpy.clear();
+
+  
 
   if (bar_idx != 0)
   {
@@ -600,8 +558,6 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
         words_localcpy.last().front() == '\''))  // The last field is a tag, so record and strip it off
     {
       VW::string_view tag = words_localcpy.pop();
-      //free((void *)tag.data());
-      //free what tag points to
       if (tag.front() == '\'')
         tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());
@@ -613,16 +569,13 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
 
   if (bar_idx != VW::string_view::npos)
   {
-    if (all->audit || all->hash_inv)
+    if (all->audit || all->hash_inv) 
       TC_parser<true> parser_line(example.substr(bar_idx), *all, ae);
     else
       TC_parser<false> parser_line(example.substr(bar_idx), *all, ae);
   }
 
-  //delete v words and parse_name
-  //words_localcpy.delete_v();
- // parse_name_localcpy.delete_v();
-  //notify_examples_cv(*all, ae);
+
 }
 
 namespace VW
@@ -630,7 +583,10 @@ namespace VW
 void read_line(vw& all, example* ex, VW::string_view line)
 {
   while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
-  substring_to_example(&all, ex, line);
+
+  v_array<VW::string_view> words = v_init<VW::string_view>();
+  v_array<VW::string_view> parse_name = v_init<VW::string_view>();
+  substring_to_example(&all, ex, line, words, parse_name);
 }
 
 void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, VW::string_view(line)); }
