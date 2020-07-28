@@ -11,10 +11,7 @@ static std::mutex count_label_mutex;
 // TODO: This function is unsafe in daemon mode, which uses multiple processes
 inline void count_label(shared_data* sd, float l)
 {
-
-  std::lock_guard<std::mutex> lck(count_label_mutex);
-
-  if (sd->is_more_than_two_labels_observed.load() || l == FLT_MAX)
+  if (sd->is_more_than_two_labels_observed || l == FLT_MAX)
     return;
 
   float l1 = FLT_MAX;
@@ -24,7 +21,6 @@ inline void count_label(shared_data* sd, float l)
       sd->is_more_than_two_labels_observed = true;
     }
   }
-
 }
 
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss);
