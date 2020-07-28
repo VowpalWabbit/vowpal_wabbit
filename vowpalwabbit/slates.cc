@@ -280,9 +280,8 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
     return nullptr;
   }
 
-  if (!options.was_supplied("ccb_explore_adf"))
+  if (options.ensure_default_dependency("ccb_explore_adf"))
   {
-    options.insert("ccb_explore_adf", "");
     options.add_and_parse(new_options);
   }
 

@@ -258,12 +258,9 @@ base_learner* mwt_setup(options_i& options, vw& all)
   {
     c->learn = true;
 
-    if (!options.was_supplied("cb"))
-    {
-      std::stringstream ss;
-      ss << c->num_classes;
-      options.insert("cb", ss.str());
-    }
+    std::stringstream ss;
+    ss << c->num_classes;
+    options.ensure_default_dependency("cb", ss.str());
   }
 
   learner<mwt, example>* l;

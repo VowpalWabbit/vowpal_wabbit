@@ -499,18 +499,12 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
                .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
       .add(make_option("cb_type", type_string)
                .keep()
+               .default_value(type_string)
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_adf_option)
     return nullptr;
-
-  // Ensure serialization of this option in all cases.
-  if (!options.was_supplied("cb_type"))
-  {
-    options.insert("cb_type", type_string);
-    options.add_and_parse(new_options);
-  }
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;  // default for IPS
@@ -547,15 +541,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
       !options.was_supplied("csoaa_rank"))
   {
-    if (!options.was_supplied("csoaa_ldf"))
-    {
-      options.insert("csoaa_ldf", "multiline");
-    }
-
-    if (!options.was_supplied("csoaa_rank"))
-    {
-      options.insert("csoaa_rank", "");
-    }
+    options.ensure_default_dependency("csoaa_ldf", "multiline");
+    options.ensure_default_dependency("csoaa_rank");
   }
 
   if (options.was_supplied("baseline") && check_baseline_enabled)

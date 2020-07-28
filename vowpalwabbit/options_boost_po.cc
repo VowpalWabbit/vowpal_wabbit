@@ -144,6 +144,21 @@ bool options_boost_po::was_supplied(const std::string& key) const
   return it != m_command_line.end();
 }
 
+bool options_boost_po::ensure_default_dependency(const std::string& key) {
+  return this->ensure_default_dependency(key, "");
+}
+
+bool options_boost_po::ensure_default_dependency(const std::string& key, const std::string& value)
+{
+  if (!this->was_supplied(key))
+  {
+    this->insert(key, value);
+    return true;
+  }
+
+  return false;
+}
+
 std::string options_boost_po::help() const { return m_help_stringstream.str(); }
 
 std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()

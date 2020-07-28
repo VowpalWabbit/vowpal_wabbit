@@ -314,10 +314,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   }
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
+  options.ensure_default_dependency("cb_adf");
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

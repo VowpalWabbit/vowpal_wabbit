@@ -208,8 +208,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   else
     data->multiplier = 1;
 
-  if (!options.was_supplied("cb_explore_adf"))
-    options.insert("cb_explore_adf", "");
+  options.ensure_default_dependency("cb_explore_adf");
 
   all.delete_prediction = nullptr;
 

@@ -615,15 +615,13 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     return nullptr;
   }
 
-  if (!options.was_supplied("cb_explore_adf"))
+  if (options.ensure_default_dependency("cb_explore_adf"))
   {
-    options.insert("cb_explore_adf", "");
     options.add_and_parse(new_options);
   }
 
-  if (!options.was_supplied("cb_sample"))
+  if (options.ensure_default_dependency("cb_sample"))
   {
-    options.insert("cb_sample", "");
     options.add_and_parse(new_options);
   }
 

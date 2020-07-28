@@ -410,11 +410,11 @@ base_learner* cbify_setup(options_i& options, vw& all)
   if (data->use_adf)
     init_adf_data(*data, num_actions);
 
-  if (!options.was_supplied("cb_explore") && !data->use_adf)
+  if (!data->use_adf)
   {
     std::stringstream ss;
     ss << num_actions;
-    options.insert("cb_explore", ss.str());
+    options.ensure_default_dependency("cb_explore", ss.str());
   }
 
   if (data->use_adf)
@@ -475,10 +475,8 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   data->all = &all;
   data->use_adf = true;
 
-  if (!options.was_supplied("cb_explore_adf"))
-  {
-    options.insert("cb_explore_adf", "");
-  }
+  options.ensure_default_dependency("cb_explore_adf");
+
   options.insert("cb_min_cost", std::to_string(data->loss0));
   options.insert("cb_max_cost", std::to_string(data->loss1));
 

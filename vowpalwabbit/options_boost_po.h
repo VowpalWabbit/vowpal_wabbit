@@ -52,6 +52,8 @@ struct options_boost_po : public options_i
 
   void add_and_parse(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
+  bool ensure_default_dependency(const std::string& key) override;
+  bool ensure_default_dependency(const std::string& key, const std::string& value) override;
   std::string help() const override;
   void check_unregistered() override;
   std::vector<std::shared_ptr<base_option>> get_all_options() override;

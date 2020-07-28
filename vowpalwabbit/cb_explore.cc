@@ -299,12 +299,9 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
-  if (!options.was_supplied("cb"))
-  {
-    std::stringstream ss;
-    ss << data->cbcs.num_actions;
-    options.insert("cb", ss.str());
-  }
+  std::stringstream ss;
+  ss << data->cbcs.num_actions;
+  options.ensure_default_dependency("cb", ss.str());
 
   if (data->epsilon < 0.0 || data->epsilon > 1.0)
   {
