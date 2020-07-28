@@ -64,7 +64,6 @@ __attribute__((packed))
 size_t read_cached_feature(vw *all, std::vector<char>& line, size_t&)
 {
 
-  //std::cout << "read_cached_feature" << std::endl;
   io_item result;
 
   result = (*all).p->_io_state.pop_io_queue();
@@ -90,7 +89,6 @@ void notify_examples_cache(vw& all, example *ex)
 int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 {
 
-  //std::cout << "read_cached_feature single example" << std::endl;
 
   size_t total = all->p->lp.read_cached_label(all->p->_shared_data, &ae->l, *input);
 
@@ -157,15 +155,12 @@ int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
     all->p->input->set(c);
   }
 
-  std::cout << "total: " << total << std::endl;
   return (int)total;
 }
 
-int read_cached_features(vw* all, v_array<example*>& examples) {
+int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::string_view>&, v_array<VW::string_view>&) {
 
   std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
-
-  std::cout << "read_cached_features" << std::endl;
 
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
@@ -174,8 +169,6 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
 
   //a line is popped off of the io queue in read_features
   num_chars_initial = read_cached_feature(all, line, num_chars);
-
-  std::cout << "num_chars_initial: " << num_chars_initial << std::endl;
 
  //convert to io_buf -> parse, using create_buffer_view.
 
@@ -214,9 +207,6 @@ int read_cached_features(vw* all, v_array<example*>& examples) {
     }
 
   }
-
-  std::cout << "total_num_read: " << total_num_read << std::endl;
-
   all->p->done = true; 
 
   return total_num_read;
