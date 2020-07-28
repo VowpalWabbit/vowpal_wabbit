@@ -28,36 +28,20 @@
 #include "vw_versions.h"
 #include "options_serializer_boost_po.h"
 
-template <class T>
-class set_initial_wrapper
+void initialize_weights_as_random_positive(weight* weights, uint64_t index)
 {
- public:
-  static void func(weight& w, float& initial, uint64_t /* index */) { w = initial; }
-};
+  weights[0] = 0.1f * merand48(index);
+}
+void initialize_weights_as_random(weight* weights, uint64_t index)
+{
+  weights[0] = merand48(index) - 0.5f;
+}
 
-template <class T>
-class random_positive_wrapper
+void initialize_weights_as_polar_normal(weight* weights, uint64_t index)
 {
- public:
-  static void func(weight& w, uint64_t index) { w = (float)(0.1 * merand48(index)); }
-};
+  weights[0] = merand48_boxmuller(index);
+}
 
-template <class T>
-class random_weights_wrapper
-{
- public:
-  static void func(weight& w, uint64_t index) { w = (float)(merand48(index) - 0.5); }
-};
-// box-muller polar implementation
-template <class T>
-class polar_normal_weights_wrapper
-{
- public:
-  static void func(weight& w, uint64_t index)
-  {
-    w = merand48_boxmuller(index);
-  }
-};
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
 template <class T>
@@ -88,9 +72,9 @@ template <class T>
 void initialize_regressor(vw& all, T& weights)
 {
   // Regressor is already initialized.
-
   if (weights.not_null())
     return;
+
   size_t length = ((size_t)1) << all.num_bits;
   try
   {
@@ -107,18 +91,27 @@ void initialize_regressor(vw& all, T& weights)
     THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
   }
   else if (all.initial_weight != 0.)
-    weights.template set_default<float, set_initial_wrapper<T> >(all.initial_weight);
+  {
+    auto initial_weight = all.initial_weight;
+    auto initial_value_weight_initializer = [initial_weight](
+      weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
+    weights.set_default(initial_value_weight_initializer);
+  }
   else if (all.random_positive_weights)
-    weights.template set_default<random_positive_wrapper<T> >();
+  {
+    weights.set_default(&initialize_weights_as_random_positive);
+  }
   else if (all.random_weights)
-    weights.template set_default<random_weights_wrapper<T> >();
+  {
+    weights.set_default(&initialize_weights_as_random);
+  }
   else if (all.normal_weights)
   {
-    weights.template set_default<polar_normal_weights_wrapper<T> >();
+    weights.set_default(&initialize_weights_as_polar_normal);
   }
   else if (all.tnormal_weights)
   {
-    weights.template set_default<polar_normal_weights_wrapper<T> >();
+    weights.set_default(&initialize_weights_as_polar_normal);
     truncate(all, weights);
   }
 }

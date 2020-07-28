@@ -28,6 +28,7 @@ add_executable(vw-unit-test.out
   test_common.cc
   test_common.h
   tokenize_tests.cc
+  weights_test.cc
 )
 
 # Add the include directories from vw target for testing
