@@ -19,6 +19,10 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   v_array<example*> examples = v_init<example*>();
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
+  // for substring_to_example
+  v_array<VW::string_view> words_localcpy = v_init<VW::string_view>();
+  v_array<VW::string_view> parse_name_localcpy = v_init<VW::string_view>();
+
   try
   {
 
@@ -29,13 +33,14 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       examples.push_back(example_ptr);
 
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.p->reader(&all, examples) > 0)
+          all.p->reader(&all, examples, words_localcpy, parse_name_localcpy) > 0)
       {
-       
-        VW::setup_examples(all, examples);
-        example_number += examples.size();
 
-        dispatch(all, examples);
+          VW::setup_examples(all, examples);
+          example_number += examples.size();
+
+          dispatch(all, examples);
+
       }
       else
       {
@@ -56,9 +61,11 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         }
 
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
+
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
           lock_done(*all.p);
         example_number = 0;
+
       }
 
       examples.clear();
@@ -82,7 +89,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     // Stash the exception so it can be thrown on the main thread.
     all.p->exc_ptr = std::current_exception();
   }
-
+  
   lock_done(*all.p);
   examples.delete_v();
 
