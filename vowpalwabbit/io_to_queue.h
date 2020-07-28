@@ -30,7 +30,6 @@ inline void io_lines_toqueue(vw& all){
 }
 
 inline bool read_input_file_ascii(vw *all, char *&line, v_array<example*>&) {
-  std::cout << "read input file ascii" << std::endl;
 
   size_t num_chars_initial = readto(*(all->p->input), line, '\n');
 
@@ -43,16 +42,12 @@ inline bool read_input_file_ascii(vw *all, char *&line, v_array<example*>&) {
   return should_finish;
 }
 
-inline bool read_input_file_binary(vw *all, char *&line, v_array<example*>& examples) {
-
-  std::cout << "read input file binary" << std::endl;
+inline bool read_input_file_binary(vw *all, char *&line, v_array<example*>&) {
 
   size_t total_num_input_bytes = 0;
 
   //read_all_data returns the number of bytes successfully read from the input files
   total_num_input_bytes = all->p->input->read_all_data(line, total_num_input_bytes);
-
-  std::cout << "total_num_input_bytes: " << total_num_input_bytes << std::endl;
 
   bool should_finish = true;
   
@@ -84,9 +79,7 @@ inline void start_io_thread(vw& all){
 
 inline void end_io_thread(vw& all){
 
-  std::cout << "end io thread - beginning" << std::endl;
   all.io_thread.join();
-  std::cout << "end io thread - end" << std::endl;
 
 }
 
