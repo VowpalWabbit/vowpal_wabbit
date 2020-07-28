@@ -5,7 +5,10 @@
 #pragma once
 
 #include "vw.h"
+#pragma warning(push)
+#pragma warning(disable : 4635)
 #include "parser/flatbuffer/generated/example_generated.h"
+#pragma warning(pop)
 #include "simple_label.h"
 
 

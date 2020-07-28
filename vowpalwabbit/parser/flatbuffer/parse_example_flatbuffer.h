@@ -5,7 +5,10 @@
 #pragma once
 
 #include "../../vw.h"
+#pragma warning(push)
+#pragma warning(disable : 4635)
 #include "generated/example_generated.h"
+#pragma warning(pop)
 
 namespace VW {
 namespace parsers {

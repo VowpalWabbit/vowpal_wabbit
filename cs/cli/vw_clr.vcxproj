@@ -29,8 +29,8 @@
          (same as pre-path-fix behaviour as checked in) until we either replace this with a non-C++/CLI binding or
          find the correct ruleset to use. -->
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
   </PropertyGroup>
-  <Import Project="$(VcpkgProperties)" Condition="'$(Configuration)'=='Debug' And Exists('$(VcpkgProperties)')"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -48,6 +48,7 @@
   </PropertyGroup>
   <PropertyGroup Label="Globals">
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(ProjectDir)\..\..\vowpalwabbit\Build.props" />
@@ -93,7 +94,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore;"$(VcpkgCurrentInstalledDir)include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <EnablePREfast>false</EnablePREfast>
@@ -116,7 +117,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore;"$(VcpkgCurrentInstalledDir)include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -193,7 +194,6 @@
     </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(VcpkgIntegration)" Condition="'$(Configuration)'=='Release' And Exists('$(VcpkgIntegration)')" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
     <Import Project="$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" />
@@ -201,6 +201,7 @@
     <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
     <Import Project="$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
   </ImportGroup>
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <PropertyGroup>
     <WriteAssemblyInfoCpp>true</WriteAssemblyInfoCpp>
     <WriteResourceRc>true</WriteResourceRc>
