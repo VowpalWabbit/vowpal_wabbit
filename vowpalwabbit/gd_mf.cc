@@ -237,16 +237,14 @@ void mf_train(gdmf& d, example& ec)
     mf_train(d, ec, d.all->weights.dense_weights);
 }
 
-template <class T>
-class set_rand_wrapper
+void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
 {
- public:
-  static void func(weight& w, uint32_t& stride, uint64_t index)
+  for (size_t i = 0; i != stride; ++i, ++index)
   {
-    weight* pw = &w;
-    for (size_t i = 0; i != stride; ++i, ++index) pw[i] = (float)(0.1 * merand48(index));
+    float initial_value = 0.1 * merand48(index);
+    weights[i] = initial_value;
   }
-};
+}
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
@@ -258,10 +256,10 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      if (all.weights.sparse)
-        all.weights.sparse_weights.set_default<uint32_t, set_rand_wrapper<sparse_parameters> >(stride);
-      else
-        all.weights.dense_weights.set_default<uint32_t, set_rand_wrapper<dense_parameters> >(stride);
+      auto weight_initializer = [stride](
+                                    weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
+
+      all.weights.set_default(weight_initializer);
     }
   }
 

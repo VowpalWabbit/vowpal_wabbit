@@ -762,42 +762,32 @@ struct initial_weights
   bool _random;
   uint32_t _lda;
   uint32_t _stride;
-  initial_weights(weight initial, weight initial_random, bool random, uint32_t lda, uint32_t stride)
-      : _initial(initial), _initial_random(initial_random), _random(random), _lda(lda), _stride(stride)
-  {
-  }
-};
-
-template <class T>
-class set_initial_lda_wrapper
-{
- public:
-  static void func(weight &w, initial_weights &iw, uint64_t index)
-  {
-    uint32_t lda = iw._lda;
-    weight initial_random = iw._initial_random;
-    if (iw._random)
-    {
-      weight *pw = &w;
-      for (size_t i = 0; i != lda; ++i, ++index) pw[i] = (float)(-log(merand48(index) + 1e-6) + 1.0f) * initial_random;
-    }
-    (&w)[lda] = iw._initial;
-  }
 };
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 {
-  vw &all = *(l.all);
+  vw& all = *(l.all);
   uint64_t length = (uint64_t)1 << all.num_bits;
   if (read)
   {
     initialize_regressor(all);
-    initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda,
-        all.weights.stride());
-    if (all.weights.sparse)
-      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda_wrapper<sparse_parameters>>(init);
-    else
-      all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
+    initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f), all.random_weights, all.lda,
+        all.weights.stride()};
+
+    auto initial_lda_weight_initializer = [init](weight* weights, uint64_t index) {
+      uint32_t lda = init._lda;
+      weight initial_random = init._initial_random;
+      if (init._random)
+      {
+        for (size_t i = 0; i != lda; ++i, ++index)
+        {
+          weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random;
+        }
+      }
+      weights[lda] = init._initial;
+    };
+
+    all.weights.set_default(initial_lda_weight_initializer);
   }
   if (model_file.num_files() != 0)
   {
