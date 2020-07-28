@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <thread>
+#include <chrono>
+
 class io_item {
 
   public:
@@ -60,7 +63,7 @@ struct io_state {
       
     }
 
-    inline bool add_to_queue(char *line, size_t num_chars_initial){
+    inline bool add_to_queue(char *& line, size_t& num_chars_initial){
 
       bool finish = false;
 
@@ -74,12 +77,10 @@ struct io_state {
       }
 
       if(num_chars_initial < 1){
-          finish = true;
+        finish = true;
       }
 
       has_input_cv.notify_all();
-
-      std::cout << "has input cv notifyall" << std::endl;
 
       return finish;
 
@@ -87,39 +88,32 @@ struct io_state {
 
     //Pops a line of input from the input queue
     inline io_item pop_io_queue(){
-      
-      std::unique_lock<std::mutex> lck(io_queue_lock);
-
-      std::cout << "pop io queue" << std::endl;
 
       io_item front;
 
-      if(io_lines->size() == 0 && done_with_io) {
-        std::cout << "condition L130" << std::endl;
-        return front;
-      }
-
-      while(!done_with_io && io_lines->size() == 0){
-    
-        std::cout << "wait" << std::endl;
-        has_input_cv.wait(lck);
-      
-      }
-      
-      if(io_lines->size() > 0)
       {
+        std::unique_lock<std::mutex> lck(io_queue_lock);
 
-        std::cout << "get front" << std::endl;
-
-        front = io_lines->front();
-
-        io_lines->pop();
+        while(!done_with_io && io_lines->size() == 0){
       
+          has_input_cv.wait(lck);
+        
+        }
+
+        if(io_lines->size() > 0) {
+
+          front = std::move(io_lines->front());
+          io_lines->pop();
+
+        }
+
       }
 
       return front;
 
     }
+
+
 
 };
 
