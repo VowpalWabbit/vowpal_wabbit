@@ -48,6 +48,9 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <cerrno>
 #include <cstdio>
 #include <cassert>
+//cassandra - for testing/debugging
+#include <chrono>
+#include <atomic>
 
 #include "parse_example.h"
 #include "cache.h"
@@ -299,11 +302,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     if (!quiet)
       all.trace_message << "using no cache" << endl;
     all.p->output->space.delete_v();
-    all.p->input_file_reader = read_input_file_ascii;
   } 
-  else {
-    all.p->input_file_reader = read_input_file_binary;
-  }
 }
 
 // For macs
@@ -811,13 +810,13 @@ void setup_example(vw& all, example* ae)
 
 }  // namespace VW
 
-void notify_examples_cv(vw& all, example *ex)
+void notify_examples_cv(vw& all, example *& ex)
 {
 
-  ex->done_parsing.store(true);
+//  std::cout << "ex  in notify: " << ex << std::endl;
+  ex->done_parsing.store(true); 
   
-  all.p->example_parsed.notify_one();
-
+  all.p->example_parsed.notify_all();
 
 }
 
@@ -973,12 +972,9 @@ void finish_example(vw& all, example& ec)
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
   
-  //don't use same lock as in "pop io and reserve ready example queue spot" lock. Need a lock for the CV.
-  //std::unique_lock<std::mutex> lck(all.p->parser_mutex);
   all.p->end_parsed_examples += examples.size();
 
   notify_examples_cv(all, examples[0]);
-
 
 }
 
@@ -987,17 +983,19 @@ void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 namespace VW
 {
 example* get_example(parser* p) { 
- 
-  std::unique_lock<std::mutex> lock(p->example_cv_mutex);
-  
+
   example* ex = p->ready_parsed_examples.pop();
 
-  if (ex != nullptr && !ex->done_parsing) {
+  if (ex == nullptr || ex->done_parsing) {
+    return ex;
+  }
 
-    while( ex != nullptr && !ex->done_parsing) {
+  {
+    std::unique_lock<std::mutex> lock(p->example_cv_mutex);
+    while(ex != nullptr && !ex->done_parsing) {
+      // std::cout << "ex in get_ex: " << ex << std::endl;
       p->example_parsed.wait(lock);
     }
-
   }
 
   return ex;
