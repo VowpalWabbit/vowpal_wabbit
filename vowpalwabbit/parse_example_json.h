@@ -1619,7 +1619,9 @@ inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& 
     example& ae = VW::get_unused_example(all);
     static const char empty[] = "";
     VW::string_view example(empty);
-    substring_to_example(all, &ae, example);
+    v_array<VW::string_view> words = v_init<VW::string_view>();
+    v_array<VW::string_view> parse_name = v_init<VW::string_view>();
+    substring_to_example(all, &ae, example, words, parse_name);
 
     examples.push_back(&ae);
   }
@@ -1639,7 +1641,7 @@ void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<exampl
 }
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples)
+int read_features_json(vw* all, v_array<example*>& examples, v_array<VW::string_view>&, v_array<VW::string_view>&)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
@@ -1649,7 +1651,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
     std::vector<char> line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(all, line, num_chars);
+    size_t num_chars_initial = read_features(all, line, num_chars, examples);
 
     // Ensure there is a null terminator.
     line.push_back('\0'); 
