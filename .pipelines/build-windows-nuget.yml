@@ -7,7 +7,7 @@ pool:
 
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
-  VCPKG_INSTALLATION_DIR: $VCPKG_INSTALLATION_ROOT\installed\x64-windows
+  VCPKG_ARCHIVE_DIR: $(Pipeline.Workspace)/.vcpkg
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
@@ -21,8 +21,8 @@ steps:
     #netShare: # Required when packageFeedSelector == NetShare
 - task: Cache@2
   inputs:
-    key: 'vcpkg | "$(Agent.OS)"'
-    path: $(VCPKG_INSTALLATION_DIR)
+    key: 'vcpkg | archives'
+    path: $(VCPKG_ARCHIVE_DIR)
   displayName: Cache vcpkg dependencies
 - script: CALL .scripts/restore.cmd
   displayName: 'Restore dependencies'
