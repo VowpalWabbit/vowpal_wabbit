@@ -7,7 +7,7 @@ pool:
 
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
-  VCPKG_ARCHIVE_DIR: $(UserProfile)\AppData\Local\vcpkg\archives
+  VCPKG_ARCHIVE_DIR: $(LOCALAPPDATA)\vcpkg\archives
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
