@@ -5,10 +5,10 @@
 #pragma once
 
 #include "vw.h"
-#pragma warning(push)
-#pragma warning(disable : 4635)
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_BADLY_FORMED_XML
 #include "parser/flatbuffer/generated/example_generated.h"
-#pragma warning(pop)
+VW_WARNING_STATE_POP
 #include "simple_label.h"
 
 
