@@ -8,6 +8,7 @@ pool:
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
   VCPKG_ARCHIVE_DIR: $(LOCALAPPDATA)\vcpkg\archives
+  NUGET_ARCHIVE_DIR: $(Build.SourcesDirectory)\vowpalwabbit\packages
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
@@ -24,6 +25,11 @@ steps:
     key: 'vcpkg | archives'
     path: $(VCPKG_ARCHIVE_DIR)
   displayName: Cache vcpkg dependencies
+- task: Cache@2
+  inputs:
+    key: 'vowpalwabbit | packages'
+    path: $(NUGET_ARCHIVE_DIR)
+  displayName: Cache nuget dependencies
 - script: CALL .scripts/restore.cmd
   displayName: 'Restore dependencies'
   env:
