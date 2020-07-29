@@ -164,11 +164,10 @@ base_learner* lrq_setup(options_i& options, vw& all)
   auto lrq = scoped_calloc_or_throw<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
-  new_options.add(make_option("lrq", lrq_names).keep().help("use low rank quadratic features"))
+  new_options.add(make_option("lrq", lrq_names).keep().necessary().help("use low rank quadratic features"))
       .add(make_option("lrqdropout", lrq->dropout).keep().help("use dropout training for low rank quadratic features"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("lrq"))
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   uint32_t maxk = 0;

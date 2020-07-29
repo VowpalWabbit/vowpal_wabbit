@@ -128,10 +128,9 @@ VW::LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {
   uint32_t K;
   option_group_definition new_options("Top K");
-  new_options.add(make_option("top", K).keep().help("top k recommendation"));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("top", K).keep().necessary().help("top k recommendation"));
 
-  if (!options.was_supplied("top"))
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   auto data = scoped_calloc_or_throw<VW::topk>(K);

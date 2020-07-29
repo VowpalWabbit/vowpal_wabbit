@@ -78,9 +78,12 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
+
+  // TODO interesting case
   options.add_and_parse(new_options);
 
   // NOTE: epsilon-greedy is the default explore type.

@@ -107,10 +107,9 @@ VW::LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   std::string host;
 
   option_group_definition sender_options("Network sending");
-  sender_options.add(make_option("sendto", host).keep().help("send examples to <host>"));
-  options.add_and_parse(sender_options);
+  sender_options.add(make_option("sendto", host).keep().necessary().help("send examples to <host>"));
 
-  if (!options.was_supplied("sendto"))
+  if (!options.add_parse_and_check_necessary(sender_options))
   {
     return nullptr;
   }

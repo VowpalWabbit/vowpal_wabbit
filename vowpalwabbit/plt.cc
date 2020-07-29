@@ -322,7 +322,7 @@ base_learner* plt_setup(options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
-  new_options.add(make_option("plt", tree->k).keep().help("Probabilistic Label Tree with <k> labels"))
+  new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
       .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("use <k>-ary tree"))
       .add(make_option("threshold", tree->threshold)
                .default_value(0.5)
@@ -330,9 +330,8 @@ base_learner* plt_setup(options_i& options, vw& all)
       .add(make_option("top_k", tree->top_k)
                .default_value(0)
                .help("predict top-<k> labels instead of labels above threshold"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("plt")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   tree->all = &all;
 

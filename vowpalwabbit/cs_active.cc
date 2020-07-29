@@ -322,7 +322,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   int domination;
   option_group_definition new_options("Cost-sensitive Active Learning");
   new_options
-      .add(make_option("cs_active", data->num_classes).keep().help("Cost-sensitive active learning with <k> costs"))
+      .add(make_option("cs_active", data->num_classes).keep().necessary().help("Cost-sensitive active learning with <k> costs"))
       .add(make_option("simulation", simulation).help("cost-sensitive active learning simulation mode"))
       .add(make_option("baseline", data->is_baseline).help("cost-sensitive active learning baseline"))
       .add(make_option("domination", domination)
@@ -338,14 +338,14 @@ base_learner* cs_active_setup(options_i& options, vw& all)
       .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."))
       // TODO replace with trace and quiet
       .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
-  options.add_and_parse(new_options);
 
+  if (!options.add_parse_and_check_necessary(new_options))
+    return nullptr;
+
+  // TODO: interesting case
   data->use_domination = true;
   if (options.was_supplied("domination") && !domination)
     data->use_domination = false;
-
-  if (!options.was_supplied("cs_active"))
-    return nullptr;
 
   data->all = &all;
   data->t = 1;
