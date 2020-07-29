@@ -1513,6 +1513,9 @@ class _Col:
         expected_type = list(self.expected_type)
         if str in expected_type:
             expected_type.append(object)
+        if int in expected_type:
+            import numpy as np
+            expected_type.append(np.int64)
 
         col_type = df[self.colname].dtype
         if not (col_type in expected_type):

@@ -238,8 +238,8 @@ def test_parse():
 def test_learn_predict_multiline():
     model = vw(quiet=True, cb_adf=True)
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
-    finish = model.finish_example(ex)
     assert model.predict(ex) == [0.0, 0.0]
+    model.finish_example(ex)
     ex = ["| a", "| b"]
     model.learn(ex)
     assert model.predict(ex) == [0.0, 0.0]
@@ -478,7 +478,7 @@ def test_non_numerical_simplelabel_error():
     df = pd.DataFrame({"y": ["a"], "x": ["featX"]})
     with pytest.raises(TypeError) as type_error:
         DFtoVW(df=df, label=SimpleLabel(name="y"), features=Feature("x"))
-    expected = "In argument 'name' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float'."
+    expected = "In argument 'name' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float', 'int64'."
     assert expected == str(type_error.value)
 
 
