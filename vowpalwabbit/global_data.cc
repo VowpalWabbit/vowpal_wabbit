@@ -371,10 +371,8 @@ vw::vw()
 
   all_reduce = nullptr;
 
-  for (size_t i = 0; i < 256; i++)
+  for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
-    ngram[i] = 0;
-    skips[i] = 0;
     limit[i] = INT_MAX;
     affix_features[i] = 0;
     spelling_features[i] = 0;
