@@ -170,6 +170,7 @@ struct option_group_definition
     return *this;
   }
 
+  // will check if all necessary options were suplied
   bool check_necessary_enabled(const options_i& options) const
   {
     if (m_necessary_flags.size() == 0) return false;
