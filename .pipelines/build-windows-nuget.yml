@@ -7,7 +7,7 @@ pool:
 
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
-  VCPKG_ARCHIVE_DIR: $(Pipeline.Workspace)/.vcpkg
+  VCPKG_ARCHIVE_DIR: $(Agent.HomeDirectory)\AppData\Local\vcpkg\archives
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
@@ -29,37 +29,37 @@ steps:
   env:
     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
   failOnStderr: true
-- script: CALL .scripts/build.cmd
-  displayName: 'Build vw.sln'
-  env:
-    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-  failOnStderr: true
-- script: CALL .scripts/test.cmd
-  displayName: 'Run tests'
-  env:
-    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-  failOnStderr: false
-- task: PublishTestResults@2
-  displayName: 'Publish Test Results'
-  inputs:
-    testResultsFormat: VSTest
-    testResultsFiles: '**/vowpalwabbit/out/test/Release/x64/*.trx'
-- script: CALL .scripts/package.cmd
-  displayName: 'Package artifacts'
-  env:
-    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-    Tag: -$(Build.SourceVersion)--$(Build.BuildId)
-    SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
-  failOnStderr: true
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: target'
-  inputs:
-    PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\target
-    ArtifactName: target
-  condition: succeededOrFailed()
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: package'
-  inputs:
-    PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
-    ArtifactName: package
-  condition: succeededOrFailed()
+# - script: CALL .scripts/build.cmd
+#   displayName: 'Build vw.sln'
+#   env:
+#     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+#   failOnStderr: true
+# - script: CALL .scripts/test.cmd
+#   displayName: 'Run tests'
+#   env:
+#     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+#   failOnStderr: false
+# - task: PublishTestResults@2
+#   displayName: 'Publish Test Results'
+#   inputs:
+#     testResultsFormat: VSTest
+#     testResultsFiles: '**/vowpalwabbit/out/test/Release/x64/*.trx'
+# - script: CALL .scripts/package.cmd
+#   displayName: 'Package artifacts'
+#   env:
+#     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+#     Tag: -$(Build.SourceVersion)--$(Build.BuildId)
+#     SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
+#   failOnStderr: true
+# - task: PublishBuildArtifacts@1
+#   displayName: 'Publish Artifact: target'
+#   inputs:
+#     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\target
+#     ArtifactName: target
+#   condition: succeededOrFailed()
+# - task: PublishBuildArtifacts@1
+#   displayName: 'Publish Artifact: package'
+#   inputs:
+#     PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
+#     ArtifactName: package
+#   condition: succeededOrFailed()
