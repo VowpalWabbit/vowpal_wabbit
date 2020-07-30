@@ -814,9 +814,13 @@ void notify_examples_cv(vw& all, example *& ex)
 {
 
 //  std::cout << "ex  in notify: " << ex << std::endl;
+  //std::unique_lock<std::mutex> lock(all.p->example_cv_mutex);
+  std::unique_lock<std::mutex> lock(ex->example_cv_mutex);
+
   ex->done_parsing.store(true); 
   
-  all.p->example_parsed.notify_all();
+  //all.p->example_parsed.notify_all();
+  ex->example_parsed.notify_all();
 
 }
 
@@ -936,7 +940,10 @@ void empty_example(vw& /*all*/, example& ec)
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
-  ec.done_parsing = false;
+  {
+    std::unique_lock<std::mutex> lock(ec.example_cv_mutex);
+    ec.done_parsing = false;
+  }
   
 }
 
@@ -986,15 +993,21 @@ example* get_example(parser* p) {
 
   example* ex = p->ready_parsed_examples.pop();
 
-  if (ex == nullptr || ex->done_parsing) {
+  /*if (ex == nullptr || ex->done_parsing) {
+    return ex;
+  }*/
+
+  if (ex == nullptr) {
     return ex;
   }
 
   {
-    std::unique_lock<std::mutex> lock(p->example_cv_mutex);
+    //std::unique_lock<std::mutex> lock(p->example_cv_mutex);
+    std::unique_lock<std::mutex> lock(ex->example_cv_mutex);
     while(ex != nullptr && !ex->done_parsing) {
       // std::cout << "ex in get_ex: " << ex << std::endl;
-      p->example_parsed.wait(lock);
+      //p->example_parsed.wait(lock);
+      ex->example_parsed.wait(lock);
     }
   }
 
@@ -1051,7 +1064,10 @@ float get_confidence(example* ec) { return ec->confidence; }
 example* example_initializer::operator()(example* ex)
 {
   //manually set parser ready flag here
-  ex->done_parsing.store(false);
+  {
+    std::unique_lock<std::mutex> lock(ex->example_cv_mutex);
+    ex->done_parsing.store(false);
+  }
   memset(&ex->l, 0, sizeof(polylabel));
   ex->passthrough = nullptr;
   ex->tag = v_init<char>();
