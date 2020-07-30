@@ -103,7 +103,12 @@ struct example : public example_predict  // core example datatype.
 
   // NT set to false!!!
   //std::atomic<bool> done_parsing; // flag used in multithreaded parsing to indicate that the example is done being parsed
-  std::atomic_bool done_parsing{false};
+  std::atomic<bool> done_parsing{false};
+  //for get_example
+  std::condition_variable example_parsed;
+  //for cv notify and wait
+  std::mutex example_cv_mutex;
+
 
 };
 IGNORE_DEPRECATED_USAGE_END
