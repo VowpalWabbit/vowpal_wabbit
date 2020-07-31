@@ -4,7 +4,7 @@ import sys, os
 import math
 from vowpalwabbit import pyvw
 
-class MyCustomPythonicReduction(pyvw.Copperhead):
+class NoopPythonicReduction(pyvw.Copperhead):
     def _predict(self):
         print("hello there I'm predicting stuff")
 
@@ -58,7 +58,7 @@ vw.finish()
 
 def noop_example():
     vw = pyvw.vw("--red_python --loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
-    customPythonReduction = vw.init_python_reduction_task(MyCustomPythonicReduction)
+    customPythonReduction = vw.init_python_reduction_task(NoopPythonicReduction)
     vw.run_parser()
     vw.finish()
 
