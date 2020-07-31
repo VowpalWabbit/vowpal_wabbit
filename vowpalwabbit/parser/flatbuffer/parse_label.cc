@@ -14,11 +14,12 @@
 #include "../../best_constant.h"
 #include "parse_example_flatbuffer.h"
 
-
-namespace VW {
-namespace parsers {
-namespace flatbuffer {
-
+namespace VW
+{
+namespace parsers
+{
+namespace flatbuffer
+{
 void parser::parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label)
 {
   l->simple.label = label->label();
@@ -29,7 +30,8 @@ void parser::parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel
 void parser::parse_cb_label(polylabel* l, const CBLabel* label)
 {
   l->cb.weight = label->weight();
-  for (auto const& cost : *(label->costs())){
+  for (auto const& cost : *(label->costs()))
+  {
     CB::cb_class f;
     f.action = cost->action();
     f.cost = cost->cost();
@@ -44,17 +46,21 @@ void parser::parse_cb_label(polylabel* l, const CBLabel* label)
 void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
 {
   l->conditional_contextual_bandit.weight = label->weight();
-  if (label->example_type() == 1) l->conditional_contextual_bandit.type = CCB::example_type::shared;
-  else if (label->example_type() == 2) l->conditional_contextual_bandit.type = CCB::example_type::action;
-  else if (label->example_type() == 3) {
+  if (label->example_type() == 1)
+    l->conditional_contextual_bandit.type = CCB::example_type::shared;
+  else if (label->example_type() == 2)
+    l->conditional_contextual_bandit.type = CCB::example_type::action;
+  else if (label->example_type() == 3)
+  {
     l->conditional_contextual_bandit.type = CCB::example_type::slot;
 
-    if (label->explicit_included_actions() != nullptr){
-      for (const auto& exp_included_action : *(label->explicit_included_actions())){
-        l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action);
-      }
+    if (label->explicit_included_actions() != nullptr)
+    {
+      for (const auto& exp_included_action : *(label->explicit_included_actions()))
+      { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); }
     }
-    else if (label->outcome() != nullptr){
+    else if (label->outcome() != nullptr)
+    {
       auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
       ccb_outcome.cost = label->outcome()->cost();
       ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
@@ -64,7 +70,8 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
 
       l->conditional_contextual_bandit.outcome = &ccb_outcome;
     }
-  else l->conditional_contextual_bandit.type = CCB::example_type::unset;
+    else
+      l->conditional_contextual_bandit.type = CCB::example_type::unset;
     // l->conditional_contextual_bandit.outcome->cost = label->outcome()->cost();
   }
 }
@@ -73,7 +80,8 @@ void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
 {
   l->cb_eval.action = label->action();
   l->cb_eval.event.weight = label->event()->weight();
-  for (const auto& cb_cost : *(label->event()->costs())){
+  for (const auto& cb_cost : *(label->event()->costs()))
+  {
     CB::cb_class f;
     f.cost = cb_cost->cost();
     f.action = cb_cost->action();
@@ -85,13 +93,14 @@ void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
 
 void parser::parse_cs_label(polylabel* l, const CS_Label* label)
 {
-  for (auto const& cost : *(label->costs())){
+  for (auto const& cost : *(label->costs()))
+  {
     COST_SENSITIVE::wclass f;
     f.x = cost->x();
     f.partial_prediction = cost->partial_pred();
     f.wap_value = cost->wap_value();
     f.class_index = cost->class_index();
-    l->cs.costs.push_back(f); 
+    l->cs.costs.push_back(f);
   }
 }
 
@@ -104,26 +113,28 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
 
 void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
 {
-  for (auto const& lab : *(label->labels()))
-    l->multilabels.label_v.push_back(lab);
+  for (auto const& lab : *(label->labels())) l->multilabels.label_v.push_back(lab);
 }
 
 void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
 {
   l->slates.weight = label->weight();
-  if (label->example_type() == 1) {
+  if (label->example_type() == 1)
+  {
     l->slates.labeled = label->labeled();
     l->slates.cost = label->cost();
   }
-  else if (label->example_type() == 2) l->slates.slot_id = label->slot();
-  else if (label->example_type() == 3) {
+  else if (label->example_type() == 2)
+    l->slates.slot_id = label->slot();
+  else if (label->example_type() == 3)
+  {
     l->slates.labeled = label->labeled();
     l->slates.probabilities = v_init<ACTION_SCORE::action_score>();
 
-    for (auto const& as : *(label->probabilities()))
-      l->slates.probabilities.push_back({as->action(), as->score()});    
+    for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }
-  else {
+  else
+  {
     THROW("Example type not understood")
   }
 }
@@ -132,6 +143,6 @@ void parser::parse_no_label()
 {
   // No Label
 }
-} // flatbuffer
-} // parsers
-} // VW
+}  // namespace flatbuffer
+}  // namespace parsers
+}  // namespace VW
