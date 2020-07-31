@@ -451,12 +451,14 @@ base_learner* cbify_setup(options_i& options, vw& all)
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
-    if (use_cs) {
+    if (use_cs)
+    {
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
       all.label_type = label_type_t::cs;
     }
-    else {
+    else
+    {
       l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
       all.label_type = label_type_t::mc;
     }

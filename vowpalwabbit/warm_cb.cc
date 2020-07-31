@@ -654,12 +654,14 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
     data->epsilon = 0.05f;
   }
 
-  if (use_cs) {
+  if (use_cs)
+  {
     l = &init_cost_sensitive_learner(
         data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, data->choices_lambda);
     all.label_type = label_type_t::cs;
   }
-  else {
+  else
+  {
     l = &init_multiclass_learner(
         data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
     all.label_type = label_type_t::mc;
