@@ -21,8 +21,11 @@ struct node_pred
   uint32_t label;
   double label_count;
 
+  node_pred() = default;
   node_pred(uint32_t a) : label(a), label_count(0) {}
 };
+
+static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
 
 struct node
 {
@@ -55,6 +58,11 @@ struct node
       , preds(v_init<node_pred>())
   {
   }
+
+  ~node()
+  {
+    preds.delete_v();
+  }
 };
 
 struct recall_tree
@@ -64,7 +72,7 @@ struct recall_tree
   uint32_t k;
   bool node_only;
 
-  v_array<node> nodes;
+  std::vector<node> nodes;
 
   size_t max_candidates;
   size_t max_routers;
@@ -72,12 +80,6 @@ struct recall_tree
   float bern_hyper;
 
   bool randomized_routing;
-
-  ~recall_tree()
-  {
-    for (auto& node : nodes) node.preds.delete_v();
-    nodes.delete_v();
-  }
 };
 
 float to_prob(float x)
@@ -430,7 +432,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
 void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
 

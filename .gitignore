@@ -121,6 +121,7 @@ python/docs/build
 /cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs
 /cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
 /cs/unittest/RunTests.cs
+/cs/unittest/TestMarshalNumeric.cs
 vowpalwabbit/vw.VC.VC.opendb
 vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs

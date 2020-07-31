@@ -25,7 +25,7 @@
 #include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
-//Brings VW_DLL_MEMBER to help control exports
+//Brings VW_DLL_PUBLIC to help control exports
 #define VWDLL_EXPORTS
 #include "../vowpalwabbit/vwdll.h"
 
@@ -406,7 +406,7 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   if (ec->feature_space[ns].indicies.size()> 0)
     ec->feature_space[ns].indicies.pop();
   if (ec->feature_space[ns].space_names.size()> 0)
-    ec->feature_space[ns].space_names.pop();
+    ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
   ec->total_sum_feat_sq -= val * val;

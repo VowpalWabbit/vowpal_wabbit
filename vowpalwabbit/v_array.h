@@ -36,6 +36,8 @@ struct v_array
   T* end_array;
   size_t erase_count;
 
+  using iterator = T*;
+
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
@@ -211,14 +213,14 @@ void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&))
 }
 
 template <class T>
-void push_many(v_array<T>& v, const T* _begin, size_t num)
+void push_many(v_array<T>& v, const T* src, size_t num)
 {
   if (v._end + num >= v.end_array)
     v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
 #ifdef _WIN32
-  memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
+  memcpy_s(v._end, (v.end_array - v._end)* sizeof(T), src, num * sizeof(T));
 #else
-  memcpy(v._end, _begin, num * sizeof(T));
+  memcpy(v._end, src, num * sizeof(T));
 #endif
   v._end += num;
 }

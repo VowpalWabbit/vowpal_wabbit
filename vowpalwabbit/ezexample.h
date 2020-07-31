@@ -119,7 +119,7 @@ class ezexample
     if (current_ns != 0)
     {
       str[0] = current_ns;
-      current_seed = VW::hash_space(*vw_ref, str);
+      current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
     }
   }
 
@@ -154,7 +154,7 @@ class ezexample
     past_seeds.push_back(current_seed);
     current_ns = c;
     str[0] = c;
-    current_seed = VW::hash_space(*vw_ref, str);
+    current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
   }
 
   void remns()
@@ -238,11 +238,13 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (auto const& pair : vw_ref->pairs)
+    for (auto const& interaction : vw_ref->interactions)
     {
-      quadratic_features_num += ec->feature_space[(int)pair[0]].size() * ec->feature_space[(int)pair[1]].size();
+      if(interaction.size() != 2)
+        continue;
+      quadratic_features_num += ec->feature_space[(int)interaction[0]].size() * ec->feature_space[(int)interaction[1]].size();
       quadratic_features_sqr +=
-          ec->feature_space[(int)pair[0]].sum_feat_sq * ec->feature_space[(int)pair[1]].sum_feat_sq;
+          ec->feature_space[(int)interaction[0]].sum_feat_sq * ec->feature_space[(int)interaction[1]].sum_feat_sq;
     }
     ec->num_features += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
@@ -315,17 +317,17 @@ class ezexample
 
   // HELPER FUNCTIONALITY
 
-  inline fid hash(std::string fstr) { return VW::hash_feature(*vw_ref, fstr, current_seed); }
-  inline fid hash(char* fstr) { return VW::hash_feature_cstr(*vw_ref, fstr, current_seed); }
+  inline fid hash(std::string fstr) { return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, current_seed)); }
+  inline fid hash(char* fstr) { return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, current_seed)); }
   inline fid hash(char c, std::string fstr)
   {
     str[0] = c;
-    return VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
   inline fid hash(char c, char* fstr)
   {
     str[0] = c;
-    return VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
 
   inline fid addf(fid fint) { return addf(fint, 1.0); }

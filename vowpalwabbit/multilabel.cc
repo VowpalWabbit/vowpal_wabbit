@@ -93,7 +93,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
   labels* ld = (labels*)v;
 
@@ -178,8 +178,9 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
-    if (sink >= 0)
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (sink != nullptr)
     {
       std::stringstream ss;
 
@@ -190,8 +191,9 @@ void output_example(vw& all, example& ec)
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text_by_ref(sink, ss.str(), ec.tag);
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
     }
+  }
 
   print_update(all, test_label(&ec.l.multilabels), ec);
 }

@@ -14,7 +14,7 @@
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
-  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
+  size_t num_chars_initial = all->p->input->readto(line, '\n');
   if (num_chars_initial < 1)
     return num_chars_initial;
   num_chars = num_chars_initial;
@@ -190,8 +190,10 @@ class TC_parser
 
       if (_chain_hash && !string_feature_value.empty())
       {
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(),
-                         _p->hasher(string_feature_value.begin(), string_feature_value.length(), _channel_hash)) & _parse_mask);
+        // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
+        word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
+                         _p->hasher(feature_name.begin(), feature_name.length(), _channel_hash)) &
+            _parse_mask);
       }
       else if (!feature_name.empty())
       {
@@ -283,7 +285,7 @@ class TC_parser
         }
 
         VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        uint64_t word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
+        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
@@ -499,13 +501,13 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
       label_space.remove_prefix(tab_idx + 1);
     }
 
-    std::vector<VW::string_view> tokenized;
     tokenize(' ', label_space, all->p->words);
     if (all->p->words.size() > 0 &&
-        (all->p->words.last().end() == label_space.end() ||
-        all->p->words.last().front() == '\''))  // The last field is a tag, so record and strip it off
+        (all->p->words.back().end() == label_space.end() ||
+        all->p->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->p->words.pop();
+      VW::string_view tag = all->p->words.back();
+      all->p->words.pop_back();
       if (tag.front() == '\'')
         tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());
