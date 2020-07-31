@@ -21,7 +21,7 @@ namespace flatbuffer
 {
 int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
 {
-  return (int)all->flat_converter->parse_examples(all, examples);
+  return static_cast<int>(all->flat_converter->parse_examples(all, examples));
 }
 
 parser::parser(std::string filename) : _filename(filename), _flatbuffer_pointer(nullptr), _example_index(0), _c_hash(0)

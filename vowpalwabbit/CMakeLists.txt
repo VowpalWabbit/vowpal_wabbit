@@ -278,6 +278,7 @@ set(vw_all_sources
 )
 
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
+add_subdirectory(parser/flatbuffer)
 add_dependencies(vw fbschemas)
 
 target_link_libraries(vw
