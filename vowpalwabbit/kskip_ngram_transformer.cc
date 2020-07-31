@@ -73,7 +73,7 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
     for (size_t n = 1; n < ngram_definition[index]; n++)
     {
       gram_mask.clear();
-      gram_mask.push_back((size_t)0);
+      gram_mask.push_back(0);
       add_grams(n, skip_definition[index], ex->feature_space[index], length, gram_mask, 0);
     }
   }

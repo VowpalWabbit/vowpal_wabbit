@@ -741,8 +741,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
         [](const std::string& arg) { return spoof_hex_encoded_namespaces(arg); });
 
     all.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(
-        std::move(
-        VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.logger.quiet)));
+        VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.logger.quiet));
   }
 
   if (options.was_supplied("feature_limit"))
