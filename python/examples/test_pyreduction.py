@@ -38,17 +38,22 @@ class BinaryPythonReduction(pyvw.Copperhead):
 
 print(os.getpid())
 
+# this should match cpp_binary() output
+# doesn't do anything, runs in python see class impl NoopPythonicReductions
 def noop_example():
     vw = pyvw.createWithCustomPythonReduction(NoopPythonicReduction, "--loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
 
+# this should match cpp_binary() output
+# mirror implementation of the cpp, runs in python see class impl BinaryPythonReductions
 def python_binary():
     vw = pyvw.createWithCustomPythonReduction(BinaryPythonReduction, "--loss_function logistic --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
 
-def baseline_binary():
+# this should be the baseline
+def cpp_binary():
     vw = pyvw.vw("--loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
@@ -58,4 +63,4 @@ noop_example()
 print("python")
 python_binary()
 print("cpp")
-baseline_binary()
+cpp_binary()

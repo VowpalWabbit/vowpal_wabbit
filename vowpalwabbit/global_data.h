@@ -423,8 +423,8 @@ struct vw
 
   void* /*Search::search*/ searchstr;
 
-  // needed for python red AKA a copperhead snake (red(uction) snake(python))
-  void* /* TBD to be define */ copperhead;
+  // needed for custom python reduction: this links up python + cpp worlds
+  void* /* TBD to be define */ pythonCppBridge;
 
   uint32_t wpp;
 

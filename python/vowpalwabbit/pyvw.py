@@ -6,25 +6,24 @@ import pylibvw
 import warnings
 
 class Learner():
-    def __init__(self, redpy):
-        self.redpy = redpy
+    def __init__(self, vwCppBridge):
+        self.vwCppBridge = vwCppBridge
 
     def learn(self, ec):
-        self.redpy.call_base_learn(ec)
+        self.vwCppBridge.call_base_learn(ec)
 
 class Copperhead():
     """Copperhead class"""
-    def __init__(self, vw, redpy):
+    def __init__(self, vw):
         self.vw = vw
-        self.redpy = redpy
+        self.vwCppBridge = vw.get_python_cpp_bridge_ptr()
 
-        # rename bc its actually just learning?
+        # rename bc its actually just learning
         def run(example):
-            # build learner object?
-            l = Learner(self.redpy)
+            l = Learner(self.vwCppBridge)
             self._learn(example, l)
 
-        self.redpy.set_python_reduction_hook(run)
+        self.vwCppBridge.set_python_reduction_hook(run)
 
     def _predict(self):
         pass
@@ -33,7 +32,7 @@ class Copperhead():
         pass
 
     def _call_base_learn(self, ec):
-        self.redpy.call_base_learn(ec)
+        self.vwCppBridge.call_base_learn(ec)
 
 
 class SearchTask():
@@ -509,9 +508,9 @@ class vw(pylibvw.vw):
     def __del__(self):
         self.finish()
 
-    def init_python_reduction_task(self, chead):
-        redpy = self.get_red_python_ptr()
-        return chead(self, redpy)
+    def init_python_reduction_task(self, actual_python_reduction):
+        # link the python reduction impl with this (self) VW instance
+        return actual_python_reduction(self)
 
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()
@@ -659,11 +658,10 @@ class vw(pylibvw.vw):
                                self, sch, num_actions, task_data)
 
 
-def createWithCustomPythonReduction(chead, arg_str=None, **kw):
-    if issubclass(chead, Copperhead):
+def createWithCustomPythonReduction(actual_python_reduction, arg_str=None, **kw):
+    if issubclass(actual_python_reduction, Copperhead):
         inst = vw("--red_python  "+ arg_str, **kw)
-        redpy = inst.get_red_python_ptr()
-        chead(inst, redpy)
+        inst.init_python_reduction_task(actual_python_reduction)
 
         return inst
     

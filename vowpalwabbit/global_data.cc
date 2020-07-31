@@ -384,7 +384,7 @@ vw::vw()
 
   searchstr = nullptr;
 
-  copperhead = nullptr;
+  pythonCppBridge = nullptr;
 
   nonormalize = false;
   l1_lambda = 0.0;

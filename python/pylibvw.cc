@@ -36,7 +36,7 @@ typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
-typedef boost::shared_ptr<RED_PYTHON::Copperhead> redpython_ptr;
+typedef boost::shared_ptr<RED_PYTHON::PythonCppBridge> py_cpp_bridge_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -81,10 +81,10 @@ void my_save(vw_ptr all, std::string name)
 { VW::save_predictor(*all, name);
 }
 
-redpython_ptr get_red_python_ptr(vw_ptr all)
+py_cpp_bridge_ptr get_python_cpp_bridge_ptr(vw_ptr all)
 { 
-  RED_PYTHON::Copperhead* temp = (RED_PYTHON::Copperhead*)(all->copperhead);
-  return boost::shared_ptr<RED_PYTHON::Copperhead>(temp, dont_delete_me);
+  RED_PYTHON::PythonCppBridge* temp = (RED_PYTHON::PythonCppBridge*)(all->pythonCppBridge);
+  return boost::shared_ptr<RED_PYTHON::PythonCppBridge>(temp, dont_delete_me);
 }
 
 search_ptr get_search_ptr(vw_ptr all)
@@ -627,7 +627,7 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<ui
 }
 */
 
-void verify_redpy_set_properly(redpython_ptr redpy)
+void verify_redpy_set_properly(py_cpp_bridge_ptr redpy)
 {
   if (redpy->random_number == 0)
   {
@@ -654,7 +654,7 @@ uint32_t search_get_num_actions(search_ptr sch)
   return (uint32_t)d->num_actions;
 }
 
-void learn_redpy_fn(RED_PYTHON::Copperhead& redpy, example* ec)
+void learn_redpy_fn(RED_PYTHON::PythonCppBridge& redpy, example* ec)
 {
   try
   {
@@ -740,17 +740,17 @@ void set_force_oracle(search_ptr sch, bool useOracle)
 }
 
 // void baselearn(redpython_ptr redpy, example_ptr ec)
-void baselearn(redpython_ptr redpy, example_ptr ec)
+void baselearn(py_cpp_bridge_ptr redpy, example_ptr ec)
 {
   ((VW::LEARNER::single_learner *)redpy->base_learn)->learn(*ec);
 }
 
-void basepredict(redpython_ptr redpy, example_ptr ec)
+void basepredict(py_cpp_bridge_ptr redpy, example_ptr ec)
 {
   ((VW::LEARNER::single_learner *)redpy->base_learn)->predict(*ec);
 }
 
-void set_python_reduction_hook(redpython_ptr redpy, py::object learn_object)
+void set_python_reduction_hook(py_cpp_bridge_ptr redpy, py::object learn_object)
 { verify_redpy_set_properly(redpy);
   redpy->run_f = &learn_redpy_fn;
   redpy->run_object = new py::object(learn_object);
@@ -873,7 +873,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
-  .def("get_red_python_ptr", &get_red_python_ptr, "return a pointer to the RED_PYTHON::Copperhead data structure")
+  .def("get_python_cpp_bridge_ptr", &get_python_cpp_bridge_ptr, "return a pointer to the RED_PYTHON::PythonCppBridge data structure")
 
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
@@ -991,7 +991,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("predict", &Search::predictor::predict, "make a prediction")
   ;
 
-  py::class_<RED_PYTHON::Copperhead, redpython_ptr>("red_python")
+  py::class_<RED_PYTHON::PythonCppBridge, py_cpp_bridge_ptr>("red_python")
   .def("set_python_reduction_hook", &set_python_reduction_hook, "Set the hook (function pointer) (you don't want to call this yourself!")
   .def("call_base_learn", &baselearn, "Set the hook (function pointer) (you don't want to call this yourself!")
   ;
