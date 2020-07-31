@@ -4,6 +4,7 @@
 #pragma once
 #include <iostream>
 #include <iomanip>
+#include <utility>
 #include <vector>
 #include <map>
 #include <cfloat>
@@ -30,7 +31,6 @@
 #include <thread>
 #endif
 
-#include "parser/flatbuffer/generated/example_generated.h"
 #include "v_array.h"
 #include "array_parameters.h"
 #include "parse_primitives.h"
@@ -50,6 +50,7 @@
 
 #include "options.h"
 #include "version.h"
+#include "named_labels.h"
 
 typedef float weight;
 
@@ -60,59 +61,6 @@ struct dictionary_info
   std::string name;
   uint64_t file_hash;
   std::shared_ptr<feature_dict> dict;
-};
-
-class namedlabels
-{
- private:
-  // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
-  std::string m_label_list;
-  std::vector<VW::string_view> m_id2name;
-  std::unordered_map<VW::string_view, uint32_t> m_name2id;
-  uint32_t m_K;
-
- public:
-  namedlabels(const std::string& label_list) : m_label_list(label_list)
-  {
-    tokenize(',', m_label_list, m_id2name);
-
-    m_K = static_cast<uint32_t>(m_id2name.size());
-    m_name2id.max_load_factor(0.25);
-    m_name2id.reserve(m_K);
-
-    for (uint32_t k = 0; k < m_K; k++)
-    {
-      const VW::string_view& l = m_id2name[static_cast<size_t>(k)];
-      auto iter = m_name2id.find(l);
-      if (iter != m_name2id.end())
-        THROW("error: label dictionary initialized with multiple occurances of: " << l);
-      m_name2id.emplace(l, k + 1);
-    }
-  }
-
-  uint32_t getK() { return m_K; }
-
-  uint32_t get(VW::string_view s) const
-  {
-    auto iter = m_name2id.find(s);
-    if (iter == m_name2id.end())
-    {
-      std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
-      return 0;
-    }
-    return iter->second;
-  }
-
-  VW::string_view get(uint32_t v) const
-  {
-    static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is smaller than 32-bits. Potential overflow issues.");
-    if ((v == 0) || (v > m_K))
-    {
-      return VW::string_view();
-    }
-    else
-      return m_id2name[static_cast<size_t>(v - 1)];
-  }
 };
 
 struct shared_data
@@ -135,7 +83,7 @@ struct shared_data
   float min_label;  // minimum label encountered
   float max_label;  // maximum label encountered
 
-  namedlabels* ldict;
+  VW::named_labels* ldict;
 
   // for holdout
   double weighted_holdout_examples;

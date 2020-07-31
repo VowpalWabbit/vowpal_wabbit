@@ -5,7 +5,10 @@
 #pragma once
 
 #include "../../vw.h"
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_BADLY_FORMED_XML
 #include "generated/example_generated.h"
+VW_WARNING_STATE_POP
 
 namespace VW
 {

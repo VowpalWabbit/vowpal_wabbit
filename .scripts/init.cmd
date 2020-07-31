@@ -42,7 +42,6 @@ IF NOT DEFINED VCPKG_INSTALLATION_ROOT (
 )
 
 SET "VcpkgIntegration=%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\msbuild\vcpkg.targets"
-SET "VcpkgProperties=%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\msbuild\vcpkg.props"
 SET "flatcPath=%VCPKG_INSTALLATION_ROOT%\installed\x64-windows\tools\flatbuffers\flatc.exe"
 
 REM Repo-specific paths
