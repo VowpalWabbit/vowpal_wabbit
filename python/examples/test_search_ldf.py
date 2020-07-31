@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import sys
-import os
 from vowpalwabbit import pyvw
 
 # wow! your data can be ANY type you want... does NOT have to be VW examples
@@ -49,8 +48,6 @@ class SequenceLabeler(pyvw.SearchTask):
             vw.finish_example(ex)
             output.append(pred)
         return output
-
-print(os.getpid())
 
 # initialize VW as usual, but use 'hook' as the search_task
 vw = pyvw.vw("--search 0 --csoaa_ldf m --quiet --search_task hook --ring_size 1024")
