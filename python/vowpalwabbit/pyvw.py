@@ -5,6 +5,13 @@ from __future__ import division
 import pylibvw
 import warnings
 
+class Learner():
+    def __init__(self, redpy):
+        self.redpy = redpy
+
+    def learn(self, ec):
+        self.redpy.call_base_learn(ec)
+
 class Copperhead():
     """Copperhead class"""
     def __init__(self, vw, redpy):
@@ -14,14 +21,15 @@ class Copperhead():
         # rename bc its actually just learning?
         def run(example):
             # build learner object?
-            self._learn(example)
+            l = Learner(self.redpy)
+            self._learn(example, l)
 
         self.redpy.set_python_reduction_hook(run)
 
     def _predict(self):
         pass
 
-    def _learn(self):
+    def _learn(self, learner):
         pass
 
     def _call_base_learn(self, ec):

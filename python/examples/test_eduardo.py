@@ -8,17 +8,16 @@ class MyCustomPythonicReduction(pyvw.Copperhead):
     def _predict(self):
         print("hello there I'm predicting stuff")
 
-    def _learn(self, ec):
+    def _learn(self, ec, learner):
         # print("hello there I can also learn stuff btw the total_sum_feat_sq is " + str(ec.get_total_sum_feat_sq()))
-
-        self._call_base_learn(ec)
+        learner.learn(ec)
 
 class BinaryPythonReduction(pyvw.Copperhead):
     def _predict(self):
         print("hello there I'm predicting stuff")
 
-    def _learn(self, ec):
-        self._call_base_learn(ec)
+    def _learn(self, ec, learner):
+        learner.learn(ec)
 
         if ec.get_simplelabel_prediction() > 0:
             ec.set_simplelabel_prediction(1)
