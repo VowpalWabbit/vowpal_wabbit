@@ -38,33 +38,13 @@ class BinaryPythonReduction(pyvw.Copperhead):
 
 print(os.getpid())
 
-# initialize VW as usual, but use 'hook' as the search_task
-# vw = pyvw.vw("--red_python --cb_adf --dsjson -c -d /root/vw/python/examples/prueba.json --cb_type ips -l 1 --power_t 0 -P 1 ")
-
-# no op reduction
-# vw = pyvw.vw("--red_python --loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
-
-# python binary reduction
-vw = pyvw.vw("--red_python --loss_function logistic --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
-
-# test without python
-# vw = pyvw.vw("--loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
-
-# customPythonReduction = vw.init_python_reduction_task(MyCustomPythonicReduction)
-customPythonReduction = vw.init_python_reduction_task(BinaryPythonReduction)
-
-vw.run_parser()
-vw.finish()
-
 def noop_example():
-    vw = pyvw.vw("--red_python --loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
-    customPythonReduction = vw.init_python_reduction_task(NoopPythonicReduction)
+    vw = pyvw.createWithCustomPythonReduction(NoopPythonicReduction, "--loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
 
 def python_binary():
-    vw = pyvw.vw("--red_python --loss_function logistic --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
-    customPythonReduction = vw.init_python_reduction_task(BinaryPythonReduction)
+    vw = pyvw.createWithCustomPythonReduction(BinaryPythonReduction, "--loss_function logistic --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
 
@@ -72,8 +52,6 @@ def baseline_binary():
     vw = pyvw.vw("--loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
-
-print("asdfasdfasdf")
 
 print("noop")
 noop_example()

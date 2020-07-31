@@ -659,6 +659,17 @@ class vw(pylibvw.vw):
                                self, sch, num_actions, task_data)
 
 
+def createWithCustomPythonReduction(chead, arg_str=None, **kw):
+    if issubclass(chead, Copperhead):
+        inst = vw("--red_python  "+ arg_str, **kw)
+        redpy = inst.get_red_python_ptr()
+        chead(inst, redpy)
+
+        return inst
+    
+    raise TypeError("The first argument must be a class that inherits from Copperhead")
+
+
 class namespace_id():
     """The namespace_id class is simply a wrapper to convert between
     hash spaces referred to by character (eg 'x') versus their index
