@@ -183,6 +183,7 @@ endif()
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
 find_package(ZLIB REQUIRED)
+find_package(flatbuffers REQUIRED)
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
@@ -230,13 +231,14 @@ else()
   endif()
 endif()
 
-if (BUILD_FLATBUFFER_UTILS)
-  add_subdirectory(utl/flatbuffer)
-endif()
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
+
+if (BUILD_FLATBUFFER_UTILS)
+  add_subdirectory(utl/flatbuffer)
+endif()
 
 if(BUILD_DOCS)
   add_subdirectory(doc)

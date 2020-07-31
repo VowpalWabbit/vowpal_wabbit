@@ -1,6 +1,3 @@
-
-find_package(flatbuffers REQUIRED)
-
 set(EXAMPLE_SCHEMA
   "${CMAKE_CURRENT_SOURCE_DIR}/schema/example.fbs")
 

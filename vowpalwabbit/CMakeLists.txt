@@ -20,6 +20,11 @@ endif()
 add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 
+add_subdirectory(parser/flatbuffer)
+add_library(FlatbuffersTarget INTERFACE)
+target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
+add_dependencies(FlatbuffersTarget fbschemas)
+
 set(vw_all_headers
   accumulate.h
   action_score.h
@@ -278,8 +283,6 @@ set(vw_all_sources
 )
 
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
-add_subdirectory(parser/flatbuffer)
-add_dependencies(vw fbschemas)
 
 target_link_libraries(vw
   PUBLIC
@@ -289,7 +292,8 @@ target_link_libraries(vw
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
-    $<BUILD_INTERFACE:RapidJSON>)
+    $<BUILD_INTERFACE:RapidJSON>
+    $<BUILD_INTERFACE:FlatbuffersTarget>)
 
 add_library(VowpalWabbit::vw ALIAS vw)
 
@@ -301,7 +305,6 @@ target_include_directories(vw PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  ${FLATBUFFERS_INCLUDE_DIR}
 )
 
 target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
