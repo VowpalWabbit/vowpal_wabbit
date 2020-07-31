@@ -348,7 +348,7 @@ struct vw
 
   uint32_t hash_seed;
 
-  VW::parsers::flatbuffer::parser* flat_converter;
+  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
   std::string data_filename;
 
   bool daemon;

@@ -26,6 +26,7 @@ class VW::parsers::flatbuffer::parser
 public:
   bool parse_examples(vw* all, v_array<example*>& examples);
   void init();
+  parser() = default;
   parser(std::string filename);
   parser(uint8_t* buffer_pointer);
   const VW::parsers::flatbuffer::ExampleCollection* data();
