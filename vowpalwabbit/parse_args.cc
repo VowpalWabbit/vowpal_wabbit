@@ -1270,7 +1270,6 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(OjaNewton_setup);
   // all.reduction_stack.push(VW_CNTK::setup);
 
-
   // Score Users
   all.reduction_stack.push(baseline_setup);
   all.reduction_stack.push(ExpReplay::expreplay_setup<'b', simple_label>);
@@ -1329,7 +1328,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push(Search::setup);
   all.reduction_stack.push(audit_regressor_setup);
-
+  //temp this will be removed
   all.reduction_stack.push(red_python_setup);
 
   all.l = setup_base(options, all);
