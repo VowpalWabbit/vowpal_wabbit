@@ -202,6 +202,7 @@
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="recall_tree.h" />
+    <ClInclude Include="red_python.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search_dep_parser.h" />
     <ClInclude Include="search_entityrelationtask.h" />
@@ -320,6 +321,7 @@
     <ClCompile Include="print.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
+    <ClCompile Include="red_python.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search_dep_parser.cc" />
     <ClCompile Include="search_entityrelationtask.cc" />
