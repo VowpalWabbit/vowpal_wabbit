@@ -11,7 +11,9 @@ class Copperhead():
         self.vw = vw
         self.redpy = redpy
 
+        # rename bc its actually just learning?
         def run(example):
+            # build learner object?
             self._learn(example)
 
         self.redpy.set_python_reduction_hook(run)

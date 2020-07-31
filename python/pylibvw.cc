@@ -498,6 +498,12 @@ uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
+float ex_get_scalar(example_ptr ec)
+{ 
+  const auto value = ec->pred.scalar;
+  return value;
+}
+
 py::list ex_get_scalars(example_ptr ec)
 { py::list values;
   const auto& scalars = ec->pred.scalars;
@@ -739,6 +745,11 @@ void baselearn(redpython_ptr redpy, example_ptr ec)
   ((VW::LEARNER::single_learner *)redpy->base_learn)->learn(*ec);
 }
 
+void basepredict(redpython_ptr redpy, example_ptr ec)
+{
+  ((VW::LEARNER::single_learner *)redpy->base_learn)->predict(*ec);
+}
+
 void set_python_reduction_hook(redpython_ptr redpy, py::object learn_object)
 { verify_redpy_set_properly(redpy);
   redpy->run_f = &learn_redpy_fn;
@@ -910,7 +921,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_partial_prediction", &get_partial_prediction, "Returns the partial prediction associated with this example")
   .def("get_updated_prediction", &get_updated_prediction, "Returns the partial prediction as if we had updated it after learning")
   .def("get_loss", &get_loss, "Returns the loss associated with this example")
-  .def("set_loss", &set_loss, "Returns the loss associated with this example")
+  .def("set_loss", &set_loss, "Sets the loss associated with this example")
   .def("get_total_sum_feat_sq", &get_total_sum_feat_sq, "The total sum of feature-value squared for this example")
 
   .def("num_namespaces", &ex_num_namespaces, "The total number of namespaces associated with this example")
@@ -939,6 +950,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_multiclass_weight", &ex_get_multiclass_weight, "Assuming a multiclass label type, get the importance weight")
   .def("get_multiclass_prediction", &ex_get_multiclass_prediction, "Assuming a multiclass label type, get the prediction")
   .def("get_prob", &ex_get_prob, "Get probability from example prediction")
+  .def("get_scalar", &ex_get_scalar, "Get scalar value from example prediction")
   .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
   .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
   .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
