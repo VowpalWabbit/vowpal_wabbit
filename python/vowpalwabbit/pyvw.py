@@ -547,6 +547,7 @@ class vw(pylibvw.vw):
 
     def init_python_reduction_task(self, actual_python_reduction):
         # link the python reduction impl with this (self) VW instance
+        # see Copperhead class and createWithCustomPythonReduction()
         return actual_python_reduction(self)
 
     def init_search_task(self, search_task, task_data=None):
