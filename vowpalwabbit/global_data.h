@@ -51,6 +51,7 @@
 #include "options.h"
 #include "version.h"
 #include "named_labels.h"
+#include "kskip_ngram_transformer.h"
 
 typedef float weight;
 
@@ -411,10 +412,7 @@ struct vw
 
   bool redefine_some;                                  // --redefine param was used
   std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
-  std::vector<std::string> ngram_strings;
-  std::vector<std::string> skip_strings;
-  std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
-  std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
+  std::unique_ptr<VW::kskip_ngram_transformer> skip_gram_transformer;
   std::vector<std::string> limit_strings;      // descriptor of feature limits
   std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
   std::array<uint64_t, NUM_NAMESPACES>

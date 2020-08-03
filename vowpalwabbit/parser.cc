@@ -636,66 +636,6 @@ void set_done(vw& all)
   lock_done(*all.p);
 }
 
-void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t initial_length, v_array<size_t>& gram_mask,
-    size_t skips)
-{
-  if (ngram == 0 && gram_mask.last() < initial_length)
-  {
-    size_t last = initial_length - gram_mask.last();
-    for (size_t i = 0; i < last; i++)
-    {
-      uint64_t new_index = fs.indicies[i];
-      for (size_t n = 1; n < gram_mask.size(); n++)
-        new_index = new_index * quadratic_constant + fs.indicies[i + gram_mask[n]];
-
-      fs.push_back(1., new_index);
-      if (fs.space_names.size() > 0)
-      {
-        std::string feature_name(fs.space_names[i].get()->second);
-        for (size_t n = 1; n < gram_mask.size(); n++)
-        {
-          feature_name += std::string("^");
-          feature_name += std::string(fs.space_names[i + gram_mask[n]].get()->second);
-        }
-        fs.space_names.push_back(audit_strings_ptr(new audit_strings(fs.space_names[i].get()->first, feature_name)));
-      }
-    }
-  }
-  if (ngram > 0)
-  {
-    gram_mask.push_back(gram_mask.last() + 1 + skips);
-    addgrams(all, ngram - 1, skip_gram, fs, initial_length, gram_mask, 0);
-    gram_mask.pop();
-  }
-  if (skip_gram > 0 && ngram > 0)
-    addgrams(all, ngram, skip_gram - 1, fs, initial_length, gram_mask, skips + 1);
-}
-
-/**
- * This function adds k-skip-n-grams to the feature vector.
- * Definition of k-skip-n-grams:
- * Consider a feature vector - a, b, c, d, e, f
- * 2-skip-2-grams would be - ab, ac, ad, bc, bd, be, cd, ce, cf, de, df, ef
- * 1-skip-3-grams would be - abc, abd, acd, ace, bcd, bce, bde, bdf, cde, cdf, cef, def
- * Note that for a n-gram, (n-1)-grams, (n-2)-grams... 2-grams are also appended
- * The k-skip-n-grams are appended to the feature vector.
- * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
- * 32 random nos. are maintained in an array and are used in the hashing.
- */
-void generateGrams(vw& all, example*& ex)
-{
-  for (namespace_index index : ex->indices)
-  {
-    size_t length = ex->feature_space[index].size();
-    for (size_t n = 1; n < all.ngram[index]; n++)
-    {
-      all.p->gram_mask.clear();
-      all.p->gram_mask.push_back((size_t)0);
-      addgrams(all, n, all.skips[index], ex->feature_space[index], length, all.p->gram_mask, 0);
-    }
-  }
-}
-
 void end_pass_example(vw& all, example* ae)
 {
   all.p->lp.default_label(&ae->l);
@@ -775,8 +715,10 @@ void setup_example(vw& all, example* ae)
         i--;
       }
 
-  if (!all.ngram_strings.empty())
-    generateGrams(all, ae);
+  if(all.skip_gram_transformer != nullptr)
+  {
+    all.skip_gram_transformer->generate_grams(ae);
+  }
 
   if (all.add_constant)  // add constant feature
     VW::add_constant_feature(all, ae);

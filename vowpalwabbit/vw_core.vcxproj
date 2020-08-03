@@ -168,6 +168,7 @@
     <ClInclude Include="interactions.h" />
     <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="io_buf.h" />
+    <ClInclude Include="kskip_ngram_transformer.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
@@ -295,6 +296,7 @@
     <ClCompile Include="io/io_adapter.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
+    <ClCompile Include="kskip_ngram_transformer.cc" />
     <ClCompile Include="label_dictionary.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
