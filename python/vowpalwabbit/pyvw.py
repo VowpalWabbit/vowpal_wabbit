@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from abc import ABC, abstractmethod
+import abc
 import pylibvw
 import warnings
 import pandas as pd
@@ -13,6 +13,9 @@ class Learner:
 
     def learn(self, ec):
         self.vwCppBridge.call_base_learn(ec)
+
+# compatible with Python 2 *and* 3
+ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
 class Copperhead(ABC):
     """Copperhead class"""
@@ -27,11 +30,11 @@ class Copperhead(ABC):
 
         self.vwCppBridge.init_python_cpp_bridge(run)
 
-    @abstractmethod
+    @abc.abstractmethod
     def _predict(self):
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def _learn(self, ec, learner):
         pass
 
