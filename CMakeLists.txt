@@ -322,5 +322,7 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 # TODO Make this an email address or contact page
 set(CPACK_PACKAGE_CONTACT "https://github.com/VowpalWabbit/vowpal_wabbit")
+# Generates a package dependency list in the deb control file
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS On)
 
 include(CPack)
