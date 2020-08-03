@@ -432,7 +432,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     THROW("error: cannot unsetup example when some namespaces are ignored!");
   }
 
-  if(all.ngram_strings.size() > 0)
+  if(all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
   {
     THROW("error: cannot unsetup example when ngrams are in use!");
   }
