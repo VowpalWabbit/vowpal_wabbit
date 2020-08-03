@@ -62,7 +62,7 @@ VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
   auto ld = scoped_calloc_or_throw<red_python>(pyCppBridge.get());
 
   pyCppBridge->random_number = 4;
-  all.pythonCppBridge = pyCppBridge.get();
+  all.python_cpp_bridge = pyCppBridge.get();
   pyCppBridge.release();
 
   VW::LEARNER::learner<red_python, example>& ret =

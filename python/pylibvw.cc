@@ -83,13 +83,13 @@ void my_save(vw_ptr all, std::string name)
 
 py_cpp_bridge_ptr get_python_cpp_bridge_ptr(vw_ptr all)
 { 
-  if (all->pythonCppBridge == nullptr)
+  if (all->python_cpp_bridge == nullptr)
   {
     THROW("python-cpp bridge not initialized in vw");
   }
   else
   {
-    RED_PYTHON::PythonCppBridge* temp = (RED_PYTHON::PythonCppBridge*)(all->pythonCppBridge);
+    RED_PYTHON::PythonCppBridge* temp = reinterpret_cast<RED_PYTHON::PythonCppBridge*>(all->python_cpp_bridge);
     return boost::shared_ptr<RED_PYTHON::PythonCppBridge>(temp, dont_delete_me);
   }
 }
@@ -743,20 +743,17 @@ void set_force_oracle(search_ptr sch, bool useOracle)
 }
 
 void baselearn(py_cpp_bridge_ptr redpy, example_ptr ec)
-{
-  ((VW::LEARNER::single_learner *)redpy->base_learn)->learn(*ec);
+{ reinterpret_cast<VW::LEARNER::single_learner *>(redpy->base_learn)->learn(*ec);
 }
 
 void basepredict(py_cpp_bridge_ptr redpy, example_ptr ec)
-{
-  ((VW::LEARNER::single_learner *)redpy->base_learn)->predict(*ec);
+{ reinterpret_cast<VW::LEARNER::single_learner *>(redpy->base_learn)->predict(*ec);
 }
 
 void set_python_reduction_hook(py_cpp_bridge_ptr redpy, py::object learn_object)
 { verify_redpy_set_properly(redpy);
   redpy->run_f = &learn_redpy_fn;
   redpy->run_object = new py::object(learn_object);
-  return;
 }
 
 void set_structured_predict_hook(search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object)

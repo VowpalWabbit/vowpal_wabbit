@@ -361,7 +361,7 @@ vw::vw()
 
   searchstr = nullptr;
 
-  pythonCppBridge = nullptr;
+  python_cpp_bridge = nullptr;
 
   nonormalize = false;
   l1_lambda = 0.0;

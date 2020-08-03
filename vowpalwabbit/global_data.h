@@ -375,7 +375,7 @@ struct vw
   void* /*Search::search*/ searchstr;
 
   // needed for custom python reduction: this links up python + cpp worlds
-  void* /* TBD to be define */ pythonCppBridge;
+  void* /* TBD to be define */ python_cpp_bridge;
 
   uint32_t wpp;
 

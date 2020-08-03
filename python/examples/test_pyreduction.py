@@ -10,6 +10,8 @@ class NoopPythonicReduction(pyvw.Copperhead):
         # print("hello there I can also learn stuff btw the total_sum_feat_sq is " + str(ec.get_total_sum_feat_sq()))
         learner.learn(ec)
 
+# this is a recreation of the impl in vw
+# see https://github.com/VowpalWabbit/vowpal_wabbit/blob/ac3a2c21a9760b68ce49368b11a35bf95faeb8b8/vowpalwabbit/binary.cc
 class BinaryPythonReduction(pyvw.Copperhead):
     def _predict(self):
         print("hello there I'm predicting stuff")
