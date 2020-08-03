@@ -2,6 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
+from abc import ABC, abstractmethod
 import pylibvw
 import warnings
 import pandas as pd
@@ -13,7 +14,7 @@ class Learner:
     def learn(self, ec):
         self.vwCppBridge.call_base_learn(ec)
 
-class Copperhead:
+class Copperhead(ABC):
     """Copperhead class"""
     def __init__(self, vw):
         self.vw = vw
@@ -24,17 +25,15 @@ class Copperhead:
             l = Learner(self.vwCppBridge)
             self._learn(example, l)
 
-        self.vwCppBridge.set_python_reduction_hook(run)
+        self.vwCppBridge.init_python_cpp_bridge(run)
 
+    @abstractmethod
     def _predict(self):
         pass
 
-    def _learn(self, learner):
+    @abstractmethod
+    def _learn(self, ec, learner):
         pass
-
-    def _call_base_learn(self, ec):
-        self.vwCppBridge.call_base_learn(ec)
-
 
 class SearchTask:
     """Search task class"""
@@ -545,11 +544,6 @@ class vw(pylibvw.vw):
     def __del__(self):
         self.finish()
 
-    def init_python_reduction_task(self, actual_python_reduction):
-        # link the python reduction impl with this (self) VW instance
-        # see Copperhead class and createWithCustomPythonReduction()
-        return actual_python_reduction(self)
-
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()
 
@@ -727,7 +721,8 @@ class vw(pylibvw.vw):
 def createWithCustomPythonReduction(actual_python_reduction, arg_str=None, **kw):
     if issubclass(actual_python_reduction, Copperhead):
         inst = vw("--red_python  "+ arg_str, **kw)
-        inst.init_python_reduction_task(actual_python_reduction)
+        # do we need to save a reference to this instance?
+        actual_python_reduction(inst)
 
         return inst
     

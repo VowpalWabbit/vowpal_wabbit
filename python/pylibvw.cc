@@ -83,8 +83,15 @@ void my_save(vw_ptr all, std::string name)
 
 py_cpp_bridge_ptr get_python_cpp_bridge_ptr(vw_ptr all)
 { 
-  RED_PYTHON::PythonCppBridge* temp = (RED_PYTHON::PythonCppBridge*)(all->pythonCppBridge);
-  return boost::shared_ptr<RED_PYTHON::PythonCppBridge>(temp, dont_delete_me);
+  if (all->pythonCppBridge == nullptr)
+  {
+    THROW("python-cpp bridge not initialized in vw");
+  }
+  else
+  {
+    RED_PYTHON::PythonCppBridge* temp = (RED_PYTHON::PythonCppBridge*)(all->pythonCppBridge);
+    return boost::shared_ptr<RED_PYTHON::PythonCppBridge>(temp, dont_delete_me);
+  }
 }
 
 search_ptr get_search_ptr(vw_ptr all)
@@ -658,16 +665,12 @@ void learn_redpy_fn(RED_PYTHON::PythonCppBridge& redpy, example* ec)
 {
   try
   {
-    // HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)redpy.run_object;
 
-    //possible delete gets triggered
     boost::shared_ptr<example> temp_ptr(ec, dont_delete_me);
     py::object temp = py::object(temp_ptr);
 
-    // py::object temp = py::object(*ec);
     run.attr("__call__")(temp);
-    
   }
   catch (...)
   {
@@ -739,7 +742,6 @@ void set_force_oracle(search_ptr sch, bool useOracle)
   sch->set_force_oracle(useOracle);
 }
 
-// void baselearn(redpython_ptr redpy, example_ptr ec)
 void baselearn(py_cpp_bridge_ptr redpy, example_ptr ec)
 {
   ((VW::LEARNER::single_learner *)redpy->base_learn)->learn(*ec);
@@ -992,7 +994,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   ;
 
   py::class_<RED_PYTHON::PythonCppBridge, py_cpp_bridge_ptr>("red_python")
-  .def("set_python_reduction_hook", &set_python_reduction_hook, "Set the hook (function pointer) (you don't want to call this yourself!")
+  .def("init_python_cpp_bridge", &set_python_reduction_hook, "Set the hook (function pointer) (you don't want to call this yourself!")
   .def("call_base_learn", &baselearn, "Set the hook (function pointer) (you don't want to call this yourself!")
   ;
 

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import sys, os
 import math
 from vowpalwabbit import pyvw
@@ -25,13 +23,12 @@ class BinaryPythonReduction(pyvw.Copperhead):
             ec.set_simplelabel_prediction(-1)
 
         temp_label = ec.get_simplelabel_label()
-        some_scalar = ec.get_scalar()
 
         # going to have to expose FLT_MAX?
         if temp_label != sys.float_info.max:
             if math.fabs(temp_label) != 1.0:
                 print("You are using label " + temp_label << " not -1 or 1 as loss function expects!")
-            elif temp_label == some_scalar:
+            elif temp_label == ec.get_scalar():
                 ec.set_loss(0)
             else:
                 ec.set_loss(ec.get_simplelabel_weight())
