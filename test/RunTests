@@ -669,6 +669,7 @@ sub run_tests() {
                 else {
                     my $errfile = valgrind_errfile($TestNo);
                     warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                    next;
                 }
             } elsif ($TimeOut && $status == 124) {
                 warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
