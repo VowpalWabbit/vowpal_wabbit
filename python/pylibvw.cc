@@ -875,9 +875,8 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
-  .def("get_python_cpp_bridge_ptr", &get_python_cpp_bridge_ptr, "return a pointer to the RED_PYTHON::PythonCppBridge data structure")
-
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
+  .def("get_python_cpp_bridge_ptr", &get_python_cpp_bridge_ptr, "return a pointer to the RED_PYTHON::PythonCppBridge data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
   .def("get_id", &get_model_id, "return the model id")
   .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
