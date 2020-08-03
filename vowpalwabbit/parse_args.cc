@@ -90,6 +90,7 @@
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 #include "named_labels.h"
+#include "kskip_ngram_transformer.h"
 
 using std::cerr;
 using std::cout;
@@ -504,11 +505,22 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
     return "affix_features";
 
-  if (!std::equal(vw1.ngram.begin(), vw1.ngram.end(), vw2.ngram.begin()))
-    return "ngram";
+  if (vw1.skip_gram_transformer != nullptr && vw2.skip_gram_transformer != nullptr)
+  {
+    const auto& vw1_ngram_strings = vw1.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw2_ngram_strings = vw2.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw1_skips_strings = vw1.skip_gram_transformer->get_initial_skip_definitions();
+    const auto& vw2_skips_strings = vw2.skip_gram_transformer->get_initial_skip_definitions();
 
-  if (!std::equal(vw1.skips.begin(), vw1.skips.end(), vw2.skips.begin()))
-    return "skips";
+    if (!std::equal(vw1_ngram_strings.begin(), vw1_ngram_strings.end(), vw2_ngram_strings.begin())) return "ngram";
+
+    if (!std::equal(vw1_skips_strings.begin(), vw1_skips_strings.end(), vw2_skips_strings.begin())) return "skips";
+  }
+  else if (vw1.skip_gram_transformer != nullptr || vw2.skip_gram_transformer != nullptr)
+  {
+    // If one of them didn't define the ngram transformer then they differ by ngram (skips depends on ngram)
+    return "ngram";
+  }
 
   if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin()))
     return "limit";
@@ -622,6 +634,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   std::vector<std::string> keeps;
   std::vector<std::string> redefines;
 
+  std::vector<std::string> ngram_strings;
+  std::vector<std::string> skip_strings;
+
   std::vector<std::string> dictionary_path;
 
   bool noconstant;
@@ -648,9 +663,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
       .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
-      .add(make_option("ngram", all.ngram_strings)
+      .add(make_option("ngram", ngram_strings)
                .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
-      .add(make_option("skips", all.skip_strings)
+      .add(make_option("skips", skip_strings)
                .help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate "
                      "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
       .add(make_option("feature_limit", all.limit_strings)
@@ -705,24 +720,28 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   if (options.was_supplied("affix"))
     parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
 
-  if (options.was_supplied("ngram"))
-  {
-    if (options.was_supplied("sort_features"))
-      THROW("ngram is incompatible with sort_features.");
-
-    for (size_t i = 0; i < all.ngram_strings.size(); i++)
-      all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
-    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.logger.quiet);
-  }
-
+  // Process ngram and skips arguments
   if (options.was_supplied("skips"))
   {
-    if (!options.was_supplied("ngram"))
-      THROW("You can not skip unless ngram is > 1");
+    if (!options.was_supplied("ngram")) { THROW("You can not skip unless ngram is > 1"); }
+  }
 
-    for (size_t i = 0; i < all.skip_strings.size(); i++)
-      all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
-    compile_gram(all.skip_strings, all.skips, (char*)"skips", all.logger.quiet);
+  if (options.was_supplied("ngram"))
+  {
+    if (options.was_supplied("sort_features")) { THROW("ngram is incompatible with sort_features."); }
+
+    std::vector<std::string> hex_decoded_ngram_strings;
+    hex_decoded_ngram_strings.reserve(ngram_strings.size());
+    std::transform(ngram_strings.begin(), ngram_strings.end(), std::back_inserter(hex_decoded_ngram_strings),
+        [](const std::string& arg) { return spoof_hex_encoded_namespaces(arg); });
+
+    std::vector<std::string> hex_decoded_skip_strings;
+    hex_decoded_skip_strings.reserve(skip_strings.size());
+    std::transform(skip_strings.begin(), skip_strings.end(), std::back_inserter(hex_decoded_skip_strings),
+        [](const std::string& arg) { return spoof_hex_encoded_namespaces(arg); });
+
+    all.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(
+        VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.logger.quiet));
   }
 
   if (options.was_supplied("feature_limit"))
@@ -1002,7 +1021,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     if (directory_exists("."))
       all.dictionary_path.push_back(".");
 
-    
+
 #if _WIN32
     std::string PATH;
     char* buf;
