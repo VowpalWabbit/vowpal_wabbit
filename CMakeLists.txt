@@ -79,7 +79,6 @@ option(BUILD_DOCS "Add documentation targets." Off)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
-option(BUILD_VALGRIND_TESTS "Add RunTests to be run with valgrind" OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -251,7 +250,7 @@ if(BUILD_SLIM_VW)
   add_subdirectory(vowpalwabbit/slim)
 endif()
 
-if(BUILD_TESTS OR BUILD_VALGRIND_TESTS)
+if(BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)
 

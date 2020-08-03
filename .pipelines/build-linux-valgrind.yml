@@ -17,3 +17,4 @@ steps:
   displayName: Build C++ VW binary
 - bash: ./.scripts/linux/test-valgrind.sh
   displayName: Run test suite with Valgrind
+  failOnStderr: true
