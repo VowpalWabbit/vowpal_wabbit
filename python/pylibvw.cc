@@ -59,7 +59,7 @@ vw_ptr my_initialize(std::string args)
 { if (args.find_first_of("--no_stdin") == std::string::npos)
     args += " --no_stdin";
   vw*foo = VW::initialize(args);
-  return boost::shared_ptr<vw>(foo, dont_delete_me);
+  return boost::shared_ptr<vw>(foo);
 }
 
 void my_run_parser(vw_ptr all)
