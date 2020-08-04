@@ -12,30 +12,15 @@ using namespace VW::config;
 
 namespace RED_PYTHON
 {
-struct red_python
-{
- private:
-
- public:
-  ExternalBinding* ext_bind_impl = nullptr;
-
-  red_python(ExternalBinding* ext_bind_impl)
-      : ext_bind_impl(ext_bind_impl)
-  {
-  }
-
-  ~red_python()
-  {
-  }
-};
-
-void learn(red_python& redpy, single_learner& base, example& ec)
+//useful for debugging
+void learn(ExternalBinding& redpy, single_learner& base, example& ec)
 { 
-  redpy.ext_bind_impl->SetLearner(&base);
-  redpy.ext_bind_impl->ActualLearn(&ec);
+  redpy.SetLearner(&base);
+  redpy.ActualLearn(&ec);
 }
 
-void predict(red_python& c, single_learner& base, example& ec) { return; }
+//useful for debugging
+void predict(ExternalBinding& c, single_learner& base, example& ec) { return; }
 
 }  // namespace RED_PYTHON
 using namespace RED_PYTHON;
@@ -44,14 +29,15 @@ VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
   if (!all.ext_binding)
     return nullptr;
 
-  auto ld = scoped_calloc_or_throw<red_python>(all.ext_binding.get());
+  all.ext_binding->SetRandomNumber(4);
 
-  ld->ext_bind_impl->SetRandomNumber(4);
+  auto base = as_singleline(setup_base(options, all));
 
-  VW::LEARNER::learner<red_python, example>& ret =
-      VW::LEARNER::init_learner(ld, as_singleline(setup_base(options, all)), learn, predict);
+  //not sure if learner calls into delete of ext_binding?
+  VW::LEARNER::learner<ExternalBinding, example>& ret =
+      learner<ExternalBinding, example>::init_learner(all.ext_binding.get(), base, learn, predict, 1, base->pred_type);
 
-  //missing finish
+  //missing finish?
 
   return make_base(ret);
 }
