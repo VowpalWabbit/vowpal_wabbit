@@ -29,7 +29,7 @@ class BinaryPythonReduction(pyvw.Copperhead):
         # going to have to expose FLT_MAX?
         if temp_label != sys.float_info.max:
             if math.fabs(temp_label) != 1.0:
-                print("You are using label " + temp_label << " not -1 or 1 as loss function expects!")
+                print("You are using label " + temp_label + " not -1 or 1 as loss function expects!")
             elif temp_label == ec.get_scalar():
                 ec.set_loss(0)
             else:

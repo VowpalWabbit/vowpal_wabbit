@@ -63,8 +63,8 @@ void dont_delete_me(void*arg) { }
 
 class PyCppBridge : public RED_PYTHON::ExternalBinding {
   private:
-      py::object* inst;
-      void* base_learn;
+      py::object* py_reduction_impl;
+      void* base_learner;
 
   public:
       int random_num = 0;
@@ -77,28 +77,28 @@ class PyCppBridge : public RED_PYTHON::ExternalBinding {
       void ActualLearn(example* ec)
       { try
         {
-          this->inst->attr("_learn_convenience")(boost::shared_ptr<example>(ec, dont_delete_me),
-                                                 boost::shared_ptr<PyCppBridge>(this, dont_delete_me));
+          this->py_reduction_impl->attr("_learn_convenience")(boost::shared_ptr<example>(ec, dont_delete_me),
+                                                       boost::shared_ptr<PyCppBridge>(this, dont_delete_me));
         }
         catch (...)
         {
           // TODO: Properly translate and return Python exception. #2169
           PyErr_Print();
           PyErr_Clear();
-          THROW("Exception in 'search_run_fn'");
+          THROW("Exception when calling into python method '_learn_convenience'");
         }
       }
 
       void SetLearner(void* learner){
-        this->base_learn = learner;
+        this->base_learner = learner;
       }
 
-      void SetupPythonSide(py::object actual_objc)
-      { this->inst = new py::object(actual_objc);
+      void SetupPythonSide(py::object py_reduction_impl)
+      { this->py_reduction_impl = new py::object(py_reduction_impl);
       }
 
       void CallLearn(example* ec)
-      { reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learn)->learn(*ec);
+      { reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learner)->learn(*ec);
       }
 };
 
