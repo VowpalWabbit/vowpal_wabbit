@@ -39,15 +39,15 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   {
     cats_pdf(single_learner* p_base);
 
-    int learn(example& ec, api_status* status);
-    int predict(example& ec, api_status* status);
+    int learn(example& ec, experimental::api_status* status);
+    int predict(example& ec, experimental::api_status* status);
 
    private:
     single_learner* _base = nullptr;
   };
 
   // Pass through
-  int cats_pdf::predict(example& ec, api_status*)
+  int cats_pdf::predict(example& ec, experimental::api_status*)
   {
     VW_DBG(ec) << "cats_pdf::predict(), " << features_to_string(ec) << endl;
     _base->predict(ec);
@@ -55,7 +55,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   }
 
   // Pass through
-  int cats_pdf::learn(example& ec, api_status* status)
+  int cats_pdf::learn(example& ec, experimental::api_status* status)
   {
     assert(!ec.test_only);
     predict(ec, status);
@@ -70,7 +70,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   template <bool is_learn>
   void predict_or_learn(cats_pdf& reduction, single_learner&, example& ec)
   {
-    api_status status;
+    experimental::api_status status;
     if (is_learn)
       reduction.learn(ec, &status);
     else

@@ -28,8 +28,8 @@ namespace continuous_action
 // BEGIN sample_pdf reduction and reduction methods
 struct get_pmf
 {
-  int learn(example& ec, api_status* status);
-  int predict(example& ec, api_status* status);
+  int learn(example& ec, experimental::api_status* status);
+  int predict(example& ec, experimental::api_status* status);
 
   void init(single_learner* p_base, float epsilon);
 
@@ -38,13 +38,13 @@ struct get_pmf
   float _epsilon;
 };
 
-int get_pmf::learn(example& ec, api_status*)
+int get_pmf::learn(example& ec, experimental::api_status*)
 {
   _base->learn(ec);
   return error_code::success;
 }
 
-int get_pmf::predict(example& ec, api_status*)
+int get_pmf::predict(example& ec, experimental::api_status*)
 {
   uint32_t base_prediction;
 
@@ -70,7 +70,7 @@ void get_pmf::init(single_learner* p_base, float epsilon) {
 template <bool is_learn>
 void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
 {
-  api_status status;
+  experimental::api_status status;
   if (is_learn)
     reduction.learn(ec, &status);
   else
