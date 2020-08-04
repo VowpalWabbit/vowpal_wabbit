@@ -29,7 +29,7 @@ class Copperhead(ABC):
             l = Learner(self.vwCppBridge)
             self._learn(example, l)
 
-        self.vwCppBridge.init_python_cpp_bridge(run)
+        self.vwCppBridge.init_python_reduction_bridge(run)
 
     @abc.abstractmethod
     def _predict(self):

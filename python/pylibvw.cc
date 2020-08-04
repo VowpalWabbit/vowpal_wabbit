@@ -36,8 +36,8 @@ typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
-class PyCppBri ;
-typedef boost::shared_ptr<PyCppBri> py_cpp_b_ptr;
+class PyCppBridge ;
+typedef boost::shared_ptr<PyCppBridge> py_cpp_bridge_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -61,14 +61,14 @@ const size_t pDECISION_SCORES = 8;
 
 void dont_delete_me(void*arg) { }
 
-class PyCppBri : public RED_PYTHON::ExternalBinding {
+class PyCppBridge : public RED_PYTHON::ExternalBinding {
   private:
     py::object* run_object;
     void* base_learn;
 
   public:
       int random_num = 0;
-      PyCppBri() {}
+      PyCppBridge() {}
 
       void SetRandomNumber(int n)
       { random_num = n;
@@ -107,17 +107,18 @@ class PyCppBri : public RED_PYTHON::ExternalBinding {
 };
 
 vw_ptr my_initialize(std::string args, bool with_reduction = false)
-{ if (args.find_first_of("--no_stdin") == std::string::npos)
+{ vw* foo;
+  if (args.find_first_of("--no_stdin") == std::string::npos)
     args += " --no_stdin";
-  
-  vw* foo;
+
   if (with_reduction)
-  { std::unique_ptr<RED_PYTHON::ExternalBinding> ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBri());
+  { auto ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge());
     foo = VW::initialize(args, nullptr, false, nullptr, nullptr, std::move(ext_binding));
   }
   else
   { foo = VW::initialize(args);
   }
+
   return boost::shared_ptr<vw>(foo);
 }
 
@@ -135,15 +136,15 @@ void my_save(vw_ptr all, std::string name)
 { VW::save_predictor(*all, name);
 }
 
-py_cpp_b_ptr get_python_cpp_bridge_ptr(vw_ptr all)
+py_cpp_bridge_ptr get_python_cpp_bridge_ptr(vw_ptr all)
 { if (!all->ext_binding)
   {
     THROW("python-cpp bridge not initialized in vw");
   }
   else
   {
-    PyCppBri* temp = reinterpret_cast<PyCppBri*>(all->ext_binding.get());
-    return boost::shared_ptr<PyCppBri>(temp, dont_delete_me);
+    PyCppBridge* temp = reinterpret_cast<PyCppBridge*>(all->ext_binding.get());
+    return boost::shared_ptr<PyCppBridge>(temp, dont_delete_me);
   }
 }
 
@@ -686,7 +687,7 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<ui
 }
 */
 
-void verify_redpy_set_properly(py_cpp_b_ptr redpy)
+void verify_redpy_set_properly(py_cpp_bridge_ptr redpy)
 {
   if (redpy->random_num == 0)
   {
@@ -1007,9 +1008,9 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("predict", &Search::predictor::predict, "make a prediction")
   ;
 
-  py::class_<PyCppBri, py_cpp_b_ptr>("red_python_v2")
-  .def("init_python_cpp_bridge", &PyCppBri::SetupPythonSide, "Set the hook (function pointer) (you don't want to call this yourself!")
-  .def("call_base_learn", &PyCppBri::CallLearn, "Set the hook (function pointer) (you don't want to call this yourself!")
+  py::class_<PyCppBridge, py_cpp_bridge_ptr>("reduction_bridge")
+  .def("init_python_reduction_bridge", &PyCppBridge::SetupPythonSide, "Setup the python side of the cpp-python bridge (you don't want to call this yourself!")
+  .def("call_base_learn", &PyCppBridge::CallLearn, "Call into the current base learner set in the bridge (you don't want to call this yourself!")
   ;
 
   py::class_<Search::search, search_ptr>("search")
