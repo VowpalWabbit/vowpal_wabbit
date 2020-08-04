@@ -313,7 +313,7 @@ if(VW_INSTALL)
 endif()
 
 set(CPACK_PACKAGE_VENDOR "Vowpal Wabbit")
-set(CPACK_PACKAGE_NAME "VowpalWabbit")
+set(CPACK_PACKAGE_NAME "vowpal-wabbit")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Vowpal Wabbit is a machine learning system which pushes the frontier of machine learning with techniques such as online, hashing, allreduce, reductions, learning2search, active, and interactive learning.")
 set(CPACK_PACKAGE_VERSION_MAJOR ${VW_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${VW_VERSION_MINOR})
