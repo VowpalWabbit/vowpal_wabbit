@@ -139,7 +139,7 @@ py_cpp_bridge_ptr get_python_cpp_bridge_ptr(vw_ptr all)
   }
   else
   {
-    PyCppBridge* temp = reinterpret_cast<PyCppBridge*>(all->ext_binding.get());
+    auto temp = reinterpret_cast<PyCppBridge*>(all->ext_binding.get());
     return boost::shared_ptr<PyCppBridge>(temp, dont_delete_me);
   }
 }
