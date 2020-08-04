@@ -9,6 +9,7 @@
 #include "vw_exception.h"
 #include "cb_label_parser.h"
 #include "cb_continuous_label.h"
+#include "debug_print.h"
 
 using namespace LEARNER;
 using std::endl;
@@ -36,7 +37,7 @@ namespace VW { namespace cb_continuous
 {
   ////////////////////////////////////////////////////
   // Begin: parse a,c,p label format
-  void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+  void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
   {
     auto ld = static_cast<continuous_label*>(v);
     ld->costs.clear();
