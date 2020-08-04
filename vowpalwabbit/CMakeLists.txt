@@ -106,6 +106,7 @@ set(vw_all_headers
   mwt.h
   named_labels.h
   network.h
+  kskip_ngram_transformer.h
   nn.h
   no_label.h
   noop.h
@@ -234,6 +235,7 @@ set(vw_all_sources
   mwt.cc
   named_labels.cc
   network.cc
+  kskip_ngram_transformer.cc
   nn.cc
   no_label.cc
   noop.cc
