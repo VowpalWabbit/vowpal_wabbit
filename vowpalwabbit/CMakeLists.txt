@@ -21,11 +21,11 @@ add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 
 set(vw_all_headers
-  accumulate.h
   action_score.h
   active_cover.h
   active.h
   allreduce.h
+  api_status.h
   array_parameters_dense.h
   array_parameters.h
   audit_regressor.h
@@ -68,6 +68,8 @@ set(vw_all_headers
   decision_scores.h
   distributionally_robust.h
   ect.h
+  error_constants.h
+  error_data.h
   error_reporting.h
   example_predict.h
   example.h
@@ -172,6 +174,7 @@ set(vw_all_sources
   action_score.cc
   active_cover.cc
   active.cc
+  api_status.cc
   audit_regressor.cc
   autolink.cc
   baseline.cc
