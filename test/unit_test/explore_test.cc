@@ -78,7 +78,9 @@ struct bins_calc
         return;
       }
     }
-    throw std::logic_error("Values does not fall in a bin");
+    std::stringstream err_strm;
+    err_strm << "Value " << val << " does not fall in a bin";
+    throw std::logic_error(err_strm.str());
   }
 
   vector<float> _bins{};
@@ -93,12 +95,12 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical)
 
   float chosen_value;
   float pdf_value;
-  const float range_min = .0f;
-  const float range_max = 100.0f;
+  constexpr float range_min = .0f;
+  constexpr float range_max = 100.0f;
   uint64_t random_seed = 7791;
   bins_calc bins({0.f, 10.f, 20.f, 30.f, 40.f, 100.f});
 
-  const uint32_t iterate_count = 100000;
+  constexpr uint32_t iterate_count = 100000;
   for (auto idx = 0; idx < iterate_count; idx++)
   {
     const auto scode = exploration::sample_pdf(&random_seed, begin(scores), end(scores), chosen_value, pdf_value);

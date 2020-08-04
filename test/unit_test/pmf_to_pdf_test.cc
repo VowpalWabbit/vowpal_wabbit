@@ -7,7 +7,10 @@
 #include "action_score.h"
 
 using namespace VW::LEARNER;
-using namespace std;
+using std::vector;
+using std::pair;
+using std::endl;
+using std::cout;
 
 
 namespace VW { namespace pmf_to_pdf {
