@@ -7,7 +7,7 @@
 #include "cb_algs.h"
 #include "io_buf.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
@@ -38,7 +38,6 @@ struct mwt
   {
     evals.delete_v();
     policies.delete_v();
-    for (auto& i : feature_space) i.delete_v();
     indices.delete_v();
   }
 };
@@ -144,9 +143,9 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   ec.pred.scalars = preds;
 }
 
-void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
+void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& tag)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
 
@@ -164,9 +163,9 @@ void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -178,7 +177,7 @@ void finish_example(vw& all, mwt& c, example& ec)
       loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars[0]);
   all.sd->update(ec.test_only, c.observation != nullptr, loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink) print_scalars(sink, ec.pred.scalars, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag);
 
   if (c.learn)
   {
@@ -192,7 +191,7 @@ void finish_example(vw& all, mwt& c, example& ec)
 
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.empty())
+  if (model_file.num_files() == 0)
     return;
 
   std::stringstream msg;
@@ -253,7 +252,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   all.delete_prediction = delete_scalars;
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type::cb;
+  all.label_type = label_type_t::cb;
 
   if (c->num_classes > 0)
   {
@@ -271,13 +270,14 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type::scalars,"mwt-learn-no_eval", false);
+          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars,"mwt-learn-no_eval", false);
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type::scalars, "mwt-learn-eval", false);
+          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars, "mwt-learn-eval", false);
   else
     l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type::scalars, "mwt", false);
+        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars, "mwt", false);
+
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

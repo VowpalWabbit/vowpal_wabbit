@@ -14,7 +14,7 @@ struct multi_oaa
 };
 
 template <bool is_learn>
-void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -53,7 +53,7 @@ void finish_example(vw& all, multi_oaa&, example& ec)
   VW::finish_example(all, ec);
 }
 
-LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<multi_oaa>();
   option_group_definition new_options("Multilabel One Against All");
@@ -63,11 +63,11 @@ LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
   if (!options.was_supplied("multilabel_oaa"))
     return nullptr;
 
-  LEARNER::learner<multi_oaa, example>& l = LEARNER::init_learner(data, as_singleline(setup_base(options, all)),
+  VW::LEARNER::learner<multi_oaa, example>& l = VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)),
       predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type::multilabels, "multilabel_oaa", false);
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
-  all.label_type = label_type::multi;
+  all.label_type = label_type_t::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
   return make_base(l);

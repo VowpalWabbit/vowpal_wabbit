@@ -13,7 +13,7 @@
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 static constexpr uint32_t parent_bit = 1;
@@ -75,10 +75,12 @@ struct stagewise_poly
     cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
-    synth_ec.feature_space[tree_atomics].delete_v();
-    synth_ec.indices.delete_v();
+    //synth_ec.feature_space[tree_atomics].delete_v();
     free(sd);
     free(depthsbits);
+
+    // Intentionally do not clear the unions here.
+    synth_ec.delete_unions(nullptr, nullptr);
   }
 };
 
@@ -396,7 +398,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.test_only = ec.test_only;
   poly.synth_ec.end_pass = ec.end_pass;
   poly.synth_ec.sorted = ec.sorted;
-  poly.synth_ec.in_use = ec.in_use;
 
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
@@ -440,7 +441,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
       // collisions.  Have not played with this issue yet...
       parent_toggle(poly, wid_cur);
     }
-    min_depths_set(poly, wid_cur, poly.cur_depth);
+    min_depths_set(poly, wid_cur, static_cast<uint8_t>(poly.cur_depth));
   }
 
   if (!cycle_get(poly, wid_cur) &&
@@ -642,7 +643,7 @@ void finish_example(vw &all, stagewise_poly &poly, example &ec)
 
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     bin_text_read_write_fixed(
@@ -691,7 +692,7 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->sum_sparsity_sync = 0;
   poly->sum_input_sparsity_sync = 0;
   poly->num_examples_sync = 0;
-  poly->last_example_counter = -1;
+  poly->last_example_counter = std::numeric_limits<uint64_t>::max();
   poly->numpasses = 1;
   poly->update_support = false;
   poly->original_ec = nullptr;

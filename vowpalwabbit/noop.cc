@@ -8,9 +8,9 @@
 
 using namespace VW::config;
 
-void learn(char&, LEARNER::base_learner&, example&) {}
+void learn(char&, VW::LEARNER::base_learner&, example&) {}
 
-LEARNER::base_learner* noop_setup(options_i& options, vw&)
+VW::LEARNER::base_learner* noop_setup(options_i& options, vw&)
 {
   bool noop = false;
   option_group_definition new_options("Noop Learner");
@@ -20,5 +20,5 @@ LEARNER::base_learner* noop_setup(options_i& options, vw&)
   if (!noop)
     return nullptr;
 
-  return make_base(LEARNER::init_learner(learn, 1, "noop"));
+  return make_base(VW::LEARNER::init_learner(learn, 1, "noop"));
 }

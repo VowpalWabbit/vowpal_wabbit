@@ -7,10 +7,11 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include <cmath>
+#include "vw_string_view.h"
 
 namespace COST_SENSITIVE
 {
-void name_value(substring& s, v_array<substring>& name, float& v)
+void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -21,14 +22,12 @@ void name_value(substring& s, v_array<substring>& name, float& v)
       v = 1.;
       break;
     case 2:
-      v = float_of_substring(name[1]);
+      v = float_of_string(name[1]);
       if (std::isnan(v))
         THROW("error NaN value for: " << name[0]);
       break;
     default:
-      std::cerr << "example with a wierd name.  What is '";
-      std::cerr.write(s.begin, s.end - s.begin);
-      std::cerr << "'?\n";
+      std::cerr << "example with a wierd name.  What is '" << s << "'?\n";
   }
 }
 
@@ -122,7 +121,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -132,12 +131,12 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
     float fx;
     name_value(words[0], p->parse_name, fx);
-    bool eq_shared = substring_equal(p->parse_name[0], "***shared***");
-    bool eq_label = substring_equal(p->parse_name[0], "***label***");
+    bool eq_shared = p->parse_name[0] == "***shared***";
+    bool eq_label = p->parse_name[0] == "***label***";
     if (!sd->ldict)
     {
-      eq_shared |= substring_equal(p->parse_name[0], "shared");
-      eq_label |= substring_equal(p->parse_name[0], "label");
+      eq_shared |= p->parse_name[0] == "shared";
+      eq_label |= p->parse_name[0] == "label";
     }
     if (eq_shared || eq_label)
     {
@@ -157,7 +156,7 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
           std::cerr << "label feature vectors should have exactly one cost on: " << words[0] << std::endl;
         else
         {
-          wclass f = {float_of_substring(p->parse_name[1]), 0, 0., 0.};
+          wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
           ld->costs.push_back(f);
         }
       }
@@ -176,13 +175,13 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
     {
-      f.class_index =
-          sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
+      f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0])
+                                : (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
       if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
     else
-      THROW("malformed cost specification on '" << (p->parse_name[0].begin) << "'");
+      THROW("malformed cost specification on '" << (p->parse_name[0]) << "'");
 
     ld->costs.push_back(f);
   }
@@ -193,7 +192,7 @@ label_parser cs_label = {default_label, parse_label, cache_label, read_cached_la
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     size_t num_current_features = ec.num_features;
     // for csoaa_ldf we want features from the whole (multiline example),
@@ -267,16 +266,20 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, ec.weight, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
+  {
     if (!all.sd->ldict)
-      all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+    {
+      all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
+    }
     else
     {
-      substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(sink, std::string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag);
     }
+  }
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -286,7 +289,7 @@ void output_example(vw& all, example& ec)
         outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   print_update(all, test_label(&ec.l.cs), ec, nullptr, false, ec.pred.multiclass);

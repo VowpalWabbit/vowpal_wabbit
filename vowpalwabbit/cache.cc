@@ -67,7 +67,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   ae->sorted = all->example_parser->sorted_cache;
   io_buf* input = all->example_parser->input;
 
-  size_t total = all->example_parser->lbl_parser.read_cached_label(all->sd, &ae->l, *input);
+  size_t total = all->example_parser->lbl_parser.read_cached_label(all->example_parser->_shared_data, &ae->l, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input, ae) == 0)

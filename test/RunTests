@@ -25,7 +25,7 @@ my $VW;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
-$ENV{'PATH'} .= ':../build/vowpalwabbit:test:../vowpalwabbit:vowpalwabbit:.';
+$ENV{'PATH'} = '../build/vowpalwabbit:test:../vowpalwabbit:vowpalwabbit:.:' . $ENV{'PATH'};
 
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
@@ -44,8 +44,9 @@ my $ErrorCount = 0;
 # word by word:
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
-my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
-$WordSplit = "[ \t:]+";
+# 160 used to sufficient but there are new tests with VERY wide outputs - so it needs to be huge...
+my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 1500';
+$WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
 # The intent is to make them easier to parse (and compare values) by a human
@@ -371,6 +372,10 @@ sub lenient_array_compare($$) {
         # print STDERR "\t$word1 == $word2 ?\n";
         next if ($word1 eq $word2);
 
+        # Some output contains '...', remove this for comparison.
+        $word1 =~ s/\.\.\.//;
+        $word2 =~ s/\.\.\.//;
+
         # There's some difference, is it significant?
         unless (looks_like_number($word1)) {
             v(4, "$word1 vs $word2: word1=$word1 is not a number!\n");
@@ -653,8 +658,18 @@ sub run_tests() {
         if ($status) {
             $ErrorCount++;
             if ($opt_V && $status == 100) {
-                my $errfile = valgrind_errfile($TestNo);
-                warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                # If the failing test was a script or Python file, ignore the failure because Valgrind
+                # doesn't really work there.
+                if (index($cmd, ".sh") != -1 || index($cmd, ".py") != -1) {
+                    print "$0: test $TestNo: Valgrind failure in script ignored\n";
+                    # Undo the error count change, as this failure is okay.
+                    $ErrorCount--;
+                    next;
+                }
+                else {
+                    my $errfile = valgrind_errfile($TestNo);
+                    warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+                }
             } elsif ($TimeOut && $status == 124) {
                 warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
             } else {
@@ -1772,5 +1787,77 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 204: Test if options that are negative numbers are handled correctly
 {VW} --classweight -1:0.5 --no_stdin
     test-sets/ref/negative-num-option.stderr
+
+# Test 205: test cb_dro with softmax
+{VW} --cb_dro --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_dro_adf_sm.stderr
+    pred-sets/ref/cb_dro_adf_sm.predict
+
+# Test 206: Tests segfault that used to happen when audit, cache and interactions were combined.
+{VW} -c -k --passes 2 -d train-sets/cache_interaction_audit.txt -q st --audit
+    train-sets/ref/cache_interaction_audit.stdout
+    train-sets/ref/cache_interaction_audit.stderr
+
+# Test 207: Enable chain hash option for json example
+{VW} --audit --json -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash && \
+    tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new && \
+        rm chain_hash_json_result.cmp && \
+            mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp
+    test-sets/ref/chain_hash_json_test.stderr
+    test-sets/ref/chain_hash_json_test.stdout
+    test-sets/ref/chain_hash_json_result.cmp
+
+# Test 208: Enable chain hash option for text example
+{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash && \
+    tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new && \
+        rm chain_hash_text_result.cmp && \
+            mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp
+    test-sets/ref/chain_hash_text_result.stderr
+    test-sets/ref/chain_hash_text_result.stdout
+    test-sets/ref/chain_hash_text_result.cmp
+
+# Test 209: Test override epsilon value saved in a model
+{VW} -i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds
+    pred-sets/ref/override_epsilon.stderr
+    pred-sets/ref/override_epsilon.preds
+
+# Test 210: Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.
+# SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)
+{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant \
+    && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.invert.txt
+    train-sets/ref/inv_hash_load_model.readable.txt
+
+# Test 211: cb_explore_adf with rnd exploration
+{VW} --cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict
+    train-sets/ref/cbe_adf_rnd.stderr
+    pred-sets/ref/cbe_adf_rnd.predict
+
+# Test 212: Slates sanity check
+{VW} --slates -d train-sets/slates_simple.txt -p slates_simple.predict
+    train-sets/ref/slates_simple.stderr
+    pred-sets/ref/slates_simple.predict
+
+# Test 213: Regression test for crash on unlabelled data
+{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
+    train-sets/ref/slates_simple_unlabeled.stderr
+
+# Test 214: check plt training
+{VW} -d train-sets/multilabel -f plt.model --plt 10 --sgd
+    train-sets/ref/plt_multilabel.stderr
+
+# Test 215: check default plt prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict
+    train-sets/ref/plt_multilabel_predict.stderr
+    pred-sets/ref/plt_multilabel.predict
+
+# Test 216: check plt top-1 prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
+    train-sets/ref/plt_top1_multilabel_predict.stderr
+    pred-sets/ref/plt_top1_multilabel.predict
+
+# Test 217: daemon test with json
+./daemon-test.sh --json
+    test-sets/ref/vw-daemon.stdout
 
 # Do not delete this line or the empty line above it

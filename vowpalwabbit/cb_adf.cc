@@ -7,7 +7,6 @@
 #include <algorithm>
 
 #include "reductions.h"
-#include "v_hashmap.h"
 #include "label_dictionary.h"
 #include "vw.h"
 #include "cb_algs.h"
@@ -16,7 +15,7 @@
 #include "vw_versions.h"
 #include "explore.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
@@ -55,7 +54,7 @@ struct cb_adf
 
  public:
   template <bool is_learn>
-  void do_actual_learning(LEARNER::multi_learner& base, multi_ex& ec_seq);
+  void do_actual_learning(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
   cb_adf(
@@ -65,7 +64,7 @@ struct cb_adf
     _gen_cs.cb_type = cb_type;
   }
 
-  void set_scorer(LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
+  void set_scorer(VW::LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
 
   bool get_rank_all() const { return _rank_all; }
 
@@ -102,8 +101,7 @@ struct cb_adf
 
 CB::cb_class get_observed_cost(multi_ex& examples)
 {
-  CB::label ld;
-  ld.costs = v_init<cb_class>();
+  CB::label* ld = nullptr;
   int index = -1;
   CB::cb_class known_cost;
 
@@ -112,7 +110,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   {
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
     {
-      ld = ec->l.cb;
+      ld = &ec->l.cb;
       index = (int)i;
     }
     ++i;
@@ -127,7 +125,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
     // throw exception();
   }
 
-  known_cost = ld.costs[0];
+  known_cost = ld->costs[0];
   known_cost.action = index;
   return known_cost;
 }
@@ -208,9 +206,9 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
     _backup_nf.push_back((uint32_t)examples[current_action]->num_features);
 
     if (current_action == chosen_action)
-      examples[current_action]->weight = example_weight * (1.0f - action_score.score);
+      examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
     else
-      examples[current_action]->weight = example_weight * action_score.score;
+      examples[current_action]->weight *= example_weight * action_score.score;
 
     if (examples[current_action]->weight <= 1e-15)
       examples[current_action]->weight = 0;
@@ -335,16 +333,15 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
   }
 }
 
-void global_print_newline(const v_array<int>& final_prediction_sink)
+void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
 {
   char temp[1];
   temp[0] = '\n';
-  for (auto f : final_prediction_sink)
+  for (auto& sink : final_prediction_sink)
   {
-    ssize_t t;
-    t = io_buf::write_file_or_socket(f, temp, 1);
+    ssize_t t = sink->write(temp, 1);
     if (t != 1)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -380,13 +377,16 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)action, 0, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    all.print_by_ref(sink.get(), (float)action, 0, ec.tag);
+  }
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -394,7 +394,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -402,17 +402,16 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  label& ld = ec.l.cb;
-  v_array<CB::cb_class> costs = ld.costs;
+  const auto& costs = ec.l.cb.costs;
 
   if (example_is_newline_not_header(ec))
     return;
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -422,7 +421,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -438,8 +437,8 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
     {
       output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
-      if (all.raw_prediction > 0)
-        all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+      if (all.raw_prediction != nullptr)
+        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
     }
   }
 }
@@ -569,7 +568,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn,
-      predict, problem_multiplier, prediction_type::action_scores,"cb_adf");
+      predict, problem_multiplier, prediction_type::action_scores, "cb_adf");
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

@@ -23,8 +23,8 @@ class topk
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
-  void predict(LEARNER::single_learner& base, multi_ex& ec_seq);
-  void learn(LEARNER::single_learner& base, multi_ex& ec_seq);
+  void predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq);
+  void learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq);
   std::pair<const_iterator_t, const_iterator_t> get_container_view();
   void clear_container();
 
@@ -38,7 +38,7 @@ class topk
 
 VW::topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
-void VW::topk::predict(LEARNER::single_learner& base, multi_ex& ec_seq)
+void VW::topk::predict(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -47,7 +47,7 @@ void VW::topk::predict(LEARNER::single_learner& base, multi_ex& ec_seq)
   }
 }
 
-void VW::topk::learn(LEARNER::single_learner& base, multi_ex& ec_seq)
+void VW::topk::learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq)
   {
@@ -76,26 +76,23 @@ std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> VW::topk::get_
 
 void VW::topk::clear_container() { _pr_queue.clear(); }
 
-void print_result(int file_descriptor, std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view)
+void print_result(
+    VW::io::writer* file_descriptor, std::pair<VW::topk::const_iterator_t, VW::topk::const_iterator_t> const& view)
 {
-  if (file_descriptor >= 0)
+  if (file_descriptor != nullptr)
   {
     std::stringstream ss;
     for (auto it = view.first; it != view.second; it++)
     {
       ss << std::fixed << it->first << " ";
-      print_tag(ss, it->second);
+      print_tag_by_ref(ss, it->second);
       ss << " \n";
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-#ifdef _WIN32
-    ssize_t t = _write(file_descriptor, ss.str().c_str(), (unsigned int)len);
-#else
-    ssize_t t = write(file_descriptor, ss.str().c_str(), (unsigned int)len);
-#endif
+    auto t = file_descriptor->write(ss.str().c_str(), len);
     if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -111,7 +108,7 @@ void output_example(vw& all, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(VW::topk& d, LEARNER::single_learner& base, multi_ex& ec_seq)
+void predict_or_learn(VW::topk& d, VW::LEARNER::single_learner& base, multi_ex& ec_seq)
 {
   if (is_learn)
     d.learn(base, ec_seq);
@@ -122,12 +119,12 @@ void predict_or_learn(VW::topk& d, LEARNER::single_learner& base, multi_ex& ec_s
 void finish_example(vw& all, VW::topk& d, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) output_example(all, *ec);
-  for (auto sink : all.final_prediction_sink) print_result(sink, d.get_container_view());
+  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), d.get_container_view());
   d.clear_container();
   VW::finish_example(all, ec_seq);
 }
 
-LEARNER::base_learner* topk_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {
   uint32_t K;
   option_group_definition new_options("Top K");
@@ -139,7 +136,7 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 
   auto data = scoped_calloc_or_throw<VW::topk>(K);
 
-  LEARNER::learner<VW::topk, multi_ex>& l =
+  VW::LEARNER::learner<VW::topk, multi_ex>& l =
       init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>,"topK", false);
   l.set_finish_example(finish_example);
 

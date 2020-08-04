@@ -60,6 +60,8 @@ struct lda
   size_t minibatch;
   lda_math_mode mmode;
 
+  size_t finish_example_count;
+
   v_array<float> Elogtheta;
   v_array<float> decay_levels;
   v_array<float> total_new;
@@ -223,7 +225,7 @@ inline v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 
 inline v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 inline __m128 operator+(const __m128 a, const __m128 b) { return _mm_add_ps(a, b); }
 
@@ -591,18 +593,18 @@ float lda::powf(float x, float p)
   }
 }
 
-void lda::expdigammify(vw &all, float *gamma)
+void lda::expdigammify(vw &all_, float *gamma)
 {
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_FAST_APPROX>(all_, gamma, underflow_threshold, 0.0f);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_PRECISE>(all_, gamma, underflow_threshold, 0.0f);
       break;
     case USE_SIMD:
-      ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
       break;
     default:
       std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
@@ -610,18 +612,18 @@ void lda::expdigammify(vw &all, float *gamma)
   }
 }
 
-void lda::expdigammify_2(vw &all, float *gamma, float *norm)
+void lda::expdigammify_2(vw &all_, float *gamma, float *norm)
 {
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all_, gamma, norm, underflow_threshold);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_PRECISE>(all_, gamma, norm, underflow_threshold);
       break;
     case USE_SIMD:
-      ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_SIMD>(all_, gamma, norm, underflow_threshold);
       break;
     default:
       std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -760,44 +762,34 @@ struct initial_weights
   bool _random;
   uint32_t _lda;
   uint32_t _stride;
-  initial_weights(weight initial, weight initial_random, bool random, uint32_t lda, uint32_t stride)
-      : _initial(initial), _initial_random(initial_random), _random(random), _lda(lda), _stride(stride)
-  {
-  }
-};
-
-template <class T>
-class set_initial_lda_wrapper
-{
- public:
-  static void func(weight &w, initial_weights &iw, uint64_t index)
-  {
-    uint32_t lda = iw._lda;
-    weight initial_random = iw._initial_random;
-    if (iw._random)
-    {
-      weight *pw = &w;
-      for (size_t i = 0; i != lda; ++i, ++index) pw[i] = (float)(-log(merand48(index) + 1e-6) + 1.0f) * initial_random;
-    }
-    (&w)[lda] = iw._initial;
-  }
 };
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 {
-  vw &all = *(l.all);
+  vw& all = *(l.all);
   uint64_t length = (uint64_t)1 << all.num_bits;
   if (read)
   {
     initialize_regressor(all);
-    initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda,
-        all.weights.stride());
-    if (all.weights.sparse)
-      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda_wrapper<sparse_parameters>>(init);
-    else
-      all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
+    initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f), all.random_weights, all.lda,
+        all.weights.stride()};
+
+    auto initial_lda_weight_initializer = [init](weight* weights, uint64_t index) {
+      uint32_t lda = init._lda;
+      weight initial_random = init._initial_random;
+      if (init._random)
+      {
+        for (size_t i = 0; i != lda; ++i, ++index)
+        {
+          weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random;
+        }
+      }
+      weights[lda] = init._initial;
+    };
+
+    all.weights.set_default(initial_lda_weight_initializer);
   }
-  if (!model_file.files.empty())
+  if (model_file.num_files() != 0)
   {
     uint64_t i = 0;
     std::stringstream msg;
@@ -846,9 +838,12 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 void return_example(vw &all, example &ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
-  for (int f : all.final_prediction_sink) MWT::print_scalars(f, ec.pred.scalars, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag);
+  }
 
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
     all.sd->print_update(
         all.holdout_set_off, all.current_pass, "none", 0, ec.num_features, all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);
@@ -857,6 +852,9 @@ void return_example(vw &all, example &ec)
 void learn_batch(lda &l)
 {
   parameters &weights = l.all->weights;
+
+  assert(l.finish_example_count == (l.examples.size() - 1));
+
   if (l.sorted_features.empty())  // FAST-PASS for real "true"
   {
     // This can happen when the socket connection is dropped by the client.
@@ -872,7 +870,12 @@ void learn_batch(lda &l)
       l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
-      return_example(*l.all, *l.examples[d]);
+
+      if (l.finish_example_count > 0)
+      {
+        return_example(*l.all, *l.examples[d]);
+        l.finish_example_count--;
+      }
     }
     l.examples.clear();
     return;
@@ -910,7 +913,7 @@ void learn_batch(lda &l)
   float additional = (float)(l.all->length()) * l.lda_rho;
   for (size_t i = 0; i < l.all->lda; i++) l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
 
-  uint64_t last_weight_index = -1;
+  auto last_weight_index = std::numeric_limits<uint64_t>::max();
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
   {
     if (last_weight_index == s->f.weight_index)
@@ -944,7 +947,12 @@ void learn_batch(lda &l)
       l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
     }
-    return_example(*l.all, *l.examples[d]);
+
+    if (l.finish_example_count > 0)
+    {
+      return_example(*l.all, *l.examples[d]);
+      l.finish_example_count--;
+    }
   }
 
   // -t there's no need to update weights (especially since it's a noop)
@@ -989,7 +997,7 @@ void learn_batch(lda &l)
   l.doc_lengths.clear();
 }
 
-void learn(lda &l, LEARNER::single_learner &, example &ec)
+void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
 {
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
@@ -1007,7 +1015,7 @@ void learn(lda &l, LEARNER::single_learner &, example &ec)
     learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
+void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1030,8 +1038,8 @@ void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1157,9 +1165,8 @@ void compute_coherence_metrics(lda &l, T &weights)
       }
       else
       {
-        std::vector<word_doc_frequency> vec = {{f2, 0}};
-        coWordsDFSet.insert(std::make_pair(f1, vec));
-        // printf(" insert %d %d\n", f1, f2);
+        std::vector<word_doc_frequency> tmp_vec = {{f2, 0}};
+        coWordsDFSet.insert(std::make_pair(f1, tmp_vec));
       }
     }
   }
@@ -1270,7 +1277,26 @@ void end_examples(lda &l)
     end_examples(l, l.all->weights.dense_weights);
 }
 
-void finish_example(vw &, lda &, example &) {}
+void finish_example(vw &all, lda &l, example &e)
+{
+  if (l.minibatch <= 1)
+  {
+    return return_example(all, e);
+  }
+
+  if (l.examples.size() > 0)
+  {
+    // if there's still examples to be queued, inc only to finish later
+    l.finish_example_count++;
+  }
+  else
+  {
+    // return now since it has been processed (example size = 0)
+    return_example(all, e);
+  }
+
+  assert(l.finish_example_count <= l.minibatch);
+}
 
 std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 {
@@ -1287,7 +1313,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-LEARNER::base_learner *lda_setup(options_i &options, vw &all)
+VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 {
   auto ld = scoped_calloc_or_throw<lda>();
   option_group_definition new_options("Latent Dirichlet Allocation");
@@ -1310,6 +1336,8 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   // Convert from int to corresponding enum value.
   ld->mmode = static_cast<lda_math_mode>(math_mode);
+
+  ld->finish_example_count = 0;
 
   if (!options.was_supplied("lda"))
     return nullptr;
@@ -1344,6 +1372,7 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     bool previous_strict_parse = all.example_parser->strict_parse;
     delete all.example_parser;
     all.example_parser = new parser{minibatch2, previous_strict_parse};
+    all.example_parser->_shared_data = all.sd;
   }
 
   ld->v.resize(all.lda * ld->minibatch);
@@ -1352,9 +1381,9 @@ LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   all.example_parser->lbl_parser = no_label::no_label_parser;
 
-  LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
+  VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type::scalars, "lda");
+      prediction_type_t::scalars, "lda");
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

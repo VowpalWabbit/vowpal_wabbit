@@ -14,7 +14,7 @@
 // input = contextual bandit label
 // output = chosen ranking
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
@@ -39,7 +39,7 @@ struct explore_eval
 
 void finish(explore_eval& data)
 {
-  if (!data.all->quiet)
+  if (!data.all->logger.quiet)
   {
     data.all->trace_message << "update count = " << data.update_count << std::endl;
     if (data.violations > 0)
@@ -84,13 +84,13 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (auto& sink : all.final_prediction_sink) print_action_score(sink.get(), ec.pred.a_s, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
-    v_array<CB::cb_class> costs = ec.l.cb.costs;
+    const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
@@ -98,7 +98,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
         outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true);
@@ -109,8 +109,8 @@ void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
   if (ec_seq.size() > 0)
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
-    if (all.raw_prediction > 0)
-      all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr)
+      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
   }
 }
 
@@ -218,7 +218,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   all.label_type = label_type::cb;
 
   learner<explore_eval, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::action_probs, "explore_eval");
+      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs, "explore_eval");
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

@@ -5,7 +5,6 @@
 #include <cmath>
 #include <errno.h>
 #include "reductions.h"
-#include "v_hashmap.h"
 #include "rand48.h"
 #include <cfloat>
 #include "vw.h"
@@ -15,7 +14,7 @@
 
 #define B_SEARCH_MAX_ITER 20
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
 
@@ -34,7 +33,7 @@ struct lq_data
   bool is_range_overlapped;  // Indicator of whether this label's cost range overlaps with the cost range that has the
                              // minimum max_pred
   bool query_needed;         // Used in reduction mode: tell upper-layer whether a query is needed for this label
-  COST_SENSITIVE::wclass& cl;
+  COST_SENSITIVE::wclass* cl;
 };
 
 struct cs_active
@@ -55,7 +54,7 @@ struct cs_active
   bool use_domination;
 
   vw* all;  // statistics, loss
-  LEARNER::base_learner* l;
+  VW::LEARNER::base_learner* l;
 
   v_array<lq_data> query_data;
 
@@ -222,13 +221,13 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     // Create metadata structure
     for (COST_SENSITIVE::wclass& cl : ld.costs)
     {
-      lq_data f = {0.0, 0.0, 0, 0, 0, cl};
+      lq_data f = {0.0, 0.0, 0, 0, 0, &cl};
       cs_a.query_data.push_back(f);
     }
     uint32_t n_overlapped = 0;
     for (lq_data& lqd : cs_a.query_data)
     {
-      find_cost_range(cs_a, base, ec, lqd.cl.class_index, delta, eta, lqd.min_pred, lqd.max_pred, lqd.is_range_large);
+      find_cost_range(cs_a, base, ec, lqd.cl->class_index, delta, eta, lqd.min_pred, lqd.max_pred, lqd.is_range_large);
       min_max_cost = std::min(min_max_cost, lqd.max_pred);
     }
     for (lq_data& lqd : cs_a.query_data)
@@ -236,7 +235,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       lqd.is_range_overlapped = (lqd.min_pred <= min_max_cost);
       n_overlapped += (uint32_t)(lqd.is_range_overlapped);
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
-      if (lqd.cl.x > lqd.max_pred || lqd.cl.x < lqd.min_pred)
+      if (lqd.cl->x > lqd.max_pred || lqd.cl->x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
         cs_a.distance_to_range += std::max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
@@ -250,8 +249,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     {
       bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && lqd.is_range_large) ||
           (query && lqd.is_range_overlapped && lqd.is_range_large));
-      inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl.class_index, lqd.cl.x, prediction, score,
-          lqd.cl.partial_prediction, query_label, lqd.query_needed);
+      inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
+          lqd.cl->partial_prediction, query_label, lqd.query_needed);
       if (lqd.query_needed)
         ec.pred.multilabels.label_v.push_back(lqd.cl.class_index);
 
@@ -263,7 +262,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     }
 
     // Need to pop metadata
-    cs_a.query_data.delete_v();
+    cs_a.query_data.clear();
 
     if (cs_a.all->sd->queries - queries > 0)
       cs_a.num_any_queries++;
@@ -310,8 +309,8 @@ base_learner* cs_active_setup(options_i& options, vw& all)
       .add(make_option("range_c", data->c1)
                .default_value(0.5f)
                .help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."))
-      .add(make_option("max_labels", data->max_labels).default_value(-1).help("maximum number of label queries."))
-      .add(make_option("min_labels", data->min_labels).default_value(-1).help("minimum number of label queries."))
+      .add(make_option("max_labels", data->max_labels).default_value(std::numeric_limits<size_t>::max()).help("maximum number of label queries."))
+      .add(make_option("min_labels", data->min_labels).default_value(std::numeric_limits<size_t>::max()).help("minimum number of label queries."))
       .add(make_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."))
       .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."));
   options.add_and_parse(new_options);
@@ -353,9 +352,9 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type::multilabels, "cs_active-sim", false)
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels, "cs_active-sim", false)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type::multilabels, "cs_active", false);
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels, "cs_active", false);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);

@@ -119,16 +119,16 @@ class ezexample
     if (current_ns != 0)
     {
       str[0] = current_ns;
-      current_seed = VW::hash_space(*vw_ref, str);
+      current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
     }
   }
 
   ~ezexample()  // calls finish_example *only* if we created our own example!
   {
-    if (ec->in_use && VW::is_ring_example(*vw_par_ref, ec))
+    if (VW::is_ring_example(*vw_par_ref, ec))
       VW::finish_example(*vw_par_ref, *ec);
     for (auto ecc : example_copies)
-      if (ecc->in_use && VW::is_ring_example(*vw_par_ref, ec))
+      if (VW::is_ring_example(*vw_par_ref, ec))
         VW::finish_example(*vw_par_ref, *ecc);
     example_copies.clear();
     free(example_copies.begin());
@@ -154,7 +154,7 @@ class ezexample
     past_seeds.push_back(current_seed);
     current_ns = c;
     str[0] = c;
-    current_seed = VW::hash_space(*vw_ref, str);
+    current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
   }
 
   void remns()
@@ -238,14 +238,17 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (auto const& pair : vw_ref->pairs)
+    for (auto const& interaction : vw_ref->interactions)
     {
-      quadratic_features_num += ec->feature_space[(int)pair[0]].size() * ec->feature_space[(int)pair[1]].size();
+      if(interaction.size() != 2)
+        continue;
+      quadratic_features_num += ec->feature_space[(int)interaction[0]].size() * ec->feature_space[(int)interaction[1]].size();
       quadratic_features_sqr +=
-          ec->feature_space[(int)pair[0]].sum_feat_sq * ec->feature_space[(int)pair[1]].sum_feat_sq;
+          ec->feature_space[(int)interaction[0]].sum_feat_sq * ec->feature_space[(int)interaction[1]].sum_feat_sq;
     }
     ec->num_features += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
+    ec->interactions = &vw_ref->interactions;
   }
 
   size_t get_num_features() { return ec->num_features; }
@@ -284,9 +287,7 @@ class ezexample
     else  // is multiline
     {     // we need to make a copy
       example* copy = get_new_example();
-      assert(ec->in_use);
       VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
-      assert(copy->in_use);
       vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }
@@ -309,25 +310,24 @@ class ezexample
     {
       vw_ref->learn(*empty_example);
       for (auto ecc : example_copies)
-        if (ecc->in_use)
-          VW::finish_example(*vw_par_ref, *ecc);
+        VW::finish_example(*vw_par_ref, *ecc);
       example_copies.clear();
     }
   }
 
   // HELPER FUNCTIONALITY
 
-  inline fid hash(std::string fstr) { return VW::hash_feature(*vw_ref, fstr, current_seed); }
-  inline fid hash(char* fstr) { return VW::hash_feature_cstr(*vw_ref, fstr, current_seed); }
+  inline fid hash(std::string fstr) { return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, current_seed)); }
+  inline fid hash(char* fstr) { return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, current_seed)); }
   inline fid hash(char c, std::string fstr)
   {
     str[0] = c;
-    return VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
   inline fid hash(char c, char* fstr)
   {
     str[0] = c;
-    return VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
 
   inline fid addf(fid fint) { return addf(fint, 1.0); }

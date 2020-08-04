@@ -17,7 +17,7 @@
 #include "vw_exception.h"
 #include "array_parameters.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct gdmf
@@ -42,12 +42,16 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     {
       std::cout << '\t';
       if (audit)
-        std::cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
+        std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (std::string& i : all.pairs)
+  for (const auto& i : all.interactions)
+  {
+    if (i.size() != 2)
+      THROW("can only use pairs in matrix factorization");
+
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     {
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
@@ -56,12 +60,12 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
           for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           {
-            std::cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':'
+            std::cout << '\t' << f1.audit()->get()->first << k << '^' << f1.audit()->get()->second << ':'
                       << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
                       << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':'
+            std::cout << ':' << f2.audit()->get()->first << k << '^' << f2.audit()->get()->second << ':'
                       << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
                       << ':' << f2.value();
             std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
@@ -70,14 +74,13 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
           }
       }
     }
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
+  }
   std::cout << std::endl;
 }
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 {
-  print_result(d.all->stdout_fileno, ec.pred.scalar, -1, ec.tag);
+  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -95,8 +98,11 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   vw& all = *d.all;
   float prediction = ec.initial;
 
-  for (std::string& i : d.all->pairs)
+  for (const auto& i : d.all->interactions)
   {
+    if (i.size() != 2)
+      THROW("can only use pairs in matrix factorization");
+
     ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
     ec.num_features += ec.feature_space[(int)i[1]].size() * d.rank;
@@ -116,8 +122,10 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (std::string& i : d.all->pairs)
+  for (const auto& i : d.all->interactions)
   {
+    // The check for non-pair interactions is done in the previous loop
+
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
       for (uint64_t k = 1; k <= d.rank; k++)
@@ -143,16 +151,13 @@ float mf_predict(gdmf& d, example& ec, T& weights)
     }
   }
 
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
-
   // d.scalars has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ...
 
   ec.partial_prediction = prediction;
 
   all.set_minmax(all.sd, ec.l.simple.label);
 
-  ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
@@ -196,8 +201,11 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
-  for (std::string& i : all.pairs)
+  for (const auto& i : all.interactions)
   {
+    if (i.size() != 2)
+      THROW("can only use pairs in matrix factorization");
+
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
       // update l^k weights
@@ -218,8 +226,6 @@ void mf_train(gdmf& d, example& ec, T& weights)
       }
     }
   }
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
 }
 
 void mf_train(gdmf& d, example& ec)
@@ -230,16 +236,14 @@ void mf_train(gdmf& d, example& ec)
     mf_train(d, ec, d.all->weights.dense_weights);
 }
 
-template <class T>
-class set_rand_wrapper
+void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
 {
- public:
-  static void func(weight& w, uint32_t& stride, uint64_t index)
+  for (size_t i = 0; i != stride; ++i, ++index)
   {
-    weight* pw = &w;
-    for (size_t i = 0; i != stride; ++i, ++index) pw[i] = (float)(0.1 * merand48(index));
+    float initial_value = 0.1 * merand48(index);
+    weights[i] = initial_value;
   }
-};
+}
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
@@ -251,14 +255,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      if (all.weights.sparse)
-        all.weights.sparse_weights.set_default<uint32_t, set_rand_wrapper<sparse_parameters> >(stride);
-      else
-        all.weights.dense_weights.set_default<uint32_t, set_rand_wrapper<dense_parameters> >(stride);
+      auto weight_initializer = [stride](
+                                    weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
+
+      all.weights.set_default(weight_initializer);
     }
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     uint64_t i = 0;
     size_t brw = 1;

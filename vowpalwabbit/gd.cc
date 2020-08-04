@@ -29,7 +29,7 @@
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 // todo:
@@ -277,9 +277,9 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
       tempstream << '[' << (dat.offset >> stride_shift) << ']';
       ns_pre += tempstream.str();
     }
-
-    if (!dat.all.name_index_map.count(ns_pre))
-      dat.all.name_index_map.insert(std::map<std::string, size_t>::value_type(ns_pre, index >> stride_shift));
+    const auto strided_index = index >> stride_shift;
+    if (!dat.all.index_name_map.count(strided_index))
+      dat.all.index_name_map.insert(std::make_pair(strided_index, ns_pre));
   }
 }
 
@@ -293,7 +293,7 @@ void print_lda_features(vw& all, example& ec)
   {
     for (features::iterator_all& f : fs.values_indices_audit())
     {
-      std::cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
+      std::cout << '\t' << f.audit()->get()->first << '^' << f.audit()->get()->second << ':'
                 << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
@@ -314,7 +314,7 @@ void print_features(vw& all, example& ec)
       if (fs.space_names.size() > 0)
         for (features::iterator_all& f : fs.values_indices_audit())
         {
-          audit_interaction(dat, f.audit().get());
+          audit_interaction(dat, f.audit()->get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
           audit_interaction(dat, NULL);
         }
@@ -337,17 +337,19 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    print_result(all.stdout_fileno, ec.pred.scalar, -1, ec.tag);
+    print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, float ret)
+float finalize_prediction(shared_data* sd, vw_logger& logger, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl;
+    if (!logger.quiet) {
+      std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl;
+    }
     return ret;
   }
   if (ret > sd->max_label)
@@ -393,7 +395,7 @@ void predict(gd& g, base_learner&, example& ec)
     ec.partial_prediction = inline_predict(all, ec);
 
   ec.partial_prediction *= (float)all.sd->contraction;
-  ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
+  ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << std::endl;
 
@@ -436,7 +438,7 @@ void multipredict(
   if (all.sd->contraction != 1.)
     for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
   if (finalize_predictions)
-    for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, pred[c].scalar);
+    for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
@@ -724,18 +726,23 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   if (all.print_invert)  // write readable model with feature names
   {
     std::stringstream msg;
-    typedef std::map<std::string, size_t> str_int_map;
 
-    for (str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
+    for (auto it = weights.begin(); it != weights.end(); ++it)
     {
-      weight* v = &weights.strided_index(it->second);
-      if (*v != 0.)
+      const auto weight_value = *it;
+      if (*it != 0.f)
       {
-        msg << it->first;
-        brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()), msg, true);
+        const auto weight_index = it.index() >> weights.stride_shift();
 
-        msg << ":" << it->second << ":" << *v << "\n";
-        bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, true);
+        const auto map_it = all.index_name_map.find(weight_index);
+        if (map_it != all.index_name_map.end())
+        {
+          msg << map_it->second;
+          bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+        }
+
+        msg << ":" << weight_index << ":" << weight_value << "\n";
+        bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
       }
     }
     return;
@@ -822,7 +829,7 @@ void save_load_online_state(
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 3, "");
         uint32_t stride = 1 << weights.stride_shift();
         weight* v = &weights.strided_index(i);
-        for (size_t i = 0; i < stride; i++) v[i] = buff[i];
+        for (size_t j = 0; j < stride; j++) v[j] = buff[j];
       }
     } while (brw > 0);
   else  // write binary or text
@@ -991,17 +998,6 @@ void save_load_online_state(
     save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
 }
 
-template <class T>
-class set_initial_gd_wrapper
-{
- public:
-  static void func(weight& w, std::pair<float, float>& initial, uint64_t /* index */)
-  {
-    w = initial.first;
-    (&w)[1] = initial.second;
-  }
-};
-
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 {
   vw& all = *g.all;
@@ -1012,11 +1008,14 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (all.weights.adaptive && all.initial_t > 0)
     {
       float init_weight = all.initial_weight;
-      std::pair<float, float> p = std::make_pair(init_weight, all.initial_t);
-      if (all.weights.sparse)
-        all.weights.sparse_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<sparse_parameters> >(p);
-      else
-        all.weights.dense_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<dense_parameters> >(p);
+      float init_t = all.initial_t;
+      auto initial_gd_weight_initializer = [init_weight, init_t](weight* weights, uint64_t /*index*/) {
+        weights[0] = init_weight;
+        weights[1] = init_t;
+      };
+
+      all.weights.set_default(initial_gd_weight_initializer);
+
       // for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared
       // gradient=1 NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since
       // scaling the data scales the gradient, this should ideally be feature_range*initial_t, or something like that.
@@ -1028,7 +1027,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       VW::set_weight(all, constant, 0, g.initial_constant);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = all.save_resume;
     std::stringstream msg;

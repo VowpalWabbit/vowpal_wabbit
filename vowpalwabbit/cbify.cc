@@ -11,7 +11,7 @@
 #include <vector>
 #include "debug_log.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 // using namespace COST_SENSITIVE;
@@ -280,7 +280,7 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   // Get the predicted action (adjusting for 1 based start)
   const auto predicted_action = out_ec.pred.a_s[data.chosen_action].action + 1;
 
-  // Set cs prediction 
+  // Set cs prediction
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
@@ -334,8 +334,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
-  COST_SENSITIVE::label& ld = ec.l.cs;
-  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  const auto& costs = ec.l.cs.costs;
 
   if (example_is_newline(ec))
     return;
@@ -365,9 +364,9 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (int sink : all.final_prediction_sink) all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (const auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::string outputString;
     std::stringstream outputStringStream(outputString);
@@ -378,7 +377,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
@@ -394,10 +393,10 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   bool hit_loss = false;
   for (example* ec : ec_seq) output_example(all, *ec, hit_loss, &(ec_seq));
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     v_array<char> empty = {nullptr, nullptr, nullptr, 0};
-    all.print_text(all.raw_prediction, "", empty);
+    all.print_text_by_ref(all.raw_prediction.get(), "", empty);
   }
 }
 
@@ -475,10 +474,10 @@ base_learner* cbify_setup(options_i& options, vw& all)
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_cs)
      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser,
-          1, "cbify-cs", prediction_type::multiclass, false);
+          1, "cbify-cs", prediction_type_t::multiclass, false);
     else
       l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1,
-          "cbify", prediction_type::multiclass, false);
+          "cbify", prediction_type_t::multiclass, false);
   }
   all.delete_prediction = nullptr;
 
@@ -520,7 +519,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   multi_learner* base = as_multiline(setup_base(options, all));
   learner<cbify, multi_ex>& l = init_learner(
-      data, base, do_actual_learning_ldf, do_actual_predict_ldf, 1, prediction_type::multiclass, "cbify-ldf");
+      data, base, do_actual_learning_ldf, do_actual_predict_ldf, 1, prediction_type_t::multiclass, "cbify-ldf");
 
   l.set_finish_example(finish_multiline_example);
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;

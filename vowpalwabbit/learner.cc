@@ -8,8 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-namespace prediction_type
-{
 #define CASE(type) \
   case type:       \
     return #type;
@@ -18,20 +16,21 @@ const char* to_string(prediction_type_t prediction_type)
 {
   switch (prediction_type)
   {
-    CASE(scalar)
-    CASE(scalars)
-    CASE(action_scores)
-    CASE(action_probs)
-    CASE(multiclass)
-    CASE(multilabels)
-    CASE(prob)
-    CASE(multiclassprobs)
+    CASE(prediction_type_t::scalar)
+    CASE(prediction_type_t::scalars)
+    CASE(prediction_type_t::action_scores)
+    CASE(prediction_type_t::action_probs)
+    CASE(prediction_type_t::multiclass)
+    CASE(prediction_type_t::multilabels)
+    CASE(prediction_type_t::prob)
+    CASE(prediction_type_t::multiclassprobs)
     default:
       return "<unsupported>";
   }
 }
-}  // namespace prediction_type
 
+namespace VW
+{
 namespace LEARNER
 {
 void learn_ex(example& ec, vw& all)
@@ -62,7 +61,7 @@ void save(example& ec, vw& all)
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
   save_predictor(all, final_regressor_name, 0);
 
@@ -74,7 +73,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
   bool is_header = false;
-  if (all.label_type == label_type::ccb)
+  if (all.label_type == label_type_t::ccb)
   {
     is_header = CCB::ec_is_example_header(ec);
   }
@@ -311,3 +310,4 @@ void generic_driver_onethread(vw& all)
 float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 
 }  // namespace LEARNER
+}  // namespace VW

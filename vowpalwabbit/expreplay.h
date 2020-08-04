@@ -21,7 +21,7 @@ struct expreplay
   bool* filled;         // which of buf[] is filled
   size_t replay_count;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in which
                         // case we're just permuting)
-  LEARNER::single_learner* base;
+  VW::LEARNER::single_learner* base;
 
   ~expreplay()
   {
@@ -37,7 +37,7 @@ struct expreplay
 
 template <label_parser& lp>
 void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
-{  
+{
   // Cannot learn if the example weight is 0.
   if (lp.get_weight(&ec.l) == 0.)
     return;
@@ -63,7 +63,7 @@ void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
 
 template <label_parser& lp>
 void predict(expreplay<lp>&, LEARNER::single_learner& base, example& ec)
-{  
+{
   base.predict(ec);
 }
 
@@ -87,7 +87,7 @@ void end_pass(expreplay<lp>& er)
 }
 
 template <char er_level, label_parser& lp>
-LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
   std::string replay_string = "replay_";
   replay_string += er_level;
@@ -119,12 +119,12 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 
   er->filled = calloc_or_throw<bool>(er->N);
 
-  if (!all.quiet)
+  if (!all.logger.quiet)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
               << std::endl;
 
-  er->base = LEARNER::as_singleline(setup_base(options, all));
-  LEARNER::learner<expreplay<lp>, example>* l =
+  er->base = VW::LEARNER::as_singleline(setup_base(options, all));
+  VW::LEARNER::learner<expreplay<lp>, example>* l =
       &init_learner(er, er->base, learn<lp>, predict<lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 

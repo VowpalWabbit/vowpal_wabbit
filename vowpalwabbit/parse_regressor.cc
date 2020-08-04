@@ -28,46 +28,20 @@
 #include "vw_versions.h"
 #include "options_serializer_boost_po.h"
 
-template <class T>
-class set_initial_wrapper
+void initialize_weights_as_random_positive(weight* weights, uint64_t index)
 {
- public:
-  static void func(weight& w, float& initial, uint64_t /* index */) { w = initial; }
-};
+  weights[0] = 0.1f * merand48(index);
+}
+void initialize_weights_as_random(weight* weights, uint64_t index)
+{
+  weights[0] = merand48(index) - 0.5f;
+}
 
-template <class T>
-class random_positive_wrapper
+void initialize_weights_as_polar_normal(weight* weights, uint64_t index)
 {
- public:
-  static void func(weight& w, uint64_t index) { w = (float)(0.1 * merand48(index)); }
-};
+  weights[0] = merand48_boxmuller(index);
+}
 
-template <class T>
-class random_weights_wrapper
-{
- public:
-  static void func(weight& w, uint64_t index) { w = (float)(merand48(index) - 0.5); }
-};
-// box-muller polar implementation
-template <class T>
-class polar_normal_weights_wrapper
-{
- public:
-  static void func(weight& w, uint64_t index)
-  {
-    static float x1 = 0.0;
-    static float x2 = 0.0;
-    static float temp = 0.0;
-    do
-    {
-      x1 = 2.0f * merand48(index) - 1.0f;
-      x2 = 2.0f * merand48(index) - 1.0f;
-      temp = x1 * x1 + x2 * x2;
-    } while ((temp >= 1.0) || (temp == 0.0));
-    temp = sqrtf((-2.0f * logf(temp)) / temp);
-    w = x1 * temp;
-  }
-};
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
 template <class T>
@@ -98,9 +72,9 @@ template <class T>
 void initialize_regressor(vw& all, T& weights)
 {
   // Regressor is already initialized.
-
   if (weights.not_null())
     return;
+
   size_t length = ((size_t)1) << all.num_bits;
   try
   {
@@ -117,18 +91,27 @@ void initialize_regressor(vw& all, T& weights)
     THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
   }
   else if (all.initial_weight != 0.)
-    weights.template set_default<float, set_initial_wrapper<T> >(all.initial_weight);
+  {
+    auto initial_weight = all.initial_weight;
+    auto initial_value_weight_initializer = [initial_weight](
+      weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
+    weights.set_default(initial_value_weight_initializer);
+  }
   else if (all.random_positive_weights)
-    weights.template set_default<random_positive_wrapper<T> >();
+  {
+    weights.set_default(&initialize_weights_as_random_positive);
+  }
   else if (all.random_weights)
-    weights.template set_default<random_weights_wrapper<T> >();
+  {
+    weights.set_default(&initialize_weights_as_random);
+  }
   else if (all.normal_weights)
   {
-    weights.template set_default<polar_normal_weights_wrapper<T> >();
+    weights.set_default(&initialize_weights_as_polar_normal);
   }
   else if (all.tnormal_weights)
   {
-    weights.template set_default<polar_normal_weights_wrapper<T> >();
+    weights.set_default(&initialize_weights_as_polar_normal);
     truncate(all, weights);
   }
 }
@@ -175,7 +158,7 @@ void save_load_header(
 
   try
   {
-    if (model_file.files.size() > 0)
+    if (model_file.num_files() > 0)
     {
       size_t bytes_read_write = 0;
 
@@ -248,9 +231,11 @@ void save_load_header(
 
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
       {
-        // -q, --cubic and --interactions are not saved in vw::file_options
-        uint32_t pair_len = (uint32_t)all.pairs.size();
+        if (!read)
+          THROW("cannot write legacy format");
 
+        // -q, --cubic and --interactions are not saved in vw::file_options
+        uint32_t pair_len = 0;
         msg << pair_len << " pairs: ";
         bytes_read_write +=
             bin_text_read_write_fixed_validated(model_file, (char*)&pair_len, sizeof(pair_len), "", read, msg, text);
@@ -260,25 +245,19 @@ void save_load_header(
         {
           char pair[3] = {0, 0, 0};
 
-          if (!read)
-          {
-            memcpy(pair, all.pairs[i].c_str(), 2);
-            msg << all.pairs[i] << " ";
-          }
-
+          // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
-          if (read)
+          std::vector<namespace_index> temp(pair, *(&pair + 1));
+          if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
           {
-            std::string temp(pair);
-            if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
-              all.pairs.push_back(temp);
+            all.interactions.emplace_back(temp.begin(), temp.end());
           }
         }
 
         msg << "\n";
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
-        uint32_t triple_len = (uint32_t)all.triples.size();
+        uint32_t triple_len = 0;
 
         msg << triple_len << " triples: ";
         bytes_read_write += bin_text_read_write_fixed_validated(
@@ -289,17 +268,13 @@ void save_load_header(
         {
           char triple[4] = {0, 0, 0, 0};
 
-          if (!read)
-          {
-            msg << all.triples[i] << " ";
-            memcpy(triple, all.triples[i].c_str(), 3);
-          }
+          // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
-          if (read)
+
+          std::vector<namespace_index> temp(triple, *(&triple + 1));
+          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
           {
-            std::string temp(triple);
-            if (count(all.triples.begin(), all.triples.end(), temp) == 0)
-              all.triples.push_back(temp);
+            all.interactions.emplace_back(temp.begin(), temp.end());
           }
         }
 
@@ -309,8 +284,11 @@ void save_load_header(
         if (all.model_file_ver >=
             VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
         {
+          if (!read)
+            THROW("cannot write legacy format");
+
           // the only version that saves interacions among pairs and triples
-          uint32_t len = (uint32_t)all.interactions.size();
+          uint32_t len = 0;
 
           msg << len << " interactions: ";
           bytes_read_write +=
@@ -318,39 +296,28 @@ void save_load_header(
 
           for (size_t i = 0; i < len; i++)
           {
+            // Only the read path is implemented since this is for old version read support.
             uint32_t inter_len = 0;
-            if (!read)
-            {
-              inter_len = (uint32_t)all.interactions[i].size();
-              msg << "len: " << inter_len << " ";
-            }
             bytes_read_write += bin_text_read_write_fixed_validated(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
-            if (!read)
-            {
-              memcpy(buff2, all.interactions[i].c_str(), inter_len);
 
-              msg << "interaction: ";
-              msg.write(all.interactions[i].c_str(), inter_len);
+
+            auto size = bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
+            bytes_read_write += size;
+            if(size != inter_len)
+            {
+              THROW("Failed to read interaction from model file.");
             }
 
-            bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
-
-            if (read)
+            std::vector<namespace_index> temp(buff2, buff2 + size);
+            if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
             {
-              std::string temp(buff2, inter_len);
-              all.interactions.push_back(temp);
+              all.interactions.emplace_back(buff2, buff2 + inter_len);
             }
           }
 
           msg << "\n";
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
-        }
-        else  // < VERSION_FILE_WITH_INTERACTIONS
-        {
-          // pairs and triples may be restored but not reflected in interactions
-          all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
-          all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
         }
       }
 
@@ -382,25 +349,27 @@ void save_load_header(
           bin_text_read_write_fixed_validated(model_file, (char*)&all.lda, sizeof(all.lda), "", read, msg, text);
 
       // TODO: validate ngram_len?
-      uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
+      auto* g_transformer = all.skip_gram_transformer.get();
+      uint32_t ngram_len = (g_transformer != nullptr) ? g_transformer->get_initial_ngram_definitions().size() : 0;
       msg << ngram_len << " ngram:";
       bytes_read_write +=
           bin_text_read_write_fixed_validated(model_file, (char*)&ngram_len, sizeof(ngram_len), "", read, msg, text);
+
+      std::vector<std::string> temp_vec;
+      const auto& ngram_strings = g_transformer != nullptr ? g_transformer->get_initial_ngram_definitions() : temp_vec;
       for (size_t i = 0; i < ngram_len; i++)
       {
         // have '\0' at the end for sure
         char ngram[4] = {0, 0, 0, 0};
         if (!read)
         {
-          msg << all.ngram_strings[i] << " ";
-          memcpy(ngram, all.ngram_strings[i].c_str(), std::min(static_cast<size_t>(3), all.ngram_strings[i].size()));
+          msg << ngram_strings[i] << " ";
+          memcpy(ngram, ngram_strings[i].c_str(), std::min(static_cast<size_t>(3), ngram_strings[i].size()));
         }
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3, "", read, msg, text);
         if (read)
         {
           std::string temp(ngram);
-          all.ngram_strings.push_back(temp);
-
           file_options += " --ngram";
           file_options += " " + temp;
         }
@@ -410,30 +379,30 @@ void save_load_header(
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
       // TODO: validate skips?
-      uint32_t skip_len = (uint32_t)all.skip_strings.size();
+      uint32_t skip_len = (g_transformer != nullptr) ? g_transformer->get_initial_skip_definitions().size() : 0;
       msg << skip_len << " skip:";
       bytes_read_write +=
           bin_text_read_write_fixed_validated(model_file, (char*)&skip_len, sizeof(skip_len), "", read, msg, text);
 
+      const auto& skip_strings = g_transformer != nullptr ? g_transformer->get_initial_skip_definitions() : temp_vec;
       for (size_t i = 0; i < skip_len; i++)
       {
         char skip[4] = {0, 0, 0, 0};
         if (!read)
         {
-          msg << all.skip_strings[i] << " ";
-          memcpy(skip, all.skip_strings[i].c_str(), std::min(static_cast<size_t>(3), all.skip_strings[i].size()));
+          msg << skip_strings[i] << " ";
+          memcpy(skip, skip_strings[i].c_str(), std::min(static_cast<size_t>(3), skip_strings[i].size()));
         }
 
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3, "", read, msg, text);
         if (read)
         {
           std::string temp(skip);
-          all.skip_strings.push_back(temp);
-
           file_options += " --skips";
           file_options += " " + temp;
         }
       }
+
       msg << "\n";
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
@@ -495,7 +464,7 @@ void save_load_header(
       {
         uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
             ? model_file.hash()
-            : (uint32_t)uniform_hash(model_file.space.begin(), bytes_read_write, 0);
+            : (uint32_t)uniform_hash(model_file.buffer_start(), bytes_read_write, 0);
 
         uint32_t check_sum_saved = check_sum;
 
@@ -523,6 +492,10 @@ void save_load_header(
 
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
+  if (buf.num_output_files() == 0)
+  {
+    THROW("Cannot dump regressor with an io buffer that has no output files.");
+  }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr)
@@ -538,8 +511,7 @@ void dump_regressor(vw& all, std::string reg_name, bool as_text)
     return;
   std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
-
-  io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
+  io_temp.add_file(VW::io::open_file_writer(start_name));
 
   dump_regressor(all, io_temp, as_text);
 
@@ -583,8 +555,9 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
 {
   if (all_intial.size() > 0)
   {
-    io_temp.open_file(all_intial[0].c_str(), all.stdin_off, io_buf::READ);
-    if (!all.quiet)
+    io_temp.add_file(VW::io::open_file_reader(all_intial[0]));
+
+    if (!all.logger.quiet)
     {
       // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
@@ -612,7 +585,8 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
 
     // all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
-    io_temp_mask.open_file(feature_mask.c_str(), false, io_buf::READ);
+    io_temp_mask.add_file(VW::io::open_file_reader(feature_mask));
+
     save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
@@ -622,7 +596,8 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
     {
       // Load original header again.
       io_buf io_temp;
-      io_temp.open_file(initial_regressors[0].c_str(), false, io_buf::READ);
+      io_temp.add_file(VW::io::open_file_reader(initial_regressors[0]));
+
       save_load_header(all, io_temp, true, false, file_options, *all.options);
       io_temp.close_file();
 

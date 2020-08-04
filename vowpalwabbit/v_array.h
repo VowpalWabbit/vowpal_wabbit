@@ -36,6 +36,8 @@ struct v_array
   T* end_array;
   size_t erase_count;
 
+  using iterator = T*;
+
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
@@ -108,7 +110,16 @@ struct v_array
       resize(2 * (end_array - _begin) + 3);
     new (_end++) T(new_ele);
   }
+
   void push_back_unchecked(const T& new_ele) { new (_end++) T(new_ele); }
+
+  template <class... Args>
+  void emplace_back(Args&&... args)
+  {
+    if (_end == end_array)
+      resize(2 * (end_array - _begin) + 3);
+    new (_end++) T(std::forward<Args>(args)...);
+  }
 
   size_t find_sorted(const T& ele) const  // index of the smallest element >= ele, return true if element is in the
                                           // array
@@ -202,14 +213,14 @@ void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&))
 }
 
 template <class T>
-void push_many(v_array<T>& v, const T* _begin, size_t num)
+void push_many(v_array<T>& v, const T* src, size_t num)
 {
   if (v._end + num >= v.end_array)
     v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
 #ifdef _WIN32
-  memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
+  memcpy_s(v._end, (v.end_array - v._end)* sizeof(T), src, num * sizeof(T));
 #else
-  memcpy(v._end, _begin, num * sizeof(T));
+  memcpy(v._end, src, num * sizeof(T));
 #endif
   v._end += num;
 }

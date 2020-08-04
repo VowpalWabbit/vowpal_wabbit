@@ -11,11 +11,12 @@
 #include "hash.h"
 #include "explore.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 #include <vector>
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;
@@ -157,7 +158,7 @@ void finish(warm_cb& data)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->quiet)
+  if (!data.all->logger.quiet)
   {
     std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
     std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
@@ -423,14 +424,23 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&old_weights, &data]
+    {
+      for (size_t a = 0; a < data.num_actions; ++a) 
+      {
+        data.ecs[a]->weight = old_weights[a];
+      }
+    }
+  );
+
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
     for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a] * weight_multiplier;
     base.learn(data.ecs, i);
   }
-
-  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 }
 
 template <bool use_cs>
@@ -572,7 +582,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("warm_start", data->ws_period)
                .default_value(0U)
                .help("number of training examples for warm start phase"))
-      .add(make_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("interaction", data->inter_period)
                .default_value(UINT32_MAX)
                .help("number of examples for the interactive contextual bandit learning phase"))

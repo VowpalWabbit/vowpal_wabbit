@@ -30,7 +30,13 @@ struct default_cleanup
   void operator()(T*) {}
 };
 
-template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
+template <typename T>
+struct default_initializer
+{
+  T* operator()(T* obj) { return obj; }
+};
+
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct no_lock_object_pool
 {
   no_lock_object_pool() = default;
@@ -42,6 +48,7 @@ struct no_lock_object_pool
 
   ~no_lock_object_pool()
   {
+    assert(m_pool.size() == size());
     while (!m_pool.empty())
     {
       auto front = m_pool.front();
@@ -112,19 +119,18 @@ struct no_lock_object_pool
 
     for (size_t i = 0; i < size; i++)
     {
-      memset(&chunk[i], 0, sizeof(T));
-      new (&chunk[i]) T{};
       m_pool.push(m_initializer(&chunk[i]));
     }
   }
 
-  std::queue<T*> m_pool;
-  std::vector<std::pair<T*, T*>> m_chunk_bounds;
-  std::vector<std::unique_ptr<T[]>> m_chunks;
   TInitializer m_initializer;
   TCleanup m_cleanup;
   size_t m_initial_chunk_size = 0;
   size_t m_chunk_size = 8;
+
+  std::vector<std::unique_ptr<T[]>> m_chunks;
+  std::vector<std::pair<T*, T*>> m_chunk_bounds;
+  std::queue<T*> m_pool;
 };
 
 template <typename T, typename TAllocator, typename TDeleter>
@@ -166,7 +172,7 @@ struct value_object_pool
   TDeleter m_deleter;
 };
 
-template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct object_pool
 {
   object_pool() = default;
@@ -187,13 +193,26 @@ struct object_pool
     return inner_pool.get_object();
   }
 
-  bool empty() const { return inner_pool.empty(); }
+  bool empty() const
+  {
+    std::unique_lock<std::mutex> lock(m_lock);
+    return inner_pool.empty();
+  }
 
-  size_t size() const { return inner_pool.size(); }
+  size_t size() const
+  {
+    std::unique_lock<std::mutex> lock(m_lock);
+    return inner_pool.size();
+  }
 
-  bool is_from_pool(T* obj) const { return inner_pool.is_from_pool(obj); }
+  bool is_from_pool(T* obj) const
+  {
+    std::unique_lock<std::mutex> lock(m_lock);
+    return inner_pool.is_from_pool(obj);
+  }
 
-  std::mutex m_lock;
+  private:
+  mutable std::mutex m_lock;
   no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
 };
 }  // namespace VW

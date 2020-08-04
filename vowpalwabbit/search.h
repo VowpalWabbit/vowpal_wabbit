@@ -301,11 +301,13 @@ class predictor
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
   predictor& add_allowed(action* a, float* costs, size_t action_count);
+  VW_DEPRECATED("Use the std::vector variant of add_allowed.")
   predictor& add_allowed(v_array<std::pair<action, float> >& a);
   predictor& add_allowed(std::vector<std::pair<action, float> >& a);
 
   predictor& set_allowed(action a, float cost);
   predictor& set_allowed(action* a, float* costs, size_t action_count);
+  VW_DEPRECATED("Use the std::vector variant of set_allowed.")
   predictor& set_allowed(v_array<std::pair<action, float> >& a);
   predictor& set_allowed(std::vector<std::pair<action, float> >& a);
 
@@ -372,11 +374,7 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
 
 // void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const
 // char* mismatch_error_string);
-bool string_equal(std::string a, std::string b);
-bool float_equal(float a, float b);
-bool uint32_equal(uint32_t a, uint32_t b);
-bool size_equal(size_t a, size_t b);
 
 // our interface within VW
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 }  // namespace Search

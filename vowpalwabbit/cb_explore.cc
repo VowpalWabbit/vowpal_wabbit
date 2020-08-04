@@ -10,8 +10,9 @@
 #include "explore.h"
 #include "debug_log.h"
 #include <memory>
+#include "scope_exit.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
@@ -185,6 +186,9 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   data.cb_label = ec.l.cb;
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([&data, &ec] { ec.l.cb = data.cb_label; });
+
   ec.l.cs = data.cs_label;
   get_cover_probabilities(data, base, ec, probs);
 
@@ -225,13 +229,12 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     }
   }
 
-  ec.l.cb = data.cb_label;
   ec.pred.a_s = probs;
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -267,7 +270,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
       maxid = i + 1;
     }
   }
-  for (int sink : all.final_prediction_sink) all.print_text(sink, ss.str(), ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
@@ -291,7 +294,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
                .keep()
                .help("Online explore-exploit for a <k> action contextual bandit problem"))
       .add(make_option("first", data->tau).keep().help("tau-first exploration"))
-      .add(make_option("epsilon", data->epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon).keep().allow_override().default_value(0.05f).help("epsilon-greedy exploration"))
       .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
@@ -308,6 +311,11 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
+  }
+
+  if (data->epsilon < 0.0 || data->epsilon > 1.0)
+  {
+    THROW("The value of epsilon must be in [0,1]");
   }
 
   all.delete_prediction = delete_action_scores;
@@ -327,17 +335,17 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->preds = v_init<uint32_t>();
     data->preds.resize(data->cover_size);
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type::action_probs, "explore_cover");
+        prediction_type_t::action_probs, "explore_cover");
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type::action_probs,"explore_bag");
+        prediction_type_t::action_probs,"explore_bag");
   else if (options.was_supplied("first"))
     l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs,"explore_first");
+        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_probs,"explore_first");
   else  // greedy
     l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs,"explore_greedy");
+        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_probs,"explore_greedy");
 
   l->set_finish_example(finish_example);
   return make_base(*l);

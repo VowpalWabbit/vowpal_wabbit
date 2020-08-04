@@ -22,7 +22,7 @@ void print_feature(vw& /* all */, float value, uint64_t index)
   cout << " ";
 }
 
-void learn(print& p, LEARNER::base_learner&, example& ec)
+void learn(print& p, VW::LEARNER::base_learner&, example& ec)
 {
   if (ec.l.simple.label != FLT_MAX)
   {
@@ -44,7 +44,7 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
   cout << std::endl;
 }
 
-LEARNER::base_learner* print_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* print_setup(options_i& options, vw& all)
 {
   bool print_option = false;
   option_group_definition new_options("Print psuedolearner");
@@ -59,6 +59,6 @@ LEARNER::base_learner* print_setup(options_i& options, vw& all)
 
   all.weights.stride_shift(0);
 
-  LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1, "print");
+  VW::LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1, "print");
   return make_base(ret);
 }
