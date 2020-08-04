@@ -67,16 +67,11 @@ class PyCppBridge : public RED_PYTHON::ExternalBinding {
       void* base_learner;
 
   public:
-      ~PyCppBridge()
-      {
-
-      }
-
       int random_num = 0;
-      PyCppBridge(py::object* obj = nullptr) {
-        if (obj != nullptr)
-          this->py_reduction_impl = new py::object(*obj);
-      }
+
+      PyCppBridge(py::object* py_reduction_impl) : py_reduction_impl(new py::object(*py_reduction_impl)) { }
+
+      ~PyCppBridge() { }
 
       void SetRandomNumber(int n)
       { random_num = n;
@@ -987,7 +982,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("predict", &Search::predictor::predict, "make a prediction")
   ;
 
-  py::class_<PyCppBridge, py_cpp_bridge_ptr>("reduction_bridge")
+  py::class_<PyCppBridge, py_cpp_bridge_ptr>("reduction_bridge", py::no_init)
   .def("call_base_learn", &PyCppBridge::CallLearn, "Call into the current base learner set in the bridge (you don't want to call this yourself!")
   ;
 
