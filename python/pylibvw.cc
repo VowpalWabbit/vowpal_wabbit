@@ -136,18 +136,6 @@ void my_save(vw_ptr all, std::string name)
 { VW::save_predictor(*all, name);
 }
 
-py_cpp_bridge_ptr get_python_cpp_bridge_ptr(vw_ptr all)
-{ if (!all->ext_binding)
-  {
-    THROW("python-cpp bridge not initialized in vw");
-  }
-  else
-  {
-    auto temp = reinterpret_cast<PyCppBridge*>(all->ext_binding.get());
-    return boost::shared_ptr<PyCppBridge>(temp, dont_delete_me);
-  }
-}
-
 search_ptr get_search_ptr(vw_ptr all)
 { return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
 }
@@ -687,14 +675,6 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<ui
 }
 */
 
-void verify_redpy_set_properly(py_cpp_bridge_ptr redpy)
-{
-  if (redpy->random_num == 0)
-  {
-    THROW("redpy: something is clearly wrong!");
-  }
-}
-
 void verify_search_set_properly(search_ptr sch)
 {
   if (sch->task_name == nullptr)
@@ -892,7 +872,6 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
-  .def("get_python_cpp_bridge_ptr", &get_python_cpp_bridge_ptr, "return a pointer to the RED_PYTHON::PythonCppBridge data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
   .def("get_id", &get_model_id, "return the model id")
   .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")

@@ -33,9 +33,11 @@ VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
 
   auto base = as_singleline(setup_base(options, all));
 
-  // learner deletes ext_binding pointer therefore had to add a temp release()
   VW::LEARNER::learner<ExternalBinding, example>& ret =
       learner<ExternalBinding, example>::init_learner(all.ext_binding.get(), base, learn, predict, 1, base->pred_type);
+
+  // learner should delete ext_binding
+  all.ext_binding.release();
 
   //missing finish?
 
