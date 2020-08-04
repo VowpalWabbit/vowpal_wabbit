@@ -67,8 +67,16 @@ class PyCppBridge : public RED_PYTHON::ExternalBinding {
       void* base_learner;
 
   public:
+      ~PyCppBridge()
+      {
+
+      }
+
       int random_num = 0;
-      PyCppBridge() {}
+      PyCppBridge(py::object* obj = nullptr) {
+        if (obj != nullptr)
+          this->py_reduction_impl = new py::object(*obj);
+      }
 
       void SetRandomNumber(int n)
       { random_num = n;
@@ -93,22 +101,18 @@ class PyCppBridge : public RED_PYTHON::ExternalBinding {
         this->base_learner = learner;
       }
 
-      void SetupPythonSide(py::object py_reduction_impl)
-      { this->py_reduction_impl = new py::object(py_reduction_impl);
-      }
-
       void CallLearn(example* ec)
       { reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learner)->learn(*ec);
       }
 };
 
-vw_ptr my_initialize(std::string args, bool with_reduction = false)
+vw_ptr my_initialize(std::string args, py::object with_reduction)
 { vw* foo;
   if (args.find_first_of("--no_stdin") == std::string::npos)
     args += " --no_stdin";
 
   if (with_reduction)
-  { auto ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge());
+  { auto ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge(&with_reduction));
     foo = VW::initialize(args, nullptr, false, nullptr, nullptr, std::move(ext_binding));
   }
   else
@@ -1005,7 +1009,6 @@ BOOST_PYTHON_MODULE(pylibvw)
   ;
 
   py::class_<PyCppBridge, py_cpp_bridge_ptr>("reduction_bridge")
-  .def("init_python_reduction_bridge", &PyCppBridge::SetupPythonSide, "Setup the python side of the cpp-python bridge (you don't want to call this yourself!")
   .def("call_base_learn", &PyCppBridge::CallLearn, "Call into the current base learner set in the bridge (you don't want to call this yourself!")
   ;
 

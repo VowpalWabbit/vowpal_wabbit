@@ -261,12 +261,11 @@ class vw(pylibvw.vw):
             l = [arg_str] + l
 
         if python_reduction is None:
-            pylibvw.vw.__init__(self, " ".join(l), False)
+            pylibvw.vw.__init__(self, " ".join(l), None)
         else:
             if issubclass(python_reduction, Copperhead):
-                pylibvw.vw.__init__(self, " ".join(l), True)
                 self._py_reduction = python_reduction()
-                self.get_python_cpp_bridge_ptr().init_python_reduction_bridge(self._py_reduction)
+                pylibvw.vw.__init__(self, " ".join(l), self._py_reduction)
             else:
                 raise TypeError("The python_reduction argument must be a class that inherits from Copperhead")
 

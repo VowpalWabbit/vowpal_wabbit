@@ -424,4 +424,5 @@ vw::~vw()
 
   delete loss;
   delete all_reduce;
+  ext_binding.release();
 }
