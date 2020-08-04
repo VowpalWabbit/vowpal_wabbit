@@ -2,7 +2,7 @@ import sys, os
 import math
 from vowpalwabbit import pyvw
 
-class NoopPythonicReduction(pyvw.Copperhead):
+class NoopPythonReduction(pyvw.Copperhead):
     def _predict(self):
         print("hello there I'm predicting stuff")
 
@@ -40,14 +40,14 @@ print(os.getpid())
 # this should match cpp_binary() output
 # doesn't do anything, runs in python see class impl NoopPythonicReductions
 def noop_example():
-    vw = pyvw.createWithCustomPythonReduction(NoopPythonicReduction, "--loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
+    vw = pyvw.vw(python_reduction=NoopPythonReduction, arg_str="--loss_function logistic --binary --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
 
 # this should match cpp_binary() output
 # mirror implementation of the cpp, runs in python see class impl BinaryPythonReductions
 def python_binary():
-    vw = pyvw.createWithCustomPythonReduction(BinaryPythonReduction, "--loss_function logistic --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
+    vw = pyvw.vw(python_reduction=BinaryPythonReduction, arg_str="--loss_function logistic --active_cover --oracular -d /root/vw/test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
 

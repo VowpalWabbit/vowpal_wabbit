@@ -42,6 +42,7 @@
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
+#include "red_python.h"
 #include "constant.h"
 #include "rand48.h"
 #include "hashstring.h"
@@ -374,8 +375,7 @@ struct vw
 
   void* /*Search::search*/ searchstr;
 
-  // needed for custom python reduction: this links up python + cpp worlds
-  void* /* TBD to be define */ python_cpp_bridge;
+  std::unique_ptr<RED_PYTHON::ExternalBinding> ext_binding;
 
   uint32_t wpp;
 

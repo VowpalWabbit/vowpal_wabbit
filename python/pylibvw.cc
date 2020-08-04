@@ -36,7 +36,8 @@ typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
-typedef boost::shared_ptr<RED_PYTHON::PythonCppBridge> py_cpp_bridge_ptr;
+class PyCppBri ;
+typedef boost::shared_ptr<PyCppBri> py_cpp_b_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -60,10 +61,63 @@ const size_t pDECISION_SCORES = 8;
 
 void dont_delete_me(void*arg) { }
 
-vw_ptr my_initialize(std::string args)
+class PyCppBri : public RED_PYTHON::ExternalBinding {
+  private:
+    py::object* run_object;
+    void* base_learn;
+
+  public:
+      int random_num = 0;
+      PyCppBri() {}
+
+      void SetRandomNumber(int n)
+      { random_num = n;
+      }
+
+      void ActualLearn(example* ec)
+      { try
+        {
+          py::object run = *this->run_object;
+
+          boost::shared_ptr<example> temp_ptr(ec, dont_delete_me);
+          py::object temp = py::object(temp_ptr);
+
+          run.attr("__call__")(temp);
+        }
+        catch (...)
+        {
+          // TODO: Properly translate and return Python exception. #2169
+          PyErr_Print();
+          PyErr_Clear();
+          THROW("Exception in 'search_run_fn'");
+        }
+      }
+
+      void SetLearner(void* learner){
+        this->base_learn = learner;
+      }
+
+      void SetupPythonSide(py::object learn_object)
+      { this->run_object = new py::object(learn_object);
+      }
+
+      void CallLearn(example* ec)
+      { reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learn)->learn(*ec);
+      }
+};
+
+vw_ptr my_initialize(std::string args, bool with_reduction = false)
 { if (args.find_first_of("--no_stdin") == std::string::npos)
     args += " --no_stdin";
-  vw*foo = VW::initialize(args);
+  
+  vw* foo;
+  if (with_reduction)
+  { std::unique_ptr<RED_PYTHON::ExternalBinding> ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBri());
+    foo = VW::initialize(args, nullptr, false, nullptr, nullptr, std::move(ext_binding));
+  }
+  else
+  { foo = VW::initialize(args);
+  }
   return boost::shared_ptr<vw>(foo, dont_delete_me);
 }
 
@@ -81,16 +135,15 @@ void my_save(vw_ptr all, std::string name)
 { VW::save_predictor(*all, name);
 }
 
-py_cpp_bridge_ptr get_python_cpp_bridge_ptr(vw_ptr all)
-{ 
-  if (all->python_cpp_bridge == nullptr)
+py_cpp_b_ptr get_python_cpp_bridge_ptr(vw_ptr all)
+{ if (!all->ext_binding)
   {
     THROW("python-cpp bridge not initialized in vw");
   }
   else
   {
-    RED_PYTHON::PythonCppBridge* temp = reinterpret_cast<RED_PYTHON::PythonCppBridge*>(all->python_cpp_bridge);
-    return boost::shared_ptr<RED_PYTHON::PythonCppBridge>(temp, dont_delete_me);
+    PyCppBri* temp = reinterpret_cast<PyCppBri*>(all->ext_binding.get());
+    return boost::shared_ptr<PyCppBri>(temp, dont_delete_me);
   }
 }
 
@@ -498,7 +551,7 @@ float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
 float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
-void ex_set_simplelabel_prediction(example_ptr ec, float fl) { ec->pred.scalar = fl; }
+void  ex_set_simplelabel_prediction(example_ptr ec, float fl) { ec->pred.scalar = fl; }
 float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 
 uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
@@ -506,8 +559,7 @@ float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
 float ex_get_scalar(example_ptr ec)
-{ 
-  const auto value = ec->pred.scalar;
+{ const auto value = ec->pred.scalar;
   return value;
 }
 
@@ -634,9 +686,9 @@ uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<ui
 }
 */
 
-void verify_redpy_set_properly(py_cpp_bridge_ptr redpy)
+void verify_redpy_set_properly(py_cpp_b_ptr redpy)
 {
-  if (redpy->random_number == 0)
+  if (redpy->random_num == 0)
   {
     THROW("redpy: something is clearly wrong!");
   }
@@ -659,26 +711,6 @@ uint32_t search_get_num_actions(search_ptr sch)
 { verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   return (uint32_t)d->num_actions;
-}
-
-void learn_redpy_fn(RED_PYTHON::PythonCppBridge& redpy, example* ec)
-{
-  try
-  {
-    py::object run = *(py::object*)redpy.run_object;
-
-    boost::shared_ptr<example> temp_ptr(ec, dont_delete_me);
-    py::object temp = py::object(temp_ptr);
-
-    run.attr("__call__")(temp);
-  }
-  catch (...)
-  {
-    // TODO: Properly translate and return Python exception. #2169
-    PyErr_Print();
-    PyErr_Clear();
-    THROW("Exception in 'search_run_fn'");
-  }
 }
 
 void search_run_fn(Search::search& sch)
@@ -740,20 +772,6 @@ void py_delete_run_object(void* pyobj)
 void set_force_oracle(search_ptr sch, bool useOracle)
 { verify_search_set_properly(sch);
   sch->set_force_oracle(useOracle);
-}
-
-void baselearn(py_cpp_bridge_ptr redpy, example_ptr ec)
-{ reinterpret_cast<VW::LEARNER::single_learner *>(redpy->base_learn)->learn(*ec);
-}
-
-void basepredict(py_cpp_bridge_ptr redpy, example_ptr ec)
-{ reinterpret_cast<VW::LEARNER::single_learner *>(redpy->base_learn)->predict(*ec);
-}
-
-void set_python_reduction_hook(py_cpp_bridge_ptr redpy, py::object learn_object)
-{ verify_redpy_set_properly(redpy);
-  redpy->run_f = &learn_redpy_fn;
-  redpy->run_object = new py::object(learn_object);
 }
 
 void set_structured_predict_hook(search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object)
@@ -989,9 +1007,9 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("predict", &Search::predictor::predict, "make a prediction")
   ;
 
-  py::class_<RED_PYTHON::PythonCppBridge, py_cpp_bridge_ptr>("red_python")
-  .def("init_python_cpp_bridge", &set_python_reduction_hook, "Set the hook (function pointer) (you don't want to call this yourself!")
-  .def("call_base_learn", &baselearn, "Set the hook (function pointer) (you don't want to call this yourself!")
+  py::class_<PyCppBri, py_cpp_b_ptr>("red_python_v2")
+  .def("init_python_cpp_bridge", &PyCppBri::SetupPythonSide, "Set the hook (function pointer) (you don't want to call this yourself!")
+  .def("call_base_learn", &PyCppBri::CallLearn, "Set the hook (function pointer) (you don't want to call this yourself!")
   ;
 
   py::class_<Search::search, search_ptr>("search")

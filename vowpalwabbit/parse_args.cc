@@ -1334,9 +1334,8 @@ void parse_reductions(options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
-vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_context)
+vw& parse_args(vw& all, options_i& options, trace_message_t trace_listener, void* trace_context)
 {
-  vw& all = *(new vw());
   all.options = &options;
 
   if (trace_listener)
@@ -1689,10 +1688,10 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(
-    options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize_with_options(
+    vw& all, options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  vw& all = parse_args(options, trace_listener, trace_context);
+  parse_args(all, options, trace_listener, trace_context);
 
   try
   {
@@ -1746,7 +1745,7 @@ vw* initialize(
   }
 }
 
-vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context, std::unique_ptr<RED_PYTHON::ExternalBinding> ext_binding)
 {
   int argc = 0;
   char** argv = to_argv(s, argc);
@@ -1754,7 +1753,15 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
 
   try
   {
-    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+    options_i* options = new config::options_boost_po(argc, argv);
+
+    vw& all = *(new vw());
+    all.ext_binding = std::move(ext_binding);
+
+    ret = initialize_with_options(all, *options, model, skipModelLoad, trace_listener, trace_context);
+
+    // When VW is deleted the options object will be cleaned up too.
+    ret->should_delete_options = true;
   }
   catch (...)
   {
@@ -1791,11 +1798,12 @@ vw* initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   options_i* options = new config::options_boost_po(argc, argv);
-  vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
+  vw& all = *(new vw());
+  initialize_with_options(all, *options, model, skipModelLoad, trace_listener, trace_context);
 
   // When VW is deleted the options object will be cleaned up too.
-  all->should_delete_options = true;
-  return all;
+  all.should_delete_options = true;
+  return &all;
 }
 
 // Create a new VW instance while sharing the model with another instance

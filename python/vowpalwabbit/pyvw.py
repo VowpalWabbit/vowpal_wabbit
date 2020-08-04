@@ -217,7 +217,7 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, arg_str=None, **kw):
+    def __init__(self, arg_str=None, python_reduction=None, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -267,7 +267,15 @@ class vw(pylibvw.vw):
         if arg_str is not None:
             l = [arg_str] + l
 
-        pylibvw.vw.__init__(self, " ".join(l))
+        if python_reduction is None:
+            pylibvw.vw.__init__(self, " ".join(l), False)
+        else:
+            if issubclass(python_reduction, Copperhead):
+                pylibvw.vw.__init__(self, " ".join(l), True)
+                self._py_reduction = python_reduction
+                python_reduction(self)
+            else:
+                raise TypeError("The python_reduction argument must be a class that inherits from Copperhead")
 
         # check to see if native parser needs to run
         ext_file_args = ["d", "data", "passes"]
@@ -719,17 +727,6 @@ class vw(pylibvw.vw):
             if task_data is None
             else search_task(self, sch, num_actions, task_data)
         )
-
-
-def createWithCustomPythonReduction(actual_python_reduction, arg_str=None, **kw):
-    if issubclass(actual_python_reduction, Copperhead):
-        inst = vw("--red_python  "+ arg_str, **kw)
-        # do we need to save a reference to this instance?
-        actual_python_reduction(inst)
-
-        return inst
-    
-    raise TypeError("The first argument must be a class that inherits from Copperhead")
 
 
 class namespace_id:

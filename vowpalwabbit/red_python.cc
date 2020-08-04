@@ -17,11 +17,10 @@ struct red_python
  private:
 
  public:
-  PythonCppBridge* pyCppBridge;
+  ExternalBinding* ext_bind_impl = nullptr;
 
-  red_python(
-      PythonCppBridge* pyCppBridge)
-      : pyCppBridge(pyCppBridge)
+  red_python(ExternalBinding* ext_bind_impl)
+      : ext_bind_impl(ext_bind_impl)
   {
   }
 
@@ -32,12 +31,8 @@ struct red_python
 
 void learn(red_python& redpy, single_learner& base, example& ec)
 { 
-  redpy.pyCppBridge->base_learn = &base;
-
-  if (redpy.pyCppBridge->run_f)
-    redpy.pyCppBridge->run_f(*redpy.pyCppBridge, &ec);
-  else
-    std::cerr << "warning: learn called before hook with python is set" << std::endl;
+  redpy.ext_bind_impl->SetLearner(&base);
+  redpy.ext_bind_impl->ActualLearn(&ec);
 }
 
 void predict(red_python& c, single_learner& base, example& ec) { return; }
@@ -46,24 +41,12 @@ void predict(red_python& c, single_learner& base, example& ec) { return; }
 using namespace RED_PYTHON;
 VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
 {
-  bool red_python_option = false;
-
-  option_group_definition new_options("Reduction (not base) implemented in Python");
-  new_options
-      .add(make_option("red_python", red_python_option)
-              //  .keep()
-               .help("EXPERIMENTAL: Add python reduction"));
-  options.add_and_parse(new_options);
-
-  if (!red_python_option)
+  if (!all.ext_binding)
     return nullptr;
-  
-  free_ptr<PythonCppBridge> pyCppBridge = scoped_calloc_or_throw<PythonCppBridge>();
-  auto ld = scoped_calloc_or_throw<red_python>(pyCppBridge.get());
 
-  pyCppBridge->random_number = 4;
-  all.python_cpp_bridge = pyCppBridge.get();
-  pyCppBridge.release();
+  auto ld = scoped_calloc_or_throw<red_python>(all.ext_binding.get());
+
+  ld->ext_bind_impl->SetRandomNumber(4);
 
   VW::LEARNER::learner<red_python, example>& ret =
       VW::LEARNER::init_learner(ld, as_singleline(setup_base(options, all)), learn, predict);
