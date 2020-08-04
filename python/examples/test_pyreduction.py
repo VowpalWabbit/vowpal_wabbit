@@ -57,9 +57,9 @@ def cpp_binary():
     vw.run_parser()
     vw.finish()
 
-print("noop")
-noop_example()
 print("python")
 python_binary()
+print("noop")
+noop_example()
 print("cpp")
 cpp_binary()

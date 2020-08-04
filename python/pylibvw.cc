@@ -63,8 +63,8 @@ void dont_delete_me(void*arg) { }
 
 class PyCppBridge : public RED_PYTHON::ExternalBinding {
   private:
-    py::object* run_object;
-    void* base_learn;
+      py::object* inst;
+      void* base_learn;
 
   public:
       int random_num = 0;
@@ -77,12 +77,8 @@ class PyCppBridge : public RED_PYTHON::ExternalBinding {
       void ActualLearn(example* ec)
       { try
         {
-          py::object run = *this->run_object;
-
-          boost::shared_ptr<example> temp_ptr(ec, dont_delete_me);
-          py::object temp = py::object(temp_ptr);
-
-          run.attr("__call__")(temp);
+          this->inst->attr("_learn_convenience")(boost::shared_ptr<example>(ec, dont_delete_me),
+                                                 boost::shared_ptr<PyCppBridge>(this, dont_delete_me));
         }
         catch (...)
         {
@@ -97,8 +93,8 @@ class PyCppBridge : public RED_PYTHON::ExternalBinding {
         this->base_learn = learner;
       }
 
-      void SetupPythonSide(py::object learn_object)
-      { this->run_object = new py::object(learn_object);
+      void SetupPythonSide(py::object actual_objc)
+      { this->inst = new py::object(actual_objc);
       }
 
       void CallLearn(example* ec)

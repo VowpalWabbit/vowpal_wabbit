@@ -18,19 +18,8 @@ class Learner:
 # compatible with Python 2 *and* 3
 ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
+"""Copperhead class"""
 class Copperhead(ABC):
-    """Copperhead class"""
-    def __init__(self, vw):
-        self.vw = vw
-        self.vwCppBridge = vw.get_python_cpp_bridge_ptr()
-
-        # rename bc its actually just learning
-        def run(example):
-            l = Learner(self.vwCppBridge)
-            self._learn(example, l)
-
-        self.vwCppBridge.init_python_reduction_bridge(run)
-
     @abc.abstractmethod
     def _predict(self):
         pass
@@ -38,6 +27,9 @@ class Copperhead(ABC):
     @abc.abstractmethod
     def _learn(self, ec, learner):
         pass
+
+    def _learn_convenience(self, ec, vwbridge):
+        self._learn(ec, Learner(vwbridge))
 
 class SearchTask:
     """Search task class"""
@@ -273,8 +265,8 @@ class vw(pylibvw.vw):
         else:
             if issubclass(python_reduction, Copperhead):
                 pylibvw.vw.__init__(self, " ".join(l), True)
-                self._py_reduction = python_reduction
-                python_reduction(self)
+                self._py_reduction = python_reduction()
+                self.get_python_cpp_bridge_ptr().init_python_reduction_bridge(self._py_reduction)
             else:
                 raise TypeError("The python_reduction argument must be a class that inherits from Copperhead")
 
