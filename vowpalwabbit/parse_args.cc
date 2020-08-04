@@ -1771,7 +1771,8 @@ vw* initialize(
     return initialize_with_options(all, options, model, skipModelLoad, trace_listener, trace_context);
 }
 
-vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context, std::unique_ptr<RED_PYTHON::ExternalBinding> ext_binding)
+vw* initialize_with_reduction(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
+    void* trace_context, std::unique_ptr<RED_PYTHON::ExternalBinding> ext_binding)
 {
   int argc = 0;
   char** argv = to_argv(s, argc);
@@ -1797,6 +1798,11 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
 
   free_args(argc, argv);
   return ret;
+}
+
+vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  return initialize_with_reduction(s, model, skipModelLoad, trace_listener, trace_context, nullptr);
 }
 
 vw* initialize_escaped(

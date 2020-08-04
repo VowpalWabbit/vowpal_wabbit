@@ -113,7 +113,7 @@ vw_ptr my_initialize(std::string args, py::object with_reduction)
 
   if (with_reduction)
   { auto ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge(&with_reduction));
-    foo = VW::initialize(args, nullptr, false, nullptr, nullptr, std::move(ext_binding));
+    foo = VW::initialize_with_reduction(args, nullptr, false, nullptr, nullptr, std::move(ext_binding));
   }
   else
   { foo = VW::initialize(args);
