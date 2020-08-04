@@ -58,7 +58,7 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, v_a
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 

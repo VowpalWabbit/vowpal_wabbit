@@ -60,7 +60,8 @@ typedef union
   VW::actions_pdf::action_pdf_value a_pdf;
 } polyprediction;
 
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
 {
   example();
@@ -105,7 +106,7 @@ struct example : public example_predict  // core example datatype.
       "Standalone examples are by definition always in use.")
   bool in_use = true;
 };
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
 
 struct vw;
 

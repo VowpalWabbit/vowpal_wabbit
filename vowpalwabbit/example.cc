@@ -7,13 +7,18 @@
 #include "example.h"
 #include "gd.h"
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example()
 {
   memset(&l, 0, sizeof(polylabel));
   memset(&pred, 0, sizeof(polyprediction));
   tag = v_init<char>();
 }
+VW_WARNING_STATE_POP
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   tag.delete_v();
@@ -23,7 +28,10 @@ example::~example()
     passthrough = nullptr;
   }
 }
+VW_WARNING_STATE_POP
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example(example&& other) noexcept
     : example_predict(std::move(other))
     , l(other.l)
@@ -61,6 +69,7 @@ example::example(example&& other) noexcept
   other.sorted = false;
   other.in_use = false;
 }
+VW_WARNING_STATE_POP
 
 example& example::operator=(example&& other) noexcept
 {
@@ -80,7 +89,10 @@ example& example::operator=(example&& other) noexcept
   test_only = other.test_only;
   end_pass = other.end_pass;
   sorted = other.sorted;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
   in_use = other.in_use;
+VW_WARNING_STATE_POP
 
   other.weight = 1.f;
 
@@ -101,7 +113,10 @@ example& example::operator=(example&& other) noexcept
   other.test_only = false;
   other.end_pass = false;
   other.sorted = false;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
   other.in_use = false;
+VW_WARNING_STATE_POP
   return *this;
 }
 

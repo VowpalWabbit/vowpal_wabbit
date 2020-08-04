@@ -21,11 +21,11 @@
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
-#pragma GCC diagnostic pop
+VW_WARNING_STATE_POP
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #pragma managed(pop)
@@ -1600,8 +1600,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0)
     {
-      // VW::return_multiple_example(*all, examples);
-      // examples.push_back(&VW::get_unused_example(all));
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
       return false;
     }
   }

@@ -15,6 +15,7 @@
 #include "vw_exception.h"
 #include "future_compat.h"
 #include "vw_allreduce.h"
+#include "named_labels.h"
 
 struct global_prediction
 {
@@ -109,7 +110,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
     if (t != len)
     {
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
     }
   }
 }
@@ -127,7 +128,7 @@ void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
   if (t != len)
   {
-    std::cerr << "write error: " << strerror(errno) << std::endl;
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -144,7 +145,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
   if (t != len)
   {
-    std::cerr << "write error: " << strerror(errno) << std::endl;
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -223,31 +224,6 @@ void vw::finish_example(multi_ex& ec)
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(
-    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
-{
-  for (size_t i = 0; i < grams.size(); i++)
-  {
-    std::string ngram = grams[i];
-    if (isdigit(ngram[0]))
-    {
-      int n = atoi(ngram.c_str());
-      if (!quiet)
-        std::cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << std::endl;
-      for (size_t j = 0; j < 256; j++) dest[j] = n;
-    }
-    else if (ngram.size() == 1)
-      std::cout << "You must specify the namespace index before the n" << std::endl;
-    else
-    {
-      int n = atoi(ngram.c_str() + 1);
-      dest[(uint32_t)(unsigned char)*ngram.c_str()] = n;
-      if (!quiet)
-        std::cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << std::endl;
-    }
-  }
-}
-
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
 {
   for (size_t i = 0; i < limits.size(); i++)
@@ -294,7 +270,9 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
 vw::vw()
 {
   sd = &calloc_or_throw<shared_data>();
@@ -368,10 +346,8 @@ vw::vw()
 
   all_reduce = nullptr;
 
-  for (size_t i = 0; i < 256; i++)
+  for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
-    ngram[i] = 0;
-    skips[i] = 0;
     limit[i] = INT_MAX;
     affix_features[i] = 0;
     spelling_features[i] = 0;
@@ -412,7 +388,7 @@ vw::vw()
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
 }
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
 
 vw::~vw()
 {
@@ -438,7 +414,7 @@ vw::~vw()
   {
     if (sd->ldict)
     {
-      sd->ldict->~namedlabels();
+      sd->ldict->~named_labels();
       free(sd->ldict);
     }
     free(sd);

@@ -20,10 +20,7 @@ endif()
 add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 
-set(explore_all_headers
-  ${explore_INCLUDE_DIRS}explore.h ${explore_INCLUDE_DIRS}explore_internal.h
-  ${explore_INCLUDE_DIRS}hash.h
-  accumulate.h
+set(vw_all_headers
   action_score.h
   active_cover.h
   active.h
@@ -73,10 +70,12 @@ set(explore_all_headers
   crossplat_compat.h
   cs_active.h
   csoaa.h
+  debug_print.h
   decision_scores.h
   distributionally_robust.h
   ect.h
-  err_constants.h
+  error_constants.h
+  error_data.h
   error_reporting.h
   errors_data.h
   example_predict.h
@@ -115,7 +114,9 @@ set(explore_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  named_labels.h
   network.h
+  kskip_ngram_transformer.h
   nn.h
   no_label.h
   noop.h
@@ -136,6 +137,7 @@ set(explore_all_headers
   parse_slates_example_json.h
   parser.h
   pmf_to_pdf.h
+  plt.h
   print.h
   prob_dist_cont.h
   queue.h
@@ -251,7 +253,9 @@ set(vw_all_sources
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
+  named_labels.cc
   network.cc
+  kskip_ngram_transformer.cc
   nn.cc
   no_label.cc
   noop.cc
@@ -266,6 +270,7 @@ set(vw_all_sources
   parse_regressor.cc
   parser.cc
   pmf_to_pdf.cc
+  plt.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc

@@ -79,11 +79,11 @@ public:
   void get_next(const char*prefix, std::vector<nextstr>& next)
   { if (prefix == nullptr || *prefix == 0)
     { next.clear();
-      float c = 1. / (float)count;
-      next.push_back( nextstr('$', log(1. + c * (float)terminus), max_string, log(1. + (float)max_count)) );
+      float c = 1.0f / (float)count;
+      next.push_back( nextstr('$', log(1.0f + c * (float)terminus), max_string, log(1.0f + (float)max_count)) );
       for (size_t id=0; id<children.size(); id++)
         if (children[id])
-          next.push_back( nextstr(action2char(id+1), c*(float)children[id]->count, children[id]->max_string, log(1.+ (float)children[id]->max_count)) );
+          next.push_back( nextstr(action2char((action)(id+1)), c*(float)children[id]->count, children[id]->max_string, log(1.0f+ (float)children[id]->max_count)) );
     }
     else
     { size_t id = char2action(*prefix) - 1;
@@ -98,7 +98,7 @@ public:
     max_string = prefix;
     for (size_t id=0; id<children.size(); id++)
       if (children[id])
-      { char c = action2char(id + 1);
+      { char c = action2char((action)(id + 1));
         children[id]->build_max(prefix + c);
         if (children[id]->max_count > max_count)
         { max_count  = children[id]->max_count;
@@ -112,7 +112,7 @@ public:
     cerr << '\'' << c << "' " << count << " [max_string=" << max_string << " max_count=" << max_count << "]" << endl;
     for (size_t i=0; i<children.size(); i++)
       if (children[i])
-        children[i]->print(action2char(i+1), indent+1);
+        children[i]->print(action2char((action)(i+1)), indent+1);
   }
 
 private:
@@ -243,7 +243,7 @@ public:
     Trie* cdict = dict;
 
     v_array<action> ref = v_init<action>();
-    int N = in.in.length();
+    int N = (int)in.in.length();
     out = "^";
    std::vector<nextstr> next;
     for (int m=1; m<=N*2; m++)     // at most |in|*2 outputs
@@ -399,7 +399,7 @@ Trie load_dictionary(const char* fname)
     if (space)
     { *space = 0;
       space++;
-      t.insert(space, atof(str));
+      t.insert(space, atoi(str));
     }
     else
       t.insert(str);
@@ -427,8 +427,7 @@ void run_istream(Generator& gen, const char* fname, bool is_learn=true, size_t p
     { cerr << "skipping line " << n << ": '" << line << "'" << endl;
       continue;
     }
-    input dat(line.substr(j+5), line.substr(i+5,j-i-5), atof(line.substr(0,i).c_str())/10.);
-    //cerr << "count=" << dat.weight << ", in='" << dat.in << "', out='" << dat.out << "'" << endl;
+    input dat(line.substr(j+5), line.substr(i+5,j-i-5), (float)(atof(line.substr(0,i).c_str())/10.));
     weight += dat.weight;
     if (is_learn)
       gen.learn(dat, out);
