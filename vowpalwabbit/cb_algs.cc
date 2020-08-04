@@ -187,12 +187,12 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   if (eval)
   {
     all.example_parser->lbl_parser = CB_EVAL::cb_eval;
-    all.label_type = label_type::cb_eval;
+    all.label_type = label_type_t::cb_eval;
   }
   else
   {
     all.example_parser->lbl_parser = CB::cb_label;
-    all.label_type = label_type::cb;
+    all.label_type = label_type_t::cb;
   }
 
   learner<cb, example>* l;

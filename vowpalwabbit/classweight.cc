@@ -47,8 +47,8 @@ struct classweights
   }
 };
 
-template <int pred_type>
-static inline void update_example_weight(classweights& cweights, example& ec)
+template <prediction_type_t pred_type>
+void update_example_weight(classweights& cweights, example& ec)
 {
   switch (pred_type)
   {
@@ -64,8 +64,8 @@ static inline void update_example_weight(classweights& cweights, example& ec)
   }
 }
 
-template <bool is_learn, int pred_type>
-static void predict_or_learn(classweights& cweights, LEARNER::single_learner& base, example& ec)
+template <bool is_learn, prediction_type_t pred_type>
+void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
 {
   // Notes: Update example weight either in predict() or learn() but not in both
   // If base.predict_before_learn is set, predict() will be called before learn()
@@ -104,12 +104,11 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 
   VW::LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type_t::scalar)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type_t::scalar>,
-        predict_or_learn<false, prediction_type_t::scalar>, "classweight-scalar", base->predict_before_learn);
+    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::scalar>,
+        &predict_or_learn<false, prediction_type_t::scalar>, "classweight-scalar", base->predict_before_learn);
   else if (base->pred_type == prediction_type_t::multiclass)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type_t::multiclass>,
-        predict_or_learn<false, prediction_type_t::multiclass>,"classweight-multi", base->predict_before_learn);
-
+    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::multiclass>,
+        &predict_or_learn<false, prediction_type_t::multiclass>,"classweight-multi", base->predict_before_learn);
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);

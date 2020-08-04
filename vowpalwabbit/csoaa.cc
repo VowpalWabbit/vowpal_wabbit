@@ -146,7 +146,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
 using namespace ACTION_SCORE;
 
 // TODO: passthrough for ldf
-struct ldf
+struct  ldf
 {
   LabelDict::label_feature_map label_features;
 
@@ -265,10 +265,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   // What should be done here about ec.l.simple?
   const label_data simple_label{FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
   ec.l.simple = simple_label;
-  uint64_t old_offset = ec.ft_offset;
-  ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
-  ec.ft_offset = old_offset;
 
   // WARNING: Access of label information when making prediction is problematic.
   // What should be done here about ld.costs[0].partial_prediction?
@@ -368,20 +365,18 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       // learn
       float old_weight = ec1->weight;
       ec1->initial = 0.;
-      uint64_t old_offset = ec1->ft_offset;
       simple_lbl.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
+      // TODO: @rajan-chari it looks like ft_offset is not handled here.
       base_learn_restore_pred(base, ec1);
       ec1->weight = old_weight;
-      ec1->ft_offset = data.ft_offset;
 
       // Guard inner example state restore against throws
       auto restore_guard_inner = VW::scope_exit(
-        [&data, old_offset, old_weight, &costs2, &ec2, &ec1]
+        [&data, old_weight, &costs2, &ec2, &ec1]
         {
-          ec1->ft_offset = old_offset;
           ec1->weight = old_weight;
           unsubtract_example(ec1);
 
@@ -444,14 +439,11 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     base_learn_restore_pred(base, ec);
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
-    uint64_t old_offset = ec->ft_offset;
-    ec->ft_offset = data.ft_offset;
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit(
-      [&save_cs_label, &data, &costs, old_offset, old_weight, &ec]
+      [&save_cs_label, &data, &costs, old_weight, &ec]
       {
-        ec->ft_offset = old_offset;
         LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
         ec->weight = old_weight;
 
@@ -959,8 +951,10 @@ base_learner* csldf_setup(options_i& options, vw& all)
   if (ld->rank)
     pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, "csoaa_ldf_rank");
   else if (ld->is_probabilities)
+  {
     // FIXME: What are the correct predict/learn funcs
-    pl = &init_learner(ld, pbase, nullptr, nullptr, 1, prediction_type_t::prob, "csoaa_ldf_prob");
+    // pl = &init_learner(ld, pbase, nullptr, nullptr, 1, prediction_type_t::prob, "csoaa_ldf_prob");
+  }
   else
     pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, "csoaa_ldf");
 

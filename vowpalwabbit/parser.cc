@@ -782,7 +782,7 @@ void add_constant_feature(vw& vw, example* ec)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
 }
 
-void add_label_(example* ec, float label, float weight, float base)
+void add_label(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
   ec->initial = base;
@@ -915,7 +915,7 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial_(example* ec) { return ec->initial; }
+float get_initial(example* ec) { return ec->initial; }
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 

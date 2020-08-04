@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include "scope_exit.h"
+#include "debug_print.h"
 
 // Random Network Distillation style exploration.  Basically predicts
 // something whose true expectation is zero and uses the MSE(prediction
@@ -159,6 +160,8 @@ inline void vec_add_with_norm(std::pair<float, float>& p,
 
 }  // namespace
 
+
+
 float cb_explore_adf_rnd::get_initial_prediction(example* ec)
 {
   LazyGaussian w;
@@ -255,7 +258,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     accumulate_bonuses(examples);
   }
   finish_bonuses();
-  
+
   // Labels need to be restored before calling base_learn_or_predict
   restore_guard.call();
   base_learn_or_predict<is_learn>(base, examples, 0);
@@ -324,7 +327,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   size_t problem_multiplier = 1 + numrnd;
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
@@ -337,7 +340,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   }
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf_rnd");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

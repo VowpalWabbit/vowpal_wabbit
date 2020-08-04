@@ -238,7 +238,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       if (lqd.cl->x > lqd.max_pred || lqd.cl->x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
-        cs_a.distance_to_range += std::max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
+        cs_a.distance_to_range += std::max(lqd.cl->x - lqd.max_pred, lqd.min_pred - lqd.cl->x);
         cs_a.range += lqd.max_pred - lqd.min_pred;
       }
     }
@@ -252,10 +252,10 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
       if (lqd.query_needed)
-        ec.pred.multilabels.label_v.push_back(lqd.cl.class_index);
+        ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
 
-      VW_DBG(ec) << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction
-             << " score=" << score << " pp=" << lqd.cl.partial_prediction << " ql=" << query_label
+      VW_DBG(ec) << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x << " prediction=" << prediction
+             << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label
              << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " ["
              << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped
              << " is_baseline=" << cs_a.is_baseline << endl;

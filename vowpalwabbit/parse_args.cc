@@ -1846,7 +1846,7 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->p->_shared_data = new_model->sd;
+  new_model->example_parser->_shared_data = new_model->sd;
 
   return new_model;
 }

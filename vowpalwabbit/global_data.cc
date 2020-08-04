@@ -417,10 +417,10 @@ vw::~vw()
     delete options;
 
   // TODO: migrate all finalization into parser destructor
-  if (p != nullptr)
+  if (example_parser != nullptr)
   {
     free_parser(*this);
-    delete p;
+    delete example_parser;
   }
 
   const bool seeded = weights.seeded() > 0;

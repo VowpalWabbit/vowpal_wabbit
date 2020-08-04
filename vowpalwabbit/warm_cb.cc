@@ -428,7 +428,7 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   auto restore_guard = VW::scope_exit(
     [&old_weights, &data]
     {
-      for (size_t a = 0; a < data.num_actions; ++a) 
+      for (size_t a = 0; a < data.num_actions; ++a)
       {
         data.ecs[a]->weight = old_weights[a];
       }
@@ -656,10 +656,10 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (use_cs)
     l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>, all.example_parser,
-        data->choices_lambda, "warm_cb-cs", prediction_type::multiclass, false);
+        data->choices_lambda, "warm_cb-cs", prediction_type_t::multiclass, false);
   else
     l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>, all.example_parser,
-        data->choices_lambda, "warm_cb-multi", prediction_type::multiclass, false);
+        data->choices_lambda, "warm_cb-multi", prediction_type_t::multiclass, false);
 
   l->set_finish(finish);
   all.delete_prediction = nullptr;

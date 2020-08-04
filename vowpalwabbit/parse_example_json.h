@@ -189,12 +189,12 @@ class LabelObjectState : public BaseState<audit>
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      ctx.ex->l.simple.initial = std::numeric_limits<float>::quiet_NaN();
+      ctx.ex->l.simple.serialized_initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->l.simple.weight = std::numeric_limits<float>::quiet_NaN();
+      ctx.ex->l.simple.serialized_weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     // CB
@@ -565,7 +565,7 @@ struct SlotsState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all>example_parser->lbl_parser.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
     if (ctx.all->label_type == label_type_t::ccb)
     {
       ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
