@@ -27,3 +27,5 @@ done
 if [[ -v ISSUE_FOUND ]]; then
     echo -e "\nFormatting issues found:\n\tRun \"./utl/clang-format fix\""
 fi
+
+clang-format-diff --help
