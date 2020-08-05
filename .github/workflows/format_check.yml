@@ -1,0 +1,18 @@
+name: Check code formatting
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  check_coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Check code formatting
+        shell: bash
+        run: clang-format-diff --help
+      - name: Check code formatting
+        shell: bash
+        run: ./utl/clang-format check
+        env:
+          GH_WORKFLOW_LOGGING: true
