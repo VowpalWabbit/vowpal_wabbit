@@ -35,4 +35,6 @@ jobs:
             cat clang_format_diff.txt
             echo "::error:: Formatting issues found"
             exit 1
+          else
+            echo "No formatting issues found in the PR diff."
           fi
