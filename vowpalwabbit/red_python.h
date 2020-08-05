@@ -16,8 +16,11 @@ namespace RED_PYTHON
         public:
             //not needed added for debugging
             virtual void SetRandomNumber(int n) = 0;
-            virtual void SetLearner(void* learner) = 0;
+            virtual void SetBaseLearner(void* learner) = 0;
             virtual void ActualLearn(example *) = 0;
+            virtual void ActualPredict(example *) = 0;
+            virtual bool ShouldRegisterFinishExample() = 0;
+            virtual void ActualFinishExample(example *) = 0;
             virtual ~ExternalBinding() {};
     };
 }  // namespace RED_PYTHON

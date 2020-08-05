@@ -13,23 +13,45 @@ class Learner:
         self.vwCppBridge = vwCppBridge
 
     def learn(self, ec):
-        self.vwCppBridge.call_base_learn(ec)
+        self.vwCppBridge.call_base_learner(ec, True)
+
+    def predict(self, ec):
+        self.vwCppBridge.call_base_learner(ec, False)
 
 # compatible with Python 2 *and* 3
 ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
+def no_impl(method):
+  method.no_impl = True
+  return method
+
+# End user (pyvw library consumer) will have to create a class that
+# inherits from Copperhead and implements the custom _predict() and
+# _learn(). Optionally the user can also implement _finish_example()
+# if needed. See test_pyreduction.py for examples
 """Copperhead class"""
 class Copperhead(ABC):
     @abc.abstractmethod
-    def _predict(self):
+    def _predict(self, ec, learner):
         pass
 
     @abc.abstractmethod
     def _learn(self, ec, learner):
         pass
 
+    # this method should be implemented only if needed
+    @no_impl
+    def _finish_example(self, ec):
+        pass
+
     def _learn_convenience(self, ec, vwbridge):
         self._learn(ec, Learner(vwbridge))
+
+    def _predict_convenience(self, ec, vwbridge):
+        self._predict(ec, Learner(vwbridge))
+
+    def _is_finish_example_implemented(self):
+        return not hasattr(self._finish_example, 'no_impl')
 
 class SearchTask:
     """Search task class"""

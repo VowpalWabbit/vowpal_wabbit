@@ -13,14 +13,23 @@ using namespace VW::config;
 namespace RED_PYTHON
 {
 //useful for debugging
-void learn(ExternalBinding& redpy, single_learner& base, example& ec)
+void learn(ExternalBinding& external_binding, single_learner& base, example& ec)
 { 
-  redpy.SetLearner(&base);
-  redpy.ActualLearn(&ec);
+  external_binding.SetBaseLearner(&base);
+  external_binding.ActualLearn(&ec);
 }
 
 //useful for debugging
-void predict(ExternalBinding& c, single_learner& base, example& ec) { return; }
+void predict(ExternalBinding& external_binding, single_learner& base, example& ec) {
+  external_binding.SetBaseLearner(&base);
+  external_binding.ActualPredict(&ec);
+}
+
+void finish_example(vw& all, ExternalBinding& external_binding, example& ec) {
+  external_binding.ActualFinishExample(&ec);
+  // have to bubble this out to python?
+  VW::finish_example(all, ec);
+}
 
 }  // namespace RED_PYTHON
 using namespace RED_PYTHON;
@@ -36,10 +45,11 @@ VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
   VW::LEARNER::learner<ExternalBinding, example>& ret =
       learner<ExternalBinding, example>::init_learner(all.ext_binding.get(), base, learn, predict, 1, base->pred_type);
 
+  if (all.ext_binding->ShouldRegisterFinishExample())
+    ret.set_finish_example(finish_example);
+
   // learner should delete ext_binding
   all.ext_binding.release();
-
-  //missing finish?
 
   return make_base(ret);
 }

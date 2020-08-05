@@ -58,46 +58,67 @@ const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 
-
 void dont_delete_me(void*arg) { }
 
 class PyCppBridge : public RED_PYTHON::ExternalBinding {
   private:
       py::object* py_reduction_impl;
       void* base_learner;
+      bool register_finish_learn = false;
 
   public:
       int random_num = 0;
 
-      PyCppBridge(py::object* py_reduction_impl) : py_reduction_impl(new py::object(*py_reduction_impl)) { }
+      PyCppBridge(py::object* py_reduction_impl) : py_reduction_impl(new py::object(*py_reduction_impl))
+      { this->register_finish_learn = py::extract<bool>(call_py_impl_method("_is_finish_example_implemented"));
+      }
 
       ~PyCppBridge() { }
+
+      bool ShouldRegisterFinishExample()
+      { return this->register_finish_learn;
+      }
 
       void SetRandomNumber(int n)
       { random_num = n;
       }
 
-      void ActualLearn(example* ec)
+      template<typename... Args>
+      py::object call_py_impl_method(char const* method_name, Args&&... args)
       { try
         {
-          this->py_reduction_impl->attr("_learn_convenience")(boost::shared_ptr<example>(ec, dont_delete_me),
-                                                       boost::shared_ptr<PyCppBridge>(this, dont_delete_me));
+          return this->py_reduction_impl->attr(method_name)(std::forward<Args>(args)...);
         }
         catch (...)
         {
           // TODO: Properly translate and return Python exception. #2169
           PyErr_Print();
           PyErr_Clear();
-          THROW("Exception when calling into python method '_learn_convenience'");
+          THROW("Exception when calling into python method: " << method_name);
         }
       }
 
-      void SetLearner(void* learner){
-        this->base_learner = learner;
+      void ActualLearn(example* ec)
+      { this->call_py_impl_method("_learn_convenience", example_ptr(ec, dont_delete_me), py_cpp_bridge_ptr(this, dont_delete_me));
       }
 
-      void CallLearn(example* ec)
-      { reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learner)->learn(*ec);
+      void ActualPredict(example* ec)
+      { this->call_py_impl_method("_predict_convenience", example_ptr(ec, dont_delete_me), py_cpp_bridge_ptr(this, dont_delete_me));
+      }
+
+      void ActualFinishExample(example* ec)
+      { this->call_py_impl_method("_finish_example", example_ptr(ec, dont_delete_me));
+      }
+
+      void SetBaseLearner(void* learner)
+      { this->base_learner = learner;
+      }
+
+      void CallBaseLearner(example* ec, bool should_call_learn = true)
+      { if (should_call_learn)
+          reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learner)->learn(*ec);
+        else
+          reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learner)->predict(*ec);
       }
 };
 
@@ -983,7 +1004,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   ;
 
   py::class_<PyCppBridge, py_cpp_bridge_ptr>("reduction_bridge", py::no_init)
-  .def("call_base_learn", &PyCppBridge::CallLearn, "Call into the current base learner set in the bridge (you don't want to call this yourself!")
+  .def("call_base_learner", &PyCppBridge::CallBaseLearner, "Call into the current base learner set in the bridge (you don't want to call this yourself!")
   ;
 
   py::class_<Search::search, search_ptr>("search")
