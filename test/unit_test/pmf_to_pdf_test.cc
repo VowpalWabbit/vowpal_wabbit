@@ -96,22 +96,24 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   predict(*data, *data->_p_base, ec);
 
   float sum = 0;
-  cout << "ec.pred.p_d (PDF): " << endl;
+  std::stringstream sout;
   for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
   {
-    cout << "(" << ec.pred.prob_dist[i].left << " , " << ec.pred.prob_dist[i].right <<
-    ": " << ec.pred.prob_dist[i].pdf_value << ")" << endl;
     sum += ec.pred.prob_dist[i].pdf_value * (ec.pred.prob_dist[i].right - ec.pred.prob_dist[i].left);
   }
-  cout << "sum = " << sum << endl;
 
+  BOOST_CHECK_CLOSE(1.0f, sum,.0001f);
+  
   ec.l.cb_cont = VW::cb_continuous::continuous_label();
   ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.cb_cont.costs.clear();
   ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f}); // action, cost, prob
 
-  cout << "ec.l.cb_cont.costs after:" << endl;
-  cout << "(" << ec.l.cb_cont.costs[0].action << " , " << ec.l.cb_cont.costs[0].cost << " , " << ec.l.cb_cont.costs[0].probability << "), " << endl;
+  VW::cb_continuous::continuous_label_elm exp_val {1010.17, 0.5, 0.05};
+
+  BOOST_CHECK_EQUAL(1010.17f, ec.l.cb_cont.costs[0].action);
+  BOOST_CHECK_EQUAL(0.5f, ec.l.cb_cont.costs[0].cost);
+  BOOST_CHECK_EQUAL(0.05f, ec.l.cb_cont.costs[0].probability);
 
   learn(*data, *as_singleline(test_harness), ec);
 }
