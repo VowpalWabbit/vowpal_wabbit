@@ -89,12 +89,12 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   class reduction_output
   {
    public:
-    static void report_progress(vw& all, cats_pdf&, example& ec);
-    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::pdf& prediction);
+    static void report_progress(vw& all, const cats_pdf&, const example& ec);
+    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::pdf& prediction);
 
    private:
-    static inline bool does_example_have_label(example& ec);
-    static void print_update_cb_cont(vw& all, example& ec);
+    static inline bool does_example_have_label(const example& ec);
+    static void print_update_cb_cont(vw& all, const example& ec);
   };
 
   // Free function to tie function pointers to output class methods
@@ -106,8 +106,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     VW::finish_example(all, ec);
   }
 
-  void reduction_output::output_predictions(
-    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::pdf& prediction)
+  void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::pdf& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
@@ -117,7 +116,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
 
   // "average loss" "since last" "example counter" "example weight"
   // "current label" "current predict" "current features"
-  void reduction_output::report_progress(vw& all, cats_pdf&, example& ec)
+  void reduction_output::report_progress(vw& all, const cats_pdf&, const example& ec)
   {
     const auto& cb_cont_costs = ec.l.cb_cont.costs;
     all.sd->update(ec.test_only, does_example_have_label(ec), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost,
@@ -126,12 +125,12 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     print_update_cb_cont(all, ec);
   }
 
-  inline bool reduction_output::does_example_have_label(example& ec)
+  inline bool reduction_output::does_example_have_label(const example& ec)
   {
     return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
   }
 
-  void reduction_output::print_update_cb_cont(vw& all, example& ec)
+  void reduction_output::print_update_cb_cont(vw& all, const example& ec)
   {
     if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
     {
@@ -168,12 +167,19 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     if (!options.was_supplied("cb_explore_pdf"))
       options.insert("cb_explore_pdf", "");
     if (!options.add_or_check_options("pmf_to_pdf", num_actions))
-      THROW(error_code::options_disagree_s);
+    {
+      std::stringstream err_desc;
+      err_desc << error_code::options_disagree_s << "  Check values of pmf_to_pdf.";
+      THROW(err_desc.str());
+    }
     if (!options.was_supplied("get_pmf"))
       options.insert("get_pmf", "");
     if (!options.add_or_check_options("cats_tree", num_actions))
-      THROW(error_code::options_disagree_s);
-
+    {
+      std::stringstream err_desc;
+      err_desc << error_code::options_disagree_s << "  Check values of cats_tree.";
+      THROW(err_desc.str());
+    }
     LEARNER::base_learner* p_base = setup_base(options, all);
     auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base));
 

@@ -83,14 +83,14 @@ namespace VW { namespace cats_tree {
         nodes[i].left_id = 2 * i + 1;
         nodes[i].right_id = 2 * i + 2;
         nodes[i].is_leaf = false;
-        if (2 * i + 1 >= depth_const)
+        if (2 * i + 1 >= depth_const) {
           depth_const = (1 << (++depth + 1)) - 1;
+        }
 
         uint32_t id = 2 * i + 1;
         bool right_only = false;
         bool left_only = false;
-        if (bandwidth)
-        {
+        if (bandwidth) {
           right_only = (id == (_num_leaf_nodes/(2*bandwidth) - 1));
           left_only = (id == (_num_leaf_nodes/(bandwidth) - 2));
         }
@@ -114,7 +114,7 @@ namespace VW { namespace cats_tree {
     }
   }
 
-  uint32_t min_depth_binary_tree::internal_node_count() const { return (uint32_t)nodes.size() - _num_leaf_nodes; }
+  uint32_t min_depth_binary_tree::internal_node_count() const { return static_cast<uint32_t>(nodes.size()) - _num_leaf_nodes; }
 
   uint32_t min_depth_binary_tree::leaf_node_count() const { return _num_leaf_nodes; }
 

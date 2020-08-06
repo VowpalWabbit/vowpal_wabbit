@@ -100,7 +100,7 @@ namespace VW { namespace cb_continuous
     return strm.str();
   }
 
-  std::string to_string(continuous_label& lbl)
+  std::string to_string(const continuous_label& lbl)
   {
     std::stringstream strstream;
     strstream << "[l.cb_cont={";
