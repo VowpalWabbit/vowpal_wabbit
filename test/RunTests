@@ -664,6 +664,7 @@ sub run_tests() {
                     print "$0: test $TestNo: Valgrind failure in script ignored\n";
                     # Undo the error count change, as this failure is okay.
                     $ErrorCount--;
+                    next;
                 }
                 else {
                     my $errfile = valgrind_errfile($TestNo);
@@ -673,6 +674,10 @@ sub run_tests() {
                 warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
+            }
+            if ($opt_e) {
+                printf STDERR "exiting with full status $full_status\n";
+                exit 1;
             }
             next;
         }
