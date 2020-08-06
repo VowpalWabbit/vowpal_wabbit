@@ -675,7 +675,10 @@ sub run_tests() {
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
-            exit $full_status if ($opt_e);
+            if ($opt_e) {
+                printf STDERR "exiting with full status $full_status\n";
+                exit 1;
+            }
             next;
         }
 
