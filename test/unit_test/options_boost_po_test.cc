@@ -20,7 +20,6 @@ using namespace VW::config;
 template <size_t N = 64>
 std::array<char*, N> convert_to_command_args(char* command_line, int& argc) {
   std::array<char*, N> argv;
-  char** argv = new char*[max_args];
   argc = 0;
 
   char* current_arg = strtok(command_line, " ");
