@@ -13,4 +13,4 @@ mkdir -p build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=${BUILD_CONFIGURATION} -DWARNINGS=Off -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On
 NUM_PROCESSORS=$(cat nprocs.txt)
-make vw-bin -j ${NUM_PROCESSORS}
+make vw-bin vw-unit-test.out -j ${NUM_PROCESSORS}
