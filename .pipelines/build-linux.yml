@@ -17,8 +17,6 @@ strategy:
   maxParallel: 2
 
 steps:
-- bash: ./.scripts/linux/clang-format-check.sh
-  displayName: Clang format check
 - bash: ./.scripts/linux/build.sh $(BUILD_CONFIGURATION)
   displayName: Build C++
 - bash: ./.scripts/linux/test.sh
