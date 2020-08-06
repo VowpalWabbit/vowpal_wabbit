@@ -61,7 +61,6 @@ BOOST_AUTO_TEST_CASE(tag_without_seed__seed_extraction)
   BOOST_CHECK_EQUAL(false, extracted);
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
@@ -84,7 +83,6 @@ BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
   BOOST_CHECK_EQUAL(false, extracted);
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 
