@@ -281,8 +281,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool squarecb = false;
-  const std::string mtr = "mtr";
-  std::string type_string(mtr);
+  std::string type_string = "mtr";
 
   // Basic SquareCB parameters
   float gamma_scale = 1.;
