@@ -195,7 +195,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
   uint32_t num_actions = (uint32_t)preds.size();
 
   // The actual parameter $\gamma$ used in the SquareCB.
-  const float gamma = _gamma_scale*pow(_counter, _gamma_exponent); 
+  const float gamma = _gamma_scale * std::pow(_counter, _gamma_exponent); 
 
   // RegCB action set parameters
   const float max_range = _max_cb_cost - _min_cb_cost;
