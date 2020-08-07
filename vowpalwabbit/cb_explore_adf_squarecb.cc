@@ -34,7 +34,7 @@ namespace squarecb
 {
 struct cb_explore_adf_squarecb
 {
- private:
+private:
   // size_t _counter;
   size_t _counter;
   float _gamma_scale;     // Scale factor for SquareCB reediness parameter $\gamma$.
@@ -53,7 +53,7 @@ struct cb_explore_adf_squarecb
   std::vector<ACTION_SCORE::action_scores> _ex_as;
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
- public:
+public:
   cb_explore_adf_squarecb(
       float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost);
   ~cb_explore_adf_squarecb() = default;
@@ -62,7 +62,7 @@ struct cb_explore_adf_squarecb
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
- private:
+private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
@@ -94,8 +94,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
   const float maxw = (std::min)(fhat / sens, FLT_MAX);
 
   // If the objective value for maxw satisfies the delta constraint, we can just take this and skip the binary search.
-  if (maxw * fhat * fhat <= delta)
-    return maxw;
+  if (maxw * fhat * fhat <= delta) return maxw;
 
   // Upper and lower bounds on w for binary search.
   float l = 0;
@@ -114,8 +113,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol)
-      break;
+    if (fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;
@@ -140,10 +138,7 @@ void cb_explore_adf_squarecb::get_cost_ranges(
   }
 
   // set regressor predictions
-  for (const auto& as : _ex_as[0])
-  {
-    examples[as.action]->pred.scalar = as.score;
-  }
+  for (const auto& as : _ex_as[0]) { examples[as.action]->pred.scalar = as.score; }
 
   const float cmin = _min_cb_cost;
   const float cmax = _max_cb_cost;
@@ -161,24 +156,19 @@ void cb_explore_adf_squarecb::get_cost_ranges(
     {
       w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
       _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
-      if (_min_costs[a] > cmax)
-        _min_costs[a] = cmax;
+      if (_min_costs[a] > cmax) _min_costs[a] = cmax;
     }
 
     if (!min_only)
     {
       ec->l.simple.label = cmax + 1;
       sens = base.sensitivity(*ec);
-      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens))
-      {
-        _max_costs[a] = cmax;
-      }
+      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens)) { _max_costs[a] = cmax; }
       else
       {
         w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
         _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
-        if (_max_costs[a] < cmin)
-          _max_costs[a] = cmin;
+        if (_max_costs[a] < cmin) _max_costs[a] = cmin;
       }
     }
   }
@@ -199,8 +189,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
     for (size_t i = 0; i < examples.size() - 1; ++i)
     {
       CB::label& ld = examples[i]->l.cb;
-      if (ld.costs.size() == 1)
-        ld.costs[0].probability = 1.f;  // no importance weighting
+      if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
     }
 
     VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
@@ -241,8 +230,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
       float pa = 0;
       for (size_t a = 0; a < num_actions; ++a)
       {
-        if (a == a_min)
-          continue;
+        if (a == a_min) continue;
         pa = 1. / (num_actions + gamma * (preds[a].score - min_cost));
         preds[a].score = pa;
         total_weight += pa;
@@ -255,8 +243,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
 
       float min_max_cost = FLT_MAX;
       for (size_t a = 0; a < num_actions; ++a)
-        if (_max_costs[a] < min_max_cost)
-          min_max_cost = _max_costs[a];
+        if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
 
       size_t a_min = 0;
       size_t num_surviving_actions = 0;
@@ -276,14 +263,10 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
       // // Compute probabilities for surviving actions using SquareCB rule.
       for (size_t a = 0; a < num_actions; ++a)
       {
-        if (_min_costs[preds[a].action] > min_max_cost)
-        {
-          preds[a].score = 0;
-        }
+        if (_min_costs[preds[a].action] > min_max_cost) { preds[a].score = 0; }
         else
         {
-          if (a == a_min)
-            continue;
+          if (a == a_min) continue;
           pa = 1. / (num_surviving_actions + gamma * (preds[a].score - min_cost));
           preds[a].score = pa;
           total_weight += pa;
@@ -344,14 +327,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
   options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !options.was_supplied("squarecb"))
-    return nullptr;
+  if (!cb_explore_adf_option || !options.was_supplied("squarecb")) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
   if (type_string != "mtr")
   {
     all.trace_message << "warning: bad cb_type, SquareCB only supports mtr; resetting to mtr." << std::endl;
