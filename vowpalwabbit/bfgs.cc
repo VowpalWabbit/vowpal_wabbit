@@ -677,7 +677,7 @@ int process_pass(vw& all, bfgs& b)
       b.step_size = 0.5;
       float d_mag = direction_magnitude(all);
       b.t_end_global = std::chrono::system_clock::now();
-      b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
+      b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
       if (!all.logger.quiet)
         fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
       b.predictions.clear();
@@ -735,7 +735,7 @@ int process_pass(vw& all, bfgs& b)
     {
       // curvature violated, or we stepped too far last time: step back
       b.t_end_global = std::chrono::system_clock::now();
-      b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
+      b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
       float ratio = (b.step_size == 0.f) ? 0.f : (float)new_step / (float)b.step_size;
       if (!all.logger.quiet)
         fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
@@ -786,7 +786,7 @@ int process_pass(vw& all, bfgs& b)
       {
         float d_mag = direction_magnitude(all);
         b.t_end_global = std::chrono::system_clock::now();
-        b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
+        b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
         if (!all.logger.quiet)
           fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
         b.predictions.clear();
@@ -828,7 +828,7 @@ int process_pass(vw& all, bfgs& b)
     b.predictions.clear();
     update_weight(all, b.step_size);
     b.t_end_global = std::chrono::system_clock::now();
-    b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
+    b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
     if (!all.logger.quiet)
       fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
@@ -845,7 +845,7 @@ int process_pass(vw& all, bfgs& b)
     // preconditioner_to_regularizer(all, b, all.l2_lambda);
   }
   b.t_end_global = std::chrono::system_clock::now();
-  b.net_time = std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count();
+  b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
   if (all.save_per_pass)
     save_predictor(all, all.final_regressor_name, b.current_pass);

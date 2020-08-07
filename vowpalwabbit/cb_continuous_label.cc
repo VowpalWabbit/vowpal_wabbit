@@ -9,6 +9,7 @@
 #include "vw_exception.h"
 #include "cb_label_parser.h"
 #include "cb_continuous_label.h"
+#include "debug_print.h"
 
 using namespace LEARNER;
 using std::endl;

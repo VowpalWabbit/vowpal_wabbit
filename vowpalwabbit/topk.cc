@@ -92,7 +92,7 @@ void print_result(
     ssize_t len = ss.str().size();
     auto t = file_descriptor->write(ss.str().c_str(), len);
     if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
