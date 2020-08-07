@@ -17,7 +17,8 @@
 #include <cmath>
 
 /*
-This file implements the SquareCB algorithm/reduction (Foster and Rakhlin (2020), https://arxiv.org/abs/2002.04926), with the VW learner as the base algorithm.
+This file implements the SquareCB algorithm/reduction (Foster and Rakhlin (2020), https://arxiv.org/abs/2002.04926),
+with the VW learner as the base algorithm.
 */
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
@@ -36,8 +37,8 @@ struct cb_explore_adf_squarecb
  private:
   // size_t _counter;
   size_t _counter;
-  float _gamma_scale;	// Scale factor for SquareCB reediness parameter $\gamma$.
-  float _gamma_exponent; // Exponent on $t$ for SquareCB reediness parameter $\gamma$.
+  float _gamma_scale;     // Scale factor for SquareCB reediness parameter $\gamma$.
+  float _gamma_exponent;  // Exponent on $t$ for SquareCB reediness parameter $\gamma$.
 
   // Parameters and data structures for RegCB action set computation
   bool _elim;
@@ -52,10 +53,9 @@ struct cb_explore_adf_squarecb
   std::vector<ACTION_SCORE::action_scores> _ex_as;
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
-
  public:
-  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim,
-			  float c0, float min_cb_cost, float max_cb_cost);
+  cb_explore_adf_squarecb(
+      float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost);
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -72,20 +72,27 @@ struct cb_explore_adf_squarecb
 
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(
     float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost)
-    : _counter(0), _gamma_scale(gamma_scale), _gamma_exponent(gamma_exponent),
-      _elim(elim), _c0(c0), _min_cb_cost(min_cb_cost), _max_cb_cost(max_cb_cost)
+    : _counter(0)
+    , _gamma_scale(gamma_scale)
+    , _gamma_exponent(gamma_exponent)
+    , _elim(elim)
+    , _c0(c0)
+    , _min_cb_cost(min_cb_cost)
+    , _max_cb_cost(max_cb_cost)
 {
 }
 
 // TODO: same as cs_active.cc and cb_explore_adf_regcb.cc, move to shared place
 float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens, float tol)
 {
-    // Binary search to find the largest weight w such that w*(fhat^2 - (fhat - w*sens)^2) \leq delta.
-  // Implements binary search procedure described at the end of Section 7.1 in https://arxiv.org/pdf/1703.01014.pdf.
+  /*
+     Binary search to find the largest weight w such that w*(fhat^2 - (fhat - w*sens)^2) \leq delta.
+     Implements binary search procedure described at the end of Section 7.1 in https://arxiv.org/pdf/1703.01014.pdf.
+  */
 
   // We are always guaranteed that the solution to the problem above lies in (0, maxw), as long as fhat \geq 0.
   const float maxw = (std::min)(fhat / sens, FLT_MAX);
-  
+
   // If the objective value for maxw satisfies the delta constraint, we can just take this and skip the binary search.
   if (maxw * fhat * fhat <= delta)
     return maxw;
@@ -93,7 +100,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
   // Upper and lower bounds on w for binary search.
   float l = 0;
   float u = maxw;
-  // Binary search variable. 
+  // Binary search variable.
   float w;
   // Value for w.
   float v;
@@ -115,7 +122,8 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
 }
 
 // TODO: Same as cb_explore_adf_regcb.cc
-void cb_explore_adf_squarecb::get_cost_ranges(float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
+void cb_explore_adf_squarecb::get_cost_ranges(
+    float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
@@ -205,7 +213,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
   uint32_t num_actions = (uint32_t)preds.size();
 
   // The actual parameter $\gamma$ used in the SquareCB.
-  const float gamma = _gamma_scale * std::pow(_counter, _gamma_exponent); 
+  const float gamma = _gamma_scale * std::pow(_counter, _gamma_exponent);
 
   // RegCB action set parameters
   const float max_range = _max_cb_cost - _min_cb_cost;
@@ -214,76 +222,76 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
 
   // SquareCB Exploration
   if (!is_learn)
+  {
+    if (!_elim)  // Vanilla variant (perform SquareCB exploration over all actions)
     {
-      if (!_elim) // Vanilla variant (perform SquareCB exploration over all actions)
-	{
-	  size_t a_min = 0;
-	  float min_cost = preds[0].score;
-	  // Compute highest-scoring action
-	  for(size_t a = 0; a < num_actions; ++a)
-	    {
-	      if(preds[a].score < min_cost)
-		{
-		  a_min = a;
-		  min_cost = preds[a].score;
-		}
-	    }
-	  // Compute probabilities using SquareCB rule.
-	  float total_weight = 0;
-	  float pa = 0;
-	  for(size_t a = 0; a < num_actions; ++a)
-	    {
-	      if (a == a_min)
-		continue;
-	      pa = 1./(num_actions + gamma*(preds[a].score-min_cost));
-	      preds[a].score = pa;
-	      total_weight += pa;
-	    }
-	  preds[a_min].score = 1.f-total_weight;
-	}
-      else // elimination variant
-	{
-	  get_cost_ranges(delta, base, examples, /*min_only=*/ false);
-	  
-	  float min_max_cost = FLT_MAX;
-	  for (size_t a = 0; a < num_actions; ++a)
-	    if (_max_costs[a] < min_max_cost)
-	      min_max_cost = _max_costs[a];
-
-	  size_t a_min = 0;
-	  size_t num_surviving_actions = 0;
-	  float min_cost = FLT_MAX;
-	  // Compute plausible / surviving actions.
-	  for(size_t a = 0; a < num_actions; ++a)
-	    {
-	      if(preds[a].score < min_cost && _min_costs[preds[a].action] <= min_max_cost)
-		{
-		  a_min = a;
-		  min_cost = preds[a].score;
-		  num_surviving_actions += 1;
-		}
-	    }
-	  float total_weight = 0;
-	  float pa = 0;
-	  // // Compute probabilities for surviving actions using SquareCB rule.
-	  for(size_t a = 0; a < num_actions; ++a)
-	    {
-	      if (_min_costs[preds[a].action] > min_max_cost)
-		{
-		  preds[a].score = 0;
-		}
-	      else
-		{
-		  if (a == a_min)
-		    continue;
-		  pa = 1./(num_surviving_actions + gamma*(preds[a].score-min_cost));
-		  preds[a].score = pa;
-		  total_weight += pa;
-		}
-	    }
-	  preds[a_min].score = 1.f-total_weight;
-	}
+      size_t a_min = 0;
+      float min_cost = preds[0].score;
+      // Compute highest-scoring action
+      for (size_t a = 0; a < num_actions; ++a)
+      {
+        if (preds[a].score < min_cost)
+        {
+          a_min = a;
+          min_cost = preds[a].score;
+        }
+      }
+      // Compute probabilities using SquareCB rule.
+      float total_weight = 0;
+      float pa = 0;
+      for (size_t a = 0; a < num_actions; ++a)
+      {
+        if (a == a_min)
+          continue;
+        pa = 1. / (num_actions + gamma * (preds[a].score - min_cost));
+        preds[a].score = pa;
+        total_weight += pa;
+      }
+      preds[a_min].score = 1.f - total_weight;
     }
+    else  // elimination variant
+    {
+      get_cost_ranges(delta, base, examples, /*min_only=*/false);
+
+      float min_max_cost = FLT_MAX;
+      for (size_t a = 0; a < num_actions; ++a)
+        if (_max_costs[a] < min_max_cost)
+          min_max_cost = _max_costs[a];
+
+      size_t a_min = 0;
+      size_t num_surviving_actions = 0;
+      float min_cost = FLT_MAX;
+      // Compute plausible / surviving actions.
+      for (size_t a = 0; a < num_actions; ++a)
+      {
+        if (preds[a].score < min_cost && _min_costs[preds[a].action] <= min_max_cost)
+        {
+          a_min = a;
+          min_cost = preds[a].score;
+          num_surviving_actions += 1;
+        }
+      }
+      float total_weight = 0;
+      float pa = 0;
+      // // Compute probabilities for surviving actions using SquareCB rule.
+      for (size_t a = 0; a < num_actions; ++a)
+      {
+        if (_min_costs[preds[a].action] > min_max_cost)
+        {
+          preds[a].score = 0;
+        }
+        else
+        {
+          if (a == a_min)
+            continue;
+          pa = 1. / (num_surviving_actions + gamma * (preds[a].score - min_cost));
+          preds[a].score = pa;
+          total_weight += pa;
+        }
+      }
+      preds[a_min].score = 1.f - total_weight;
+    }
+  }
 }
 
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
@@ -302,22 +310,38 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   float c0 = 0.;
   float min_cb_cost = 0.;
   float max_cb_cost = 0.;
-  
+
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
-    .add(make_option("cb_explore_adf", cb_explore_adf_option)
-	 .keep()
-	 .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-    .add(make_option("squarecb", squarecb).keep().help("SquareCB exploration"))
-    .add(make_option("gamma_scale", gamma_scale).keep().default_value(10.f).help("Sets SquareCB greediness parameter to gamma=[gamma_scale]*[num examples]^1/2"))
-    .add(make_option("gamma_exponent", gamma_exponent).default_value(.5f).help("Exponent on [num examples] in SquareCB greediness parameter gamma."))
-    .add(make_option("elim", elim).keep().help("Only perform SquareCB exploration over plausible actions (computed via RegCB strategy)"))
-    .add(make_option("mellowness", c0).keep().default_value(0.001f).help("Mellowness parameter c_0 for computing plausible action set. Only used with --elim"))
-    .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("Lower bound on cost. Only used with --elim"))
-    .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("Upper bound on cost. Only used with --elim"))
-    .add(make_option("cb_type", type_string)
-	 .keep()
-	 .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
+      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+               .keep()
+               .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
+      .add(make_option("squarecb", squarecb).keep().help("SquareCB exploration"))
+      .add(make_option("gamma_scale", gamma_scale)
+               .keep()
+               .default_value(10.f)
+               .help("Sets SquareCB greediness parameter to gamma=[gamma_scale]*[num examples]^1/2"))
+      .add(make_option("gamma_exponent", gamma_exponent)
+               .default_value(.5f)
+               .help("Exponent on [num examples] in SquareCB greediness parameter gamma."))
+      .add(make_option("elim", elim)
+               .keep()
+               .help("Only perform SquareCB exploration over plausible actions (computed via RegCB strategy)"))
+      .add(make_option("mellowness", c0)
+               .keep()
+               .default_value(0.001f)
+               .help("Mellowness parameter c_0 for computing plausible action set. Only used with --elim"))
+      .add(make_option("cb_min_cost", min_cb_cost)
+               .keep()
+               .default_value(0.f)
+               .help("Lower bound on cost. Only used with --elim"))
+      .add(make_option("cb_max_cost", max_cb_cost)
+               .keep()
+               .default_value(1.f)
+               .help("Upper bound on cost. Only used with --elim"))
+      .add(make_option("cb_type", type_string)
+               .keep()
+               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
   options.add_and_parse(new_options);
 
   if (!cb_explore_adf_option || !options.was_supplied("squarecb"))
