@@ -48,9 +48,9 @@ void print_update(vw& all, std::vector<example*>& slots, const VW::decision_scor
 
 namespace VW
 {
-void print_decision_scores(int f, const VW::decision_scores_t& decision_scores)
+void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores)
 {
-  if (f >= 0)
+  if (f != nullptr)
   {
     std::stringstream ss;
     for (auto slot : decision_scores)
@@ -65,10 +65,10 @@ void print_decision_scores(int f, const VW::decision_scores_t& decision_scores)
     }
     const auto str = ss.str();
     ssize_t len = str.size();
-    ssize_t t = io_buf::write_file_or_socket(f, str.c_str(), (unsigned int)len);
+    ssize_t t = f->write(str.c_str(), (unsigned int)len);
     if (t != len)
     {
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
     }
   }
 }

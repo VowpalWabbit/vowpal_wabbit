@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
+
 #include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
@@ -21,6 +23,7 @@
 #include "slates_label.h"
 #include "decision_scores.h"
 #include <vector>
+#include <iostream>
 
 typedef union
 {
@@ -52,37 +55,53 @@ typedef union
   float prob;  // for --probabilities --csoaa_ldf=mc
 } polyprediction;
 
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
 {
+  example();
+  ~example();
+
+  example(const example&) = delete;
+  example& operator=(const example&) = delete;
+  example(example&& other) noexcept;
+  example& operator=(example&& other) noexcept;
+
+  /// Example contains unions for label and prediction. These do not get cleaned
+  /// up by the constructor because the type is not known at that time. To
+  /// ensure correct cleanup delete_unions must be explicitly called.
+  void delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*));
+
   // input fields
   polylabel l;
 
   // output prediction
   polyprediction pred;
 
-  float weight;       // a relative importance weight for the example, default = 1
-  v_array<char> tag;  // An identifier for the example.
-  size_t example_counter;
+  float weight = 1.f;  // a relative importance weight for the example, default = 1
+  v_array<char> tag;   // An identifier for the example.
+  size_t example_counter = 0;
 
   // helpers
-  size_t num_features;       // precomputed, cause it's fast&easy.
-  float partial_prediction;  // shared data for prediction.
-  float updated_prediction;  // estimated post-update prediction.
-  float loss;
-  float total_sum_feat_sq;  // precomputed, cause it's kind of fast & easy.
-  float confidence;
-  features*
-      passthrough;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
+  size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  float partial_prediction = 0.f;  // shared data for prediction.
+  float updated_prediction = 0.f;  // estimated post-update prediction.
+  float loss = 0.f;
+  float total_sum_feat_sq = 0.f;  // precomputed, cause it's kind of fast & easy.
+  float confidence = 0.f;
+  features* passthrough =
+      nullptr;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
-  bool test_only;
-  bool end_pass;  // special example indicating end of pass.
-  bool sorted;    // Are the features sorted or not?
+  bool test_only = false;
+  bool end_pass = false;  // special example indicating end of pass.
+  bool sorted = false;    // Are the features sorted or not?
 
-  VW_DEPRECATED("in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. Standalone examples are by definition always in use.")
+  VW_DEPRECATED(
+      "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
+      "Standalone examples are by definition always in use.")
   bool in_use = true;
 };
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
 
 struct vw;
 

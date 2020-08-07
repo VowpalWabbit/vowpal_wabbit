@@ -1,0 +1,40 @@
+name: Check code formatting
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check_code_formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install clang-format
+        # This is only needed if the diff check runs as it installs 'clang-format-diff'
+        # 'clang-format' is available by default
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install clang-format
+      - name: Check code formatting for codebase
+        shell: bash
+        run: ./utl/clang-format check
+        env:
+          GH_WORKFLOW_LOGGING: true
+      - name: Check code formatting for diff
+        # Only run the diff check for pull requests
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git diff origin/master HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 > clang_format_diff.txt
+          if [ -s clang_format_diff.txt ]; then
+            cat clang_format_diff.txt
+            echo "::error:: Formatting issues found"
+            exit 1
+          else
+            echo "No formatting issues found in the PR diff."
+          fi

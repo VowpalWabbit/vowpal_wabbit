@@ -10,6 +10,7 @@
 #include "options.h"
 #include "parse_args.h"
 #include "vw.h"
+#include "scope_exit.h"
 
 #include <iterator>
 
@@ -50,20 +51,28 @@ void predict_or_learn(sfm_data&, VW::LEARNER::multi_learner& base, multi_ex& ec_
     // merge sequences
     for (auto& example : ec_seq) LabelDict::add_example_namespaces_from_example(*example, *shared_example);
     std::swap(ec_seq[0]->pred, shared_example->pred);
+    std::swap(ec_seq[0]->tag, shared_example->tag);
   }
+
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [has_example_header, &shared_example, &ec_seq]
+    {
+      if (has_example_header)
+      {
+        for (auto& example : ec_seq) LabelDict::del_example_namespaces_from_example(*example, *shared_example);
+        std::swap(shared_example->pred, ec_seq[0]->pred);
+        std::swap(shared_example->tag, ec_seq[0]->tag);
+        ec_seq.insert(ec_seq.begin(), shared_example);
+      }
+    });
+
   if (ec_seq.size() == 0)
     return;
   if (is_learn)
     base.learn(ec_seq);
   else
     base.predict(ec_seq);
-
-  if (has_example_header)
-  {
-    for (auto& example : ec_seq) LabelDict::del_example_namespaces_from_example(*example, *shared_example);
-    std::swap(shared_example->pred, ec_seq[0]->pred);
-    ec_seq.insert(ec_seq.begin(), shared_example);
-  }
 }
 
 VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)

@@ -4,7 +4,134 @@
 #include <cstdint>
 #include <algorithm>
 
+#include "example.h"
 #include "gd.h"
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+example::example()
+{
+  memset(&l, 0, sizeof(polylabel));
+  memset(&pred, 0, sizeof(polyprediction));
+  tag = v_init<char>();
+}
+VW_WARNING_STATE_POP
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+example::~example()
+{
+  tag.delete_v();
+  if (passthrough)
+  {
+    delete passthrough;
+    passthrough = nullptr;
+  }
+}
+VW_WARNING_STATE_POP
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+example::example(example&& other) noexcept
+    : example_predict(std::move(other))
+    , l(other.l)
+    , pred(other.pred)
+    , weight(other.weight)
+    , tag(std::move(other.tag))
+    , example_counter(other.example_counter)
+    , num_features(other.num_features)
+    , partial_prediction(other.partial_prediction)
+    , updated_prediction(other.updated_prediction)
+    , loss(other.loss)
+    , total_sum_feat_sq(other.total_sum_feat_sq)
+    , confidence(other.confidence)
+    , passthrough(other.passthrough)
+    , test_only(other.test_only)
+    , end_pass(other.end_pass)
+    , sorted(other.sorted)
+    , in_use(other.in_use)
+{
+  other.weight = 1.f;
+  auto& other_tag = other.tag;
+  other_tag._begin = nullptr;
+  other_tag._end = nullptr;
+  other_tag.end_array = nullptr;
+  other.example_counter = 0;
+  other.num_features = 0;
+  other.partial_prediction = 0.f;
+  other.updated_prediction = 0.f;
+  other.loss = 0.f;
+  other.total_sum_feat_sq = 0.f;
+  other.confidence = 0.f;
+  other.passthrough = nullptr;
+  other.test_only = false;
+  other.end_pass = false;
+  other.sorted = false;
+  other.in_use = false;
+}
+VW_WARNING_STATE_POP
+
+example& example::operator=(example&& other) noexcept
+{
+  example_predict::operator=(std::move(other));
+  l = other.l;
+  pred = other.pred;
+  weight = other.weight;
+  tag = std::move(other.tag);
+  example_counter = other.example_counter;
+  num_features = other.num_features;
+  partial_prediction = other.partial_prediction;
+  updated_prediction = other.updated_prediction;
+  loss = other.loss;
+  total_sum_feat_sq = other.total_sum_feat_sq;
+  confidence = other.confidence;
+  passthrough = other.passthrough;
+  test_only = other.test_only;
+  end_pass = other.end_pass;
+  sorted = other.sorted;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+  in_use = other.in_use;
+VW_WARNING_STATE_POP
+
+  other.weight = 1.f;
+
+  // We need to null out all the v_arrays to prevent double freeing during moves
+  auto& other_tag = other.tag;
+  other_tag._begin = nullptr;
+  other_tag._end = nullptr;
+  other_tag.end_array = nullptr;
+
+  other.example_counter = 0;
+  other.num_features = 0;
+  other.partial_prediction = 0.f;
+  other.updated_prediction = 0.f;
+  other.loss = 0.f;
+  other.total_sum_feat_sq = 0.f;
+  other.confidence = 0.f;
+  other.passthrough = nullptr;
+  other.test_only = false;
+  other.end_pass = false;
+  other.sorted = false;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+  other.in_use = false;
+VW_WARNING_STATE_POP
+  return *this;
+}
+
+void example::delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*))
+{
+  if (delete_label)
+  {
+    delete_label(&l);
+  }
+
+  if (delete_prediction)
+  {
+    delete_prediction(&pred);
+  }
+}
 
 float collision_cleanup(features& fs)
 {
@@ -214,20 +341,7 @@ example* alloc_examples(size_t, size_t count = 1)
 
 void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
 {
-  if (delete_label)
-    delete_label(&ec.l);
-
-  if (delete_prediction)
-    delete_prediction(&ec.pred);
-
-  ec.tag.delete_v();
-
-  if (ec.passthrough)
-  {
-    delete ec.passthrough;
-  }
-
-  ec.indices.delete_v();
+  ec.delete_unions(delete_label, delete_prediction);
   ec.~example();
 }
 
@@ -236,8 +350,7 @@ void clean_example(vw&, example&, bool rewind);
 
 void finish_example(vw& all, multi_ex& ec_seq)
 {
-  for (example* ecc : ec_seq)
-    VW::finish_example(all, *ecc);
+  for (example* ecc : ec_seq) VW::finish_example(all, *ecc);
 }
 
 void return_multiple_example(vw& all, v_array<example*>& examples)

@@ -44,7 +44,8 @@ my $ErrorCount = 0;
 # word by word:
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
-my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
+# 160 used to sufficient but there are new tests with VERY wide outputs - so it needs to be huge...
+my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 1500';
 $WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
@@ -674,7 +675,10 @@ sub run_tests() {
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
-            exit $full_status if ($opt_e);
+            if ($opt_e) {
+                printf STDERR "exiting with full status $full_status\n";
+                exit 1;
+            }
             next;
         }
 
@@ -1827,19 +1831,51 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.readable.txt
 
-# Test 211: cbify adf, squarecb
+# Test 211: cb_explore_adf with rnd exploration
+{VW} --cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict
+    train-sets/ref/cbe_adf_rnd.stderr
+    pred-sets/ref/cbe_adf_rnd.predict
+
+# Test 212: Slates sanity check
+{VW} --slates -d train-sets/slates_simple.txt -p slates_simple.predict
+    train-sets/ref/slates_simple.stderr
+    pred-sets/ref/slates_simple.predict
+
+# Test 213: Regression test for crash on unlabelled data
+{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
+    train-sets/ref/slates_simple_unlabeled.stderr
+
+# Test 214: check plt training
+{VW} -d train-sets/multilabel -f plt.model --plt 10 --sgd
+    train-sets/ref/plt_multilabel.stderr
+
+# Test 215: check default plt prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict
+    train-sets/ref/plt_multilabel_predict.stderr
+    pred-sets/ref/plt_multilabel.predict
+
+# Test 216: check plt top-1 prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
+    train-sets/ref/plt_top1_multilabel_predict.stderr
+    pred-sets/ref/plt_top1_multilabel.predict
+
+# Test 217: daemon test with json
+./daemon-test.sh --json
+    test-sets/ref/vw-daemon.stdout
+    
+# Test 218: cbify adf, squarecb
 {VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --gamma_scale 500 -d train-sets/multiclass
     train-sets/ref/cbify_squarecb.stderr
 
-# Test 212: cbify adf, squarecb-elim
+# Test 219: cbify adf, squarecb-elim
 {VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001 -d train-sets/multiclass
     train-sets/ref/cbify_squarecb_elim.stderr
 
-# Test 213: cbify ldf, squarecb
+# Test 220: cbify ldf, squarecb
 {VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --gamma_scale 500
     train-sets/ref/cbify_ldf_squarecb.stderr
 
-# Test 214: cbify ldf, squarecb-elim
+# Test 221: cbify ldf, squarecb-elim
 {VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001
     train-sets/ref/cbify_ldf_squarecb_elim.stderr
 

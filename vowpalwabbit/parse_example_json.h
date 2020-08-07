@@ -18,8 +18,14 @@
 #pragma managed(push, off)
 #endif
 
+// RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
+// polluted by it.
+// https://github.com/Tencent/rapidjson/issues/1700
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
+VW_WARNING_STATE_POP
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #pragma managed(pop)
@@ -1471,6 +1477,12 @@ template <bool audit>
 void read_line_json(
     vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
 {
+  if (all.label_type == label_type_t::slates)
+  {
+    parse_slates_example_json<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context);
+    return;
+  }
+
   // string line_copy(line);
   // destructive parsing
   InsituStringStream ss(line);
@@ -1523,7 +1535,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   if(all.label_type == label_type_t::slates)
   {
-    parse_slates_example<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
+    parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
     apply_pdrop(all, data->probabilityOfDrop, examples);
     return;
   }
@@ -1588,8 +1600,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0)
     {
-      // VW::return_multiple_example(*all, examples);
-      // examples.push_back(&VW::get_unused_example(all));
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
       return false;
     }
   }
@@ -1600,7 +1612,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
   return true;
 }
 
-inline void prepare_for_learner(vw* all, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1630,8 +1642,6 @@ void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<exampl
     examples.push_back(&VW::get_unused_example(all));
     return;
   }
-
-  prepare_for_learner(all, examples);
 }
 
 template <bool audit>
@@ -1655,7 +1665,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
     reread = !parse_line_json<audit>(all, line, num_chars, examples);
   } while (reread);
 
-  prepare_for_learner(all, examples);
+  append_empty_newline_example_for_driver(all, examples);
 
   return 1;
 }

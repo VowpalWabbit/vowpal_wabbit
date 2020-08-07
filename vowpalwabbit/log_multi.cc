@@ -21,22 +21,19 @@ class node_pred
   uint32_t label;
   uint32_t label_count;
 
-  bool operator==(node_pred v) { return (label == v.label); }
+  bool operator==(node_pred v) const { return (label == v.label); }
 
-  bool operator>(node_pred v)
+  bool operator>(node_pred v) const
   {
-    if (label > v.label)
-      return true;
-    return false;
+    return label > v.label;
   }
 
-  bool operator<(node_pred v)
+  bool operator<(node_pred v) const
   {
-    if (label < v.label)
-      return true;
-    return false;
+    return label < v.label;
   }
 
+  node_pred() = default;
   node_pred(uint32_t l)
   {
     label = l;
@@ -47,7 +44,9 @@ class node_pred
   }
 };
 
-typedef struct
+static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
+
+struct node
 {
   // everyone has
   uint32_t parent;           // the parent node
@@ -68,7 +67,7 @@ typedef struct
   // leaf has
   uint32_t max_count;        // the number of samples of the most common label
   uint32_t max_count_label;  // the most common label
-} node;
+};
 
 struct log_multi
 {
@@ -353,7 +352,7 @@ void save_node_stats(log_multi& d)
   uint32_t total;
   log_multi* b = &d;
 
-  fp = fopen("atxm_debug.csv", "wt");
+  VW::file_open(&fp, "atxm_debug.csv", "wt");
 
   for (i = 0; i < b->nodes.size(); i++)
   {
@@ -395,7 +394,7 @@ void save_node_stats(log_multi& d)
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     msg << "k = " << b.k;
@@ -427,7 +426,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
       msg << " parent = " << n.parent;
       bin_text_read_write_fixed(model_file, (char*)&n.parent, sizeof(n.parent), "", read, msg, text);
 
-      uint32_t temp = (uint32_t)n.preds.size();
+      temp = (uint32_t)n.preds.size();
 
       msg << " preds = " << temp;
       bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
