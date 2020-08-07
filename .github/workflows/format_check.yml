@@ -30,10 +30,14 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          git diff origin/master HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 > clang_format_diff.txt
+          git diff origin/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 > clang_format_diff.txt
           if [ -s clang_format_diff.txt ]; then
             cat clang_format_diff.txt
             echo "::error:: Formatting issues found"
+            echo "To fix:"
+            echo -e "\tEnsure there is an upstream remote that points to: https://github.com/VowpalWabbit/vowpal_wabbit.git"
+            echo -e "\tRun: \"git fetch upstream\""
+            echo -e "\tRun: \"git diff upstream/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 -i\""
             exit 1
           else
             echo "No formatting issues found in the PR diff."
