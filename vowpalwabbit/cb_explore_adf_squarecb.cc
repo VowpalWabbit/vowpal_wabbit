@@ -77,18 +77,28 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(
 {
 }
 
-  // TODO: same as cs_active.cc and cb_explore_adf_regcb.cc, move to shared place
+// TODO: same as cs_active.cc and cb_explore_adf_regcb.cc, move to shared place
 float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens, float tol)
 {
-  const float maxw = (std::min)(fhat / sens, FLT_MAX);
+    // Binary search to find the largest weight w such that w*(fhat^2 - (fhat - w*sens)^2) \leq delta.
+  // Implements binary search procedure described at the end of Section 7.1 in https://arxiv.org/pdf/1703.01014.pdf.
 
+  // We are always guaranteed that the solution to the problem above lies in (0, maxw), as long as fhat \geq 0.
+  const float maxw = (std::min)(fhat / sens, FLT_MAX);
+  
+  // If the objective value for maxw satisfies the delta constraint, we can just take this and skip the binary search.
   if (maxw * fhat * fhat <= delta)
     return maxw;
 
+  // Upper and lower bounds on w for binary search.
   float l = 0;
   float u = maxw;
-  float w, v;
+  // Binary search variable. 
+  float w;
+  // Value for w.
+  float v;
 
+  // Standard binary search given the objective described above.
   for (int iter = 0; iter < B_SEARCH_MAX_ITER; iter++)
   {
     w = (u + l) / 2.f;
@@ -318,10 +328,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   {
     options.insert("cb_adf", "");
   }
-  if (type_string != mtr)
+  if (type_string != "mtr")
   {
     all.trace_message << "warning: bad cb_type, SquareCB only supports mtr; resetting to mtr." << std::endl;
-    options.replace("cb_type", mtr);
+    options.replace("cb_type", "mtr");
   }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
