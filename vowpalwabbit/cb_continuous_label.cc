@@ -39,7 +39,7 @@ namespace VW { namespace cb_continuous
   // Begin: parse a,c,p label format
   void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
   {
-    auto ld = static_cast<continuous_label*>(v);
+    auto* ld = static_cast<continuous_label*>(v);
     ld->costs.clear();
     for (auto word : words)
     {
@@ -47,7 +47,7 @@ namespace VW { namespace cb_continuous
       tokenize(':', word, p->parse_name);
 
       if (p->parse_name.empty() || p->parse_name.size() > 3)
-        THROW("malformed cost specification: " << p->parse_name);
+        THROW("malformed cost specification: " << "p->parse_name");
 
       f.action = float_of_string(p->parse_name[0]);
 
@@ -101,7 +101,7 @@ namespace VW { namespace cb_continuous
     return strm.str();
   }
 
-  std::string to_string(continuous_label& lbl)
+  std::string to_string(const continuous_label& lbl)
   {
     std::stringstream strstream;
     strstream << "[l.cb_cont={";

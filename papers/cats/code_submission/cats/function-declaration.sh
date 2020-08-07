@@ -2,7 +2,7 @@
 
 run_offline(){
 
-  # parameteres for all the experiments
+  # parameters for all the experiments
   pass=1
   timee=5000
   pp=10000
@@ -67,7 +67,7 @@ run_offline(){
 
 run_online(){
 
-  # parameteres for all the experiments
+  # parameters for all the experiments
   pass=1
   timee=5000
   pp=10000

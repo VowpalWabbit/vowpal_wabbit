@@ -17,7 +17,6 @@
 #endif
 #endif
 
-#include <string>
 #include "gd.h"
 #include "accumulate.h"
 #include "reductions.h"
@@ -28,7 +27,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-using std::endl;
 
 // todo:
 // 4. Factor various state out of vw&

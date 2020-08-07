@@ -16,7 +16,7 @@ namespace VW { namespace cb_continuous
     float cost;         // the cost of this class
     float probability;  // new for bandit setting, specifies the probability the data collection policy chose this class
 
-    bool operator==(continuous_label_elm j) { return action == j.action; }
+    bool operator==(const continuous_label_elm&& j) const { return action == j.action; }
   };
 
   struct continuous_label
@@ -27,7 +27,7 @@ namespace VW { namespace cb_continuous
   extern label_parser the_label_parser;
 
   std::string to_string(const continuous_label_elm& elm);
-  std::string to_string(continuous_label& lbl);
+  std::string to_string(const continuous_label& lbl);
 
   }  // namespace cb_continuous
   }  // namespace VW
