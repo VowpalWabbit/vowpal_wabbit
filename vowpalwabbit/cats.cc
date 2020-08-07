@@ -84,12 +84,12 @@ namespace VW { namespace continuous_action { namespace cats {
   class reduction_output
   {
   public:
-    static void report_progress(vw& all, cats&, example& ec);
-    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::action_pdf_value& prediction);
+    static void report_progress(vw& all, const cats&, const example& ec);
+    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::action_pdf_value& prediction);
 
   private:
-    static inline bool does_example_have_label(example& ec);
-    static void print_update_cb_cont(vw& all, example& ec);
+    static inline bool does_example_have_label(const example& ec);
+    static void print_update_cb_cont(vw& all, const example& ec);
   };
 
   // Free function to tie function pointers to output class methods
@@ -102,7 +102,7 @@ namespace VW { namespace continuous_action { namespace cats {
   }
 
   void reduction_output::output_predictions(
-    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, actions_pdf::action_pdf_value& prediction)
+    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::action_pdf_value& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
@@ -112,7 +112,7 @@ namespace VW { namespace continuous_action { namespace cats {
 
   // "average loss" "since last" "example counter" "example weight"
   // "current label" "current predict" "current features"
-  void reduction_output::report_progress(vw& all, cats&, example& ec)
+  void reduction_output::report_progress(vw& all, const cats&, const example& ec)
   {
     const auto& cb_cont_costs = ec.l.cb_cont.costs;
     all.sd->update(ec.test_only, does_example_have_label(ec), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost,
@@ -121,12 +121,12 @@ namespace VW { namespace continuous_action { namespace cats {
     print_update_cb_cont(all, ec);
   }
 
-  inline bool reduction_output::does_example_have_label(example& ec)
+  inline bool reduction_output::does_example_have_label(const example& ec)
   {
     return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
   }
 
-  void reduction_output::print_update_cb_cont(vw& all, example& ec)
+  void reduction_output::print_update_cb_cont(vw& all, const example& ec)
   {
     if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
     {
@@ -144,7 +144,10 @@ namespace VW { namespace continuous_action { namespace cats {
   LEARNER::base_learner* setup(options_i& options, vw& all)
   {
     option_group_definition new_options("Continuous action tree with smoothing");
-    int num_actions = 0, pdf_num_actions = 0;
+
+    int num_actions = 0;
+    int pdf_num_actions = 0;
+
     new_options.add(make_option("cats", num_actions).keep().help("Continuous action tree with smoothing"))
         .add(make_option("cats_pdf", pdf_num_actions).keep().help("Continuous action tree with smoothing (pdf)"));
 

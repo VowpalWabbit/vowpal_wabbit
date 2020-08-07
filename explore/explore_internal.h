@@ -412,7 +412,7 @@ namespace exploration
     if (total_pdf_mass == 0.f)
       return E_EXPLORATION_BAD_PDF;
 
-    const float edge_avoid_factor = 1.0001f;
+    constexpr float edge_avoid_factor = 1.0001f;
     float draw = 0.f;
     do
     {
@@ -445,7 +445,7 @@ namespace exploration
   template <typename It>
   int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
   {
-    typedef typename std::iterator_traits<It>::iterator_category pdf_category;
+    using pdf_category = std::iterator_traits<It>::iterator_category;
     return sample_pdf(p_seed, pdf_first, pdf_last, chosen_value, pdf_value, pdf_category());
   }
 

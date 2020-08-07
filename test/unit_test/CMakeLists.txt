@@ -1,19 +1,24 @@
 add_executable(vw-unit-test.out
+  cats_tree_tests.cc
   cb_explore_adf_test.cc
   ccb_parser_test.cc
   ccb_test.cc
+  chain_hashing.cc
   dsjson_parser_test.cc
   example_header_test.cc
   explore_test.cc
   guard_test.cc
+  initialize_test.cc
   io_adapter_test.cc
   json_parser_test.cc
   main.cc
   object_pool_test.cc
+  offset_tree_tests.cc
   options_boost_po_test.cc
   options_test.cc
+  pmf_to_pdf_test.cc
   prediction_test.cc
-  initialize_test.cc
+  random_test.cc
   scope_exit_test.cc
   slates_parser_test.cc
   slates_test.cc
@@ -22,11 +27,6 @@ add_executable(vw-unit-test.out
   test_common.cc
   test_common.h
   tokenize_tests.cc
-  chain_hashing.cc
-  offset_tree_tests.cc
-  random_test.cc
-  cats_tree_tests.cc
-  pmf_to_pdf_test.cc
 )
 
 # Add the include directories from vw target for testing

@@ -8,7 +8,6 @@
 #include "io_buf.h"
 
 using namespace std;
-// TODO: below check
 namespace VW { namespace actions_pdf
 {
   void delete_prob_dist(void* v)

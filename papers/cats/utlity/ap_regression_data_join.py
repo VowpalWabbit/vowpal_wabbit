@@ -52,22 +52,10 @@ class PredictDataJoiner_ap:
     sqr_loss = sqr_loss_acc / float(N)
     zero_one_loss = zero_one_loss_acc / float(N)
 
-    # print('.')
-    # print("abs_loss=",abs_loss,", abs_loss_acc=",abs_loss_acc,", N=",N,)
-    # print("sqr_loss=",sqr_loss,", sqr_loss_acc=",sqr_loss_acc,", N=",N,)
-    # print("zero_one_loss=",zero_one_loss,", zero_one_loss_acc=",zero_one_loss_acc,", N=",N,)
-    # print("abs_loss_MAX=",abs_loss_max,", sqr_loss_MAX=",sqr_loss_max,", N=",N,)
-    # print("zero_one_width=",zero_one_width)
-    # print("max_param=",self.max_val,",min_param=",self.min_val,"max_found=",max_found,"min_found=",min_found)
-    # if(not math.isclose(self.max_val,max_found,rel_tol=.001)):
-    #   print("ERR:Please check max param. ", self.max_val, "is not close to ", max_found)
-    # if(not math.isclose(self.min_val,min_found,rel_tol=.001)):
-    #   print("ERR:Please check min param. ", self.min_val, "is not close to ", min_found)
-    
     if (self.loss_type_return == "abs"):
       return abs_loss, abs_loss_max, N
     elif (self.loss_type_return == "sqr"):
-      return sqr_loss, sqr_loss_max, N 
+      return sqr_loss, sqr_loss_max, N
     elif (self.loss_type_return == "zerone"):
       return zero_one_loss, 1, N
 
@@ -77,7 +65,6 @@ class PredictDataJoiner_ap:
 
   def get_action(self, pred_line):
     separator_position = pred_line.find(',')
-    #print(pred_line[:separator_position - 1 ])
     return float(pred_line[:separator_position])
 
 if __name__ == "__main__":

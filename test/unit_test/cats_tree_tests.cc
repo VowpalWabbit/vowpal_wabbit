@@ -4,7 +4,7 @@
 #include "cats_tree.h"
 
 using namespace VW::LEARNER;
-using namespace std;
+using std::vector;
 
 namespace VW { namespace cats_tree {
 
