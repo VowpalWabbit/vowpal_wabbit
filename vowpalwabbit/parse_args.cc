@@ -359,6 +359,7 @@ void parse_diagnostics(options_i& options, vw& all)
 {
   bool version_arg = false;
   bool help = false;
+  bool setup_stack_debug = false;
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic options");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
@@ -367,6 +368,8 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
+      .add(make_option("setup_stack_debug", setup_stack_debug)
+               .help("Setup reduction stack but won't actually run anything. Combine with any command arguments."))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
   options.add_and_parse(diagnostic_group);
@@ -1266,6 +1269,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   all.reduction_stack.pop();
   auto base = std::get<1>(setup_func)(options, all);
 
+  // this mean that setup_func did not do any setup since it didnt add itself to the chain of learners
   if (base == nullptr)
   {
     return setup_base(options, all);
@@ -1280,8 +1284,24 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 
 void parse_reductions(options_i& options, vw& all)
 {
+
+  //dictionary string->function
+  // config file based on the option_group_definition -> function with the dictionary above
+  // setup_base
+  // list of configs in the right order,with a custom hooked option
+
+  /*
+  default_good_old_vw_stack = {"gd", "kernel", "python-red",};
+
+  new api:
+    string list 
+
+
+  for r in default_good_old: dict[r]()
+  */
+
   // Base algorithms
-  all.reduction_stack.push(std::make_tuple("", GD::setup));
+  all.reduction_stack.push(std::make_tuple("gd", GD::setup));
   all.reduction_stack.push(std::make_tuple("", kernel_svm_setup));
   all.reduction_stack.push(std::make_tuple("", ftrl_setup));
   all.reduction_stack.push(std::make_tuple("", svrg_setup));
@@ -1758,6 +1778,19 @@ vw* initialize(
     if (options.get_typed_option<bool>("help").value())
     {
       cout << options.help();
+      exit(0);
+    }
+
+    /*
+    right now we are abusing the api, to generate the options but in theory we should seperate to
+    re-use same options and same vw without a delete could be added as experimental as a debugging tool
+    */
+    if (options.get_typed_option<bool>("setup_stack_debug").value())
+    {
+      cout << "List of enabled reductions: " << std::endl;
+      for (auto a : all.enabled_reductions)
+      { cout << a << std::endl;
+      }
       exit(0);
     }
 

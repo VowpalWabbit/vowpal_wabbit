@@ -107,7 +107,6 @@ typed_option<T> make_option(std::string name, T& location)
 
 struct option_group_definition;
 
-
 struct options_i
 {
   virtual void add_and_parse(const option_group_definition& group) = 0;
