@@ -90,7 +90,7 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     if (!_first_only)
     {
       size_t tied_actions = fill_tied(preds);
-      for (size_t i = 0; i < tied_actions; ++i) _top_actions[preds[i].action] += 1.f / tied_actions;
+      for (size_t j = 0; j < tied_actions; ++j) _top_actions[preds[j].action] += 1.f / tied_actions;
     }
     else
       _top_actions[preds[0].action] += 1.f;

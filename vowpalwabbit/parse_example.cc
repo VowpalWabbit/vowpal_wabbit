@@ -285,7 +285,7 @@ class TC_parser
         }
 
         VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        uint64_t word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
+        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
@@ -501,7 +501,6 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
       label_space.remove_prefix(tab_idx + 1);
     }
 
-    std::vector<VW::string_view> tokenized;
     tokenize(' ', label_space, all->p->words);
     if (all->p->words.size() > 0 &&
         (all->p->words.back().end() == label_space.end() ||

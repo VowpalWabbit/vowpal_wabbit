@@ -807,7 +807,7 @@ void save_load_online_state(
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 3, "");
         uint32_t stride = 1 << weights.stride_shift();
         weight* v = &weights.strided_index(i);
-        for (size_t i = 0; i < stride; i++) v[i] = buff[i];
+        for (size_t j = 0; j < stride; j++) v[j] = buff[j];
       }
     } while (brw > 0);
   else  // write binary or text
@@ -976,17 +976,6 @@ void save_load_online_state(
     save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
 }
 
-template <class T>
-class set_initial_gd_wrapper
-{
- public:
-  static void func(weight& w, std::pair<float, float>& initial, uint64_t /* index */)
-  {
-    w = initial.first;
-    (&w)[1] = initial.second;
-  }
-};
-
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 {
   vw& all = *g.all;
@@ -997,11 +986,14 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (all.weights.adaptive && all.initial_t > 0)
     {
       float init_weight = all.initial_weight;
-      std::pair<float, float> p = std::make_pair(init_weight, all.initial_t);
-      if (all.weights.sparse)
-        all.weights.sparse_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<sparse_parameters> >(p);
-      else
-        all.weights.dense_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<dense_parameters> >(p);
+      float init_t = all.initial_t;
+      auto initial_gd_weight_initializer = [init_weight, init_t](weight* weights, uint64_t /*index*/) {
+        weights[0] = init_weight;
+        weights[1] = init_t;
+      };
+
+      all.weights.set_default(initial_gd_weight_initializer);
+
       // for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared
       // gradient=1 NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since
       // scaling the data scales the gradient, this should ideally be feature_range*initial_t, or something like that.

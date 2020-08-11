@@ -26,8 +26,8 @@ namespace continuous_action
   // BEGIN sample_pdf reduction and reduction methods
   struct cb_explore_pdf
   {
-    int learn(example& ec, api_status* status);
-    int predict(example& ec, api_status* status);
+    int learn(example& ec, experimental::api_status* status);
+    int predict(example& ec, experimental::api_status* status);
 
     void init(single_learner* p_base);
 
@@ -39,13 +39,13 @@ namespace continuous_action
       single_learner* _base = nullptr;
   };
 
-  int cb_explore_pdf::learn(example& ec, api_status*)
+  int cb_explore_pdf::learn(example& ec, experimental::api_status*)
   {
     _base->learn(ec);
     return error_code::success;
   }
 
-  int cb_explore_pdf::predict(example& ec, api_status*)
+  int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   {
     _base->predict(ec);
 
@@ -66,7 +66,7 @@ namespace continuous_action
   template <bool is_learn>
   void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
   {
-    api_status status;
+    experimental::api_status status;
     if (is_learn)
       reduction.learn(ec, &status);
     else

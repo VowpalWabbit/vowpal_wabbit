@@ -68,7 +68,7 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
     ssize_t t = f->write(str.c_str(), (unsigned int)len);
     if (t != len)
     {
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
     }
   }
 }

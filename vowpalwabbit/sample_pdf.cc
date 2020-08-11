@@ -29,8 +29,8 @@ namespace continuous_action
   // BEGIN sample_pdf reduction and reduction methods
   struct sample_pdf
   {
-    int learn(example& ec, api_status* status);
-    int predict(example& ec, api_status* status);
+    int learn(example& ec, experimental::api_status* status);
+    int predict(example& ec, experimental::api_status* status);
 
     void init(single_learner* p_base, uint64_t* p_random_seed);
     ~sample_pdf();
@@ -41,7 +41,7 @@ namespace continuous_action
       single_learner* _base = nullptr;
   };
 
-  int sample_pdf::learn(example& ec, api_status*)
+  int sample_pdf::learn(example& ec, experimental::api_status*)
   {
     // one of the base reductions will call predict so we need a valid
     // predict buffer
@@ -53,7 +53,7 @@ namespace continuous_action
     return error_code::success;
   }
 
-  int sample_pdf::predict(example& ec, api_status*)
+  int sample_pdf::predict(example& ec, experimental::api_status*)
   {
     _pred_pdf.clear();
 
@@ -91,7 +91,7 @@ namespace continuous_action
   template <bool is_learn>
   void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
   {
-    api_status status;
+    experimental::api_status status;
     if (is_learn)
       reduction.learn(ec, &status);
     else {
