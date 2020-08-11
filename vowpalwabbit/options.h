@@ -150,6 +150,7 @@ struct options_i
 
 struct option_group_definition
 {
+  //add second parameter for const string short name
   option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>

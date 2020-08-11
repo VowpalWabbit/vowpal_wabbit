@@ -1346,7 +1346,16 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(explore_eval_setup);
   all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push(Search::setup);
-  all.reduction_stack.push(audit_regressor_setup);
+  // this string can be a constant under audit_regressor.h
+  all.reduction_stack.push([](options_i& options, vw& all) { return audit_regressor_setup("audit_regressor", options, all); });
+
+
+  /*
+  three flags:
+  - gated
+  - always
+  - depends
+  */
 
   all.l = setup_base(options, all);
 }
