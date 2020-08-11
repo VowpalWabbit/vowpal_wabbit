@@ -11,7 +11,6 @@
 #include "explore.h"
 #include "prob_dist_cont.h"
 #include "debug_log.h"
-#include <experimental/filesystem>
 
 using namespace VW::LEARNER;
 using namespace exploration;
@@ -119,13 +118,6 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-template <class T>
-inline void delete_it(T* p)
-{
-  if (p != nullptr)
-    delete p;
-}
-
 void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
   if (trace_stream != nullptr)
@@ -225,8 +217,6 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
 
-  /*cout << "regression_label.label = " << regression_label.label << endl;*/
-
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
 
@@ -235,7 +225,6 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  /*cout << "chosen_action = " << chosen_action << endl;*/
   CB::cb_class cb;
   cb.action = chosen_action + 1;
   cb.probability = ec.pred.a_s[chosen_action].score;
@@ -268,7 +257,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
 
   if (data.regression_data.loss_report == 1)
   {
-    // for reporintg avergae loss to be in the correct range (reverse normalizing)
+    // for reporting average loss to be in the correct range (reverse normalizing)
     size_t siz = data.cb_label.costs.size();
     if (data.regression_data.loss_option == 0)
     {
@@ -393,8 +382,8 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   if (is_learn)
     base.learn(ec);
 
+  data.a_s = ec.pred.a_s;
   data.a_s.clear();
-  data.a_s = ec.pred.a_s;  // TODO: the above line needs to be moved to after this line!
 
   if (use_cs)
     ec.l.cs = csl;
@@ -609,7 +598,7 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
     all.sd->update(ec.test_only, cb_costs[0].action != FLT_MAX, cb_costs[0].cost, ec.weight, ec.num_features);
 
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ((double)cb_costs[0].action) * ec.weight;
+    all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;
 
   print_update(all, ec);
 }
@@ -629,7 +618,7 @@ void output_example_regression(vw& all, cbify& data, example& ec)
     all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
 
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ((double)cb_cont_costs[0].action) * ec.weight;
+    all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight;
 
   print_update(all, ec);
 }
@@ -735,7 +724,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   if (data->use_adf)
   { init_adf_data(*data.get(), num_actions); }
 
-  if (use_reg)  // todo: check: we need more options passed to pmf_to_pdf
+  if (use_reg)
   {
     // Check invalid parameter combinations
     if (data->use_adf)

@@ -254,7 +254,6 @@
     <ClCompile Include="cats_pdf.cc" />
     <ClCompile Include="cb_continuous_label.cc" />
     <ClCompile Include="cb_explore_pdf.cc" />
-    <ClCompile Include="nullstream.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />

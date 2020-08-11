@@ -61,16 +61,11 @@ namespace VW { namespace cb_continuous
         f.probability = float_of_string(p->parse_name[2]);
 
       if (std::isnan(f.probability))
-        THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
+        THROW("error NaN pdf_value (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
 
-      if (f.probability > 1.0)
-      {
-        std::cerr << "invalid probability > 1 specified for an action, resetting to 1." << endl;
-        f.probability = 1.0;
-      }
       if (f.probability < 0.0)
       {
-        std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
+        std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
         f.probability = .0;
       }
 

@@ -8,7 +8,6 @@
 
 namespace GD
 {
-
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t), class W>
 void foreach_feature(W& /*weights*/, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)

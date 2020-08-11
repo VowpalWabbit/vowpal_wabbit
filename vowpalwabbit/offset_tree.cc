@@ -93,7 +93,11 @@ namespace VW { namespace offset_tree {
 
   uint32_t min_depth_binary_tree::leaf_node_count() const { return _num_leaf_nodes; }
 
-  void offset_tree::init(uint32_t num_actions) { binary_tree.build_tree(num_actions); }
+  void offset_tree::init() { binary_tree.build_tree(_num_actions); }
+
+  offset_tree::offset_tree(uint32_t num_actions)
+    : _num_actions{num_actions}, _prediction_buffer(num_actions), _scores(num_actions)
+  {}
 
   int32_t offset_tree::learner_count() const { return binary_tree.internal_node_count(); }
 
@@ -126,24 +130,20 @@ namespace VW { namespace offset_tree {
     // - pair<float,float> stores the scores for left and right nodes
     // - prediction_buffer stores predictions for all the nodes in the tree for the duration
     //   of the predict() call
-    // - static thread_local ensures only one copy per calling thread.  This is to reduce
-    //   memory allocations in steady state.
-    using predict_buffer_t = std::vector<std::pair<float, float>>;
-    static thread_local predict_buffer_t prediction_buffer(learner_count());
-    static thread_local std::vector<float> scores(binary_tree.leaf_node_count());
+    // - This is to reduce memory allocations in steady state.
 
     auto& t = binary_tree;
 
-    prediction_buffer.clear();
-    scores.resize(t.leaf_node_count());
+    _prediction_buffer.clear();
+    _scores.resize(t.leaf_node_count());
 
     // Handle degenerate cases of zero and one node trees
     if (t.leaf_node_count() == 0)
-      return scores;
+      return _scores;
     if (t.leaf_node_count() == 1)
     {
-      scores[0] = 1.0f;
-      return scores;
+      _scores[0] = 1.0f;
+      return _scores;
     }
 
     // Save and clear example label.
@@ -156,14 +156,14 @@ namespace VW { namespace offset_tree {
     for (uint32_t idx = 0; idx < t.internal_node_count(); ++idx)
     {
       base.predict(ec, idx);
-      prediction_buffer.emplace_back(ec.pred.a_s[0].score, ec.pred.a_s[1].score);
+      _prediction_buffer.emplace_back(ec.pred.a_s[0].score, ec.pred.a_s[1].score);
     }
 
     // Restore example label.
     ec.l.cb = saved_label;
 
     // use a offset helper to deal with start index offset
-    offset_helper<predict_buffer_t> buffer_helper(prediction_buffer, t.leaf_node_count());
+    offset_helper<predict_buffer_t> buffer_helper(_prediction_buffer, t.leaf_node_count());
 
     // Compute action scores
     for (auto rit = t.nodes.rbegin(); rit != t.nodes.rend(); ++rit)
@@ -176,7 +176,7 @@ namespace VW { namespace offset_tree {
       const float left_p = buffer_helper[rit->id].first;
       if (t.nodes[rit->left_id].is_leaf)
       {
-        scores[rit->left_id] = left_p;
+        _scores[rit->left_id] = left_p;
       }
       else
       {
@@ -190,7 +190,7 @@ namespace VW { namespace offset_tree {
       const float right_p = buffer_helper[rit->id].second;
       if (t.nodes[rit->right_id].is_leaf)
       {
-        scores[rit->right_id] = right_p;
+        _scores[rit->right_id] = right_p;
       }
       else
       {
@@ -201,7 +201,7 @@ namespace VW { namespace offset_tree {
       }
     }
 
-    return scores;
+    return _scores;
   }
 
 void offset_tree::learn(LEARNER::single_learner& base, example& ec) {
@@ -252,10 +252,9 @@ void predict(offset_tree& ot, single_learner& base, example& ec)
   void learn(offset_tree& tree, single_learner& base, example& ec)
   {
     ec.pred.a_s.clear();
-    static thread_local offset_tree::scores_t saved_scores;
 
     // store predictions before learning
-    saved_scores = tree.predict(base, ec);
+    const offset_tree::scores_t& saved_scores = tree.predict(base, ec);
 
     // learn
     tree.learn(base, ec);
@@ -280,8 +279,8 @@ void predict(offset_tree& ot, single_learner& base, example& ec)
       options.insert("cb_explore", "2");
     }
 
-    auto otree = scoped_calloc_or_throw<offset_tree>();
-    otree->init(num_actions);
+    auto otree = scoped_calloc_or_throw<offset_tree>(num_actions);
+    otree->init();
 
     base_learner* base = setup_base(options, all);
 

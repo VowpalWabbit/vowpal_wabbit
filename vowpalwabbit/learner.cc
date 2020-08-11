@@ -8,14 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-using namespace std;
-
-void dispatch_example(vw& all, example& ec)
-{
-  all.learn(ec);
-  as_singleline(all.l)->finish_example(all, ec);
-}
-
 #define CASE(type) \
   case type:       \
     return #type;
