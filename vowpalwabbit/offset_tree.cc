@@ -146,10 +146,7 @@ namespace VW { namespace offset_tree {
       return _scores;
     }
 
-    // Save and clear example label.
-    // (CB algs predict_or_learn checks for valid label during learn.)
-    static thread_local CB::label saved_label;
-    saved_label = ec.l.cb;
+    const CB::label saved_label = ec.l.cb;
     ec.l.cb.costs.clear();
 
     // Get predictions for all internal nodes
@@ -204,50 +201,50 @@ namespace VW { namespace offset_tree {
     return _scores;
   }
 
-void offset_tree::learn(LEARNER::single_learner& base, example& ec) {
-  const auto global_action = ec.l.cb.costs[0].action;
-  const auto global_weight = ec.weight;
+  void offset_tree::learn(LEARNER::single_learner& base, example& ec) {
+    const auto global_action = ec.l.cb.costs[0].action;
+    const auto global_weight = ec.weight;
 
-  // for brevity
-  auto& nodes = binary_tree.nodes;
+    // for brevity
+    auto& nodes = binary_tree.nodes;
 
-  tree_node node = nodes[global_action - 1];
-  do
-  {  // ascend
-    const auto previous_id = node.id;
-    node = nodes[node.parent_id];
+    tree_node node = nodes[global_action - 1];
+    do
+    {  // ascend
+      const auto previous_id = node.id;
+      node = nodes[node.parent_id];
 
-    // learn
-    uint32_t local_action = 2;
-    if (node.left_id == previous_id)
-      local_action = 1;
-    ec.l.cb.costs[0].action = local_action;
-    base.learn(ec, node.id - binary_tree.leaf_node_count());
+      // learn
+      uint32_t local_action = 2;
+      if (node.left_id == previous_id)
+        local_action = 1;
+      ec.l.cb.costs[0].action = local_action;
+      base.learn(ec, node.id - binary_tree.leaf_node_count());
 
-    // re-weight
-    base.predict(ec, node.id - binary_tree.leaf_node_count());
-    ec.weight *= ec.pred.a_s[local_action - 1].score;
-  } while (node.parent_id != node.id);
+      // re-weight
+      base.predict(ec, node.id - binary_tree.leaf_node_count());
+      ec.weight *= ec.pred.a_s[local_action - 1].score;
+    } while (node.parent_id != node.id);
 
-  ec.l.cb.costs[0].action = global_action;
-  ec.weight = global_weight;
-}
-
-inline void copy_to_action_scores(const offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s) {
-  a_s.clear();
-  for (uint32_t idx = 0; idx < scores.size(); ++idx)
-  {
-    a_s.push_back({idx, scores[idx]});
+    ec.l.cb.costs[0].action = global_action;
+    ec.weight = global_weight;
   }
-}
 
-void predict(offset_tree& ot, single_learner& base, example& ec)
-{
-  // get predictions for all internal nodes in binary tree.
-  ec.pred.a_s.clear();
-  const auto& scores = ot.predict(base, ec);
-  copy_to_action_scores(scores, ec.pred.a_s);
-}
+  inline void copy_to_action_scores(const offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s) {
+    a_s.clear();
+    for (uint32_t idx = 0; idx < scores.size(); ++idx)
+    {
+      a_s.push_back({idx, scores[idx]});
+    }
+  }
+
+  void predict(offset_tree& tree, single_learner& base, example& ec)
+  {
+    // get predictions for all internal nodes in binary tree.
+    ec.pred.a_s.clear();
+    const auto& scores = tree.predict(base, ec);
+    copy_to_action_scores(scores, ec.pred.a_s);
+  }
 
   void learn(offset_tree& tree, single_learner& base, example& ec)
   {
@@ -263,7 +260,7 @@ void predict(offset_tree& ot, single_learner& base, example& ec)
     copy_to_action_scores(saved_scores, ec.pred.a_s);
   }
 
-  base_learner* offset_tree_setup(VW::config::options_i& options, vw& all)
+  base_learner* setup(VW::config::options_i& options, vw& all)
   {
     option_group_definition new_options("Offset tree Options");
     uint32_t num_actions;
@@ -291,5 +288,4 @@ void predict(offset_tree& ot, single_learner& base, example& ec)
 
     return make_base(l);
   }
-
 }}

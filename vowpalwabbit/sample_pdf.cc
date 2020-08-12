@@ -37,7 +37,7 @@ namespace continuous_action
 
     private:
       uint64_t* _p_random_state;
-      actions_pdf::pdf _pred_pdf;
+      continuous_actions::probabiity_density_function _pred_pdf;
       single_learner* _base = nullptr;
   };
 
@@ -66,8 +66,8 @@ namespace continuous_action
       _p_random_state,
       std::begin(_pred_pdf),
       std::end(_pred_pdf),
-      ec.pred.a_pdf.action,
-      ec.pred.a_pdf.pdf_value);
+      ec.pred.pdf_value.action,
+      ec.pred.pdf_value.pdf_value);
 
     if (ret_code != S_EXPLORATION_OK)
       return error_code::sample_pdf_failed;
@@ -79,7 +79,7 @@ namespace continuous_action
   {
     _base = p_base;
     _p_random_state = p_random_seed;
-    _pred_pdf = v_init<actions_pdf::pdf_segment>();
+    _pred_pdf = v_init<continuous_actions::pdf_segment>();
   }
 
   sample_pdf::~sample_pdf()

@@ -287,29 +287,29 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   const label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
-  ec.pred.a_pdf = {0.f, 0.f};
+  ec.pred.pdf_value = {0.f, 0.f};
 
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
-  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.a_pdf.action << endl;
+  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.pdf_value.action << endl;
 
   continuous_label_elm cb_cont_lbl;
 
-  cb_cont_lbl.action = ec.pred.a_pdf.action;
-  cb_cont_lbl.probability = ec.pred.a_pdf.pdf_value;
+  cb_cont_lbl.action = ec.pred.pdf_value.action;
+  cb_cont_lbl.probability = ec.pred.pdf_value.pdf_value;
 
   if (data.regression_data.loss_option == 0)
   {
-    cb_cont_lbl.cost = get_squared_loss(data, ec.pred.a_pdf.action, regression_label.label);
+    cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 1)
   {
-    cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.a_pdf.action, regression_label.label);
+    cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.pdf_value.action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 2)
   {
-    cb_cont_lbl.cost = get_01_loss(data, ec.pred.a_pdf.action, regression_label.label);
+    cb_cont_lbl.cost = get_01_loss(data, ec.pred.pdf_value.action, regression_label.label);
   }
 
   data.regression_data.cb_cont_label.costs.push_back(cb_cont_lbl);

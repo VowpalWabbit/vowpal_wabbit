@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "reductions.h"
-#include "pmf_to_pdf.h" // todo rename
+#include "pmf_to_pdf.h"
 #include "explore.h"
 #include "vw.h"
 
@@ -45,7 +45,7 @@ namespace VW { namespace pmf_to_pdf
     if (temp_pred_a_s[n-1].action + bandwidth != num_actions - 1)
       pdf_lim.push_back(num_actions - 1);
 
-    auto& p_dist = ec.pred.prob_dist;
+    auto& p_dist = ec.pred.pdf;
     p_dist.clear();
 
     size_t m = pdf_lim.size();
@@ -89,20 +89,20 @@ namespace VW { namespace pmf_to_pdf
     const float unit_range = continuous_range / (num_actions - 1);
 
     const float ac = (action_cont - min_value) / unit_range;
-    int ic = (int)floor(ac);
-    const bool cond1 = min_value + ic * unit_range <= action_cont;
-    const bool cond2 = action_cont < min_value + (ic + 1) * unit_range;
+    int action_segment_index = static_cast<int>(floor(ac));
+    const bool cond1 = min_value + action_segment_index * unit_range <= action_cont;
+    const bool cond2 = action_cont < min_value + (action_segment_index + 1) * unit_range;
 
     if (!cond1 || !cond2)
     {
       if (!cond1)
-        ic--;
+        action_segment_index--;
       if (!cond2)
-        ic++;
+        action_segment_index++;
     }
 
-    const uint32_t min_value = (std::max)((int)bandwidth, ic - (int)bandwidth + 1);
-    const uint32_t max_value = (std::min)(num_actions - 1 - bandwidth, ic + bandwidth);
+    const uint32_t min_value = (std::max)((int)bandwidth, action_segment_index - (int)bandwidth + 1);
+    const uint32_t max_value = (std::min)(num_actions - 1 - bandwidth, action_segment_index + bandwidth);
 
     swap_restore_cb_label swap_label(ec, temp_lbl_cb);
 
@@ -162,8 +162,8 @@ namespace VW { namespace pmf_to_pdf
 
     if (get_observed_cost(ec.l.cb) != nullptr)
       for (auto& cbc : ec.l.cb.costs)
-        for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
-          loss += (cbc.cost / cbc.probability) * ec.pred.prob_dist[i].pdf_value;
+        for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
+          loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
 
     all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
@@ -171,18 +171,18 @@ namespace VW { namespace pmf_to_pdf
     std::stringstream ss, sso;
     float maxprob = 0.;
     uint32_t maxid = 0;
-    for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
+    for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
     {
-      sprintf(temp_str, "%f ", ec.pred.prob_dist[i].pdf_value);
+      sprintf_s(temp_str, "%f ", ec.pred.pdf[i].pdf_value);
       ss << temp_str;
-      if (ec.pred.prob_dist[i].pdf_value > maxprob)
+      if (ec.pred.pdf[i].pdf_value > maxprob)
       {
-        maxprob = ec.pred.prob_dist[i].pdf_value;
+        maxprob = ec.pred.pdf[i].pdf_value;
         maxid = i + 1;
       }
     }
 
-    sprintf(temp_str, "%d:%f", maxid, maxprob);
+    sprintf_s(temp_str, "%d:%f", maxid, maxprob);
     sso << temp_str;
 
     for (auto& sink : all.final_prediction_sink)

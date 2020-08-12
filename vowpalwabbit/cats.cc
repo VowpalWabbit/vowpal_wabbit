@@ -85,7 +85,7 @@ namespace VW { namespace continuous_action { namespace cats {
   {
   public:
     static void report_progress(vw& all, const cats&, const example& ec);
-    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::action_pdf_value& prediction);
+    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probabiity_density_function_value& prediction);
 
   private:
     static inline bool does_example_have_label(const example& ec);
@@ -97,12 +97,12 @@ namespace VW { namespace continuous_action { namespace cats {
   {
     // add output example
     reduction_output::report_progress(all, data, ec);
-    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.a_pdf);
+    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.pdf_value);
     VW::finish_example(all, ec);
   }
 
   void reduction_output::output_predictions(
-    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::action_pdf_value& prediction)
+    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probabiity_density_function_value& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
@@ -132,7 +132,7 @@ namespace VW { namespace continuous_action { namespace cats {
     {
       all.sd->print_update(all.holdout_set_off, all.current_pass,
           to_string(ec.l.cb_cont.costs[0]),  // Label
-          to_string(ec.pred.a_pdf),          // Prediction
+          to_string(ec.pred.pdf_value),          // Prediction
           ec.num_features, all.progress_add, all.progress_arg);
     }
   }
@@ -165,7 +165,7 @@ namespace VW { namespace continuous_action { namespace cats {
     if (!options.was_supplied("sample_pdf"))
       options.insert("sample_pdf", "");
 
-    if (!options.add_or_check_options("cats_pdf", num_actions))
+    if (!options.insert_arguments("cats_pdf", num_actions))
       THROW(error_code::options_disagree_s);
 
     LEARNER::base_learner* p_base = setup_base(options, all);

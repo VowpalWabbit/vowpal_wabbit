@@ -8,7 +8,7 @@
 #include "io_buf.h"
 
 using namespace std;
-namespace VW { namespace actions_pdf
+namespace VW { namespace continuous_actions
 {
   void delete_prob_dist(void* v)
   {
@@ -16,7 +16,7 @@ namespace VW { namespace actions_pdf
     cs->delete_v();
   }
 
-  std::string to_string(const action_pdf_value& a_p, bool newline)
+  std::string to_string(const probabiity_density_function_value& a_p, bool newline)
   {
     std::stringstream strm;
     strm << a_p.action << "," << a_p.pdf_value;

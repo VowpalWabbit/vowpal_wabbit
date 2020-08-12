@@ -1356,7 +1356,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(VW::continuous_action::cats::setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
-  all.reduction_stack.push(VW::offset_tree::offset_tree_setup);
+  all.reduction_stack.push(VW::offset_tree::setup);
   all.reduction_stack.push(explore_eval_setup);
   all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push(Search::setup);
