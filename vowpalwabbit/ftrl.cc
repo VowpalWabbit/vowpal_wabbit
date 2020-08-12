@@ -332,9 +332,9 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   bool coin = false;
 
   option_group_definition new_options("Follow the Regularized Leader");
-  new_options.add(make_option("ftrl", ftrl_option).keep().necessary().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("coin", coin).keep().necessary().help("Coin betting optimizer"))
-      .add(make_option("pistol", pistol).keep().necessary().help("PiSTOL: Parameter-free STOchastic Learning"))
+  new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
+      .add(make_option("coin", coin).keep().help("Coin betting optimizer"))
+      .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
 

@@ -1302,9 +1302,9 @@ void parse_reductions(options_i& options, vw& all)
   */
 
   // Base algorithms
-  all.reduction_stack.push(std::make_tuple("gd", GD::setup));
+  all.reduction_stack.push(std::make_tuple("gd", GD::setup)); // always
   all.reduction_stack.push(std::make_tuple("ksvm", kernel_svm_setup));
-  all.reduction_stack.push(std::make_tuple("ftrl", ftrl_setup));
+  all.reduction_stack.push(std::make_tuple("ftrl", ftrl_setup)); // custom logic
   all.reduction_stack.push(std::make_tuple("svrg", svrg_setup));
   all.reduction_stack.push(std::make_tuple("sendto", sender_setup));
   all.reduction_stack.push(std::make_tuple("bfgs", gd_mf_setup));

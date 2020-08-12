@@ -170,19 +170,18 @@ struct option_group_definition
     return *this;
   }
 
-  // will check if all necessary options were suplied
+  // will check if ALL of 'necessary' options were suplied
   bool check_necessary_enabled(const options_i& options) const
   {
     if (m_necessary_flags.size() == 0) return false;
 
-    bool at_least_one = true;
+    bool check_if_all_necessary_enabled = true;
 
     for (const auto& elem : m_necessary_flags)
-    {
-      at_least_one &= options.was_supplied(elem);
+    { check_if_all_necessary_enabled &= options.was_supplied(elem);
     }
 
-    return at_least_one;
+    return check_if_all_necessary_enabled;
   }
 
   template <typename T>
