@@ -85,7 +85,7 @@ namespace VW { namespace continuous_action { namespace cats {
   {
   public:
     static void report_progress(vw& all, const cats&, const example& ec);
-    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probabiity_density_function_value& prediction);
+    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probability_density_function_value& prediction);
 
   private:
     static inline bool does_example_have_label(const example& ec);
@@ -102,7 +102,7 @@ namespace VW { namespace continuous_action { namespace cats {
   }
 
   void reduction_output::output_predictions(
-    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probabiity_density_function_value& prediction)
+    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probability_density_function_value& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);

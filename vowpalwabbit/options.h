@@ -10,7 +10,7 @@
 #include <typeinfo>
 #include <memory>
 #include <sstream>
-#include <type_traits>>
+#include <type_traits>
 
 #include "options_types.h"
 

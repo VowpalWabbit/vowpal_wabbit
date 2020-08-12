@@ -7,7 +7,7 @@
 #include "api_status.h"
 #include "debug_log.h"
 #include "parse_args.h"
-#include "../explore/explore.h"
+#include "explore.h"
 
 // Aliases
 using VW::LEARNER::single_learner;
@@ -37,7 +37,7 @@ namespace continuous_action
 
     private:
       uint64_t* _p_random_state;
-      continuous_actions::probabiity_density_function _pred_pdf;
+      continuous_actions::probability_density_function _pred_pdf;
       single_learner* _base = nullptr;
   };
 

@@ -90,7 +90,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   {
    public:
     static void report_progress(vw& all, const cats_pdf&, const example& ec);
-    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probabiity_density_function& prediction);
+    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probability_density_function& prediction);
 
    private:
     static inline bool does_example_have_label(const example& ec);
@@ -106,12 +106,15 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     VW::finish_example(all, ec);
   }
 
-  void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probabiity_density_function& prediction)
+  void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probability_density_function& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
     for (auto& f : predict_file_descriptors)
+    {
       f->write(str.c_str(), str.size());
+      f->write("\n", 1);
+    }
   }
 
   // "average loss" "since last" "example counter" "example weight"

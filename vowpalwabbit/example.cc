@@ -473,7 +473,7 @@ swap_restore_action_scores_prediction::~swap_restore_action_scores_prediction()
   _ec.pred = _prediction;
 }
 
-swap_restore_pdf_prediction::swap_restore_pdf_prediction(example& ec, continuous_actions::probabiity_density_function& base_prediction)
+swap_restore_pdf_prediction::swap_restore_pdf_prediction(example& ec, continuous_actions::probability_density_function& base_prediction)
     : _prediction(ec.pred), _ec(ec), _base_prediction(base_prediction)
 {
   _ec.pred.pdf = _base_prediction;

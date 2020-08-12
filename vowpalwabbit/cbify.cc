@@ -126,31 +126,9 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
 
-void finish(cbify& data)
-{
-  CB::cb_label.delete_label(&data.cb_label);
-  data.a_s.delete_v();
-  finish_cbify_reg(data.regression_data, &data.all->trace_message);
-
-  if (data.use_adf)
-  {
-    for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-    {
-      data.adf_data.ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
-      free_it(data.adf_data.ecs[a]);
-    }
-    data.adf_data.ecs.~vector<example*>();
-    data.cs_costs.~vector<v_array<COST_SENSITIVE::wclass>>();
-    data.cb_costs.~vector<v_array<CB::cb_class>>();
-    for (auto as : data.cb_as) as.delete_v();
-    data.cb_as.~vector<ACTION_SCORE::action_scores>();
-  }
-}
-
 void copy_example_to_adf(cbify& data, example& ec)
 {
-  auto& adf_data = data.adf_data;
+  cbify_adf_data& adf_data = data.adf_data;
   const uint64_t ss = data.all->weights.stride_shift();
   const uint64_t mask = data.all->weights.mask();
 
