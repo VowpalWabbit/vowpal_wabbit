@@ -342,7 +342,6 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
-  // TODO: interesting case
   data->use_domination = true;
   if (options.was_supplied("domination") && !domination)
     data->use_domination = false;

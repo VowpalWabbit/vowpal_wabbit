@@ -1353,11 +1353,11 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(std::make_tuple("cb_adf", cb_adf_setup));
   all.reduction_stack.push(std::make_tuple("multiworld_test", mwt_setup));
   all.reduction_stack.push(std::make_tuple("cb_explore", cb_explore_setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_greedy", VW::cb_explore_adf::greedy::setup));      // custom logic? some of the _adf
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_greedy", VW::cb_explore_adf::greedy::setup));      // custom logic
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_softmax", VW::cb_explore_adf::softmax::setup));
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_rnd", VW::cb_explore_adf::rnd::setup));
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_squarecb", VW::cb_explore_adf::squarecb::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_regcb", VW::cb_explore_adf::regcb::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_regcb", VW::cb_explore_adf::regcb::setup));        // custom logic
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_first", VW::cb_explore_adf::first::setup));
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_cover", VW::cb_explore_adf::cover::setup));
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_bag", VW::cb_explore_adf::bag::setup));

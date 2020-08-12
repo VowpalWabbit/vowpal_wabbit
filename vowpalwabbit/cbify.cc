@@ -398,10 +398,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
-  //options.add_and_parse(new_options);
-  options.add_parse_and_check_necessary(new_options);
 
-  if (!options.was_supplied("cbify"))
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   data->use_adf = options.was_supplied("cb_explore_adf");
