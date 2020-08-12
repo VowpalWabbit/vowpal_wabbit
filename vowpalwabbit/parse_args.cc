@@ -368,7 +368,7 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
-      .add(make_option("print_stack", print_stack)
+      .add(make_option("print_stack", print_stack).default_value(false)
                .help("Print the stack that would be created with the given args. Will not execute driver."))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
