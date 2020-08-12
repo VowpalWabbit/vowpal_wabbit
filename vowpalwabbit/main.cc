@@ -42,7 +42,9 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  auto should_print_stack = options.get_typed_option<bool>("print_stack").value();
+
+  if (!should_print_stack && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"
@@ -111,6 +113,17 @@ int main(int argc, char* argv[])
     }
 
     vw& all = *alls[0];
+
+    auto should_print_stack = all.options->get_typed_option<bool>("print_stack").value();
+
+    if (should_print_stack)
+    {
+      for (vw* v : alls)
+      {
+        VW::finish(*v);
+      }
+      return 0;
+    }
 
     if (should_use_onethread)
     {

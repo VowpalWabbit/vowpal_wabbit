@@ -359,7 +359,7 @@ void parse_diagnostics(options_i& options, vw& all)
 {
   bool version_arg = false;
   bool help = false;
-  bool setup_stack_debug = false;
+  bool print_stack = false;
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic options");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
@@ -368,8 +368,8 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
-      .add(make_option("setup_stack_debug", setup_stack_debug)
-               .help("Setup reduction stack but won't actually run anything. Combine with any command arguments."))
+      .add(make_option("print_stack", print_stack)
+               .help("Print the stack that would be created with the given args. Will not execute driver."))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
   options.add_and_parse(diagnostic_group);
@@ -1276,7 +1276,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   }
   else
   {
-    all.enabled_reductions.insert(std::get<0>(setup_func));
+    all.enabled_reductions.push_back(std::get<0>(setup_func));
     return base;
   }
 
@@ -1291,6 +1291,7 @@ void parse_reductions(options_i& options, vw& all)
   // list of configs in the right order,with a custom hooked option
 
   /*
+  runtest 165
   default_good_old_vw_stack = {"gd", "kernel", "python-red",};
 
   new api:
@@ -1302,76 +1303,76 @@ void parse_reductions(options_i& options, vw& all)
 
   // Base algorithms
   all.reduction_stack.push(std::make_tuple("gd", GD::setup));
-  all.reduction_stack.push(std::make_tuple("", kernel_svm_setup));
-  all.reduction_stack.push(std::make_tuple("", ftrl_setup));
-  all.reduction_stack.push(std::make_tuple("", svrg_setup));
-  all.reduction_stack.push(std::make_tuple("", sender_setup));
-  all.reduction_stack.push(std::make_tuple("", gd_mf_setup));
-  all.reduction_stack.push(std::make_tuple("", print_setup));
-  all.reduction_stack.push(std::make_tuple("", noop_setup));
-  all.reduction_stack.push(std::make_tuple("", lda_setup));
-  all.reduction_stack.push(std::make_tuple("", bfgs_setup));
-  all.reduction_stack.push(std::make_tuple("", OjaNewton_setup));
-  // all.reduction_stack.push(VW_CNTK::setup);
+  all.reduction_stack.push(std::make_tuple("ksvm", kernel_svm_setup));
+  all.reduction_stack.push(std::make_tuple("ftrl", ftrl_setup));
+  all.reduction_stack.push(std::make_tuple("svrg", svrg_setup));
+  all.reduction_stack.push(std::make_tuple("sendto", sender_setup));
+  all.reduction_stack.push(std::make_tuple("bfgs", gd_mf_setup));
+  all.reduction_stack.push(std::make_tuple("print", print_setup));
+  all.reduction_stack.push(std::make_tuple("noop", noop_setup));
+  all.reduction_stack.push(std::make_tuple("lda", lda_setup));
+  all.reduction_stack.push(std::make_tuple("conjugate_gradient", bfgs_setup));
+  all.reduction_stack.push(std::make_tuple("OjaNewton", OjaNewton_setup));
+  // all.reduction_stack.push(std::make_tuple("vw_cntk", VW_CNTK::setup));
 
   // Score Users
-  all.reduction_stack.push(std::make_tuple("", baseline_setup));
-  all.reduction_stack.push(std::make_tuple("", ExpReplay::expreplay_setup<'b', simple_label>));
-  all.reduction_stack.push(std::make_tuple("", active_setup));
-  all.reduction_stack.push(std::make_tuple("", active_cover_setup));
-  all.reduction_stack.push(std::make_tuple("", confidence_setup));
-  all.reduction_stack.push(std::make_tuple("", nn_setup));
-  all.reduction_stack.push(std::make_tuple("", mf_setup));
-  all.reduction_stack.push(std::make_tuple("", marginal_setup));
-  all.reduction_stack.push(std::make_tuple("", autolink_setup));
-  all.reduction_stack.push(std::make_tuple("", lrq_setup));
-  all.reduction_stack.push(std::make_tuple("", lrqfa_setup));
-  all.reduction_stack.push(std::make_tuple("", stagewise_poly_setup));
-  all.reduction_stack.push(std::make_tuple("", scorer_setup));
+  all.reduction_stack.push(std::make_tuple("baseline", baseline_setup));
+  all.reduction_stack.push(std::make_tuple("exp_replay_b", ExpReplay::expreplay_setup<'b', simple_label>)); // custom logic
+  all.reduction_stack.push(std::make_tuple("active", active_setup));
+  all.reduction_stack.push(std::make_tuple("active_cover", active_cover_setup));
+  all.reduction_stack.push(std::make_tuple("confidence", confidence_setup));
+  all.reduction_stack.push(std::make_tuple("nn", nn_setup));
+  all.reduction_stack.push(std::make_tuple("new_mf", mf_setup));
+  all.reduction_stack.push(std::make_tuple("marginal", marginal_setup));
+  all.reduction_stack.push(std::make_tuple("autolink", autolink_setup));
+  all.reduction_stack.push(std::make_tuple("lrq", lrq_setup));
+  all.reduction_stack.push(std::make_tuple("lrqfa", lrqfa_setup));
+  all.reduction_stack.push(std::make_tuple("stage_poly", stagewise_poly_setup));
+  all.reduction_stack.push(std::make_tuple("scorer", scorer_setup)); //always
   // Reductions
-  all.reduction_stack.push(std::make_tuple("", bs_setup));
-  all.reduction_stack.push(std::make_tuple("", binary_setup));
+  all.reduction_stack.push(std::make_tuple("bootstrap", bs_setup));
+  all.reduction_stack.push(std::make_tuple("binary", binary_setup));
 
-  all.reduction_stack.push(std::make_tuple("", ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>));
-  all.reduction_stack.push(std::make_tuple("", topk_setup));
-  all.reduction_stack.push(std::make_tuple("", oaa_setup));
-  all.reduction_stack.push(std::make_tuple("", boosting_setup));
-  all.reduction_stack.push(std::make_tuple("", ect_setup));
-  all.reduction_stack.push(std::make_tuple("", log_multi_setup));
-  all.reduction_stack.push(std::make_tuple("", recall_tree_setup));
-  all.reduction_stack.push(std::make_tuple("", memory_tree_setup));
-  all.reduction_stack.push(std::make_tuple("", classweight_setup));
-  all.reduction_stack.push(std::make_tuple("", multilabel_oaa_setup));
-  all.reduction_stack.push(std::make_tuple("", plt_setup));
+  all.reduction_stack.push(std::make_tuple("exp_replay_m", ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>)); // custom logic
+  all.reduction_stack.push(std::make_tuple("top", topk_setup));
+  all.reduction_stack.push(std::make_tuple("oaa", oaa_setup));
+  all.reduction_stack.push(std::make_tuple("boosting", boosting_setup));
+  all.reduction_stack.push(std::make_tuple("ect", ect_setup));
+  all.reduction_stack.push(std::make_tuple("log_multi", log_multi_setup));
+  all.reduction_stack.push(std::make_tuple("recall_tree", recall_tree_setup));
+  all.reduction_stack.push(std::make_tuple("memory_tree", memory_tree_setup));
+  all.reduction_stack.push(std::make_tuple("classweight", classweight_setup));
+  all.reduction_stack.push(std::make_tuple("multilabel_oaa", multilabel_oaa_setup));
+  all.reduction_stack.push(std::make_tuple("plt", plt_setup));
 
-  all.reduction_stack.push(std::make_tuple("", cs_active_setup));
-  all.reduction_stack.push(std::make_tuple("", CSOAA::csoaa_setup));
-  all.reduction_stack.push(std::make_tuple("", interact_setup));
-  all.reduction_stack.push(std::make_tuple("", CSOAA::csldf_setup));
-  all.reduction_stack.push(std::make_tuple("", cb_algs_setup));
-  all.reduction_stack.push(std::make_tuple("", cb_adf_setup));
-  all.reduction_stack.push(std::make_tuple("", mwt_setup));
-  all.reduction_stack.push(std::make_tuple("", cb_explore_setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::greedy::setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::softmax::setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::rnd::setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::squarecb::setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::regcb::setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::first::setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::cover::setup));
-  all.reduction_stack.push(std::make_tuple("", VW::cb_explore_adf::bag::setup));
-  all.reduction_stack.push(std::make_tuple("", cb_dro_setup));
-  all.reduction_stack.push(std::make_tuple("", cb_sample_setup));
-  all.reduction_stack.push(std::make_tuple("", VW::shared_feature_merger::shared_feature_merger_setup));
-  all.reduction_stack.push(std::make_tuple("", CCB::ccb_explore_adf_setup));
-  all.reduction_stack.push(std::make_tuple("", VW::slates::slates_setup));
-  // cbify/warm_cb can gen(rate multi-examples. Merge shared features after them
-  all.reduction_stack.push(std::make_tuple("", warm_cb_setup));
-  all.reduction_stack.push(std::make_tuple("", cbify_setup));
-  all.reduction_stack.push(std::make_tuple("", cbifyldf_setup));
-  all.reduction_stack.push(std::make_tuple("", explore_eval_setup));
-  all.reduction_stack.push(std::make_tuple("", ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>));
-  all.reduction_stack.push(std::make_tuple("", Search::setup));
+  all.reduction_stack.push(std::make_tuple("cs_active", cs_active_setup));
+  all.reduction_stack.push(std::make_tuple("csoaa", CSOAA::csoaa_setup));
+  all.reduction_stack.push(std::make_tuple("interact", interact_setup));
+  all.reduction_stack.push(std::make_tuple("csoaa_ldf", CSOAA::csldf_setup));
+  all.reduction_stack.push(std::make_tuple("cb", cb_algs_setup));
+  all.reduction_stack.push(std::make_tuple("cb_adf", cb_adf_setup));
+  all.reduction_stack.push(std::make_tuple("multiworld_test", mwt_setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore", cb_explore_setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_greedy", VW::cb_explore_adf::greedy::setup));      // custom logic? some of the _adf
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_softmax", VW::cb_explore_adf::softmax::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_rnd", VW::cb_explore_adf::rnd::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_squarecb", VW::cb_explore_adf::squarecb::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_regcb", VW::cb_explore_adf::regcb::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_first", VW::cb_explore_adf::first::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_cover", VW::cb_explore_adf::cover::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_adf_bag", VW::cb_explore_adf::bag::setup));
+  all.reduction_stack.push(std::make_tuple("cb_dro", cb_dro_setup));
+  all.reduction_stack.push(std::make_tuple("cb_sample", cb_sample_setup));
+  all.reduction_stack.push(std::make_tuple("shared_feature_merger_setup", VW::shared_feature_merger::shared_feature_merger_setup)); // custom logic
+  all.reduction_stack.push(std::make_tuple("ccb_explore_adf", CCB::ccb_explore_adf_setup));
+  all.reduction_stack.push(std::make_tuple("slates", VW::slates::slates_setup));
+  // cbify/warm_cb can genrate multi-examples. Merge shared features after them
+  all.reduction_stack.push(std::make_tuple("warm_cb", warm_cb_setup));
+  all.reduction_stack.push(std::make_tuple("cbify", cbify_setup));
+  all.reduction_stack.push(std::make_tuple("cbify_ldf", cbifyldf_setup));
+  all.reduction_stack.push(std::make_tuple("explore_eval", explore_eval_setup));
+  all.reduction_stack.push(std::make_tuple("replay_c", ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>)); // custom logic
+  all.reduction_stack.push(std::make_tuple("search", Search::setup));
   // this string can be a constant under audit_regressor.h
   all.reduction_stack.push(std::make_tuple("audit_regressor", [](options_i& options, vw& all) { return audit_regressor_setup("audit_regressor", options, all); }));
 
@@ -1785,16 +1786,17 @@ vw* initialize(
     right now we are abusing the api, to generate the options but in theory we should seperate to
     re-use same options and same vw without a delete could be added as experimental as a debugging tool
     */
-    if (options.get_typed_option<bool>("setup_stack_debug").value())
+    if (options.get_typed_option<bool>("print_stack").value())
     {
-      cout << "List of enabled reductions: " << std::endl;
+      cout << std::endl << "List of enabled reductions: " << std::endl;
       for (auto a : all.enabled_reductions)
       { cout << a << std::endl;
       }
-      exit(0);
     }
-
-    all.l->init_driver();
+    else
+    {
+      all.l->init_driver();
+    }
 
     return &all;
   }
