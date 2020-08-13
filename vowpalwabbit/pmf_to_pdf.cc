@@ -5,6 +5,7 @@
 #include "reductions.h"
 #include "pmf_to_pdf.h"
 #include "explore.h"
+#include "guard.h"
 #include "vw.h"
 
 using namespace LEARNER;
@@ -71,9 +72,9 @@ namespace VW { namespace pmf_to_pdf
 
   void reduction::predict(example& ec)
   {
-    swap_restore_cb_label swap_label(ec, temp_lbl_cb);
+    auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
     {  // scope for saving / restoring prediction
-      swap_restore_action_scores_prediction save_prediction(ec, temp_pred_a_s);
+      auto save_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
       _p_base->predict(ec);
     }
     transform_prediction(ec);
@@ -104,13 +105,13 @@ namespace VW { namespace pmf_to_pdf
     const uint32_t min_value = (std::max)((int)bandwidth, action_segment_index - (int)bandwidth + 1);
     const uint32_t max_value = (std::min)(num_actions - 1 - bandwidth, action_segment_index + bandwidth);
 
-    swap_restore_cb_label swap_label(ec, temp_lbl_cb);
+    auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
     ec.l.cb.costs.clear();
     ec.l.cb.costs.push_back({cost, min_value + 1, prob * 2 * bandwidth * continuous_range / num_actions, 0.0f});
     ec.l.cb.costs.push_back({cost, max_value + 1, prob * 2 * bandwidth * continuous_range / num_actions, 0.0f});
 
-    swap_restore_action_scores_prediction swap_prediction(ec, temp_pred_a_s);
+    auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 
     _p_base->learn(ec);
   }

@@ -8,6 +8,7 @@
 #include "debug_log.h"
 #include "parse_args.h"
 #include "explore.h"
+#include "guard.h"
 
 // Aliases
 using VW::LEARNER::single_learner;
@@ -47,7 +48,7 @@ namespace continuous_action
     // predict buffer
     _pred_pdf.clear();
     {  // scope to predict & restore prediction
-      swap_restore_pdf_prediction restore(ec, _pred_pdf);
+      auto restore = VW::swap_guard(ec.pred.pdf, _pred_pdf);
       _base->learn(ec);
     }
     return error_code::success;
@@ -58,7 +59,7 @@ namespace continuous_action
     _pred_pdf.clear();
 
     {  // scope to predict & restore prediction
-      swap_restore_pdf_prediction restore(ec, _pred_pdf);
+      auto restore = VW::swap_guard(ec.pred.pdf, _pred_pdf);
       _base->predict(ec);
     }
 

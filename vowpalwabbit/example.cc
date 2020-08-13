@@ -459,41 +459,4 @@ restore_prediction::restore_prediction(example& ec)
 restore_prediction::~restore_prediction()
 { _ec.pred = _prediction; }
 
-swap_restore_action_scores_prediction::swap_restore_action_scores_prediction(example& ec, ACTION_SCORE::action_scores& base_prediction)
-  : _prediction(ec.pred)
-, _ec(ec)
-, _base_prediction(base_prediction)
-{
-  _ec.pred.a_s = _base_prediction;
-}
-
-swap_restore_action_scores_prediction::~swap_restore_action_scores_prediction()
-{
-  _base_prediction = _ec.pred.a_s;
-  _ec.pred = _prediction;
-}
-
-swap_restore_pdf_prediction::swap_restore_pdf_prediction(example& ec, continuous_actions::probability_density_function& base_prediction)
-    : _prediction(ec.pred), _ec(ec), _base_prediction(base_prediction)
-{
-  _ec.pred.pdf = _base_prediction;
-}
-
-swap_restore_pdf_prediction::~swap_restore_pdf_prediction()
-{
-  _base_prediction = _ec.pred.pdf;
-  _ec.pred = _prediction;
-}
-
-swap_restore_cb_label::swap_restore_cb_label(example& ec, CB::label& base_label)
-    : _label(ec.l), _ec(ec), _base_label(base_label)
-{
-  ec.l.cb = base_label;
-}
-
-swap_restore_cb_label::~swap_restore_cb_label()
-{
-  _base_label = _ec.l.cb;
-  _ec.l = _label;
-}
 }  // namespace VW

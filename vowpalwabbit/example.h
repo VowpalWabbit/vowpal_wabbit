@@ -164,39 +164,6 @@ struct restore_prediction
   example& _ec;
 };
 
-struct swap_restore_action_scores_prediction
-{
-  swap_restore_action_scores_prediction(example& ec, ACTION_SCORE::action_scores& base_prediction);
-  ~swap_restore_action_scores_prediction();
-
- private:
-  const polyprediction _prediction;
-  example& _ec;
-  ACTION_SCORE::action_scores& _base_prediction;
-};
-
-struct swap_restore_pdf_prediction
-{
-  swap_restore_pdf_prediction(example& ec, continuous_actions::probability_density_function& base_prediction);
-  ~swap_restore_pdf_prediction();
-
- private:
-  const polyprediction _prediction;
-  example& _ec;
-  continuous_actions::probability_density_function& _base_prediction;
-};
-
-struct swap_restore_cb_label
-{
-  swap_restore_cb_label(example& ec, CB::label& base_label);
-  ~swap_restore_cb_label();
-
-  private:
-    const polylabel _label;
-    example& _ec;
-    CB::label& _base_label;
-};
-
 }  // namespace VW
 std::string features_to_string(const example& ec);
 std::string simple_label_to_string(const example& ec);
