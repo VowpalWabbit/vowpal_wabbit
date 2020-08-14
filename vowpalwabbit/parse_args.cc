@@ -1792,7 +1792,7 @@ vw* initialize(
       std::ostringstream imploded;
       std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end()-1, std::ostream_iterator<std::string>(imploded, delim));
 
-      cout << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
+      all.trace_message << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
     }
 
     if (!options.get_typed_option<bool>("what_if").value())
