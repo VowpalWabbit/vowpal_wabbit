@@ -7,7 +7,6 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/test_named_csoaa
 num sources = 1
-Enabled reductions: gd, scorer, csoaa, replay_c, audit_regressor
 Regressor contains 18 values
 example      values         total   
 counter      audited        progress
