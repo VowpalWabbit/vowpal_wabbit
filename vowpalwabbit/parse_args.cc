@@ -1782,19 +1782,6 @@ vw* initialize(
       exit(0);
     }
 
-    /*
-    right now we are abusing the api, to generate the options but in theory we should seperate to
-    re-use same options and same vw without a delete could be added as experimental as a debugging tool
-    */
-    if (!all.enabled_reductions.empty())
-    {
-      const char* const delim = ", ";
-      std::ostringstream imploded;
-      std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end()-1, std::ostream_iterator<std::string>(imploded, delim));
-
-      all.trace_message << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
-    }
-
     if (!options.get_typed_option<bool>("what_if").value())
     {
       all.l->init_driver();
