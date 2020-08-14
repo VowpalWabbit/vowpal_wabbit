@@ -44,6 +44,19 @@ vw* setup(options_i& options)
 
   auto skip_driver = options.get_typed_option<bool>("what_if").value();
 
+  /*
+  right now we are abusing the api, to generate the options but in theory we should seperate to
+  re-use same options and same vw without a delete could be added as experimental as a debugging tool
+  */
+  if (!all->logger.quiet && !options.was_supplied("audit_regressor") && !all->enabled_reductions.empty())
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(all->enabled_reductions.begin(), all->enabled_reductions.end()-1, std::ostream_iterator<std::string>(imploded, delim));
+
+    all->trace_message << "Enabled reductions: " << imploded.str() << all->enabled_reductions.back() << std::endl;
+  }
+
   if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
@@ -60,19 +73,6 @@ vw* setup(options_i& options)
                        << " " << std::setw(shared_data::col_current_label) << "label"
                        << " " << std::setw(shared_data::col_current_predict) << "predict"
                        << " " << std::setw(shared_data::col_current_features) << "features" << std::endl;
-  }
-
-  /*
-  right now we are abusing the api, to generate the options but in theory we should seperate to
-  re-use same options and same vw without a delete could be added as experimental as a debugging tool
-  */
-  if (!all->logger.quiet && !all->enabled_reductions.empty())
-  {
-    const char* const delim = ", ";
-    std::ostringstream imploded;
-    std::copy(all->enabled_reductions.begin(), all->enabled_reductions.end()-1, std::ostream_iterator<std::string>(imploded, delim));
-
-    all->trace_message << "Enabled reductions: " << imploded.str() << all->enabled_reductions.back() << std::endl;
   }
 
   return all;
