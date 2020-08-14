@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_squarecb.h"
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
@@ -16,6 +16,11 @@
 #include <algorithm>
 #include <cmath>
 
+/*
+This file implements the SquareCB algorithm/reduction (Foster and Rakhlin (2020), https://arxiv.org/abs/2002.04926),
+with the VW learner as the base algorithm.
+*/
+
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
 
@@ -25,15 +30,19 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-namespace regcb
+namespace squarecb
 {
-struct cb_explore_adf_regcb
+struct cb_explore_adf_squarecb
 {
 private:
+  // size_t _counter;
   size_t _counter;
-  bool _regcbopt;  // use optimistic variant of RegCB
-  float _c0;       // mellowness parameter for RegCB
-  bool _first_only;
+  float _gamma_scale;     // Scale factor for SquareCB reediness parameter $\gamma$.
+  float _gamma_exponent;  // Exponent on $t$ for SquareCB reediness parameter $\gamma$.
+
+  // Parameters and data structures for RegCB action set computation
+  bool _elim;
+  float _c0;
   float _min_cb_cost;
   float _max_cb_cost;
 
@@ -45,8 +54,9 @@ private:
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
 public:
-  cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost);
-  ~cb_explore_adf_regcb() = default;
+  cb_explore_adf_squarecb(
+      float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost);
+  ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -60,23 +70,41 @@ private:
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
-cb_explore_adf_regcb::cb_explore_adf_regcb(
-    bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost)
-    : _regcbopt(regcbopt), _c0(c0), _first_only(first_only), _min_cb_cost(min_cb_cost), _max_cb_cost(max_cb_cost)
+cb_explore_adf_squarecb::cb_explore_adf_squarecb(
+    float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost)
+    : _counter(0)
+    , _gamma_scale(gamma_scale)
+    , _gamma_exponent(gamma_exponent)
+    , _elim(elim)
+    , _c0(c0)
+    , _min_cb_cost(min_cb_cost)
+    , _max_cb_cost(max_cb_cost)
 {
 }
 
-// TODO: same as cs_active.cc, move to shared place
-float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, float tol)
+// TODO: same as cs_active.cc and cb_explore_adf_regcb.cc, move to shared place
+float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens, float tol)
 {
+  /*
+     Binary search to find the largest weight w such that w*(fhat^2 - (fhat - w*sens)^2) \leq delta.
+     Implements binary search procedure described at the end of Section 7.1 in https://arxiv.org/pdf/1703.01014.pdf.
+  */
+
+  // We are always guaranteed that the solution to the problem above lies in (0, maxw), as long as fhat \geq 0.
   const float maxw = (std::min)(fhat / sens, FLT_MAX);
 
+  // If the objective value for maxw satisfies the delta constraint, we can just take this and skip the binary search.
   if (maxw * fhat * fhat <= delta) return maxw;
 
+  // Upper and lower bounds on w for binary search.
   float l = 0;
   float u = maxw;
-  float w, v;
+  // Binary search variable.
+  float w;
+  // Value for w.
+  float v;
 
+  // Standard binary search given the objective described above.
   for (int iter = 0; iter < B_SEARCH_MAX_ITER; iter++)
   {
     w = (u + l) / 2.f;
@@ -91,7 +119,8 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
   return l;
 }
 
-void cb_explore_adf_regcb::get_cost_ranges(
+// TODO: Same as cb_explore_adf_regcb.cc
+void cb_explore_adf_squarecb::get_cost_ranges(
     float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
@@ -153,7 +182,7 @@ void cb_explore_adf_regcb::get_cost_ranges(
 }
 
 template <bool is_learn>
-void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
   {
@@ -172,49 +201,78 @@ void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
 
+  // The actual parameter $\gamma$ used in the SquareCB.
+  const float gamma = _gamma_scale * std::pow(_counter, _gamma_exponent);
+
+  // RegCB action set parameters
   const float max_range = _max_cb_cost - _min_cb_cost;
   // threshold on empirical loss difference
-  const float delta = _c0 * log((float)(num_actions * _counter)) * pow(max_range, 2);
+  const float delta = _c0 * std::log((float)(num_actions * _counter)) * std::pow(max_range, 2);
 
+  // SquareCB Exploration
   if (!is_learn)
   {
-    get_cost_ranges(delta, base, examples, /*min_only=*/_regcbopt);
-
-    if (_regcbopt)  // optimistic variant
+    if (!_elim)  // Vanilla variant (perform SquareCB exploration over all actions)
     {
-      float min_cost = FLT_MAX;
-      size_t a_opt = 0;  // optimistic action
+      size_t a_min = 0;
+      float min_cost = preds[0].score;
+      // Compute highest-scoring action
       for (size_t a = 0; a < num_actions; ++a)
       {
-        if (_min_costs[a] < min_cost)
+        if (preds[a].score < min_cost)
         {
-          min_cost = _min_costs[a];
-          a_opt = a;
+          a_min = a;
+          min_cost = preds[a].score;
         }
       }
-      for (size_t i = 0; i < preds.size(); ++i)
+      // Compute probabilities using SquareCB rule.
+      float total_weight = 0;
+      float pa = 0;
+      for (size_t a = 0; a < num_actions; ++a)
       {
-        if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost))
-          preds[i].score = 1;
-        else
-          preds[i].score = 0;
+        if (a == a_min) continue;
+        pa = 1. / (num_actions + gamma * (preds[a].score - min_cost));
+        preds[a].score = pa;
+        total_weight += pa;
       }
+      preds[a_min].score = 1.f - total_weight;
     }
     else  // elimination variant
     {
+      get_cost_ranges(delta, base, examples, /*min_only=*/false);
+
       float min_max_cost = FLT_MAX;
       for (size_t a = 0; a < num_actions; ++a)
         if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
-      for (size_t i = 0; i < preds.size(); ++i)
+
+      size_t a_min = 0;
+      size_t num_surviving_actions = 0;
+      float min_cost = FLT_MAX;
+      // Compute plausible / surviving actions.
+      for (size_t a = 0; a < num_actions; ++a)
       {
-        if (_min_costs[preds[i].action] <= min_max_cost)
-          preds[i].score = 1;
-        else
-          preds[i].score = 0;
-        // explore uniformly on support
-        exploration::enforce_minimum_probability(
-            1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
+        if (preds[a].score < min_cost && _min_costs[preds[a].action] <= min_max_cost)
+        {
+          a_min = a;
+          min_cost = preds[a].score;
+          num_surviving_actions += 1;
+        }
       }
+      float total_weight = 0;
+      float pa = 0;
+      // // Compute probabilities for surviving actions using SquareCB rule.
+      for (size_t a = 0; a < num_actions; ++a)
+      {
+        if (_min_costs[preds[a].action] > min_max_cost) { preds[a].score = 0; }
+        else
+        {
+          if (a == a_min) continue;
+          pa = 1. / (num_surviving_actions + gamma * (preds[a].score - min_cost));
+          preds[a].score = pa;
+          total_weight += pa;
+        }
+      }
+      preds[a_min].score = 1.f - total_weight;
     }
   }
 }
@@ -223,38 +281,60 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
-  bool regcb = false;
-  const std::string mtr = "mtr";
-  std::string type_string(mtr);
-  bool regcbopt = false;
+  bool squarecb = false;
+  std::string type_string = "mtr";
+
+  // Basic SquareCB parameters
+  float gamma_scale = 1.;
+  float gamma_exponent = 0.;
+
+  // Perform SquareCB exploration over RegCB-style disagreement sets
+  bool elim = false;
   float c0 = 0.;
-  bool first_only = false;
   float min_cb_cost = 0.;
   float max_cb_cost = 0.;
+
   config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
-      .add(make_option("regcbopt", regcbopt).keep().help("RegCB optimistic exploration"))
-      .add(make_option("mellowness", c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
-      .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
-      .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
-      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
+      .add(make_option("squarecb", squarecb).keep().help("SquareCB exploration"))
+      .add(make_option("gamma_scale", gamma_scale)
+               .keep()
+               .default_value(10.f)
+               .help("Sets SquareCB greediness parameter to gamma=[gamma_scale]*[num examples]^1/2"))
+      .add(make_option("gamma_exponent", gamma_exponent)
+               .default_value(.5f)
+               .help("Exponent on [num examples] in SquareCB greediness parameter gamma."))
+      .add(make_option("elim", elim)
+               .keep()
+               .help("Only perform SquareCB exploration over plausible actions (computed via RegCB strategy)"))
+      .add(make_option("mellowness", c0)
+               .keep()
+               .default_value(0.001f)
+               .help("Mellowness parameter c_0 for computing plausible action set. Only used with --elim"))
+      .add(make_option("cb_min_cost", min_cb_cost)
+               .keep()
+               .default_value(0.f)
+               .help("Lower bound on cost. Only used with --elim"))
+      .add(make_option("cb_max_cost", max_cb_cost)
+               .keep()
+               .default_value(1.f)
+               .help("Upper bound on cost. Only used with --elim"))
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
   options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt"))) return nullptr;
+  if (!cb_explore_adf_option || !options.was_supplied("squarecb")) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
-  if (type_string != mtr)
+  if (type_string != "mtr")
   {
-    all.trace_message << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
-    options.replace("cb_type", mtr);
+    all.trace_message << "warning: bad cb_type, SquareCB only supports mtr; resetting to mtr." << std::endl;
+    options.replace("cb_type", "mtr");
   }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
@@ -266,8 +346,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type_t::cb;
 
-  using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
-  auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
+  using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
+  auto data = scoped_calloc_or_throw<explore_type>(gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost);
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
@@ -275,6 +355,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   return make_base(l);
 }
 
-}  // namespace regcb
+}  // namespace squarecb
 }  // namespace cb_explore_adf
 }  // namespace VW

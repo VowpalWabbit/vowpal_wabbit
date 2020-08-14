@@ -138,6 +138,7 @@
     <ClInclude Include="cb_explore_adf_first.h" />
     <ClInclude Include="cb_explore_adf_greedy.h" />
     <ClInclude Include="cb_explore_adf_regcb.h" />
+    <ClInclude Include="cb_explore_adf_squarecb.h" />
     <ClInclude Include="cb_explore_adf_rnd.h" />
     <ClInclude Include="cb_explore_adf_softmax.h" />
     <ClInclude Include="cb_explore.h" />
@@ -270,6 +271,7 @@
     <ClCompile Include="cb_explore_adf_first.cc" />
     <ClCompile Include="cb_explore_adf_greedy.cc" />
     <ClCompile Include="cb_explore_adf_regcb.cc" />
+    <ClCompile Include="cb_explore_adf_squarecb.cc" />
     <ClCompile Include="cb_explore_adf_rnd.cc" />
     <ClCompile Include="cb_explore_adf_softmax.cc" />
     <ClCompile Include="cb_explore.cc" />

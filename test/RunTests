@@ -1862,6 +1862,22 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 217: daemon test with json
 ./daemon-test.sh --json
     test-sets/ref/vw-daemon.stdout
+    
+# Test 218: cbify adf, squarecb
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --gamma_scale 500 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb.stderr
+
+# Test 219: cbify adf, squarecb-elim
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb_elim.stderr
+
+# Test 220: cbify ldf, squarecb
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --gamma_scale 500
+    train-sets/ref/cbify_ldf_squarecb.stderr
+
+# Test 221: cbify ldf, squarecb-elim
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001
+    train-sets/ref/cbify_ldf_squarecb_elim.stderr
 
 # Test 218: Flatbuffer Simple Label Test
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb \
