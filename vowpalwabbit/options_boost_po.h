@@ -105,7 +105,7 @@ struct options_boost_po : public options_i
     *(it + 1) = value;
   }
 
-  std::vector<std::string> get_positional_tokens() const override
+  std::vector<std::string> get_data_values() const override
   {
     po::positional_options_description p;
     p.add("__positional__", -1);
@@ -117,6 +117,18 @@ struct options_boost_po : public options_i
                                  .allow_unregistered()
                                  .positional(p)
                                  .run();
+
+    auto it = std::find_if(
+        pos.options.begin(), pos.options.end(), [](po::option const& o) { return o.string_key == "data"; });
+
+    if (it == pos.options.end())
+    {
+      // fail: no --data or -d
+    }
+    else
+    {
+      return it->value;
+    }
 
     po::variables_map vm;
     po::store(pos, vm);
