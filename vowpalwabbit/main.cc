@@ -42,10 +42,11 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  auto should_print_stack = options.get_typed_option<bool>("print_stack").value();
+  auto skip_driver = options.get_typed_option<bool>("what_if").value();
 
-  if (!should_print_stack && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
+    all->trace_message << std::endl;
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"
                        << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
@@ -114,9 +115,9 @@ int main(int argc, char* argv[])
 
     vw& all = *alls[0];
 
-    auto should_print_stack = all.options->get_typed_option<bool>("print_stack").value();
+    auto skip_driver = all.options->get_typed_option<bool>("what_if").value();
 
-    if (should_print_stack)
+    if (skip_driver)
     {
       for (vw* v : alls)
       {

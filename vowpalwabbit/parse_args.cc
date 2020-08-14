@@ -359,7 +359,7 @@ void parse_diagnostics(options_i& options, vw& all)
 {
   bool version_arg = false;
   bool help = false;
-  bool print_stack = false;
+  bool skip_driver = false;
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic options");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
@@ -368,8 +368,8 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
-      .add(make_option("print_stack", print_stack)
-               .help("Print the stack that would be created with the given args. Will not execute driver."))
+      .add(make_option("what_if", skip_driver)
+               .help("Parse arguments and print corresponding metadata. Will not execute driver."))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
   options.add_and_parse(diagnostic_group);
@@ -1786,14 +1786,16 @@ vw* initialize(
     right now we are abusing the api, to generate the options but in theory we should seperate to
     re-use same options and same vw without a delete could be added as experimental as a debugging tool
     */
-    if (options.get_typed_option<bool>("print_stack").value())
+    if (!all.enabled_reductions.empty())
     {
-      cout << std::endl << "List of enabled reductions: " << std::endl;
-      for (auto a : all.enabled_reductions)
-      { cout << a << std::endl;
-      }
+      const char* const delim = ", ";
+      std::ostringstream imploded;
+      std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end()-1, std::ostream_iterator<std::string>(imploded, delim));
+
+      cout << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
     }
-    else
+
+    if (!options.get_typed_option<bool>("what_if").value())
     {
       all.l->init_driver();
     }
