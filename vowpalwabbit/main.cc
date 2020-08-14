@@ -48,7 +48,7 @@ vw* setup(options_i& options)
   right now we are abusing the api, to generate the options but in theory we should seperate to
   re-use same options and same vw without a delete could be added as experimental as a debugging tool
   */
-  if (!all->enabled_reductions.empty())
+  if (!all->logger.quiet && !all->enabled_reductions.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
