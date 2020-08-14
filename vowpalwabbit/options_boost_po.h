@@ -73,11 +73,13 @@ struct options_boost_po : public options_i
 
   void require(const std::string& key, const std::string& value) override
   {
-    m_command_line.push_back("--" + key);
-    if (!value.empty())
-    {
-      m_command_line.push_back(value);
-    }
+    m_required_options.insert({key, value});
+
+    // If .require() call gets made, it means that VW itself is adding a new option
+    // therefore we know it exists and should be marked as a defined_option.
+    // User input should not be added via insert() but rather via the constructor
+    m_defined_options.insert(key);
+    m_ignore_supplied.insert(key);
   }
 
   // Note: does not work for vector options.
@@ -169,6 +171,8 @@ struct options_boost_po : public options_i
   std::map<std::string, std::shared_ptr<base_option>> m_options;
 
   std::vector<std::string> m_command_line;
+
+  std::map<std::string, std::string> m_required_options;
 
   std::stringstream m_help_stringstream;
 

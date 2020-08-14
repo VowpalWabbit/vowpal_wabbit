@@ -62,6 +62,11 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
     m_options[opt_ptr->m_name] = opt_ptr;
+
+    // only add to string when it's being defined
+    if (m_required_options.count(opt_ptr->m_name) || m_required_options.count(opt_ptr->m_short_name))
+    { this->insert(opt_ptr->m_name, m_required_options[opt_ptr->m_name]);
+    };
   }
 
   // Add the help for the given options.
