@@ -108,7 +108,7 @@ void learn(plt& p, single_learner& base, example& ec)
         p.positive_nodes.insert(tn);
         while (tn > 0)
         {
-          tn = floor(static_cast<float>(tn - 1) / p.kary);
+          tn = static_cast<uint32_t>(floor(static_cast<float>(tn - 1) / p.kary));
           p.positive_nodes.insert(tn);
         }
       }
@@ -209,8 +209,8 @@ void predict(plt& p, single_learner& base, example& ec)
         if (p.true_labels.count(pred_label)) ++tp;
       }
       p.tp += tp;
-      p.fp += preds.label_v.size() - tp;
-      p.fn += p.true_labels.size() - tp;
+      p.fp += static_cast<uint32_t>(preds.label_v.size()) - tp;
+      p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
       ++p.ec_count;
     }
   }
@@ -256,7 +256,7 @@ void predict(plt& p, single_learner& base, example& ec)
         if (p.true_labels.count(preds.label_v[i])) ++p.tp_at[i];
       }
       ++p.ec_count;
-      p.true_count += p.true_labels.size();
+      p.true_count += static_cast<uint32_t>(p.true_labels.size());
     }
   }
 
@@ -266,7 +266,7 @@ void predict(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(vw& all, plt& p, example& ec)
+void finish_example(vw& all, plt& /*p*/, example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -344,14 +344,18 @@ base_learner* plt_setup(options_i& options, vw& all)
   const double e = tree->k - (a - c);
   tree->t = static_cast<uint32_t>(e + d);
   tree->ti = tree->t - tree->k;
-  
+
   if (!all.logger.quiet)
   {
     all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)
-      if (tree->top_k > 0) all.trace_message << "top_k = " << tree->top_k << std::endl;
+    {
+      if (tree->top_k > 0) { all.trace_message << "top_k = " << tree->top_k << std::endl; }
       else
+      {
         all.trace_message << "threshold = " << tree->threshold << std::endl;
+      }
+    }
   }
 
   // resize v_arrays

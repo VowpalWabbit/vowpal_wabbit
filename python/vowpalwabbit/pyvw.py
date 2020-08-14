@@ -5,6 +5,7 @@ from __future__ import division
 import pylibvw
 import warnings
 import pandas as pd
+import numpy as np
 
 
 class SearchTask:
@@ -1513,6 +1514,8 @@ class _Col:
         expected_type = list(self.expected_type)
         if str in expected_type:
             expected_type.append(object)
+        if int in expected_type:
+            expected_type.append(np.int64)
 
         col_type = df[self.colname].dtype
         if not (col_type in expected_type):
@@ -1551,7 +1554,7 @@ class _Col:
 
 class AttributeDescriptor(object):
     """This descriptor class enforces type checking and value checking for the
-    attributes of the (managed) classes SimpleLabel, Feature, etc.
+    attributes of the (managed) classes SimpleLabel, MulticlassLabel, Feature, etc.
 
     If the attribute represents a column, no type or value checking are
     performed (since the dataframe and the subsequent column is not known yet)
@@ -1590,7 +1593,7 @@ class AttributeDescriptor(object):
 
     def __set__(self, instance, arg):
         """Implement set protocol to enforce type (and value range) checking
-        for managed class such as SimpleLabel, Feature, etc.
+        for managed class such as SimpleLabel, MulticlassLabel, Feature, etc.
 
         Parameters
         ----------
@@ -1734,6 +1737,65 @@ class SimpleLabel(object):
             The SimpleLabel string representation.
         """
         return _get_col_or_value(self.name, df)
+
+
+class MulticlassLabel(object):
+    """The multiclass label type for the constructor of DFtoVW."""
+
+    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
+    weight = AttributeDescriptor(
+        "weight", expected_type=(int, float), min_value=0
+    )
+
+    def __init__(
+        self, name, weight=None, name_from_df=True, weight_from_df=True
+    ):
+        """Initialize a MulticlassLabel instance.
+
+        Parameters
+        ----------
+        name : str/int
+            The name of the multi class. If name_from_df=False, it should be of
+            type int.
+        weight: str/int/float, optional
+            The (importance) weight of the multi class. If name_from_df=False,
+            it should be of type int or float.
+        name_from_df: bool (default: True)
+            True if the name refers to a column in the dataframe and False if
+            the name is a constant.
+        weight_from_df: bool (default: True)
+            True if the weight refers to a column in the dataframe and False if
+            the weight is a constant.
+
+        Returns
+        -------
+        self : MulticlassLabel
+        """
+        self.name_from_df = name_from_df
+        self.weight_from_df = weight_from_df
+        self.name = name
+        self.weight = weight
+
+    def process(self, df):
+        """Returns the MulticlassLabel string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column(s).
+
+        Returns
+        -------
+        str or pandas.Series
+            The MulticlassLabel string representation.
+        """
+        name_col = _get_col_or_value(self.name, df)
+        if self.weight is not None:
+            weight_col = _get_col_or_value(self.weight, df)
+            out = name_col + " " + weight_col
+        else:
+            out = name_col
+        return out
 
 
 class Feature(object):
@@ -1930,7 +1992,7 @@ class Namespace(object):
 class DFtoVW:
     """Convert a pandas DataFrame to a suitable VW format.
     Instances of this class are built with classes such as SimpleLabel,
-    Feature or Namespace.
+    MulticlassLabel, Feature or Namespace.
 
     The class also provided a convenience constructor to initialize the class
     based on the target/features column names only.
@@ -2054,6 +2116,7 @@ class DFtoVW:
         """
         dict_label_type = {
             "simple_label": SimpleLabel,
+            "multiclass": MulticlassLabel,
         }
 
         if isinstance(y, list):
@@ -2151,9 +2214,9 @@ class DFtoVW:
         Raises
         ------
         TypeError
-            If label is not of type SimpleLabel.
+            If label is not of type SimpleLabel or MulticlassLabel.
         """
-        available_labels = (SimpleLabel, )
+        available_labels = (SimpleLabel, MulticlassLabel)
 
         if self.label is None:
             pass

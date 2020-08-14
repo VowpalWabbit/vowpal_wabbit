@@ -194,7 +194,7 @@ struct search_private
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
-  v_array<example> learn_ec_copy;               // copy of example(s) at learn_t
+  std::vector<example> learn_ec_copy;           // copy of example(s) at learn_t
   example* learn_ec_ref;                        // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt;                      // how many are there (for LDF mode only; otherwise 1)
   v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
@@ -280,8 +280,8 @@ struct search_private
   v_array<size_t> timesteps;
   polylabel learn_losses;
   polylabel gte_label;
-  v_array<std::pair<float, size_t>> active_uncertainty;
-  v_array<v_array<std::pair<CS::wclass&, bool>>> active_known;
+  std::vector<std::pair<float, size_t>> active_uncertainty;
+  std::vector<std::vector<std::pair<CS::wclass&, bool>>> active_known;
   bool force_setup_ec_ref;
   bool active_csoaa;
   float active_csoaa_verify;
@@ -319,9 +319,6 @@ struct search_private
       condition_on_actions.delete_v();
       learn_allowed_actions.delete_v();
       ldf_test_label.costs.delete_v();
-      active_uncertainty.delete_v();
-      for (size_t i = 0; i < active_known.size(); i++) active_known[i].delete_v();
-      active_known.delete_v();
 
       if (cb_learner)
         allowed_actions_cache->cb.costs.delete_v();
@@ -339,8 +336,7 @@ struct search_private
       if (!examples_dont_change)
       {
         void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-        for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
-        learn_ec_copy.delete_v();
+        for (example& ec : learn_ec_copy) { ec.delete_unions(delete_label, nullptr); }
       }
       learn_condition_on_names.delete_v();
       learn_condition_on.delete_v();
@@ -1264,8 +1260,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     size_t cur_t = priv.t + priv.meta_t - 1;
     while (priv.active_known.size() <= cur_t)
     {
-      priv.active_known.push_back(v_array<std::pair<CS::wclass&, bool>>());
-      priv.active_known[priv.active_known.size() - 1] = v_init<std::pair<CS::wclass&, bool>>();
+      priv.active_known.push_back({});
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].clear();
@@ -1464,9 +1459,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   memset(here, 0, sz);
   *here = (unsigned char)sz;
   here += sizeof(size_t);
-  *here = mytag;
+  *here = static_cast<uint8_t>(mytag);
   here += sizeof(ptag);
-  *here = policy;
+  *here = static_cast<uint8_t>(policy);
   here += sizeof(int);
   *here = (unsigned char)learner_id;
   here += sizeof(size_t);
@@ -1474,9 +1469,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   here += sizeof(size_t);
   for (size_t i = 0; i < condition_on_cnt; i++)
   {
-    *here = condition_on[i];
+    *here = static_cast<uint8_t>(condition_on[i]);
     here += sizeof(ptag);
-    *here = condition_on_actions[i].a;
+    *here = static_cast<uint8_t>(condition_on_actions[i].a);
     here += sizeof(action);
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
@@ -1730,11 +1725,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
         void (*label_copy_fn)(void*, void*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
 
-        ensure_size(priv.learn_ec_copy, ec_cnt);
+        priv.learn_ec_copy.resize(ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, priv.learn_ec_copy.begin() + i, ecs + i, label_size, label_copy_fn);
+          VW::copy_example_data(priv.all->audit, &priv.learn_ec_copy[i], ecs + i, label_size, label_copy_fn);
 
-        priv.learn_ec_ref = priv.learn_ec_copy.begin();
+        priv.learn_ec_ref = priv.learn_ec_copy.data();
       }
 
       // copy conditioning stuff and allowed actions
@@ -1765,7 +1760,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         else
         {
           ensure_size(priv.learn_condition_on_names, strlen(condition_on_names) + 1);
-          strcpy(priv.learn_condition_on_names.begin(), condition_on_names);
+          VW::string_cpy(priv.learn_condition_on_names.begin(), (strlen(condition_on_names) + 1), condition_on_names);
         }
       }
 
@@ -2117,7 +2112,7 @@ void run_task(search& sch, multi_ex& ec)
 }
 
 void verify_active_csoaa(
-    COST_SENSITIVE::label& losses, v_array<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
+    COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
 {
   float threshold = multiplier / std::sqrt((float)t);
   cdbg << "verify_active_csoaa, losses = [";
@@ -2533,8 +2528,8 @@ void search_initialize(vw* all, search& sch)
 
   sch.task_data = nullptr;
 
-  priv.active_uncertainty = v_init<std::pair<float, size_t>>();
-  priv.active_known = v_init<v_array<std::pair<CS::wclass&, bool>>>();
+  priv.active_uncertainty.clear();
+  priv.active_known.clear();
 
   CS::cs_label.default_label(&priv.empty_cs_label);
 
@@ -2591,14 +2586,14 @@ void search_finish(search& sch)
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
-  FILE* f = fopen(filename, "r");
-  if (f == nullptr)
+  FILE* f;
+  if (VW::file_open(&f, filename, "r") != 0)
     THROW("error: could not read file " << filename << " (" << VW::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
   bool* bg = calloc_or_throw<bool>(((size_t)(A + 1)) * (A + 1));
   int rd, from, to, count = 0;
-  while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0)
+  while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > (int)A))
     {
@@ -2616,14 +2611,16 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 
   v_array<CS::label> allowed = v_init<CS::label>();
 
-  for (size_t from = 0; from < A; from++)
+  // from
+  for (size_t i = 0; i < A; i++)
   {
     v_array<CS::wclass> costs = v_init<CS::wclass>();
 
-    for (size_t to = 0; to < A; to++)
-      if (bg[from * (A + 1) + to])
+    // to
+    for (size_t j = 0; j < A; j++)
+      if (bg[i * (A + 1) + j])
       {
-        CS::wclass c = {FLT_MAX, (action)to, 0., 0.};
+        CS::wclass c = {FLT_MAX, (action)j, 0., 0.};
         costs.push_back(c);
       }
 
@@ -3023,7 +3020,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   // action "1" is at index 0. Map action to its appropriate index. In particular, this fixes an
   // issue where the predicted action is the last, and there is no example header, causing an index
   // beyond the end of the array (usually resulting in a segfault at some point.)
-  size_t action_index = a - COST_SENSITIVE::ec_is_example_header(ecs[0]) ? 0 : 1;
+  size_t action_index = (a - COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 0 : 1;
 
   if ((mytag != 0) && ecs[action_index].l.cs.costs.size() > 0)
   {
@@ -3414,11 +3411,14 @@ predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
 }
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
 {
   erase_alloweds();
   return add_allowed(a);
 }
+VW_WARNING_STATE_POP
 predictor& predictor::set_allowed(std::vector<std::pair<action, float>>& a)
 {
   erase_alloweds();
@@ -3446,7 +3446,7 @@ predictor& predictor::add_condition_range(ptag hi, ptag count, char name0)
   {
     if (i > hi)
       break;
-    char name = name0 + i;
+    char name = name0 + static_cast<char>(i);
     condition_on_tags.push_back(hi - i);
     condition_on_names.push_back(name);
   }

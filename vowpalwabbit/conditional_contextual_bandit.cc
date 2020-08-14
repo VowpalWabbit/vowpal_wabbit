@@ -293,7 +293,7 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
   for (size_t i = 0; i < original_size; i++)
   {
     auto interaction_copy = generated_interactions[i];
-    interaction_copy.push_back((char)ccb_id_namespace);
+    interaction_copy.push_back(static_cast<namespace_index>(ccb_id_namespace));
     generated_interactions.push_back(interaction_copy);
   }
 

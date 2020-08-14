@@ -441,7 +441,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
       // collisions.  Have not played with this issue yet...
       parent_toggle(poly, wid_cur);
     }
-    min_depths_set(poly, wid_cur, poly.cur_depth);
+    min_depths_set(poly, wid_cur, static_cast<uint8_t>(poly.cur_depth));
   }
 
   if (!cycle_get(poly, wid_cur) &&
@@ -692,7 +692,7 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->sum_sparsity_sync = 0;
   poly->sum_input_sparsity_sync = 0;
   poly->num_examples_sync = 0;
-  poly->last_example_counter = -1;
+  poly->last_example_counter = std::numeric_limits<uint64_t>::max();
   poly->numpasses = 1;
   poly->update_support = false;
   poly->original_ec = nullptr;

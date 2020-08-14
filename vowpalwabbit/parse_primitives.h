@@ -15,8 +15,6 @@
 #include "vw_string_view.h"
 #include "fast_pow10.h"
 
-std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss);
-
 // chop up the string into a v_array or any compatible container of VW::string_view.
 template <typename ContainerT>
 void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty = false)
@@ -112,7 +110,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
   }
   if (*p == ' ' || *p == '\n' || *p == '\t' || p == endLine)  // easy case succeeded.
   {
-    acc *= VW::fast_pow10(exp_acc - num_dec);
+    acc *= VW::fast_pow10(static_cast<int8_t>(exp_acc - num_dec));
     end_idx = p - start;
     return s * acc;
   }
@@ -142,10 +140,8 @@ inline float float_of_string(VW::string_view s)
   return f;
 }
 
-inline int int_of_string(VW::string_view s)
+inline int int_of_string(VW::string_view s, char*& end)
 {
-  char* end = nullptr;
-
   // can't use stol because that throws an exception. Use strtol instead.
   int i = strtol(s.begin(), &end, 10);
   if (end <= s.begin() && s.size() > 0)
@@ -156,4 +152,10 @@ inline int int_of_string(VW::string_view s)
   }
 
   return i;
+}
+
+inline int int_of_string(VW::string_view s)
+{
+  char* end = nullptr;
+  return int_of_string(s, end);
 }
