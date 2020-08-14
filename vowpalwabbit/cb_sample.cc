@@ -101,10 +101,9 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   bool cb_sample_option = false;
 
   option_group_definition new_options("CB Sample");
-  new_options.add(make_option("cb_sample", cb_sample_option).keep().help("Sample from CB pdf and swap top action."));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action."));
 
-  if (!cb_sample_option)
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   if (options.was_supplied("no_predict"))

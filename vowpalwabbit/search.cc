@@ -2693,6 +2693,7 @@ base_learner* setup(options_i& options, vw& all)
       make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
   new_options.add(make_option("search_task", task_string)
                       .keep()
+                      .necessary()
                       .help("the search task (use \"--search_task list\" to get a list of available tasks)"));
   new_options.add(
       make_option("search_metatask", metatask_string)
@@ -2750,9 +2751,8 @@ base_learner* setup(options_i& options, vw& all)
                       .help("verify that active learning is doing the right thing (arg = multiplier, should be = "
                             "cost_range * range_c)"));
   new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("search_task"))
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   search_initialize(&all, *sch.get());
@@ -2897,7 +2897,7 @@ base_learner* setup(options_i& options, vw& all)
   if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
       !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
   {
-    options.insert("csoaa", std::to_string(priv.A));
+    options.require("csoaa", std::to_string(priv.A));
   }
 
   priv.active_csoaa = options.was_supplied("cs_active");

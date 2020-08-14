@@ -245,9 +245,12 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
+
   options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt"))) return nullptr;
+  // TODO custom check
+  if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt")))
+    return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   options.ensure_default_dependency("cb_adf");

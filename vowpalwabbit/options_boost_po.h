@@ -51,6 +51,7 @@ struct options_boost_po : public options_i
   options_boost_po& operator=(options_boost_po&) = delete;
 
   void add_and_parse(const option_group_definition& group) override;
+  bool add_parse_and_check_necessary(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
   bool ensure_default_dependency(const std::string& key) override;
   bool ensure_default_dependency(const std::string& key, const std::string& value) override;
@@ -60,6 +61,15 @@ struct options_boost_po : public options_i
   std::vector<std::shared_ptr<const base_option>> get_all_options() const override;
   std::shared_ptr<base_option> get_option(const std::string& key) override;
   std::shared_ptr<const base_option> get_option(const std::string& key) const override;
+
+  void insert(const std::string& key, const std::string& value) override
+  {
+    m_command_line.push_back("--" + key);
+    if (!value.empty())
+    {
+      m_command_line.push_back(value);
+    }
+  }
 
   void require(const std::string& key, const std::string& value) override
   {
@@ -117,15 +127,6 @@ struct options_boost_po : public options_i
   }
 
  private:
-  void insert(const std::string& key, const std::string& value) override
-  {
-    m_command_line.push_back("--" + key);
-    if (!value.empty())
-    {
-      m_command_line.push_back(value);
-    }
-  }
-
   template <typename T>
   typename po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
 

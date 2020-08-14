@@ -393,13 +393,13 @@ base_learner* cbify_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cbify", num_actions)
                .keep()
+               .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("cbify"))
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   data->use_adf = options.was_supplied("cb_explore_adf");
@@ -419,15 +419,15 @@ base_learner* cbify_setup(options_i& options, vw& all)
 
   if (data->use_adf)
   {
-    options.insert("cb_min_cost", std::to_string(data->loss0));
-    options.insert("cb_max_cost", std::to_string(data->loss1));
+    options.require("cb_min_cost", std::to_string(data->loss0));
+    options.require("cb_max_cost", std::to_string(data->loss1));
   }
 
   if (options.was_supplied("baseline"))
   {
     std::stringstream ss;
     ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
-    options.insert("lr_multiplier", ss.str());
+    options.require("lr_multiplier", ss.str());
   }
 
   learner<cbify, example>* l;
@@ -463,12 +463,11 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
   new_options
-      .add(make_option("cbify_ldf", cbify_ldf_option).keep().help("Convert csoaa_ldf into a contextual bandit problem"))
+      .add(make_option("cbify_ldf", cbify_ldf_option).keep().necessary().help("Convert csoaa_ldf into a contextual bandit problem"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("cbify_ldf"))
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   data->app_seed = uniform_hash("vw", 2, 0);
@@ -477,14 +476,14 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   options.ensure_default_dependency("cb_explore_adf");
 
-  options.insert("cb_min_cost", std::to_string(data->loss0));
-  options.insert("cb_max_cost", std::to_string(data->loss1));
+  options.require("cb_min_cost", std::to_string(data->loss0));
+  options.require("cb_max_cost", std::to_string(data->loss1));
 
   if (options.was_supplied("baseline"))
   {
     std::stringstream ss;
     ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
-    options.insert("lr_multiplier", ss.str());
+    options.require("lr_multiplier", ss.str());
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));

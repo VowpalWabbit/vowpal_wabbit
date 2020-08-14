@@ -241,18 +241,18 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* audit_regressor_setup(std::string const& name, options_i& options, vw& all)
 {
   std::string out_file;
 
   option_group_definition new_options("Audit Regressor");
-  new_options.add(make_option("audit_regressor", out_file)
+  new_options.add(make_option(name, out_file)
                       .keep()
+                      .necessary()
                       .help("stores feature names and their regressor values. Same dataset must be used for both "
                             "regressor training and this mode."));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("audit_regressor"))
+  if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
   if (out_file.empty())

@@ -10,6 +10,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_smaller.dat
 num sources = 1
+Enabled reductions: ksvm, scorer
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000       50
@@ -34,4 +35,4 @@ Number of kernel evaluations = 182687 Number of cache queries = 103819
 Total loss = 223.479767
 Done freeing model
 Done freeing kernel params
-Done with finish
+Done with finish 

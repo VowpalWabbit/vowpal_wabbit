@@ -19,7 +19,7 @@ class topk
 {
   using container_t = std::multimap<float, v_array<char>>;
 
- public:
+public:
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
@@ -28,7 +28,7 @@ class topk
   std::pair<const_iterator_t, const_iterator_t> get_container_view();
   void clear_container();
 
- private:
+private:
   void update_priority_queue(float pred, v_array<char>& tag);
 
   const uint32_t _k_num;
@@ -91,8 +91,7 @@ void print_result(
     ss << '\n';
     ssize_t len = ss.str().size();
     auto t = file_descriptor->write(ss.str().c_str(), len);
-    if (t != len)
-      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -101,8 +100,7 @@ void output_example(vw& all, example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  if (ld.label != FLT_MAX) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   print_update(all, ec);
 }
@@ -128,11 +126,9 @@ VW::LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {
   uint32_t K;
   option_group_definition new_options("Top K");
-  new_options.add(make_option("top", K).keep().help("top k recommendation"));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("top", K).keep().necessary().help("top k recommendation"));
 
-  if (!options.was_supplied("top"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   auto data = scoped_calloc_or_throw<VW::topk>(K);
 

@@ -574,6 +574,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   new_options
       .add(make_option("warm_cb", num_actions)
                .keep()
+               .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("warm_cb_cs", use_cs)
                .help("consume cost-sensitive classification examples instead of multiclass"))
@@ -611,16 +612,14 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("sim_bandit", data->sim_bandit)
                .help("simulate contextual bandit updates on warm start examples"));
 
-  options.add_and_parse(new_options);
+  if (!options.add_parse_and_check_necessary(new_options))
+  {
+    return nullptr;
+  }
 
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
   {
     THROW("label corruption on cost-sensitive examples not currently supported");
-  }
-
-  if (!options.was_supplied("warm_cb"))
-  {
-    return nullptr;
   }
 
   data->app_seed = uniform_hash("vw", 2, 0);
@@ -631,14 +630,14 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   init_adf_data(*data.get(), num_actions);
 
-  options.insert("cb_min_cost", std::to_string(data->loss0));
-  options.insert("cb_max_cost", std::to_string(data->loss1));
+  options.require("cb_min_cost", std::to_string(data->loss0));
+  options.require("cb_max_cost", std::to_string(data->loss1));
 
   if (options.was_supplied("baseline"))
   {
     std::stringstream ss;
     ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
-    options.insert("lr_multiplier", ss.str());
+    options.require("lr_multiplier", ss.str());
   }
 
   learner<warm_cb, example>* l;

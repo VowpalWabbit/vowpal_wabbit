@@ -9,6 +9,7 @@
 #include <vector>
 #include <typeinfo>
 #include <memory>
+#include <unordered_set>
 
 #include "options_types.h"
 
@@ -26,6 +27,7 @@ struct base_option
   std::string m_help = "";
   std::string m_short_name = "";
   bool m_keep = false;
+  bool m_necessary = false;
   bool m_allow_override = false;
 
   virtual ~base_option() = default;
@@ -66,6 +68,12 @@ struct typed_option : base_option
     return *this;
   }
 
+  typed_option& necessary(bool necessary = true)
+  {
+    m_necessary = necessary;
+    return *this;
+  }
+
   typed_option& allow_override(bool allow_override = true)
   {
     static_assert(is_scalar_option_type<T>::value, "allow_override can only apply to scalar option types.");
@@ -97,31 +105,12 @@ typed_option<T> make_option(std::string name, T& location)
   return typed_option<T>(name, location);
 }
 
-struct option_group_definition
-{
-  option_group_definition(const std::string& name) : m_name(name) {}
-
-  template <typename T>
-  option_group_definition& add(T&& op)
-  {
-    m_options.push_back(std::make_shared<typename std::decay<T>::type>(op));
-    return *this;
-  }
-
-  template <typename T>
-  option_group_definition& operator()(T&& op)
-  {
-    add(std::forward<T>(op));
-    return *this;
-  }
-
-  std::string m_name;
-  std::vector<std::shared_ptr<base_option>> m_options;
-};
+struct option_group_definition;
 
 struct options_i
 {
   virtual void add_and_parse(const option_group_definition& group) = 0;
+  virtual bool add_parse_and_check_necessary(const option_group_definition& group) = 0;
   virtual bool was_supplied(const std::string& key) const = 0;
   virtual bool ensure_default_dependency(const std::string& key) = 0;
   virtual bool ensure_default_dependency(const std::string& key, const std::string& value) = 0;
@@ -132,6 +121,7 @@ struct options_i
   virtual std::shared_ptr<base_option> get_option(const std::string& key) = 0;
   virtual std::shared_ptr<const base_option> get_option(const std::string& key) const = 0;
 
+  virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void require(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
   virtual std::vector<std::string> get_positional_tokens() const { return std::vector<std::string>(); }
@@ -158,9 +148,55 @@ struct options_i
   virtual void check_unregistered() = 0;
 
   virtual ~options_i() = default;
+};
 
-private:
-  virtual void insert(const std::string& key, const std::string& value) = 0;
+struct option_group_definition
+{
+  //add second parameter for const string short name
+  option_group_definition(const std::string& name) : m_name(name) {}
+
+  template <typename T>
+  option_group_definition& add(T&& op)
+  {
+    m_options.push_back(std::make_shared<typename std::decay<T>::type>(op));
+    return *this;
+  }
+
+  template <typename T>
+  option_group_definition& add(typed_option<T>& op)
+  {
+    m_options.push_back(std::make_shared<typename std::decay<typed_option<T>>::type>(op));
+
+    // TODO do we need to insert also the short_name ?
+    if (op.m_necessary) { m_necessary_flags.insert(op.m_name); }
+    
+    return *this;
+  }
+
+  // will check if ALL of 'necessary' options were suplied
+  bool check_necessary_enabled(const options_i& options) const
+  {
+    if (m_necessary_flags.size() == 0) return false;
+
+    bool check_if_all_necessary_enabled = true;
+
+    for (const auto& elem : m_necessary_flags)
+    { check_if_all_necessary_enabled &= options.was_supplied(elem);
+    }
+
+    return check_if_all_necessary_enabled;
+  }
+
+  template <typename T>
+  option_group_definition& operator()(T&& op)
+  {
+    add(std::forward<T>(op));
+    return *this;
+  }
+
+  std::string m_name;
+  std::unordered_set<std::string> m_necessary_flags;
+  std::vector<std::shared_ptr<base_option>> m_options;
 };
 
 struct options_serializer_i
@@ -174,7 +210,7 @@ template <typename T>
 bool operator==(const typed_option<T>& lhs, const typed_option<T>& rhs)
 {
   return lhs.m_name == rhs.m_name && lhs.m_type_hash == rhs.m_type_hash && lhs.m_help == rhs.m_help &&
-      lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep && lhs.default_value() == rhs.default_value();
+      lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep && lhs.default_value() == rhs.default_value() && lhs.m_necessary == rhs.m_necessary;
 }
 
 template <typename T>
@@ -189,7 +225,7 @@ bool operator!=(const base_option& lhs, const base_option& rhs);
 inline bool operator==(const base_option& lhs, const base_option& rhs)
 {
   return lhs.m_name == rhs.m_name && lhs.m_type_hash == rhs.m_type_hash && lhs.m_help == rhs.m_help &&
-      lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep;
+      lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep && lhs.m_necessary == rhs.m_necessary;
 }
 
 inline bool operator!=(const base_option& lhs, const base_option& rhs) { return !(lhs == rhs); }

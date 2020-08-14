@@ -60,8 +60,7 @@ void send_features(io_buf* b, example& ec, uint32_t mask)
 
   for (namespace_index ns : ec.indices)
   {
-    if (ns == constant_namespace)
-      continue;
+    if (ns == constant_namespace) continue;
     output_features(*b, ns, ec.feature_space[ns], mask);
   }
   b->flush();
@@ -83,8 +82,7 @@ void receive_result(sender& s)
 
 void learn(sender& s, VW::LEARNER::single_learner&, example& ec)
 {
-  if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
-    receive_result(s);
+  if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index) receive_result(s);
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->p->lp.cache_label(&ec.l, *s.buf);  // send label information.
@@ -107,13 +105,9 @@ VW::LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   std::string host;
 
   option_group_definition sender_options("Network sending");
-  sender_options.add(make_option("sendto", host).keep().help("send examples to <host>"));
-  options.add_and_parse(sender_options);
+  sender_options.add(make_option("sendto", host).keep().necessary().help("send examples to <host>"));
 
-  if (!options.was_supplied("sendto"))
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
 
   auto s = scoped_calloc_or_throw<sender>();
   open_sockets(*s.get(), host);

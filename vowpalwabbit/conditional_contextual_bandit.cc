@@ -607,10 +607,10 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   new_options.add(
       make_option("ccb_explore_adf", ccb_explore_adf_option)
           .keep()
+          .necessary()
           .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."));
-  options.add_and_parse(new_options);
 
-  if (!ccb_explore_adf_option)
+  if (!options.add_parse_and_check_necessary(new_options))
   {
     return nullptr;
   }

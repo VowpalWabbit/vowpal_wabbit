@@ -1240,6 +1240,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   new_options
       .add(make_option("memory_tree", tree->max_nodes)
                .keep()
+               .necessary()
                .default_value(0)
                .help("Make a memory tree with at most <n> nodes"))
       .add(make_option("max_number_of_labels", tree->max_num_labels)
@@ -1259,8 +1260,9 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .default_value(0)
                .help("turn on dream operations at reward based update as well"))
       .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
-  options.add_and_parse(new_options);
-  if (!tree->max_nodes)
+
+  // TODO: check this one
+  if (!options.add_parse_and_check_necessary(new_options))
   {
     return nullptr;
   }
