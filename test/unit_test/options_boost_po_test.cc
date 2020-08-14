@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(get_positional_tokens)
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
 
-  const auto positional_tokens = options->get_positional_tokens();
+  const auto positional_tokens = options->get_data_values();
   check_collections_exact(positional_tokens, std::vector<std::string>{"d1", "d2", "d3"});
 }
 
