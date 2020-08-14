@@ -163,7 +163,7 @@ bool options_boost_po::ensure_default_dependency(const std::string& key, const s
 {
   if (!this->was_supplied(key))
   {
-    this->insert(key, value);
+    this->require(key, value);
     return true;
   }
 
