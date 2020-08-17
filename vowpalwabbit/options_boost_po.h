@@ -67,11 +67,6 @@ struct options_boost_po : public options_i
     {
       m_command_line.push_back(value);
     }
-
-    // If .insert() call gets made, it means that VW itself is adding a new option
-    // therefore we know it exists and should be marked as a defined_option.
-    // User input should not be added via insert() but rather via the constructor
-    m_defined_options.insert(key);
   }
 
   // Note: does not work for vector options.
