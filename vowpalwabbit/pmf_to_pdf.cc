@@ -168,13 +168,14 @@ namespace VW { namespace pmf_to_pdf
 
     all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
-    char temp_str[20];
+    constexpr size_t buffsz = 20;
+    char temp_str[buffsz];
     std::stringstream ss, sso;
     float maxprob = 0.;
     uint32_t maxid = 0;
     for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
     {
-      sprintf_s(temp_str, "%f ", ec.pred.pdf[i].pdf_value);
+      sprintf_s(temp_str, buffsz, "%f ", ec.pred.pdf[i].pdf_value);
       ss << temp_str;
       if (ec.pred.pdf[i].pdf_value > maxprob)
       {
@@ -183,7 +184,7 @@ namespace VW { namespace pmf_to_pdf
       }
     }
 
-    sprintf_s(temp_str, "%d:%f", maxid, maxprob);
+    sprintf_s(temp_str, buffsz, "%d:%f", maxid, maxprob);
     sso << temp_str;
 
     for (auto& sink : all.final_prediction_sink)
