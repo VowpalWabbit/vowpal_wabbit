@@ -10,7 +10,7 @@ class PredictDataJoiner_acp:
 
     for (data_line, predict_line) in zip(data_file, predict_file):
       data_line = self.strip_label(data_line)
-      print(predict_line.strip(),"|",data_line.strip())
+      print("ca", predict_line.strip(),"|",data_line.strip())
 
   def strip_label(self, data_line):
     separator_position = data_line.find('|')

@@ -39,14 +39,18 @@ namespace VW { namespace cb_continuous
   // Begin: parse a,c,p label format
   void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
   {
+    if (words.empty()) THROW("Continuous actions labels may not be empty");
+    if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
+
     auto* ld = static_cast<continuous_label*>(v);
     ld->costs.clear();
-    for (auto word : words)
+
+    for (size_t i = 1; i < words.size(); i++)
     {
       continuous_label_elm f{0.f, FLT_MAX, 0.f};
-      tokenize(':', word, p->parse_name);
+      tokenize(':', words[i], p->parse_name);
 
-      if (p->parse_name.empty() || p->parse_name.size() > 3)
+      if (p->parse_name.empty() || p->parse_name.size() > 4)
         THROW("malformed cost specification: " << "p->parse_name");
 
       f.action = float_of_string(p->parse_name[0]);
