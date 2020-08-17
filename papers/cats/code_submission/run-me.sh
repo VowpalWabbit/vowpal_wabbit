@@ -37,14 +37,14 @@ sed '/^$/d' -i ./test/train-sets/regression/zurich.csv &
 wait
 
 # Transform data files
-python3 utl/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_wisconsin.csv &
-python3 utl/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_cpu_act.csv &
-python3 utl/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_auto_price.csv &
-python3 utl/continous_action/preprocess_data.py -c ./test/train-sets/regression/black_friday.csv &
-python3 utl/continous_action/preprocess_data.py -c ./test/train-sets/regression/zurich.csv &
+python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_wisconsin.csv &
+python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_cpu_act.csv &
+python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_auto_price.csv &
+python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/black_friday.csv &
+python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/zurich.csv &
 
 # Create additional synthetic datasets
-python3 utl/continous_action/create_synthetic_data.py &
+python3 paper/${PAPER}/continous_action/create_synthetic_data.py &
 
 # Wait for all background jobs to finish
 wait
@@ -55,7 +55,7 @@ ds_max=$(cat ./test/train-sets/regression/ds_1000000.max)
 # Run experiments
 mkdir results
 
-# Online: 
+# Online:
 run_online "black_friday" 185 23959
 run_online "BNG_auto_price" 379.36 43392.42
 run_online "BNG_cpu_act" -64.9 187.54

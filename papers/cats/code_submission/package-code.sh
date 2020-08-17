@@ -4,10 +4,15 @@
 #         Check sanitize.py for keywords to look for in comments to remove
 
 export PAPER=cats
-export BRANCH=icml_push
+
+###########export BRANCH=icml_push
+export BRANCH=pr/mmajzoubi/2493
 
 rm -rf ${PAPER}
+
+############## git clone https://github.com/SoftwareBuildingBlocks/vowpal_wabbit.git ${PAPER}
 git clone https://github.com/SoftwareBuildingBlocks/vowpal_wabbit.git ${PAPER}
+
 cd ${PAPER}
 git checkout ${BRANCH}
 rm -rf cs
@@ -26,8 +31,8 @@ touch test/CMakeLists.txt
 touch python/CMakeLists.txt
 
 # Sanitize sources
-find . -name "*.cc" -exec sh -c 'python3 utl/code_submission/${PAPER}/sanitize.py -s "$1" > "$1.clean"; mv "$1" "$1.old"; mv "$1.clean" "$1"' == {} \;
-find . -name "*.h" -exec sh -c 'python3 utl/code_submission/${PAPER}/sanitize.py -s "$1" > "$1.clean"; mv "$1" "$1.old"; mv "$1.clean" "$1"' == {} \;
+find . -name "*.cc" -exec sh -c 'python3 papers/${PAPER}/code_submission/sanitize.py -s "$1" > "$1.clean"; mv "$1" "$1.old"; mv "$1.clean" "$1"' == {} \;
+find . -name "*.h" -exec sh -c 'python3 papers/${PAPER}/code_submission/sanitize.py -s "$1" > "$1.clean"; mv "$1" "$1.old"; mv "$1.clean" "$1"' == {} \;
 find . -name "*.old" -exec sh -c 'rm "$1"' == {} \;
 
 # Get all dependencies
@@ -36,11 +41,11 @@ git submodule update --init --recursive
 # Create zip file
 rm -rf .git
 cd ..
-cp ${PAPER}/utl/code_submission/${PAPER}/run-me.sh .
-cp ${PAPER}/utl/code_submission/${PAPER}/run-manual.sh .
-cp ${PAPER}/utl/code_submission/${PAPER}/function-declaration.sh .
-cp ${PAPER}/utl/code_submission/${PAPER}/README.txt .
-rm -rf ${PAPER}/utl/code_submission
+cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/run-me.sh .
+cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/run-manual.sh .
+cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/function-declaration.sh .
+cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/README.txt .
+rm -rf ${PAPER}/paper/${PAPER}/code_submission
 tar -cvf ${PAPER}.source.tar ${PAPER}
 zip source-code.zip ${PAPER}.source.tar run-me.sh run-manual.sh function-declaration.sh README.txt
 
