@@ -41,10 +41,10 @@ git submodule update --init --recursive
 # Create zip file
 rm -rf .git
 cd ..
-cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/run-me.sh .
-cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/run-manual.sh .
-cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/function-declaration.sh .
-cp ${PAPER}/paper/${PAPER}/code_submission/${PAPER}/README.txt .
+cp ${PAPER}/paper/${PAPER}/code_submission/run-me.sh .
+cp ${PAPER}/paper/${PAPER}/code_submission/run-manual.sh .
+cp ${PAPER}/paper/${PAPER}/code_submission/function-declaration.sh .
+cp ${PAPER}/paper/${PAPER}/code_submission/README.txt .
 rm -rf ${PAPER}/paper/${PAPER}/code_submission
 tar -cvf ${PAPER}.source.tar ${PAPER}
 zip source-code.zip ${PAPER}.source.tar run-me.sh run-manual.sh function-declaration.sh README.txt
