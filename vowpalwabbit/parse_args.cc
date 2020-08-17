@@ -455,16 +455,19 @@ input_options parse_source(vw& all, options_i& options)
 
   options.add_and_parse(input_options);
 
-  // Check if the options provider has any positional args. Only really makes sense for command line, others just return
-  // an empty list.
-  const auto positional_tokens = options.get_data_values();
-  if (positional_tokens.size() == 1)
-  {
-    all.data_filename = positional_tokens[0];
-  }
-  else if (positional_tokens.size() > 1)
-  {
-    all.trace_message << "Warning: Multiple data files passed as positional parameters, only the first one will be read and the rest will be ignored." << endl;
+  if (!options.was_supplied("data")) {
+    // Check if the options provider has any positional args. Only really makes sense for command line, others just return
+    // an empty list.
+    const auto positional_tokens = options.get_data_values();
+    if (positional_tokens.size() >= 1)
+    {
+      all.data_filename = positional_tokens[0];
+    }
+
+    if (positional_tokens.size() > 1)
+    {
+      all.trace_message << "Warning: Multiple data files passed as positional parameters, only the first one will be read and the rest will be ignored." << endl;
+    }
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))

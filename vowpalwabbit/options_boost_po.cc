@@ -135,6 +135,69 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
     THROW(ex.what());
   }
 }
+  std::vector<std::string> options_boost_po::get_data_values()
+  {
+    /*
+    po::positional_options_description p;
+    //p.add("data", -1);
+    auto copied_description = master_description;
+    p.add("data,d", 1);
+    copied_description.add_options()("data,d", po::value<std::vector<std::string>>()->composing(), "Example set");
+    //copied_description.add_options()("csoaa_ldf", po::value<std::string>(), "Example set");
+    po::parsed_options pos = po::command_line_parser(m_command_line)
+                                 .style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
+                                 .options(copied_description)
+                                 .allow_unregistered()
+                                 .positional(p)
+                                 .run();
+
+    auto it = std::find_if(
+        pos.options.begin(), pos.options.end(), [](po::option const& o) { return o.string_key == "data"; });
+
+    /*
+    if (it == pos.options.end())
+    {
+      // fail: no --data or -d
+    }
+    else
+    {
+      return it->value;
+    }
+    */
+
+    po::positional_options_description p;
+    p.add("__positional__", -1);
+    auto copied_description = master_description;
+    copied_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
+    po::parsed_options pos = po::command_line_parser(m_command_line)
+                                 .style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
+                                 .options(copied_description)
+                                 .allow_unregistered()
+                                 .positional(p)
+                                 .run();
+
+    po::variables_map vm;
+    po::store(pos, vm);
+
+    // keep track that data was actually defined via positional args
+    this->m_defined_options.insert("data");
+    this->m_defined_options.insert("d");
+    this->m_defined_options.insert("-d");
+
+    // add to help
+
+    if (vm.count("__positional__") != 0)
+    {
+      //agregar que se proceso
+      this->m_supplied_options.insert("data");
+      this->m_ignore_supplied.insert("data");
+      this->m_supplied_options.insert("d");
+      this->m_ignore_supplied.insert("d");
+
+      return vm["__positional__"].as<std::vector<std::string>>();
+    }
+    return std::vector<std::string>();
+  }
 
 bool options_boost_po::add_parse_and_check_necessary(const option_group_definition& group)
 {

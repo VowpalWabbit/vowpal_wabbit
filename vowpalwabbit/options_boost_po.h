@@ -51,6 +51,7 @@ struct options_boost_po : public options_i
   options_boost_po& operator=(options_boost_po&) = delete;
 
   void add_and_parse(const option_group_definition& group) override;
+  std::vector<std::string> get_data_values() override;
   bool add_parse_and_check_necessary(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
   bool ensure_default_dependency(const std::string& key) override;
@@ -73,13 +74,19 @@ struct options_boost_po : public options_i
 
   void require(const std::string& key, const std::string& value) override
   {
-    m_required_options.insert({key, value});
+    if (m_required_options.count(key) == 0)
+    {
+      // If .require() call gets made, it means that VW itself is adding a new option
+      // therefore we know it exists and should be marked as a defined_option.
+      // User input should not be added via insert() but rather via the constructor
+      m_supplied_options.insert(key);
+      //m_defined_options.insert(key);
+      m_ignore_supplied.insert(key);
 
-    // If .require() call gets made, it means that VW itself is adding a new option
-    // therefore we know it exists and should be marked as a defined_option.
-    // User input should not be added via insert() but rather via the constructor
-    m_defined_options.insert(key);
-    m_ignore_supplied.insert(key);
+      m_required_options.insert({key, value});
+    }
+    else
+      m_required_options[key] = value;
   }
 
   // Note: does not work for vector options.
@@ -105,40 +112,6 @@ struct options_boost_po : public options_i
     *(it + 1) = value;
   }
 
-  std::vector<std::string> get_data_values() const override
-  {
-    po::positional_options_description p;
-    p.add("__positional__", -1);
-    auto copied_description = master_description;
-    copied_description.add_options()("__positional__", po::value<std::vector<std::string>>()->composing(), "");
-    po::parsed_options pos = po::command_line_parser(m_command_line)
-                                 .style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
-                                 .options(copied_description)
-                                 .allow_unregistered()
-                                 .positional(p)
-                                 .run();
-
-    auto it = std::find_if(
-        pos.options.begin(), pos.options.end(), [](po::option const& o) { return o.string_key == "data"; });
-
-    if (it == pos.options.end())
-    {
-      // fail: no --data or -d
-    }
-    else
-    {
-      return it->value;
-    }
-
-    po::variables_map vm;
-    po::store(pos, vm);
-
-    if (vm.count("__positional__") != 0)
-    {
-      return vm["__positional__"].as<std::vector<std::string>>();
-    }
-    return std::vector<std::string>();
-  }
 
  private:
   template <typename T>
