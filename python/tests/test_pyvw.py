@@ -565,7 +565,7 @@ def test_multilabels_non_positive_name_error():
         DFtoVW(
             df=df,
             label=MultiLabels(name="y"),
-            features=Feature("c"),
+            features=Feature("b"),
         )
-    expected = "In argument 'name' of 'MultiLabels', column 'a' must be >= 1."
+    expected = "In argument 'name' of 'MultiLabels', column 'y' must be >= 1."
     assert expected == str(value_error.value)
