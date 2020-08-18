@@ -1638,6 +1638,18 @@ class AttributeDescriptor(object):
                     self.generate_error(instance, valid_type, valid_value)
 
     def validate_value(self, arg):
+        """Validate value for litterals (not for _Col).
+
+        Parameters
+        ----------
+        arg: int/float
+            The argument which value range has to be checked
+
+        Returns
+        -------
+        valid_type: bool
+            True if value is of valid type, False otherwise
+        """
         if isinstance(arg, list):
             valid_value = all([x >= self.min_value for x in arg])
         else:
@@ -1645,6 +1657,18 @@ class AttributeDescriptor(object):
         return valid_value
 
     def validate_type(self, arg):
+        """Validate type for litterals (not for _Col).
+
+        Parameters
+        ----------
+        arg: int/float
+            The argument which value type has to be checked
+
+        Returns
+        -------
+        valid_type: bool
+            True if value is of valid type, False otherwise
+        """
         if isinstance(arg, list):
             valid_type = all([
                     isinstance(x, self.expected_type)
@@ -1826,7 +1850,7 @@ class MulticlassLabel(object):
 class MultiLabels(object):
     """The multi labels type for the constructor of DFtoVW."""
 
-    name = AttributeDescriptor("name", expected_type=(int,))
+    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
 
     def __init__(
         self, name, name_from_df=True
@@ -1862,12 +1886,13 @@ class MultiLabels(object):
         str or pandas.Series
             The MultiLabels string representation.
         """
-        for (i, name) in enumerate(self.name):
+        names = self.name if isinstance(self.name, list) else [self.name]
+        for (i, name) in enumerate(names):
             name_col = _get_col_or_value(name, df)
             if i == 0:
                 out = name_col
             else:
-                out += ", " + name_col
+                out += "," + name_col
         return out
 
 
@@ -2193,26 +2218,25 @@ class DFtoVW:
             "multilabels": MultiLabels,
         }
 
-        if isinstance(y, list):
+        if label_type not in dict_label_type:
+            raise ValueError(
+                "'label_type' should be either of the following string: {label_types}".format(
+                    label_types=repr(list(dict_label_type.keys()))[1:-1]
+                )
+            )
+
+        if isinstance(y, list) and label_type != "multilabels":
             if len(y) == 1:
                 y = y[0]
             else:
                 raise ValueError(
                     "Argument 'y' should a list of one string (or a string)."
                 )
-        if not isinstance(y, str):
+        if not isinstance(y, str) and label_type != "multilabels":
             raise TypeError(
                 "Argument 'y' should be a string or a list of one string."
             )
-
-        try:
-            label = dict_label_type[label_type](y)
-        except KeyError:
-            raise ValueError(
-                "'label_type' should be either of the following string: {label_types}".format(
-                    label_types=repr(list(dict_label_type.keys()))[1:-1]
-                )
-            )
+        label = dict_label_type[label_type](y)
 
         x = list(x) if isinstance(x, (list, set)) else [x]
         if not all(isinstance(xi, str) for xi in x):
