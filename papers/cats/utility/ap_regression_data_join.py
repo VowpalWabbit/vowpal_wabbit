@@ -60,8 +60,12 @@ class PredictDataJoiner_ap:
       return zero_one_loss, 1, N
 
   def get_regression_val(self, data_line):
+    data_line = data_line.lstrip()
+    ca_end_position = 0
+    if data_line.startswith('ca'):
+      ca_end_position = 2
     separator_position = data_line.find('|')
-    return float(data_line[:separator_position])
+    return float(data_line[ca_end_position:separator_position])
 
   def get_action(self, pred_line):
     separator_position = pred_line.find(',')

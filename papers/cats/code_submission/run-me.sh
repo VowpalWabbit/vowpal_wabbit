@@ -1,5 +1,9 @@
 #! /bin/bash
 
+set -o xtrace
+
+export PAPER=cats
+
 . function-declaration.sh
 
 # Untar file
@@ -37,14 +41,14 @@ sed '/^$/d' -i ./test/train-sets/regression/zurich.csv &
 wait
 
 # Transform data files
-python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_wisconsin.csv &
-python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_cpu_act.csv &
-python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/BNG_auto_price.csv &
-python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/black_friday.csv &
-python3 paper/${PAPER}/continous_action/preprocess_data.py -c ./test/train-sets/regression/zurich.csv &
+python3 papers/${PAPER}/utility/preprocess_data.py -c ./test/train-sets/regression/BNG_wisconsin.csv &
+python3 papers/${PAPER}/utility/preprocess_data.py -c ./test/train-sets/regression/BNG_cpu_act.csv &
+python3 papers/${PAPER}/utility/preprocess_data.py -c ./test/train-sets/regression/BNG_auto_price.csv &
+python3 papers/${PAPER}/utility/preprocess_data.py -c ./test/train-sets/regression/black_friday.csv &
+python3 papers/${PAPER}/utility/preprocess_data.py -c ./test/train-sets/regression/zurich.csv &
 
 # Create additional synthetic datasets
-python3 paper/${PAPER}/continous_action/create_synthetic_data.py &
+python3 papers/${PAPER}/utility/create_synthetic_data.py &
 
 # Wait for all background jobs to finish
 wait
