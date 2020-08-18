@@ -1871,8 +1871,30 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/plt_top1_multilabel_predict.stderr
     pred-sets/ref/plt_top1_multilabel.predict
 
-# Test 217: daemon test with json
+# Test 220: daemon test with json
 ./daemon-test.sh --json
     test-sets/ref/vw-daemon.stdout
+
+# Test 221: cbify regression dataset.  Use it with cats.
+{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
+    train-sets/ref/cbify-reg-cats.stderr
+
+# Test 222: cats train
+{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
+    train-sets/ref/cats-train.stderr
+
+# Test 223: cats predict
+{VW} -d train-sets/cats.acpx -i cats.model -p cats.predict
+    train-sets/ref/cats-predict.stderr
+    pred-sets/ref/cats.predict
+
+# Test 224: cats-pdf train
+{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
+    train-sets/ref/cats-pdf-train.stderr
+
+# Test 225: cats-pdf predict
+{VW} -d train-sets/cats.acpx -i cats-pdf.model -p cats-pdf.predict
+    train-sets/ref/cats-pdf-predict.stderr
+    pred-sets/ref/cats-pdf.predict
 
 # Do not delete this line or the empty line above it
