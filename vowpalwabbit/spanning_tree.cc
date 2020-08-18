@@ -91,7 +91,11 @@ SpanningTree::SpanningTree(uint16_t port, bool quiet) : m_stop(false), m_port(po
   char addr_buf[INET_ADDRSTRLEN]; 
 
   sock = socket(PF_INET, SOCK_STREAM, 0);
+#ifdef _WIN32
+  if (sock == INVALID_SOCKET)
+#else
   if (sock < 0)
+#endif
     THROWERRNO("socket: ");
 
   int on = 1;
