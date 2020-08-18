@@ -1,6 +1,5 @@
 #! /bin/bash
-
-set -o xtrace
+# set -o xtrace
 
 export PAPER=cats
 
