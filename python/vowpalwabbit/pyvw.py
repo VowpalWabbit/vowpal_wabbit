@@ -2116,7 +2116,7 @@ class DFtoVW:
         namespaces : Namespace/list of Namespace
             One or more Namespace object(s), each of being composed of one or
             more Feature object(s).
-        label : SimpleLabel
+        label : SimpleLabel/MulticlassLabel/MultiLabels
             The label.
         tag :  str/int/float
             The tag (used as identifiers for examples).
