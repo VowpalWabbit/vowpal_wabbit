@@ -8,18 +8,12 @@
 #include "io_buf.h"
 
 using namespace std;
-namespace VW { namespace actions_pdf
+namespace VW { namespace continuous_actions
 {
-  void delete_prob_dist(void* v)
-  {
-    v_array<pdf_segment>* cs = (v_array<pdf_segment>*)v;
-    cs->delete_v();
-  }
-
-  std::string to_string(const action_pdf_value& a_p, bool newline)
+  std::string to_string(const probability_density_function_value& pdf_value, bool newline)
   {
     std::stringstream strm;
-    strm << a_p.action << "," << a_p.pdf_value;
+    strm << pdf_value.action << "," << pdf_value.pdf_value;
     if (newline)
       strm << endl;
     return strm.str();
@@ -34,14 +28,14 @@ namespace VW { namespace actions_pdf
   }
 
   // Convert pdf to string of form 'begin-end:pdf_value, ... '
-  std::string to_string(const v_array<pdf_segment>& p_d, bool newline)
+  std::string to_string(const probability_density_function& pdf, bool newline)
   {
     std::stringstream ss;
-    for (size_t i = 0; i < p_d.size(); i++)
+    for (size_t i = 0; i < pdf.size(); i++)
     {
       if (i > 0)
         ss << ',';
-      ss << p_d[i].left << '-' << p_d[i].right << ':' << p_d[i].pdf_value;
+      ss << pdf[i].left << '-' << pdf[i].right << ':' << pdf[i].pdf_value;
     }
 
     if (newline)

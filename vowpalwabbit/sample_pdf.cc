@@ -7,7 +7,8 @@
 #include "api_status.h"
 #include "debug_log.h"
 #include "parse_args.h"
-#include "../explore/explore.h"
+#include "explore.h"
+#include "guard.h"
 
 // Aliases
 using VW::LEARNER::single_learner;
@@ -37,7 +38,7 @@ namespace continuous_action
 
     private:
       uint64_t* _p_random_state;
-      actions_pdf::pdf _pred_pdf;
+      continuous_actions::probability_density_function _pred_pdf;
       single_learner* _base = nullptr;
   };
 
@@ -47,7 +48,7 @@ namespace continuous_action
     // predict buffer
     _pred_pdf.clear();
     {  // scope to predict & restore prediction
-      swap_restore_pdf_prediction restore(ec, _pred_pdf);
+      auto restore = VW::swap_guard(ec.pred.pdf, _pred_pdf);
       _base->learn(ec);
     }
     return error_code::success;
@@ -58,7 +59,7 @@ namespace continuous_action
     _pred_pdf.clear();
 
     {  // scope to predict & restore prediction
-      swap_restore_pdf_prediction restore(ec, _pred_pdf);
+      auto restore = VW::swap_guard(ec.pred.pdf, _pred_pdf);
       _base->predict(ec);
     }
 
@@ -66,8 +67,8 @@ namespace continuous_action
       _p_random_state,
       std::begin(_pred_pdf),
       std::end(_pred_pdf),
-      ec.pred.a_pdf.action,
-      ec.pred.a_pdf.pdf_value);
+      ec.pred.pdf_value.action,
+      ec.pred.pdf_value.pdf_value);
 
     if (ret_code != S_EXPLORATION_OK)
       return error_code::sample_pdf_failed;
@@ -79,7 +80,7 @@ namespace continuous_action
   {
     _base = p_base;
     _p_random_state = p_random_seed;
-    _pred_pdf = v_init<actions_pdf::pdf_segment>();
+    _pred_pdf = v_init<continuous_actions::pdf_segment>();
   }
 
   sample_pdf::~sample_pdf()

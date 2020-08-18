@@ -52,12 +52,12 @@ typedef union
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  VW::actions_pdf::pdf prob_dist;
   VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
-  float prob;  // for --probabilities --csoaa_ldf=mc
-  VW::actions_pdf::action_pdf_value a_pdf;
+  float prob;                                                           // for --probabilities --csoaa_ldf=mc
+  VW::continuous_actions::probability_density_function pdf;              // probability density defined over an action range
+  VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 } polyprediction;
 
 VW_WARNING_STATE_PUSH
@@ -162,39 +162,6 @@ struct restore_prediction
  private:
   const polyprediction _prediction;
   example& _ec;
-};
-
-struct swap_restore_action_scores_prediction
-{
-  swap_restore_action_scores_prediction(example& ec, ACTION_SCORE::action_scores& base_prediction);
-  ~swap_restore_action_scores_prediction();
-
- private:
-  const polyprediction _prediction;
-  example& _ec;
-  ACTION_SCORE::action_scores& _base_prediction;
-};
-
-struct swap_restore_pdf_prediction
-{
-  swap_restore_pdf_prediction(example& ec, actions_pdf::pdf& base_prediction);
-  ~swap_restore_pdf_prediction();
-
- private:
-  const polyprediction _prediction;
-  example& _ec;
-  actions_pdf::pdf& _base_prediction;
-};
-
-struct swap_restore_cb_label
-{
-  swap_restore_cb_label(example& ec, CB::label& base_label);
-  ~swap_restore_cb_label();
-
-  private:
-    const polylabel _label;
-    example& _ec;
-    CB::label& _base_label;
 };
 
 }  // namespace VW

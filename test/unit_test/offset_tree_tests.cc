@@ -61,8 +61,8 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic){
       {.9, .1}
   });
 
-  VW::offset_tree::offset_tree tree;
-  tree.init(3);
+  VW::offset_tree::offset_tree tree(3);
+  tree.init();
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb = CB::label();
@@ -191,8 +191,8 @@ namespace VW { namespace offset_tree {
   void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores)
   {
     const auto test_base = get_test_harness_reduction(base_reduction_predictions);
-    VW::offset_tree::offset_tree tree;
-    tree.init(expected_scores.size());
+    VW::offset_tree::offset_tree tree(expected_scores.size());
+    tree.init();
     example ec;
     ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
     ec.l.cb.costs = v_init<CB::cb_class>();

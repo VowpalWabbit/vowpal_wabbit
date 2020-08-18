@@ -405,10 +405,10 @@ std::string prob_dist_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "ec.pred.prob_dist[";
-  for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
+  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
   {
-    strstream << "(" << i << " = " << ec.pred.prob_dist[i].left << "-" << ec.pred.prob_dist[i].right << ", "
-              << ec.pred.prob_dist[i].pdf_value << ")";
+    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
+              << ec.pred.pdf[i].pdf_value << ")";
   }
   strstream << "]";
   return strstream.str();
@@ -459,41 +459,4 @@ restore_prediction::restore_prediction(example& ec)
 restore_prediction::~restore_prediction()
 { _ec.pred = _prediction; }
 
-swap_restore_action_scores_prediction::swap_restore_action_scores_prediction(example& ec, ACTION_SCORE::action_scores& base_prediction)
-  : _prediction(ec.pred)
-, _ec(ec)
-, _base_prediction(base_prediction)
-{
-  _ec.pred.a_s = _base_prediction;
-}
-
-swap_restore_action_scores_prediction::~swap_restore_action_scores_prediction()
-{
-  _base_prediction = _ec.pred.a_s;
-  _ec.pred = _prediction;
-}
-
-swap_restore_pdf_prediction::swap_restore_pdf_prediction(example& ec, actions_pdf::pdf& base_prediction)
-    : _prediction(ec.pred), _ec(ec), _base_prediction(base_prediction)
-{
-  _ec.pred.prob_dist = _base_prediction;
-}
-
-swap_restore_pdf_prediction::~swap_restore_pdf_prediction()
-{
-  _base_prediction = _ec.pred.prob_dist;
-  _ec.pred = _prediction;
-}
-
-swap_restore_cb_label::swap_restore_cb_label(example& ec, CB::label& base_label)
-    : _label(ec.l), _ec(ec), _base_label(base_label)
-{
-  ec.l.cb = base_label;
-}
-
-swap_restore_cb_label::~swap_restore_cb_label()
-{
-  _base_label = _ec.l.cb;
-  _ec.l = _label;
-}
 }  // namespace VW

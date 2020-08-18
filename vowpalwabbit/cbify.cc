@@ -11,7 +11,6 @@
 #include "explore.h"
 #include "prob_dist_cont.h"
 #include "debug_log.h"
-#include <experimental/filesystem>
 
 using namespace VW::LEARNER;
 using namespace exploration;
@@ -119,13 +118,6 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-template <class T>
-inline void delete_it(T* p)
-{
-  if (p != nullptr)
-    delete p;
-}
-
 void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
   if (trace_stream != nullptr)
@@ -134,31 +126,9 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
 
-void finish(cbify& data)
-{
-  CB::cb_label.delete_label(&data.cb_label);
-  data.a_s.delete_v();
-  finish_cbify_reg(data.regression_data, &data.all->trace_message);
-
-  if (data.use_adf)
-  {
-    for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-    {
-      data.adf_data.ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
-      free_it(data.adf_data.ecs[a]);
-    }
-    data.adf_data.ecs.~vector<example*>();
-    data.cs_costs.~vector<v_array<COST_SENSITIVE::wclass>>();
-    data.cb_costs.~vector<v_array<CB::cb_class>>();
-    for (auto as : data.cb_as) as.delete_v();
-    data.cb_as.~vector<ACTION_SCORE::action_scores>();
-  }
-}
-
 void copy_example_to_adf(cbify& data, example& ec)
 {
-  auto& adf_data = data.adf_data;
+  cbify_adf_data& adf_data = data.adf_data;
   const uint64_t ss = data.all->weights.stride_shift();
   const uint64_t mask = data.all->weights.mask();
 
@@ -225,8 +195,6 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
 
-  /*cout << "regression_label.label = " << regression_label.label << endl;*/
-
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
 
@@ -235,7 +203,6 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  /*cout << "chosen_action = " << chosen_action << endl;*/
   CB::cb_class cb;
   cb.action = chosen_action + 1;
   cb.probability = ec.pred.a_s[chosen_action].score;
@@ -268,7 +235,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
 
   if (data.regression_data.loss_report == 1)
   {
-    // for reporintg avergae loss to be in the correct range (reverse normalizing)
+    // for reporting average loss to be in the correct range (reverse normalizing)
     size_t siz = data.cb_label.costs.size();
     if (data.regression_data.loss_option == 0)
     {
@@ -298,29 +265,29 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   const label_data regression_label = ec.l.simple;
   data.regression_data.cb_cont_label.costs.clear();
   ec.l.cb_cont = data.regression_data.cb_cont_label;
-  ec.pred.a_pdf = {0.f, 0.f};
+  ec.pred.pdf_value = {0.f, 0.f};
 
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
-  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.a_pdf.action << endl;
+  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.pdf_value.action << endl;
 
   continuous_label_elm cb_cont_lbl;
 
-  cb_cont_lbl.action = ec.pred.a_pdf.action;
-  cb_cont_lbl.probability = ec.pred.a_pdf.pdf_value;
+  cb_cont_lbl.action = ec.pred.pdf_value.action;
+  cb_cont_lbl.probability = ec.pred.pdf_value.pdf_value;
 
   if (data.regression_data.loss_option == 0)
   {
-    cb_cont_lbl.cost = get_squared_loss(data, ec.pred.a_pdf.action, regression_label.label);
+    cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 1)
   {
-    cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.a_pdf.action, regression_label.label);
+    cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.pdf_value.action, regression_label.label);
   }
   else if (data.regression_data.loss_option == 2)
   {
-    cb_cont_lbl.cost = get_01_loss(data, ec.pred.a_pdf.action, regression_label.label);
+    cb_cont_lbl.cost = get_01_loss(data, ec.pred.pdf_value.action, regression_label.label);
   }
 
   data.regression_data.cb_cont_label.costs.push_back(cb_cont_lbl);
@@ -393,8 +360,8 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   if (is_learn)
     base.learn(ec);
 
+  data.a_s = ec.pred.a_s;
   data.a_s.clear();
-  data.a_s = ec.pred.a_s;  // TODO: the above line needs to be moved to after this line!
 
   if (use_cs)
     ec.l.cs = csl;
@@ -609,7 +576,7 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
     all.sd->update(ec.test_only, cb_costs[0].action != FLT_MAX, cb_costs[0].cost, ec.weight, ec.num_features);
 
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ((double)cb_costs[0].action) * ec.weight;
+    all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;
 
   print_update(all, ec);
 }
@@ -629,7 +596,7 @@ void output_example_regression(vw& all, cbify& data, example& ec)
     all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
 
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ((double)cb_cont_costs[0].action) * ec.weight;
+    all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight;
 
   print_update(all, ec);
 }
@@ -735,7 +702,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   if (data->use_adf)
   { init_adf_data(*data.get(), num_actions); }
 
-  if (use_reg)  // todo: check: we need more options passed to pmf_to_pdf
+  if (use_reg)
   {
     // Check invalid parameter combinations
     if (data->use_adf)

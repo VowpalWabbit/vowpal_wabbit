@@ -1,12 +1,15 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-
 #pragma once
-namespace VW { namespace actions_pdf
+
+#include <string>
+#include "v_array.h"
+
+namespace VW { namespace continuous_actions
 {
 
-struct action_pdf_value
+struct probability_density_function_value
 {
   float action;     // continuous action
   float pdf_value;  // pdf value
@@ -19,10 +22,8 @@ struct pdf_segment
   float pdf_value;  // height
 };
 
-typedef v_array<pdf_segment> pdf;
+using probability_density_function = v_array<pdf_segment>;
 
-void delete_prob_dist(void* v);
-
-std::string to_string(const action_pdf_value& seg, bool print_newline = false);
-std::string to_string(const v_array<pdf_segment>& pdf, bool print_newline = false);
+std::string to_string(const probability_density_function_value& pdf_value, bool print_newline = false);
+std::string to_string(const probability_density_function& pdf, bool print_newline = false);
 }}  // namespace VW::actions_pdf

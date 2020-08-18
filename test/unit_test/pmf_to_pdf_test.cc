@@ -97,9 +97,9 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   float sum = 0;
   std::stringstream sout;
-  for (uint32_t i = 0; i < ec.pred.prob_dist.size(); i++)
+  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
   {
-    sum += ec.pred.prob_dist[i].pdf_value * (ec.pred.prob_dist[i].right - ec.pred.prob_dist[i].left);
+    sum += ec.pred.pdf[i].pdf_value * (ec.pred.pdf[i].right - ec.pred.pdf[i].left);
   }
 
   BOOST_CHECK_CLOSE(1.0f, sum,.0001f);

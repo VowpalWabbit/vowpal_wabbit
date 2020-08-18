@@ -107,7 +107,6 @@
     <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="api_status.h" />
     <ClInclude Include="cats.h" />
     <ClInclude Include="cats_pdf.h" />
     <ClInclude Include="cb_continuous_label.h" />
@@ -255,12 +254,10 @@
     <ClInclude Include="warm_cb.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="api_status.cc" />
     <ClCompile Include="cats.cc" />
     <ClCompile Include="cats_pdf.cc" />
     <ClCompile Include="cb_continuous_label.cc" />
     <ClCompile Include="cb_explore_pdf.cc" />
-    <ClCompile Include="nullstream.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />

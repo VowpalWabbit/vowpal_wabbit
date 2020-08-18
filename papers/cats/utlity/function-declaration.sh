@@ -1,7 +1,7 @@
 #! /bin/bash
 
 run_offline(){
-  
+
   cd ../../
   # parameteres for all the experiments
   pass=1
@@ -22,7 +22,7 @@ run_offline(){
   sdata=$name
   filename1=results/$sdata\_offline\_srm.txt
   filename2=results/$sdata\_offline\_test.txt
-  
+
   # running the CATS offline algorithm and saving the loss estimation in SRM and test error results
 
   # 1) saving logged data from training the initial model
@@ -30,7 +30,7 @@ run_offline(){
   time -p timeout $timee build/vowpalwabbit/vw --cbify $nn --cbify_reg --min_value=$min --max_value=$max --bandwidth $hh \
   -d test/train-sets/regression/$datatrain --passes $pass -b $bb --coin --loss_option $ll -p results/$sdata\_$ll.acp
 
-  python3 utl/continous_action/acp_regression_data_join.py --p results/$sdata\_$ll.acp --d test/train-sets/regression/$datatrain > results/$sdata\_$ll.acpx
+  python3 paper/${PAPER}/continous_action/acp_regression_data_join.py --p results/$sdata\_$ll.acp --d test/train-sets/regression/$datatrain > results/$sdata\_$ll.acpx
 
   # 2) offline training a new model and saving the loss estimation in SRM and test error results
 
@@ -50,7 +50,7 @@ run_offline(){
   -d results/$sdata\_$ll.acpx --passes $pass -b $bb --coin --loss_option $ll -f results/$sdata.m -p results/$sdata\_$ll\_$n\_$h.ap \n" >> $filename1
   time -p timeout $timee build/vowpalwabbit/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
   -d results/$sdata\_$ll.acpx --passes $pass -b $bb --coin --loss_option $ll -f results/$sdata.m -p results/$sdata\_$ll\_$n\_$h.ap
-  python3 utl/continous_action/srm.py --p results/$sdata\_$ll\_$n\_$h.ap --d results/$sdata\_$ll.acp -m $max -i $min -k $n --bandwidth $h >> $filename1
+  python3 paper/${PAPER}/continous_action/srm.py --p results/$sdata\_$ll\_$n\_$h.ap --d results/$sdata\_$ll.acp -m $max -i $min -k $n --bandwidth $h >> $filename1
   printf "\nCATS-offline" >> $filename2
   printf "\nn = $n" >> $filename2
   printf "\nh = $h" >> $filename2
@@ -58,7 +58,7 @@ run_offline(){
   -d test/train-sets/regression/$datatest --passes $pass -b $bb --coin --loss_option $ll -i results/$sdata.m -p results/$sdata.ap -t \n" >> $filename2
   time -p timeout $timee build/vowpalwabbit/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
   -d test/train-sets/regression/$datatest --passes $pass -b $bb --coin --loss_option $ll -i results/$sdata.m -p results/$sdata.ap -t
-  python3 utl/continous_action/ap_regression_data_join.py --p results/$sdata.ap --d test/train-sets/regression/$datatest -m $max -i $min >> $filename2
+  python3 paper/${PAPER}/continous_action/ap_regression_data_join.py --p results/$sdata.ap --d test/train-sets/regression/$datatest -m $max -i $min >> $filename2
 
   fi;
   done
@@ -68,7 +68,7 @@ run_offline(){
 
 
 run_online(){
-  
+
   cd ../../
   # parameteres for all the experiments
   pass=1

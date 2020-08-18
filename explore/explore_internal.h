@@ -445,7 +445,7 @@ namespace exploration
   template <typename It>
   int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
   {
-    using pdf_category = std::iterator_traits<It>::iterator_category;
+    using pdf_category = typename std::iterator_traits<It>::iterator_category;
     return sample_pdf(p_seed, pdf_first, pdf_last, chosen_value, pdf_value, pdf_category());
   }
 

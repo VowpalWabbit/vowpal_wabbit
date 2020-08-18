@@ -90,7 +90,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   {
    public:
     static void report_progress(vw& all, const cats_pdf&, const example& ec);
-    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::pdf& prediction);
+    static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probability_density_function& prediction);
 
    private:
     static inline bool does_example_have_label(const example& ec);
@@ -102,16 +102,19 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   {
     // add output example
     reduction_output::report_progress(all, data, ec);
-    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.prob_dist);
+    reduction_output::output_predictions(all.final_prediction_sink, ec.pred.pdf);
     VW::finish_example(all, ec);
   }
 
-  void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const actions_pdf::pdf& prediction)
+  void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, const continuous_actions::probability_density_function& prediction)
   {
     // output to the prediction to all files
     const std::string str = to_string(prediction, true);
     for (auto& f : predict_file_descriptors)
+    {
       f->write(str.c_str(), str.size());
+      f->write("\n", 1);
+    }
   }
 
   // "average loss" "since last" "example counter" "example weight"
@@ -136,7 +139,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     {
       all.sd->print_update(all.holdout_set_off, all.current_pass,
           to_string(ec.l.cb_cont.costs[0]),  // Label
-          to_string(ec.pred.prob_dist),      // Prediction
+          to_string(ec.pred.pdf),      // Prediction
           ec.num_features, all.progress_add, all.progress_arg);
     }
   }
@@ -166,7 +169,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree ... rest specified by cats_tree]
     if (!options.was_supplied("cb_explore_pdf"))
       options.insert("cb_explore_pdf", "");
-    if (!options.add_or_check_options("pmf_to_pdf", num_actions))
+    if (!options.insert_arguments("pmf_to_pdf", num_actions))
     {
       std::stringstream err_desc;
       err_desc << error_code::options_disagree_s << "  Check values of pmf_to_pdf.";
@@ -174,7 +177,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     }
     if (!options.was_supplied("get_pmf"))
       options.insert("get_pmf", "");
-    if (!options.add_or_check_options("cats_tree", num_actions))
+    if (!options.insert_arguments("cats_tree", num_actions))
     {
       std::stringstream err_desc;
       err_desc << error_code::options_disagree_s << "  Check values of cats_tree.";
