@@ -6,7 +6,7 @@
 export PAPER=cats
 export BRANCH=icml_push
 rm -rf ${PAPER}
-git clone https://github.com/SoftwareBuildingBlocks/vowpal_wabbit.git ${PAPER}
+git clone https://github.com/VowpalWabbit/vowpal_wabbit.git ${PAPER}
 cd ${PAPER}
 git checkout ${BRANCH}
 rm -rf cs
