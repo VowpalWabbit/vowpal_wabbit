@@ -84,7 +84,11 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 socket_t AllReduceSockets::getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
+#ifdef _WIN32
+  if (sock == INVALID_SOCKET)
+#else
   if (sock < 0)
+#endif
     THROWERRNO("socket");
 
     // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
@@ -273,7 +277,11 @@ void AllReduceSockets::all_reduce_init()
     sockaddr_in child_address;
     socklen_t size = sizeof(child_address);
     socket_t f = accept(sock, (sockaddr*)&child_address, &size);
+#ifdef _WIN32
+    if (f == INVALID_SOCKET)
+#else
     if (f < 0)
+#endif
       THROWERRNO("accept");
 
     // char hostname[NI_MAXHOST];
