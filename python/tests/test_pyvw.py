@@ -6,6 +6,7 @@ from vowpalwabbit.pyvw import (
     DFtoVW,
     SimpleLabel,
     MulticlassLabel,
+    MultiLabels,
     Feature,
     Namespace,
 )
@@ -462,6 +463,26 @@ def test_multiclasslabel():
     assert first_line == "1 0.5 | x"
 
 
+def test_multilabels():
+    df = pd.DataFrame({"y1": [1], "y2": [2], "x": [3]})
+    conv = DFtoVW(
+        df=df, label=MultiLabels(["y1", "y2"]), features=Feature("x")
+    )
+    first_line = conv.convert_df()[0]
+    assert first_line == "1,2 | 3"
+
+
+def test_multilabels_list_of_len_1():
+    df = pd.DataFrame({"y": [1], "x": [2]})
+    conv1 = DFtoVW(
+        df=df, label=MultiLabels(["y"]), features=Feature("x")
+    )
+    conv2 = DFtoVW(
+        df=df, label=MultiLabels("y"), features=Feature("x")
+    )
+    assert conv1.convert_df()[0] == conv2.convert_df()[0]
+
+
 def test_absent_col_error():
     with pytest.raises(ValueError) as value_error:
         df = pd.DataFrame({"a": [1]})
@@ -536,3 +557,15 @@ def test_multiclasslabel_constant_label_type_error():
         )
     expected = "In 'MulticlassLabel', when weight_from_df=False, argument 'weight' should be either of the following type(s): 'int', 'float'."
     assert expected == str(type_error.value)
+
+
+def test_multilabels_non_positive_name_error():
+    df = pd.DataFrame({"y": [0], "b": [1]})
+    with pytest.raises(ValueError) as value_error:
+        DFtoVW(
+            df=df,
+            label=MultiLabels(name="y"),
+            features=Feature("c"),
+        )
+    expected = "In argument 'name' of 'MultiLabels', column 'a' must be >= 1."
+    assert expected == str(value_error.value)
