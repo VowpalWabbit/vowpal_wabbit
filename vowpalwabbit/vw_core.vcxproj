@@ -112,6 +112,7 @@
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="active.h" />
     <ClInclude Include="allreduce.h" />
+    <ClInclude Include="api_status.h" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="autolink.h" />
@@ -131,6 +132,7 @@
     <ClInclude Include="cb_explore_adf_first.h" />
     <ClInclude Include="cb_explore_adf_greedy.h" />
     <ClInclude Include="cb_explore_adf_regcb.h" />
+    <ClInclude Include="cb_explore_adf_squarecb.h" />
     <ClInclude Include="cb_explore_adf_rnd.h" />
     <ClInclude Include="cb_explore_adf_softmax.h" />
     <ClInclude Include="cb_explore.h" />
@@ -148,6 +150,8 @@
     <ClInclude Include="decision_scores.h" />
     <ClInclude Include="distributionally_robust.h" />
     <ClInclude Include="ect.h" />
+    <ClInclude Include="error_constants.h" />
+    <ClInclude Include="error_data.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
@@ -160,8 +164,8 @@
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="interactions.h" />
-    <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="io_buf.h" />
+    <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="kskip_ngram_transformer.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="lda_core.h" />
@@ -243,6 +247,7 @@
     <ClCompile Include="active.cc" />
     <ClCompile Include="allreduce_sockets.cc" />
     <ClCompile Include="allreduce_threads.cc" />
+    <ClCompile Include="api_status.cc" />
     <ClCompile Include="audit_regressor.cc" />
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="baseline.cc" />
@@ -260,6 +265,7 @@
     <ClCompile Include="cb_explore_adf_first.cc" />
     <ClCompile Include="cb_explore_adf_greedy.cc" />
     <ClCompile Include="cb_explore_adf_regcb.cc" />
+    <ClCompile Include="cb_explore_adf_squarecb.cc" />
     <ClCompile Include="cb_explore_adf_rnd.cc" />
     <ClCompile Include="cb_explore_adf_softmax.cc" />
     <ClCompile Include="cb_explore.cc" />
