@@ -5,6 +5,7 @@ from __future__ import division
 import pylibvw
 import warnings
 import pandas as pd
+import numpy as np
 
 
 class SearchTask:
@@ -1513,6 +1514,8 @@ class _Col:
         expected_type = list(self.expected_type)
         if str in expected_type:
             expected_type.append(object)
+        if int in expected_type:
+            expected_type.append(np.int64)
 
         col_type = df[self.colname].dtype
         if not (col_type in expected_type):

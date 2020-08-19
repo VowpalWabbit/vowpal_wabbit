@@ -225,31 +225,6 @@ void vw::finish_example(multi_ex& ec)
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(
-    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
-{
-  for (size_t i = 0; i < grams.size(); i++)
-  {
-    std::string ngram = grams[i];
-    if (isdigit(ngram[0]))
-    {
-      int n = atoi(ngram.c_str());
-      if (!quiet)
-        std::cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << std::endl;
-      for (size_t j = 0; j < 256; j++) dest[j] = n;
-    }
-    else if (ngram.size() == 1)
-      std::cout << "You must specify the namespace index before the n" << std::endl;
-    else
-    {
-      int n = atoi(ngram.c_str() + 1);
-      dest[(uint32_t)(unsigned char)*ngram.c_str()] = n;
-      if (!quiet)
-        std::cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << std::endl;
-    }
-  }
-}
-
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
 {
   for (size_t i = 0; i < limits.size(); i++)
@@ -372,10 +347,8 @@ vw::vw()
 
   all_reduce = nullptr;
 
-  for (size_t i = 0; i < 256; i++)
+  for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
-    ngram[i] = 0;
-    skips[i] = 0;
     limit[i] = INT_MAX;
     affix_features[i] = 0;
     spelling_features[i] = 0;
