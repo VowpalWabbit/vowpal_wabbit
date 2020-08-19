@@ -4,15 +4,9 @@
 #         Check sanitize.py for keywords to look for in comments to remove
 
 export PAPER=cats
-
-###########export BRANCH=icml_push
-export BRANCH=pr/mmajzoubi/2493
-
+export BRANCH=icml_push
 rm -rf ${PAPER}
-
-############## git clone https://github.com/SoftwareBuildingBlocks/vowpal_wabbit.git ${PAPER}
-git clone https://github.com/SoftwareBuildingBlocks/vowpal_wabbit.git ${PAPER}
-
+git clone https://github.com/VowpalWabbit/vowpal_wabbit.git ${PAPER}
 cd ${PAPER}
 git checkout ${BRANCH}
 rm -rf cs

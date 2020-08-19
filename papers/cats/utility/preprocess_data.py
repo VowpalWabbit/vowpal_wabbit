@@ -59,6 +59,7 @@ class PreProcessCSVData:
 
     print('Generating test data set', flush=True)
     ds_test = ds[math.floor(df.size*percent):]
+    ds_test.insert(0,'','ca')
 
     print('Writing whole file = ', dat_file_name, flush=True)
     ds.to_csv(dat_file_name, header = False, index=False)
@@ -69,7 +70,7 @@ class PreProcessCSVData:
 
     test_file_name = file_name_root + "_test.dat"
     print('Writing test file = ', test_file_name, flush=True)
-    ds_test.to_csv(test_file_name, header = False, index=False)
+    ds_test.to_csv(test_file_name, header = False, index=False, sep=' ', escapechar=' ', quoting=csv.QUOTE_NONE)
 
 if __name__ == "__main__":
   csv_file_name = "data.csv"

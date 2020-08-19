@@ -1,0 +1,28 @@
+Enabling FTRL based optimization
+Algorithm used: Coin Betting
+ftrl_alpha = 4
+ftrl_beta = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/regression/cbify-reg.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.155338 0.155338            1            1.0 3879.0000 185.1211       10
+0.400501 0.645663            2            2.0 16123.0000 772.5917       10
+0.323799 0.247098            4            4.0 4213.0000 14122.0088       10
+0.252624 0.181448            8            8.0 7932.0000 12715.1006       10
+0.216513 0.180402           16           16.0 8574.0000 669.1191       10
+0.242811 0.269110           32           32.0 15481.0000 10786.6973       10
+
+finished run
+number of examples = 50
+weighted example sum = 50.000000
+weighted label sum = 543957.634613
+average loss = 0.235902
+best constant = 10879.152344
+total feature number = 500
+Learn() count per node: id=0, #l=1; id=1, #l=0; id=2, #l=0; 
