@@ -111,6 +111,10 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
     po::store(parsed_options, vm);
     po::notify(vm);
   }
+  catch (boost::wrapexcept<boost::program_options::invalid_option_value>& ex)
+  {
+    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+  }
   catch (boost::exception_detail::clone_impl<
       boost::exception_detail::error_info_injector<boost::program_options::invalid_option_value>>& ex)
   {
