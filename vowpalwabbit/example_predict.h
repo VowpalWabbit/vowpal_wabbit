@@ -43,11 +43,12 @@ struct example_predict
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset;                                  // An offset for all feature values.
-  uint32_t stack_depth;                                // Used for debugging reductions.  Keeps track of current reduction level
 
   // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
   // and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions;
+
+  uint32_t _current_reduction_depth;                  // Used for debugging reductions.  Keeps track of current reduction level
 };
 
 // make sure we have an exception safe version of example_predict

@@ -361,7 +361,7 @@ std::string simple_label_to_string(const example& ec)
 
 std::string depth_indent_string(const example& ec)
 {
-  return depth_indent_string(ec.stack_depth);
+  return depth_indent_string(ec._current_reduction_depth);
 }
 
 std::string depth_indent_string(int32_t stack_depth)
