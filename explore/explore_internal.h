@@ -395,7 +395,20 @@ namespace exploration
     return S_EXPLORATION_OK;
   }
 
-  // Sample one action from a range given the probability density.
+  // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
+  // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
+  // be used to inplace mutate it.
+  /**
+   * @brief Sample a continuous value from the provided pdf.
+   *
+   * @tparam It Iterator type of the pmf. Must be a RandomAccessIterator.
+   * @param p_seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash. The seed state will be advanced
+   * @param pdf_first Iterator pointing to the beginning of the pdf.
+   * @param pdf_last Iterator pointing to the end of the pdf.
+   * @param chosen_value returns the sampled continuous value.
+   * @param pdf_value returns the probablity density at the sampled location.
+   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
+   */
   template <typename It>
   int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value,
       std::random_access_iterator_tag)
@@ -442,6 +455,17 @@ namespace exploration
   // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
   // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
   // be used to inplace mutate it.
+  /**
+   * @brief Sample a continuous value from the provided pdf.
+   *
+   * @tparam It Iterator type of the pmf. Must be a RandomAccessIterator.
+   * @param p_seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash. The seed state will be advanced
+   * @param pdf_first Iterator pointing to the beginning of the pdf.
+   * @param pdf_last Iterator pointing to the end of the pdf.
+   * @param chosen_value returns the sampled continuous value.
+   * @param pdf_value returns the probablity density at the sampled location.
+   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
+   */
   template <typename It>
   int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
   {

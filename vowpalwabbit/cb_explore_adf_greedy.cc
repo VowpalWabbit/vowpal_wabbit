@@ -23,11 +23,11 @@ namespace greedy
 {
 struct cb_explore_adf_greedy
 {
- private:
+private:
   float _epsilon;
   bool _first_only;
 
- public:
+public:
   cb_explore_adf_greedy(float epsilon, bool first_only);
   ~cb_explore_adf_greedy() = default;
 
@@ -35,7 +35,7 @@ struct cb_explore_adf_greedy
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
- private:
+private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
@@ -85,29 +85,20 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   // NOTE: epsilon-greedy is the default explore type.
   // This basically runs if none of the other explore strategies are used
-  bool use_greedy = !(options.was_supplied("first")
-                   || options.was_supplied("bag")
-                   || options.was_supplied("cover")
-                   || options.was_supplied("regcb")
-                   || options.was_supplied("regcbopt")
-                   || options.was_supplied("rnd")
-                   || options.was_supplied("softmax"));
+  bool use_greedy = !(options.was_supplied("first") || options.was_supplied("bag") || options.was_supplied("cover") ||
+      options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("squarecb") ||
+      options.was_supplied("rnd") || options.was_supplied("softmax"));
 
-  if (!cb_explore_adf_option || !use_greedy)
-    return nullptr;
+  if (!cb_explore_adf_option || !use_greedy) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   size_t problem_multiplier = 1;
 
-  if (!options.was_supplied("epsilon"))
-    epsilon = 0.05f;
+  if (!options.was_supplied("epsilon")) epsilon = 0.05f;
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.p->lp = CB::cb_label;
@@ -116,10 +107,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
   auto data = scoped_calloc_or_throw<explore_type>(epsilon, first_only);
 
-  if (epsilon < 0.0 || epsilon > 1.0)
-  {
-    THROW("The value of epsilon must be in [0,1]");
-  }
+  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
