@@ -269,7 +269,6 @@ template <class T>
 void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin, T& weights)
 {
   float* mem0 = mem;
-  uint32_t length = 1 << all.num_bits;
   // implement conjugate gradient
   if (b.m == 0)
   {
@@ -303,8 +302,6 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     if (!all.logger.quiet)
       fprintf(stderr, "%f\t", beta);
     return;
-
-    mem = mem0 + (length - 1) * b.mem_stride;
   }
   else
   {
