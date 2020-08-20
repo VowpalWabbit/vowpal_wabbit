@@ -17,23 +17,17 @@ namespace VW { namespace binary {
   {
     if (is_learn)
     {
-      VW_DBG(ec) << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
       base.learn(ec);
-      VW_DBG(ec) << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
     }
     else
     {
-      VW_DBG(ec) << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
       base.predict(ec);
-      VW_DBG(ec) << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
     }
 
     if (ec.pred.scalar > 0)
       ec.pred.scalar = 1;
     else
       ec.pred.scalar = -1;
-
-    VW_DBG(ec) << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
 
     if (ec.l.simple.label != FLT_MAX)
     {
