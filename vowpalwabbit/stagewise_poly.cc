@@ -72,7 +72,7 @@ struct stagewise_poly
   ~stagewise_poly()
   {
 #ifdef DEBUG
-    cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
+    std::cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
     //synth_ec.feature_space[tree_atomics].delete_v();
@@ -356,7 +356,7 @@ void sort_data_update_support(stagewise_poly &poly)
     std::cout << "  [" << depth << "] = " << poly.depths[depth];
   std::cout << std::endl;
 
-  std::cout << "Sanity check after sort... " << flush;
+  std::cout << "Sanity check after sort... " << std::flush;
   sanity_check_state(poly);
   std::cout << "done" << std::endl;
 #endif  // DEBUG
