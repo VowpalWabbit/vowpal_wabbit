@@ -11,6 +11,8 @@
 #include <iterator>
 #include <utility>
 
+#include <boost/exception/exception.hpp>
+
 using namespace VW::config;
 
 bool is_number(const VW::string_view& s)
