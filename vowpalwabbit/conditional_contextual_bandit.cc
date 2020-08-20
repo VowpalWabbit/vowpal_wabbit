@@ -554,9 +554,10 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
     if (outcome != nullptr)
     {
       num_labelled++;
-      if (i == 0 || c.all_slots_loss_report) {
+      if (i == 0 || c.all_slots_loss_report)
+      {
         float l = CB_ALGS::get_cost_estimate(
-          outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
+            outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
         loss += l * preds[i][TOP_ACTION_INDEX].score;
       }
     }
@@ -608,12 +609,12 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   bool all_slots_loss_report = false;
   option_group_definition new_options(
       "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
-  new_options.add(
-      make_option("ccb_explore_adf", ccb_explore_adf_option)
-          .keep()
-          .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report)
-         .help("Report average loss from all slots"));
+  new_options
+      .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
+               .keep()
+               .help(
+                   "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
   options.add_and_parse(new_options);
 
   if (!ccb_explore_adf_option)
