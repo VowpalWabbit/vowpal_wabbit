@@ -113,6 +113,7 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
       }
     }
     previous = current;
-    VW::finish_example(*vw, examples);
+    vw->finish_example(examples);
   }
+  VW::finish(*vw);
 }
