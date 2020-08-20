@@ -12,6 +12,7 @@
 #include <utility>
 
 #include <boost/exception/exception.hpp>
+#include <boost/throw_exception.hpp>
 
 using namespace VW::config;
 
