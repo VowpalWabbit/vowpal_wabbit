@@ -241,7 +241,7 @@ void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
 {
   for (size_t i = 0; i != stride; ++i, ++index)
   {
-    float initial_value = 0.1 * merand48(index);
+    float initial_value = 0.1f * merand48(index);
     weights[i] = initial_value;
   }
 }

@@ -160,7 +160,8 @@ public:
     {
       for (auto& iter : _map)
       {
-        free(iter.second);
+        auto* weight_ptr = iter.second;
+        free(weight_ptr);
       }
     }
     _map = input._map;
@@ -206,7 +207,8 @@ public:
     {
       for (auto& iter : _map)
       {
-        free(iter.second);
+        auto* weight_ptr = iter.second;
+        free(weight_ptr);
       }
       _map.clear();
       _delete = true;
