@@ -63,7 +63,6 @@ test/RunTests.last.times
 *.pc
 *.pyc
 .DS_Store
-test/train-sets/regression/**
 results/**
 
 # build folders
