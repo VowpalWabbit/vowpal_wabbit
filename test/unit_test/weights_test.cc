@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_default_function_weight_initialization_stride
 {
   T w(LENGTH, STRIDE_SHIFT);
   auto weight_initializer = [](weight* weights, uint64_t index) {
-    weights[0] = 1.0 * index;
+    weights[0] = 1.f * index;
   };
   w.set_default(weight_initializer);
   for(size_t i = 0; i < LENGTH; i++)
