@@ -10,7 +10,7 @@ BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
   BOOST_CHECK_EQUAL(new_random_seed, 2244123448);
 
   float random_draw = exploration::uniform_random_merand48(new_random_seed);
-  BOOST_CHECK_CLOSE(random_draw, 0.99999f, 0.00001f);
+  BOOST_CHECK_CLOSE(random_draw, 0.99999f, 0.001f);
 
   const float range_max = 7190.0f;
   const float range_min = -121830.0f;
