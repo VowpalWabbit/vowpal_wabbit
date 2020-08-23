@@ -2,12 +2,10 @@ add_executable(vw-unit-test.out
   cb_explore_adf_test.cc
   ccb_parser_test.cc
   ccb_test.cc
-  dsjson_parser_test.cc
   example_header_test.cc
   explore_test.cc
   guard_test.cc
   io_adapter_test.cc
-  json_parser_test.cc
   main.cc
   object_pool_test.cc
   options_boost_po_test.cc
@@ -22,6 +20,7 @@ add_executable(vw-unit-test.out
   test_common.h
   tokenize_tests.cc
   io_thread_test.cc
+  multithread_datafile_ordering.cc
 )
 
 # Add the include directories from vw target for testing
