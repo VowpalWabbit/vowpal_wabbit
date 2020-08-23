@@ -49,7 +49,7 @@ struct reader
   bool is_resettable() const { return _is_resettable; }
 
   /// Gets the size of the data in the io.
-  virtual size_t get_data_size() { THROW("Reset not supported for this io_adapter"); }
+  virtual size_t get_data_size() { THROW("get_data_size not supported for this io_adapter"); }
 
   reader(reader& other) = delete;
   reader& operator=(reader& other) = delete;
