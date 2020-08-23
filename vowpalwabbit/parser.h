@@ -27,8 +27,6 @@
 #include "queue.h"
 #include "object_pool.h"
 
-#include "io_item.h"
-
 struct vw;
 struct input_options;
 
@@ -48,6 +46,7 @@ struct parser
       , finished_examples(0)
       , num_parse_threads{num_parse_threads}
       , strict_parse{strict_parse_}
+      , io_lines{100000}
   {
     this->input = new io_buf{};
     this->output = new io_buf{};
@@ -89,7 +88,7 @@ struct parser
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
 
-  bool (*input_file_reader)(vw* vw, char*& line, v_array<example*>&);
+  bool (*input_file_reader)(vw& vw, char*& line);
 
   shared_data* _shared_data = nullptr;
 
@@ -137,9 +136,11 @@ struct parser
   bool strict_parse;
   std::exception_ptr exc_ptr;
 
-  io_state _io_state;
+  VW::ptr_queue<std::vector<char>> io_lines;
+  std::atomic<bool> done_with_io{false};
 
-  io_state* io_state() { return &_io_state; }
+  // for passes
+  std::condition_variable can_end_pass;
 
 };
 
