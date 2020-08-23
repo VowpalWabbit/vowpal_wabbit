@@ -36,20 +36,20 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           all.p->reader(&all, examples, words_localcpy, parse_name_localcpy) > 0)
       {
 
-          VW::setup_examples(all, examples);
-          example_number += examples.size();
+        VW::setup_examples(all, examples);
+        example_number += examples.size();
 
-          dispatch(all, examples);
+        dispatch(all, examples);
 
       }
       else
-      {
+      { 
 
         reset_source(all, all.num_bits);
+
         all.do_reset_source = false;
         all.passes_complete++;
 
-        // setup an end_pass example
         all.p->lp.default_label(&examples[0]->l);
         examples[0]->end_pass = true;
         all.p->in_pass_counter = 0;
