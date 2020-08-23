@@ -44,6 +44,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   tag_size = *(size_t*)c;
   c += sizeof(tag_size);
   cache.set(c);
+
   if (cache.buf_read(c, tag_size) < tag_size)
     return 0;
 
@@ -62,16 +63,15 @@ __attribute__((packed))
 ;
 
 size_t read_cached_feature(vw *all, std::vector<char>& line, size_t&)
-{
+{ 
+  std::vector<char> *line_ptr = all->p->io_lines.pop();
+  if(line_ptr != nullptr) {
+    line = std::move(*line_ptr);
+  }
 
-  io_item result;
-
-  result = (*all).p->_io_state.pop_io_queue();
-
-  line = std::move(result.message);
+  delete line_ptr;
 
   return line.size();
-
 }
 
 
@@ -88,7 +88,6 @@ void notify_examples_cache(vw& all, example *ex)
 
 int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 {
-
 
   size_t total = all->p->lp.read_cached_label(all->p->_shared_data, &ae->l, *input);
 
@@ -167,6 +166,64 @@ int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::strin
   size_t num_chars;
   size_t num_chars_initial;
 
+  // a line is popped off of the io queue in read_features
+  num_chars_initial = read_cached_feature(all, line, num_chars);
+
+  if(line.size() == 0) {
+    return 0;
+  }
+
+ // convert to io_buf -> parse, using create_buffer_view.
+  io_buf buf;
+  if(line.size() > 0) {
+    buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
+  }
+
+  while (examples.size() > 0) {
+    examples.pop();
+  }
+
+  example *ae = &VW::get_unused_example(all);
+
+  int new_num_read = read_cached_features_single_example(all, ae, &buf);
+
+  char *buffer = nullptr;
+
+  // Get the amount left to read in the input file
+  size_t remaining_bytes = buf.buf_read(buffer, num_chars_initial);
+  auto *unread_input = new std::vector<char>();
+  unread_input->resize(remaining_bytes);
+
+  memcpy(unread_input->data(), buffer, remaining_bytes);
+
+  all->p->io_lines.push(unread_input);
+
+  if(new_num_read == 0){
+    return 0;
+  }
+
+  examples.push_back(ae);
+  if (examples.size() > 0) {
+    (*all).p->ready_parsed_examples.push(ae);
+  }   
+
+  return new_num_read;
+
+}
+
+/*
+// Alternate implementation without pushing back remaining binary input to the io lines queue.
+// This will be more efficient than the implementation above, but does not mirror the process in parse_dispatch_loop and other function calls 
+// for parsing input, which is a reason why we use the implementation above.
+int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::string_view>&, v_array<VW::string_view>&) {
+
+  std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
+
+  // this needs to outlive the string_views pointing to it
+  std::vector<char> line;
+  size_t num_chars;
+  size_t num_chars_initial;
+
   //a line is popped off of the io queue in read_features
   num_chars_initial = read_cached_feature(all, line, num_chars);
 
@@ -211,7 +268,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::strin
 
   return total_num_read;
 
-}
+}*/
 
 inline uint64_t ZigZagEncode(int64_t n)
 {
