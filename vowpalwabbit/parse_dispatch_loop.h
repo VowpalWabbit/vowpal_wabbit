@@ -47,6 +47,10 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 
         reset_source(all, all.num_bits);
 
+        // to call reset source in io thread
+        all.p->done_with_io.store(true);
+        all.p->can_end_pass.notify_one();
+
         all.do_reset_source = false;
         all.passes_complete++;
 
