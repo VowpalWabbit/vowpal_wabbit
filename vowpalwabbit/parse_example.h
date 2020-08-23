@@ -15,7 +15,7 @@ typedef enum
   JsonFeatures
 } FeatureInputType;
 
-void substring_to_example(vw* all, example* ae, VW::string_view example, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name);
+void substring_to_example(vw* all, example* ae, VW::string_view& example, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name);
 
 namespace VW
 {
