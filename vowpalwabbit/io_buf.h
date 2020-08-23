@@ -236,7 +236,6 @@ public:
 
   size_t read_all_data(char*& buffer, size_t& size) {
 
-    //how to get the list of input files?
     size = input_files[current]->get_data_size();
     return buf_read(buffer, size);
 
