@@ -810,17 +810,14 @@ void setup_example(vw& all, example* ae)
 
 }  // namespace VW
 
-void notify_examples_cv(vw& all, example *& ex)
+void notify_examples_cv(example *& ex)
 {
 
-//  std::cout << "ex  in notify: " << ex << std::endl;
-  //std::unique_lock<std::mutex> lock(all.p->example_cv_mutex);
   std::unique_lock<std::mutex> lock(ex->example_cv_mutex);
 
   ex->done_parsing.store(true); 
   
-  //all.p->example_parsed.notify_all();
-  ex->example_parsed.notify_all();
+  ex->example_parsed.notify_one();
 
 }
 
@@ -981,7 +978,7 @@ void thread_dispatch(vw& all, const v_array<example*>& examples)
   
   all.p->end_parsed_examples += examples.size();
 
-  notify_examples_cv(all, examples[0]);
+  notify_examples_cv(examples[0]);
 
 }
 
@@ -993,20 +990,13 @@ example* get_example(parser* p) {
 
   example* ex = p->ready_parsed_examples.pop();
 
-  /*if (ex == nullptr || ex->done_parsing) {
-    return ex;
-  }*/
-
   if (ex == nullptr) {
     return ex;
   }
 
   {
-    //std::unique_lock<std::mutex> lock(p->example_cv_mutex);
     std::unique_lock<std::mutex> lock(ex->example_cv_mutex);
     while(ex != nullptr && !ex->done_parsing) {
-      // std::cout << "ex in get_ex: " << ex << std::endl;
-      //p->example_parsed.wait(lock);
       ex->example_parsed.wait(lock);
     }
   }
