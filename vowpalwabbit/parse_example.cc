@@ -15,29 +15,28 @@
 #include "vw_string_view.h"
 #include "io_to_queue.h"
 
-class io_item;
-
 size_t read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*>& examples)
 {
-
-  io_item result;
+  std::vector<char> *io_lines_next_item;
 
   {
     std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
     
-    result = std::move((*all).p->_io_state.pop_io_queue());
+    io_lines_next_item = all->p->io_lines.pop();
 
-    (*all).p->ready_parsed_examples.push(examples[0]);
-  }
-  
-  int message_size = result.message.size();
+    if(io_lines_next_item != nullptr) {
+      (*all).p->ready_parsed_examples.push(examples[0]);
+    } else {
+      return 0;
+    }
 
-  if(message_size > 0) {
-    line = std::move(result.message);
-    return message_size;
-  } else {
-    return 0;
   }
+
+  // only get here if io_lines_next_item != nullptr
+  line = std::move(*io_lines_next_item);
+  delete io_lines_next_item;
+
+  return line.size();
 
 }
 
@@ -69,10 +68,10 @@ int read_features_string(vw* all, v_array<example*>& examples, v_array<VW::strin
   size_t num_chars;
   size_t num_chars_initial;
 
-  //a line is popped off of the io queue in read_features
+  // a line is popped off of the io queue in read_features
   num_chars_initial = read_features(all, line, num_chars, examples);
 
-  char *stripped_line = line.data();
+  char *stripped_line = std::move(line.data());
   num_chars = strip_features_string(stripped_line, num_chars_initial);
 
   VW::string_view example(stripped_line, num_chars);
@@ -515,7 +514,7 @@ class TC_parser
   }
 };
 
-void substring_to_example(vw* all, example* ae, VW::string_view example, v_array<VW::string_view>& words_localcpy, v_array<VW::string_view>& parse_name_localcpy)
+void substring_to_example(vw* all, example* ae, VW::string_view& example, v_array<VW::string_view>& words_localcpy, v_array<VW::string_view>& parse_name_localcpy)
 {
 
   //words_localcpy.empty();
