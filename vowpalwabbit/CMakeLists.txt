@@ -133,6 +133,7 @@ set(vw_all_headers
   queue.h
   rand48.h
   recall_tree.h
+  reduction_stack.h
   reductions.h
   scope_exit.h
   scorer.h
@@ -256,6 +257,7 @@ set(vw_all_sources
   print.cc
   rand48.cc
   recall_tree.cc
+  reduction_stack.cc
   scorer.cc
   search_dep_parser.cc
   search_entityrelationtask.cc

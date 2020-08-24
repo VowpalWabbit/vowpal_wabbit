@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <unordered_set>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -92,6 +93,7 @@
 #include "options_serializer_boost_po.h"
 #include "named_labels.h"
 #include "kskip_ngram_transformer.h"
+#include "reduction_stack.h"
 
 using std::cerr;
 using std::cout;
@@ -1262,8 +1264,8 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  auto setup_func = all.reduction_stack.top();
-  all.reduction_stack.pop();
+  auto setup_func = all.reduction_stack.back();
+  all.reduction_stack.pop_back();
   auto base = setup_func(options, all);
 
   if (base == nullptr)
@@ -1272,82 +1274,134 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
     return base;
 }
 
+void create_reduction_template(options_i& options, vw& all)
+{
+  static const std::unordered_set< VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> multi = {
+    explore_eval_setup
+    , cbifyldf_setup
+    , cbify_setup
+    , warm_cb_setup
+    , VW::slates::slates_setup
+    , CCB::ccb_explore_adf_setup
+    , VW::shared_feature_merger::shared_feature_merger_setup
+    , cb_sample_setup
+    , cb_dro_setup
+    , VW::cb_explore_adf::greedy::setup
+    , VW::cb_explore_adf::softmax::setup
+    , VW::cb_explore_adf::rnd::setup
+    , VW::cb_explore_adf::regcb::setup
+    , VW::cb_explore_adf::first::setup
+    , VW::cb_explore_adf::cover::setup
+    , VW::cb_explore_adf::bag::setup
+    , cb_adf_setup
+    , cb_adf_setup
+  };
+  std::deque<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> tmp_reduction_stack;
+  std::swap(tmp_reduction_stack, all.reduction_stack);
+
+  auto *cast_options = dynamic_cast<options_boost_po*>(&options);
+  auto options_str = cast_options->m_command_line;
+  options_i* tmp_options = new options_boost_po(options_str);
+
+  // generate totally clean noop
+  auto* base_template = VW::reduction_stack::noop_single_setup(options, all);
+
+  for (auto reduction_it = tmp_reduction_stack.rbegin(); reduction_it != tmp_reduction_stack.rend() - 11; ++reduction_it) {
+    all.reduction_stack.clear();
+    if (multi.find(*reduction_it) == multi.end()) {
+      all.reduction_stack.push_back(VW::reduction_stack::noop_single_setup);
+      all.reduction_stack.push_back(VW::reduction_stack::passthru_single_setup);
+    }
+    else {
+      all.reduction_stack.push_back(VW::reduction_stack::noop_multi_setup);
+      all.reduction_stack.push_back(VW::reduction_stack::passthru_multi_setup);
+    }
+    all.reduction_stack.push_back(*reduction_it);
+
+    auto* l = setup_base(*tmp_options, all);
+    all.reduction_template_map[l->hash_index()] = l;
+  }
+  std::swap(tmp_reduction_stack, all.reduction_stack);
+}
+
 void parse_reductions(options_i& options, vw& all)
 {
   // Base algorithms
-  all.reduction_stack.push(GD::setup);
-  all.reduction_stack.push(kernel_svm_setup);
-  all.reduction_stack.push(ftrl_setup);
-  all.reduction_stack.push(svrg_setup);
-  all.reduction_stack.push(sender_setup);
-  all.reduction_stack.push(gd_mf_setup);
-  all.reduction_stack.push(print_setup);
-  all.reduction_stack.push(noop_setup);
-  all.reduction_stack.push(lda_setup);
-  all.reduction_stack.push(bfgs_setup);
-  all.reduction_stack.push(OjaNewton_setup);
+  all.reduction_stack.push_back(GD::setup);
+  all.reduction_stack.push_back(kernel_svm_setup);
+  all.reduction_stack.push_back(ftrl_setup);
+  all.reduction_stack.push_back(svrg_setup);
+  all.reduction_stack.push_back(sender_setup);
+  all.reduction_stack.push_back(gd_mf_setup);
+  all.reduction_stack.push_back(print_setup);
+  all.reduction_stack.push_back(noop_setup);
+  all.reduction_stack.push_back(lda_setup);
+  all.reduction_stack.push_back(bfgs_setup);
+  all.reduction_stack.push_back(OjaNewton_setup);
   // all.reduction_stack.push(VW_CNTK::setup);
 
   // Score Users
-  all.reduction_stack.push(baseline_setup);
-  all.reduction_stack.push(ExpReplay::expreplay_setup<'b', simple_label>);
-  all.reduction_stack.push(active_setup);
-  all.reduction_stack.push(active_cover_setup);
-  all.reduction_stack.push(confidence_setup);
-  all.reduction_stack.push(nn_setup);
-  all.reduction_stack.push(mf_setup);
-  all.reduction_stack.push(marginal_setup);
-  all.reduction_stack.push(autolink_setup);
-  all.reduction_stack.push(lrq_setup);
-  all.reduction_stack.push(lrqfa_setup);
-  all.reduction_stack.push(stagewise_poly_setup);
-  all.reduction_stack.push(scorer_setup);
+  all.reduction_stack.push_back(baseline_setup);
+  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
+  all.reduction_stack.push_back(active_setup);
+  all.reduction_stack.push_back(active_cover_setup);
+  all.reduction_stack.push_back(confidence_setup);
+  all.reduction_stack.push_back(nn_setup);
+  all.reduction_stack.push_back(mf_setup);
+  all.reduction_stack.push_back(marginal_setup);
+  all.reduction_stack.push_back(autolink_setup);
+  all.reduction_stack.push_back(lrq_setup);
+  all.reduction_stack.push_back(lrqfa_setup);
+  all.reduction_stack.push_back(stagewise_poly_setup);
+  all.reduction_stack.push_back(scorer_setup);
   // Reductions
-  all.reduction_stack.push(bs_setup);
-  all.reduction_stack.push(binary_setup);
+  all.reduction_stack.push_back(bs_setup);
+  all.reduction_stack.push_back(binary_setup);
 
-  all.reduction_stack.push(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
-  all.reduction_stack.push(topk_setup);
-  all.reduction_stack.push(oaa_setup);
-  all.reduction_stack.push(boosting_setup);
-  all.reduction_stack.push(ect_setup);
-  all.reduction_stack.push(log_multi_setup);
-  all.reduction_stack.push(recall_tree_setup);
-  all.reduction_stack.push(memory_tree_setup);
-  all.reduction_stack.push(classweight_setup);
-  all.reduction_stack.push(multilabel_oaa_setup);
-  all.reduction_stack.push(plt_setup);
+  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
+  all.reduction_stack.push_back(topk_setup);
+  all.reduction_stack.push_back(oaa_setup);
+  all.reduction_stack.push_back(boosting_setup);
+  all.reduction_stack.push_back(ect_setup);
+  all.reduction_stack.push_back(log_multi_setup);
+  all.reduction_stack.push_back(recall_tree_setup);
+  all.reduction_stack.push_back(memory_tree_setup);
+  all.reduction_stack.push_back(classweight_setup);
+  all.reduction_stack.push_back(multilabel_oaa_setup);
+  all.reduction_stack.push_back(plt_setup);
 
-  all.reduction_stack.push(cs_active_setup);
-  all.reduction_stack.push(CSOAA::csoaa_setup);
-  all.reduction_stack.push(interact_setup);
-  all.reduction_stack.push(CSOAA::csldf_setup);
-  all.reduction_stack.push(cb_algs_setup);
-  all.reduction_stack.push(cb_adf_setup);
-  all.reduction_stack.push(mwt_setup);
-  all.reduction_stack.push(cb_explore_setup);
-  all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::rnd::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::squarecb::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::first::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
-  all.reduction_stack.push(cb_dro_setup);
-  all.reduction_stack.push(cb_sample_setup);
-  all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
-  all.reduction_stack.push(CCB::ccb_explore_adf_setup);
-  all.reduction_stack.push(VW::slates::slates_setup);
+  all.reduction_stack.push_back(cs_active_setup);
+  all.reduction_stack.push_back(CSOAA::csoaa_setup);
+  all.reduction_stack.push_back(interact_setup);
+  all.reduction_stack.push_back(CSOAA::csldf_setup);
+  all.reduction_stack.push_back(cb_algs_setup);
+  all.reduction_stack.push_back(cb_adf_setup);
+  all.reduction_stack.push_back(mwt_setup);
+  all.reduction_stack.push_back(cb_explore_setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::greedy::setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::softmax::setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::rnd::setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::regcb::setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::squarecb::setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::first::setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::cover::setup);
+  all.reduction_stack.push_back(VW::cb_explore_adf::bag::setup);
+  all.reduction_stack.push_back(cb_dro_setup);
+  all.reduction_stack.push_back(cb_sample_setup);
+  all.reduction_stack.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
+  all.reduction_stack.push_back(CCB::ccb_explore_adf_setup);
+  all.reduction_stack.push_back(VW::slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
-  all.reduction_stack.push(warm_cb_setup);
-  all.reduction_stack.push(cbify_setup);
-  all.reduction_stack.push(cbifyldf_setup);
-  all.reduction_stack.push(explore_eval_setup);
-  all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
-  all.reduction_stack.push(Search::setup);
-  all.reduction_stack.push(audit_regressor_setup);
+  all.reduction_stack.push_back(warm_cb_setup);
+  all.reduction_stack.push_back(cbify_setup);
+  all.reduction_stack.push_back(cbifyldf_setup);
+  all.reduction_stack.push_back(explore_eval_setup);
+  all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
+  all.reduction_stack.push_back(Search::setup);
+  all.reduction_stack.push_back(audit_regressor_setup);
 
+  // needs to happen before setup_base since we don't take changes to all into account yet
+  create_reduction_template(options, all);
   all.l = setup_base(options, all);
 }
 

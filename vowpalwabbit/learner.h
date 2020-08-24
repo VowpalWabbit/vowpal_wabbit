@@ -6,6 +6,8 @@
 
 #include <iostream>
 #include <memory>
+#include <typeindex>
+#include <unordered_map>
 
 #include "memory.h"
 #include "multiclass.h"
@@ -15,6 +17,7 @@
 #include "example.h"
 #include <memory>
 #include "scope_exit.h"
+#include "reduction_stack.h"
 
 enum class prediction_type_t
 {
@@ -59,6 +62,14 @@ struct func_data
   void* data;
   base_learner* base;
   fn func;
+  bool operator==(const func_data& other) {
+    if (base != other.base) return false;
+    if (func != other.func) return false;
+    return true;
+  }
+  bool operator!=(const func_data& other) {
+    return !(*this == other);
+  }
 };
 
 inline func_data tuple_dbf(void* data, base_learner* base, void (*func)(void*))
@@ -82,6 +93,18 @@ struct learn_data
   fn predict_f;
   fn update_f;
   multi_fn multipredict_f;
+
+  bool operator==(const learn_data& other) {
+    if (base != other.base) return false;
+    if (learn_f != other.learn_f) return false;
+    if (predict_f != other.predict_f) return false;
+    if (update_f != other.update_f) return false;
+    if (multipredict_f != other.multipredict_f) return false;
+    return true;
+  }
+  bool operator!=(const learn_data& other) {
+    return !(*this == other);
+  }
 };
 
 struct sensitivity_data
@@ -89,6 +112,14 @@ struct sensitivity_data
   using fn = float (*)(void* data, base_learner& base, example& ex);
   void* data;
   fn sensitivity_f;
+
+  bool operator==(const sensitivity_data& other) {
+    if (sensitivity_f != other.sensitivity_f) return false;
+    return true;
+  }
+  bool operator!=(const sensitivity_data& other) {
+    return !(*this == other);
+  }
 };
 
 struct save_load_data
@@ -97,6 +128,15 @@ struct save_load_data
   void* data;
   base_learner* base;
   fn save_load_f;
+
+  bool operator==(const save_load_data& other) {
+    if (base != other.base) return false;
+    if (save_load_f != other.save_load_f) return false;
+    return true;
+  }
+  bool operator!=(const save_load_data& other) {
+    return !(*this == other);
+  }
 };
 
 struct finish_example_data
@@ -105,6 +145,15 @@ struct finish_example_data
   void* data;
   base_learner* base;
   fn finish_example_f;
+
+  bool operator==(const finish_example_data& other) {
+    if (base != other.base) return false;
+    if (finish_example_f != other.finish_example_f) return false;
+    return true;
+  }
+  bool operator!=(const finish_example_data& other) {
+    return !(*this == other);
+  }
 };
 
 void generic_driver(vw& all);
@@ -180,6 +229,7 @@ struct learner
   func_data end_pass_fd;
   func_data end_examples_fd;
   func_data finisher_fd;
+  std::type_index _hash_index;
 
   std::shared_ptr<void> learner_data;
   learner(){};  // Should only be able to construct a learner through init_learner function
@@ -465,8 +515,50 @@ VW_WARNING_STATE_POP
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
+    ret._hash_index = std::type_index(typeid(T));
 
     return ret;
+  }
+
+  std::type_index hash_index() { return _hash_index; }
+
+  inline VW::LEARNER::base_learner* get_base_reduction() { return learn_fd.base; }
+
+  void apply_from(
+    const VW::LEARNER::base_learner* base,
+    const std::unordered_map<std::type_index, VW::LEARNER::base_learner*>& reduction_template_map) {
+    if (base == nullptr || get_base_reduction() == nullptr) {
+      // currently working on base type. Nothing to do
+      return;
+    }
+    auto src = *this;
+    *this = *base;
+
+    _hash_index = src._hash_index;
+    auto src_template_it = reduction_template_map.find(src._hash_index);
+    if (src_template_it == reduction_template_map.end()) THROW("invalid template map");
+    auto * src_template = src_template_it->second;
+    auto * noop_template = src_template->learn_fd.base;
+
+    if (noop_template->init_fd != src_template->init_fd) init_fd = src.init_fd;
+    if (noop_template->sensitivity_fd != src_template->sensitivity_fd) sensitivity_fd = src.sensitivity_fd;
+    if (noop_template->finish_example_fd != src_template->finish_example_fd) finish_example_fd = src.finish_example_fd;
+    if (noop_template->save_load_fd != src_template->save_load_fd) save_load_fd = src.save_load_fd;
+    if (noop_template->end_pass_fd != src_template->end_pass_fd) end_pass_fd = src.end_pass_fd;
+    if (noop_template->end_examples_fd != src_template->end_examples_fd) end_examples_fd = src.end_examples_fd;
+    if (noop_template->pred_type != src_template->pred_type) pred_type = src.pred_type;
+    weights = src.weights;
+    increment = base->increment * src.weights;
+
+    _hash_index = src._hash_index;
+    learn_fd = src.learn_fd;
+    finisher_fd = src.finisher_fd;
+    // ick. const cast required to save the pointers
+    learn_fd.base = const_cast<VW::LEARNER::base_learner*>(base);
+    finisher_fd.base = const_cast<VW::LEARNER::base_learner*>(base);
+    is_multiline = src.is_multiline;
+    pred_type = src.pred_type;
+    learner_data = src.learner_data;
   }
 };
 

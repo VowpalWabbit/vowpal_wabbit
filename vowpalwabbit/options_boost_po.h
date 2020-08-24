@@ -112,7 +112,9 @@ struct options_boost_po : public options_i
       return vm["__positional__"].as<std::vector<std::string>>();
     }
     return std::vector<std::string>();
+
   }
+  std::vector<std::string> m_command_line;
 
  private:
   template <typename T>
@@ -156,7 +158,7 @@ struct options_boost_po : public options_i
  private:
   std::map<std::string, std::shared_ptr<base_option>> m_options;
 
-  std::vector<std::string> m_command_line;
+  //std::vector<std::string> m_command_line;
 
   std::stringstream m_help_stringstream;
 

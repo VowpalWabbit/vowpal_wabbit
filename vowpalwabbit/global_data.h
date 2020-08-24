@@ -18,6 +18,7 @@
 #include <array>
 #include <memory>
 #include <atomic>
+#include <deque>
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -453,7 +454,8 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::deque<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::unordered_map<std::type_index, VW::LEARNER::base_learner*> reduction_template_map;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
