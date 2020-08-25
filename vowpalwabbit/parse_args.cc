@@ -1786,6 +1786,9 @@ vw* initialize(
     std::vector<std::string> dictionary_nses;
     parse_modules(options, all, dictionary_nses);
 
+    // TODO: Stack manipulation needs to happen here.
+    // We need to have some way to maintain the initialization state until setup is complete
+
     parse_sources(options, all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
