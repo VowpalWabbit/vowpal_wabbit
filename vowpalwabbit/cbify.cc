@@ -68,6 +68,7 @@ struct cbify
   {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
+    regression_data.cb_cont_label.costs.delete_v();
 
     if (use_adf)
     {
@@ -80,6 +81,7 @@ struct cbify
       for (auto& as : cb_as) as.delete_v();
     }
   }
+
 };
 
 float loss(cbify& data, uint32_t label, uint32_t final_prediction)
@@ -262,15 +264,21 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
              << endl;
 
+  // Save simple label from the example just in case base.predict changes the label.
+  // Technically it should not.
   const label_data regression_label = ec.l.simple;
-  data.regression_data.cb_cont_label.costs.clear();
-  ec.l.cb_cont = data.regression_data.cb_cont_label;
+
+  // Clear the prediction before getting a prediction from base
   ec.pred.pdf_value = {0.f, 0.f};
 
+  // Get the continuous action and pdf value for the current features
   base.predict(ec);
 
   VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
   VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.pdf_value.action << endl;
+
+  // Create a label from the prediction and a cost derived from the actual
+  // regression label.
 
   continuous_label_elm cb_cont_lbl;
 
@@ -290,13 +298,19 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     cb_cont_lbl.cost = get_01_loss(data, ec.pred.pdf_value.action, regression_label.label);
   }
 
+  data.regression_data.cb_cont_label.costs.clear();
   data.regression_data.cb_cont_label.costs.push_back(cb_cont_lbl);
+
+  // Use the label inside the reduction data structure
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
   VW_DBG(ec) << "cbify-reg: before base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
   if (is_learn)
     base.learn(ec);
   VW_DBG(ec) << "cbify-reg: after base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+
+  // Update the label inside the reduction data structure
+  data.regression_data.cb_cont_label = ec.l.cb_cont;
 
   if (data.regression_data.loss_report == 1)
   {
@@ -314,7 +328,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     }
   }
 
-  ec.l.simple = regression_label;  // recovering regression label
+  ec.l.simple = regression_label;  // restore the regression label
   ec.pred.scalar = cb_cont_lbl.action;
 }
 
