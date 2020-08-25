@@ -68,6 +68,7 @@ struct cbify
   {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
+    regression_data.cb_cont_label.costs.delete_v();
 
     if (use_adf)
     {
@@ -80,6 +81,7 @@ struct cbify
       for (auto& as : cb_as) as.delete_v();
     }
   }
+
 };
 
 float loss(cbify& data, uint32_t label, uint32_t final_prediction)
