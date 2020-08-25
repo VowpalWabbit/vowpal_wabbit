@@ -1862,5 +1862,29 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 217: daemon test with json
 ./daemon-test.sh --json
     test-sets/ref/vw-daemon.stdout
+    
+# Test 218: cbify adf, squarecb
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --gamma_scale 500 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb.stderr
+
+# Test 219: cbify adf, squarecb-elim
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb_elim.stderr
+
+# Test 220: cbify ldf, squarecb
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --gamma_scale 500
+    train-sets/ref/cbify_ldf_squarecb.stderr
+
+# Test 221: cbify ldf, squarecb-elim
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001
+    train-sets/ref/cbify_ldf_squarecb_elim.stderr
+
+# Test 222: CCB first slot loss
+{VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips
+    train-sets/ref/ccb_1slot_loss.stderr
+
+# Test 223: CCB all slots loss
+{VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips --all_slots_loss
+    train-sets/ref/ccb_allslots_loss.stderr  
 
 # Do not delete this line or the empty line above it
