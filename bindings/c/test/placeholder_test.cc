@@ -2,6 +2,4 @@
 
 #include "vw/experimental/placeholder.h"
 
-BOOST_AUTO_TEST_CASE(placeholder_test)
-{
-}
+BOOST_AUTO_TEST_CASE(placeholder_test) {}
