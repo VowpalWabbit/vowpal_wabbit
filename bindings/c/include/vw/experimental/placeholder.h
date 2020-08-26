@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include "exports.h"
+#include "types.h"
+
+
 #ifdef __cplusplus
 extern "C"
 {
