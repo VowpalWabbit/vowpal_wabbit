@@ -1,4 +1,3 @@
-
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
@@ -6,10 +5,6 @@
 
 // uint32_t, uint64_t, etc
 #include <stdint.h>
-// size_t
-#include <stddef.h>
-// bool
-#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"
