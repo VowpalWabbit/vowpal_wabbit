@@ -1276,6 +1276,8 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 
 void create_reduction_template(options_i& options, vw& all)
 {
+  // TODO: find a better way.
+  // list of all reductions that require a multilearner as its base reduction
   static const std::unordered_set< VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> multi = {
     explore_eval_setup
     , cbifyldf_setup
@@ -1303,9 +1305,6 @@ void create_reduction_template(options_i& options, vw& all)
   auto options_str = cast_options->m_command_line;
   options_i* tmp_options = new options_boost_po(options_str);
 
-  // generate totally clean noop
-  auto* base_template = VW::reduction_stack::noop_single_setup(options, all);
-
   for (auto reduction_it = tmp_reduction_stack.rbegin(); reduction_it != tmp_reduction_stack.rend() - 11; ++reduction_it) {
     all.reduction_stack.clear();
     if (multi.find(*reduction_it) == multi.end()) {
@@ -1321,6 +1320,8 @@ void create_reduction_template(options_i& options, vw& all)
     auto* l = setup_base(*tmp_options, all);
     all.reduction_template_map[l->hash_index()] = l;
   }
+
+  delete tmp_options;
   std::swap(tmp_reduction_stack, all.reduction_stack);
 }
 

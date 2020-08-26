@@ -524,6 +524,9 @@ VW_WARNING_STATE_POP
 
   inline VW::LEARNER::base_learner* get_base_reduction() { return learn_fd.base; }
 
+  // This function will cause the learner to inherit from the input base learner.
+  // It will then apply any changes setup_base and the reduction's setup function
+  // made on top of it.
   void apply_from(
     const VW::LEARNER::base_learner* base,
     const std::unordered_map<std::type_index, VW::LEARNER::base_learner*>& reduction_template_map) {
@@ -531,6 +534,7 @@ VW_WARNING_STATE_POP
       // currently working on base type. Nothing to do
       return;
     }
+    // create a copy of the original so we can use it to apply the deltas later
     auto src = *this;
     *this = *base;
 

@@ -7,7 +7,9 @@ namespace reduction_stack {
   VW::LEARNER::base_learner* pop_reduction(vw& all) {
     auto *ret = all.l;
     if(ret)
+    {
       all.l = ret->get_base_reduction();
+    }
     return ret;
   }
 
@@ -25,14 +27,14 @@ namespace reduction_stack {
 
   template<bool is_learn>
   void passthrough_single(noop&, VW::LEARNER::single_learner& base, example& ex){
-    if(is_learn) base.learn(ex);
-    else base.predict(ex);
+    if(is_learn) { base.learn(ex); }
+    else { base.predict(ex); }
   }
 
   template<bool is_learn>
   void passthrough_multi(noop&, VW::LEARNER::multi_learner& base, multi_ex& ex){
-    if(is_learn) base.learn(ex);
-    else base.predict(ex);
+    if(is_learn) { base.learn(ex); }
+    else { base.predict(ex); }
   }
 
   VW::LEARNER::base_learner* noop_single_setup(VW::config::options_i&, vw&)
