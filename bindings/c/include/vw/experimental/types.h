@@ -16,8 +16,7 @@ extern "C"
 
 // Generate all error codes based on the definitions provided in "error_data.h"
 // This macro gets expanded for each individual error definition
-#define ERROR_CODE_DEFINITION(code, name, message) \
-  static const VWStatus VW_ ## name = code;
+#define ERROR_CODE_DEFINITION(code, name, message) static const VWStatus VW_##name = code;
 
 #include "error_data.h"
 
