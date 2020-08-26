@@ -19,6 +19,7 @@ endif()
 
 add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
+add_library(VowpalWabbit::io ALIAS vw_io)
 
 add_subdirectory(parser/flatbuffer)
 add_library(FlatbuffersTarget INTERFACE)

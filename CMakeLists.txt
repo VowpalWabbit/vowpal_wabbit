@@ -34,7 +34,7 @@ if(WIN32)
   set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
+project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
@@ -235,6 +235,7 @@ add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
+add_subdirectory(bindings)
 
 if (BUILD_FLATBUFFER_UTILS)
   add_subdirectory(utl/flatbuffer)
