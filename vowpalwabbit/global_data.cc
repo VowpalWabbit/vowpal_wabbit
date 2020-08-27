@@ -16,7 +16,6 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
-#include "guard.h"
 
 struct global_prediction
 {
@@ -185,7 +184,8 @@ void vw::learn(multi_ex& ec)
     THROW("This reduction does not support multi-line example.");
 
   // Use a prediction buffer to avoid allocations
-  ec[0]->pred = _prediction_buffer;
+  if(ec.size() > 0)
+    ec[0]->pred = _prediction_buffer;
 
   if (!training)
     VW::LEARNER::as_multiline(l)->predict(ec);
@@ -195,7 +195,8 @@ void vw::learn(multi_ex& ec)
   // prediction buffer collection begin and end must be
   // saved so that the prediction buffer tracks allocations
   // made in downstream reductions
-  _prediction_buffer = ec[0]->pred;
+  if(ec.size() > 0)
+    _prediction_buffer = ec[0]->pred;
 }
 
 void vw::predict(example& ec)
@@ -229,12 +230,14 @@ void vw::predict(multi_ex& ec)
   }
 
   // Use a prediction buffer to avoid allocations
-  ec[0]->pred = _prediction_buffer;
+  if(ec.size() > 0)
+    ec[0]->pred = _prediction_buffer;
   VW::LEARNER::as_multiline(l)->predict(ec);
   // prediction buffer collection begin and end must be
   // saved so that the prediction buffer tracks allocations
   // made in downstream reductions
-  _prediction_buffer = ec[0]->pred;
+  if(ec.size() > 0)
+    _prediction_buffer = ec[0]->pred;
 }
 
 void vw::finish_example(example& ec)
