@@ -181,7 +181,7 @@ if(STATIC_LINK_VW)
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
+find_package(Boost REQUIRED COMPONENTS program_options system thread)
 find_package(ZLIB REQUIRED)
 find_package(flatbuffers REQUIRED)
 
@@ -235,7 +235,6 @@ add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
-add_subdirectory(bindings)
 
 if (BUILD_FLATBUFFER_UTILS)
   add_subdirectory(utl/flatbuffer)
@@ -258,18 +257,30 @@ if(BUILD_SLIM_VW)
 endif()
 
 if(BUILD_TESTS)
+  # Boost test is only required if we are building tests
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
   enable_testing()
   add_subdirectory(test)
 
+  # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
+  add_custom_target(test_with_output
+    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
+    DEPENDS spanning_tree vw-unit-test.out vw-bin vw_c_api_unit_test
+  )
+
   # Don't offer these make dependent targets on Windows
   if(NOT WIN32)
-  # make bigtests BIG_TEST_ARGS="<args here>"
-  add_custom_target(bigtests
-    DEPENDS vw
-    COMMAND make \${BIG_TEST_ARGS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
+    # make bigtests BIG_TEST_ARGS="<args here>"
+    add_custom_target(bigtests
+      DEPENDS vw
+      COMMAND make \${BIG_TEST_ARGS}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
   endif()
 endif()
+
+# Must be done after the test block so that enable_testing() has been called
+add_subdirectory(bindings)
 
 # TODO convert cs directory to cmake
 # TODO convert c_test directory to cmake
