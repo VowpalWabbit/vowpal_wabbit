@@ -1,0 +1,7 @@
+ccb shared |Shared f:1.0
+ccb action |TAction af:3.0
+ccb action |TAction af:2.0
+ccb action |TAction af:1.0
+ccb slot 2:-3:0.5 |Slot sf:0.0
+ccb slot 0:-1:0.5 |Slot sf:0.0
+
