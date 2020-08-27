@@ -37,13 +37,14 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   // BEGIN cats_pdf reduction and reduction methods
   struct cats_pdf
   {
-    cats_pdf(single_learner* p_base);
+    cats_pdf(single_learner* p_base, bool always_predict=false);
 
     int learn(example& ec, experimental::api_status* status);
     int predict(example& ec, experimental::api_status* status);
 
    private:
     single_learner* _base = nullptr;
+    bool _always_predict = false;
   };
 
   // Pass through
@@ -59,11 +60,17 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   {
     assert(!ec.test_only);
     VW_DBG(ec) << "cats_pdf::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+
+    if(_always_predict)
+    {
+      _base->predict(ec);
+    }
+
     _base->learn(ec);
     return error_code::success;
   }
 
-  cats_pdf::cats_pdf(single_learner* p_base) : _base(p_base) {}
+  cats_pdf::cats_pdf(single_learner* p_base, bool always_predict) : _base(p_base), _always_predict(always_predict) {}
 
   // Free function to tie function pointers to reduction class methods
   template <bool is_learn>
@@ -183,10 +190,11 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
       THROW(err_desc.str());
     }
     LEARNER::base_learner* p_base = setup_base(options, all);
-    auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base));
+    bool always_predict = all.final_prediction_sink.size() > 0;
+    auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base),always_predict);
 
     LEARNER::learner<cats_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-        predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
+        predict_or_learn<false>, 1, prediction_type_t::pdf);
 
     l.set_finish_example(finish_example);
     all.p->lp = cb_continuous::the_label_parser;

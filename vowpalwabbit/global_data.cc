@@ -16,6 +16,7 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
+#include "guard.h"
 
 struct global_prediction
 {
@@ -164,10 +165,18 @@ void vw::learn(example& ec)
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
 
+  // Use a prediction buffer to avoid allocations
+  ec.pred = _prediction_buffer;
+
   if (ec.test_only || !training)
     VW::LEARNER::as_singleline(l)->predict(ec);
   else
     VW::LEARNER::as_singleline(l)->learn(ec);
+
+  // prediction buffer collection begin and end must be
+  // saved so that the prediction buffer tracks allocations
+  // made in downstream reductions
+  _prediction_buffer = ec.pred;
 }
 
 void vw::learn(multi_ex& ec)
@@ -175,10 +184,18 @@ void vw::learn(multi_ex& ec)
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
+  // Use a prediction buffer to avoid allocations
+  ec[0]->pred = _prediction_buffer;
+
   if (!training)
     VW::LEARNER::as_multiline(l)->predict(ec);
   else
     VW::LEARNER::as_multiline(l)->learn(ec);
+
+  // prediction buffer collection begin and end must be
+  // saved so that the prediction buffer tracks allocations
+  // made in downstream reductions
+  _prediction_buffer = ec[0]->pred;
 }
 
 void vw::predict(example& ec)
@@ -190,7 +207,13 @@ void vw::predict(example& ec)
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   ec.test_only = true;
 
+  // Use a prediction buffer to avoid allocations
+  ec.pred = _prediction_buffer;
   VW::LEARNER::as_singleline(l)->predict(ec);
+  // prediction buffer collection begin and end must be
+  // saved so that the prediction buffer tracks allocations
+  // made in downstream reductions
+  _prediction_buffer = ec.pred;
 }
 
 void vw::predict(multi_ex& ec)
@@ -205,7 +228,13 @@ void vw::predict(multi_ex& ec)
     ex->test_only = true;
   }
 
+  // Use a prediction buffer to avoid allocations
+  ec[0]->pred = _prediction_buffer;
   VW::LEARNER::as_multiline(l)->predict(ec);
+  // prediction buffer collection begin and end must be
+  // saved so that the prediction buffer tracks allocations
+  // made in downstream reductions
+  _prediction_buffer = ec[0]->pred;
 }
 
 void vw::finish_example(example& ec)
@@ -387,14 +416,52 @@ vw::vw()
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
+
+  // Clear the prediction buffer
+  std::memset(&_prediction_buffer,0,sizeof(_prediction_buffer));
 }
 VW_WARNING_STATE_POP
+
+void vw::cleanup_prediction_buffer()
+{
+  // Depending on the prediction type of the learner/reduction, different
+  // collection types are stored in the prediction buffer
+  switch(l->pred_type)
+  {
+    case prediction_type_t::scalars:
+      _prediction_buffer.scalars.delete_v();
+      break;
+    case prediction_type_t::action_scores:
+    case prediction_type_t::action_probs:
+      _prediction_buffer.a_s.delete_v();
+      break;
+    case prediction_type_t::multilabels:
+      _prediction_buffer.multilabels.label_v.delete_v();
+      break;
+    case prediction_type_t::pdf:
+      _prediction_buffer.pdf.delete_v();
+      break;
+    case prediction_type_t::decision_probs:
+      for (auto& as : _prediction_buffer.decision_scores)
+        as.delete_v();
+      _prediction_buffer.decision_scores.delete_v();
+      break;
+    default:
+      break;
+  }
+}
 
 vw::~vw()
 {
   if (l != nullptr)
   {
     l->finish();
+
+    // Prediction buffer contains collections that are
+    // reused by the top reduction on the stack.
+    // Need to cleanup the collections
+    cleanup_prediction_buffer();
+
     free(l);
   }
 
