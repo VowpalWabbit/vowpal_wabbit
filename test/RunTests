@@ -1916,11 +1916,23 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cats-pdf-predict.stderr
     pred-sets/ref/cats-pdf.predict
 
-# Test 230: CCB first slot loss
+# Test 230: cbify-reg
+{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 4  -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg.stderr
+
+# Test 231: cbify-reg cb_discrete
+{VW} --cbify 2048 --cbify_reg --cb_discrete --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg_discrete.stderr
+
+# Test 232: cbify-reg discrete cats_tree
+{VW} --cbify 2048 --cbify_reg --cb_discrete --cats_tree 2048 --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg_discrete_cats.stderr
+
+# Test 233: CCB first slot loss
 {VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips
     train-sets/ref/ccb_1slot_loss.stderr
 
-# Test 231: CCB all slots loss
+# Test 234: CCB all slots loss
 {VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips --all_slots_loss
     train-sets/ref/ccb_allslots_loss.stderr
 

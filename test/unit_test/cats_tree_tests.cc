@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_1)
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }
 
-BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big)
+BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big, *boost::unit_test::disabled())
 {
   VW::cats_tree::min_depth_binary_tree tree;
   // Throws vw_exception when unable to allocate enough memory to build tree
