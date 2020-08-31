@@ -493,12 +493,16 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_1)
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }
 
-BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big, *boost::unit_test::disabled())
-{
-  VW::cats_tree::min_depth_binary_tree tree;
-  // Throws vw_exception when unable to allocate enough memory to build tree
-  BOOST_CHECK_THROW(tree.build_tree(INT_MAX, 0), VW::vw_exception);
-}
+// This test has to be disabled for the following reasons
+// 1) Valgrind cannot handle exceptions while allocating memory
+// 2) BOOST_AUTO_TEST_CASE in boost 1.58.0 does not support disabling unit tests
+//
+// BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big, *boost::unit_test::disabled())
+// {
+//   VW::cats_tree::min_depth_binary_tree tree;
+//   // Throws vw_exception when unable to allocate enough memory to build tree
+//   BOOST_CHECK_THROW(tree.build_tree(INT_MAX, 0), VW::vw_exception);
+// }
 
 namespace VW { namespace cats_tree {
   void predict_test_helper(
