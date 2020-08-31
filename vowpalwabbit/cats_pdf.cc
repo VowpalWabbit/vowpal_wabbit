@@ -198,7 +198,6 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
 
     l.set_finish_example(finish_example);
     all.p->lp = cb_continuous::the_label_parser;
-    all.delete_prediction = nullptr;
 
     return make_base(l);
   }
