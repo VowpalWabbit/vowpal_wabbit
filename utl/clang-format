@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [[ -z "${CLANG_FORMAT_OVERRIDE}" ]]; then
+  CLANG_FORMAT_EXE="clang-format"
+else
+  CLANG_FORMAT_EXE="${CLANG_FORMAT_OVERRIDE}"
+fi
+
 # Usage (from repo root):
 # "./utl/clang-format fix" formats your code.
 # "./utl/clang-format check" exits with non-zero if your code isn't formatted correctly.
@@ -10,7 +16,7 @@
 for VW_FILE in $(find vowpalwabbit -type f -name '*.cc' -o -name '*.h'); do
 
     if [ "$1" = check ]; then
-        diff $VW_FILE <(clang-format $VW_FILE);
+        diff $VW_FILE <(${CLANG_FORMAT_EXE} $VW_FILE);
         if [ $? -ne 0 ]; then
             ISSUE_FOUND="true"
             if [[ -v GH_WORKFLOW_LOGGING ]]; then
@@ -20,7 +26,7 @@ for VW_FILE in $(find vowpalwabbit -type f -name '*.cc' -o -name '*.h'); do
     fi
 
     if [ "$1" = fix ]; then
-        clang-format -i $VW_FILE;
+        ${CLANG_FORMAT_EXE} -i $VW_FILE;
     fi
 
 done
