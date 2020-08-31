@@ -236,6 +236,8 @@ namespace VW { namespace pmf_to_pdf
     learner<pmf_to_pdf::reduction, example>& l =
         init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);
 
+    all.delete_prediction = continuous_actions::delete_probability_density_function;
+
     return make_base(l);
   }
 

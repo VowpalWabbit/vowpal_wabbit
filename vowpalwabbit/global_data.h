@@ -497,10 +497,6 @@ struct vw
 
   label_type_t label_type;
 
-  // Prediction buffer used to prevent allocation
-  // for predictions in the topmost reduction on the stack
-  polyprediction _prediction_buffer;
-
   vw();
   ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
@@ -512,7 +508,6 @@ struct vw
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
-  void cleanup_prediction_buffer();
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

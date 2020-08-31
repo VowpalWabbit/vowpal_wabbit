@@ -26,4 +26,6 @@ using probability_density_function = v_array<pdf_segment>;
 
 std::string to_string(const probability_density_function_value& pdf_value, bool print_newline = false);
 std::string to_string(const probability_density_function& pdf, bool print_newline = false);
+void delete_probability_density_function(void* v);
+
 }}  // namespace VW::actions_pdf
