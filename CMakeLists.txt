@@ -275,7 +275,7 @@ if(BUILD_TESTS)
 endif()
 
 # Must be done after the test block so that enable_testing() has been called
-if(EXPERIMENTAL_BINDING)
+if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
