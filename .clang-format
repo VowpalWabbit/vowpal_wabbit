@@ -11,3 +11,4 @@ BreakBeforeBraces: Allman
 BreakConstructorInitializersBeforeComma: true
 ColumnLimit: 120
 SortIncludes: false
+IndentPPDirectives: BeforeHash
