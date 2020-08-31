@@ -2,6 +2,8 @@
 
 #include <boost/test/unit_test.hpp>
 #include "cats_tree.h"
+#include "cb_label_parser.h"
+#include "test_common.h"
 
 using namespace VW::LEARNER;
 using std::vector;
@@ -189,7 +191,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
       expected_learners.begin(), expected_learners.end());
 
   destroy_free<test_learner_t>(&base);
-  ec.l.cb.costs.delete_v();
+  CB::delete_label(&(ec.l.cb));
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
@@ -493,16 +495,19 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_1)
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }
 
-// This test has to be disabled for the following reasons
-// 1) Valgrind cannot handle exceptions while allocating memory
-// 2) BOOST_AUTO_TEST_CASE in boost 1.58.0 does not support disabling unit tests
-//
-// BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big, *boost::unit_test::disabled())
-// {
-//   VW::cats_tree::min_depth_binary_tree tree;
-//   // Throws vw_exception when unable to allocate enough memory to build tree
-//   BOOST_CHECK_THROW(tree.build_tree(INT_MAX, 0), VW::vw_exception);
-// }
+BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big, *boost::unit_test::disabled())
+{
+  //Valgrind cannot handle new throwing while allocating memory
+  if(is_invoked_with_valgrind())
+  {
+    std::cout << "skipping build_min_depth_tree_too_big test when running in valgrind" << std::endl;
+    return;
+  }
+
+  VW::cats_tree::min_depth_binary_tree tree;
+  // Throws vw_exception when unable to allocate enough memory to build tree
+  BOOST_CHECK_THROW(tree.build_tree(INT_MAX, 0), VW::vw_exception);
+}
 
 namespace VW { namespace cats_tree {
   void predict_test_helper(

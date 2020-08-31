@@ -3,6 +3,9 @@
 #include <boost/test/unit_test.hpp>
 #include <utility>
 #include "offset_tree.h"
+#include "test_common.h"
+#include "cb_label_parser.h"
+
 using namespace VW::LEARNER;
 using namespace std;
 
@@ -71,6 +74,8 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic){
   tree.learn(*as_singleline(test_harness), ec);
 
   destroy_free<VW::offset_tree::test_learner_t>(test_harness);
+  CB::delete_label(&ec.l.cb);
+  ACTION_SCORE::delete_action_scores(&ec.pred.a_s);
 }
 
 BOOST_AUTO_TEST_CASE(offset_tree_predict) {
@@ -166,6 +171,13 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_1) {
 }
 
 BOOST_AUTO_TEST_CASE(build_min_depth_tree_too_big) {
+  //Valgrind cannot handle new throwing while allocating memory
+  if(is_invoked_with_valgrind())
+  {
+    std::cout << "skipping build_min_depth_tree_too_big test when running in valgrind" << std::endl;
+    return;
+  }
+
   VW::offset_tree::min_depth_binary_tree tree;
   // Throws vw_exception when unable to allocate enough memory to build tree
   BOOST_CHECK_THROW(tree.build_tree(INT_MAX),VW::vw_exception);
@@ -199,6 +211,8 @@ namespace VW { namespace offset_tree {
     auto& ret_val = tree.predict(*as_singleline(test_base), ec);
     BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
     destroy_free<test_learner_t>(test_base);
+    CB::delete_label(&ec.l.cb);
+    ACTION_SCORE::delete_action_scores(&ec.pred.a_s);
   }
 
 }} // namespace
