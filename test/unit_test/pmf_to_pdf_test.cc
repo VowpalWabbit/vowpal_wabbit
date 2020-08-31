@@ -5,6 +5,7 @@
 #include "pmf_to_pdf.h"
 #include "parse_args.h"  // setup_base()
 #include "action_score.h"
+#include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
 using std::vector;
@@ -103,7 +104,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   }
 
   BOOST_CHECK_CLOSE(1.0f, sum,.0001f);
-  
+
   ec.l.cb_cont = VW::cb_continuous::continuous_label();
   ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.cb_cont.costs.clear();
@@ -116,6 +117,11 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   BOOST_CHECK_EQUAL(0.05f, ec.l.cb_cont.costs[0].probability);
 
   learn(*data, *as_singleline(test_harness), ec);
+
+  delete_probability_density_function(&ec.pred.pdf);
+  CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+  test_harness->finish();
+  destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
 }
 
 namespace VW { namespace pmf_to_pdf {
