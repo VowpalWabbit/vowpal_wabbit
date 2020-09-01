@@ -5,6 +5,8 @@
 
 // uint32_t, uint64_t, etc
 #include <stdint.h>
+// size_t
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -20,6 +22,9 @@ extern "C"
 
 #include "error_data.h"
 
+  typedef VWStatus(VWReadFunc)(void*, char*, size_t, size_t*);
+  typedef VWStatus(VWWriteFunc)(void*, const char*, size_t, size_t*);
+  typedef VWStatus(VWTraceMessageFunc)(void*, int trace_level, const char*, size_t);
 #ifdef __cplusplus
 }
 #endif
