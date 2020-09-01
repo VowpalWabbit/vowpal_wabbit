@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "vwvis.h"
+#include "types.h"
+
 #ifdef __cplusplus
 extern "C"
 {
