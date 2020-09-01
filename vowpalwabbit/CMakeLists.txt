@@ -27,7 +27,8 @@ target_sources(vw_io
   PRIVATE
     io/io_adapter.cc
 )
-target_link_libraries(vw_io INTERFACE ZLIB::ZLIB)
+# This can't be correctly marked as PRIVATE until until CMake 3.12, until then it must be PUBLIC so that consumers link to it too.
+target_link_libraries(vw_io PUBLIC ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
 set(vw_all_headers
@@ -297,7 +298,7 @@ target_link_libraries(vw
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
+    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io ZLIB::ZLIB
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
