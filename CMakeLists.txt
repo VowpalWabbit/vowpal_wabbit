@@ -76,6 +76,7 @@ option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
+option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
@@ -280,7 +281,9 @@ if(BUILD_TESTS)
 endif()
 
 # Must be done after the test block so that enable_testing() has been called
-add_subdirectory(bindings)
+if(BUILD_EXPERIMENTAL_BINDING)
+  add_subdirectory(bindings)
+endif()
 
 # TODO convert cs directory to cmake
 # TODO convert c_test directory to cmake
