@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vw_slim_predict.h"
+#include "example_predict.h"
 
 namespace vw_slim
 {

@@ -12,7 +12,7 @@ add_library(explore INTERFACE)
 add_library(VowpalWabbit::explore ALIAS explore)
 
 target_include_directories(explore INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/>)
 
 target_sources(explore INTERFACE ${explore_all_headers})
