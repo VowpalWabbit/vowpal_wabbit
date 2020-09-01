@@ -27,7 +27,7 @@ target_sources(vw_io
   PRIVATE
     io/io_adapter.cc
 )
-target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
+target_link_libraries(vw_io INTERFACE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
 set(vw_all_headers
