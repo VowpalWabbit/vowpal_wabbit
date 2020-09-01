@@ -31,7 +31,6 @@ extern "C"
   static const VWLabelType VW_LABEL_CCB = 6;
   static const VWLabelType VW_LABEL_SLATES = 7;
 
-
   typedef uint32_t VWPredictionType;
   static const VWPredictionType VW_PRED_SCALAR = 0;
   static const VWPredictionType VW_PRED_SCALARS = 1;
