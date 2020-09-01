@@ -11,6 +11,6 @@ BUILD_CONFIGURATION=${1:-Release}
 
 mkdir -p build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=${BUILD_CONFIGURATION} -DWARNINGS=Off -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On
+cmake .. -DCMAKE_BUILD_TYPE=${BUILD_CONFIGURATION} -DWARNINGS=Off -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_EXPERIMENTAL_BINDING=On
 NUM_PROCESSORS=$(cat nprocs.txt)
-make vw-bin vw-unit-test.out -j ${NUM_PROCESSORS}
+make vw-bin vw-unit-test.out vw_c_api_unit_test -j ${NUM_PROCESSORS}
