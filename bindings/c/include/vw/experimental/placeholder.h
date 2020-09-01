@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "exports.h"
+#include "vwvis.h"
 #include "types.h"
 
 #ifdef __cplusplus
