@@ -172,7 +172,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
     if (num_actions <= 0)
       THROW(error_code::num_actions_gt_zero_s);
 
-    // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree ... rest specified by cats_tree]
+    // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree]
     if (!options.was_supplied("cb_explore_pdf"))
       options.insert("cb_explore_pdf", "");
     if (!options.insert_arguments("pmf_to_pdf", num_actions))
