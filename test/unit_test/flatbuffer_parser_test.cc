@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(check_flatbuffer)
   uint8_t* buf = build._builder.GetBufferPointer();
   int size = build._builder.GetSize();
 
-  all->flat_converter = std::unique_ptr<VW::parsers::flatbuffer::parser>(new VW::parsers::flatbuffer::parser(buf));
+  all->flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>(buf);
 
   BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Length(), 1);
   BOOST_CHECK_EQUAL(all->flat_converter->data()->examples()->Get(0)->namespaces()->Length(), 1);
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(check_parsed_flatbuffer_examples)
   uint8_t* buf = build._builder.GetBufferPointer();
   int size = build._builder.GetSize();
 
-  all->flat_converter = std::unique_ptr<VW::parsers::flatbuffer::parser>(new VW::parsers::flatbuffer::parser(buf));
+  all->flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>(buf);
   auto examples = parse_flatbuffer(*all);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
