@@ -34,7 +34,7 @@ if(WIN32)
   set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
+project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
@@ -76,6 +76,7 @@ option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
+option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
@@ -180,7 +181,7 @@ if(STATIC_LINK_VW)
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
+find_package(Boost REQUIRED COMPONENTS program_options system thread)
 find_package(ZLIB REQUIRED)
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
@@ -251,17 +252,31 @@ if(BUILD_SLIM_VW)
 endif()
 
 if(BUILD_TESTS)
+  # Boost test is only required if we are building tests
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
   enable_testing()
   add_subdirectory(test)
 
+  # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
+  add_custom_target(test_with_output
+    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
+    DEPENDS spanning_tree vw-unit-test.out vw-bin vw_c_api_unit_test
+  )
+
   # Don't offer these make dependent targets on Windows
   if(NOT WIN32)
-  # make bigtests BIG_TEST_ARGS="<args here>"
-  add_custom_target(bigtests
-    DEPENDS vw
-    COMMAND make \${BIG_TEST_ARGS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
+    # make bigtests BIG_TEST_ARGS="<args here>"
+    add_custom_target(bigtests
+      DEPENDS vw
+      COMMAND make \${BIG_TEST_ARGS}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
   endif()
+endif()
+
+# Must be done after the test block so that enable_testing() has been called
+if(BUILD_EXPERIMENTAL_BINDING)
+  add_subdirectory(bindings)
 endif()
 
 # TODO convert cs directory to cmake
