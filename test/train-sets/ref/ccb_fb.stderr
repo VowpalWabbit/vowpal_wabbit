@@ -9,13 +9,13 @@ average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...       18
 0.000000 0.000000            2            2.0 3:0,4:0,... 3,4,0,...       18
--0.250000 -0.500000            4            4.0 1:0,4:-1,... 1,4,2,...       18
--0.542586 -0.835171            8            8.0 4:-1,1:0,... 4,1,0,...       18
--0.306046 -0.035714           16           16.0  ?,?,... 4,2,1,...       18
+0.000000 0.000000            4            4.0 1:0,4:-1,... 1,4,2,...       18
+-0.144345 -0.288690            8            8.0 4:-1,1:0,... 4,1,0,...       18
+-0.076984 0.000000           16           16.0  ?,?,... 4,2,1,...       18
 
 finished run
 number of examples = 24
 weighted example sum = 24.000000
 weighted label sum = 0.000000
-average loss = -0.306046
+average loss = -0.076984
 total feature number = 432
