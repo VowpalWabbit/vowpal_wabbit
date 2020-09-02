@@ -311,7 +311,16 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
-namespace VW { namespace parsers { namespace flatbuffer {class parser;}}}
+namespace VW
+{
+namespace parsers
+{
+namespace flatbuffer
+{
+class parser;
+}
+}  // namespace parsers
+}  // namespace VW
 
 struct vw
 {

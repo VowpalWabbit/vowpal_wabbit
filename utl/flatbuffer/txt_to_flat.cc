@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
+#  define NOMINMAX
+#  include <WinSock2.h>
 #else
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#  include <sys/socket.h>
+#  include <arpa/inet.h>
 #endif
 #include <sys/timeb.h>
 #include "parse_args.h"
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 
   std::string q("--quiet");
   argv[argc++] = const_cast<char*>(q.c_str());
-  
+
   std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(*ptr));
@@ -85,6 +85,6 @@ int main(int argc, char* argv[])
 
   VW::start_parser(all);
   converter.convert_txt_to_flat(all);
-  VW::end_parser(all); 
+  VW::end_parser(all);
   return 0;
 }

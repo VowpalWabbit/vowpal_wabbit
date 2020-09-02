@@ -445,10 +445,14 @@ input_options parse_source(vw& all, options_i& options)
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
-      .add(make_option("no_daemon", all.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
+      .add(make_option("no_daemon", all.no_daemon)
+               .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
+                     "daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash)
-               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"))
-      .add(make_option("flatbuffer", parsed_options.flatbuffer).help("data file will be interpreted as a flatbuffer file"));
+               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as "
+                     "A^B^C"))
+      .add(make_option("flatbuffer", parsed_options.flatbuffer)
+               .help("data file will be interpreted as a flatbuffer file"));
 
   options.add_and_parse(input_options);
 

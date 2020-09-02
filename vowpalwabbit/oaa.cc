@@ -268,12 +268,14 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
       l->set_finish_example(finish_example_scores<false>);
     }
   }
-  else if (all.raw_prediction != nullptr) {
+  else if (all.raw_prediction != nullptr)
+  {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
         predict_or_learn<false, true, false, false>, all.p, data->k, prediction_type_t::multiclass);
     all.label_type = label_type_t::mc;
   }
-  else {
+  else
+  {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
         predict_or_learn<false, false, false, false>, all.p, data->k, prediction_type_t::multiclass);
     all.label_type = label_type_t::mc;
