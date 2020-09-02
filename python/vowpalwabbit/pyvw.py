@@ -2236,7 +2236,7 @@ class DFtoVW:
                 y = y[0]
             else:
                 raise ValueError(
-                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should a string or a list of exactly one string."
+                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string or a list of exactly one string."
                 )
 
         label = dict_label_type[label_type](y)
