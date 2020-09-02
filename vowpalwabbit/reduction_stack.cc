@@ -1,24 +1,26 @@
 #include "reduction_stack.h"
 #include "learner.h"
 #include "parse_args.h"
+#include "vw.h"
 
 namespace VW {
-namespace reduction_stack {
-  VW::LEARNER::base_learner* pop_reduction(vw& all) {
-    auto *ret = all.l;
+  void* pop_reduction(vw* all) {
+    auto *ret = all->l;
     if(ret)
     {
-      all.l = ret->get_base_reduction();
+      all->l = ret->get_base_reduction();
     }
-    return ret;
+    return (void*)ret;
   }
 
-  void push_reduction(vw& all, VW::LEARNER::base_learner* new_reduction) {
-    auto *next_reduction = all.l;
-    new_reduction->apply_from(next_reduction, all.reduction_template_map);
-    all.l = new_reduction;
+  void push_reduction(vw* all, void* reduction) {
+    auto *new_reduction = (VW::LEARNER::base_learner*)reduction;
+    auto *next_reduction = all->l;
+    new_reduction->apply_from(next_reduction, all->reduction_template_map);
+    all->l = new_reduction;
   }
 
+namespace reduction_stack {
   
   struct noop {};
 

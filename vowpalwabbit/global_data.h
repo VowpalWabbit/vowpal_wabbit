@@ -311,6 +311,18 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+struct initialization_state
+{
+  // dictionary_nses technically doesn't need to be saved, the problem is the option that fills
+  // the data here exists in the "Feature options" header, which is processed in
+  // parse_feature_tweaks(). Parsing the option later (when its needed) doesn't affect the results
+  std::vector<std::string> dictionary_nses;
+  bool local_model = false;
+  io_buf* model = nullptr;
+  bool skipModelLoad;
+  // options already saved in all
+};
+
 struct vw
 {
  private:
@@ -498,6 +510,7 @@ struct vw
   std::map<uint64_t, std::string> index_name_map;
 
   label_type_t label_type;
+  initialization_state *init_state = nullptr;
 
   vw();
   ~vw();

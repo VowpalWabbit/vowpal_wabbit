@@ -16,6 +16,7 @@
 #include "best_constant.h"
 #include "vw_exception.h"
 #include <fstream>
+#include <deque>
 
 #include "vw.h"
 #include "options.h"

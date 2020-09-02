@@ -2548,7 +2548,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str)
   }
 }
 
-void handle_condition_options(vw& all, auto_condition_settings& acset)
+void handle_condition_options(options_i& options, auto_condition_settings& acset)
 {
   option_group_definition new_options("Search Auto-conditioning Options");
   new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length)
@@ -2567,7 +2567,7 @@ void handle_condition_options(vw& all, auto_condition_settings& acset)
   new_options.add(make_option("search_use_passthrough_repr", acset.use_passthrough_repr)
                       .keep()
                       .help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
-  all.options->add_and_parse(new_options);
+  options.add_and_parse(new_options);
 }
 
 void search_finish(search& sch)
@@ -2847,11 +2847,11 @@ base_learner* setup(options_i& options, vw& all)
   if (!all.training && priv.current_policy > 0)
     priv.current_policy--;
 
-  all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
-  all.options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
+  options.replace("search_trained_nb_policies", std::to_string(priv.current_policy));
+  options.get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
 
-  all.options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
-  all.options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
+  options.replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
+  options.get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
 
   cdbg << "search current_policy = " << priv.current_policy
        << " total_number_of_policies = " << priv.total_number_of_policies << endl;
@@ -2908,7 +2908,7 @@ base_learner* setup(options_i& options, vw& all)
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner* base = setup_base(*all.options, all);
+  base_learner* base = setup_base(options, all);
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.p->lp = MC::mc_label;
@@ -2923,7 +2923,7 @@ base_learner* setup(options_i& options, vw& all)
     read_allowed_transitions((action)priv.A, search_allowed_transitions.c_str());
 
   // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
-  handle_condition_options(all, priv.acset);
+  handle_condition_options(options, priv.acset);
 
   if (!priv.allow_current_policy)  // if we're not dagger
     all.check_holdout_every_n_passes = priv.passes_per_policy;

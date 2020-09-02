@@ -1274,8 +1274,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
     return base;
 }
 
-void create_reduction_template(options_i& options, vw& all)
-{
+bool is_multi_reduction_hacks(const options_i& options, VW::LEARNER::base_learner* (*fn)(VW::config::options_i&, vw&)) {
   // TODO: find a better way.
   // list of all reductions that require a multilearner as its base reduction
   static const std::unordered_set< VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> multi = {
@@ -1292,22 +1291,76 @@ void create_reduction_template(options_i& options, vw& all)
     , VW::cb_explore_adf::softmax::setup
     , VW::cb_explore_adf::rnd::setup
     , VW::cb_explore_adf::regcb::setup
+    , VW::cb_explore_adf::squarecb::setup
     , VW::cb_explore_adf::first::setup
     , VW::cb_explore_adf::cover::setup
     , VW::cb_explore_adf::bag::setup
     , cb_adf_setup
-    , cb_adf_setup
   };
+  bool found = (multi.find(fn) != multi.end());
+  if(fn == cbify_setup) {
+    found &= options.was_supplied("cb_explore_adf");
+  }
+  return found;
+}
+
+struct hack_state {
+  rand_state rstate;
+  bool quiet;
+};
+void pyatom_hacks_pre(vw& all, options_i& options, hack_state& hacks) {
+  // set scorer to a temporary reduction so we don't crash
+  // certain reductions expect cost_sensitive to be a single learner
+  // others require it to be a multi learner...
+  // this is awful
+  auto noop = VW::reduction_stack::noop_single_setup(options, all);
+  auto noop_multi = VW::reduction_stack::noop_multi_setup(options, all);
+  all.scorer = as_singleline(noop);
+
+  auto is_cs_singleline = options.was_supplied("cover") &&
+    (options.was_supplied("cb_explore") || options.was_supplied("cbify")) &&
+    !options.was_supplied("cb_explore_adf");
+  if(is_cs_singleline) {
+    all.cost_sensitive = noop;
+  }
+  else {
+    all.cost_sensitive = noop_multi;
+  }
+  hacks.rstate = *all.get_random_state();
+  hacks.quiet = all.logger.quiet;
+  all.logger.quiet = true;
+}
+
+void pyatom_hacks_post(vw& all, hack_state& hacks) {
+  if((void*)all.scorer != (void*)all.cost_sensitive) {
+    all.cost_sensitive->finish();
+    free(all.cost_sensitive);
+  }
+  all.scorer->finish();
+  free(all.scorer);
+  all.scorer = nullptr;
+  all.cost_sensitive = nullptr;
+  std::swap(*all.get_random_state(), hacks.rstate);
+  all.logger.quiet = hacks.quiet;
+}
+
+void create_reduction_template(options_i& options, vw& all)
+{
   std::deque<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> tmp_reduction_stack;
   std::swap(tmp_reduction_stack, all.reduction_stack);
+
 
   auto *cast_options = dynamic_cast<options_boost_po*>(&options);
   auto options_str = cast_options->m_command_line;
   options_i* tmp_options = new options_boost_po(options_str);
 
+  // TODO: hacks!
+  hack_state hacks;
+  pyatom_hacks_pre(all, *tmp_options, hacks);
+  
   for (auto reduction_it = tmp_reduction_stack.rbegin(); reduction_it != tmp_reduction_stack.rend() - 11; ++reduction_it) {
     all.reduction_stack.clear();
-    if (multi.find(*reduction_it) == multi.end()) {
+    if (!is_multi_reduction_hacks(*tmp_options, *reduction_it)) {
       all.reduction_stack.push_back(VW::reduction_stack::noop_single_setup);
       all.reduction_stack.push_back(VW::reduction_stack::passthru_single_setup);
     }
@@ -1320,6 +1373,8 @@ void create_reduction_template(options_i& options, vw& all)
     auto* l = setup_base(*tmp_options, all);
     all.reduction_template_map[l->hash_index()] = l;
   }
+
+  pyatom_hacks_post(all, hacks);
 
   delete tmp_options;
   std::swap(tmp_reduction_stack, all.reduction_stack);
@@ -1410,6 +1465,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 {
   vw& all = *(new vw());
   all.options = &options;
+  all.init_state = new initialization_state();
 
   if (trace_listener)
   {
@@ -1761,39 +1817,127 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(
-    options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
-{
+
+vw* initialize_partial(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context){
+  return initialize(s, model, skipModelLoad, trace_listener, trace_context, true);
+}
+
+vw* initialize_reductions(options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context){
   vw& all = parse_args(options, trace_listener, trace_context);
 
   try
   {
+    all.init_state->skipModelLoad = skipModelLoad;
     // if user doesn't pass in a model, read from options
-    io_buf localModel;
     if (!model)
     {
+      all.init_state->model = new io_buf();
+      all.init_state->local_model = true;
       std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
       if (options.was_supplied("input_feature_regularizer"))
       {
         all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
       }
-      read_regressor_file(all, all_initial_regressor_files, localModel);
-      model = &localModel;
+      read_regressor_file(all, all_initial_regressor_files, *all.init_state->model);
     }
 
     // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(options, all, *model);
+    load_header_merge_options(options, all, *all.init_state->model);
 
-    std::vector<std::string> dictionary_nses;
-    parse_modules(options, all, dictionary_nses);
+    parse_modules(options, all, all.init_state->dictionary_nses);
 
     // TODO: Stack manipulation needs to happen here.
     // We need to have some way to maintain the initialization state until setup is complete
 
-    parse_sources(options, all, *model, skipModelLoad);
+    return &all;
+  }
+  catch (std::exception& e)
+  {
+    all.trace_message << "Error: " << e.what() << endl;
+    finish(all);
+    throw;
+  }
+  catch (...)
+  {
+    finish(all);
+    throw;
+  }
+  
+}
+
+void complete_initialize(vw* all){
+  initialization_state* init_state = all->init_state;
+  try{
+    parse_sources(*all->options, *all, *init_state->model, init_state->skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
-    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
+    for (size_t id = 0; id < init_state->dictionary_nses.size(); id++) parse_dictionary_argument(*all, init_state->dictionary_nses[id]);
+
+    all->options->check_unregistered();
+
+    // upon direct query for help -- spit it out to stdout;
+    if (all->options->get_typed_option<bool>("help").value())
+    {
+      cout << all->options->help();
+      exit(0);
+    }
+
+    all->l->init_driver();
+
+  }
+  catch (std::exception& e)
+  {
+    all->trace_message << "Error: " << e.what() << endl;
+    finish(*all);
+    throw;
+  }
+  catch (...)
+  {
+    finish(*all);
+    throw;
+  }
+}
+
+
+vw* initialize(
+    options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context, bool partial)
+{
+  vw *all = initialize_reductions(options, model, skipModelLoad, trace_listener, trace_context);
+  if(!partial) {
+    complete_initialize(all);
+  }
+  return all;
+  /*
+  vw& all = parse_args(options, trace_listener, trace_context);
+
+  try
+  {
+    all.init_state->skipModelLoad = skipModelLoad;
+    // if user doesn't pass in a model, read from options
+    if (!model)
+    {
+      all.init_state->model = new io_buf();
+      all.init_state->local_model = true;
+      std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
+      if (options.was_supplied("input_feature_regularizer"))
+      {
+        all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
+      }
+      read_regressor_file(all, all_initial_regressor_files, *all.init_state->model);
+    }
+
+    // Loads header of model files and loads the command line options into the options object.
+    load_header_merge_options(options, all, *all.init_state->model);
+
+    parse_modules(options, all, all.init_state->dictionary_nses);
+
+    // TODO: Stack manipulation needs to happen here.
+    // We need to have some way to maintain the initialization state until setup is complete
+
+    parse_sources(options, all, *all.init_state->model, all.init_state->skipModelLoad);
+
+    // we must delay so parse_mask is fully defined.
+    for (size_t id = 0; id < all.init_state->dictionary_nses.size(); id++) parse_dictionary_argument(all, all.init_state->dictionary_nses[id]);
 
     options.check_unregistered();
 
@@ -1819,9 +1963,10 @@ vw* initialize(
     finish(all);
     throw;
   }
+  */
 }
 
-vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context, bool partial)
 {
   int argc = 0;
   char** argv = to_argv(s, argc);
@@ -1829,7 +1974,7 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
 
   try
   {
-    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context, partial);
   }
   catch (...)
   {
@@ -1863,10 +2008,10 @@ vw* initialize_escaped(
 }
 
 vw* initialize(
-    int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+    int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context, bool partial)
 {
   options_i* options = new config::options_boost_po(argc, argv);
-  vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
+  vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context, partial);
 
   // When VW is deleted the options object will be cleaned up too.
   all->should_delete_options = true;

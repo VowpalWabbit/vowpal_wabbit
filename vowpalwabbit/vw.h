@@ -44,16 +44,24 @@ namespace VW
     (2) The code is not yet reentrant.
    */
 vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr, bool partial = false);
 vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr, bool partial = false);
 vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr, bool partial = false);
 vw* seed_vw_model(
     vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
 vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
+// Creates an incomplete VW object, allows for reduction stack manipulation. complete_initialize() must be called before using vw object
+vw* initialize_partial(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+void complete_initialize(vw* all);
+void* pop_reduction(vw* all);
+void push_reduction(vw* all, void* reduction);
+
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
