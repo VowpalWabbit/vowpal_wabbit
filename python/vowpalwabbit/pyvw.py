@@ -1638,7 +1638,7 @@ class AttributeDescriptor(object):
                     self.generate_error(instance, valid_type, valid_value)
 
     def validate_value(self, arg):
-        """Validate value for litterals (not for _Col).
+        """Validate value for literals (not for _Col).
 
         Parameters
         ----------
@@ -1657,7 +1657,7 @@ class AttributeDescriptor(object):
         return valid_value
 
     def validate_type(self, arg):
-        """Validate type for litterals (not for _Col).
+        """Validate type for literals (not for _Col).
 
         Parameters
         ----------
@@ -1847,7 +1847,7 @@ class MulticlassLabel(object):
         return out
 
 
-class MultiLabels(object):
+class MultiLabel(object):
     """The multi labels type for the constructor of DFtoVW."""
 
     name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
@@ -1855,7 +1855,7 @@ class MultiLabels(object):
     def __init__(
         self, name, name_from_df=True
     ):
-        """Initialize a MultiLabels instance.
+        """Initialize a MultiLabel instance.
 
         Parameters
         ----------
@@ -1874,7 +1874,7 @@ class MultiLabels(object):
         self.name = name
 
     def process(self, df):
-        """Returns the MultiLabels string representation.
+        """Returns the MultiLabel string representation.
 
         Parameters
         ----------
@@ -1884,7 +1884,7 @@ class MultiLabels(object):
         Returns
         -------
         str or pandas.Series
-            The MultiLabels string representation.
+            The MultiLabel string representation.
         """
         names = self.name if isinstance(self.name, list) else [self.name]
         for (i, name) in enumerate(names):
@@ -2116,7 +2116,7 @@ class DFtoVW:
         namespaces : Namespace/list of Namespace
             One or more Namespace object(s), each of being composed of one or
             more Feature object(s).
-        label : SimpleLabel/MulticlassLabel/MultiLabels
+        label : SimpleLabel/MulticlassLabel/MultiLabel
             The label.
         tag :  str/int/float
             The tag (used as identifiers for examples).
@@ -2186,7 +2186,7 @@ class DFtoVW:
         df : pandas.DataFrame
             The dataframe used.
         label_type: str (default: 'simple_label')
-            The type of the label.
+            The type of the label. Available labels: 'simple_label', 'multiclass', 'multilabel'.
 
         Raises
         ------
@@ -2215,7 +2215,7 @@ class DFtoVW:
         dict_label_type = {
             "simple_label": SimpleLabel,
             "multiclass": MulticlassLabel,
-            "multilabels": MultiLabels,
+            "multilabel": MultiLabel,
         }
 
         if label_type not in dict_label_type:
@@ -2225,20 +2225,23 @@ class DFtoVW:
                 )
             )
 
-        if isinstance(y, list) and label_type != "multilabels":
+        y = y if isinstance(y, list) else [y]
+        if not all(isinstance(yi, str) for yi in y):
+            raise TypeError(
+                "Argument 'y' should be a string or a list of string(s)."
+            )
+
+        if label_type != "multilabel":
             if len(y) == 1:
                 y = y[0]
             else:
                 raise ValueError(
-                    "Argument 'y' should a list of one string (or a string)."
+                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should a string or a list of exactly one string."
                 )
-        if not isinstance(y, str) and label_type != "multilabels":
-            raise TypeError(
-                "Argument 'y' should be a string or a list of one string."
-            )
+
         label = dict_label_type[label_type](y)
 
-        x = list(x) if isinstance(x, (list, set)) else [x]
+        x = x if isinstance(x, list) else [x]
         if not all(isinstance(xi, str) for xi in x):
             raise TypeError(
                 "Argument 'x' should be a string or a list of string."
@@ -2314,7 +2317,7 @@ class DFtoVW:
         TypeError
             If label is not of type SimpleLabel or MulticlassLabel.
         """
-        available_labels = (SimpleLabel, MulticlassLabel, MultiLabels)
+        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel)
 
         if self.label is None:
             pass
