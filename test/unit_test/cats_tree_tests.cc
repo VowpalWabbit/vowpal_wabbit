@@ -498,7 +498,7 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_1)
 BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big)
 {
   //Valgrind cannot handle new throwing while allocating memory
-  if(is_invoked_with_valgrind())
+  if(is_invoked_with("valgrind") || is_invoked_with("MacCI"))
   {
     std::cout << "skipping build_min_depth_tree_too_big test when running in valgrind" << std::endl;
     return;
