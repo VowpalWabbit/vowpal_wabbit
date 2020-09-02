@@ -7,5 +7,7 @@ mkdir -p build
 cd build
 
 # NUM_PROCESSORS=$(cat nprocs.txt)
-make test_with_output -j ${NUM_PROCESSORS}
+make help
+make vw-unit-test.out
 test/unit_test/vw-unit-test.out -l all
+make test_with_output -j ${NUM_PROCESSORS}
