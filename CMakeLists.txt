@@ -8,6 +8,11 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
+string(REPLACE "." ";" VW_VERSION_LIST ${PACKAGE_VERSION})
+list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
+list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
+list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
+
 # Set this to on so that tooling can make use of the outputted compile commands (such as clang-tidy)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
@@ -327,3 +332,18 @@ if(VW_INSTALL)
       ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
 
 endif()
+
+set(CPACK_PACKAGE_VENDOR "Vowpal Wabbit")
+set(CPACK_PACKAGE_NAME "vowpal-wabbit")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Vowpal Wabbit is a machine learning system which pushes the frontier of machine learning with techniques such as online, hashing, allreduce, reductions, learning2search, active, and interactive learning.")
+set(CPACK_PACKAGE_VERSION_MAJOR ${VW_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VW_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${VW_VERSION_PATCH})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+# TODO Make this an email address or contact page
+set(CPACK_PACKAGE_CONTACT "https://github.com/VowpalWabbit/vowpal_wabbit")
+# Generates a package dependency list in the deb control file
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS On)
+
+include(CPack)
