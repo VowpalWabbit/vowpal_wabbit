@@ -1,9 +1,12 @@
 set(vw_c_public_headers
   include/vw/experimental/placeholder.h
+  include/vw/experimental/workspace.h
+  include/vw/experimental/types.h
 )
 
 set(vw_c_impl_files
   src/placeholder.cc
+  src/workspace.cc
 )
 
 # In order to reuse the error definition data in the C API we must make the error_data.h header available here.
