@@ -16,7 +16,7 @@ extern "C"
   VW_DLL_PUBLIC VWStatus vw_create_workspace_with_model(VWOptions* options_handle, void* context, VWReadFunc* reader,
       VWTraceMessageFunc* trace_listener, void* trace_context, VWWorkspace** output_handle,
       VWErrorInfo* err_info_container) VW_API_NOEXCEPT;
-  VW_DLL_PUBLIC VWStatus vw_create_seeded_workspace(const VWWorkspace* existing_workspace_handle,
+  VW_DLL_PUBLIC VWStatus vw_create_worspace_with_seed(const VWWorkspace* existing_workspace_handle,
       VWOptions* extra_options_handle, VWTraceMessageFunc* trace_listener, void* trace_context,
       VWWorkspace** output_handle, VWErrorInfo* err_info_container) VW_API_NOEXCEPT;
 
