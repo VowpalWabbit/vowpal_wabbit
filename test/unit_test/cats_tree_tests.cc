@@ -495,21 +495,6 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_1)
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }
 
-// Mac CI issues with this test.
-// BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_too_big)
-// {
-//   //Valgrind cannot handle new throwing while allocating memory
-//   if(is_invoked_with("valgrind") || is_invoked_with("MacCI"))
-//   {
-//     std::cout << "skipping build_min_depth_tree_too_big test when running in valgrind" << std::endl;
-//     return;
-//   }
-
-//   VW::cats_tree::min_depth_binary_tree tree;
-//   // Throws vw_exception when unable to allocate enough memory to build tree
-//   BOOST_CHECK_THROW(tree.build_tree(INT_MAX, 0), VW::vw_exception);
-// }
-
 namespace VW { namespace cats_tree {
   void predict_test_helper(
       const predictions_t& base_reduction_predictions, const scores_t& expected_action, uint32_t num_leaves, uint32_t bandwidth)
