@@ -1314,7 +1314,6 @@ void pyatom_hacks_pre(vw& all, options_i& options, hack_state& hacks) {
   // others require it to be a multi learner...
   // this is awful
   auto noop = VW::reduction_stack::noop_single_setup(options, all);
-  auto noop_multi = VW::reduction_stack::noop_multi_setup(options, all);
   all.scorer = as_singleline(noop);
 
   auto is_cs_singleline = options.was_supplied("cover") &&
@@ -1324,7 +1323,7 @@ void pyatom_hacks_pre(vw& all, options_i& options, hack_state& hacks) {
     all.cost_sensitive = noop;
   }
   else {
-    all.cost_sensitive = noop_multi;
+    all.cost_sensitive = VW::reduction_stack::noop_multi_setup(options, all);
   }
   hacks.rstate = *all.get_random_state();
   hacks.quiet = all.logger.quiet;
