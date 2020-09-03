@@ -17,8 +17,18 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
-add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
-target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
+# Prior to CMake 3.11 add_library requires at least 1 source file, so dummy.cc fulfills that need since we want to use target_sources.
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy.cc "")
+add_library(vw_io OBJECT ${CMAKE_CURRENT_BINARY_DIR}/dummy.cc)
+target_sources(vw_io
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/io/io_adapter.h>
+    $<INSTALL_INTERFACE:io/io_adapter.h>
+  PRIVATE
+    io/io_adapter.cc
+)
+# This can't be correctly marked as PRIVATE until until CMake 3.12, until then it must be PUBLIC so that consumers link to it too.
+target_link_libraries(vw_io PUBLIC ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
 add_subdirectory(parser/flatbuffer)
