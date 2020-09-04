@@ -1,8 +1,10 @@
 set(vw_c_public_headers
+  include/vw/experimental/options.h
   include/vw/experimental/placeholder.h
 )
 
 set(vw_c_impl_files
+  src/options.cc
   src/placeholder.cc
 )
 

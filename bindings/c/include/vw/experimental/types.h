@@ -20,6 +20,12 @@ extern "C"
 
 #include "error_data.h"
 
+  struct VWErrorInfo_tag;
+  typedef struct VWErrorInfo_tag VWErrorInfo;
+
+  struct VWOptions_tag;
+  typedef struct VWOptions_tag VWOptions;
+
 #ifdef __cplusplus
 }
 #endif
