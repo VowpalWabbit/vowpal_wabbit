@@ -63,7 +63,7 @@ namespace VW { namespace offset_tree {
         // ids of next set of nodes start with the current
         const auto num_tournaments = tournaments.size();
         // node count (since ids are zero based)
-        auto id = nodes.size();
+        auto id = static_cast<uint32_t>(nodes.size());
         std::vector<uint32_t> new_tournaments;
         new_tournaments.reserve(num_tournaments / 2 + 1);
         for (size_t j = 0; j < num_tournaments / 2; ++j)
@@ -89,7 +89,7 @@ namespace VW { namespace offset_tree {
     _initialized = true;
   }
 
-  uint32_t min_depth_binary_tree::internal_node_count() const { return nodes.size() - _num_leaf_nodes; }
+  uint32_t min_depth_binary_tree::internal_node_count() const { return static_cast<uint32_t>(nodes.size()) - _num_leaf_nodes; }
 
   uint32_t min_depth_binary_tree::leaf_node_count() const { return _num_leaf_nodes; }
 
