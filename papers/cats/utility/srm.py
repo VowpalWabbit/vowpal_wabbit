@@ -18,7 +18,6 @@ class SRM:
 
     N = 0
     _loss_acc = 0.
-    _loss_max = float("-inf")
 
     for (data_line, predict_line) in zip(data_file, predict_file):
       # Get data

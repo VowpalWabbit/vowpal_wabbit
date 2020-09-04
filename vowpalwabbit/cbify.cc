@@ -587,7 +587,7 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
     data.regression_data.max_cost = cb_costs[0].cost;
 
   if (cb_costs.size() > 0)
-    all.sd->update(ec.test_only, cb_costs[0].action != FLT_MAX, cb_costs[0].cost, ec.weight, ec.num_features);
+    all.sd->update(ec.test_only, true /*cb_costs[0].action != FLT_MAX*/, cb_costs[0].cost, ec.weight, ec.num_features);
 
   if (ld.label != FLT_MAX)
     all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;

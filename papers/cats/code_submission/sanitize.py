@@ -1,13 +1,12 @@
 import sys
 import getopt
-import math
 import queue
 
 class Sanitize:
 
   S_CODE = 0
   S_COMMENT = 1
-  SANITIZE_WORDS = ["Copyright","Microsoft","Yahoo"
+  SANITIZE_WORDS = ["Copyright","Microsoft","Yahoo",
                     "Maryam","Majzoubi",
                     "Chicheng","Zhang",
                     "Rajan","Chari",

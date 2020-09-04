@@ -4,6 +4,7 @@ from scipy.stats import beta
 
 class ConfidenceInterval:
 
+  @staticmethod
   def calculate(N, avg_loss, max_weighted_cost, alpha=0.05):
     """
     input:

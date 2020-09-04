@@ -1,8 +1,6 @@
 import sys
 import getopt
-import math
 from confidence_interval import ConfidenceInterval
-
 
 def nextword(target, source):
   for i, w in enumerate(source):
@@ -39,7 +37,7 @@ class EvaluatorOnline:
 
     data_file = open(self.file_name,"r")
     line = data_file.readline()
-    
+
     while line:
       # Get data
       if (line.find('CATS-online') != -1):
@@ -57,12 +55,12 @@ class EvaluatorOnline:
         separator_position = len("n = ")
         separator_position_end = line.find('\n')
         self.costs[len(self.costs) - 1].n = float(line[separator_position:separator_position_end])
-      
+
       elif (line.find('h = ') != -1):
         separator_position = len("h = ")
         separator_position_end = line.find('\n')
         self.costs[len(self.costs) - 1].h = float(line[separator_position:separator_position_end])
-      
+
       elif (line.find('Max Cost=') != -1):
         separator_position = len("Max Cost=")
         self.costs[len(self.costs) - 1].max_cost = float(line[separator_position:])
@@ -70,7 +68,7 @@ class EvaluatorOnline:
       elif (line.find('number of examples') != -1):
         s1 = line.split()
         self.costs[len(self.costs) - 1].nb_examples = int(nextword('=', s1))
-      
+
       elif (line.find('average loss') != -1):
         s1 = line.split()
         self.costs[len(self.costs) - 1].loss = float(nextword('=', s1))
@@ -91,13 +89,13 @@ class EvaluatorOnline:
       self.printAllResults()
 
       print("max_time = ", self.max_time)
-    
+
       self.printBestResults(self.best_cats)
       self.printBestResults(self.best_disc_tree)
       self.printBestResults(self.best_disc_linear)
 
     self.find_error()
-  
+
 
   def return_loss(self, model):
     if (model == "cats"):
@@ -121,8 +119,8 @@ class EvaluatorOnline:
           n_.append(c.n)
           h_.append(c.h)
     return loss_, time_, n_, h_
-      
-  
+
+
   def get_best_loss(self):
     for c in self.costs:
       if (c.model == "cats"):
@@ -134,7 +132,7 @@ class EvaluatorOnline:
       elif (c.model == "disc_linear"):
         if (c.loss < self.best_disc_linear.loss):
           self.best_disc_linear = c
-  
+
   def saveConfidenceIntervals(self, cost):
     if (cost.max_cost != 0):
       cost.ci_lower, cost.ci_upper = ConfidenceInterval.calculate(cost.nb_examples, cost.loss, \
@@ -166,9 +164,9 @@ class EvaluatorOnline:
       for c in self.costs:
         if (c.model == model):
           if (c.n == n):
-            times.append(c.time) 
+            times.append(c.time)
             h_.append(c.h)
-      return times, h_  
+      return times, h_
 
 
   def printAllResults(self):
@@ -181,14 +179,14 @@ class EvaluatorOnline:
     print ("model, n, h, loss, time = {0}, {1}, {2}, {3}, {4}".format(cost.model, cost.n, cost.h, cost.loss, cost.time))
     print("C.I. = {0}, {1}".format(cost.ci_lower, cost.ci_upper))
 
-    
+
   def find_error(self):
     for c in self.costs:
       if (c.loss == sys.float_info.max):
         if (c.time < self.max_time):
           print("error in model={0}, n={1}, h={2}".format(c.model, c.n, c.h))
-    
-  
+
+
 if __name__ == "__main__":
   namee = "BNG_cpu_act"
   data_file = "../../results/" + namee + "_online_validation.txt"
@@ -208,8 +206,8 @@ if __name__ == "__main__":
       model = arg
     elif opt in ('-q', '--quiet'):
       quiet = True
-    
-  
+
+
   # Print join lines to stdout
   fileJoiner = EvaluatorOnline(data_file, alpha, quiet)
   returnValue = fileJoiner.eval()
