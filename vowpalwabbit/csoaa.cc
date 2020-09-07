@@ -65,7 +65,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0., 0., 0.};
 
-  bool learn = DO_MULTIPREDICT && !is_learn;
+  bool dont_learn = DO_MULTIPREDICT && !is_learn;
 
   if (!ld.costs.empty())
   {
@@ -73,7 +73,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
     ec.partial_prediction = score;
   }
-  else if (learn)
+  else if (dont_learn)
   {
     ec.l.simple = {FLT_MAX, 0.f, 0.f};
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
