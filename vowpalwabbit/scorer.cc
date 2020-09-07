@@ -14,7 +14,7 @@ struct scorer
   vw* all;
 };  // for set_minmax, loss
 
-template <const bool is_learn, float (*link)(float in)>
+template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
