@@ -65,15 +65,15 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0., 0., 0.};
 
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  bool learn = DO_MULTIPREDICT && !is_learn;
+
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
       inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
     ec.partial_prediction = score;
   }
-  else if VW_STD17_CONSTEXPR (DO_MULTIPREDICT && !is_learn)
+  else if (learn)
   {
     ec.l.simple = {FLT_MAX, 0.f, 0.f};
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
@@ -90,7 +90,6 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++) inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
   }
-  VW_WARNING_STATE_POP
 
   if (ec.passthrough)
   {
