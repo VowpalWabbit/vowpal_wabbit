@@ -39,6 +39,7 @@ table MultiLabel {
 }
 
 table MultiClass {
+  namedlabel:string;
   label:uint32;
   weight:float;
 }

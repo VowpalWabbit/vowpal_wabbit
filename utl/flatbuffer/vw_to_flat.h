@@ -23,7 +23,7 @@ private:
   void create_cb_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
   void create_ccb_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
   void create_cb_eval_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
-  void create_mc_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
+  void create_mc_label(VW::named_labels* ldict, example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
   void create_multi_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
   void create_slates_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
   void create_cs_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
