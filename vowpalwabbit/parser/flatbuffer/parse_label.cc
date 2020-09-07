@@ -116,6 +116,8 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
     else
       l->multi.label = sd->ldict ? (uint32_t)sd->ldict->get(VW::string_view(named_label)) : label->label();
   }
+  else
+    l->multi.label = label->label();
   l->multi.weight = label->weight();
 }
 
