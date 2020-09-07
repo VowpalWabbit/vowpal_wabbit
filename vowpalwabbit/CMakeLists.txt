@@ -343,7 +343,7 @@ endif()
 # Turn on warnings
 if(WARNINGS)
   if(MSVC)
-    target_compile_options(vw PRIVATE /WX)
+    target_compile_options(vw PRIVATE /W4)
   else(MSVC)
     target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic -Werror)
   endif(MSVC)

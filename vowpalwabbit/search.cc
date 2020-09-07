@@ -3033,7 +3033,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   // action "1" is at index 0. Map action to its appropriate index. In particular, this fixes an
   // issue where the predicted action is the last, and there is no example header, causing an index
   // beyond the end of the array (usually resulting in a segfault at some point.)
-  size_t action_index = (a - COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 0 : 1;
+  size_t action_index = a - COST_SENSITIVE::ec_is_example_header(ecs[0]) ? 0 : 1;
 
   if ((mytag != 0) && ecs[action_index].l.cs.costs.size() > 0)
   {
