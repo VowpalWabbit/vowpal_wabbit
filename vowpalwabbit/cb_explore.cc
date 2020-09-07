@@ -57,8 +57,8 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore tau times, then act according to optimal.
   action_scores probs = ec.pred.a_s;
-
-  if (is_learn && ec.l.cb.costs[0].probability < 1)
+  bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
+  if (learn)
     base.learn(ec);
   else
     base.predict(ec);
@@ -114,7 +114,8 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   for (size_t i = 0; i < data.bag_size; i++)
   {
     uint32_t count = BS::weight_gen(data._random_state);
-    if (is_learn && count > 0)
+    bool learn = is_learn && count > 0;
+    if (learn)
       base.learn(ec, i);
     else
       base.predict(ec, i);

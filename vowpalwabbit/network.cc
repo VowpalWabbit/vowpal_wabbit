@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #ifdef _WIN32
 #define NOMINMAX
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WinSock2.h>
 #include <io.h>
 #else
