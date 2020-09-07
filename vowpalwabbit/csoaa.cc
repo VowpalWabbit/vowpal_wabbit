@@ -65,8 +65,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0., 0., 0.};
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
@@ -90,7 +90,7 @@ VW_WARNING_DISABLE_CPP_17_LANG_EXT
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++) inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
   }
-VW_WARNING_STATE_POP
+  VW_WARNING_STATE_POP
 
   if (ec.passthrough)
   {

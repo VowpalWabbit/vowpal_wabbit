@@ -106,7 +106,9 @@ inline void update_feature(float& update, float x, float& fw)
   if (modify)
   {
     if VW_STD17_CONSTEXPR (spare != 0)
+    {
       x *= w[spare];
+    }
     w[0] += update * x;
   }
 }
@@ -135,7 +137,9 @@ template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normali
 void train(gd& g, example& ec, float update)
 {
   if VW_STD17_CONSTEXPR (normalized != 0)
+  {
     update *= g.update_multiplier;
+  }
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 

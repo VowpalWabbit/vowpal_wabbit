@@ -16,11 +16,11 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <stdlib.h>
 #ifdef _WIN32
 #define NOMINMAX
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <WinSock2.h>
-#include <Windows.h>
-#include <WS2tcpip.h>
-#include <io.h>
+#  define _WINSOCK_DEPRECATED_NO_WARNINGS
+#  include <WinSock2.h>
+#  include <Windows.h>
+#  include <WS2tcpip.h>
+#  include <io.h>
 #else
 #include <unistd.h>
 #include <arpa/inet.h>
