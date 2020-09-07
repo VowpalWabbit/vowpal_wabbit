@@ -336,8 +336,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
           n.all->sd->max_label = hidden_max_activation;
           save_ft_offset = ec.ft_offset;
 
-          if (n.multitask)
-            ec.ft_offset = 0;
+          if (n.multitask) ec.ft_offset = 0;
 
           for (unsigned int i = 0; i < n.k; ++i)
           {
@@ -353,8 +352,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
 
               ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
               ec.pred.scalar = hidden_units[i].scalar;
-              if (ec.l.simple.label != hidden_units[i].scalar)
-                base.update(ec, i);
+              if (ec.l.simple.label != hidden_units[i].scalar) base.update(ec, i);
             }
           }
 

@@ -105,8 +105,7 @@ inline void update_feature(float& update, float x, float& fw)
   bool modify = feature_mask_off || fw != 0.;
   if (modify)
   {
-    if constexpr (spare != 0)
-      x *= w[spare];
+    if constexpr (spare != 0) x *= w[spare];
     w[0] += update * x;
   }
 }
@@ -134,8 +133,7 @@ float average_update(float total_weight, float normalized_sum_norm_x, float neg_
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void train(gd& g, example& ec, float update)
 {
-  if constexpr (normalized != 0)
-    update *= g.update_multiplier;
+  if constexpr (normalized != 0) update *= g.update_multiplier;
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 

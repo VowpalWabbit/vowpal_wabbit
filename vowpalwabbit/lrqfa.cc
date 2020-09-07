@@ -71,10 +71,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
             // perturb away from saddle point at (0, 0)
             if (is_learn)
             {
-              if (!example_is_test(ec) && *lw == 0)
-              {
-                *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
-              }
+              if (!example_is_test(ec) && *lw == 0) { *lw = cheesyrand(lwindex) * 0.5f / sqrtk; }
             }
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)

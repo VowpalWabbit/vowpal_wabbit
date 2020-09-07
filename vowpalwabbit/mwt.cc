@@ -94,8 +94,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
       c.evals[policy].action = 0;
     }
   }
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if constexpr (exclude || learn)
   {
     c.indices.clear();
@@ -117,7 +117,7 @@ VW_WARNING_DISABLE_CPP_17_LANG_EXT
         std::swap(c.feature_space[ns], ec.feature_space[ns]);
       }
   }
-VW_WARNING_STATE_POP
+  VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.
   v_array<float> preds = ec.pred.scalars;
@@ -130,15 +130,15 @@ VW_WARNING_STATE_POP
       base.predict(ec);
   }
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if constexpr (exclude || learn)
     while (!c.indices.empty())
     {
       unsigned char ns = c.indices.pop();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
-VW_WARNING_STATE_POP
+  VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.
   preds.clear();
