@@ -33,16 +33,15 @@ using std::cerr;
 using std::endl;
 
 // port is already in network order
-socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port_)
+socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 {
-  auto p = static_cast<USHORT>(port_);
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     THROWERRNO("socket");
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
-  far_end.sin_port = p;
+  far_end.sin_port = port;
 
   far_end.sin_addr = *(in_addr*)&ip;
   memset(&far_end.sin_zero, '\0', 8);
@@ -58,7 +57,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port_)
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
     if (!quiet)
-      cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(p) << endl;
+      cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
   }
 
   size_t count = 0;
@@ -133,7 +132,7 @@ void AllReduceSockets::all_reduce_init()
 
   uint32_t master_ip = *((uint32_t*)master->h_addr);
 
-  socket_t master_sock = sock_connect(master_ip, htons(static_cast<USHORT>(port)));
+  socket_t master_sock = sock_connect(master_ip, htons(port));
   if (send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
   {
     THROW("write unique_id=" << unique_id << " to span server failed");
