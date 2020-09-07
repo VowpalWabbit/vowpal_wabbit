@@ -96,7 +96,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CPP_17_LANG_EXT
-  if constexpr (exclude || learn)
+  if VW_STD17_CONSTEXPR (exclude || learn)
   {
     c.indices.clear();
     uint32_t stride_shift = c.all->weights.stride_shift();
@@ -132,7 +132,7 @@ VW_WARNING_STATE_POP
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CPP_17_LANG_EXT
-  if constexpr (exclude || learn)
+  if VW_STD17_CONSTEXPR (exclude || learn)
     while (!c.indices.empty())
     {
       unsigned char ns = c.indices.pop();

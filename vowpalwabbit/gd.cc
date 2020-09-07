@@ -105,7 +105,7 @@ inline void update_feature(float& update, float x, float& fw)
   bool modify = feature_mask_off || fw != 0.;
   if (modify)
   {
-    if constexpr (spare != 0)
+    if VW_STD17_CONSTEXPR (spare != 0)
       x *= w[spare];
     w[0] += update * x;
   }
@@ -115,7 +115,7 @@ inline void update_feature(float& update, float x, float& fw)
 template <bool sqrt_rate, size_t adaptive, size_t normalized>
 float average_update(float total_weight, float normalized_sum_norm_x, float neg_norm_power)
 {
-  if constexpr (normalized != 0)
+  if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (sqrt_rate)
     {
@@ -134,7 +134,7 @@ float average_update(float total_weight, float normalized_sum_norm_x, float neg_
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void train(gd& g, example& ec, float update)
 {
-  if constexpr (normalized != 0)
+  if VW_STD17_CONSTEXPR (normalized != 0)
     update *= g.update_multiplier;
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
@@ -451,7 +451,7 @@ inline float compute_rate_decay(power_data& s, float& fw)
     else
       rate_decay = powf(w[adaptive], s.minus_power_t);
   }
-  if constexpr (normalized != 0)
+  if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (sqrt_rate)
     {
@@ -504,7 +504,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
     }
     if (adaptive)
       w[adaptive] += nd.grad_squared * x2;
-    if constexpr (normalized != 0)
+    if VW_STD17_CONSTEXPR (normalized != 0)
     {
       float x_abs = fabsf(x);
       if (x_abs > w[normalized])  // new scale discovered
@@ -551,7 +551,7 @@ float get_pred_per_update(gd& g, example& ec)
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}};
   foreach_feature<norm_data,
       pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
-  if constexpr (normalized != 0)
+  if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (!stateless)
     {
@@ -575,7 +575,7 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
     bool stateless>
 float sensitivity(gd& g, example& ec)
 {
-  if constexpr (adaptive || normalized)
+  if VW_STD17_CONSTEXPR (adaptive || normalized)
     return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
   else
   {
