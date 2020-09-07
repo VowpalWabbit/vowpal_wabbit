@@ -127,16 +127,19 @@ void to_flat::create_cb_eval_label(
   label_type = VW::parsers::flatbuffer::Label_CB_EVAL_Label;
 }
 
-void to_flat::create_mc_label(VW::named_labels* ldict, example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
+void to_flat::create_mc_label(
+    VW::named_labels* ldict, example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
-  if (ldict){
+  if (ldict)
+  {
     if (ldict->get(v->l.multi.label).empty())
       label = VW::parsers::flatbuffer::CreateMultiClass(_builder, 0, 0U, v->l.multi.weight).Union();
     else
     {
-      
       VW::string_view named_label = ldict->get(v->l.multi.label);
-      label = VW::parsers::flatbuffer::CreateMultiClass(_builder, _builder.CreateString(std::string(named_label.begin(), named_label.end())), 0U, v->l.multi.weight).Union();
+      label = VW::parsers::flatbuffer::CreateMultiClass(
+          _builder, _builder.CreateString(std::string(named_label.begin(), named_label.end())), 0U, v->l.multi.weight)
+                  .Union();
     }
   }
   else
@@ -144,7 +147,6 @@ void to_flat::create_mc_label(VW::named_labels* ldict, example* v, flatbuffers::
     label = VW::parsers::flatbuffer::CreateMultiClass(_builder, 0, v->l.multi.label, v->l.multi.weight).Union();
   }
 
-  
   label_type = VW::parsers::flatbuffer::Label_MultiClass;
 }
 

@@ -57,7 +57,8 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     if (label->explicit_included_actions() != nullptr)
     {
       for (const auto& exp_included_action : *(label->explicit_included_actions()))
-      { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); } }
+      { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); }
+    }
     else if (label->outcome() != nullptr)
     {
       auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
@@ -108,11 +109,12 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
   std::string named_label;
   if (flatbuffers::IsFieldPresent(label, MultiClass::VT_NAMEDLABEL))
     named_label = std::string(label->namedlabel()->c_str());
-  if (sd->ldict){
+  if (sd->ldict)
+  {
     if (named_label.empty())
       l->multi.label = FLT_MAX;
     else
-      l->multi.label = sd->ldict ? (uint32_t)sd->ldict->get(VW::string_view(named_label)) : label->label();    
+      l->multi.label = sd->ldict ? (uint32_t)sd->ldict->get(VW::string_view(named_label)) : label->label();
   }
   l->multi.weight = label->weight();
 }
