@@ -110,10 +110,7 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
     named_label = std::string(label->namedlabel()->c_str());
   if (sd->ldict)
   {
-    if (named_label.empty())
-    {
-      l->multi.label = static_cast<uint32_t>(-1);
-    }
+    if (named_label.empty()) { l->multi.label = static_cast<uint32_t>(-1); }
     else
     {
       l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label)));
