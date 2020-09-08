@@ -70,9 +70,9 @@ extern "C"
   struct VWSearch_tag;
   typedef struct VWSearch_tag VWSearch;
 
-  typedef VWStatus(VWReadFunc)(void*, char*, size_t, size_t*);
-  typedef VWStatus(VWWriteFunc)(void*, const char*, size_t, size_t*);
-  typedef VWStatus(VWTraceMessageFunc)(void*, int trace_level, const char*, size_t);
+  struct VWOptions_tag;
+  typedef struct VWOptions_tag VWOptions;
+
 #ifdef __cplusplus
 }
 #endif

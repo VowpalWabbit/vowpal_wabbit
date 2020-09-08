@@ -1,4 +1,5 @@
 set(vw_c_public_headers
+  include/vw/experimental/options.h
   include/vw/experimental/placeholder.h
   include/vw/experimental/workspace.h
   include/vw/experimental/types.h
@@ -9,6 +10,7 @@ set(vw_c_private_headers
 )
 
 set(vw_c_impl_files
+  src/options.cc
   src/placeholder.cc
   src/c_io_adapter.cc
   src/workspace.cc
