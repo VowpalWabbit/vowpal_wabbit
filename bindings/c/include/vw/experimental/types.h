@@ -70,9 +70,6 @@ extern "C"
   struct VWSearch_tag;
   typedef struct VWSearch_tag VWSearch;
 
-  struct VWErrorInfo_tag;
-  typedef struct VWErrorInfo_tag VWErrorInfo;
-
   struct VWOptions_tag;
   typedef struct VWOptions_tag VWOptions;
 
