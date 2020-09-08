@@ -78,8 +78,8 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     // avoid updates to the random num generator
     // for greedify, always update first policy once
     uint32_t count = is_learn ? ((_greedify && i == 0) ? 1 : BS::weight_gen(_random_state)) : 0;
-
-    if (is_learn && count > 0)
+    bool learn = is_learn && count > 0;
+    if (learn)
       VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
     else
       VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
