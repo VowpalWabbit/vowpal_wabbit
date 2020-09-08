@@ -305,7 +305,7 @@ void SpanningTree::Run()
         else
         {
           int bogus = -1;
-          uint32_t bogus2 = -1;
+          uint32_t bogus2 = static_cast<uint32_t>(-1);
           fail_send(partial_nodeset.nodes[i].socket, &bogus2, sizeof(bogus2));
           fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
         }

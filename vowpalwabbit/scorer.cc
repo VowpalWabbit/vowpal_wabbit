@@ -18,7 +18,8 @@ template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
+  bool learn = is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0;
+  if (learn)
     base.learn(ec);
   else
     base.predict(ec);

@@ -16,10 +16,11 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <stdlib.h>
 #ifdef _WIN32
 #define NOMINMAX
-#include <WinSock2.h>
-#include <Windows.h>
-#include <WS2tcpip.h>
-#include <io.h>
+#  define _WINSOCK_DEPRECATED_NO_WARNINGS
+#  include <WinSock2.h>
+#  include <Windows.h>
+#  include <WS2tcpip.h>
+#  include <io.h>
 #else
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -186,7 +187,7 @@ void AllReduceSockets::all_reduce_init()
       cerr << "read kid_count=" << kid_count << endl;
   }
 
-  socket_t sock = -1;
+  auto sock = static_cast<socket_t>(-1);
   short unsigned int netport = htons(26544);
   if (kid_count > 0)
   {
@@ -268,10 +269,10 @@ void AllReduceSockets::all_reduce_init()
     socks.parent = sock_connect(parent_ip, parent_port);
   }
   else
-    socks.parent = -1;
+    socks.parent = static_cast<socket_t>(-1);
 
-  socks.children[0] = -1;
-  socks.children[1] = -1;
+  socks.children[0] = static_cast<socket_t>(-1);
+  socks.children[1] = static_cast<socket_t>(-1);
   for (int i = 0; i < kid_count; i++)
   {
     sockaddr_in child_address;
