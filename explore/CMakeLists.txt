@@ -16,6 +16,7 @@ target_include_directories(explore INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/>)
 
 target_sources(explore INTERFACE ${explore_all_headers})
+target_link_libraries(explore INTERFACE VowpalWabbit::common)
 
 # Place the explore headers in their own folder in VS
 source_group(explore FILES ${explore_all_headers})

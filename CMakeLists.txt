@@ -242,6 +242,14 @@ else()
   endif()
 endif()
 
+
+if(BUILD_TESTS)
+  enable_testing()
+  # Boost test is only required if we are building tests
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+endif()
+
+add_subdirectory(common)
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
@@ -264,10 +272,6 @@ if(BUILD_SLIM_VW)
 endif()
 
 if(BUILD_TESTS)
-  # Boost test is only required if we are building tests
-  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-
-  enable_testing()
   add_subdirectory(test)
 
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.

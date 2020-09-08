@@ -16,6 +16,7 @@ if(WIN32)
 else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
+target_link_libraries(allreduce PUBLIC VowpalWabbit::common)
 
 # Prior to CMake 3.11 add_library requires at least 1 source file, so dummy.cc fulfills that need since we want to use target_sources.
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy.cc "")
@@ -296,7 +297,7 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
+  VowpalWabbit::common VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
