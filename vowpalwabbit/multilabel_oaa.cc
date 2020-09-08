@@ -39,10 +39,14 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
     if (ec.pred.scalar > 0.)
       preds.label_v.push_back(i);
   }
-  if (is_learn && multilabel_index < multilabels.label_v.size())
-    std::cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k - 1
-              << "} This won't work right." << std::endl;
-
+  if (is_learn)
+  {
+    if (multilabel_index < multilabels.label_v.size())
+    {
+      std::cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k - 1
+                << "} This won't work right." << std::endl;
+    }
+  }
   ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;
 }

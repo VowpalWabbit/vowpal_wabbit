@@ -3,3 +3,4 @@
 // license as described in the file LICENSE.
 
 #include "vw/experimental/placeholder.h"
+#include "vw/experimental/workspace.h"
