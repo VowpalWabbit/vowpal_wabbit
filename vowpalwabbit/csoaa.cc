@@ -64,13 +64,16 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0., 0., 0.};
+
+  bool dont_learn = DO_MULTIPREDICT && !is_learn;
+
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
       inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
     ec.partial_prediction = score;
   }
-  else if (DO_MULTIPREDICT && !is_learn)
+  else if (dont_learn)
   {
     ec.l.simple = {FLT_MAX, 0.f, 0.f};
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
@@ -87,6 +90,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++) inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp);
   }
+
   if (ec.passthrough)
   {
     uint64_t second_best = 0;
@@ -496,12 +500,15 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   }
 
   /////////////////////// learn
-  if (is_learn && !isTest)
+  if (is_learn)
   {
-    if (data.is_wap)
-      do_actual_learning_wap(data, base, ec_seq);
-    else
-      do_actual_learning_oaa(data, base, ec_seq);
+    if (!isTest)
+    {
+      if (data.is_wap)
+        do_actual_learning_wap(data, base, ec_seq);
+      else
+        do_actual_learning_oaa(data, base, ec_seq);
+    }
   }
 
   if (data.rank)

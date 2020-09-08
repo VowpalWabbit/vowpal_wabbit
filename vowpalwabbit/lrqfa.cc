@@ -69,8 +69,10 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
                 (lindex + ((uint64_t)(rfd_id * k + n) << stride_shift));  // a feature has k weights in each field
             float* lw = &all.weights[lwindex & weight_mask];
             // perturb away from saddle point at (0, 0)
-            if (is_learn && !example_is_test(ec) && *lw == 0)
-              *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
+            if (is_learn)
+            {
+              if (!example_is_test(ec) && *lw == 0) { *lw = cheesyrand(lwindex) * 0.5f / sqrtk; }
+            }
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
