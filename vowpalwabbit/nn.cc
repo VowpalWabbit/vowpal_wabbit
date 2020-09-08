@@ -320,47 +320,48 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
       n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
     }
 
-    if (is_learn && n.all->training && ld.label != FLT_MAX)
+    if (is_learn)
     {
-      float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
-
-      if (fabs(gradient) > 0)
+      if (n.all->training && ld.label != FLT_MAX)
       {
-        n.all->loss = n.squared_loss;
-        n.all->set_minmax = noop_mm;
-        save_min_label = n.all->sd->min_label;
-        n.all->sd->min_label = hidden_min_activation;
-        save_max_label = n.all->sd->max_label;
-        n.all->sd->max_label = hidden_max_activation;
-        save_ft_offset = ec.ft_offset;
+        float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
 
-        if (n.multitask)
-          ec.ft_offset = 0;
-
-        for (unsigned int i = 0; i < n.k; ++i)
+        if (fabs(gradient) > 0)
         {
-          if (!dropped_out[i])
+          n.all->loss = n.squared_loss;
+          n.all->set_minmax = noop_mm;
+          save_min_label = n.all->sd->min_label;
+          n.all->sd->min_label = hidden_min_activation;
+          save_max_label = n.all->sd->max_label;
+          n.all->sd->max_label = hidden_max_activation;
+          save_ft_offset = ec.ft_offset;
+
+          if (n.multitask) ec.ft_offset = 0;
+
+          for (unsigned int i = 0; i < n.k; ++i)
           {
-            float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
-            float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            n.outputweight.feature_space[nn_output_namespace].indicies[0] =
-                n.output_layer.feature_space[nn_output_namespace].indicies[i];
-            base.predict(n.outputweight, n.k);
-            float nu = n.outputweight.pred.scalar;
-            float gradhw = 0.5f * nu * gradient * sigmahprime;
+            if (!dropped_out[i])
+            {
+              float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
+              float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
+              n.outputweight.feature_space[nn_output_namespace].indicies[0] =
+                  n.output_layer.feature_space[nn_output_namespace].indicies[i];
+              base.predict(n.outputweight, n.k);
+              float nu = n.outputweight.pred.scalar;
+              float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
-            ec.pred.scalar = hidden_units[i].scalar;
-            if (ec.l.simple.label != hidden_units[i].scalar)
-              base.update(ec, i);
+              ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
+              ec.pred.scalar = hidden_units[i].scalar;
+              if (ec.l.simple.label != hidden_units[i].scalar) base.update(ec, i);
+            }
           }
-        }
 
-        n.all->loss = save_loss;
-        n.all->set_minmax = save_set_minmax;
-        n.all->sd->min_label = save_min_label;
-        n.all->sd->max_label = save_max_label;
-        ec.ft_offset = save_ft_offset;
+          n.all->loss = save_loss;
+          n.all->set_minmax = save_set_minmax;
+          n.all->sd->min_label = save_min_label;
+          n.all->sd->max_label = save_max_label;
+          ec.ft_offset = save_ft_offset;
+        }
       }
     }
 
