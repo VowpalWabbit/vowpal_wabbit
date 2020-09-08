@@ -53,11 +53,11 @@ inline float merand48_boxmuller(uint64_t& index)
 }  // namespace common
 }  // namespace VW
 
-VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::merand48(...) ")
+// VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::merand48(...) ")
 inline float merand48(uint64_t& initial) { return VW::common::merand48(initial); }
 
-VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::merand48_noadvance(...) ")
+// VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::merand48_noadvance(...) ")
 inline float merand48_noadvance(uint64_t v) { return VW::common::merand48_noadvance(v); }
 
-VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::merand48_boxmuller(...) ")
+// VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::merand48_boxmuller(...) ")
 inline float merand48_boxmuller(uint64_t& index) { return VW::common::merand48_boxmuller(index); }

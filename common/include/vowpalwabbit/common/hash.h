@@ -124,20 +124,20 @@ VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uin
 // This namespace is exported for compatability when calling fmix and getblock
 namespace MURMUR_HASH_3
 {
-VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::details::fmix(...) ")
+// VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::details::fmix(...) ")
 VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept { return VW::common::details::fmix(h); }
 
-VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::details::getblock(...) ")
+// VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::details::getblock(...) ")
 constexpr static inline uint32_t getblock(const uint32_t* p, int i) noexcept
 {
   return VW::common::details::getblock(p, i);
 }
 }  // namespace MURMUR_HASH_3
 
-VW_DEPRECATED("Function has been moved into a namespace, use: VVW::common::details::rotl32(...) ")
+// VW_DEPRECATED("Function has been moved into a namespace, use: VVW::common::details::rotl32(...) ")
 constexpr inline uint32_t rotl32(uint32_t x, int8_t r) noexcept { return VW::common::details::rotl32(x, r); }
 
-VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::uniform_hash(...) ")
+// VW_DEPRECATED("Function has been moved into a namespace, use: VW::common::uniform_hash(...) ")
 VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 {
   return VW::common::uniform_hash(key, len, seed);
