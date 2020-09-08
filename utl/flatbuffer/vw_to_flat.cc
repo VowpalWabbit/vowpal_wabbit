@@ -15,34 +15,6 @@
 #include "vw_exception.h"
 #include "options_boost_po.h"
 
-std::string to_flat::get_label_string(label_type_t label_type)
-{
-  switch (label_type)
-  {
-    case label_type_t::nolabel:
-      return std::string("No label");
-    case label_type_t::cb:
-      return std::string("Contextual Bandit Label");
-    case label_type_t::ccb:
-      return std::string("Conditional Contextual Bandit Label");
-    case label_type_t::multi:
-      return std::string("Multilabel Label");
-    case label_type_t::mc:
-      return std::string("Multiclass Label");
-    case label_type_t::cs:
-      return std::string("Cost Sensitive Label");
-    case label_type_t::cb_eval:
-      return std::string("Contextual Bandit Eval Label");
-    case label_type_t::slates:
-      return std::string("Slates Label");
-    case label_type_t::simple:
-      return std::string("Simple Label");
-    default:
-      THROW("Unknown label type");
-      break;
-  }
-}
-
 void to_flat::create_simple_label(
     example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
@@ -291,7 +263,6 @@ void to_flat::convert_txt_to_flat(vw& all)
     ae = all.p->ready_parsed_examples.pop();
   }
 
-  all.trace_message << "\nLabel type " << get_label_string(all.label_type) << std::endl;
   all.trace_message << "Converted " << examples << " examples" << std::endl;
 
   flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection =

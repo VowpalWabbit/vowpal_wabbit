@@ -111,12 +111,18 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
   if (sd->ldict)
   {
     if (named_label.empty())
-      l->multi.label = FLT_MAX;
+    {
+      l->multi.label = static_cast<uint32_t>(-1);
+    }
     else
-      l->multi.label = sd->ldict ? (uint32_t)sd->ldict->get(VW::string_view(named_label)) : label->label();
+    {
+      l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label)));
+    }
   }
   else
+  {
     l->multi.label = label->label();
+  }
   l->multi.weight = label->weight();
 }
 
