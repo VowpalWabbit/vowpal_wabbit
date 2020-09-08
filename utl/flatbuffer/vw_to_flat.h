@@ -29,5 +29,4 @@ private:
   void create_slates_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
   void create_cs_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
   void create_no_label(example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type);
-  std::string get_label_string(label_type_t label_type);
 };

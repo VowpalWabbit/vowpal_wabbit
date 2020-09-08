@@ -1929,7 +1929,12 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 
 # Test 232: Named Labels FB Test (Based on 88)
 {VW} -d train-sets/named_label.fb --named_labels det,noun,verb \
-     --oaa 3 -k --flatbuffer
+     --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model
          train-sets/ref/named_label_fb.stderr
+
+# Test 233: Named Labels FB at prediction (Based on 89)
+{VW} -i models/test_named_fb.model -t -d train-sets/test_named -p test_named.predict
+    train-sets/ref/named_label_test_fb.stderr
+    pred-sets/ref/test_named.predict
 
 # Do not delete this line or the empty line above it
