@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "vwvis.h"
-#include "types.h"
+#include "vw/experimental/types.h"
+#include "vw/experimental/vwvis.h"
 
 #ifdef __cplusplus
 extern "C"

@@ -358,6 +358,15 @@ if(WARNINGS)
   endif(MSVC)
 endif(WARNINGS)
 
+# Turn on warnings as errors
+if(WARNING_AS_ERROR)
+  if(MSVC)
+    target_compile_options(vw PRIVATE /WX)
+  else(MSVC)
+    target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  endif(MSVC)
+endif(WARNING_AS_ERROR)
+
 if(NOT WIN32)
   add_executable(active_interactor active_interactor.cc)
 
