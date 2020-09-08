@@ -99,8 +99,13 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
             weight* lw = &lrq.all->weights[lwindex];
 
             // perturb away from saddle point at (0, 0)
-            if (is_learn && !example_is_test(ec) && *lw == 0)
-              *lw = cheesyrand(lwindex);  // not sure if lw needs a weight mask?
+            if (is_learn)
+            {
+              if (!example_is_test(ec) && *lw == 0)
+              {
+                *lw = cheesyrand(lwindex);  // not sure if lw needs a weight mask?
+              }
+            }
 
             features& right_fs = ec.feature_space[right];
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)

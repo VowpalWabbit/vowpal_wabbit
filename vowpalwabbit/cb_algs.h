@@ -34,7 +34,8 @@ float get_cost_pred(
   BASELINE::set_baseline_enabled(&ec);
   ec.l.simple = simple_temp;
   polyprediction p = ec.pred;
-  if (is_learn && known_cost != nullptr && index == known_cost->action)
+  bool learn = is_learn && known_cost != nullptr && index == known_cost->action;
+  if (learn)
   {
     float old_weight = ec.weight;
     ec.weight /= known_cost->probability;
