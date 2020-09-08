@@ -40,17 +40,17 @@ void to_flat::create_ccb_label(example* v, flatbuffers::Offset<void>& label, VW:
   auto e_type = v->l.conditional_contextual_bandit.type;
   label_type = VW::parsers::flatbuffer::Label_CCBLabel;
 
-  if (e_type == 1)
+  if (e_type == CCB::example_type::shared)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
     label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
   }
-  else if (e_type == 2)
+  else if (e_type == CCB::example_type::action)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
     label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
   }
-  else if (e_type == 3)
+  else if (e_type == CCB::example_type::slot)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     std::vector<uint32_t> explicit_included_actions;
