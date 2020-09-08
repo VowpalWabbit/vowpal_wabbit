@@ -61,7 +61,7 @@ vw* initialize_partial(std::string s, io_buf* model = nullptr, bool skipModelLoa
 void complete_initialize(vw* all);
 void* pop_reduction(vw* all);
 void push_reduction(vw* all, void* reduction);
-
+void delete_reduction(void* reduction);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 

@@ -20,6 +20,15 @@ namespace VW {
     all->l = new_reduction;
   }
 
+  void delete_reduction(void* reduction){
+    if(!reduction)
+      return;
+    auto* r = static_cast<LEARNER::base_learner*>(reduction);
+    r->~learner<char, char>();
+    free(r);
+  }
+
+
 namespace reduction_stack {
   
   struct noop {};

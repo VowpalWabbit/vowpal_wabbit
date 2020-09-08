@@ -403,6 +403,13 @@ VW_WARNING_STATE_POP
       free(finisher_fd.base);
     }
   }
+  inline void recursive_delete() {
+    if(finisher_fd.base) {
+      finisher_fd.base->recursive_delete();
+    }
+    this->~learner<char, char>();
+    free(this);
+  }
 
   void end_pass()
   {

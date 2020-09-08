@@ -1307,36 +1307,35 @@ bool is_multi_reduction_hacks(const options_i& options, VW::LEARNER::base_learne
 struct hack_state {
   rand_state rstate;
   bool quiet;
+  VW::LEARNER::base_learner* scorer;
+  VW::LEARNER::base_learner* cost_sensitive;
 };
 void pyatom_hacks_pre(vw& all, options_i& options, hack_state& hacks) {
   // set scorer to a temporary reduction so we don't crash
   // certain reductions expect cost_sensitive to be a single learner
   // others require it to be a multi learner...
   // this is awful
-  auto noop = VW::reduction_stack::noop_single_setup(options, all);
-  all.scorer = as_singleline(noop);
-
+  hacks.scorer = VW::reduction_stack::noop_single_setup(options, all);
   auto is_cs_singleline = options.was_supplied("cover") &&
     (options.was_supplied("cb_explore") || options.was_supplied("cbify")) &&
     !options.was_supplied("cb_explore_adf");
   if(is_cs_singleline) {
-    all.cost_sensitive = noop;
+    hacks.cost_sensitive = VW::reduction_stack::noop_single_setup(options, all);
   }
   else {
-    all.cost_sensitive = VW::reduction_stack::noop_multi_setup(options, all);
+    hacks.cost_sensitive = VW::reduction_stack::noop_multi_setup(options, all);
   }
+  all.scorer = as_singleline(hacks.scorer);
+  all.cost_sensitive = hacks.cost_sensitive;
+
   hacks.rstate = *all.get_random_state();
   hacks.quiet = all.logger.quiet;
   all.logger.quiet = true;
 }
 
 void pyatom_hacks_post(vw& all, hack_state& hacks) {
-  if((void*)all.scorer != (void*)all.cost_sensitive) {
-    all.cost_sensitive->finish();
-    free(all.cost_sensitive);
-  }
-  all.scorer->finish();
-  free(all.scorer);
+  VW::delete_reduction(hacks.scorer);
+  VW::delete_reduction(hacks.cost_sensitive);
   all.scorer = nullptr;
   all.cost_sensitive = nullptr;
   std::swap(*all.get_random_state(), hacks.rstate);
@@ -1882,6 +1881,10 @@ void complete_initialize(vw* all){
     }
 
     all->l->init_driver();
+    for(auto kv : all->reduction_template_map) {
+      kv.second->recursive_delete();
+    }
+    all->reduction_template_map.clear();
 
   }
   catch (std::exception& e)
