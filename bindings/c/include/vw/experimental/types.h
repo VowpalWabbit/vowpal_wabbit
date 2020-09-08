@@ -18,7 +18,7 @@ extern "C"
 // This macro gets expanded for each individual error definition
 #define ERROR_CODE_DEFINITION(code, name, message) static const VWStatus VW_##name = code;
 
-#include "error_data.h"
+#include "vw/experimental/error_data.h"
 
   struct VWErrorInfo_tag;
   typedef struct VWErrorInfo_tag VWErrorInfo;
