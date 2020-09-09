@@ -27,7 +27,7 @@ namespace common
 {
 inline float merand48(uint64_t& initial)
 {
-  static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
+  static_assert(sizeof(int32_t) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
   initial = CONSTANT_A * initial + CONSTANT_C;
   int32_t temp = ((initial >> 25) & 0x7FFFFF) | BIAS;
   return reinterpret_cast<float&>(temp) - 1;
