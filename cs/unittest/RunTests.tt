@@ -28,7 +28,7 @@ var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
 	203, // Cluster mode test
 	204, // Testing option usage
     213, // DSJSON not supported
-    224, 225, 226, 227, 228, 229, 230, 231, 232 // flatbuffer input tests, to be enabled in due course
+    224, 225, 226, 227, 228, 229, 230, 231, 232, 233 // flatbuffer input tests, to be enabled in due course
 	};
 
 var outputModels = new Dictionary<string, TestCase>();
