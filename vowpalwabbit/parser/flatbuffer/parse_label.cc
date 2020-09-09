@@ -38,8 +38,6 @@ void parser::parse_cb_label(polylabel* l, const CBLabel* label)
     f.probability = cost->probability();
     f.partial_prediction = cost->partial_pred();
     l->cb.costs.push_back(f);
-    // No constructor available
-    // l->cb.costs.emplace_back(cost->cost(), cost->action(), cost->probability(), cost->partial_pred());
   }
 }
 
@@ -71,7 +69,6 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     }
     else
       l->conditional_contextual_bandit.type = CCB::example_type::unset;
-    // l->conditional_contextual_bandit.outcome->cost = label->outcome()->cost();
   }
 }
 
