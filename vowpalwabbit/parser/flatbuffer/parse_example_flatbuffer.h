@@ -17,11 +17,8 @@ namespace parsers
 namespace flatbuffer
 {
 int flatbuffer_to_examples(vw* all, v_array<example*>& examples);
-}  // namespace flatbuffer
-}  // namespace parsers
-}  // namespace VW
 
-class VW::parsers::flatbuffer::parser
+class parser
 {
 public:
   bool parse_examples(vw* all, v_array<example*>& examples);
@@ -54,3 +51,6 @@ private:
   void parse_no_label();
   void parse_slates_label(polylabel* l, const Slates_Label* label);
 };
+}  // namespace flatbuffer
+}  // namespace parsers
+}  // namespace VW
