@@ -4,12 +4,9 @@
 
 #include <cfloat>
 #include "reductions.h"
-#include "debug_log.h"
 
 using namespace VW::config;
 using std::endl;
-
-VW_DEBUG_ENABLE(false)
 
 namespace VW { namespace binary {
   template <bool is_learn>
