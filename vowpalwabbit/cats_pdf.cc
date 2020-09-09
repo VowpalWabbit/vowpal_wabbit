@@ -56,7 +56,7 @@ namespace VW { namespace continuous_action { namespace cats_pdf {
   }
 
   // Pass through
-  int cats_pdf::learn(example& ec, experimental::api_status* status)
+  int cats_pdf::learn(example& ec, experimental::api_status*)
   {
     assert(!ec.test_only);
     VW_DBG(ec) << "cats_pdf::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
