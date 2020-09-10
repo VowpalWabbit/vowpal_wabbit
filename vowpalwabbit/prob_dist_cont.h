@@ -6,9 +6,10 @@
 #include <string>
 #include "v_array.h"
 
-namespace VW { namespace continuous_actions
+namespace VW
 {
-
+namespace continuous_actions
+{
 struct probability_density_function_value
 {
   float action;     // continuous action
@@ -28,4 +29,5 @@ std::string to_string(const probability_density_function_value& pdf_value, bool 
 std::string to_string(const probability_density_function& pdf, bool print_newline = false);
 void delete_probability_density_function(void* v);
 
-}}  // namespace VW::actions_pdf
+}  // namespace continuous_actions
+}  // namespace VW

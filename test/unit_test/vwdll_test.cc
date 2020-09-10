@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
 {
-  if(is_invoked_with("valgrind"))
+  if (is_invoked_with("valgrind"))
   {
     std::cout << "skipping vw_dll_parse_escaped test when running in valgrind" << std::endl;
     return;

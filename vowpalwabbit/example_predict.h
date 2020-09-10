@@ -48,7 +48,7 @@ struct example_predict
   // and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions;
 
-  uint32_t _current_reduction_depth;                  // Used for debugging reductions.  Keeps track of current reduction level
+  uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level
 };
 
 // make sure we have an exception safe version of example_predict

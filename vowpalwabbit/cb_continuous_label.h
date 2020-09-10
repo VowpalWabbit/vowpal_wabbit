@@ -8,26 +8,28 @@
 
 struct example;
 
-namespace VW { namespace cb_continuous
+namespace VW
 {
-  struct continuous_label_elm
-  {
-    float action;       // the continuous action
-    float cost;         // the cost of this class
-    float probability;  // new for bandit setting, specifies the probability the data collection policy chose this class
+namespace cb_continuous
+{
+struct continuous_label_elm
+{
+  float action;       // the continuous action
+  float cost;         // the cost of this class
+  float probability;  // new for bandit setting, specifies the probability the data collection policy chose this class
 
-    bool operator==(const continuous_label_elm&& j) const { return action == j.action; }
-  };
+  bool operator==(const continuous_label_elm&& j) const { return action == j.action; }
+};
 
-  struct continuous_label
-  {
-    v_array<continuous_label_elm> costs;
-  };
+struct continuous_label
+{
+  v_array<continuous_label_elm> costs;
+};
 
-  extern label_parser the_label_parser;
+extern label_parser the_label_parser;
 
-  std::string to_string(const continuous_label_elm& elm);
-  std::string to_string(const continuous_label& lbl);
+std::string to_string(const continuous_label_elm& elm);
+std::string to_string(const continuous_label& lbl);
 
-  }  // namespace cb_continuous
-  }  // namespace VW
+}  // namespace cb_continuous
+}  // namespace VW
