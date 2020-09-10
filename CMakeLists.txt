@@ -73,6 +73,7 @@ option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
+option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 
