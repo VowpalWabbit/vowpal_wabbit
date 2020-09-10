@@ -567,7 +567,8 @@ class vw_predict
     const size_t pdf_size = pdf_last - pdf_first;
     const size_t ranking_size = ranking_last - ranking_begin;
 
-    if (pdf_size != ranking_size) return E_EXPLORATION_PMF_RANKING_SIZE_MISMATCH;
+    if (pdf_size != ranking_size)
+      return E_EXPLORATION_PMF_RANKING_SIZE_MISMATCH;
 
     // Initialize ranking with actions 0,1,2,3 ...
     std::iota(ranking_begin, ranking_last, 0);

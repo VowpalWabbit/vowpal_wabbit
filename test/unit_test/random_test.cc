@@ -18,3 +18,5 @@ BOOST_AUTO_TEST_CASE(reproduce_max_boundary_issue)
   float chosen_value = interval_size * (random_draw + 31) + range_min;
   BOOST_CHECK_CLOSE(chosen_value, range_max, 0.000000001f);
 }
+
+

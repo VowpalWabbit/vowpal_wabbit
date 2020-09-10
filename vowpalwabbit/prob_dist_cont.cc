@@ -8,45 +8,49 @@
 #include "io_buf.h"
 
 using namespace std;
-namespace VW
+namespace VW { namespace continuous_actions
 {
-namespace continuous_actions
-{
-std::string to_string(const probability_density_function_value& pdf_value, bool newline)
-{
-  std::stringstream strm;
-  strm << pdf_value.action << "," << pdf_value.pdf_value;
-  if (newline) strm << endl;
-  return strm.str();
-}
-
-std::string to_string(const pdf_segment& seg)
-{
-  std::stringstream strm;
-  strm << "{" << seg.left << "-" << seg.right << "," << seg.pdf_value << "}";
-  return strm.str();
-}
-
-// Convert pdf to string of form 'begin-end:pdf_value, ... '
-std::string to_string(const probability_density_function& pdf, bool newline)
-{
-  std::stringstream ss;
-  for (size_t i = 0; i < pdf.size(); i++)
+  std::string to_string(const probability_density_function_value& pdf_value, bool newline)
   {
-    if (i > 0) ss << ',';
-    ss << pdf[i].left << '-' << pdf[i].right << ':' << pdf[i].pdf_value;
+    std::stringstream strm;
+    strm << pdf_value.action << "," << pdf_value.pdf_value;
+    if (newline)
+      strm << endl;
+    return strm.str();
   }
 
-  if (newline) ss << endl;
+  std::string to_string(const pdf_segment& seg)
+  {
+    std::stringstream strm;
+    strm << "{" << seg.left << "-" << seg.right
+         << "," << seg.pdf_value << "}";
+    return strm.str();
+  }
 
-  return ss.str();
-}
+  // Convert pdf to string of form 'begin-end:pdf_value, ... '
+  std::string to_string(const probability_density_function& pdf, bool newline)
+  {
+    std::stringstream ss;
+    for (size_t i = 0; i < pdf.size(); i++)
+    {
+      if (i > 0)
+        ss << ',';
+      ss << pdf[i].left << '-' << pdf[i].right << ':' << pdf[i].pdf_value;
+    }
 
-void delete_probability_density_function(void* v)
-{
-  v_array<pdf_segment>* pdf = (v_array<pdf_segment>*)v;
-  pdf->delete_v();
-}
+    if (newline)
+      ss << endl;
 
-}  // namespace continuous_actions
-}  // namespace VW
+    return ss.str();
+  }
+
+  void delete_probability_density_function(void* v)
+  {
+    v_array<pdf_segment>* pdf = (v_array<pdf_segment>*)v;
+    pdf->delete_v();
+  }
+
+  }  // namespace actions_pdf
+  } // namespace vw::pdf
+
+

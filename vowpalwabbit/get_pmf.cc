@@ -9,13 +9,13 @@
 #include "parse_args.h"
 
 // Aliases
+using VW::LEARNER::single_learner;
 using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 VW_DEBUG_ENABLE(false)
@@ -33,7 +33,7 @@ struct get_pmf
 
   void init(single_learner* p_base, float epsilon);
 
-private:
+ private:
   single_learner* _base = nullptr;
   float _epsilon;
 };
@@ -61,8 +61,7 @@ int get_pmf::predict(example& ec, experimental::api_status*)
   return error_code::success;
 }
 
-void get_pmf::init(single_learner* p_base, float epsilon)
-{
+void get_pmf::init(single_learner* p_base, float epsilon) {
   _base = p_base;
   _epsilon = epsilon;
 }
@@ -77,7 +76,10 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != error_code::success)
+  {
+    VW_DBG(ec) << status.get_error_msg() << endl;
+  }
 }
 
 // END sample_pdf reduction and reduction methods
@@ -95,7 +97,8 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
 
   // If reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.was_supplied("get_pmf")) return nullptr;
+  if (!options.was_supplied("get_pmf"))
+    return nullptr;
 
   LEARNER::base_learner* p_base = setup_base(options, all);
   auto p_reduction = scoped_calloc_or_throw<get_pmf>();

@@ -18,9 +18,9 @@ using namespace ACTION_SCORE;
 
 using namespace VW::config;
 
-using std::endl;
 using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
+using std::endl;
 
 struct cbify;
 
@@ -81,6 +81,7 @@ struct cbify
       for (auto& as : cb_as) as.delete_v();
     }
   }
+
 };
 
 float loss(cbify& data, uint32_t label, uint32_t final_prediction)
@@ -121,7 +122,8 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
 
 void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
-  if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
+  if (trace_stream != nullptr)
+    (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 
   data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
@@ -177,7 +179,8 @@ float get_01_loss(cbify& data, float chosen_action, float label)
 {
   float diff = label - chosen_action;
   float range = data.regression_data.max_value - data.regression_data.min_value;
-  if (abs(diff) <= (data.regression_data.loss_01_ratio * range)) return 0.0f;
+  if (abs(diff) <= (data.regression_data.loss_01_ratio * range))
+    return 0.0f;
   return 1.0f;
 }
 
@@ -206,13 +209,16 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   cb.action = chosen_action + 1;
   cb.probability = ec.pred.a_s[chosen_action].score;
 
-  if (!cb.action) THROW("No action with non-zero probability found!");
+  if (!cb.action)
+    THROW("No action with non-zero probability found!");
   float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
   float converted_action =
       data.regression_data.min_value + chosen_action * continuous_range / data.regression_data.num_actions;
 
   if (data.regression_data.loss_option == 0)
-  { cb.cost = get_squared_loss(data, converted_action, regression_label.label); }
+  {
+    cb.cost = get_squared_loss(data, converted_action, regression_label.label);
+  }
   else if (data.regression_data.loss_option == 1)
   {
     cb.cost = get_absolute_loss(data, converted_action, regression_label.label);
@@ -226,14 +232,17 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   data.cb_label.costs.push_back(cb);
   ec.l.cb = data.cb_label;
 
-  if (is_learn) base.learn(ec);
+  if (is_learn)
+    base.learn(ec);
 
   if (data.regression_data.loss_report == 1)
   {
     // for reporting average loss to be in the correct range (reverse normalizing)
     size_t siz = data.cb_label.costs.size();
     if (data.regression_data.loss_option == 0)
-    { data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range; }
+    {
+      data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
+    }
     else if (data.regression_data.loss_option == 1)
     {
       data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range;
@@ -277,7 +286,9 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   cb_cont_lbl.probability = ec.pred.pdf_value.pdf_value;
 
   if (data.regression_data.loss_option == 0)
-  { cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label); }
+  {
+    cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label);
+  }
   else if (data.regression_data.loss_option == 1)
   {
     cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.pdf_value.action, regression_label.label);
@@ -294,7 +305,8 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   ec.l.cb_cont = data.regression_data.cb_cont_label;
 
   VW_DBG(ec) << "cbify-reg: before base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
-  if (is_learn) base.learn(ec);
+  if (is_learn)
+    base.learn(ec);
   VW_DBG(ec) << "cbify-reg: after base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
 
   // Update the label inside the reduction data structure
@@ -571,12 +583,14 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
   const auto& cb_costs = data.cb_label.costs;
 
   // Track the max cost and report it at the end
-  if (cb_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_costs[0].cost;
+  if (cb_costs[0].cost > data.regression_data.max_cost)
+    data.regression_data.max_cost = cb_costs[0].cost;
 
   if (cb_costs.size() > 0)
     all.sd->update(ec.test_only, true /*cb_costs[0].action != FLT_MAX*/, cb_costs[0].cost, ec.weight, ec.num_features);
 
-  if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;
+  if (ld.label != FLT_MAX)
+    all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;
 
   print_update(all, ec);
 }
@@ -589,18 +603,20 @@ void output_example_regression(vw& all, cbify& data, example& ec)
   const auto& cb_cont_costs = data.regression_data.cb_cont_label.costs;
 
   // Track the max cost and report it at the end
-  if (cb_cont_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_cont_costs[0].cost;
+  if (cb_cont_costs[0].cost > data.regression_data.max_cost)
+    data.regression_data.max_cost = cb_cont_costs[0].cost;
 
   if (cb_cont_costs.size() > 0)
     all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
 
-  if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight;
+  if (ld.label != FLT_MAX)
+    all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight;
 
   print_update(all, ec);
 }
 
 void output_cb_reg_predictions(
-    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, continuous_label& label)
+  std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, continuous_label& label)
 {
   std::stringstream strm;
   if (label.costs.size() == 1)
@@ -617,7 +633,10 @@ void output_cb_reg_predictions(
     strm << "ERR Too many costs found. Expecting one." << std::endl;
   }
   const std::string str = strm.str();
-  for (auto& f : predict_file_descriptors) { f->write(str.c_str(), str.size()); }
+  for (auto& f : predict_file_descriptors)
+  {
+      f->write(str.c_str(), str.size());
+  }
 }
 
 void finish_example_cb_reg_continous(vw& all, cbify& data, example& ec)
@@ -694,18 +713,30 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->a_s = v_init<action_score>();
   data->all = &all;
 
-  if (data->use_adf) { init_adf_data(*data.get(), num_actions); }
+  if (data->use_adf)
+  { init_adf_data(*data.get(), num_actions); }
 
   if (use_reg)
   {
     // Check invalid parameter combinations
-    if (data->use_adf) { THROW("error: incompatible options: cb_explore_adf and cbify_reg"); }
-    if (use_cs) { THROW("error: incompatible options: cbify_cs and cbify_reg"); }
+    if (data->use_adf)
+    {
+      THROW("error: incompatible options: cb_explore_adf and cbify_reg");
+    }
+    if (use_cs)
+    {
+      THROW("error: incompatible options: cbify_cs and cbify_reg");
+    }
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-    { THROW("error: min and max values must be supplied with cbify_reg"); }
+    {
+      THROW("error: min and max values must be supplied with cbify_reg");
+    }
 
     if (use_discrete && options.was_supplied("cats"))
-    { THROW("error: incompatible options: cb_discrete and cats"); } else if (use_discrete)
+    {
+      THROW("error: incompatible options: cb_discrete and cats");
+    }
+    else if (use_discrete)
     {
       std::stringstream ss;
       ss << num_actions;

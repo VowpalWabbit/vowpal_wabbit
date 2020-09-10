@@ -14,6 +14,7 @@
 
 #include "options_types.h"
 
+
 namespace VW
 {
 namespace config
@@ -155,29 +156,26 @@ struct options_i
     return dynamic_cast<const typed_option<T>&>(base);
   }
 
-  template <typename T>
-  struct is_vector
-  {
-    static const bool value = false;
-  };
+  template<typename T>
+  struct is_vector { static const bool value = false; };
 
-  template <typename T, typename A>
-  struct is_vector<std::vector<T, A>>
-  {
-    static const bool value = true;
-  };
+  template<typename T, typename A>
+  struct is_vector <std::vector<T,A>> { static const bool value = true; };
 
   // Check if option values exist and match.
   // Add if it does not exist.
-  template <typename T>
+  template<typename T>
   bool insert_arguments(const std::string& name, T expected_val)
   {
     static_assert(!is_vector<T>::value, "insert_arguments does not support vectors");
 
-    if (was_supplied(name))
+    if(was_supplied(name))
     {
       T found_val = get_typed_option<T>(name).value();
-      if (found_val != expected_val) { return false; }
+      if(found_val != expected_val)
+      {
+        return false;
+      }
     }
     else
     {
@@ -187,6 +185,7 @@ struct options_i
     }
     return true;
   }
+
 
   // Will throw if any options were supplied that do not having a matching argument specification.
   virtual void check_unregistered() = 0;

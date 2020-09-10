@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(new_sample_pdf)
 
 struct bins_calc
 {
-  bins_calc(vector<float>&& bins) : _bins(bins), _counts(_bins.size() - 1), _total_samples(0) {}
+  bins_calc(vector<float>&& bins) : _bins(bins), _counts(_bins.size()-1), _total_samples(0) {}
 
   void add_to_bin(float val)
   {
@@ -76,7 +76,7 @@ struct bins_calc
       float right = _bins[i];
       if (left <= val && val < right)
       {
-        ++_counts[i - 1];
+        ++_counts[i-1];
         return;
       }
     }
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical)
   }
 
   const float total_mass = std::accumulate(std::begin(scores), std::end(scores), 0.f,
-      [](const float& acc, const pdf_seg& rhs) { return acc + (rhs.pdf_value * (rhs.right - rhs.left)); });
+      [](const float& acc, const pdf_seg& rhs) { return acc + (rhs.pdf_value*(rhs.right-rhs.left)); });
 
   for (uint32_t idx = 0; idx < bins._counts.size(); ++idx)
   {

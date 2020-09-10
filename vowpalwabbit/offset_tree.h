@@ -6,56 +6,52 @@
 #include "learner.h"
 #include "options.h"
 
-namespace VW
-{
-namespace offset_tree
-{
-LEARNER::base_learner* setup(config::options_i& options, vw& all);
+namespace VW { namespace offset_tree {
 
-struct tree_node
-{
-  tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, bool is_leaf);
+  LEARNER::base_learner* setup(config::options_i& options, vw& all);
 
-  inline bool operator==(const tree_node& rhs) const;
-  bool operator!=(const tree_node& rhs) const;
+  struct tree_node
+  {
+    tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, bool is_leaf);
 
-  uint32_t id;
-  uint32_t left_id;
-  uint32_t right_id;
-  uint32_t parent_id;
-  bool is_leaf;
-};
+    inline bool operator==(const tree_node& rhs) const;
+    bool operator!=(const tree_node& rhs) const;
 
-struct min_depth_binary_tree
-{
-  void build_tree(uint32_t num_nodes);
-  inline uint32_t internal_node_count() const;
-  inline uint32_t leaf_node_count() const;
+    uint32_t id;
+    uint32_t left_id;
+    uint32_t right_id;
+    uint32_t parent_id;
+    bool is_leaf;
+  };
 
-  std::vector<tree_node> nodes;
-  uint32_t root_idx = 0;
+  struct min_depth_binary_tree
+  {
+    void build_tree(uint32_t num_nodes);
+    inline uint32_t internal_node_count() const;
+    inline uint32_t leaf_node_count() const;
 
-private:
-  uint32_t _num_leaf_nodes = 0;
-  bool _initialized = false;
-};
+    std::vector<tree_node> nodes;
+    uint32_t root_idx = 0;
 
-struct offset_tree
-{
-  using scores_t = std::vector<float>;
-  using predict_buffer_t = std::vector<std::pair<float, float>>;
+    private:
+    uint32_t _num_leaf_nodes = 0;
+    bool _initialized = false;
+  };
 
-  offset_tree(uint32_t num_actions);
-  void init();
-  int32_t learner_count() const;
-  const scores_t& predict(LEARNER::single_learner& base, example& ec);
-  void learn(LEARNER::single_learner& base, example& ec);
+  struct offset_tree
+  {
+    using scores_t = std::vector<float>;
+    using predict_buffer_t = std::vector<std::pair<float, float>>;
 
-private:
-  min_depth_binary_tree binary_tree;
-  uint32_t _num_actions;
-  predict_buffer_t _prediction_buffer{};
-  std::vector<float> _scores{};
-};
-}  // namespace offset_tree
-}  // namespace VW
+    offset_tree(uint32_t num_actions);
+    void init();
+    int32_t learner_count() const;
+    const scores_t& predict(LEARNER::single_learner& base, example& ec);
+    void learn(LEARNER::single_learner& base, example& ec);
+  private:
+    min_depth_binary_tree binary_tree;
+    uint32_t _num_actions;
+    predict_buffer_t _prediction_buffer{};
+    std::vector<float> _scores{};
+  };
+}}

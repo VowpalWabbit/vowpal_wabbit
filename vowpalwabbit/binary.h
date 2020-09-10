@@ -5,10 +5,6 @@
 #pragma once
 #include "reductions_fwd.h"
 
-namespace VW
-{
-namespace binary
-{
-LEARNER::base_learner* binary_setup(VW::config::options_i& options, vw& all);
-}
-}  // namespace VW
+namespace VW { namespace binary {
+  LEARNER::base_learner* binary_setup(VW::config::options_i& options, vw& all);
+}}
