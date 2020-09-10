@@ -1,0 +1,34 @@
+
+name: Build Linux Python Wheels
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    container:
+      image: vowpalwabbit/manylinux2010-build:latest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+        - { version: 3.5 , base_path: /opt/python/cp35-cp35m/, include_dir_name: python3.5m/ }
+        - { version: 3.6 , base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/ }
+        - { version: 3.7 , base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
+        - { version: 3.8 , base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
+        - { version: 3.9 , base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
+    steps:
+      - uses: actions/checkout@master
+      - name: Build wheel
+        shell: bash
+        run: |
+          ${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'"
+          auditwheel repair wheel_output/*whl -w audit_output/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: wheel_${{ matrix.config.version }}
+          path: audit_output/
+
