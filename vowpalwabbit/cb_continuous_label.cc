@@ -50,11 +50,15 @@ namespace cb_continuous
 // Begin: parse a,c,p label format
 void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
-  if (words.empty()) THROW("Continuous actions labels may not be empty");
-  if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
-
   auto* ld = static_cast<continuous_label*>(v);
   ld->costs.clear();
+
+  if (words.empty())
+  {
+    return;
+  }
+  
+  if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
 
   for (size_t i = 1; i < words.size(); i++)
   {

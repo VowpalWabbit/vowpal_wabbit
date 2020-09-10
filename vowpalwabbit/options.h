@@ -125,6 +125,7 @@ struct options_i
 {
   virtual void add_and_parse(const option_group_definition& group) = 0;
   virtual bool was_supplied(const std::string& key) const = 0;
+  virtual std::string get_key_value(const std::string& key) = 0;
   virtual std::string help() const = 0;
 
   virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
