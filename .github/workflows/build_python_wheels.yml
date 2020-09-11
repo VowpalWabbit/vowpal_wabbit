@@ -34,6 +34,7 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           ${{ matrix.config.base_path }}bin/pip install -r requirements.txt
+          ${{ matrix.config.base_path }}bin/pip install pytest
           ${{ matrix.config.base_path }}bin/pip install ${wheel_file}
           ${{ matrix.config.base_path }}bin/python -m pytest ./python/tests/
       - name: Upload built wheel
