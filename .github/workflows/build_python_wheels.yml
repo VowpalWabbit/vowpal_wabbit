@@ -40,13 +40,14 @@ jobs:
       image: python:${{ matrix.config.version }}
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.config.experimental }}
-    matrix:
-      config:
-      - { version: 3.5, experimental: false }
-      - { version: 3.6, experimental: false }
-      - { version: 3.7, experimental: false }
-      - { version: 3.8, experimental: false }
-      - { version: 3.9, experimental: true }
+    strategy:
+      matrix:
+        config:
+        - { version: 3.5, experimental: false }
+        - { version: 3.6, experimental: false }
+        - { version: 3.7, experimental: false }
+        - { version: 3.8, experimental: false }
+        - { version: 3.9, experimental: true }
     steps:
       - uses: actions/checkout@v1
       - name: Download Wheel
