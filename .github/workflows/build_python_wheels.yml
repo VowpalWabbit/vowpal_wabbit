@@ -20,6 +20,7 @@ jobs:
         - { version: 3.8 , base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
         - { version: 3.9 , base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
     steps:
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
       - name: Build wheel
         shell: bash
@@ -29,8 +30,9 @@ jobs:
       - name: Test wheel
         shell: bash
         run: |
-          wheel_files=( audit_output/ )
-          wheel_file="${files[0]}"
+          export wheel_files=( audit_output/ )
+          export wheel_file="${files[0]}"
+          echo Installing ${wheel_file}...
           ${{ matrix.config.base_path }}bin/pip install -r requirements.txt
           ${{ matrix.config.base_path }}bin/pip install ${wheel_file}
           ${{ matrix.config.base_path }}bin/python -m pytest ./python/tests/
