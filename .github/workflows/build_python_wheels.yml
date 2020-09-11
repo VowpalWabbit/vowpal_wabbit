@@ -47,6 +47,7 @@ jobs:
         - { version: 3.6, experimental: false }
         - { version: 3.7, experimental: false }
         - { version: 3.8, experimental: false }
+        # This will fail until there is a docker image released for 3.9
         - { version: 3.9, experimental: true }
     steps:
       - uses: actions/checkout@v1
@@ -57,7 +58,6 @@ jobs:
       - name: Test wheel
         shell: bash
         run: |
-          ls
           export wheel_files=(wheel_${{ matrix.config.version }}/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
