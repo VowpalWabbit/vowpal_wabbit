@@ -357,12 +357,7 @@ namespace VW {
       option_group_definition new_options("CATS Tree Options");
       uint32_t num_actions; // = K = 2^D
       uint32_t bandwidth; // = 2^h#
-      uint32_t scorer_flag;
       new_options.add(make_option("cats_tree", num_actions).keep().help("CATS Tree with <k> labels"))
-        .add(make_option("scorer_option", scorer_flag)
-          .default_value(0)
-          .keep()
-          .help("CATS Tree reduction to scorer [-1, 1] versus binary -1/+1"))
         .add(make_option("bandwidth", bandwidth)
           .default_value(0)
           .keep()
@@ -373,13 +368,19 @@ namespace VW {
       if (!options.was_supplied("cats_tree"))
         return nullptr;
 
-      if (scorer_flag)
+      // default behaviour uses binary
+      if (!options.was_supplied("link"))
       {
-        options.insert("link", "glf1");
+        options.insert("binary", "");
       }
       else
       {
-        options.insert("binary", "");
+        // if link was supplied then force glf1
+        if (options.get_key_value("link") != "glf1")
+        {
+          all.trace_message << "warning: bad link type, cats_tree only supports glf1; resetting to glf1." << std::endl;
+        }
+        options.replace("link", "glf1");
       }
 
       auto tree = scoped_calloc_or_throw<cats_tree>();

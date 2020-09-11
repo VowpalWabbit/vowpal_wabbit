@@ -131,7 +131,7 @@ namespace VW { namespace continuous_action { namespace cats {
     if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
     {
       all.sd->print_update(all.holdout_set_off, all.current_pass,
-          to_string(ec.l.cb_cont.costs[0]),  // Label
+          ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
           to_string(ec.pred.pdf_value),          // Prediction
           ec.num_features, all.progress_add, all.progress_arg);
     }
