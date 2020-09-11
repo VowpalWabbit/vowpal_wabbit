@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           export wheel_files=(audit_output/*)
-          export wheel_file="${files[0]}"
+          export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           ${{ matrix.config.base_path }}bin/pip install -r requirements.txt
           ${{ matrix.config.base_path }}bin/pip install ${wheel_file}
