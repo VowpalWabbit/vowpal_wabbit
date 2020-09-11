@@ -25,7 +25,6 @@ VW_DEBUG_ENABLE(false)
 
 namespace CB_EXPLORE
 {
-
 struct cb_explore
 {
   std::shared_ptr<rand_state> _random_state;
