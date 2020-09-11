@@ -339,36 +339,3 @@ BOOST_AUTO_TEST_CASE(unregistered_options)
 
   BOOST_CHECK_THROW(options->check_unregistered(), VW::vw_exception);
 }
-
-BOOST_AUTO_TEST_CASE(get_key_value)
-{
-  int int_opt;
-
-  char command_line[] = "exe --int_opt 3 --str_opt test";
-  int argc;
-  auto argv = convert_to_command_args(command_line, argc);
-  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(new options_boost_po(argc, argv.data()));
-  BOOST_CHECK_EQUAL(options->get_key_value("int_opt"), "3");
-}
-
-BOOST_AUTO_TEST_CASE(get_key_value_key_missing)
-{
-  int int_opt;
-
-  char command_line[] = "exe --str_opt test";
-  int argc;
-  auto argv = convert_to_command_args(command_line, argc);
-  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(new options_boost_po(argc, argv.data()));
-  BOOST_REQUIRE_THROW(options->get_key_value("int_opt"), VW::vw_exception);
-}
-
-BOOST_AUTO_TEST_CASE(get_key_value_value_missing)
-{
-  int int_opt;
-
-  char command_line[] = "exe --int_opt --str_opt test";
-  int argc;
-  auto argv = convert_to_command_args(command_line, argc);
-  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(new options_boost_po(argc, argv.data()));
-  BOOST_REQUIRE_THROW(options->get_key_value("int_opt"), VW::vw_exception);
-}

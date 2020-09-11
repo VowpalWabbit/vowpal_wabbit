@@ -91,27 +91,6 @@ struct options_boost_po : public options_i
     *(it + 1) = value;
   }
 
-  
-  std::string get_key_value(const std::string& key) override
-  {
-    auto full_key = "--" + key;
-    auto it = std::find(m_command_line.begin(), m_command_line.end(), full_key);
-
-    // Not found
-    if (it == m_command_line.end())
-    {
-      THROW(key + " option was not supplied.");
-    }
-
-    // Check if it is the final option or the next option is not a value.
-    if (it + 1 == m_command_line.end() || (*(it + 1)).find("--") != std::string::npos)
-    {
-      THROW(key + " option does not have a value.");
-    }
-
-    return *(it + 1);
-  }
-
   std::vector<std::string> get_positional_tokens() const override
   {
     po::positional_options_description p;

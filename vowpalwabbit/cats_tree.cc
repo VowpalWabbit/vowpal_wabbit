@@ -357,11 +357,15 @@ namespace VW {
       option_group_definition new_options("CATS Tree Options");
       uint32_t num_actions; // = K = 2^D
       uint32_t bandwidth; // = 2^h#
+      std::string link;
       new_options.add(make_option("cats_tree", num_actions).keep().help("CATS Tree with <k> labels"))
         .add(make_option("bandwidth", bandwidth)
           .default_value(0)
           .keep()
-          .help("bandwidth for continuous actions in terms of #actions"));
+          .help("bandwidth for continuous actions in terms of #actions"))
+        .add(make_option("link", link)
+          .keep()
+          .help("Specify the link function: identity, logistic, glf1 or poisson"));
 
       options.add_and_parse(new_options);
 
@@ -376,9 +380,9 @@ namespace VW {
       else
       {
         // if link was supplied then force glf1
-        if (options.get_key_value("link") != "glf1")
+        if (link != "glf1")
         {
-          all.trace_message << "warning: bad link type, cats_tree only supports glf1; resetting to glf1." << std::endl;
+          all.trace_message << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl;
         }
         options.replace("link", "glf1");
       }
