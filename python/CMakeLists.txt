@@ -22,7 +22,11 @@ endif(Boost_MINOR_VERSION GREATER 66)
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
   find_package(PythonInterp ${PY_VERSION} REQUIRED)
   find_package(PythonLibs ${PY_VERSION} REQUIRED)
+elseif(${CMAKE_VERSION} VERSION_LESS "3.18.0")
+  # This was fixed in 3.18 to allow for just the Development.Module component to be used
+  find_package(Python COMPONENTS Development REQUIRED)
 else()
+  # This was fixed in 3.18 to allow for just the Development.Module component to be used
   find_package(Python COMPONENTS Development.Module REQUIRED)
 endif()
 find_package(Boost REQUIRED COMPONENTS system python${BOOST_PY_VERSION_SUFFIX})
