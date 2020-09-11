@@ -55,8 +55,8 @@ typedef union
   VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
-  float prob;                                                           // for --probabilities --csoaa_ldf=mc
-  VW::continuous_actions::probability_density_function pdf;              // probability density defined over an action range
+  float prob;                                                // for --probabilities --csoaa_ldf=mc
+  VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 } polyprediction;
 
@@ -159,7 +159,7 @@ struct restore_prediction
   restore_prediction(example& ec);
   ~restore_prediction();
 
- private:
+private:
   const polyprediction _prediction;
   example& _ec;
 };

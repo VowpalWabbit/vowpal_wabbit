@@ -16,101 +16,100 @@ using std::endl;
 
 namespace CB
 {
-  template <>
-  char* bufcache_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*, char* c)
-  { return c; }
-
-  template<>
-  char* bufread_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*, char* c)
-  { return c; }
-
-  template <>
-  void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*)
-  {}
-
-  template <>
-  void copy_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*, VW::cb_continuous::continuous_label*)
-  {}
+template <>
+char* bufcache_label_additional_fields<VW::cb_continuous::continuous_label>(
+    VW::cb_continuous::continuous_label*, char* c)
+{
+  return c;
 }
 
-namespace VW { namespace cb_continuous
+template <>
+char* bufread_label_additional_fields<VW::cb_continuous::continuous_label>(
+    VW::cb_continuous::continuous_label*, char* c)
 {
-  ////////////////////////////////////////////////////
-  // Begin: parse a,c,p label format
-  void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
+  return c;
+}
+
+template <>
+void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label*)
+{
+}
+
+template <>
+void copy_label_additional_fields<VW::cb_continuous::continuous_label>(
+    VW::cb_continuous::continuous_label*, VW::cb_continuous::continuous_label*)
+{
+}
+}  // namespace CB
+
+namespace VW
+{
+namespace cb_continuous
+{
+////////////////////////////////////////////////////
+// Begin: parse a,c,p label format
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
+{
+  auto* ld = static_cast<continuous_label*>(v);
+  ld->costs.clear();
+
+  if (words.empty()) { return; }
+
+  if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
+
+  for (size_t i = 1; i < words.size(); i++)
   {
-    auto* ld = static_cast<continuous_label*>(v);
-    ld->costs.clear();
+    continuous_label_elm f{0.f, FLT_MAX, 0.f};
+    tokenize(':', words[i], p->parse_name);
 
-    if (words.empty())
+    if (p->parse_name.empty() || p->parse_name.size() > 4)
+      THROW("malformed cost specification: "
+          << "p->parse_name");
+
+    f.action = float_of_string(p->parse_name[0]);
+
+    if (p->parse_name.size() > 1) f.cost = float_of_string(p->parse_name[1]);
+
+    if (std::isnan(f.cost)) THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
+
+    f.probability = .0;
+    if (p->parse_name.size() > 2) f.probability = float_of_string(p->parse_name[2]);
+
+    if (std::isnan(f.probability))
+      THROW("error NaN pdf_value (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
+
+    if (f.probability < 0.0)
     {
-      return;
-    }
-
-    if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
-
-    for (size_t i = 1; i < words.size(); i++)
-    {
-      continuous_label_elm f{0.f, FLT_MAX, 0.f};
-      tokenize(':', words[i], p->parse_name);
-
-      if (p->parse_name.empty() || p->parse_name.size() > 4)
-        THROW("malformed cost specification: " << "p->parse_name");
-
-      f.action = float_of_string(p->parse_name[0]);
-
-      if (p->parse_name.size() > 1)
-        f.cost = float_of_string(p->parse_name[1]);
-
-      if (std::isnan(f.cost))
-        THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
-
+      std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
       f.probability = .0;
-      if (p->parse_name.size() > 2)
-        f.probability = float_of_string(p->parse_name[2]);
-
-      if (std::isnan(f.probability))
-        THROW("error NaN pdf_value (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
-
-      if (f.probability < 0.0)
-      {
-        std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
-        f.probability = .0;
-      }
-
-      ld->costs.push_back(f);
     }
+
+    ld->costs.push_back(f);
   }
+}
 
-  label_parser the_label_parser = {
-      CB::default_label<continuous_label>,
-      parse_label,
-      CB::cache_label<continuous_label, continuous_label_elm>,
-      CB::read_cached_label<continuous_label, continuous_label_elm>,
-      CB::delete_label<continuous_label>,
-      CB::weight,
-      CB::copy_label<continuous_label>,
-      CB::is_test_label<continuous_label>,
-    sizeof(continuous_label)
-  };
+label_parser the_label_parser = {CB::default_label<continuous_label>, parse_label,
+    CB::cache_label<continuous_label, continuous_label_elm>,
+    CB::read_cached_label<continuous_label, continuous_label_elm>, CB::delete_label<continuous_label>, CB::weight,
+    CB::copy_label<continuous_label>, CB::is_test_label<continuous_label>, sizeof(continuous_label)};
 
-  // End: parse a,c,p label format
-  ////////////////////////////////////////////////////
+// End: parse a,c,p label format
+////////////////////////////////////////////////////
 
-  std::string to_string(const continuous_label_elm& elm)
-  {
-    std::stringstream strm;
-    strm << "{" << elm.action << "," << elm.cost << "," << elm.probability << "}";
-    return strm.str();
-  }
+std::string to_string(const continuous_label_elm& elm)
+{
+  std::stringstream strm;
+  strm << "{" << elm.action << "," << elm.cost << "," << elm.probability << "}";
+  return strm.str();
+}
 
-  std::string to_string(const continuous_label& lbl)
-  {
-    std::stringstream strstream;
-    strstream << "[l.cb_cont={";
-    for (const auto cost : lbl.costs)
-      strstream << to_string(cost);
-    strstream << "}]";
-    return strstream.str();
-  }
-}}  // namespace VW::cb_continuous
+std::string to_string(const continuous_label& lbl)
+{
+  std::stringstream strstream;
+  strstream << "[l.cb_cont={";
+  for (const auto cost : lbl.costs) strstream << to_string(cost);
+  strstream << "}]";
+  return strstream.str();
+}
+}  // namespace cb_continuous
+}  // namespace VW

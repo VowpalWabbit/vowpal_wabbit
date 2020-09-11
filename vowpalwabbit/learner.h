@@ -130,8 +130,7 @@ inline void increment_offset(example& ex, const size_t increment, const size_t i
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  if (ec_seq.size() > 0)
-    ++ec_seq[0]->_current_reduction_depth;
+  if (ec_seq.size() > 0) ++ec_seq[0]->_current_reduction_depth;
   for (auto& ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
 }
 
@@ -144,8 +143,7 @@ inline void decrement_offset(example& ex, const size_t increment, const size_t i
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  if (ec_seq.size() > 0)
-    --ec_seq[0]->_current_reduction_depth;
+  if (ec_seq.size() > 0) --ec_seq[0]->_current_reduction_depth;
   for (auto ec : ec_seq)
   {
     assert(ec->ft_offset >= increment * i);

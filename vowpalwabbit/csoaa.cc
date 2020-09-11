@@ -359,7 +359,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
         });
 
       base.learn(*ec1);
-    } 
+    }
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }

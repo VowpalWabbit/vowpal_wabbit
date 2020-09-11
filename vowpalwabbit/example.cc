@@ -340,13 +340,15 @@ std::string features_to_string(const example& ec)
   return strstream.str();
 }
 
-std::string cb_label_to_string(const example& ec) {
+std::string cb_label_to_string(const example& ec)
+{
   std::stringstream strstream;
   strstream << "[l.cb={";
   auto& costs = ec.l.cb.costs;
   for (auto c = costs.cbegin(); c != costs.cend(); ++c)
   {
-    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction << "}";
+    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction
+              << "}";
   }
   strstream << "}]";
   return strstream.str();
@@ -359,18 +361,12 @@ std::string simple_label_to_string(const example& ec)
   return strstream.str();
 }
 
-std::string depth_indent_string(const example& ec)
-{
-  return depth_indent_string(ec._current_reduction_depth);
-}
+std::string depth_indent_string(const example& ec) { return depth_indent_string(ec._current_reduction_depth); }
 
 std::string depth_indent_string(int32_t stack_depth)
 {
   std::stringstream strstream;
-  for (auto i = 0; i < stack_depth - 1; i++)
-  {
-    strstream << "| ";
-  }
+  for (auto i = 0; i < stack_depth - 1; i++) { strstream << "| "; }
   strstream << "+ ";
   return strstream.str();
 }
@@ -387,10 +383,7 @@ std::string a_s_pred_to_string(const example& ec)
   std::stringstream strstream;
   strstream << "ec.pred.a_s[";
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  {
-    strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")";
-  }
-  strstream << "]";
+  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; } strstream << "]";
   return strstream.str();
 }
 
@@ -453,10 +446,8 @@ void return_multiple_example(vw& all, v_array<example*>& examples)
   examples.clear();
 }
 
-restore_prediction::restore_prediction(example& ec)
-: _prediction(ec.pred), _ec(ec) {}
+restore_prediction::restore_prediction(example& ec) : _prediction(ec.pred), _ec(ec) {}
 
-restore_prediction::~restore_prediction()
-{ _ec.pred = _prediction; }
+restore_prediction::~restore_prediction() { _ec.pred = _prediction; }
 
 }  // namespace VW
