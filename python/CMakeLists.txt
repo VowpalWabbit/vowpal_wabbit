@@ -23,7 +23,7 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
   find_package(PythonInterp ${PY_VERSION} REQUIRED)
   find_package(PythonLibs ${PY_VERSION} REQUIRED)
 elseif(${CMAKE_VERSION} VERSION_LESS "3.18.0")
-  # This was fixed in 3.18 to allow for just the Development.Module component to be used
+  # Prior to 3.18 only the Development component is exposed
   find_package(Python COMPONENTS Development REQUIRED)
 else()
   # This was fixed in 3.18 to allow for just the Development.Module component to be used
