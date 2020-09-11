@@ -8,6 +8,7 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "explore.h"
+#include "debug_log.h"
 #include <memory>
 #include "scope_exit.h"
 
@@ -17,7 +18,10 @@ using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
+using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
+
+VW_DEBUG_ENABLE(false)
 
 namespace CB_EXPLORE
 {
@@ -95,6 +99,9 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
     base.predict(ec);
 
   // pre-allocate pdf
+
+  VW_DBG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
+
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
@@ -234,7 +241,10 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
     if (is_test)
       label_string << " unknown";
     else
-      label_string << ec.l.cb.costs[0].action;
+    {
+      const auto& cost = ec.l.cb.costs[0];
+      label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
+    }
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
         all.progress_add, all.progress_arg);
   }
@@ -300,8 +310,11 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
-  if (!options.was_supplied("cb"))
+  // If neither cb nor cats_tree are present on the reduction stack then
+  // add cb to the reduction stack as the default reduction for cb_explore.
+  if (!options.was_supplied("cats_tree") && !options.was_supplied("cb"))
   {
+    // none of the relevant options are set, default to cb
     std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());

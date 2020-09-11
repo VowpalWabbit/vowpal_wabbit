@@ -323,6 +323,90 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
+std::string features_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[off=" << ec.ft_offset << "]";
+  for (auto& f : ec.feature_space)
+  {
+    auto ind_iter = f.indicies.cbegin();
+    auto val_iter = f.values.cbegin();
+    for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
+    {
+      strstream << "[h=" << *ind_iter << ","
+                << "v=" << *val_iter << "]";
+    }
+  }
+  return strstream.str();
+}
+
+std::string cb_label_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[l.cb={";
+  auto& costs = ec.l.cb.costs;
+  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
+  {
+    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction
+              << "}";
+  }
+  strstream << "}]";
+  return strstream.str();
+}
+
+std::string simple_label_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.l.simple.weight << "]";
+  return strstream.str();
+}
+
+std::string depth_indent_string(const example& ec) { return depth_indent_string(ec._current_reduction_depth); }
+
+std::string depth_indent_string(int32_t stack_depth)
+{
+  std::stringstream strstream;
+  for (auto i = 0; i < stack_depth - 1; i++) { strstream << "| "; }
+  strstream << "+ ";
+  return strstream.str();
+}
+
+std::string scalar_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[p=" << ec.pred.scalar << ", pp=" << ec.partial_prediction << "]";
+  return strstream.str();
+}
+
+std::string a_s_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.a_s[";
+  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; } strstream << "]";
+  return strstream.str();
+}
+
+std::string multiclass_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
+  return strstream.str();
+}
+
+std::string prob_dist_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.prob_dist[";
+  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
+  {
+    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
+              << ec.pred.pdf[i].pdf_value << ")";
+  }
+  strstream << "]";
+  return strstream.str();
+}
+
 namespace VW
 {
 example* alloc_examples(size_t, size_t count = 1)
@@ -361,4 +445,9 @@ void return_multiple_example(vw& all, v_array<example*>& examples)
   }
   examples.clear();
 }
+
+restore_prediction::restore_prediction(example& ec) : _prediction(ec.pred), _ec(ec) {}
+
+restore_prediction::~restore_prediction() { _ec.pred = _prediction; }
+
 }  // namespace VW
