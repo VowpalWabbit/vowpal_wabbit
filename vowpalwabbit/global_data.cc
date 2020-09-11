@@ -190,7 +190,6 @@ void vw::predict(example& ec)
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   ec.test_only = true;
-
   VW::LEARNER::as_singleline(l)->predict(ec);
 }
 

@@ -37,6 +37,7 @@ target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR
 add_dependencies(FlatbuffersTarget fbschemas)
 
 set(vw_all_headers
+  accumulate.h
   action_score.h
   active_cover.h
   active.h
@@ -54,8 +55,12 @@ set(vw_all_headers
   boosting.h
   bs.h
   cache.h
+  cats_pdf.h
+  cats_tree.h
+  cats.h
   cb_adf.h
   cb_algs.h
+  cb_continuous_label.h
   cb_dro.h
   cb_explore_adf_bag.h
   cb_explore_adf_common.h
@@ -66,7 +71,9 @@ set(vw_all_headers
   cb_explore_adf_squarecb.h
   cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
+  cb_explore_pdf.h
   cb_explore.h
+  cb_label_parser.h
   cb.h
   cbify.h
   ccb_label.h
@@ -88,6 +95,7 @@ set(vw_all_headers
   error_constants.h
   error_data.h
   error_reporting.h
+  errors_data.h
   example_predict.h
   example.h
   explore_eval.h
@@ -99,6 +107,7 @@ set(vw_all_headers
   gd_predict.h
   gd.h
   gen_cs_example.h
+  get_pmf.h
   global_data.h
   guard.h
   hashstring.h
@@ -131,6 +140,7 @@ set(vw_all_headers
   noop.h
   oaa.h
   object_pool.h
+  offset_tree.h
   OjaNewton.h
   options_boost_po.h
   options_serializer_boost_po.h
@@ -144,13 +154,19 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
+<<<<<<< HEAD
   parser/flatbuffer/parse_example_flatbuffer.h
+=======
+  pmf_to_pdf.h
+>>>>>>> Continuous actions (#2493)
   plt.h
   print.h
+  prob_dist_cont.h
   queue.h
   rand48.h
   recall_tree.h
   reductions.h
+  sample_pdf.h
   scope_exit.h
   scorer.h
   search_dep_parser.h
@@ -202,8 +218,12 @@ set(vw_all_sources
   boosting.cc
   bs.cc
   cache.cc
+  cats_pdf.cc
+  cats_tree.cc
+  cats.cc
   cb_adf.cc
   cb_algs.cc
+  cb_continuous_label.cc
   cb_dro.cc
   cb_explore_adf_bag.cc
   cb_explore_adf_cover.cc
@@ -213,6 +233,7 @@ set(vw_all_sources
   cb_explore_adf_squarecb.cc
   cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
+  cb_explore_pdf.cc
   cb_explore.cc
   cb_sample.cc
   cb.cc
@@ -235,6 +256,7 @@ set(vw_all_sources
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
+  get_pmf.cc
   global_data.cc
   interact.cc
   interactions.cc
@@ -261,6 +283,7 @@ set(vw_all_sources
   no_label.cc
   noop.cc
   oaa.cc
+  offset_tree.cc
   OjaNewton.cc
   options_boost_po.cc
   options_serializer_boost_po.cc
@@ -269,12 +292,13 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  parser/flatbuffer/parse_example_flatbuffer.cc
-  parser/flatbuffer/parse_label.cc
+  pmf_to_pdf.cc
   plt.cc
   print.cc
+  prob_dist_cont.cc
   rand48.cc
   recall_tree.cc
+  sample_pdf.cc
   scorer.cc
   search_dep_parser.cc
   search_entityrelationtask.cc
