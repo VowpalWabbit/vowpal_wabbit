@@ -1,8 +1,10 @@
 add_executable(vw-unit-test.out
+  cats_tree_tests.cc
   cb_explore_adf_test.cc
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
+  continuous_actions_parser_test.cc
   dsjson_parser_test.cc
   error_test.cc
   example_header_test.cc
@@ -14,11 +16,14 @@ add_executable(vw-unit-test.out
   main.cc
   multiclass_label_parser_test.cc
   object_pool_test.cc
+  offset_tree_tests.cc
   options_boost_po_test.cc
   options_test.cc
   parser_test.cc
   power_test.cc
+  pmf_to_pdf_test.cc
   prediction_test.cc
+  random_test.cc
   scope_exit_test.cc
   slates_parser_test.cc
   slates_test.cc
@@ -27,6 +32,10 @@ add_executable(vw-unit-test.out
   test_common.cc
   test_common.h
   tokenize_tests.cc
+  chain_hashing.cc
+  offset_tree_tests.cc
+  random_test.cc
+  pmf_to_pdf_test.cc
   weights_test.cc
 )
 

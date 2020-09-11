@@ -6,14 +6,20 @@
 #include "reductions.h"
 
 using namespace VW::config;
+using std::endl;
 
+namespace VW
+{
+namespace binary
+{
 template <bool is_learn>
 void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
 {
-  if (is_learn)
-    base.learn(ec);
+  if (is_learn) { base.learn(ec); }
   else
+  {
     base.predict(ec);
+  }
 
   if (ec.pred.scalar > 0)
     ec.pred.scalar = 1;
@@ -38,10 +44,12 @@ VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
   new_options.add(make_option("binary", binary).keep().help("report loss as binary classification on -1,1"));
   options.add_and_parse(new_options);
 
-  if (!binary)
-    return nullptr;
+  if (!binary) return nullptr;
 
-  VW::LEARNER::learner<char, example>& ret =
-      VW::LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+  VW::LEARNER::learner<char, example>& ret = VW::LEARNER::init_learner(
+      as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
-}
+  }
+
+  }  // namespace binary
+  }  // namespace VW
