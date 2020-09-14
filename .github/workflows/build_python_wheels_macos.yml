@@ -21,8 +21,8 @@ jobs:
       - name: Install cmake
         shell: bash
         run: |
-        brew install homebrew/cask/cmake 
-        brew install conda
+          brew install homebrew/cask/cmake 
+          brew install conda
       - name: Build wheel
         shell: bash
         run: |
