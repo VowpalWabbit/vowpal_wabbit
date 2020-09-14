@@ -16,7 +16,7 @@ jobs:
         - { version: 3.8, include_dir_name: python3.8/}
     steps:
       - uses: actions/checkout@v2
-      - uses: goanpeca/setup-miniconda@v1
+      - uses: conda-incubator/setup-miniconda@v1.7.0
         with:
           auto-update-conda: true
           python-version: ${{ matrix.config.version }}
@@ -46,7 +46,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.config.version }}
-      - name: Download Wheel
+      - name: Download wheel
         uses: actions/download-artifact@v1
         with:
           name: wheel_${{ matrix.config.version }}
