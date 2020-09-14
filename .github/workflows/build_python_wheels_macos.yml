@@ -18,20 +18,16 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.config.version }}
       - name: Build wheel
         shell: bash
         run: |
           conda info 
-          CONDA_BASE=$(conda info --base)
-          echo $CONDA_BASE
           conda init bash
-          # source $CONDA_PREFIX/etc/profile.d/conda.sh
-          # conda activate
-          $CONDA/bin/conda install python=${{ matrix.config.version }} wheel boost py-boost zlib
+          source $CONDA_PREFIX/etc/profile.d/conda.sh
+          conda info
+          conda create --prefix $HOME/python-conda-en -n python-conda-env python=${{ matrix.config.version }} 
+          conda activate python-conda-env
+          conda info 
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
