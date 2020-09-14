@@ -25,8 +25,8 @@ jobs:
           conda init bash
           source $CONDA/etc/profile.d/conda.sh
           conda info
-          conda create --prefix $HOME/python-conda-en -n python-conda-env python=${{ matrix.config.version }} 
-          conda activate python-conda-env
+          conda create --prefix $HOME/python-conda-env python=${{ matrix.config.version }} 
+          conda activate $HOME/python-conda-env
           conda info 
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
       - name: Upload built wheel
