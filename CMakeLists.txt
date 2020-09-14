@@ -89,10 +89,6 @@ option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency.
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
-if(DEFINED CONDA_ENV_PREFIX)
-  list(APPEND CMAKE_PREFIX_PATH ${CONDA_ENV_PREFIX})
-endif()
-
 # When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
 # Use this option to force color output in these modes.
 option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
