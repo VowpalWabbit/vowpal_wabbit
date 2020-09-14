@@ -29,7 +29,7 @@ else()
   # This was fixed in 3.18 to allow for just the Development.Module component to be used
   find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
 endif()
-find_package(Boost REQUIRED COMPONENTS system python${BOOST_PY_VERSION_SUFFIX})
+find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
 
 if (NOT WIN32)
   # Use position independent code for all targets in this directory
@@ -57,11 +57,11 @@ else()
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-  target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
+  target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
   target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
-  target_link_libraries(pylibvw PUBLIC Python::Python Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
+  target_link_libraries(pylibvw PUBLIC Python::Python Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
 else()
-  target_link_libraries(pylibvw PUBLIC Python::Module Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
+  target_link_libraries(pylibvw PUBLIC Python::Module Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
 endif()
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
