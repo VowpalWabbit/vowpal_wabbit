@@ -21,8 +21,8 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          conda create -n python-conda-env python=${{ matrix.config.version }} wheel boost py-boost zlib
-          conda activate python-conda-env
+          conda activate
+          conda install python=${{ matrix.config.version }} wheel boost py-boost zlib
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
