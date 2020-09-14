@@ -21,6 +21,8 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
+          brew install conda
+          brew link --overwrite conda
           conda info 
           conda init bash
           source $CONDA/etc/profile.d/conda.sh
