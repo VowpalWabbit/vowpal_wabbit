@@ -18,11 +18,6 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v2
-      - name: Install cmake
-        shell: bash
-        run: |
-          brew install homebrew/cask/cmake 
-          brew install conda
       - name: Build wheel
         shell: bash
         run: |
