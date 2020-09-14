@@ -41,7 +41,7 @@ add_executable(vw-unit-test.out
 
 # Add the include directories from vw target for testing
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)
-target_link_libraries(vw-unit-test.out PRIVATE vw allreduce Boost::unit_test_framework Boost::system)
+target_link_libraries(vw-unit-test.out PRIVATE vw allreduce Boost::unit_test_framework)
 
 if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   target_sources(vw-unit-test.out PUBLIC vwdll_test.cc)
