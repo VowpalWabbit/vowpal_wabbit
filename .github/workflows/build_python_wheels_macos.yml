@@ -23,12 +23,11 @@ jobs:
         run: |
           brew cask install miniconda
           brew link --overwrite miniconda
+          echo 111111
           conda info 
-          conda init bash
-          source $CONDA/etc/profile.d/conda.sh
-          conda info
-          conda create --prefix $HOME/python-conda-env python=${{ matrix.config.version }} 
-          conda activate $HOME/python-conda-env
+          conda init "$(basename "${SHELL}")"
+          echo 22222
+          conda install --prefix $HOME/python-conda-env python=${{ matrix.config.version }} zlib wheel boost boost-py
           conda info 
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
       - name: Upload built wheel
