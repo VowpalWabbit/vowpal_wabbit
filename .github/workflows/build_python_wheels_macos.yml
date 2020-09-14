@@ -12,7 +12,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: 3.5, include_dir_name: python3.5m/}
         - { version: 3.6, include_dir_name: python3.6m/}
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
