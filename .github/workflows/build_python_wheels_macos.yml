@@ -21,15 +21,9 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          brew cask install miniconda
-          brew link --overwrite miniconda
-          echo 111111
-          conda info 
-          conda init "$(basename "${SHELL}")"
-          echo 22222
-          conda install python=${{ matrix.config.version }} zlib wheel boost boost-py
-          conda info 
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
+          sudo conda create -n python-conda-env python=${{ matrix.config.version }} wheel zlib boost boost-py
+          sudo conda activate python-conda-env
+          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\""" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
