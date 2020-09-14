@@ -194,7 +194,7 @@ if(STATIC_LINK_VW)
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system thread)
+find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
 find_package(flatbuffers REQUIRED)
 
