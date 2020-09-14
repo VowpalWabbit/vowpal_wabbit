@@ -21,7 +21,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          brew install miniconda
+          brew cask install miniconda
           brew link --overwrite miniconda
           conda info 
           conda init bash
