@@ -24,8 +24,8 @@ jobs:
           conda init bash
           echo $HOME
           source  /Users/runner/.bash_profile
-          sudo conda create -n pywheel python=${{ matrix.config.version }} wheel zlib boost py-boost
-          sudo conda activate pywheel
+          sudo -E conda create -n pywheel python=${{ matrix.config.version }} wheel zlib boost py-boost
+          sudo -E conda activate pywheel
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
