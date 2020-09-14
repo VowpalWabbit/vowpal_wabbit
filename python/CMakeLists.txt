@@ -24,10 +24,10 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
   find_package(PythonLibs ${PY_VERSION} REQUIRED)
 elseif(${CMAKE_VERSION} VERSION_LESS "3.18.0")
   # Prior to 3.18 only the Development component is exposed
-  find_package(Python COMPONENTS Development REQUIRED)
+  find_package(Python ${PY_VERSION} EXACT COMPONENTS Development REQUIRED)
 else()
   # This was fixed in 3.18 to allow for just the Development.Module component to be used
-  find_package(Python COMPONENTS Development.Module REQUIRED)
+  find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
 endif()
 find_package(Boost REQUIRED COMPONENTS system python${BOOST_PY_VERSION_SUFFIX})
 
