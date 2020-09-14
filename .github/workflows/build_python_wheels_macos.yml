@@ -18,14 +18,15 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v2
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
       - name: Build wheel
-        shell: bash
+        shell: bash -l {0}
         run: |
-          conda init bash
-          echo $HOME
-          source  /Users/runner/.bash_profile
-          sudo -E conda create -n pywheel python=${{ matrix.config.version }} wheel zlib boost py-boost
-          sudo -E conda activate pywheel
+          conda info
+          conda install wheel zlib boost py-boost
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
