@@ -21,6 +21,8 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
+          conda init bash
+          source $CONDA/etc/profile.d/conda.sh
           sudo conda install python=${{ matrix.config.version }} wheel zlib boost py-boost
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
       - name: Upload built wheel
