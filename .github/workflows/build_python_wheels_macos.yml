@@ -23,7 +23,7 @@ jobs:
         run: |
           conda info 
           conda init bash
-          source $CONDA_PREFIX/etc/profile.d/conda.sh
+          source $CONDA/etc/profile.d/conda.sh
           conda info
           conda create --prefix $HOME/python-conda-en -n python-conda-env python=${{ matrix.config.version }} 
           conda activate python-conda-env
