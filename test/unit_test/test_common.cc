@@ -16,3 +16,12 @@ multi_ex parse_json(vw& all, const std::string& line)
   examples.delete_v();
   return result;
 }
+
+bool is_invoked_with(const std::string& arg)
+{
+  for (size_t i = 0; i < boost::unit_test::framework::master_test_suite().argc; i++)
+  {
+    if (VW::string_view(boost::unit_test::framework::master_test_suite().argv[i]).find(arg) != std::string::npos)
+    { return true; } }
+  return false;
+}

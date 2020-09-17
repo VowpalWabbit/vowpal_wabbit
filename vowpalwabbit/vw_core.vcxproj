@@ -109,6 +109,16 @@
     <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="cats.h" />
+    <ClInclude Include="cats_pdf.h" />
+    <ClInclude Include="cb_continuous_label.h" />
+    <ClInclude Include="cb_explore_pdf.h" />
+    <ClInclude Include="cb_label_parser.h" />
+    <ClInclude Include="debug_log.h" />
+    <ClInclude Include="errors_data.h" />
+    <ClInclude Include="err_constants.h" />
+    <ClInclude Include="get_pmf.h" />
+    <ClInclude Include="offset_tree.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="action_score.h" />
     <ClInclude Include="active_cover.h" />
@@ -191,6 +201,7 @@
     <ClInclude Include="noop.h" />
     <ClInclude Include="oaa.h" />
     <ClInclude Include="object_pool.h" />
+    <ClInclude Include="cats_tree.h" />
     <ClInclude Include="OjaNewton.h" />
     <ClInclude Include="options_boost_po.h" />
     <ClInclude Include="options_serializer_boost_po.h" />
@@ -204,11 +215,15 @@
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="parse_slates_example_json.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="pmf_to_pdf.h" />
+    <ClInclude Include="primitives.h" />
     <ClInclude Include="plt.h" />
     <ClInclude Include="print.h" />
+    <ClInclude Include="prob_dist_cont.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="recall_tree.h" />
+    <ClInclude Include="sample_pdf.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search_dep_parser.h" />
     <ClInclude Include="search_entityrelationtask.h" />
@@ -242,6 +257,11 @@
     <ClInclude Include="warm_cb.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cats.cc" />
+    <ClCompile Include="cats_pdf.cc" />
+    <ClCompile Include="cb_continuous_label.cc" />
+    <ClCompile Include="cb_explore_pdf.cc" />
+    <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />
     <ClCompile Include="active_cover.cc" />
@@ -318,6 +338,7 @@
     <ClCompile Include="no_label.cc" />
     <ClCompile Include="noop.cc" />
     <ClCompile Include="oaa.cc" />
+    <ClCompile Include="cats_tree.cc" />
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
@@ -326,10 +347,13 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="parser.cc" />
+    <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="plt.cc" />
     <ClCompile Include="print.cc" />
+    <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
+    <ClCompile Include="sample_pdf.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search_dep_parser.cc" />
     <ClCompile Include="search_entityrelationtask.cc" />
@@ -356,6 +380,9 @@
     <ClCompile Include="warm_cb.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="get_pmf.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

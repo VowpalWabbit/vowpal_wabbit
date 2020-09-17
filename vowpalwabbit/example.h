@@ -24,6 +24,8 @@
 #include "decision_scores.h"
 #include <vector>
 #include <iostream>
+#include "cb_continuous_label.h"
+#include "prob_dist_cont.h"
 
 typedef union
 {
@@ -32,6 +34,7 @@ typedef union
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
+  VW::cb_continuous::continuous_label cb_cont;
   CCB::label conditional_contextual_bandit;
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
@@ -52,7 +55,9 @@ typedef union
   VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
-  float prob;  // for --probabilities --csoaa_ldf=mc
+  float prob;                                                // for --probabilities --csoaa_ldf=mc
+  VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
+  VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 } polyprediction;
 
 VW_WARNING_STATE_PUSH
@@ -148,4 +153,24 @@ typedef std::vector<example*> multi_ex;
 namespace VW
 {
 void return_multiple_example(vw& all, v_array<example*>& examples);
+
+struct restore_prediction
+{
+  restore_prediction(example& ec);
+  ~restore_prediction();
+
+private:
+  const polyprediction _prediction;
+  example& _ec;
+};
+
 }  // namespace VW
+std::string features_to_string(const example& ec);
+std::string simple_label_to_string(const example& ec);
+std::string scalar_pred_to_string(const example& ec);
+std::string a_s_pred_to_string(const example& ec);
+std::string prob_dist_pred_to_string(const example& ec);
+std::string multiclass_pred_to_string(const example& ec);
+std::string depth_indent_string(const example& ec);
+std::string depth_indent_string(int32_t stack_depth);
+std::string cb_label_to_string(const example& ec);
