@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <memory>
-#include <typeindex>
+#include <typeinfo>
 #include <unordered_map>
 
 #include "memory.h"
@@ -229,7 +229,7 @@ struct learner
   func_data end_pass_fd;
   func_data end_examples_fd;
   func_data finisher_fd;
-  std::type_index _hash_index;
+  std::string _typename;
 
   std::shared_ptr<void> learner_data;
   learner(){};  // Should only be able to construct a learner through init_learner function
@@ -522,12 +522,13 @@ VW_WARNING_STATE_POP
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
-    ret._hash_index = std::type_index(typeid(T));
+    ret._typename = typeid(T).name();
 
     return ret;
   }
 
-  std::type_index hash_index() { return _hash_index; }
+  std::string& hash_index() { return _typename; }
+  const std::string& hash_index() const { return _typename; }
 
   inline VW::LEARNER::base_learner* get_base_reduction() { return learn_fd.base; }
 
@@ -536,7 +537,7 @@ VW_WARNING_STATE_POP
   // made on top of it.
   void apply_from(
     const VW::LEARNER::base_learner* base,
-    const std::unordered_map<std::type_index, VW::LEARNER::base_learner*>& reduction_template_map) {
+    const std::unordered_map<std::string, VW::LEARNER::base_learner*>& reduction_template_map) {
     if (base == nullptr || get_base_reduction() == nullptr) {
       // currently working on base type. Nothing to do
       return;
@@ -545,8 +546,8 @@ VW_WARNING_STATE_POP
     auto src = *this;
     *this = *base;
 
-    _hash_index = src._hash_index;
-    auto src_template_it = reduction_template_map.find(src._hash_index);
+    _typename = src._typename;
+    auto src_template_it = reduction_template_map.find(src._typename);
     if (src_template_it == reduction_template_map.end()) THROW("invalid template map");
     auto * src_template = src_template_it->second;
     auto * noop_template = src_template->learn_fd.base;
@@ -561,7 +562,7 @@ VW_WARNING_STATE_POP
     weights = src.weights;
     increment = base->increment * src.weights;
 
-    _hash_index = src._hash_index;
+    _typename = src._typename;
     learn_fd = src.learn_fd;
     finisher_fd = src.finisher_fd;
     // ick. const cast required to save the pointers

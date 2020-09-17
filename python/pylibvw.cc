@@ -21,6 +21,8 @@
 #include <boost/python.hpp>
 #include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/python/return_opaque_pointer.hpp>
+#include <boost/python/return_value_policy.hpp>
 
 //Brings VW_DLL_PUBLIC to help control exports
 #define VWDLL_EXPORTS
@@ -28,10 +30,15 @@
 
 namespace py = boost::python;
 
+typedef struct opaque_ *opaque;
+BOOST_PYTHON_OPAQUE_SPECIALIZED_TYPE_ID(opaque_)
+
 typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
+typedef boost::shared_ptr<void> void_ptr;
+
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -52,15 +59,108 @@ const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 
+class PyCppBridge;
+typedef boost::shared_ptr<PyCppBridge> py_cpp_bridge_ptr;
 
 void dont_delete_me(void*arg) { }
 
-vw_ptr my_initialize(std::string args)
+class PyCppBridge : public RED_PYTHON::ExternalBinding {
+  private:
+      py::object* py_reduction_impl;
+      void* base_learner;
+      bool register_finish_learn = false;
+
+  public:
+      int random_num = 0;
+
+      PyCppBridge(py::object* py_reduction_impl) : py_reduction_impl(new py::object(*py_reduction_impl))
+      { this->register_finish_learn = py::extract<bool>(call_py_impl_method("_is_finish_example_implemented"));
+      }
+
+      ~PyCppBridge() { }
+
+      bool ShouldRegisterFinishExample()
+      { return this->register_finish_learn;
+      }
+
+      void SetRandomNumber(int n)
+      { random_num = n;
+      }
+
+      template<typename... Args>
+      py::object call_py_impl_method(char const* method_name, Args&&... args)
+      { try
+        {
+          return this->py_reduction_impl->attr(method_name)(std::forward<Args>(args)...);
+        }
+        catch (...)
+        {
+          // TODO: Properly translate and return Python exception. #2169
+          PyErr_Print();
+          PyErr_Clear();
+          THROW("Exception when calling into python method: " << method_name);
+        }
+      }
+
+      void ActualLearn(example* ec)
+      { this->call_py_impl_method("_learn_convenience", example_ptr(ec, dont_delete_me), py_cpp_bridge_ptr(this, dont_delete_me));
+      }
+
+      void ActualPredict(example* ec)
+      { this->call_py_impl_method("_predict_convenience", example_ptr(ec, dont_delete_me), py_cpp_bridge_ptr(this, dont_delete_me));
+      }
+
+      void ActualFinishExample(example* ec)
+      { this->call_py_impl_method("_finish_example", example_ptr(ec, dont_delete_me));
+      }
+
+      void SetBaseLearner(void* learner)
+      { this->base_learner = learner;
+      }
+
+      void CallBaseLearner(example* ec, bool should_call_learn = true)
+      { if (should_call_learn)
+          reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learner)->learn(*ec);
+        else
+          reinterpret_cast<VW::LEARNER::single_learner *>(this->base_learner)->predict(*ec);
+      }
+};
+
+vw_ptr my_initialize(std::string args, bool partial_initialize)
 { if (args.find_first_of("--no_stdin") == std::string::npos)
     args += " --no_stdin";
-  vw*foo = VW::initialize(args);
+  vw* foo = nullptr;
+  if(partial_initialize)
+  {
+    foo = VW::initialize_partial(args);
+  }
+  else
+  {
+    foo = VW::initialize(args);
+  }
   return boost::shared_ptr<vw>(foo);
 }
+
+void complete_initialize(vw_ptr all)
+{
+  VW::complete_initialize(all.get());
+}
+
+void create_and_push_custom_reduction(vw_ptr all, std::string name, py::object custom_reduction)
+{
+  VW::create_and_push_custom_reduction(all.get(), name, std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge(&custom_reduction)));
+}
+
+opaque pop_reduction(vw_ptr all){
+  void* reduction = VW::pop_reduction(all.get());
+  //return reduction;
+  return (opaque)reduction;
+}
+void push_reduction(vw_ptr all, opaque reduction)
+{
+  VW::push_reduction(all.get(), (void*)reduction);
+}
+
 
 void my_run_parser(vw_ptr all)
 {   VW::start_parser(*all);
@@ -79,7 +179,6 @@ void my_save(vw_ptr all, std::string name)
 search_ptr get_search_ptr(vw_ptr all)
 { return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
 }
-
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
 
 const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
@@ -781,6 +880,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   // define the vw class
   py::class_<vw, vw_ptr, boost::noncopyable>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
   .def("__init__", py::make_constructor(my_initialize))
+  .def("complete_initialize", &complete_initialize, "complete a partial init")
   //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
   .def("run_parser", &my_run_parser, "parse external data file")
   .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
@@ -814,6 +914,10 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("_parse", &my_parse, "Parse a string into a collection of VW examples")
   .def("_is_multiline", &my_is_multiline, "true if the base reduction is multiline")
 
+  .def("push_reduction", push_reduction, "push reduction")
+  .def("pop_reduction", pop_reduction, boost::python::return_value_policy<boost::python::return_opaque_pointer>())
+  .def("create_and_push_custom_reduction", &create_and_push_custom_reduction, "create and push custom reduction")
+
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
   .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
@@ -831,6 +935,10 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("pPROB", pPROB, "Probability prediction type")
   .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
   .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
+;
+
+py::class_<PyCppBridge, py_cpp_bridge_ptr>("reduction_bridge", py::no_init)
+  .def("call_base_learner", &PyCppBridge::CallBaseLearner, "Call into the current base learner set in the bridge (you don't want to call this yourself!")
 ;
 
   // define the example class

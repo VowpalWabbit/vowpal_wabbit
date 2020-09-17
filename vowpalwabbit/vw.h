@@ -32,6 +32,7 @@
 #include "simple_label.h"
 #include "parser.h"
 #include "parse_example.h"
+#include "red_python.h"
 
 #include "options.h"
 
@@ -62,6 +63,9 @@ void complete_initialize(vw* all);
 void* pop_reduction(vw* all);
 void push_reduction(vw* all, void* reduction);
 void delete_reduction(void* reduction);
+// The library MUST own the object here, currently the python bindings creates a copy of the input parameter
+// but this isn't feasible in the long term. We'll probably need to take in function pointers in the future
+void create_and_push_custom_reduction(vw* all, const std::string& name, std::unique_ptr<RED_PYTHON::ExternalBinding> custom);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 

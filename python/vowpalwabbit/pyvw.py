@@ -2,11 +2,56 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
+import abc
 import pylibvw
 import warnings
 import pandas as pd
 import numpy as np
 
+class Learner:
+    def __init__(self, vwCppBridge):
+        self.vwCppBridge = vwCppBridge
+
+    def learn(self, ec):
+        self.vwCppBridge.call_base_learner(ec, True)
+
+    def predict(self, ec):
+        self.vwCppBridge.call_base_learner(ec, False)
+
+# compatible with Python 2 *and* 3
+ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
+
+def no_impl(method):
+  method.no_impl = True
+  return method
+
+# End user (pyvw library consumer) will have to create a class that
+# inherits from Copperhead and implements the custom _predict() and
+# _learn(). Optionally the user can also implement _finish_example()
+# if needed. See test_pyreduction.py for examples
+"""Copperhead class"""
+class Copperhead(ABC):
+    @abc.abstractmethod
+    def _predict(self, ec, learner):
+        pass
+
+    @abc.abstractmethod
+    def _learn(self, ec, learner):
+        pass
+
+    # this method should be implemented only if needed
+    @no_impl
+    def _finish_example(self, ec):
+        pass
+
+    def _learn_convenience(self, ec, vwbridge):
+        self._learn(ec, Learner(vwbridge))
+
+    def _predict_convenience(self, ec, vwbridge):
+        self._predict(ec, Learner(vwbridge))
+
+    def _is_finish_example_implemented(self):
+        return not hasattr(self._finish_example, 'no_impl')
 
 class SearchTask:
     """Search task class"""
@@ -187,7 +232,7 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, arg_str=None, **kw):
+    def __init__(self, arg_str=None, partial_initialize=False, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -237,14 +282,25 @@ class vw(pylibvw.vw):
         if arg_str is not None:
             l = [arg_str] + l
 
-        pylibvw.vw.__init__(self, " ".join(l))
+        pylibvw.vw.__init__(self, " ".join(l), partial_initialize)
 
         # check to see if native parser needs to run
         ext_file_args = ["d", "data", "passes"]
+        self.needs_parser = False
         if any(x in kw for x in ext_file_args):
+            self.needs_parser = True
+
+        # TODO: clean this up
+        if not partial_initialize and self.needs_parser:
             pylibvw.vw.run_parser(self)
 
         self.finished = False
+        self.custom_reduction = None
+
+    def complete_initialize(self):
+        pylibvw.vw.complete_initialize(self)
+        if(self.needs_parser):
+            pylibvw.vw.run_parser(self)
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or
@@ -690,6 +746,14 @@ class vw(pylibvw.vw):
             else search_task(self, sch, num_actions, task_data)
         )
 
+    def create_and_push_custom_reduction(self, name, custom_reduction):
+        if issubclass(custom_reduction, Copperhead):
+            #self.custom_reduction = custom_reduction()
+            print("copying thing to self")
+            pylibvw.vw.create_and_push_custom_reduction(self, name, custom_reduction())
+        else:
+            raise TypeError("The python_reduction argument must be a class that inherits from Copperhead")
+    
 
 class namespace_id:
     """The namespace_id class is simply a wrapper to convert between
@@ -732,7 +796,6 @@ class namespace_id:
                 "ns_to_characterord failed because id type is unknown: "
                 + str(type(id))
             )
-
 
 class example_namespace:
     """The example_namespace class is a helper class that allows you

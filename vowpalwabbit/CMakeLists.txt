@@ -257,6 +257,7 @@ set(vw_all_sources
   print.cc
   rand48.cc
   recall_tree.cc
+  red_python.cc
   reduction_stack.cc
   scorer.cc
   search_dep_parser.cc

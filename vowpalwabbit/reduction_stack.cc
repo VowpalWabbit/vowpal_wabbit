@@ -2,6 +2,7 @@
 #include "learner.h"
 #include "parse_args.h"
 #include "vw.h"
+#include "red_python.h"
 
 namespace VW {
   void* pop_reduction(vw* all) {
@@ -28,6 +29,40 @@ namespace VW {
     free(r);
   }
 
+  class NoopExternalBinding : public RED_PYTHON::ExternalBinding
+  {
+    void SetBaseLearner(void* learner) {}
+    void ActualLearn(example *) {}
+    void ActualPredict(example *) {}
+    bool ShouldRegisterFinishExample() {return false;}
+    void ActualFinishExample(example *) {}
+  };
+
+  void create_and_push_custom_reduction(vw* all, const std::string& name, std::unique_ptr<RED_PYTHON::ExternalBinding> custom)
+  {
+    LEARNER::base_learner* custom_reduction = nullptr;
+    if(all->l)
+    {
+      // not pushing a base reduction
+      all->reduction_stack.push_back(reduction_stack::noop_single_setup);
+      custom_reduction = red_python_setup(*all->options, *all, name, custom.get());
+      // clean up the noop
+      delete_reduction((void*)custom_reduction->get_base_reduction());
+
+      // weird and hacky. Need a copy to put into the template map.
+      all->reduction_stack.push_back(reduction_stack::noop_single_setup);
+      all->reduction_stack.push_back(reduction_stack::passthru_single_setup);
+      auto tmp = red_python_setup(*all->options, *all, name, new NoopExternalBinding());
+      all->reduction_template_map[tmp->hash_index()] = tmp;
+
+    }
+    else
+    {
+      custom_reduction = red_python_base_setup(*all->options, *all, name, custom.get());
+    }
+    custom.release();
+    push_reduction(all, custom_reduction);
+  }
 
 namespace reduction_stack {
   

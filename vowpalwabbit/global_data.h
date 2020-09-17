@@ -467,7 +467,7 @@ struct vw
   size_t length() { return ((size_t)1) << num_bits; };
 
   std::deque<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
-  std::unordered_map<std::type_index, VW::LEARNER::base_learner*> reduction_template_map;
+  std::unordered_map<std::string, VW::LEARNER::base_learner*> reduction_template_map;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
