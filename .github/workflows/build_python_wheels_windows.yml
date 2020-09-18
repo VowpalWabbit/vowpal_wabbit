@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-2016
     strategy:
       matrix:
         config:
@@ -33,7 +33,7 @@ jobs:
           path: wheel_output
   test:
     needs: build
-    runs-on: windows-2019
+    runs-on: windows-2016
     strategy:
       matrix:
         config:
