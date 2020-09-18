@@ -33,7 +33,7 @@ class Distribution(_distribution):
         global_options += [
             ('vcpkg-root=', None, 'Path to vcpkg root. For Windows only'),
         ]
- 
+
     def __init__(self, attrs=None):
         self.vcpkg_root = None
         self.enable_boost_cmake = None
@@ -102,11 +102,11 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DBoost_NO_BOOST_CMAKE=ON'
             ]
-            
+
         if self.distribution.cmake_options is not None:
             argslist = self.distribution.cmake_options.split(';')
             cmake_args += argslist
-        
+
         # If we are being installed in a conda environment then use the dependencies from there.
         if 'CONDA_PREFIX' in os.environ:
             cmake_args.append('-DCMAKE_PREFIX_PATH={}'.format(os.environ['CONDA_PREFIX']))
@@ -120,7 +120,8 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
-                '-G', "Visual Studio 15 2017 Win64"
+                '-G', 'Visual Studio 15 2017 Win64',
+                '-A', 'x64'
             ]
             build_args += [
                 '--target', 'pylibvw'
