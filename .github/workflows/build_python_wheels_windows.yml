@@ -11,9 +11,9 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: 3.6, include_dir_name: python3.6m/}
-        - { version: 3.7, include_dir_name: python3.7m/}
-        - { version: 3.8, include_dir_name: python3.8/}
+        - { version: 3.6, include_dir_name: python3.6m}
+        - { version: 3.7, include_dir_name: python3.7m}
+        - { version: 3.8, include_dir_name: python3.8}
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v1.7.0
@@ -25,21 +25,21 @@ jobs:
         run: |
           conda info
           conda install python=${{ matrix.config.version }} wheel zlib boost py-boost
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
+          pip wheel . -w wheel_output --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX\\include\\${{ matrix.config.include_dir_name }}\"" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
           name: wheel_${{ matrix.config.version }}
-          path: wheel_output/
+          path: wheel_output
   test:
     needs: build
     runs-on: windows-2019
     strategy:
       matrix:
         config:
-        - { version: 3.6, include_dir_name: python3.6m/}
-        - { version: 3.7, include_dir_name: python3.7m/}
-        - { version: 3.8, include_dir_name: python3.8/}
+        - { version: 3.6, include_dir_name: python3.6m}
+        - { version: 3.7, include_dir_name: python3.7m}
+        - { version: 3.8, include_dir_name: python3.8}
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.config.version }}
@@ -59,4 +59,4 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
           pip install ${wheel_file}
-          python -m pytest ./python/tests/
+          python -m pytest .\\python\\tests\\
