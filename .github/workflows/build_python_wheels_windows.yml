@@ -1,4 +1,4 @@
-name: Build MacOS Python Wheels
+name: Build Windows Python Wheels
 
 on:
   push:
