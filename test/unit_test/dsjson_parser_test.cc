@@ -149,7 +149,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
   }
 }
 )";
-  auto vw = VW::initialize("--dsjson --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--dsjson --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -161,10 +162,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++)
-  {
-    BOOST_CHECK_EQUAL(space_names[i]->second, features[i]);
-  }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -192,7 +190,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
   }
 }
 )";
-  auto vw = VW::initialize("--dsjson -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--dsjson -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -200,10 +199,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++)
-  {
-    BOOST_CHECK_EQUAL(space_names[i]->second, features[i]);
-  }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -658,4 +654,3 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
   VW::finish_example(*ccb_vw, ccb_examples);
   VW::finish(*ccb_vw);
 }
-

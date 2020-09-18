@@ -204,10 +204,7 @@ class LabelObjectState : public BaseState<audit>
     // CB/CA
     else if (!_stricmp(ctx.key, "Cost"))
     {
-      if (found_cb_continuous)
-      {
-        cont_label_element.cost = std::numeric_limits<float>::quiet_NaN();
-      }
+      if (found_cb_continuous) { cont_label_element.cost = std::numeric_limits<float>::quiet_NaN(); }
       else
       {
         cb_label.cost = std::numeric_limits<float>::quiet_NaN();
@@ -254,10 +251,7 @@ class LabelObjectState : public BaseState<audit>
     // CB/CA
     else if (!_stricmp(ctx.key, "Action"))
     {
-      if (found_cb_continuous)
-      {
-        cont_label_element.action = v;
-      }
+      if (found_cb_continuous) { cont_label_element.action = v; }
       else
       {
         cb_label.action = (uint32_t)v;
@@ -266,10 +260,7 @@ class LabelObjectState : public BaseState<audit>
     }
     else if (!_stricmp(ctx.key, "Cost"))
     {
-      if (found_cb_continuous)
-      {
-        cont_label_element.cost = v;
-      }
+      if (found_cb_continuous) { cont_label_element.cost = v; }
       else
       {
         cb_label.cost = v;
@@ -382,10 +373,7 @@ struct LabelSinglePropertyState : BaseState<audit>
 {
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
 
-  BaseState<audit>* StartObject(Context<audit>& ctx) override
-  {
-    return ctx.label_object_state.StartObject(ctx);
-  }
+  BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
 
   // forward _label
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
@@ -821,10 +809,7 @@ class DefaultState : public BaseState<audit>
       {
         if (ctx.key_length >= 7 && ctx.key[6] == '_')
         {
-          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2))
-          {
-            ctx.label_object_state.found_cb_continuous = true;
-          }
+          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
         }
         else if (ctx.key_length == 6)
@@ -1315,10 +1300,7 @@ class DecisionServiceState : public BaseState<audit>
         ctx.key_length = length;
         if (length >= 7 && ctx.key[6] == '_')
         {
-          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2))
-          {
-            ctx.label_object_state.found_cb_continuous = true;
-          }
+          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
         }
         else if (length == 6)

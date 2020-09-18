@@ -105,7 +105,8 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
 }
 )";
 
-  auto vw = VW::initialize("--json --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -117,10 +118,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++)
-  {
-    BOOST_CHECK_EQUAL(space_names[i]->second, features[i]);
-  }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -141,7 +139,8 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
   "M":1
 }
 )";
-  auto vw = VW::initialize("--json -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -149,10 +148,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++)
-  {
-    BOOST_CHECK_EQUAL(space_names[i]->second, features[i]);
-  }
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
