@@ -91,7 +91,8 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
 label_parser the_label_parser = {CB::default_label<continuous_label>, parse_label,
     CB::cache_label<continuous_label, continuous_label_elm>,
     CB::read_cached_label<continuous_label, continuous_label_elm>, CB::delete_label<continuous_label>, CB::weight,
-    CB::copy_label<continuous_label>, CB::is_test_label<continuous_label, continuous_label_elm>, sizeof(continuous_label)};
+    CB::copy_label<continuous_label>, CB::is_test_label<continuous_label, continuous_label_elm>,
+    sizeof(continuous_label)};
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////
