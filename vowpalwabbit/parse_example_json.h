@@ -219,7 +219,7 @@ class LabelObjectState : public BaseState<audit>
     // CA
     else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
     {
-      cont_label_element.probability = std::numeric_limits<float>::quiet_NaN();
+      cont_label_element.pdf_value = std::numeric_limits<float>::quiet_NaN();
     }
     else
     {
@@ -275,7 +275,7 @@ class LabelObjectState : public BaseState<audit>
     // CA
     else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
     {
-      cont_label_element.probability = v;
+      cont_label_element.pdf_value = v;
     }
     else
     {

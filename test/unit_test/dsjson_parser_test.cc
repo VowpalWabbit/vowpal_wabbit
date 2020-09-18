@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].probability, 6.20426e-05, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].action, 185.121, FLOAT_TOL);
 

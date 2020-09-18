@@ -96,13 +96,28 @@ void default_label(void* v)
   default_label_additional_fields(ld);
 }
 
-template <typename LabelT = CB::label>
+template <typename LabelElmT = cb_class>
+float get_probability(LabelElmT& elm)
+{
+  return elm.probability;
+}
+
+template <>
+inline float get_probability(VW::cb_continuous::continuous_label_elm& elm)
+{
+  return elm.pdf_value;
+}
+
+template <typename LabelT = CB::label, typename LabelElmT = cb_class>
 bool is_test_label(void* v)
 {
   auto ld = (LabelT*)v;
   if (ld->costs.size() == 0) return true;
   for (size_t i = 0; i < ld->costs.size(); i++)
-    if (FLT_MAX != ld->costs[i].cost && ld->costs[i].probability > 0.) return false;
+  {
+    auto probability = get_probability<LabelElmT>(ld->costs[i]);
+    if (FLT_MAX != ld->costs[i].cost && probability > 0.) return false;
+  }
   return true;
 }
 

@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   BOOST_CHECK_EQUAL(1010.17f, ec.l.cb_cont.costs[0].action);
   BOOST_CHECK_EQUAL(0.5f, ec.l.cb_cont.costs[0].cost);
-  BOOST_CHECK_EQUAL(0.05f, ec.l.cb_cont.costs[0].probability);
+  BOOST_CHECK_EQUAL(0.05f, ec.l.cb_cont.costs[0].pdf_value);
 
   learn(*data, *as_singleline(test_harness), ec);
 
