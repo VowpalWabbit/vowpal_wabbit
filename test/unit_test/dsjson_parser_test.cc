@@ -205,40 +205,6 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cb_no_adf)
-{
-  std::string json_text = R"(
-{
-  "_label_cost": 1,
-  "_label_probability": 0.5,
-  "_label_action": 1,
-  "Version": "1",
-  "EventId": "event_id",
-  "c": {
-    "tuesday":1,
-    "year":1,
-    "million":1,
-    "short":1
-  },
-  "VWState": {
-    "m": "N/A"
-  }
-}
-)";
-  auto vw = VW::initialize("--dsjson --cb_explore 2 --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
-
-  BOOST_CHECK_EQUAL(examples.size(), 1);
-
-  BOOST_CHECK_EQUAL(examples[0]->l.cb.costs.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].probability, 0.5, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].cost, 1, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(examples[0]->l.cb.costs[0].action, 1);
-
-  VW::finish_example(*vw, examples);
-  VW::finish(*vw);
-}
-
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
 {
