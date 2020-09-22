@@ -33,6 +33,7 @@ VW_WARNING_STATE_POP
 
 #include "cb.h"
 #include "conditional_contextual_bandit.h"
+#include "cb_continuous_label.h"
 
 #include "best_constant.h"
 #include "json_utils.h"
@@ -134,8 +135,10 @@ class LabelObjectState : public BaseState<audit>
 
  public:
   CB::cb_class cb_label;
+  VW::cb_continuous::continuous_label_elm cont_label_element;
   bool found;
   bool found_cb;
+  bool found_cb_continuous;
   std::vector<unsigned int> actions;
   std::vector<float> probs;
   std::vector<unsigned int> inc;
@@ -144,9 +147,10 @@ class LabelObjectState : public BaseState<audit>
 
   void init(vw* /* all */)
   {
-    found = found_cb = false;
+    found = found_cb = found_cb_continuous = false;
 
     cb_label = {0., 0, 0., 0.};
+    cont_label_element = {0., 0., 0.};
   }
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
@@ -197,16 +201,25 @@ class LabelObjectState : public BaseState<audit>
       ctx.ex->l.simple.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
-    // CB
+    // CB/CA
     else if (!_stricmp(ctx.key, "Cost"))
     {
-      cb_label.cost = std::numeric_limits<float>::quiet_NaN();
-      found_cb = true;
+      if (found_cb_continuous) { cont_label_element.cost = std::numeric_limits<float>::quiet_NaN(); }
+      else
+      {
+        cb_label.cost = std::numeric_limits<float>::quiet_NaN();
+        found_cb = true;
+      }
     }
     else if (!_stricmp(ctx.key, "Probability"))
     {
       cb_label.probability = std::numeric_limits<float>::quiet_NaN();
       found_cb = true;
+    }
+    // CA
+    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
+    {
+      cont_label_element.pdf_value = std::numeric_limits<float>::quiet_NaN();
     }
     else
     {
@@ -235,21 +248,34 @@ class LabelObjectState : public BaseState<audit>
       ctx.ex->l.simple.weight = v;
       found = true;
     }
-    // CB
+    // CB/CA
     else if (!_stricmp(ctx.key, "Action"))
     {
-      cb_label.action = (uint32_t)v;
-      found_cb = true;
+      if (found_cb_continuous) { cont_label_element.action = v; }
+      else
+      {
+        cb_label.action = (uint32_t)v;
+        found_cb = true;
+      }
     }
     else if (!_stricmp(ctx.key, "Cost"))
     {
-      cb_label.cost = v;
-      found_cb = true;
+      if (found_cb_continuous) { cont_label_element.cost = v; }
+      else
+      {
+        cb_label.cost = v;
+        found_cb = true;
+      }
     }
     else if (!_stricmp(ctx.key, "Probability"))
     {
       cb_label.probability = v;
       found_cb = true;
+    }
+    // CA
+    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
+    {
+      cont_label_element.pdf_value = v;
     }
     else
     {
@@ -322,6 +348,14 @@ class LabelObjectState : public BaseState<audit>
       found_cb = false;
       cb_label = {0., 0, 0., 0.};
     }
+    else if (found_cb_continuous)
+    {
+      auto* ld = (VW::cb_continuous::continuous_label*)&ctx.ex->l;
+      ld->costs.push_back(cont_label_element);
+
+      found_cb_continuous = false;
+      cont_label_element = {0., 0., 0.};
+    }
     else if (found)
     {
       count_label(ctx.all->sd, ctx.ex->l.simple.label);
@@ -338,6 +372,8 @@ template <bool audit>
 struct LabelSinglePropertyState : BaseState<audit>
 {
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
+
+  BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
 
   // forward _label
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
@@ -772,7 +808,10 @@ class DefaultState : public BaseState<audit>
       if (ctx.key_length >= 6 && !strncmp(ctx.key, "_label", 6))
       {
         if (ctx.key_length >= 7 && ctx.key[6] == '_')
+        {
+          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
+        }
         else if (ctx.key_length == 6)
           return &ctx.label_state;
         else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex"))
@@ -1260,7 +1299,10 @@ class DecisionServiceState : public BaseState<audit>
         ctx.key = str;
         ctx.key_length = length;
         if (length >= 7 && ctx.key[6] == '_')
+        {
+          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
+        }
         else if (length == 6)
           return &ctx.label_state;
         else if (length == 11 && !_stricmp(str, "_labelIndex"))
@@ -1598,7 +1640,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     }
 
     // let's ask to continue reading data until we find a line with actions provided
-    if (interaction.actions.size() == 0)
+    if (interaction.actions.size() == 0 && all->l->is_multiline)
     {
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
