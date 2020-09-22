@@ -72,16 +72,16 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
 
     if (std::isnan(f.cost)) THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
-    f.probability = .0;
-    if (p->parse_name.size() > 2) f.probability = float_of_string(p->parse_name[2]);
+    f.pdf_value = .0;
+    if (p->parse_name.size() > 2) f.pdf_value = float_of_string(p->parse_name[2]);
 
-    if (std::isnan(f.probability))
+    if (std::isnan(f.pdf_value))
       THROW("error NaN pdf_value (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
 
-    if (f.probability < 0.0)
+    if (f.pdf_value < 0.0)
     {
       std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
-      f.probability = .0;
+      f.pdf_value = .0;
     }
 
     ld->costs.push_back(f);
@@ -91,7 +91,8 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
 label_parser the_label_parser = {CB::default_label<continuous_label>, parse_label,
     CB::cache_label<continuous_label, continuous_label_elm>,
     CB::read_cached_label<continuous_label, continuous_label_elm>, CB::delete_label<continuous_label>, CB::weight,
-    CB::copy_label<continuous_label>, CB::is_test_label<continuous_label>, sizeof(continuous_label)};
+    CB::copy_label<continuous_label>, CB::is_test_label<continuous_label, continuous_label_elm>,
+    sizeof(continuous_label)};
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////
@@ -99,7 +100,7 @@ label_parser the_label_parser = {CB::default_label<continuous_label>, parse_labe
 std::string to_string(const continuous_label_elm& elm)
 {
   std::stringstream strm;
-  strm << "{" << elm.action << "," << elm.cost << "," << elm.probability << "}";
+  strm << "{" << elm.action << "," << elm.cost << "," << elm.pdf_value << "}";
   return strm.str();
 }
 

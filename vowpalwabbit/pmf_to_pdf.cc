@@ -82,7 +82,7 @@ void reduction::predict(example& ec)
 void reduction::learn(example& ec)
 {
   const float cost = ec.l.cb_cont.costs[0].cost;
-  const float prob = ec.l.cb_cont.costs[0].probability;
+  const float pdf_value = ec.l.cb_cont.costs[0].pdf_value;
   const float action_cont = ec.l.cb_cont.costs[0].action;
 
   const float continuous_range = max_value - min_value;
@@ -105,8 +105,8 @@ void reduction::learn(example& ec)
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
   ec.l.cb.costs.clear();
-  ec.l.cb.costs.push_back({cost, min_value + 1, prob * 2 * bandwidth * continuous_range / num_actions, 0.0f});
-  ec.l.cb.costs.push_back({cost, max_value + 1, prob * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+  ec.l.cb.costs.push_back({cost, min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+  ec.l.cb.costs.push_back({cost, max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 

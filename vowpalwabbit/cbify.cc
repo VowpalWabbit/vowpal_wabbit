@@ -274,7 +274,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
   continuous_label_elm cb_cont_lbl;
 
   cb_cont_lbl.action = ec.pred.pdf_value.action;
-  cb_cont_lbl.probability = ec.pred.pdf_value.pdf_value;
+  cb_cont_lbl.pdf_value = ec.pred.pdf_value.pdf_value;
 
   if (data.regression_data.loss_option == 0)
   { cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label); }
@@ -606,7 +606,7 @@ void output_cb_reg_predictions(
   if (label.costs.size() == 1)
   {
     continuous_label_elm cost = label.costs[0];
-    strm << cost.action << ":" << cost.cost << ":" << cost.probability << std::endl;
+    strm << cost.action << ":" << cost.cost << ":" << cost.pdf_value << std::endl;
   }
   else if (label.costs.empty())
   {
