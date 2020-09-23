@@ -38,30 +38,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 {
   const std::string json_text = R"(
 {
-  "Version": "1",
-  "c": {
-    "Shared": {
-      "a": 1,
-      "b": "x"
-    },
-    "_multi": [
-      {
-        "Action": {
-            "a": 1
-        }
-      },
-      {
-        "Action": {
-            "a": 1
-        }
-      }
-    ],
-    "_p": [0.4, 0.6]
-  },
-  "_p": [0.4, 0.6],
-  "VWState": {
-    "m": "N/A"
-  }
+  "_p": [0.4, 0.6]
 }
   )";
   auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
@@ -85,30 +62,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p)
 {
   const std::string json_text = R"(
 {
-  "Version": "1",
-  "c": {
-    "Shared": {
-      "a": 1,
-      "b": "x"
-    },
-    "_multi": [
-      {
-        "Action": {
-            "a": 1
-        }
-      },
-      {
-        "Action": {
-            "a": 1
-        }
-      }
-    ],
-    "_p": [0.4, 0.6]
-  },
-  "p": [0.4, 0.6],
-  "VWState": {
-    "m": "N/A"
-  }
+  "p": [0.4, 0.6]
 }
   )";
   auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
@@ -132,31 +86,11 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
 {
   const std::string json_text = R"(
 {
-  "Version": "1",
   "c": {
-    "Shared": {
-      "a": 1,
-      "b": "x"
-    },
-    "_multi": [
-      {
-        "Action": {
-            "a": 1
-        }
-      },
-      {
-        "Action": {
-            "a": 1
-        }
-      }
-    ],
     "_p": [0.4, 0.6]
   },
-  "p": [0.4, 0.6],
-  "_p": [0.5, 0.5],
-  "VWState": {
-    "m": "N/A"
-  }
+  "p": [0.4, 0.3, 0.3],
+  "_p": [0.5, 0.5]
 }
   )";
   auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
@@ -166,7 +100,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
-  // Use the latest "p" or "_p" field provided.
+  // Use the latest "p" or "_p" field provided. The "_p" is ignored when it's inside "c".
   constexpr float EXPECTED_PDF[2] = {0.5f, 0.5f};
   const size_t num_probabilities = interaction.probabilities.size();
   BOOST_CHECK_EQUAL(num_probabilities, 2);
