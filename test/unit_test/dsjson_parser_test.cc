@@ -22,7 +22,6 @@ multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* int
     interaction = &local_interaction;
   }
 
-
   VW::read_line_decision_service_json<true>(all, examples, (char*)line.c_str(), line.size(), false,
       (VW::example_factory_t)&VW::get_unused_example, (void*)&all, interaction);
 
@@ -33,6 +32,149 @@ multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* int
   }
   examples.delete_v();
   return result;
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
+{
+  const std::string json_text = R"(
+{
+  "Version": "1",
+  "c": {
+    "Shared": {
+      "a": 1,
+      "b": "x"
+    },
+    "_multi": [
+      {
+        "Action": {
+            "a": 1
+        }
+      },
+      {
+        "Action": {
+            "a": 1
+        }
+      }
+    ],
+    "_p": [0.4, 0.6]
+  },
+  "_p": [0.4, 0.6],
+  "VWState": {
+    "m": "N/A"
+  }
+}
+  )";
+  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
+  const size_t num_probabilities = interaction.probabilities.size();
+  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  for (size_t i = 0; i < num_probabilities; ++i)
+  {
+    // Check that probabilities are as expected.
+    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_p)
+{
+  const std::string json_text = R"(
+{
+  "Version": "1",
+  "c": {
+    "Shared": {
+      "a": 1,
+      "b": "x"
+    },
+    "_multi": [
+      {
+        "Action": {
+            "a": 1
+        }
+      },
+      {
+        "Action": {
+            "a": 1
+        }
+      }
+    ],
+    "_p": [0.4, 0.6]
+  },
+  "p": [0.4, 0.6],
+  "VWState": {
+    "m": "N/A"
+  }
+}
+  )";
+  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
+  const size_t num_probabilities = interaction.probabilities.size();
+  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  for (size_t i = 0; i < num_probabilities; ++i)
+  {
+    // Check that probabilities are as expected.
+    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
+{
+  const std::string json_text = R"(
+{
+  "Version": "1",
+  "c": {
+    "Shared": {
+      "a": 1,
+      "b": "x"
+    },
+    "_multi": [
+      {
+        "Action": {
+            "a": 1
+        }
+      },
+      {
+        "Action": {
+            "a": 1
+        }
+      }
+    ],
+    "_p": [0.4, 0.6]
+  },
+  "p": [0.4, 0.6],
+  "_p": [0.5, 0.5],
+  "VWState": {
+    "m": "N/A"
+  }
+}
+  )";
+  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  // Use the latest "p" or "_p" field provided.
+  constexpr float EXPECTED_PDF[2] = {0.5f, 0.5f};
+  const size_t num_probabilities = interaction.probabilities.size();
+  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  for (size_t i = 0; i < num_probabilities; ++i)
+  {
+    // Check that probabilities are as expected.
+    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+  }
 }
 
 // TODO: Make unit test dig out and verify features.

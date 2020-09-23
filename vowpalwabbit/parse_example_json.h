@@ -1270,6 +1270,7 @@ class DecisionServiceState : public BaseState<audit>
           ctx.array_uint_state.return_state = this;
           return &ctx.array_uint_state;
         case 'p':
+          data->probabilities.clear();
           ctx.array_float_state.output_array = &data->probabilities;
           ctx.array_float_state.return_state = this;
           return &ctx.array_float_state;
@@ -1318,6 +1319,13 @@ class DecisionServiceState : public BaseState<audit>
       {
         ctx.slot_outcome_list_state.interactions = data;
         return &ctx.slot_outcome_list_state;
+      }
+      else if (length == 2 && !strncmp(str, "_p", 2))
+      {
+        data->probabilities.clear();
+        ctx.array_float_state.output_array = &data->probabilities;
+        ctx.array_float_state.return_state = this;
+        return &ctx.array_float_state;
       }
     }
 
