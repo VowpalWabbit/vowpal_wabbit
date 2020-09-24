@@ -21,7 +21,7 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v2
         with:
-          repository: https://github.com/microsoft/vcpkg
+          repository: https://github.com/microsoft/vcpkg.git
           ref: ${{ matrix.config.vcpkg_commit }}
           path: vcpkg
       - name: Cache vcpkg
