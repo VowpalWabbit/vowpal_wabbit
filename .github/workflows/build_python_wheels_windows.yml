@@ -32,7 +32,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install wheel
-          pip wheel . -w wheel_output --global-option --vcpkg-root ${VCPKG_INSTALLATION_ROOT} --verbose
+          pip wheel . -w wheel_output --global-option --vcpkg-root="${VCPKG_INSTALLATION_ROOT}" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
