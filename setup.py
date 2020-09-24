@@ -120,7 +120,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
-                '-G', "Visual Studio 15 2017"
+                '-G', "Visual Studio 15 2017 Win64"
             ]
             build_args += [
                 '--target', 'pylibvw'
@@ -136,7 +136,6 @@ class BuildPyLibVWBindingsModule(_build_ext):
                     'vcpkg.cmake'
                 )
                 cmake_args +=  ['-DCMAKE_TOOLCHAIN_FILE=' + vcpkg_toolchain]
-                cmake_args +=  ['-DVCPKG_TARGET_TRIPLET=x64-windows']
                 
                 
 
