@@ -2,6 +2,16 @@ import sys, os
 import math
 from vowpalwabbit import pyvw
 
+class NoopPythonReductionBase(pyvw.Copperhead):
+    def _predict(self, ec, learner):
+        #print("hello there I'm predicting stuff")
+        #learner.predict(ec)
+        x = 1
+
+    def _learn(self, ec, learner):
+        #print("hello there I can also learn stuff btw the total_sum_feat_sq is " + str(ec.get_total_sum_feat_sq()))
+        #learner.learn(ec)
+        x = 1
 class NoopPythonReduction(pyvw.Copperhead):
     def _predict(self, ec, learner):
         #print("hello there I'm predicting stuff")
@@ -43,21 +53,8 @@ print(os.getpid())
 # doesn't do anything, runs in python see class impl NoopPythonicReductions
 def noop_example():
     vw = pyvw.vw(arg_str="--loss_function logistic --binary --active_cover --oracular -d test/train-sets/rcv1_small.dat", partial_initialize = True)
-    
-    reduction_stack = []
-    reduction = vw.pop_reduction()
-    while reduction is not None:
-        print("popping reduction")
-        reduction_stack.append(reduction);
-        reduction = vw.pop_reduction()
-
-    # noop reduction runs just before GD
-    vw.push_reduction(reduction_stack.pop())
-    vw.create_and_push_custom_reduction("my_noop", NoopPythonReduction)
-    while len(reduction_stack) > 0:
-        print("pushing reduction")
-        vw.push_reduction(reduction_stack.pop())
-
+    vw.create_and_push_custom_reduction("my_noop_top", NoopPythonReduction)
+    vw.replace_base_reduction("my_noop_base", NoopPythonReductionBase)
     vw.complete_initialize()
     vw.run_parser()
     vw.finish()

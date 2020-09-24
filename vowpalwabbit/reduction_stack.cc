@@ -31,11 +31,33 @@ namespace VW {
 
   class NoopExternalBinding : public RED_PYTHON::ExternalBinding
   {
+  private:
+    bool needs_update = false;
+    bool needs_sensitivity = false;
+    bool needs_finish = false;
+    bool needs_end_pass = false;
+    bool needs_end_examples = false;
+    bool needs_finish_example = false;
+  public:
+    NoopExternalBinding(const RED_PYTHON::ExternalBinding* ext)
+    {
+      needs_update = ext->ShouldRegisterUpdate();
+      needs_sensitivity = ext->ShouldRegisterSensitivity();
+      needs_finish = ext->ShouldRegisterFinish();
+      needs_end_pass = ext->ShouldRegisterEndPass();
+      needs_end_examples = ext->ShouldRegisterEndExamples();
+      needs_finish_example = ext->ShouldRegisterFinishExample();
+    }
     void SetBaseLearner(void* learner) {}
     void ActualLearn(example *) {}
     void ActualPredict(example *) {}
-    bool ShouldRegisterFinishExample() {return false;}
-    void ActualFinishExample(example *) {}
+
+    bool ShouldRegisterUpdate() { return needs_update; }
+    bool ShouldRegisterSensitivity() { return needs_sensitivity; }
+    bool ShouldRegisterFinish() { return needs_finish; }
+    bool ShouldRegisterEndPass() { return needs_end_pass; }
+    bool ShouldRegisterEndExamples() { return needs_end_examples; }
+    bool ShouldRegisterFinishExample() {return needs_finish_example;}
   };
 
   void create_and_push_custom_reduction(vw* all, const std::string& name, std::unique_ptr<RED_PYTHON::ExternalBinding> custom)
@@ -52,7 +74,7 @@ namespace VW {
       // weird and hacky. Need a copy to put into the template map.
       all->reduction_stack.push_back(reduction_stack::noop_single_setup);
       all->reduction_stack.push_back(reduction_stack::passthru_single_setup);
-      auto tmp = red_python_setup(*all->options, *all, name, new NoopExternalBinding());
+      auto tmp = red_python_setup(*all->options, *all, name, new NoopExternalBinding(custom.get()));
       all->reduction_template_map[tmp->hash_index()] = tmp;
 
     }

@@ -39,9 +39,57 @@ void finish_example(vw& all, ExternalBinding& external_binding, example& ec) {
   VW::finish_example(all, ec);
 }
 
+void update(ExternalBinding& external_binding, VW::LEARNER::single_learner&, example& ec)
+{
+  external_binding.ActualUpdate(&ec);
+}
+
+float sensitivity(ExternalBinding& external_binding, VW::LEARNER::base_learner&, example& ec)
+{
+  return external_binding.ActualSensitivity(&ec);
+}
+
+void finish(ExternalBinding& external_binding)
+{
+  external_binding.ActualFinish();
+}
+
+void end_pass(ExternalBinding& external_binding)
+{
+  external_binding.ActualEndPass();
+}
+
+void end_examples(ExternalBinding& external_binding)
+{
+  external_binding.ActualEndExamples();
+}
+
+
 }  // namespace RED_PYTHON
 using RED_PYTHON::ExternalBinding;
 using VW::config::options_i;
+
+template <typename T>
+void set_learner_functions(T& learner, ExternalBinding* ext_binding)
+{
+  if (ext_binding->ShouldRegisterFinishExample())
+    learner.set_finish_example(RED_PYTHON::finish_example);
+
+  if(ext_binding->ShouldRegisterUpdate())
+    learner.set_update(RED_PYTHON::update);
+
+  if(ext_binding->ShouldRegisterSensitivity())
+    learner.set_sensitivity(RED_PYTHON::sensitivity);
+
+  if(ext_binding->ShouldRegisterFinish())
+    learner.set_finish(RED_PYTHON::finish);
+
+  if(ext_binding->ShouldRegisterEndPass())
+    learner.set_end_pass(RED_PYTHON::end_pass);
+
+  if(ext_binding->ShouldRegisterEndExamples())
+    learner.set_end_examples(RED_PYTHON::end_examples);
+}
 
 VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all, const std::string& name, ExternalBinding* ext_binding)
 {
@@ -57,8 +105,7 @@ VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all, const s
   );
 
   ret.hash_index() = name;
-  if (ext_binding->ShouldRegisterFinishExample())
-    ret.set_finish_example(RED_PYTHON::finish_example);
+  set_learner_functions(ret, ext_binding);
 
   return make_base(ret);
 }
@@ -77,8 +124,7 @@ VW::LEARNER::base_learner* red_python_base_setup(options_i&, vw& all, const std:
   );
 
   ret.hash_index() = name;
-  if (ext_binding->ShouldRegisterFinishExample())
-    ret.set_finish_example(RED_PYTHON::finish_example);
+  set_learner_functions(ret, ext_binding);
 
   return make_base(ret);
 }

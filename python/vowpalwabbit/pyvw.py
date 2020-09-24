@@ -753,6 +753,21 @@ class vw(pylibvw.vw):
             pylibvw.vw.create_and_push_custom_reduction(self, name, custom_reduction())
         else:
             raise TypeError("The python_reduction argument must be a class that inherits from Copperhead")
+
+    def replace_base_reduction(self, name, custom_reduction):
+        reduction_stack = []
+        reduction = self.pop_reduction()
+        while reduction is not None:
+            reduction_stack.append(reduction)
+            reduction = self.pop_reduction()
+
+        # delete base reduction and replace with our custom one
+        self.delete_reduction(reduction_stack.pop())
+        self.create_and_push_custom_reduction(name, custom_reduction)
+
+        while len(reduction_stack) > 0:
+            self.push_reduction(reduction_stack.pop())
+
     
 
 class namespace_id:

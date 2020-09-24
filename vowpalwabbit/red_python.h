@@ -17,9 +17,32 @@ namespace RED_PYTHON
     virtual void SetBaseLearner(void* learner) = 0;
     virtual void ActualLearn(example *) = 0;
     virtual void ActualPredict(example *) = 0;
-    virtual bool ShouldRegisterFinishExample() = 0;
-    virtual void ActualFinishExample(example *) = 0;
-    virtual ~ExternalBinding() {};    
+
+    virtual bool ShouldRegisterUpdate() const { return false; }
+    virtual void ActualUpdate(example*) {}
+
+    virtual bool ShouldRegisterSensitivity() const { return false; }
+    virtual float ActualSensitivity(example *) { return 0; }
+
+    virtual bool ShouldRegisterFinish() const { return false; }
+    virtual void ActualFinish() {}
+
+    virtual bool ShouldRegisterEndPass() const { return false; }
+    virtual void ActualEndPass() {}
+
+    virtual bool ShouldRegisterEndExamples() const { return false; }
+    virtual void ActualEndExamples() {}
+
+    virtual bool ShouldRegisterFinishExample() const { return false; }
+    virtual void ActualFinishExample(example *) {}
+
+    /*
+    // How to handle the inputs here?
+    virtual bool ShouldRegisterSaveLoad() { return false; }
+    virtual void ActualSaveLoad(io_buf&, bool, bool) {}
+    */
+    
+    virtual ~ExternalBinding() = default;
   };
 }  // namespace RED_PYTHON
 

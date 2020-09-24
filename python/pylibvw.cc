@@ -79,12 +79,8 @@ class PyCppBridge : public RED_PYTHON::ExternalBinding {
 
       ~PyCppBridge() { }
 
-      bool ShouldRegisterFinishExample()
+      bool ShouldRegisterFinishExample() const
       { return this->register_finish_learn;
-      }
-
-      void SetRandomNumber(int n)
-      { random_num = n;
       }
 
       template<typename... Args>
@@ -159,6 +155,10 @@ opaque pop_reduction(vw_ptr all){
 void push_reduction(vw_ptr all, opaque reduction)
 {
   VW::push_reduction(all.get(), (void*)reduction);
+}
+void delete_reduction(vw_ptr, opaque reduction)
+{
+  VW::delete_reduction((void*)reduction);
 }
 
 
@@ -917,6 +917,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("push_reduction", push_reduction, "push reduction")
   .def("pop_reduction", pop_reduction, boost::python::return_value_policy<boost::python::return_opaque_pointer>())
   .def("create_and_push_custom_reduction", &create_and_push_custom_reduction, "create and push custom reduction")
+  .def("delete_reduction", delete_reduction, "delete reduction")
 
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
