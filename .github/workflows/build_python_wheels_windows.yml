@@ -23,6 +23,7 @@ jobs:
       - name: Build wheel
         shell: bash -l {0}
         run: |
+          ( set -o posix ; set ) | less
           conda info
           conda install python=${{ matrix.config.version }} wheel zlib boost py-boost
           ls C:/Miniconda/envs/test/Library/lib
