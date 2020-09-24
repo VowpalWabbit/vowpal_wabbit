@@ -136,6 +136,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
                     'vcpkg.cmake'
                 )
                 cmake_args +=  ['-DCMAKE_TOOLCHAIN_FILE=' + vcpkg_toolchain]
+                cmake_args +=  ['-DVCPKG_TARGET_TRIPLET=x64-windows']
+                
+                
 
         else:
             cmake_args += [
