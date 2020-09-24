@@ -16,8 +16,7 @@ jobs:
 #         - { version: 3.8, include_dir_name: python3.8}
     steps:
       - uses: actions/checkout@v2
-      - name: Cache multiple paths
-        id: vcpkg-cache
+      - name: Cache vcpkg
         uses: actions/cache@v2
         with:
           path: |
@@ -31,7 +30,6 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - name: Boostrap and install vcpkg
         shell: bash -l {0}
-        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         run: |
           cd ${VCPKG_INSTALLATION_ROOT}
           git fetch --unshallow
