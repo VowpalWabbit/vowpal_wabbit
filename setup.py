@@ -120,8 +120,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
-                '-G', "Visual Studio 16 2019",
-                '-A', 'x64'
+                '-G', "Visual Studio 15 2017"
             ]
             build_args += [
                 '--target', 'pylibvw'
