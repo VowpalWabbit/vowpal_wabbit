@@ -67,13 +67,15 @@ struct cb_explore_adf_base
   // used in output_example
   CB::label _action_label;
   CB::label _empty_label;
-  ExploreType explore;
 public:
   template <typename... Args >
   cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...){}
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
+
+public:
+  ExploreType explore;
 
  private:
   void output_example_seq(vw& all, multi_ex& ec_seq);

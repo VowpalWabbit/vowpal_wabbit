@@ -39,17 +39,20 @@ struct cb_explore_adf_bag
   std::vector<float> _top_actions;
 
  public:
+  using PredictionT = v_array<ACTION_SCORE::action_score>;
+
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
   ~cb_explore_adf_bag();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+
+  const PredictionT& get_cached_prediction() {return _action_probs;} ;
 
  private:
-  template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  uint32_t get_bag_learner_update_count(uint32_t learner_index);
 };
 
 cb_explore_adf_bag::cb_explore_adf_bag(
@@ -58,8 +61,17 @@ cb_explore_adf_bag::cb_explore_adf_bag(
 {
 }
 
-template <bool is_learn>
-void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index)
+{
+  // If _greedify then always update the first policy once
+  // for others the update count depends on drawing from a poisson
+  if(_greedify && learner_index==0)
+    return 1;
+  else
+    return BS::weight_gen(_random_state);
+}
+
+void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -70,33 +82,26 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     return;
   }
 
-  _scores.clear();
-  for (uint32_t i = 0; i < num_actions; i++) _scores.push_back(0.f);
+  _scores.assign(num_actions,0.f);
   _top_actions.assign(num_actions, 0);
+
   for (uint32_t i = 0; i < _bag_size; i++)
   {
-    // avoid updates to the random num generator
-    // for greedify, always update first policy once
-    uint32_t count = is_learn ? ((_greedify && i == 0) ? 1 : BS::weight_gen(_random_state)) : 0;
-
-    if (is_learn && count > 0)
-      VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
-    else
-      VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
+    VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
 
     assert(preds.size() == num_actions);
-    for (auto e : preds) _scores[e.action] += e.score;
+    for (auto e : preds)
+      _scores[e.action] += e.score;
 
     if (!_first_only)
     {
       size_t tied_actions = fill_tied(preds);
-      for (size_t j = 0; j < tied_actions; ++j) _top_actions[preds[j].action] += 1.f / tied_actions;
+      for (size_t j = 0; j < tied_actions; ++j)
+        _top_actions[preds[j].action] += 1.f / tied_actions;
     }
     else
       _top_actions[preds[0].action] += 1.f;
-    if (is_learn)
-      for (uint32_t j = 1; j < count; j++)
-        VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+
   }
 
   _action_probs.clear();
@@ -107,13 +112,42 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
       begin(_top_actions), end(_top_actions), begin_scores(_action_probs), end_scores(_action_probs));
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
-
   sort_action_probs(_action_probs, _scores);
+  std::copy(std::begin(_action_probs),std::end(_action_probs),std::begin(preds));
+}
 
-  for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
+void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+{
+  for (uint32_t i = 0; i < _bag_size; i++)
+  {
+    // learn_count determines how many times learner (i) will learn from this example.
+    uint32_t learn_count = get_bag_learner_update_count(i);
+
+    VW_DBG(examples) << "cb_explore_adf_bag::learn, bag_learner_idx = " << i << ", learn_count = " << learn_count << std::endl;
+
+    for (uint32_t j = 0; j < learn_count; j++)
+      VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+  }
 }
 
 cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
+
+void finish_bag_example(vw& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
+{
+  assert(ec_seq.size() > 0);
+
+  polyprediction saved_prediction = ec_seq[0]->pred;
+  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
+  // Guard inner example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&saved_prediction, &ec_seq]
+    {
+      ec_seq[0]->pred = saved_prediction;
+    }
+  );
+
+  cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all,data,ec_seq);
+}
 
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
@@ -156,7 +190,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-bag");
 
-  l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_finish_example(finish_bag_example);
   return make_base(l);
 }
 

@@ -299,21 +299,6 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
   return isTest;
 }
 
-void base_learn_restore_pred(single_learner& base, example* ec1)
-{
-  // Notes:  Q) Why are we saving value of prediction during learn()?
-  //
-  //        gd.learn() changes state of ec.pred.
-  //        However, for progressive validation predict() was called initially
-  //        and result saved in ec.pred.  This is needed during finish_example()
-  //        Therefore we need to save the state of ec->pred and restore it after
-  //        base.learn is called.
-
-  const polyprediction saved_pred = ec1->pred;  // save
-  base.learn(*ec1);
-  ec1->pred = saved_pred;  // restore
-}
-
 void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
@@ -369,14 +354,15 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
+
       // TODO: @rajan-chari it looks like ft_offset is not handled here.
-      base_learn_restore_pred(base, ec1);
-      ec1->weight = old_weight;
+      const polyprediction saved_pred = ec1->pred;  // save
 
       // Guard inner example state restore against throws
       auto restore_guard_inner = VW::scope_exit(
-        [&data, old_weight, &costs2, &ec2, &ec1]
+        [&data, old_weight, &costs2, &ec2, &ec1, &saved_pred]
         {
+          ec1->pred = saved_pred;  // restore
           ec1->weight = old_weight;
           unsubtract_example(ec1);
 
@@ -436,16 +422,16 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 
     // Prepare examples for learning
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
-    base_learn_restore_pred(base, ec);
-    LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
+    const polyprediction saved_pred = ec->pred;  // save
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit(
-      [&save_cs_label, &data, &costs, old_weight, &ec]
+      [&save_cs_label, &data, &costs, old_weight, &ec, &saved_pred]
       {
         LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
         ec->weight = old_weight;
+        ec->pred = saved_pred;  // restore
 
         // restore original cost-sensitive label, sum of importance weights and partial_prediction
         ec->l.cs = save_cs_label;
@@ -939,10 +925,8 @@ base_learner* csldf_setup(options_i& options, vw& all)
 
   all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
-
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
-  prediction_type_t pred_type;
 
   ld->read_example_this_loop = 0;
   single_learner* pbase = as_singleline(setup_base(*all.options, all));
