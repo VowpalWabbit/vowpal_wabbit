@@ -11,39 +11,39 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: 3.6, include_dir_name: python3.6m, vcpkg_commit: aa095559917a495b160986e9ad50556431509ace}
+        - { version: 3.6, vcpkg_commit: aa095559917a495b160986e9ad50556431509ace}
 #         - { version: 3.7, include_dir_name: python3.7m}
 #         - { version: 3.8, include_dir_name: python3.8}
     steps:
-      - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.config.version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.config.version }}
-      - name: Checkout vcpkg commit
-        shell: bash -l {0}
-        run: |
-          echo "::set-env name=VCPKG_INSTALLATION_ROOT::${VCPKG_INSTALLATION_ROOT}"
-          cd ${VCPKG_INSTALLATION_ROOT}
-          git fetch --unshallow
-          git checkout ${{ matrix.config.vcpkg_commit }}
+      - uses: actions/checkout@v2
+        with:
+          repository: https://github.com/microsoft/vcpkg
+          ref: ${{ matrix.config.vcpkg_commit }}
+          path: vcpkg
       - name: Cache vcpkg
         uses: actions/cache@v2
         with:
-#           path: ${{ env.VCPKG_INSTALLATION_ROOT }}
-          path: /vcpkg
+          path: ${{env.GITHUB_WORKSPACE}}/vcpkg
           key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-1
       - name: Boostrap and install vcpkg packages
         shell: bash -l {0}
         run: |
-          cd ${VCPKG_INSTALLATION_ROOT}
-          .\\bootstrap-vcpkg.bat
-          .\\vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3 
+          cd ${GITHUB_WORKSPACE}/vcpkg
+          ./bootstrap-vcpkg.bat
+          ./vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3 
+      - uses: actions/checkout@v2
+        with:
+          path: "vowpal_wabbit"
       - name: Build wheel
         shell: bash -l {0}
         run: |
+          cd ${GITHUB_WORKSPACE}/vowpal_wabbit
           pip install wheel
-          pip wheel . -w wheel_output --global-option --vcpkg-root="${VCPKG_INSTALLATION_ROOT}" --verbose
+          pip wheel . -w ${GITHUB_WORKSPACE}/wheel_output --global-option --vcpkg-root="${VCPKG_INSTALLATION_ROOT}" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
