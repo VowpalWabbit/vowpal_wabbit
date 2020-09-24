@@ -23,6 +23,7 @@ jobs:
       - name: Checkout vcpkg commit
         shell: bash -l {0}
         run: |
+          echo "::set-env name=VCPKG_INSTALLATION_ROOT::${VCPKG_INSTALLATION_ROOT}"
           cd ${VCPKG_INSTALLATION_ROOT}
           git fetch --unshallow
           git checkout ${{ matrix.config.vcpkg_commit }}
