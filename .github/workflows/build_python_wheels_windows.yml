@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2016
+    runs-on: windows-2019
     strategy:
       matrix:
         config:
@@ -23,18 +23,16 @@ jobs:
           git fetch --unshallow
           git checkout aa095559917a495b160986e9ad50556431509ace
           .\\bootstrap-vcpkg.bat
-      - uses: conda-incubator/setup-miniconda@v1.7.0
+          .\\vcpkg.exe --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-python boost-math python3 
+      - name: Set up Python ${{ matrix.config.version }}
+        uses: actions/setup-python@v2
         with:
-          auto-update-conda: true
           python-version: ${{ matrix.config.version }}
       - name: Build wheel
         shell: bash -l {0}
         run: |
-          ( set -o posix ; set ) | less
-          conda info
-          conda install python=${{ matrix.config.version }} wheel zlib boost py-boost
-          ls C:/Miniconda/envs/test/Library/lib
-          pip wheel . -w wheel_output --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX\\include\"" --verbose
+          pip install wheel
+          pip wheel . -w wheel_output --global-option --vcpkg-root ${VCPKG_INSTALLATION_ROOT} --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
@@ -42,7 +40,7 @@ jobs:
           path: wheel_output
   test:
     needs: build
-    runs-on: windows-2016
+    runs-on: windows-2019
     strategy:
       matrix:
         config:
