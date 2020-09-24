@@ -29,9 +29,8 @@ jobs:
       - name: Cache vcpkg
         uses: actions/cache@v2
         with:
-          path: |
-            ${VCPKG_INSTALLATION_ROOT}
-          key: ${{ runner.os }}-${{ matrix.config.version }}
+          path: ${VCPKG_INSTALLATION_ROOT}
+          key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}
       - name: Boostrap and install vcpkg packages
         shell: bash -l {0}
         run: |
