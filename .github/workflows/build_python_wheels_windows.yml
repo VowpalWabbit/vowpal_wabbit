@@ -30,7 +30,7 @@ jobs:
           path: ${{github.workspace}}\\vcpkg
           key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-1
       - name: Boostrap and install vcpkg packages
-        shell: cmd
+        shell: powershell
         run: |
           cd ${{github.workspace}}\\vcpkg
           .\\bootstrap-vcpkg.bat
@@ -39,7 +39,7 @@ jobs:
         with:
           path: ${{github.workspace}}\\vowpal_wabbit
       - name: Build wheel
-        shell: cmd
+        shell: powershell
         run: |
           cd ${{github.workspace}}\\vowpal_wabbit
           pip install wheel
