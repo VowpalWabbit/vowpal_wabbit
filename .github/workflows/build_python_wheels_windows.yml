@@ -16,24 +16,26 @@ jobs:
 #         - { version: 3.8, include_dir_name: python3.8}
     steps:
       - uses: actions/checkout@v2
-      - name: Cache vcpkg
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${VCPKG_INSTALLATION_ROOT}/buildtrees
-            ${VCPKG_INSTALLATION_ROOT}/installed
-            ${VCPKG_INSTALLATION_ROOT}/packages
-          key: ${{ runner.os }}-${{ matrix.config.version }}
       - name: Set up Python ${{ matrix.config.version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.config.version }}
-      - name: Boostrap and install vcpkg
+      - name: Checkout vcpkg commit
         shell: bash -l {0}
         run: |
           cd ${VCPKG_INSTALLATION_ROOT}
           git fetch --unshallow
           git checkout ${{ matrix.config.vcpkg_commit }}
+      - name: Cache vcpkg
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${VCPKG_INSTALLATION_ROOT}
+          key: ${{ runner.os }}-${{ matrix.config.version }}
+      - name: Boostrap and install vcpkg packages
+        shell: bash -l {0}
+        run: |
+          cd ${VCPKG_INSTALLATION_ROOT}
           .\\bootstrap-vcpkg.bat
           .\\vcpkg.exe --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-python boost-math python3 
       - name: Build wheel
