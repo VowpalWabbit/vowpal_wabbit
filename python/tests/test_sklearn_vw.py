@@ -67,7 +67,7 @@ class TestVW(BaseVWTest):
         assert model.vw_ is not None
 
     def test_save_load(self, data):
-        f = NamedTemporaryFile()
+        f = NamedTemporaryFile(delete=False)
 
         model_before = VW(l=100)
         model_before.fit(data.x, data.y)
