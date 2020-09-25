@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{github.workspace}}\\vcpkg
-          key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}
+          key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-1
       - name: Bootstrap and install vcpkg packages
         shell: powershell
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
