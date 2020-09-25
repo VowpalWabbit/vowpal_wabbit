@@ -852,8 +852,8 @@ class DefaultState : public BaseState<audit>
 
       if (ctx.key_length == 2 && ctx.key[1] == 'p')
       {
-        // Ignore "_p" when it is under the "c" key in decision service state.
-        if (ctx.root_state == &ctx.decision_service_state) Ignore(ctx, length);
+        // Ignore "_p" when it is inside the "c" key in decision service state.
+        if (ctx.root_state == &ctx.decision_service_state) { Ignore(ctx, length); }
 
         ctx.array_float_state.output_array = &ctx.label_object_state.probs;
         ctx.array_float_state.return_state = this;
