@@ -25,12 +25,14 @@ jobs:
           ref: ${{ matrix.config.vcpkg_commit }}
           path: ${{github.workspace}}\\vcpkg
       - name: Cache vcpkg
+        id: vcpkg-cache
         uses: actions/cache@v2
         with:
           path: ${{github.workspace}}\\vcpkg
           key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-1
       - name: Boostrap and install vcpkg packages
         shell: powershell
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         run: |
           cd ${{github.workspace}}\\vcpkg
           .\\bootstrap-vcpkg.bat
