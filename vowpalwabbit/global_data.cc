@@ -395,7 +395,6 @@ vw::~vw()
   if (l != nullptr)
   {
     l->finish();
-    free(l);
   }
 
   // Check if options object lifetime is managed internally.
@@ -422,4 +421,10 @@ vw::~vw()
 
   delete loss;
   delete all_reduce;
+  //delete init_state;
+  for(auto kv : reduction_template_map) {
+    kv.second->recursive_delete();
+  }
+  reduction_template_map.clear();
+  delete init_state;
 }

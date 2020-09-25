@@ -396,12 +396,12 @@ VW_WARNING_STATE_POP
     {
       finisher_fd.func(finisher_fd.data);
     }
-    learner_data.~shared_ptr<void>();
     if (finisher_fd.base)
     {
       finisher_fd.base->finish();
-      free(finisher_fd.base);
     }
+    this->~learner<char, char>();
+    free(this);
   }
   inline void recursive_delete() {
     if(finisher_fd.base) {

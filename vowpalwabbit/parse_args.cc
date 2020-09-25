@@ -1369,7 +1369,16 @@ void create_reduction_template(options_i& options, vw& all)
     all.reduction_stack.push_back(*reduction_it);
 
     auto* l = setup_base(*tmp_options, all);
-    all.reduction_template_map[l->hash_index()] = l;
+    // Don't add duplicate reductions (usually if the actual reduction returns nullptr)
+    // TODO: find a better way
+    if(all.reduction_template_map.find(l->hash_index()) != all.reduction_template_map.end())
+    {
+      l->recursive_delete();
+    }
+    else
+    {
+      all.reduction_template_map[l->hash_index()] = l;
+    }
   }
 
   pyatom_hacks_post(all, hacks);
@@ -1881,11 +1890,14 @@ void complete_initialize(vw* all){
     }
 
     all->l->init_driver();
+    /*
     for(auto kv : all->reduction_template_map) {
       kv.second->recursive_delete();
     }
     all->reduction_template_map.clear();
-
+    delete all->init_state;
+    all->init_state = nullptr;
+    */
   }
   catch (std::exception& e)
   {
@@ -1909,63 +1921,6 @@ vw* initialize(
     complete_initialize(all);
   }
   return all;
-  /*
-  vw& all = parse_args(options, trace_listener, trace_context);
-
-  try
-  {
-    all.init_state->skipModelLoad = skipModelLoad;
-    // if user doesn't pass in a model, read from options
-    if (!model)
-    {
-      all.init_state->model = new io_buf();
-      all.init_state->local_model = true;
-      std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
-      if (options.was_supplied("input_feature_regularizer"))
-      {
-        all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
-      }
-      read_regressor_file(all, all_initial_regressor_files, *all.init_state->model);
-    }
-
-    // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(options, all, *all.init_state->model);
-
-    parse_modules(options, all, all.init_state->dictionary_nses);
-
-    // TODO: Stack manipulation needs to happen here.
-    // We need to have some way to maintain the initialization state until setup is complete
-
-    parse_sources(options, all, *all.init_state->model, all.init_state->skipModelLoad);
-
-    // we must delay so parse_mask is fully defined.
-    for (size_t id = 0; id < all.init_state->dictionary_nses.size(); id++) parse_dictionary_argument(all, all.init_state->dictionary_nses[id]);
-
-    options.check_unregistered();
-
-    // upon direct query for help -- spit it out to stdout;
-    if (options.get_typed_option<bool>("help").value())
-    {
-      cout << options.help();
-      exit(0);
-    }
-
-    all.l->init_driver();
-
-    return &all;
-  }
-  catch (std::exception& e)
-  {
-    all.trace_message << "Error: " << e.what() << endl;
-    finish(all);
-    throw;
-  }
-  catch (...)
-  {
-    finish(all);
-    throw;
-  }
-  */
 }
 
 vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context, bool partial)

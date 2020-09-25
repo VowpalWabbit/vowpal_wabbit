@@ -100,6 +100,5 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
 
   vw.finish_example(examples);
   VW::finish(vw);
-  test_base_learner->finish();
-  free_it(test_base_learner);
+  VW::LEARNER::make_base(*test_base_learner)->finish();
 }

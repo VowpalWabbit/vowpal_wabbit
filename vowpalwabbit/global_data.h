@@ -321,6 +321,10 @@ struct initialization_state
   io_buf* model = nullptr;
   bool skipModelLoad;
   // options already saved in all
+  ~initialization_state()
+  {
+    delete model;
+  }
 };
 
 struct vw

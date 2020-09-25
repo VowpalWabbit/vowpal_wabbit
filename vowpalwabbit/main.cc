@@ -29,7 +29,10 @@ vw* setup(options_i& options)
   vw* all = nullptr;
   try
   {
-    all = VW::initialize(options);
+    all = VW::initialize(options, nullptr, false, nullptr, nullptr, true);
+    //auto r = VW::pop_reduction(all);
+    //VW::push_reduction(all, r);
+    VW::complete_initialize(all);
   }
   catch (const std::exception& ex)
   {
