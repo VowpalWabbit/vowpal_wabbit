@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label)
   {
     auto label = scoped_calloc_or_throw<VW::cb_continuous::continuous_label>();
     parse_label(lp, &p, "ca 185.121:0.657567:6.20426e-05", *label);
-    BOOST_CHECK_CLOSE(label->costs[0].probability, 6.20426e-05, FLOAT_TOL);
+    BOOST_CHECK_CLOSE(label->costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
     BOOST_CHECK_CLOSE(label->costs[0].cost, 0.657567, FLOAT_TOL);
     BOOST_CHECK_CLOSE(label->costs[0].action, 185.121, FLOAT_TOL);
 
