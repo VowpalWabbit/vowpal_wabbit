@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build:
@@ -30,7 +33,7 @@ jobs:
         with:
           path: ${{github.workspace}}\\vcpkg
           key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-1
-      - name: Boostrap and install vcpkg packages
+      - name: Bootstrap and install vcpkg packages
         shell: powershell
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         run: |
@@ -70,7 +73,7 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: wheel_${{ matrix.config.version }}
-      - name: Test wheel
+      - name: Install deps and test wheel
         shell: bash
         run: |
           export wheel_files=(wheel_${{ matrix.config.version }}/*)
