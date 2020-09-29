@@ -1355,7 +1355,9 @@ void create_reduction_template(options_i& options, vw& all)
   // TODO: hacks!
   hack_state hacks;
   pyatom_hacks_pre(all, *tmp_options, hacks);
-  
+
+  // TODO: We go to rend() - 11 because some of the base reductions have side effects that will destroy the state
+  // if called multiple times. Once all the side effects are removed, that should no longer be necessary
   for (auto reduction_it = tmp_reduction_stack.rbegin(); reduction_it != tmp_reduction_stack.rend() - 11; ++reduction_it) {
     all.reduction_stack.clear();
     if (!is_multi_reduction_hacks(*tmp_options, *reduction_it)) {

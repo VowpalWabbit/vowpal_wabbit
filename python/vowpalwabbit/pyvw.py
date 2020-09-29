@@ -290,7 +290,8 @@ class vw(pylibvw.vw):
         if any(x in kw for x in ext_file_args):
             self.needs_parser = True
 
-        # TODO: clean this up
+        # TODO: Having to call complete_initialize() based on this flag
+        # is unintuitive. Clean up the workflow around this
         if not partial_initialize and self.needs_parser:
             pylibvw.vw.run_parser(self)
 
