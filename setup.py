@@ -107,8 +107,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
             argslist = self.distribution.cmake_options.split(';')
             cmake_args += argslist
         
-        if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
-            cmake_args.append('-DBOOST_ROOT={}'.format(os.environ['CONDA_PREFIX']))
+        # If we are being installed in a conda environment then use the dependencies from there.
+        if 'CONDA_PREFIX' in os.environ:
+            cmake_args.append('-DCMAKE_PREFIX_PATH={}'.format(os.environ['CONDA_PREFIX']))
 
         # example of build args
         build_args = [

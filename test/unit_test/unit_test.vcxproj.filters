@@ -24,6 +24,9 @@
     <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="continuous_actions_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="distributionally_robust_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,16 +66,43 @@
     <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="offset_tree_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="power_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="options_boost_po_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="options_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stable_unique_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vwdll_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="random_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pmf_to_pdf_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cats_tree_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ccb_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="slates_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="scope_exit_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="slates_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="slates_test.cc">
@@ -93,6 +123,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cats_tree_tests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

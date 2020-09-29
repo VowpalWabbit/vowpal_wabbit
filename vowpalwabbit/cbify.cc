@@ -2,22 +2,29 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <cfloat>
+#include <vector>
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
-
-#include <vector>
+#include "prob_dist_cont.h"
+#include "debug_log.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
-// using namespace COST_SENSITIVE;
 
 using namespace VW::config;
 
+using std::endl;
+using VW::cb_continuous::continuous_label;
+using VW::cb_continuous::continuous_label_elm;
+
 struct cbify;
+
+VW_DEBUG_ENABLE(false)
 
 struct cbify_adf_data
 {
@@ -25,11 +32,25 @@ struct cbify_adf_data
   size_t num_actions;
 };
 
+struct cbify_reg
+{
+  float min_value;
+  float max_value;
+  float bandwidth;
+  int num_actions;
+  int loss_option;
+  int loss_report;
+  float loss_01_ratio;
+  continuous_label cb_cont_label;
+  float max_cost = std::numeric_limits<float>::lowest();
+};
+
 struct cbify
 {
   CB::label cb_label;
   uint64_t app_seed;
   action_scores a_s;
+  cbify_reg regression_data;
   // used as the seed
   size_t example_counter;
   vw* all;
@@ -47,6 +68,7 @@ struct cbify
   {
     CB::cb_label.delete_label(&cb_label);
     a_s.delete_v();
+    regression_data.cb_cont_label.costs.delete_v();
 
     if (use_adf)
     {
@@ -97,9 +119,16 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
+void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
+{
+  if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
+
+  data.cb_cont_label.costs.delete_v();  // todo: instead of above
+}
+
 void copy_example_to_adf(cbify& data, example& ec)
 {
-  auto& adf_data = data.adf_data;
+  cbify_adf_data& adf_data = data.adf_data;
   const uint64_t ss = data.all->weights.stride_shift();
   const uint64_t mask = data.all->weights.mask();
 
@@ -128,6 +157,167 @@ void copy_example_to_adf(cbify& data, example& ec)
       eca.tag.push_back('n');
     }
   }
+}
+
+float get_squared_loss(cbify& data, float chosen_action, float label)
+{
+  float diff = label - chosen_action;
+  float range = data.regression_data.max_value - data.regression_data.min_value;
+  return (diff * diff) / (range * range);
+}
+
+float get_absolute_loss(cbify& data, float chosen_action, float label)
+{
+  float diff = label - chosen_action;
+  float range = data.regression_data.max_value - data.regression_data.min_value;
+  return abs(diff) / range;
+}
+
+float get_01_loss(cbify& data, float chosen_action, float label)
+{
+  float diff = label - chosen_action;
+  float range = data.regression_data.max_value - data.regression_data.min_value;
+  if (abs(diff) <= (data.regression_data.loss_01_ratio * range)) return 0.0f;
+  return 1.0f;
+}
+
+// discretized continuous action space predict_or_learn. Non-afd workflow only
+// Receives Regression example as input, sends cb example to base learn/predict which is cb_explore
+template <bool is_learn>
+void predict_or_learn_regression_discrete(cbify& data, single_learner& base, example& ec)
+{
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
+             << endl;
+
+  label_data regression_label = ec.l.simple;
+  data.cb_label.costs.clear();
+  ec.l.cb = data.cb_label;
+  ec.pred.a_s = data.a_s;
+
+  // Call the cb_explore algorithm. It returns a vector of probabilities for each action
+  base.predict(ec);
+
+  uint32_t chosen_action;
+  if (sample_after_normalizing(
+          data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
+    THROW("Failed to sample from pdf");
+
+  CB::cb_class cb;
+  cb.action = chosen_action + 1;
+  cb.probability = ec.pred.a_s[chosen_action].score;
+
+  if (!cb.action) THROW("No action with non-zero probability found!");
+  float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
+  float converted_action =
+      data.regression_data.min_value + chosen_action * continuous_range / data.regression_data.num_actions;
+
+  if (data.regression_data.loss_option == 0)
+  { cb.cost = get_squared_loss(data, converted_action, regression_label.label); }
+  else if (data.regression_data.loss_option == 1)
+  {
+    cb.cost = get_absolute_loss(data, converted_action, regression_label.label);
+  }
+  else if (data.regression_data.loss_option == 2)
+  {
+    cb.cost = get_01_loss(data, converted_action, regression_label.label);
+  }
+
+  // Create a new cb label
+  data.cb_label.costs.push_back(cb);
+  ec.l.cb = data.cb_label;
+
+  if (is_learn) base.learn(ec);
+
+  if (data.regression_data.loss_report == 1)
+  {
+    // for reporting average loss to be in the correct range (reverse normalizing)
+    size_t siz = data.cb_label.costs.size();
+    if (data.regression_data.loss_option == 0)
+    { data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range; }
+    else if (data.regression_data.loss_option == 1)
+    {
+      data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range;
+    }
+  }
+
+  data.a_s = ec.pred.a_s;
+  data.a_s.clear();
+
+  ec.l.simple = regression_label;
+  ec.pred.scalar = converted_action;
+}
+
+// continuous action space predict_or_learn. Non-afd workflow only
+// Receives Regression example as input, sends cb_continuous example to base learn/predict
+template <bool is_learn>
+void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
+{
+  VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << simple_label_to_string(ec) << features_to_string(ec)
+             << endl;
+
+  // Save simple label from the example just in case base.predict changes the label.
+  // Technically it should not.
+  const label_data regression_label = ec.l.simple;
+
+  // Clear the prediction before getting a prediction from base
+  ec.pred.pdf_value = {0.f, 0.f};
+
+  // Get the continuous action and pdf value for the current features
+  base.predict(ec);
+
+  VW_DBG(ec) << "cbify-reg: base.predict() = " << simple_label_to_string(ec) << features_to_string(ec) << endl;
+  VW_DBG(ec) << "cbify-reg: predict before learn, chosen_action=" << ec.pred.pdf_value.action << endl;
+
+  // Create a label from the prediction and a cost derived from the actual
+  // regression label.
+
+  continuous_label_elm cb_cont_lbl;
+
+  cb_cont_lbl.action = ec.pred.pdf_value.action;
+  cb_cont_lbl.pdf_value = ec.pred.pdf_value.pdf_value;
+
+  if (data.regression_data.loss_option == 0)
+  { cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label); }
+  else if (data.regression_data.loss_option == 1)
+  {
+    cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.pdf_value.action, regression_label.label);
+  }
+  else if (data.regression_data.loss_option == 2)
+  {
+    cb_cont_lbl.cost = get_01_loss(data, ec.pred.pdf_value.action, regression_label.label);
+  }
+
+  data.regression_data.cb_cont_label.costs.clear();
+  data.regression_data.cb_cont_label.costs.push_back(cb_cont_lbl);
+
+  // Use the label inside the reduction data structure
+  ec.l.cb_cont = data.regression_data.cb_cont_label;
+
+  VW_DBG(ec) << "cbify-reg: before base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+  if (is_learn) base.learn(ec);
+  VW_DBG(ec) << "cbify-reg: after base.learn() = " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
+
+  // Update the label inside the reduction data structure
+  data.regression_data.cb_cont_label = ec.l.cb_cont;
+
+  if (data.regression_data.loss_report == 1)
+  {
+    // for reporting average loss to be in the correct range (reverse normalizing)
+    const float continuous_range = data.regression_data.max_value - data.regression_data.min_value;
+    const size_t cost_size = data.regression_data.cb_cont_label.costs.size();
+    if (data.regression_data.loss_option == 0)
+    {
+      data.regression_data.cb_cont_label.costs[cost_size - 1].cost =
+          cb_cont_lbl.cost * continuous_range * continuous_range;
+    }
+    else if (data.regression_data.loss_option == 1)
+    {
+      data.regression_data.cb_cont_label.costs[cost_size - 1].cost = cb_cont_lbl.cost * continuous_range;
+    }
+  }
+
+  ec.l.simple = regression_label;  // restore the regression label
+  ec.pred.scalar = cb_cont_lbl.action;
 }
 
 template <bool is_learn, bool use_cs>
@@ -172,8 +362,8 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   if (is_learn)
     base.learn(ec);
 
-  data.a_s.clear();
   data.a_s = ec.pred.a_s;
+  data.a_s.clear();
 
   if (use_cs)
     ec.l.cs = csl;
@@ -373,6 +563,78 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
   }
 }
 
+void output_example_regression_discrete(vw& all, cbify& data, example& ec)
+{
+  // data contains the cb vector, which store among other things, loss
+  // ec contains a simple label type
+  label_data& ld = ec.l.simple;
+  const auto& cb_costs = data.cb_label.costs;
+
+  // Track the max cost and report it at the end
+  if (cb_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_costs[0].cost;
+
+  if (cb_costs.size() > 0)
+    all.sd->update(ec.test_only, true /*cb_costs[0].action != FLT_MAX*/, cb_costs[0].cost, ec.weight, ec.num_features);
+
+  if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;
+
+  print_update(all, ec);
+}
+
+void output_example_regression(vw& all, cbify& data, example& ec)
+{
+  // data contains the cb_cont vector, which store among other things, loss
+  // ec contains a simple label type
+  label_data& ld = ec.l.simple;
+  const auto& cb_cont_costs = data.regression_data.cb_cont_label.costs;
+
+  // Track the max cost and report it at the end
+  if (cb_cont_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_cont_costs[0].cost;
+
+  if (cb_cont_costs.size() > 0)
+    all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
+
+  if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight;
+
+  print_update(all, ec);
+}
+
+void output_cb_reg_predictions(
+    std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors, continuous_label& label)
+{
+  std::stringstream strm;
+  if (label.costs.size() == 1)
+  {
+    continuous_label_elm cost = label.costs[0];
+    strm << cost.action << ":" << cost.cost << ":" << cost.pdf_value << std::endl;
+  }
+  else if (label.costs.empty())
+  {
+    strm << "ERR No costs found." << std::endl;
+  }
+  else
+  {
+    strm << "ERR Too many costs found. Expecting one." << std::endl;
+  }
+  const std::string str = strm.str();
+  for (auto& f : predict_file_descriptors) { f->write(str.c_str(), str.size()); }
+}
+
+void finish_example_cb_reg_continous(vw& all, cbify& data, example& ec)
+{
+  // add output example
+  output_example_regression(all, data, ec);
+  output_cb_reg_predictions(all.final_prediction_sink, data.regression_data.cb_cont_label);
+  VW::finish_example(all, ec);
+}
+
+void finish_example_cb_reg_discrete(vw& all, cbify& data, example& ec)
+{
+  // add output example
+  output_example_regression_discrete(all, data, ec);
+  VW::finish_example(all, ec);
+}
+
 void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
@@ -386,35 +648,89 @@ void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
 base_learner* cbify_setup(options_i& options, vw& all)
 {
   uint32_t num_actions = 0;
+  uint32_t cb_continuous_num_actions = 0;
   auto data = scoped_calloc_or_throw<cbify>();
   bool use_cs;
+  bool use_reg;  // todo: check
+  bool use_discrete;
 
   option_group_definition new_options("Make Multiclass into Contextual Bandit");
   new_options
       .add(make_option("cbify", num_actions)
                .keep()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
-      .add(make_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("cbify_cs", use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("cbify_reg", use_reg)
+               .help("Consume regression examples instead of multiclass and cost sensitive"))
+      .add(make_option("cats", cb_continuous_num_actions)
+               .default_value(0)
+               .keep()
+               .help("Continuous action tree with smoothing"))
+      .add(make_option("cb_discrete", use_discrete)
+               .keep()
+               .help("Discretizes continuous space and adds cb_explore as option"))
+      .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
+      .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
+      .add(make_option("loss_option", data->regression_data.loss_option)
+               .default_value(0)
+               .help("loss options for regression - 0:squared, 1:absolute, 2:0/1"))
+      .add(make_option("loss_report", data->regression_data.loss_report)
+               .default_value(0)
+               .help("loss report option - 0:normalized, 1:denormalized"))
+      .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio)
+               .default_value(0.1f)
+               .help("ratio of zero loss for 0/1 loss"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))
     return nullptr;
 
+  data->regression_data.num_actions = num_actions;
   data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
   data->all = &all;
 
-  if (data->use_adf)
-    init_adf_data(*data, num_actions);
+  if (data->use_adf) { init_adf_data(*data.get(), num_actions); }
 
-  if (!options.was_supplied("cb_explore") && !data->use_adf)
+  if (use_reg)
   {
-    std::stringstream ss;
-    ss << num_actions;
-    options.insert("cb_explore", ss.str());
+    // Check invalid parameter combinations
+    if (data->use_adf) { THROW("error: incompatible options: cb_explore_adf and cbify_reg"); }
+    if (use_cs) { THROW("error: incompatible options: cbify_cs and cbify_reg"); }
+    if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
+    { THROW("error: min and max values must be supplied with cbify_reg"); }
+
+    if (use_discrete && options.was_supplied("cats"))
+    { THROW("error: incompatible options: cb_discrete and cats"); } else if (use_discrete)
+    {
+      std::stringstream ss;
+      ss << num_actions;
+      options.insert("cb_explore", ss.str());
+    }
+    else if (options.was_supplied("cats"))
+    {
+      if (cb_continuous_num_actions != num_actions)
+        THROW("error: different number of actions specified for cbify and cb_continuous");
+    }
+    else
+    {
+      std::stringstream ss;
+      ss << num_actions;
+      options.insert("cats", ss.str());
+    }
+  }
+  else
+  {
+    if (!options.was_supplied("cb_explore") && !data->use_adf)
+    {
+      std::stringstream ss;
+      ss << num_actions;
+      options.insert("cb_explore", ss.str());
+    }
   }
 
   if (data->use_adf)
@@ -451,8 +767,23 @@ base_learner* cbify_setup(options_i& options, vw& all)
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
-    if (use_cs)
+    if (use_reg)
     {
+      all.p->lp = simple_label;
+      if (use_discrete)
+      {
+        l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
+            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar);
+        l->set_finish_example(finish_example_cb_reg_discrete);  // todo: check
+      }
+      else
+      {
+        l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
+            prediction_type_t::scalar);
+        l->set_finish_example(finish_example_cb_reg_continous);
+      }
+    }
+    else if (use_cs)
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
       all.label_type = label_type_t::cs;

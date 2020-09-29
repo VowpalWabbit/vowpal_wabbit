@@ -168,7 +168,7 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
 // W_MX 3  maximum absolute value
 // W_WE 4  Wealth
 // W_MG 5  Maximum Lipschitz constant
-void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
+void inner_coin_betting_predict(update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float w_mx = w[W_MX];
@@ -189,7 +189,7 @@ void inner_update_cb_state_and_predict(update_data& d, float x, float& wref)
     d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
 }
 
-void inner_update_cb_post(update_data& d, float x, float& wref)
+void inner_coin_betting_update_after_prediction(update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float fabs_x = fabs(x);
@@ -217,12 +217,12 @@ void inner_update_cb_post(update_data& d, float x, float& wref)
   w[W_WE] += (-gradient * w[W_XT]);
 }
 
-void update_state_and_predict_cb(ftrl& b, single_learner&, example& ec)
+void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
-  GD::foreach_feature<update_data, inner_update_cb_state_and_predict>(*b.all, ec, b.data);
+  GD::foreach_feature<update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
@@ -255,11 +255,10 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
-void update_after_prediction_cb(ftrl& b, example& ec)
+void coin_betting_update_after_prediction(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-
-  GD::foreach_feature<update_data, inner_update_cb_post>(*b.all, ec, b.data);
+  GD::foreach_feature<update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 
 template <bool audit>
@@ -281,13 +280,13 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_pistol(a, ec);
 }
 
-void learn_cb(ftrl& a, single_learner& base, example& ec)
+void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
-  update_state_and_predict_cb(a, base, ec);
+  coin_betting_predict(a, base, ec);
 
   // update state based on the prediction
-  update_after_prediction_cb(a, ec);
+  coin_betting_update_after_prediction(a, ec);
 }
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
@@ -389,7 +388,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   else if (coin)
   {
     algorithm_name = "Coin Betting";
-    learn_ptr = learn_cb;
+    learn_ptr = learn_coin_betting;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
   }

@@ -194,7 +194,7 @@ if(STATIC_LINK_VW)
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system thread)
+find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
 find_package(flatbuffers REQUIRED)
 
@@ -276,10 +276,15 @@ if(BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)
 
+  set(vw_c_api_unit_test_target "")
+  if(BUILD_EXPERIMENTAL_BINDING)
+    set(vw_c_api_unit_test_target "vw_c_api_unit_test")
+  endif()
+
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
   add_custom_target(test_with_output
     COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-    DEPENDS spanning_tree vw-unit-test.out vw-bin vw_c_api_unit_test
+    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target}
   )
 
   # Don't offer these make dependent targets on Windows
