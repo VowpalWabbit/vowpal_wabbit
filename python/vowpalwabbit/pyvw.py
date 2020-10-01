@@ -1538,7 +1538,6 @@ class _Col:
         ------
         ValueError
             If the values of the column are not valid.
-
         """
         if self.min_value is None:
             pass
@@ -1624,11 +1623,11 @@ class AttributeDescriptor(object):
             # else process to type and value range checking
             else:
                 # validate type
-                valid_type = isinstance(arg, self.expected_type)
+                valid_type = self.validate_type(arg)
 
                 # validate value
                 if self.min_value is not None and valid_type:
-                    valid_value = arg >= self.min_value
+                    valid_value = self.validate_value(arg)
                 else:
                     valid_value = True
 
@@ -1637,6 +1636,47 @@ class AttributeDescriptor(object):
                     instance.__dict__[self.attribute_name] = arg
                 else:
                     self.generate_error(instance, valid_type, valid_value)
+
+    def validate_value(self, arg):
+        """Validate value for literals (not for _Col).
+
+        Parameters
+        ----------
+        arg: int/float
+            The argument which value range has to be checked
+
+        Returns
+        -------
+        valid_type: bool
+            True if value is of valid type, False otherwise
+        """
+        if isinstance(arg, list):
+            valid_value = all([x >= self.min_value for x in arg])
+        else:
+            valid_value = arg >= self.min_value
+        return valid_value
+
+    def validate_type(self, arg):
+        """Validate type for literals (not for _Col).
+
+        Parameters
+        ----------
+        arg: int/float
+            The argument which value type has to be checked
+
+        Returns
+        -------
+        valid_type: bool
+            True if value is of valid type, False otherwise
+        """
+        if isinstance(arg, list):
+            valid_type = all([
+                    isinstance(x, self.expected_type)
+                    for x in arg
+                    ])
+        else:
+            valid_type = isinstance(arg, self.expected_type)
+        return valid_type
 
     def initialize_col_type(self, instance, colname):
         """Initialize the attribute as a _Col type
@@ -1648,13 +1688,22 @@ class AttributeDescriptor(object):
         colname: str/int/float
             The colname used for the _Col instance.
         """
+        if isinstance(colname, list):
+            for col in colname:
+                instance.__dict__["columns"].add(col)
 
-        instance.__dict__["columns"].add(colname)
-        instance.__dict__[self.attribute_name] = _Col(
-            colname=colname,
-            expected_type=self.expected_type,
-            min_value=self.min_value,
-        )
+            instance.__dict__[self.attribute_name] = [_Col(
+                colname=col,
+                expected_type=self.expected_type,
+                min_value=self.min_value,
+            ) for col in colname ]
+        else:
+            instance.__dict__["columns"].add(colname)
+            instance.__dict__[self.attribute_name] = _Col(
+                colname=colname,
+                expected_type=self.expected_type,
+                min_value=self.min_value,
+            )
 
     def generate_error(self, instance, valid_type, valid_value):
         """Generate message error for the attribute
@@ -1795,6 +1844,55 @@ class MulticlassLabel(object):
             out = name_col + " " + weight_col
         else:
             out = name_col
+        return out
+
+
+class MultiLabel(object):
+    """The multi labels type for the constructor of DFtoVW."""
+
+    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
+
+    def __init__(
+        self, name, name_from_df=True
+    ):
+        """Initialize a MultiLabel instance.
+
+        Parameters
+        ----------
+        name : str/int or list of str/int
+            The name of the multi labels. If name_from_df=False, it should be of
+            type (list of) int.
+        name_from_df: bool (default: True)
+            True if the name refers to a column in the dataframe and False if
+            the name is a constant.
+
+        Returns
+        -------
+        self : MulticlassLabel
+        """
+        self.name_from_df = name_from_df
+        self.name = name
+
+    def process(self, df):
+        """Returns the MultiLabel string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column(s).
+
+        Returns
+        -------
+        str or pandas.Series
+            The MultiLabel string representation.
+        """
+        names = self.name if isinstance(self.name, list) else [self.name]
+        for (i, name) in enumerate(names):
+            name_col = _get_col_or_value(name, df)
+            if i == 0:
+                out = name_col
+            else:
+                out += "," + name_col
         return out
 
 
@@ -2018,7 +2116,7 @@ class DFtoVW:
         namespaces : Namespace/list of Namespace
             One or more Namespace object(s), each of being composed of one or
             more Feature object(s).
-        label : SimpleLabel
+        label : SimpleLabel/MulticlassLabel/MultiLabel
             The label.
         tag :  str/int/float
             The tag (used as identifiers for examples).
@@ -2088,7 +2186,7 @@ class DFtoVW:
         df : pandas.DataFrame
             The dataframe used.
         label_type: str (default: 'simple_label')
-            The type of the label.
+            The type of the label. Available labels: 'simple_label', 'multiclass', 'multilabel'.
 
         Raises
         ------
@@ -2117,30 +2215,33 @@ class DFtoVW:
         dict_label_type = {
             "simple_label": SimpleLabel,
             "multiclass": MulticlassLabel,
+            "multilabel": MultiLabel,
         }
 
-        if isinstance(y, list):
-            if len(y) == 1:
-                y = y[0]
-            else:
-                raise ValueError(
-                    "Argument 'y' should a list of one string (or a string)."
-                )
-        if not isinstance(y, str):
-            raise TypeError(
-                "Argument 'y' should be a string or a list of one string."
-            )
-
-        try:
-            label = dict_label_type[label_type](y)
-        except KeyError:
+        if label_type not in dict_label_type:
             raise ValueError(
                 "'label_type' should be either of the following string: {label_types}".format(
                     label_types=repr(list(dict_label_type.keys()))[1:-1]
                 )
             )
 
-        x = list(x) if isinstance(x, (list, set)) else [x]
+        y = y if isinstance(y, list) else [y]
+        if not all(isinstance(yi, str) for yi in y):
+            raise TypeError(
+                "Argument 'y' should be a string or a list of string(s)."
+            )
+
+        if label_type != "multilabel":
+            if len(y) == 1:
+                y = y[0]
+            else:
+                raise ValueError(
+                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string or a list of exactly one string."
+                )
+
+        label = dict_label_type[label_type](y)
+
+        x = x if isinstance(x, list) else [x]
         if not all(isinstance(xi, str) for xi in x):
             raise TypeError(
                 "Argument 'x' should be a string or a list of string."
@@ -2216,7 +2317,7 @@ class DFtoVW:
         TypeError
             If label is not of type SimpleLabel or MulticlassLabel.
         """
-        available_labels = (SimpleLabel, MulticlassLabel)
+        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel)
 
         if self.label is None:
             pass
@@ -2346,10 +2447,19 @@ class DFtoVW:
             class_name = type(instance).__name__
             for attribute_name in vars(instance):
                 attribute_value = getattr(instance, attribute_name)
-                if isinstance(attribute_value, _Col):
+
+                if isinstance(attribute_value, list):
+                    list_of_col = all([isinstance(x, _Col) for x in attribute_value])
+                else:
+                    list_of_col = False
+
+                if isinstance(attribute_value, _Col) or list_of_col:
                     # Testing column type
                     try:
-                        attribute_value.check_col_type(self.df)
+                        if list_of_col:
+                            [x.check_col_type(self.df) for x in attribute_value]
+                        else:
+                            attribute_value.check_col_type(self.df)
                     except TypeError as type_error:
                         type_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
                             class_name=class_name,
@@ -2359,7 +2469,10 @@ class DFtoVW:
                         raise TypeError(type_error_msg)
                     # Testing column value range
                     try:
-                        attribute_value.check_col_value(self.df)
+                        if list_of_col:
+                            [x.check_col_value(self.df) for x in attribute_value]
+                        else:
+                            attribute_value.check_col_value(self.df)
                     except ValueError as value_error:
                         value_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
                             class_name=class_name,
