@@ -144,11 +144,8 @@ namespace cs_unittest
                 {
                     driver.ForEachMultiline(rawvw.Learn);
 
-                    if (passes > 1)
-                    {
-                        rawvw.EndOfPass();
-                        driver.Reset();
-                    }
+                    rawvw.EndOfPass();
+                    driver.Reset();
                 } while (remainingPasses-- > 0);
 
                 driver.Reset();
