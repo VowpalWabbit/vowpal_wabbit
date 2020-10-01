@@ -146,3 +146,4 @@ test/*.model
 test/*.stdout
 test/*.stderr
 test/*.lenient-diff
+test/outputs

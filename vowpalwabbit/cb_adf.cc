@@ -53,8 +53,8 @@ struct cb_adf
   const float _clip_p;
 
  public:
-  template <bool is_learn>
-  void do_actual_learning(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
   cb_adf(
@@ -293,12 +293,11 @@ example* test_adf_sequence(multi_ex& ec_seq)
   return ret;
 }
 
-template <bool is_learn>
-void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
+void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
   _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
-  if (is_learn && test_adf_sequence(ec_seq) != nullptr)
+  if (test_adf_sequence(ec_seq) != nullptr)
   {
     restore_prediction(ec_seq[0]->pred.a_s);
     switch (_gen_cs.cb_type)
@@ -325,12 +324,15 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
         THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
   }
-  else
-  {
-    gen_cs_test_example(ec_seq, _cs_labels);  // create test labels.
-    call_cs_ldf<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
-    save_prediction(ec_seq[0]->pred.a_s);
-  }
+}
+
+void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
+{
+  _offset = ec_seq[0]->ft_offset;
+  _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
+  gen_cs_test_example(ec_seq, _cs_labels);  // create test labels.
+  call_cs_ldf<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  save_prediction(ec_seq[0]->pred.a_s);
 }
 
 void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
@@ -467,9 +469,9 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
 }
 
-void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<true>(base, ec_seq); }
+void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.learn(base, ec_seq); }
 
-void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<false>(base, ec_seq); }
+void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 }  // namespace CB_ADF
 using namespace CB_ADF;
