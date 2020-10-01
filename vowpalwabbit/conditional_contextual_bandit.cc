@@ -14,11 +14,15 @@
 #include "constant.h"
 #include "v_array_pool.h"
 #include "decision_scores.h"
+#include "debug_log.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
 #include <bitset>
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::ccb
 
 using namespace VW::LEARNER;
 using namespace VW;
@@ -446,16 +450,16 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // the cb example contains at least 1 action
     if (has_action(data.cb_ex))
     {
-
-      // Notes: This reduction does not seem to have progressive validation or holdoff
-      // validation.  When this work is complete, remove the following line.
-      // For now we emulate this by calling predict first on base reductions to cache
-      // downstream predictions.
-
       if (is_learn)
+      {
+          multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
+//        // Call learn if only if there is a label
+//        if(data.cb_ex[0]->l.cb.costs.size() > 0)
+          multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset);
+      }
+      else
         multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
 
-      multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
       save_action_scores(data, decision_scores);
       clear_pred_and_label(data);
     }

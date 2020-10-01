@@ -77,12 +77,11 @@ struct cb_sample_data
       {
         _random_state->get_and_update_random();
       }
+
+      result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
+      assert(result == S_EXPLORATION_OK);
+      _UNUSED(result);
     }
-
-    auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
-    assert(result == S_EXPLORATION_OK);
-
-    _UNUSED(result);
   }
 
  private:

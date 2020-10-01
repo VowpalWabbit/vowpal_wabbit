@@ -117,13 +117,6 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
   }
-  else if (!examples[0]->predict_called_before_learn)
-  {
-    // Notes:  Predict will be called as part of workflow before learn.
-    // No need to call predict again here ... however not all top level reductions
-    // do this.  So have to call in some cases
-    predict(data, base, examples);
-  }
 }
 
 template <typename ExploreType>
