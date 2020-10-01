@@ -299,7 +299,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
         predict<true, false, false>, all.example_parser, data->k, "oaa-raw", prediction_type_t::multiclass);
   else
     l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, false, false>,
-        predict<false, false, false>, all.example_parser, data->k, "oaa", prediction_type_t::multiclass);
+        predict<false, false, false>, all.example_parser, data->k, "oaa", prediction_type_t::multiclass, false);
 
   if (data_ptr->num_subsample > 0)
   {
