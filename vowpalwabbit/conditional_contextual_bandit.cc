@@ -374,11 +374,14 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
     data.origin_index[index++] = (uint32_t)i;
 
     // Remember the index of the chosen action
-    if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+    if (is_learn)
     {
-      // This is used to remove the label later.
-      data.action_with_label = (uint32_t)i;
-      attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
+      if (slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+      {
+        // This is used to remove the label later.
+        data.action_with_label = (uint32_t)i;
+        attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
+      }
     }
   }
 
