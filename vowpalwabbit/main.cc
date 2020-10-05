@@ -42,7 +42,7 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  auto skip_driver = options.get_typed_option<bool>("what_if").value();
+  auto skip_driver = options.get_typed_option<bool>("dry_run").value();
 
   /*
   right now we are abusing the api, to generate the options but in theory we should seperate to
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 
     vw& all = *alls[0];
 
-    auto skip_driver = all.options->get_typed_option<bool>("what_if").value();
+    auto skip_driver = all.options->get_typed_option<bool>("dry_run").value();
 
     if (skip_driver)
     {

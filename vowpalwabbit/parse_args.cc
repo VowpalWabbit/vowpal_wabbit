@@ -376,7 +376,7 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
-      .add(make_option("what_if", skip_driver)
+      .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
@@ -1804,7 +1804,7 @@ vw* initialize(
       exit(0);
     }
 
-    if (!options.get_typed_option<bool>("what_if").value())
+    if (!options.get_typed_option<bool>("dry_run").value())
     {
       all.l->init_driver();
     }
