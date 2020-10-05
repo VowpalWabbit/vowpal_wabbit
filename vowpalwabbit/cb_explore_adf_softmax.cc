@@ -65,10 +65,21 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
-               .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
-      .add(make_option("softmax", softmax).keep().necessary().help("softmax exploration"))
-      .add(make_option("lambda", lambda).keep().allow_override().default_value(1.f).help("parameter for softmax"));
+               .help("Online explore-exploit for a contextual bandit problem "
+                     "with multiline action dependent features"))
+      .add(make_option("epsilon", epsilon)
+               .keep()
+               .allow_override()
+               .help("epsilon-greedy exploration"))
+      .add(make_option("softmax", softmax)
+               .keep()
+               .necessary()
+               .help("softmax exploration"))
+      .add(make_option("lambda", lambda)
+               .keep()
+               .allow_override()
+               .default_value(1.f)
+               .help("parameter for softmax"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

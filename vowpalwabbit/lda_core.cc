@@ -1318,7 +1318,11 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   auto ld = scoped_calloc_or_throw<lda>();
   option_group_definition new_options("Latent Dirichlet Allocation");
   int math_mode;
-  new_options.add(make_option("lda", ld->topics).keep().necessary().help("Run lda with <int> topics"))
+  new_options
+      .add(make_option("lda", ld->topics)
+               .keep()
+               .necessary()
+               .help("Run lda with <int> topics"))
       .add(make_option("lda_alpha", ld->lda_alpha)
                .keep()
                .default_value(0.1f)
@@ -1327,11 +1331,20 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
                .keep()
                .default_value(0.1f)
                .help("Prior on sparsity of topic distributions"))
-      .add(make_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"))
-      .add(make_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
-      .add(make_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"))
-      .add(make_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"))
-      .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
+      .add(make_option("lda_D", ld->lda_D)
+               .default_value(10000.0f)
+               .help("Number of documents"))
+      .add(make_option("lda_epsilon", ld->lda_epsilon)
+               .default_value(0.001f)
+               .help("Loop convergence threshold"))
+      .add(make_option("minibatch", ld->minibatch)
+               .default_value(1)
+               .help("Minibatch size, for LDA"))
+      .add(make_option("math-mode", math_mode)
+               .default_value(USE_SIMD)
+               .help("Math mode: simd, accuracy, fast-approx"))
+      .add(make_option("metrics", ld->compute_coherence_metrics)
+               .help("Compute metrics"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

@@ -45,20 +45,25 @@ vw* setup(options_i& options)
   auto skip_driver = options.get_typed_option<bool>("dry_run").value();
 
   /*
-  right now we are abusing the api, to generate the options but in theory we should seperate to
-  re-use same options and same vw without a delete could be added as experimental as a debugging tool
+  right now we are abusing the api, to generate the options but in theory we
+  should seperate to
+  re-use same options and same vw without a delete could be added as
+  experimental as a debugging tool
   */
-  if (!all->logger.quiet && !options.was_supplied("audit_regressor") && !all->enabled_reductions.empty())
-  {
-    const char* const delim = ", ";
+  if (!all->logger.quiet && !options.was_supplied("audit_regressor") &&
+      !all->enabled_reductions.empty()) {
+    const char *const delim = ", ";
     std::ostringstream imploded;
-    std::copy(all->enabled_reductions.begin(), all->enabled_reductions.end()-1, std::ostream_iterator<std::string>(imploded, delim));
+    std::copy(all->enabled_reductions.begin(),
+              all->enabled_reductions.end() - 1,
+              std::ostream_iterator<std::string>(imploded, delim));
 
-    all->trace_message << "Enabled reductions: " << imploded.str() << all->enabled_reductions.back() << std::endl;
+    all->trace_message << "Enabled reductions: " << imploded.str()
+                       << all->enabled_reductions.back() << std::endl;
   }
 
-  if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
-  {
+  if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr &&
+      !options.was_supplied("audit_regressor")) {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"
                        << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
@@ -125,14 +130,12 @@ int main(int argc, char* argv[])
       arguments.push_back(std::move(ptr));
     }
 
-    vw& all = *alls[0];
+    vw &all = *alls[0];
 
     auto skip_driver = all.options->get_typed_option<bool>("dry_run").value();
 
-    if (skip_driver)
-    {
-      for (vw* v : alls)
-      {
+    if (skip_driver) {
+      for (vw *v : alls) {
         VW::finish(*v);
       }
       return 0;

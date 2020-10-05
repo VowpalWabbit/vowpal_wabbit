@@ -6,4 +6,6 @@
 
 #include "reductions_fwd.h"
 
-VW::LEARNER::base_learner* audit_regressor_setup(std::string const& id, VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner *audit_regressor_setup(std::string const &id,
+                                                 VW::config::options_i &options,
+                                                 vw &all);

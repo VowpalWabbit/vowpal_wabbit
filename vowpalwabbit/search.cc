@@ -2694,7 +2694,8 @@ base_learner* setup(options_i& options, vw& all)
   new_options.add(make_option("search_task", task_string)
                       .keep()
                       .necessary()
-                      .help("the search task (use \"--search_task list\" to get a list of available tasks)"));
+                      .help("the search task (use \"--search_task list\" to "
+                            "get a list of available tasks)"));
   new_options.add(
       make_option("search_metatask", metatask_string)
           .keep()

@@ -204,10 +204,16 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   bool probabilities = false;
   bool scores = false;
   option_group_definition new_options("One Against All Options");
-  new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
-      .add(make_option("oaa_subsample", data->num_subsample)
-               .help("subsample this number of negative examples when learning"))
-      .add(make_option("probabilities", probabilities).help("predict probabilites of all classes"))
+  new_options
+      .add(make_option("oaa", data->k)
+               .keep()
+               .necessary()
+               .help("One-against-all multiclass with <k> labels"))
+      .add(
+          make_option("oaa_subsample", data->num_subsample)
+              .help("subsample this number of negative examples when learning"))
+      .add(make_option("probabilities", probabilities)
+               .help("predict probabilites of all classes"))
       .add(make_option("scores", scores).help("output raw scores per class"));
 
   if (!options.add_parse_and_check_necessary(new_options))

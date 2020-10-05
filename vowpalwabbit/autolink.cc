@@ -90,7 +90,10 @@ VW::LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 {
   uint32_t d;
   option_group_definition new_options("Autolink");
-  new_options.add(make_option("autolink", d).keep().necessary().help("create link function with polynomial d"));
+  new_options.add(make_option("autolink", d)
+                      .keep()
+                      .necessary()
+                      .help("create link function with polynomial d"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

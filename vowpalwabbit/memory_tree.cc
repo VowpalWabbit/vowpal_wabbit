@@ -1253,17 +1253,21 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
       .add(make_option("dream_repeats", tree->dream_repeats)
                .default_value(1)
                .help("number of dream operations per example (default = 1)"))
-      .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
-      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (default = True)"))
+      .add(make_option("top_K", tree->top_K)
+               .default_value(1)
+               .help("top K prediction error (default 1)"))
+      .add(make_option("learn_at_leaf", tree->learn_at_leaf)
+               .help("whether or not learn at leaf (default = True)"))
       .add(make_option("oas", tree->oas).help("use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
                .help("turn on dream operations at reward based update as well"))
-      .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
+      .add(
+          make_option("online", tree->online)
+              .help("turn on dream operations at reward based update as well"));
 
   // TODO: check this one
-  if (!options.add_parse_and_check_necessary(new_options))
-  {
+  if (!options.add_parse_and_check_necessary(new_options)) {
     return nullptr;
   }
 

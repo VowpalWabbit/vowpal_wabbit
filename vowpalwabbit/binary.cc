@@ -41,7 +41,10 @@ VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 {
   bool binary = false;
   option_group_definition new_options("Binary loss");
-  new_options.add(make_option("binary", binary).keep().necessary().help("report loss as binary classification on -1,1"));
+  new_options.add(make_option("binary", binary)
+                      .keep()
+                      .necessary()
+                      .help("report loss as binary classification on -1,1"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

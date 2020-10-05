@@ -1087,10 +1087,17 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   bool bfgs_option = false;
   option_group_definition bfgs_outer_options("LBFGS and Conjugate Gradient options");
   bfgs_outer_options.add(
-      make_option("conjugate_gradient", conjugate_gradient).keep().necessary().help("use conjugate gradient based optimization"));
+      make_option("conjugate_gradient", conjugate_gradient)
+          .keep()
+          .necessary()
+          .help("use conjugate gradient based optimization"));
 
   option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient options");
-  bfgs_inner_options.add(make_option("bfgs", bfgs_option).keep().necessary().help("use conjugate gradient based optimization"));
+  bfgs_inner_options.add(
+      make_option("bfgs", bfgs_option)
+          .keep()
+          .necessary()
+          .help("use conjugate gradient based optimization"));
   bfgs_inner_options.add(make_option("hessian_on", all.hessian_on).help("use second derivative in line search"));
   bfgs_inner_options.add(make_option("mem", b->m).default_value(15).help("memory in bfgs"));
   bfgs_inner_options.add(
