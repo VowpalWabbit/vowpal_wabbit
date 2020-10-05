@@ -1282,6 +1282,11 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 
 }
 
+void register_reduction(vw& all, std::tuple<std::string, VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> tup)
+{
+
+}
+
 void parse_reductions(options_i& options, vw& all)
 {
 
@@ -1363,10 +1368,11 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_bag", VW::cb_explore_adf::bag::setup));
   all.reduction_stack.push(std::make_tuple("cb_dro", cb_dro_setup));
   all.reduction_stack.push(std::make_tuple("cb_sample", cb_sample_setup));
+  // see line 1375, this should be brought in by the ones that generate multiexamples
   all.reduction_stack.push(std::make_tuple("shared_feature_merger_setup", VW::shared_feature_merger::shared_feature_merger_setup)); // custom logic
   all.reduction_stack.push(std::make_tuple("ccb_explore_adf", CCB::ccb_explore_adf_setup));
   all.reduction_stack.push(std::make_tuple("slates", VW::slates::slates_setup));
-  // cbify/warm_cb can genrate multi-examples. Merge shared features after them
+  // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(std::make_tuple("warm_cb", warm_cb_setup));
   all.reduction_stack.push(std::make_tuple("cbify", cbify_setup));
   all.reduction_stack.push(std::make_tuple("cbify_ldf", cbifyldf_setup));
