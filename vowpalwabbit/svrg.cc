@@ -173,16 +173,11 @@ base_learner* svrg_setup(options_i& options, vw& all)
 
   bool svrg_option = false;
   option_group_definition new_options("Stochastic Variance Reduced Gradient");
-  new_options
-      .add(make_option("svrg", svrg_option)
-               .keep()
-               .necessary()
-               .help("Streaming Stochastic Variance Reduced Gradient"))
-      .add(make_option("stage_size", s->stage_size)
-               .default_value(1)
-               .help("Number of passes per SVRG stage"));
+  new_options.add(make_option("svrg", svrg_option).keep().necessary().help("Streaming Stochastic Variance Reduced Gradient"))
+      .add(make_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) {
+  if (!options.add_parse_and_check_necessary(new_options))
+  {
     return nullptr;
   }
 

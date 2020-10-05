@@ -61,10 +61,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<multi_oaa>();
   option_group_definition new_options("Multilabel One Against All");
-  new_options.add(make_option("multilabel_oaa", data->k)
-                      .keep()
-                      .necessary()
-                      .help("One-against-all multilabel with <k> labels"));
+  new_options.add(make_option("multilabel_oaa", data->k).keep().necessary().help("One-against-all multilabel with <k> labels"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

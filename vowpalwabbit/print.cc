@@ -49,10 +49,7 @@ VW::LEARNER::base_learner* print_setup(options_i& options, vw& all)
 {
   bool print_option = false;
   option_group_definition new_options("Print psuedolearner");
-  new_options.add(make_option("print", print_option)
-                      .keep()
-                      .necessary()
-                      .help("print examples"));
+  new_options.add(make_option("print", print_option).keep().necessary().help("print examples"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

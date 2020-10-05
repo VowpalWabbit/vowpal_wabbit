@@ -867,18 +867,11 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   bool ksvm = false;
 
   option_group_definition new_options("Kernel SVM");
-  new_options
-      .add(make_option("ksvm", ksvm).keep().necessary().help("kernel svm"))
-      .add(make_option("reprocess", params->reprocess)
-               .default_value(1)
-               .help("number of reprocess steps for LASVM"))
-      .add(make_option("pool_greedy", params->active_pool_greedy)
-               .help("use greedy selection on mini pools"))
-      .add(make_option("para_active", params->para_active)
-               .help("do parallel active learning"))
-      .add(make_option("pool_size", params->pool_size)
-               .default_value(1)
-               .help("size of pools for active learning"))
+  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("kernel svm"))
+      .add(make_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
+      .add(make_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
+      .add(make_option("para_active", params->para_active).help("do parallel active learning"))
+      .add(make_option("pool_size", params->pool_size).default_value(1).help("size of pools for active learning"))
       .add(make_option("subsample", params->subsample)
                .default_value(1)
                .help("number of items to subsample from the pool"))
@@ -886,16 +879,11 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
                .keep()
                .default_value("linear")
                .help("type of kernel (rbf or linear (default))"))
-      .add(make_option("bandwidth", bandwidth)
-               .keep()
-               .default_value(1.f)
-               .help("bandwidth of rbf kernel"))
-      .add(make_option("degree", degree)
-               .keep()
-               .default_value(2)
-               .help("degree of poly kernel"));
+      .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
+      .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) {
+  if (!options.add_parse_and_check_necessary(new_options))
+  {
     return nullptr;
   }
 

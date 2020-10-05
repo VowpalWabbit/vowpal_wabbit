@@ -616,12 +616,12 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
                .keep()
                .necessary()
-               .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning "
-                     "with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report)
-               .help("Report average loss from all slots"));
+               .help(
+                   "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) {
+  if (!options.add_parse_and_check_necessary(new_options))
+  {
     return nullptr;
   }
   data->all_slots_loss_report = all_slots_loss_report;

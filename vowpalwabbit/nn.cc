@@ -423,29 +423,13 @@ base_learner* nn_setup(options_i& options, vw& all)
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
-  new_options
-      .add(make_option("nn", n->k)
-               .keep()
-               .necessary()
-               .help("Sigmoidal feedforward network with <k> hidden units"))
+  new_options.add(make_option("nn", n->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
       .add(make_option("inpass", n->inpass)
                .keep()
-               .help("Train or test "
-                     "sigmoidal feedforward "
-                     "network with input "
-                     "passthrough."))
-      .add(make_option("multitask", n->multitask)
-               .keep()
-               .help("Share hidden layer across all reduced tasks."))
-      .add(
-          make_option("dropout", n->dropout)
-              .keep()
-              .help(
-                  "Train or test sigmoidal feedforward network using dropout."))
-      .add(make_option("meanfield", meanfield)
-               .help("Train or test sigmoidal "
-                     "feedforward network using "
-                     "mean field."));
+               .help("Train or test sigmoidal feedforward network with input passthrough."))
+      .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
+      .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
+      .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

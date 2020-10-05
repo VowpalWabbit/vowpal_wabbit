@@ -575,71 +575,51 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("warm_cb", num_actions)
                .keep()
                .necessary()
-               .help("Convert multiclass on <k> classes into a contextual "
-                     "bandit problem"))
+               .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("warm_cb_cs", use_cs)
-               .help("consume cost-sensitive "
-                     "classification examples "
-                     "instead of multiclass"))
-      .add(make_option("loss0", data->loss0)
-               .default_value(0.f)
-               .help("loss for correct label"))
-      .add(make_option("loss1", data->loss1)
-               .default_value(1.f)
-               .help("loss for incorrect label"))
+               .help("consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
       .add(make_option("warm_start", data->ws_period)
                .default_value(0U)
                .help("number of training examples for warm start phase"))
-      .add(make_option("epsilon", data->epsilon)
-               .keep()
-               .allow_override()
-               .help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("interaction", data->inter_period)
                .default_value(UINT32_MAX)
-               .help("number of examples for the interactive contextual bandit "
-                     "learning phase"))
-      .add(make_option("warm_start_update", data->upd_ws)
-               .help("indicator of warm start updates"))
-      .add(make_option("interaction_update", data->upd_inter)
-               .help("indicator of interaction updates"))
+               .help("number of examples for the interactive contextual bandit learning phase"))
+      .add(make_option("warm_start_update", data->upd_ws).help("indicator of warm start updates"))
+      .add(make_option("interaction_update", data->upd_inter).help("indicator of interaction updates"))
       .add(make_option("corrupt_type_warm_start", data->cor_type_ws)
                .default_value(UAR)
-               .help("type of label corruption in the warm start phase (1: "
-                     "uniformly at random, 2: circular, 3: "
+               .help("type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: "
                      "replacing with overwriting label)"))
       .add(make_option("corrupt_prob_warm_start", data->cor_prob_ws)
                .default_value(0.f)
                .help("probability of label corruption in the warm start phase"))
       .add(make_option("choices_lambda", data->choices_lambda)
                .default_value(1U)
-               .help("the number of candidate lambdas to aggregate (lambda is "
-                     "the importance weight parameter between "
+               .help("the number of candidate lambdas to aggregate (lambda is the importance weight parameter between "
                      "the two sources)"))
       .add(make_option("lambda_scheme", data->lambda_scheme)
                .default_value(ABS_CENTRAL)
-               .help("The scheme for generating candidate lambda set (1: "
-                     "center lambda=0.5, 2: center lambda=0.5, min "
-                     "lambda=0, max lambda=1, 3: center "
-                     "lambda=epsilon/(1+epsilon), 4: center "
-                     "lambda=epsilon/(1+epsilon), min lambda=0, max lambda=1); "
-                     "the rest of candidate lambda values are "
+               .help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min "
+                     "lambda=0, max lambda=1, 3: center lambda=epsilon/(1+epsilon), 4: center "
+                     "lambda=epsilon/(1+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are "
                      "generated using a doubling scheme"))
       .add(make_option("overwrite_label", data->overwrite_label)
                .default_value(1U)
                .help("the label used by type 3 corruptions (overwriting)"))
-      .add(
-          make_option("sim_bandit", data->sim_bandit)
-              .help(
-                  "simulate contextual bandit updates on warm start examples"));
+      .add(make_option("sim_bandit", data->sim_bandit)
+               .help("simulate contextual bandit updates on warm start examples"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) {
+  if (!options.add_parse_and_check_necessary(new_options))
+  {
     return nullptr;
   }
 
-  if (use_cs && (options.was_supplied("corrupt_type_warm_start") ||
-                 options.was_supplied("corrupt_prob_warm_start"))) {
-    THROW(
-        "label corruption on cost-sensitive examples not currently supported");
+  if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
+  {
+    THROW("label corruption on cost-sensitive examples not currently supported");
   }
 
   data->app_seed = uniform_hash("vw", 2, 0);

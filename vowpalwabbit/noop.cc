@@ -14,8 +14,7 @@ VW::LEARNER::base_learner* noop_setup(options_i& options, vw&)
 {
   bool noop = false;
   option_group_definition new_options("Noop Learner");
-  new_options.add(
-      make_option("noop", noop).keep().necessary().help("do no learning"));
+  new_options.add(make_option("noop", noop).keep().necessary().help("do no learning"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

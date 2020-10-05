@@ -45,8 +45,7 @@ constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label ==
 
 void reset_seed(LRQstate& lrq)
 {
-  if (lrq.all->bfgs)
-    lrq.seed = lrq.initial_seed;
+  if (lrq.all->bfgs) lrq.seed = lrq.initial_seed;
 }
 
 template <bool is_learn>
@@ -57,9 +56,9 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
   // Remember original features
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
-  for (namespace_index i : ec.indices) {
-    if (lrq.lrindices[i])
-      lrq.orig_size[i] = ec.feature_space[i].size();
+  for (namespace_index i : ec.indices)
+  {
+    if (lrq.lrindices[i]) lrq.orig_size[i] = ec.feature_space[i].size();
   }
 
   size_t which = ec.example_counter;
@@ -168,23 +167,15 @@ base_learner* lrq_setup(options_i& options, vw& all)
   auto lrq = scoped_calloc_or_throw<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
-  new_options
-      .add(make_option("lrq", lrq_names)
-               .keep()
-               .necessary()
-               .help("use low rank quadratic features"))
-      .add(make_option("lrqdropout", lrq->dropout)
-               .keep()
-               .help("use dropout training for low rank quadratic features"));
+  new_options.add(make_option("lrq", lrq_names).keep().necessary().help("use low rank quadratic features"))
+      .add(make_option("lrqdropout", lrq->dropout).keep().help("use dropout training for low rank quadratic features"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (auto &lrq_name : lrq_names)
-    lrq_name = spoof_hex_encoded_namespaces(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
@@ -193,8 +184,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
   if (!all.logger.quiet)
   {
     all.trace_message << "creating low rank quadratic features for pairs: ";
-    if (lrq->dropout)
-      all.trace_message << "(using dropout) ";
+    if (lrq->dropout) all.trace_message << "(using dropout) ";
   }
 
   for (std::string const& i : lrq->lrpairs)
@@ -216,8 +206,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
     maxk = std::max(k, k);
   }
 
-  if (!all.logger.quiet)
-    all.trace_message << std::endl;
+  if (!all.logger.quiet) all.trace_message << std::endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate, example>& l = init_learner(

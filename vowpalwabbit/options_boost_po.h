@@ -51,8 +51,7 @@ struct options_boost_po : public options_i
   options_boost_po& operator=(options_boost_po&) = delete;
 
   void add_and_parse(const option_group_definition& group) override;
-  bool
-  add_parse_and_check_necessary(const option_group_definition &group) override;
+  bool add_parse_and_check_necessary(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
   std::string help() const override;
   void check_unregistered() override;

@@ -191,30 +191,14 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
-               .help("Online explore-exploit for a contextual bandit problem "
-                     "with multiline action dependent features"))
-      .add(make_option("cover", cover_size)
-               .keep()
-               .necessary()
-               .help("Online cover based exploration"))
-      .add(make_option("psi", psi)
-               .keep()
-               .default_value(1.0f)
-               .help("disagreement parameter for cover"))
-      .add(make_option("nounif", nounif)
-               .keep()
-               .help("do not explore uniformly "
-                     "on zero-probability "
-                     "actions in cover"))
-      .add(make_option("first_only", first_only)
-               .keep()
-               .help("Only explore the first action in a tie-breaking event"))
+               .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
+      .add(make_option("cover", cover_size).keep().necessary().help("Online cover based exploration"))
+      .add(make_option("psi", psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
+      .add(make_option("nounif", nounif).keep().help("do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .help("contextual bandit "
-                     "method to use in "
-                     "{ips,dr,mtr}. "
-                     "Default: mtr"));
+               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;

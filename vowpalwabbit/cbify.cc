@@ -659,48 +659,30 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("cbify", num_actions)
                .keep()
                .necessary()
-               .help("Convert multiclass on <k> classes into a contextual "
-                     "bandit problem"))
-      .add(make_option("cbify_cs", use_cs)
-               .help("Consume cost-sensitive "
-                     "classification examples "
-                     "instead of multiclass"))
+               .help("Convert multiclass on <k> classes into a contextual bandit problem"))
+      .add(make_option("cbify_cs", use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("cbify_reg", use_reg)
-               .help("Consume regression examples "
-                     "instead of multiclass and "
-                     "cost sensitive"))
+               .help("Consume regression examples instead of multiclass and cost sensitive"))
       .add(make_option("cats", cb_continuous_num_actions)
                .default_value(0)
                .keep()
                .help("Continuous action tree with smoothing"))
-      .add(
-          make_option("cb_discrete", use_discrete)
-              .keep()
-              .help(
-                  "Discretizes continuous space and adds cb_explore as option"))
-      .add(make_option("min_value", data->regression_data.min_value)
+      .add(make_option("cb_discrete", use_discrete)
                .keep()
-               .help("Minimum continuous value"))
-      .add(make_option("max_value", data->regression_data.max_value)
-               .keep()
-               .help("Maximum continuous value"))
-      .add(
-          make_option("loss_option", data->regression_data.loss_option)
-              .default_value(0)
-              .help(
-                  "loss options for regression - 0:squared, 1:absolute, 2:0/1"))
+               .help("Discretizes continuous space and adds cb_explore as option"))
+      .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
+      .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
+      .add(make_option("loss_option", data->regression_data.loss_option)
+               .default_value(0)
+               .help("loss options for regression - 0:squared, 1:absolute, 2:0/1"))
       .add(make_option("loss_report", data->regression_data.loss_report)
                .default_value(0)
                .help("loss report option - 0:normalized, 1:denormalized"))
       .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio)
                .default_value(0.1f)
                .help("ratio of zero loss for 0/1 loss"))
-      .add(make_option("loss0", data->loss0)
-               .default_value(0.f)
-               .help("loss for correct label"))
-      .add(make_option("loss1", data->loss1)
-               .default_value(1.f)
-               .help("loss for incorrect label"));
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
@@ -793,12 +775,12 @@ base_learner* cbify_setup(options_i& options, vw& all)
             prediction_type_t::scalar);
         l->set_finish_example(finish_example_cb_reg_continous);
       }
-    } else if (use_cs)
-      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>,
-                                       predict_or_learn<false, true>, all.p, 1);
+    }
+    else if (use_cs)
+      l = &init_cost_sensitive_learner(
+          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>,
-                                   predict_or_learn<false, false>, all.p, 1);
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
   }
   all.delete_prediction = nullptr;
 
@@ -812,16 +794,9 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
   new_options
-      .add(make_option("cbify_ldf", cbify_ldf_option)
-               .keep()
-               .necessary()
-               .help("Convert csoaa_ldf into a contextual bandit problem"))
-      .add(make_option("loss0", data->loss0)
-               .default_value(0.f)
-               .help("loss for correct label"))
-      .add(make_option("loss1", data->loss1)
-               .default_value(1.f)
-               .help("loss for incorrect label"));
+      .add(make_option("cbify_ldf", cbify_ldf_option).keep().necessary().help("Convert csoaa_ldf into a contextual bandit problem"))
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
 
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
