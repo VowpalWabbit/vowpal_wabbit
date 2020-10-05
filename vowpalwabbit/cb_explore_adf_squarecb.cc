@@ -202,7 +202,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
   uint32_t num_actions = (uint32_t)preds.size();
 
   // The actual parameter $\gamma$ used in the SquareCB.
-  const float gamma = _gamma_scale * std::pow(_counter, _gamma_exponent);
+  const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
 
   // RegCB action set parameters
   const float max_range = _max_cb_cost - _min_cb_cost;
@@ -231,7 +231,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
       for (size_t a = 0; a < num_actions; ++a)
       {
         if (a == a_min) continue;
-        pa = 1. / (num_actions + gamma * (preds[a].score - min_cost));
+        pa = 1.f / (num_actions + gamma * (preds[a].score - min_cost));
         preds[a].score = pa;
         total_weight += pa;
       }
@@ -267,7 +267,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
         else
         {
           if (a == a_min) continue;
-          pa = 1. / (num_surviving_actions + gamma * (preds[a].score - min_cost));
+          pa = 1.f / (num_surviving_actions + gamma * (preds[a].score - min_cost));
           preds[a].score = pa;
           total_weight += pa;
         }

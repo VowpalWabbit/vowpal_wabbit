@@ -87,9 +87,17 @@
 #include "shared_feature_merger.h"
 // #include "cntk.h"
 
+#include "cats.h"
+#include "cats_pdf.h"
+#include "cb_explore_pdf.h"
 #include "options.h"
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
+#include "offset_tree.h"
+#include "cats_tree.h"
+#include "get_pmf.h"
+#include "pmf_to_pdf.h"
+#include "sample_pdf.h"
 #include "named_labels.h"
 #include "kskip_ngram_transformer.h"
 
@@ -1336,7 +1344,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(std::make_tuple("scorer", scorer_setup)); //always
   // Reductions
   all.reduction_stack.push(std::make_tuple("bootstrap", bs_setup));
-  all.reduction_stack.push(std::make_tuple("binary", binary_setup));
+  all.reduction_stack.push(std::make_tuple("binary", VW::binary::binary_setup));
 
   all.reduction_stack.push(std::make_tuple("exp_replay_m", ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>)); // custom logic
   all.reduction_stack.push(std::make_tuple("top", topk_setup));
@@ -1357,6 +1365,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(std::make_tuple("cb", cb_algs_setup));
   all.reduction_stack.push(std::make_tuple("cb_adf", cb_adf_setup));
   all.reduction_stack.push(std::make_tuple("multiworld_test", mwt_setup));
+  all.reduction_stack.push(std::make_tuple("cats_tree", VW::cats_tree::setup));
   all.reduction_stack.push(std::make_tuple("cb_explore", cb_explore_setup));
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_greedy", VW::cb_explore_adf::greedy::setup));      // custom logic
   all.reduction_stack.push(std::make_tuple("cb_explore_adf_softmax", VW::cb_explore_adf::softmax::setup));
@@ -1374,8 +1383,15 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(std::make_tuple("slates", VW::slates::slates_setup));
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(std::make_tuple("warm_cb", warm_cb_setup));
+  all.reduction_stack.push(std::make_tuple("pmf", VW::continuous_action::get_pmf_setup));
+  all.reduction_stack.push(std::make_tuple("pmf_to_pdf", VW::pmf_to_pdf::setup));
+  all.reduction_stack.push(std::make_tuple("cb_explore_pdf", VW::continuous_action::cb_explore_pdf_setup));
+  all.reduction_stack.push(std::make_tuple("cats_pdf", VW::continuous_action::cats_pdf::setup));
+  all.reduction_stack.push(std::make_tuple("sample_pdf", VW::continuous_action::sample_pdf_setup));
+  all.reduction_stack.push(std::make_tuple("cats", VW::continuous_action::cats::setup));
   all.reduction_stack.push(std::make_tuple("cbify", cbify_setup));
   all.reduction_stack.push(std::make_tuple("cbify_ldf", cbifyldf_setup));
+  all.reduction_stack.push(std::make_tuple("offset_tree", VW::offset_tree::setup));
   all.reduction_stack.push(std::make_tuple("explore_eval", explore_eval_setup));
   all.reduction_stack.push(std::make_tuple("replay_c", ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>)); // custom logic
   all.reduction_stack.push(std::make_tuple("search", Search::setup));
