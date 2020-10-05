@@ -1290,10 +1290,12 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 
 }
 
+/*
 void register_reduction(vw& all, std::tuple<std::string, VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> tup)
 {
 
 }
+*/
 
 void parse_reductions(options_i& options, vw& all)
 {
