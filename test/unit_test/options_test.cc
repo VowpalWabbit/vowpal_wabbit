@@ -83,3 +83,102 @@ BOOST_AUTO_TEST_CASE(create_argument_group) {
   BOOST_CHECK_EQUAL(ag.m_options[3]->m_keep, true);
   BOOST_CHECK_EQUAL(ag.m_options[3]->m_type_hash, typeid(decltype(loc2)).hash_code());
 }
+
+BOOST_AUTO_TEST_CASE(name_extraction_from_option_group) {
+  char loc;
+  std::vector<std::string> loc2;
+  option_group_definition ag("g1");
+  ag(make_option("im_necessary", loc).keep().necessary());
+  ag(make_option("opt2", loc));
+  ag.add(make_option("opt3", loc2));
+  ag.add(make_option("opt4", loc2).keep());
+
+  auto name_extractor = options_name_extractor();
+  // result should always be false
+  auto result = name_extractor.add_parse_and_check_necessary(ag);
+
+  BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary");
+  BOOST_CHECK_EQUAL(result, false);
+  // was_supplied will always return false
+  BOOST_CHECK_EQUAL(name_extractor.was_supplied("opt2"), false);
+  BOOST_CHECK_EQUAL(name_extractor.was_supplied("random"), false);
+
+  // should throw since we validate that reductions should use add_parse_and_check_necessary
+  BOOST_REQUIRE_THROW(name_extractor.add_and_parse(ag), VW::vw_exception);
+}
+
+BOOST_AUTO_TEST_CASE(name_extraction_multi_necessary) {
+  char loc;
+  std::vector<std::string> loc2;
+  option_group_definition ag("g1");
+  ag(make_option("im_necessary", loc).keep().necessary());
+  ag(make_option("opt2", loc).necessary());
+  ag.add(make_option("opt3", loc2));
+  ag.add(make_option("opt4", loc2).keep());
+
+  auto name_extractor = options_name_extractor();
+  // result should always be false
+  auto result = name_extractor.add_parse_and_check_necessary(ag);
+
+  BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary_opt2");
+  BOOST_CHECK_EQUAL(result, false);
+  // was_supplied will always return false
+  BOOST_CHECK_EQUAL(name_extractor.was_supplied("opt2"), false);
+  BOOST_CHECK_EQUAL(name_extractor.was_supplied("random"), false);
+
+  // should throw since we validate that reductions should use add_parse_and_check_necessary
+  BOOST_REQUIRE_THROW(name_extractor.add_and_parse(ag), VW::vw_exception);
+}
+
+BOOST_AUTO_TEST_CASE(name_extraction_should_throw) {
+  char loc;
+  std::vector<std::string> loc2;
+  option_group_definition ag("g1");
+  ag(make_option("im_necessary", loc).keep());
+  ag(make_option("opt2", loc));
+  ag.add(make_option("opt3", loc2));
+  ag.add(make_option("opt4", loc2).keep());
+
+  auto name_extractor = options_name_extractor();
+  
+  // should throw since no .necessary() is defined
+  BOOST_REQUIRE_THROW(name_extractor.add_parse_and_check_necessary(ag), VW::vw_exception);
+
+  // should throw since these methods will never be implemented by options_name_extractor
+  BOOST_REQUIRE_THROW(name_extractor.help(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.check_unregistered(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.get_all_options(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.get_option("opt2"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.insert("opt2", "blah"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.replace("opt2", "blah"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.get_positional_tokens(), VW::vw_exception);
+}
+
+BOOST_AUTO_TEST_CASE(name_extraction_recycle) {
+  char loc;
+  std::vector<std::string> loc2;
+  option_group_definition ag("g1");
+  ag(make_option("im_necessary", loc).keep().necessary());
+  ag(make_option("opt2", loc).necessary());
+  ag.add(make_option("opt3", loc2));
+  ag.add(make_option("opt4", loc2).keep());
+
+  auto name_extractor = options_name_extractor();
+  // result should always be false
+  auto result = name_extractor.add_parse_and_check_necessary(ag);
+
+  BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary_opt2");
+  BOOST_CHECK_EQUAL(result, false);
+
+  option_group_definition ag2("g1");
+  ag2(make_option("im_necessary_v2", loc).keep().necessary());
+  ag2(make_option("opt2", loc).necessary());
+  ag2.add(make_option("opt3", loc2));
+  ag2.add(make_option("opt4", loc2).keep());
+
+  // result should always be false
+  result = name_extractor.add_parse_and_check_necessary(ag2);
+
+  BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary_v2_opt2");
+  BOOST_CHECK_EQUAL(result, false);
+}
