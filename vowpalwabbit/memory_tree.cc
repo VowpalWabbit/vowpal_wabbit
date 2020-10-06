@@ -1261,7 +1261,6 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .help("turn on dream operations at reward based update as well"))
       .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
 
-  // TODO: check this one
   if (!options.add_parse_and_check_necessary(new_options))
   {
     return nullptr;
