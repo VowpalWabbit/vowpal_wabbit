@@ -5,7 +5,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/ccb_losses.txt
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger_setup, ccb_explore_adf
+Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 -4.000000 -4.000000            1            1.0 2:-3,0:-1      2,0       10

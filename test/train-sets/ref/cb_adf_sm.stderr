@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_adf_sm.data
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, shared_feature_merger_setup
+Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 6.000000 6.000000            1            1.0    known        0:0...        9

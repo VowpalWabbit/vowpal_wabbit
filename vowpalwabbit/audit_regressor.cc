@@ -241,12 +241,12 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-VW::LEARNER::base_learner* audit_regressor_setup(std::string const& name, options_i& options, vw& all)
+VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
   std::string out_file;
 
   option_group_definition new_options("Audit Regressor");
-  new_options.add(make_option(name, out_file)
+  new_options.add(make_option("audit_regressor", out_file)
                       .keep()
                       .necessary()
                       .help("stores feature names and their regressor values. Same dataset must be used for both "

@@ -14,6 +14,7 @@
 #include <type_traits>
 
 #include "options_types.h"
+#include "vw_exception.h"
 
 namespace VW
 {
@@ -229,6 +230,89 @@ struct option_group_definition
   std::string m_name;
   std::unordered_set<std::string> m_necessary_flags;
   std::vector<std::shared_ptr<base_option>> m_options;
+};
+
+struct options_name_extractor : options_i
+{
+  std::string generated_name;
+
+  void add_and_parse(const option_group_definition&) override
+  {
+    THROW("you should use add_parse_and_check_necessary() inside a reduction setup");
+  };
+
+  bool add_parse_and_check_necessary(const option_group_definition& group) override
+  {
+    if (group.m_necessary_flags.empty())
+    {
+      THROW("reductions must specify at least one .necessary() option");
+    }
+
+    generated_name.clear();
+
+    for (auto opt : group.m_options)
+    {
+      if (opt->m_necessary)
+      {
+        if (generated_name.empty())
+          generated_name += opt->m_name;
+        else
+          generated_name += "_" + opt->m_name;
+      }
+    }
+
+    return false;
+  };
+
+  bool was_supplied(const std::string&) const override
+  {
+    return false;
+  };
+
+  std::string help() const override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  void check_unregistered() override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  std::vector<std::shared_ptr<base_option>> get_all_options() override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  std::vector<std::shared_ptr<const base_option>> get_all_options() const override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  std::shared_ptr<base_option> get_option(const std::string&) override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  std::shared_ptr<const base_option> get_option(const std::string&) const override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  void insert(const std::string&, const std::string&) override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  void replace(const std::string&, const std::string&) override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  std::vector<std::string> get_positional_tokens() const override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
 };
 
 struct options_serializer_i

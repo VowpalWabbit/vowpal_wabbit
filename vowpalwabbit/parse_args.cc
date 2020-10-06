@@ -1290,124 +1290,126 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 
 }
 
-/*
-void register_reduction(vw& all, std::tuple<std::string, VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> tup)
+void register_reductions(vw& all, std::vector<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)>& reductions)
 {
+  std::map<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&), std::string> allowlist = {
+    {GD::setup, "gd"},
+    {ftrl_setup, "ftrl"},
+    {scorer_setup, "scorer"},
+    {CSOAA::csldf_setup, "csoaa_ldf"},
+    {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
+    {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
+    {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}
+  };
 
+  auto name_extractor = options_name_extractor();
+  vw dummy_all;
+
+  for (auto setup_fn : reductions)
+  {
+    if (allowlist.count(setup_fn))
+    {
+      all.reduction_stack.push(std::make_tuple(allowlist[setup_fn], setup_fn));
+    }
+    else
+    {
+      auto base = setup_fn(name_extractor, dummy_all);
+
+      if (base == nullptr)
+        all.reduction_stack.push(std::make_tuple(name_extractor.generated_name, setup_fn));
+      else
+        THROW("fatal: under register_reduction() all setup functions must return nullptr");
+    }
+  }
 }
-*/
 
 void parse_reductions(options_i& options, vw& all)
 {
-
-  //dictionary string->function
-  // config file based on the option_group_definition -> function with the dictionary above
-  // setup_base
-  // list of configs in the right order,with a custom hooked option
-
-  /*
-  runtest 165
-  default_good_old_vw_stack = {"gd", "kernel", "python-red",};
-
-  new api:
-    string list 
-
-
-  for r in default_good_old: dict[r]()
-  */
+  std::vector<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reductions;
 
   // Base algorithms
-  all.reduction_stack.push(std::make_tuple("gd", GD::setup)); // always
-  all.reduction_stack.push(std::make_tuple("ksvm", kernel_svm_setup));
-  all.reduction_stack.push(std::make_tuple("ftrl", ftrl_setup)); // custom logic
-  all.reduction_stack.push(std::make_tuple("svrg", svrg_setup));
-  all.reduction_stack.push(std::make_tuple("sendto", sender_setup));
-  all.reduction_stack.push(std::make_tuple("bfgs", gd_mf_setup));
-  all.reduction_stack.push(std::make_tuple("print", print_setup));
-  all.reduction_stack.push(std::make_tuple("noop", noop_setup));
-  all.reduction_stack.push(std::make_tuple("lda", lda_setup));
-  all.reduction_stack.push(std::make_tuple("conjugate_gradient", bfgs_setup));
-  all.reduction_stack.push(std::make_tuple("OjaNewton", OjaNewton_setup));
-  // all.reduction_stack.push(std::make_tuple("vw_cntk", VW_CNTK::setup));
+  reductions.push_back(GD::setup);
+  reductions.push_back(kernel_svm_setup);
+  reductions.push_back(ftrl_setup);
+  reductions.push_back(svrg_setup);
+  reductions.push_back(sender_setup);
+  reductions.push_back(gd_mf_setup);
+  reductions.push_back(print_setup);
+  reductions.push_back(noop_setup);
+  reductions.push_back(lda_setup);
+  reductions.push_back(bfgs_setup);
+  reductions.push_back(OjaNewton_setup);
+  // reductions.push_back(VW_CNTK::setup);
 
   // Score Users
-  all.reduction_stack.push(std::make_tuple("baseline", baseline_setup));
-  all.reduction_stack.push(std::make_tuple("exp_replay_b", ExpReplay::expreplay_setup<'b', simple_label>)); // custom logic
-  all.reduction_stack.push(std::make_tuple("active", active_setup));
-  all.reduction_stack.push(std::make_tuple("active_cover", active_cover_setup));
-  all.reduction_stack.push(std::make_tuple("confidence", confidence_setup));
-  all.reduction_stack.push(std::make_tuple("nn", nn_setup));
-  all.reduction_stack.push(std::make_tuple("new_mf", mf_setup));
-  all.reduction_stack.push(std::make_tuple("marginal", marginal_setup));
-  all.reduction_stack.push(std::make_tuple("autolink", autolink_setup));
-  all.reduction_stack.push(std::make_tuple("lrq", lrq_setup));
-  all.reduction_stack.push(std::make_tuple("lrqfa", lrqfa_setup));
-  all.reduction_stack.push(std::make_tuple("stage_poly", stagewise_poly_setup));
-  all.reduction_stack.push(std::make_tuple("scorer", scorer_setup)); //always
+  reductions.push_back(baseline_setup);
+  reductions.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
+  reductions.push_back(active_setup);
+  reductions.push_back(active_cover_setup);
+  reductions.push_back(confidence_setup);
+  reductions.push_back(nn_setup);
+  reductions.push_back(mf_setup);
+  reductions.push_back(marginal_setup);
+  reductions.push_back(autolink_setup);
+  reductions.push_back(lrq_setup);
+  reductions.push_back(lrqfa_setup);
+  reductions.push_back(stagewise_poly_setup);
+  reductions.push_back(scorer_setup);
   // Reductions
-  all.reduction_stack.push(std::make_tuple("bootstrap", bs_setup));
-  all.reduction_stack.push(std::make_tuple("binary", VW::binary::binary_setup));
+  reductions.push_back(bs_setup);
+  reductions.push_back(VW::binary::binary_setup);
 
-  all.reduction_stack.push(std::make_tuple("exp_replay_m", ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>)); // custom logic
-  all.reduction_stack.push(std::make_tuple("top", topk_setup));
-  all.reduction_stack.push(std::make_tuple("oaa", oaa_setup));
-  all.reduction_stack.push(std::make_tuple("boosting", boosting_setup));
-  all.reduction_stack.push(std::make_tuple("ect", ect_setup));
-  all.reduction_stack.push(std::make_tuple("log_multi", log_multi_setup));
-  all.reduction_stack.push(std::make_tuple("recall_tree", recall_tree_setup));
-  all.reduction_stack.push(std::make_tuple("memory_tree", memory_tree_setup));
-  all.reduction_stack.push(std::make_tuple("classweight", classweight_setup));
-  all.reduction_stack.push(std::make_tuple("multilabel_oaa", multilabel_oaa_setup));
-  all.reduction_stack.push(std::make_tuple("plt", plt_setup));
+  reductions.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
+  reductions.push_back(topk_setup);
+  reductions.push_back(oaa_setup);
+  reductions.push_back(boosting_setup);
+  reductions.push_back(ect_setup);
+  reductions.push_back(log_multi_setup);
+  reductions.push_back(recall_tree_setup);
+  reductions.push_back(memory_tree_setup);
+  reductions.push_back(classweight_setup);
+  reductions.push_back(multilabel_oaa_setup);
+  reductions.push_back(plt_setup);
 
-  all.reduction_stack.push(std::make_tuple("cs_active", cs_active_setup));
-  all.reduction_stack.push(std::make_tuple("csoaa", CSOAA::csoaa_setup));
-  all.reduction_stack.push(std::make_tuple("interact", interact_setup));
-  all.reduction_stack.push(std::make_tuple("csoaa_ldf", CSOAA::csldf_setup));
-  all.reduction_stack.push(std::make_tuple("cb", cb_algs_setup));
-  all.reduction_stack.push(std::make_tuple("cb_adf", cb_adf_setup));
-  all.reduction_stack.push(std::make_tuple("multiworld_test", mwt_setup));
-  all.reduction_stack.push(std::make_tuple("cats_tree", VW::cats_tree::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore", cb_explore_setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_greedy", VW::cb_explore_adf::greedy::setup));      // custom logic
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_softmax", VW::cb_explore_adf::softmax::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_rnd", VW::cb_explore_adf::rnd::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_squarecb", VW::cb_explore_adf::squarecb::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_regcb", VW::cb_explore_adf::regcb::setup));        // custom logic
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_first", VW::cb_explore_adf::first::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_cover", VW::cb_explore_adf::cover::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_adf_bag", VW::cb_explore_adf::bag::setup));
-  all.reduction_stack.push(std::make_tuple("cb_dro", cb_dro_setup));
-  all.reduction_stack.push(std::make_tuple("cb_sample", cb_sample_setup));
-  // see line 1375, this should be brought in by the ones that generate multiexamples
-  all.reduction_stack.push(std::make_tuple("shared_feature_merger_setup", VW::shared_feature_merger::shared_feature_merger_setup)); // custom logic
-  all.reduction_stack.push(std::make_tuple("ccb_explore_adf", CCB::ccb_explore_adf_setup));
-  all.reduction_stack.push(std::make_tuple("slates", VW::slates::slates_setup));
+  reductions.push_back(cs_active_setup);
+  reductions.push_back(CSOAA::csoaa_setup);
+  reductions.push_back(interact_setup);
+  reductions.push_back(CSOAA::csldf_setup);
+  reductions.push_back(cb_algs_setup);
+  reductions.push_back(cb_adf_setup);
+  reductions.push_back(mwt_setup);
+  reductions.push_back(VW::cats_tree::setup);
+  reductions.push_back(cb_explore_setup);
+  reductions.push_back(VW::cb_explore_adf::greedy::setup);
+  reductions.push_back(VW::cb_explore_adf::softmax::setup);
+  reductions.push_back(VW::cb_explore_adf::rnd::setup);
+  reductions.push_back(VW::cb_explore_adf::regcb::setup);
+  reductions.push_back(VW::cb_explore_adf::squarecb::setup);
+  reductions.push_back(VW::cb_explore_adf::first::setup);
+  reductions.push_back(VW::cb_explore_adf::cover::setup);
+  reductions.push_back(VW::cb_explore_adf::bag::setup);
+  reductions.push_back(cb_dro_setup);
+  reductions.push_back(cb_sample_setup);
+  reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
+  reductions.push_back(CCB::ccb_explore_adf_setup);
+  reductions.push_back(VW::slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
-  all.reduction_stack.push(std::make_tuple("warm_cb", warm_cb_setup));
-  all.reduction_stack.push(std::make_tuple("pmf", VW::continuous_action::get_pmf_setup));
-  all.reduction_stack.push(std::make_tuple("pmf_to_pdf", VW::pmf_to_pdf::setup));
-  all.reduction_stack.push(std::make_tuple("cb_explore_pdf", VW::continuous_action::cb_explore_pdf_setup));
-  all.reduction_stack.push(std::make_tuple("cats_pdf", VW::continuous_action::cats_pdf::setup));
-  all.reduction_stack.push(std::make_tuple("sample_pdf", VW::continuous_action::sample_pdf_setup));
-  all.reduction_stack.push(std::make_tuple("cats", VW::continuous_action::cats::setup));
-  all.reduction_stack.push(std::make_tuple("cbify", cbify_setup));
-  all.reduction_stack.push(std::make_tuple("cbify_ldf", cbifyldf_setup));
-  all.reduction_stack.push(std::make_tuple("offset_tree", VW::offset_tree::setup));
-  all.reduction_stack.push(std::make_tuple("explore_eval", explore_eval_setup));
-  all.reduction_stack.push(std::make_tuple("replay_c", ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>)); // custom logic
-  all.reduction_stack.push(std::make_tuple("search", Search::setup));
-  // this string can be a constant under audit_regressor.h
-  all.reduction_stack.push(std::make_tuple("audit_regressor", [](options_i& options, vw& all) { return audit_regressor_setup("audit_regressor", options, all); }));
+  reductions.push_back(warm_cb_setup);
+  reductions.push_back(VW::continuous_action::get_pmf_setup);
+  reductions.push_back(VW::pmf_to_pdf::setup);
+  reductions.push_back(VW::continuous_action::cb_explore_pdf_setup);
+  reductions.push_back(VW::continuous_action::cats_pdf::setup);
+  reductions.push_back(VW::continuous_action::sample_pdf_setup);
+  reductions.push_back(VW::continuous_action::cats::setup);
+  reductions.push_back(cbify_setup);
+  reductions.push_back(cbifyldf_setup);
+  reductions.push_back(VW::offset_tree::setup);
+  reductions.push_back(explore_eval_setup);
+  reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
+  reductions.push_back(Search::setup);
+  reductions.push_back(audit_regressor_setup);
 
-
-  /*
-  three flags:
-  - gated
-  - always
-  - depends
-  */
-
+  register_reductions(all, reductions);
   all.l = setup_base(options, all);
 }
 
