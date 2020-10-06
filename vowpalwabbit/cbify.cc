@@ -24,7 +24,8 @@ using VW::cb_continuous::continuous_label_elm;
 
 struct cbify;
 
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cbify
 
 struct cbify_adf_data
 {
@@ -172,14 +173,14 @@ float get_absolute_loss(cbify& data, float chosen_action, float label)
 {
   float diff = label - chosen_action;
   float range = data.regression_data.max_value - data.regression_data.min_value;
-  return abs(diff) / range;
+  return std::abs(diff) / range;
 }
 
 float get_01_loss(cbify& data, float chosen_action, float label)
 {
   float diff = label - chosen_action;
   float range = data.regression_data.max_value - data.regression_data.min_value;
-  if (abs(diff) <= (data.regression_data.loss_01_ratio * range)) return 0.0f;
+  if (std::abs(diff) <= (data.regression_data.loss_01_ratio * range)) return 0.0f;
   return 1.0f;
 }
 
@@ -789,19 +790,19 @@ base_learner* cbify_setup(options_i& options, vw& all)
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_reg)
     {
-      all.example_parser->lbl_parser = simple_label;
+      all.example_parser->lbl_parser = simple_label_parser;
       if (use_discrete)
       {
         l = &init_learner(
               data, base, predict_or_learn_regression_discrete<true>,
-              predict_or_learn_regression_discrete<false>, 1, "cbify-reg-discrete", prediction_type_t::scalar);
+              predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar, "cbify-reg-discrete");
         l->set_finish_example(finish_example_cb_reg_discrete);
       }
       else
       {
         l = &init_learner(
             data, base, predict_or_learn_regression<true>,
-            predict_or_learn_regression<false>, 1, "cbify-reg", prediction_type_t::scalar);
+            predict_or_learn_regression<false>, 1, prediction_type_t::scalar, "cbify-reg");
         l->set_finish_example(finish_example_cb_reg_continous);
       }
     }

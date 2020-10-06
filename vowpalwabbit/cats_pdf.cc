@@ -24,7 +24,8 @@ using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cats_pdf
 
 // Forward declarations
 namespace VW
@@ -191,10 +192,10 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base), always_predict);
 
   LEARNER::learner<cats_pdf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
+      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf, "cats_pdf");
 
   l.set_finish_example(finish_example);
-  all.p->lp = cb_continuous::the_label_parser;
+  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
 
   return make_base(l);
 }

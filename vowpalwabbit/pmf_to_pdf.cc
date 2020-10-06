@@ -212,7 +212,7 @@ base_learner* setup(options_i& options, vw& all)
   { THROW("error: Bandwidth must be >= 1"); } auto p_base = as_singleline(setup_base(options, all));
   data->_p_base = p_base;
 
-  learner<pmf_to_pdf::reduction, example>& l = init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);
+  learner<pmf_to_pdf::reduction, example>& l = init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf, "pmf_to_pdf");
 
   all.delete_prediction = continuous_actions::delete_probability_density_function;
 
