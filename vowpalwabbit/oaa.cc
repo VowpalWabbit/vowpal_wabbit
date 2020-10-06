@@ -210,8 +210,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
       .add(make_option("probabilities", probabilities).help("predict probabilites of all classes"))
       .add(make_option("scores", scores).help("output raw scores per class"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")

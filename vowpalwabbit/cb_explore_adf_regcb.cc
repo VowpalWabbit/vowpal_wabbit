@@ -249,8 +249,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   options.add_and_parse(new_options);
 
   // TODO custom check
-  if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt")))
-    return nullptr;
+  if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt"))) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }

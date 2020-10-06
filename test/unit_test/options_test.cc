@@ -84,7 +84,8 @@ BOOST_AUTO_TEST_CASE(create_argument_group) {
   BOOST_CHECK_EQUAL(ag.m_options[3]->m_type_hash, typeid(decltype(loc2)).hash_code());
 }
 
-BOOST_AUTO_TEST_CASE(name_extraction_from_option_group) {
+BOOST_AUTO_TEST_CASE(name_extraction_from_option_group)
+{
   char loc;
   std::vector<std::string> loc2;
   option_group_definition ag("g1");
@@ -107,7 +108,8 @@ BOOST_AUTO_TEST_CASE(name_extraction_from_option_group) {
   BOOST_REQUIRE_THROW(name_extractor.add_and_parse(ag), VW::vw_exception);
 }
 
-BOOST_AUTO_TEST_CASE(name_extraction_multi_necessary) {
+BOOST_AUTO_TEST_CASE(name_extraction_multi_necessary)
+{
   char loc;
   std::vector<std::string> loc2;
   option_group_definition ag("g1");
@@ -130,7 +132,8 @@ BOOST_AUTO_TEST_CASE(name_extraction_multi_necessary) {
   BOOST_REQUIRE_THROW(name_extractor.add_and_parse(ag), VW::vw_exception);
 }
 
-BOOST_AUTO_TEST_CASE(name_extraction_should_throw) {
+BOOST_AUTO_TEST_CASE(name_extraction_should_throw)
+{
   char loc;
   std::vector<std::string> loc2;
   option_group_definition ag("g1");
@@ -140,7 +143,7 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw) {
   ag.add(make_option("opt4", loc2).keep());
 
   auto name_extractor = options_name_extractor();
-  
+
   // should throw since no .necessary() is defined
   BOOST_REQUIRE_THROW(name_extractor.add_parse_and_check_necessary(ag), VW::vw_exception);
 
@@ -154,7 +157,8 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw) {
   BOOST_REQUIRE_THROW(name_extractor.get_positional_tokens(), VW::vw_exception);
 }
 
-BOOST_AUTO_TEST_CASE(name_extraction_recycle) {
+BOOST_AUTO_TEST_CASE(name_extraction_recycle)
+{
   char loc;
   std::vector<std::string> loc2;
   option_group_definition ag("g1");

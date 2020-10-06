@@ -192,12 +192,15 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_eval>();
   bool explore_eval_option = false;
   option_group_definition new_options("Explore evaluation");
-  new_options.add(make_option("explore_eval", explore_eval_option).keep().necessary().help("Evaluate explore_eval adf policies"))
+  new_options
+      .add(make_option("explore_eval", explore_eval_option)
+               .keep()
+               .necessary()
+               .help("Evaluate explore_eval adf policies"))
       .add(make_option("multiplier", data->multiplier)
                .help("Multiplier used to make all rejection sample probabilities <= 1"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->all = &all;
   data->_random_state = all.get_random_state();

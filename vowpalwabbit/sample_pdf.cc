@@ -102,7 +102,8 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous actions");
   bool invoked = false;
-  new_options.add(make_option("sample_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));
+  new_options.add(
+      make_option("sample_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));
 
   // If sample_pdf reduction was not invoked, don't add anything
   // to the reduction stack;

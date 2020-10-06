@@ -209,8 +209,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
                .keep()
                .help("only use baseline when the example contains enabled flag"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // initialize baseline example
   data->ec = VW::alloc_examples(simple_label.label_size, 1);

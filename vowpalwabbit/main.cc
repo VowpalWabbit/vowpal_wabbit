@@ -52,7 +52,8 @@ vw* setup(options_i& options)
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
-    std::copy(all->enabled_reductions.begin(), all->enabled_reductions.end()-1, std::ostream_iterator<std::string>(imploded, delim));
+    std::copy(all->enabled_reductions.begin(), all->enabled_reductions.end() - 1,
+        std::ostream_iterator<std::string>(imploded, delim));
 
     all->trace_message << "Enabled reductions: " << imploded.str() << all->enabled_reductions.back() << std::endl;
   }
@@ -131,10 +132,7 @@ int main(int argc, char* argv[])
 
     if (skip_driver)
     {
-      for (vw* v : alls)
-      {
-        VW::finish(*v);
-      }
+      for (vw* v : alls) { VW::finish(*v); }
       return 0;
     }
 

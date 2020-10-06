@@ -236,11 +236,11 @@ base_learner* bs_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");
   option_group_definition new_options("Bootstrap");
-  new_options.add(make_option("bootstrap", data->B).keep().necessary().help("k-way bootstrap by online importance resampling"))
+  new_options
+      .add(make_option("bootstrap", data->B).keep().necessary().help("k-way bootstrap by online importance resampling"))
       .add(make_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
-   
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;

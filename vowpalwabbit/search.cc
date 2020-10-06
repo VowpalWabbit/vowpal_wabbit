@@ -2752,8 +2752,7 @@ base_learner* setup(options_i& options, vw& all)
                             "cost_range * range_c)"));
   new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   search_initialize(&all, *sch.get());
 

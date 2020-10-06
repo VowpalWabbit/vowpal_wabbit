@@ -1278,39 +1278,28 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   auto base = std::get<1>(setup_func)(options, all);
 
   // this mean that setup_func did not do any setup since it didnt add itself to the chain of learners
-  if (base == nullptr)
-  {
-    return setup_base(options, all);
-  }
+  if (base == nullptr) { return setup_base(options, all); }
   else
   {
     all.enabled_reductions.push_back(std::get<0>(setup_func));
     return base;
   }
-
 }
 
 void register_reductions(vw& all, std::vector<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)>& reductions)
 {
-  std::map<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&), std::string> allowlist = {
-    {GD::setup, "gd"},
-    {ftrl_setup, "ftrl"},
-    {scorer_setup, "scorer"},
-    {CSOAA::csldf_setup, "csoaa_ldf"},
-    {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
-    {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
-    {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}
-  };
+  std::map<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&), std::string> allowlist = {{GD::setup, "gd"},
+      {ftrl_setup, "ftrl"}, {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
+      {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
+      {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
+      {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}};
 
   auto name_extractor = options_name_extractor();
   vw dummy_all;
 
   for (auto setup_fn : reductions)
   {
-    if (allowlist.count(setup_fn))
-    {
-      all.reduction_stack.push(std::make_tuple(allowlist[setup_fn], setup_fn));
-    }
+    if (allowlist.count(setup_fn)) { all.reduction_stack.push(std::make_tuple(allowlist[setup_fn], setup_fn)); }
     else
     {
       auto base = setup_fn(name_extractor, dummy_all);
@@ -1808,10 +1797,7 @@ vw* initialize(
       exit(0);
     }
 
-    if (!options.get_typed_option<bool>("dry_run").value())
-    {
-      all.l->init_driver();
-    }
+    if (!options.get_typed_option<bool>("dry_run").value()) { all.l->init_driver(); }
 
     return &all;
   }

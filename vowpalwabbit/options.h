@@ -185,7 +185,7 @@ struct options_i
 
 struct option_group_definition
 {
-  //add second parameter for const string short name
+  // add second parameter for const string short name
   option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>
@@ -202,7 +202,7 @@ struct option_group_definition
 
     // TODO do we need to insert also the short_name ?
     if (op.m_necessary) { m_necessary_flags.insert(op.m_name); }
-    
+
     return *this;
   }
 
@@ -213,9 +213,7 @@ struct option_group_definition
 
     bool check_if_all_necessary_enabled = true;
 
-    for (const auto& elem : m_necessary_flags)
-    { check_if_all_necessary_enabled &= options.was_supplied(elem);
-    }
+    for (const auto& elem : m_necessary_flags) { check_if_all_necessary_enabled &= options.was_supplied(elem); }
 
     return check_if_all_necessary_enabled;
   }
@@ -243,10 +241,7 @@ struct options_name_extractor : options_i
 
   bool add_parse_and_check_necessary(const option_group_definition& group) override
   {
-    if (group.m_necessary_flags.empty())
-    {
-      THROW("reductions must specify at least one .necessary() option");
-    }
+    if (group.m_necessary_flags.empty()) { THROW("reductions must specify at least one .necessary() option"); }
 
     generated_name.clear();
 
@@ -264,20 +259,11 @@ struct options_name_extractor : options_i
     return false;
   };
 
-  bool was_supplied(const std::string&) const override
-  {
-    return false;
-  };
+  bool was_supplied(const std::string&) const override { return false; };
 
-  std::string help() const override
-  {
-    THROW("options_name_extractor does not implement this method");
-  };
+  std::string help() const override { THROW("options_name_extractor does not implement this method"); };
 
-  void check_unregistered() override
-  {
-    THROW("options_name_extractor does not implement this method");
-  };
+  void check_unregistered() override { THROW("options_name_extractor does not implement this method"); };
 
   std::vector<std::shared_ptr<base_option>> get_all_options() override
   {
@@ -326,7 +312,8 @@ template <typename T>
 bool operator==(const typed_option<T>& lhs, const typed_option<T>& rhs)
 {
   return lhs.m_name == rhs.m_name && lhs.m_type_hash == rhs.m_type_hash && lhs.m_help == rhs.m_help &&
-      lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep && lhs.default_value() == rhs.default_value() && lhs.m_necessary == rhs.m_necessary;
+      lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep && lhs.default_value() == rhs.default_value() &&
+      lhs.m_necessary == rhs.m_necessary;
 }
 
 template <typename T>

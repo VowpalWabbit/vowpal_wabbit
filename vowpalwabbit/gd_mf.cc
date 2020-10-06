@@ -339,8 +339,7 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   gf_md_options.add(
       make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
 
-  if (!options.add_parse_and_check_necessary(gf_md_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(gf_md_options)) return nullptr;
 
   if (options.was_supplied("adaptive"))
     THROW("adaptive is not implemented for matrix factorization");

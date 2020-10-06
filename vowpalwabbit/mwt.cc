@@ -247,8 +247,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
       .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."))
       .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;

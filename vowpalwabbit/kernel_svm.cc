@@ -882,10 +882,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
       .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
       .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;

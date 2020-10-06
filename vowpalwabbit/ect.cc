@@ -348,8 +348,7 @@ base_learner* ect_setup(options_i& options, vw& all)
                .keep()
                .help("Specify the link function: identity, logistic, glf1 or poisson"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 

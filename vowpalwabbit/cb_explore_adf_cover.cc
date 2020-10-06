@@ -200,8 +200,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_type in all cases.
   if (!options.was_supplied("cb_type"))

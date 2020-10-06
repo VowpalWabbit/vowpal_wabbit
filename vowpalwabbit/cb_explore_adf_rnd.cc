@@ -295,8 +295,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .default_value(0.1f)
                .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (alpha <= 0)
   {

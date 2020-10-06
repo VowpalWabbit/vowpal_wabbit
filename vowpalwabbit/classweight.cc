@@ -77,10 +77,10 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   std::vector<std::string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();
   option_group_definition new_options("importance weight classes");
-  new_options.add(make_option("classweight", classweight_array).necessary().help("importance weight multiplier for class"));
+  new_options.add(
+      make_option("classweight", classweight_array).necessary().help("importance weight multiplier for class"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   for (auto& s : classweight_array) cweights->load_string(s);
 

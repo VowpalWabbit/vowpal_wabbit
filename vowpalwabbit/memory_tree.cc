@@ -1261,10 +1261,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .help("turn on dream operations at reward based update as well"))
       .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   tree->all = &all;
   tree->_random_state = all.get_random_state();

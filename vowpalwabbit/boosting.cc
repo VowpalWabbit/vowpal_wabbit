@@ -405,8 +405,7 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
               .default_value("BBM")
               .help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)

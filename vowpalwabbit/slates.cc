@@ -275,10 +275,7 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   new_options.add(make_option("slates", slates_option).keep().necessary().help("EXPERIMENTAL"));
 
   // test this one
-  if (!options.add_parse_and_check_necessary(new_options))
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (!options.was_supplied("ccb_explore_adf"))
   {

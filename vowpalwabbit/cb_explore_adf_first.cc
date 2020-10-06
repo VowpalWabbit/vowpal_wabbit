@@ -86,8 +86,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
       .add(make_option("first", tau).keep().necessary().help("tau-first exploration"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))

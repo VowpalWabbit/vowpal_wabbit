@@ -553,8 +553,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
       .add(make_option("normalize", normalize).help("normalize the features or not"))
       .add(make_option("random_init", random_init).help("randomize initialization of Oja or not"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   ON->all = &all;
   ON->_random_state = all.get_random_state();

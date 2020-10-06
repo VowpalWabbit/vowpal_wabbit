@@ -134,8 +134,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("greedify", greedify).keep().help("always update first policy once in bagging"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))

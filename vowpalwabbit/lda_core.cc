@@ -1333,8 +1333,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
       .add(make_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"))
       .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Convert from int to corresponding enum value.
   ld->mmode = static_cast<lda_math_mode>(math_mode);

@@ -89,7 +89,8 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
   option_group_definition new_options("Continuous actions");
   bool invoked = false;
   float epsilon = 0.0f;
-  new_options.add(make_option("get_pmf", invoked).keep().necessary().help("Convert a single multiclass prediction to a pmf"));
+  new_options.add(
+      make_option("get_pmf", invoked).keep().necessary().help("Convert a single multiclass prediction to a pmf"));
 
   // If reduction was not invoked, don't add anything
   // to the reduction stack;

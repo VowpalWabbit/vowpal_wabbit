@@ -158,8 +158,7 @@ base_learner* active_setup(options_i& options, vw& all)
                .default_value(8.f)
                .help("active learning mellowness parameter c_0. Default 8"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->all = &all;
   data->_random_state = all.get_random_state();

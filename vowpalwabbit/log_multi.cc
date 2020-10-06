@@ -502,8 +502,7 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
                .default_value(4)
                .help("higher = more resistance to swap, default=4"));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->progress = !data->progress;
 

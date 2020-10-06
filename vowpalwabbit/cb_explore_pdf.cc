@@ -82,7 +82,10 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
   float min;
   float max;
   new_options
-      .add(make_option("cb_explore_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"))
+      .add(make_option("cb_explore_pdf", invoked)
+               .keep()
+               .necessary()
+               .help("Sample a pdf and pick a continuous valued action"))
       .add(make_option("epsilon", epsilon)
                .keep()
                .allow_override()
