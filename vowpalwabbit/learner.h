@@ -26,12 +26,14 @@ enum class prediction_type_t
   scalar,
   scalars,
   action_scores,
+  pdf,
   action_probs,
   multiclass,
   multilabels,
   prob,
   multiclassprobs,
-  decision_probs
+  decision_probs,
+  action_pdf_value
 };
 
 const char* to_string(prediction_type_t prediction_type);
@@ -158,21 +160,23 @@ inline void decrement_depth(multi_ex& ec_seq)
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 {
+  ++ex._current_reduction_depth;
   ex.ft_offset += static_cast<uint32_t>(increment * i);
   increment_depth(ex);
 }
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
+  if (ec_seq.size() > 0) increment_depth(ec_seq);
   for (auto& ec : ec_seq)
   {
     ec->ft_offset += static_cast<uint32_t>(increment * i);
   }
-  increment_depth(ec_seq);
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
 {
+  --ex._current_reduction_depth;
   assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
   decrement_depth(ex);
@@ -180,6 +184,7 @@ inline void decrement_offset(example& ex, const size_t increment, const size_t i
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
+  if (ec_seq.size() > 0) --ec_seq[0]->_current_reduction_depth;
   for (auto ec : ec_seq)
   {
     assert(ec->ft_offset >= increment * i);

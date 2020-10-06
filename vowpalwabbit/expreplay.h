@@ -113,10 +113,12 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   er->_random_state = all.get_random_state();
   er->buf = VW::alloc_examples(1, er->N);
   er->buf->interactions = &all.interactions;
-
-  if (er_level == 'c')
-    for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
-
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_CPP_17_LANG_EXT
+  if
+    VW_STD17_CONSTEXPR(er_level == 'c')
+  for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+  VW_WARNING_STATE_POP
   er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.logger.quiet)

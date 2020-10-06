@@ -21,15 +21,11 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
   {
-    VW_DBG(ec) << "binary: before-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
     base.learn(ec);
-    VW_DBG(ec) << "binary: after-base.learn() " << simple_label_to_string(ec) << features_to_string(ec) << endl;
   }
   else
   {
-    VW_DBG(ec) << "binary: before-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
     base.predict(ec);
-    VW_DBG(ec) << "binary: after-base.predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
   }
 
   if (ec.pred.scalar > 0) ec.pred.scalar = 1;

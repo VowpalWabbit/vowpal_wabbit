@@ -1,6 +1,5 @@
 from collections import namedtuple
 import os
-from tempfile import NamedTemporaryFile
 
 import numpy as np
 from packaging import version
@@ -67,19 +66,18 @@ class TestVW(BaseVWTest):
         assert model.vw_ is not None
 
     def test_save_load(self, data):
-        f = NamedTemporaryFile()
+        file_name = "tmp_sklearn.model"
 
         model_before = VW(l=100)
         model_before.fit(data.x, data.y)
         before_saving = model_before.predict(data.x)
-        model_before.save(f.name)
+        model_before.save(file_name)
 
         model_after = VW(l=100)
-        model_after.load(f.name)
+        model_after.load(file_name)
         after_loading = model_after.predict(data.x)
 
         assert np.allclose(before_saving, after_loading)
-        f.close()
 
     def test_passes(self, data):
         n_passes = 2

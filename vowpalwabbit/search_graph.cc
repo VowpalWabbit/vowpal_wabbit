@@ -422,16 +422,6 @@ void run(Search::search& sch, multi_ex& ec)
         add_edge_features(sch, D, n, ec);
       Search::predictor P = Search::predictor(sch, n + 1);
       P.set_input(*ec[n]);
-      if (false && (k > 0))
-      {
-        float min_count = 1e12f;
-        for (size_t k2 = 1; k2 <= D.K; k2++) min_count = std::min(min_count, D.true_counts[k2]);
-        float w = min_count / D.true_counts[k];
-        // float w = D.true_counts_total / D.true_counts[k] / (float)(D.K);
-        P.set_weight(w);
-        // std::cerr << "w = " << D.true_counts_total / D.true_counts[k] / (float)(D.K) << std::endl;
-        // P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
-      }
       if (D.separate_learners)
         P.set_learner_id(loop);
       if (k > 0)  // for test examples

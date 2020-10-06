@@ -41,7 +41,8 @@ struct cb_sample_data
 
     // If we are learning and have a label, then take that action as the chosen action. Otherwise sample the
     // distribution.
-    if (is_learn && maybe_labelled_action >= 0)
+    bool learn = is_learn && maybe_labelled_action >= 0;
+    if (learn)
     {
       // Find where the labelled action is in the final prediction to determine if swapping needs to occur.
       // This only matters if the prediction decided to explore, but the same output should happen for the learn case.

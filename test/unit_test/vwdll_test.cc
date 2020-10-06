@@ -7,6 +7,9 @@
 
 #include "vwdll.h"
 #include "vw.h"
+#include "test_common.h"
+
+using namespace boost::unit_test;
 
 template<class T>
 void check_weights_equal(T& first, T& second)
@@ -73,6 +76,11 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
 
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
 {
+  if (is_invoked_with("valgrind"))
+  {
+    std::cout << "skipping vw_dll_parse_escaped test when running in valgrind" << std::endl;
+    return;
+  }
   // This call doesn't escape and so sees --nonexistent_option as a standalone invalid argument.
   BOOST_CHECK_THROW(VW_InitializeA("-d test\\ --nonexistent_option --quiet"), VW::vw_unrecognised_option_exception);
 

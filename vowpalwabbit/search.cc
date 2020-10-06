@@ -463,8 +463,8 @@ bool should_print_update(vw& all, bool hit_new_pass = false)
 
   if (PRINT_UPDATE_EVERY_EXAMPLE)
     return true;
-  if (PRINT_UPDATE_EVERY_PASS && hit_new_pass)
-    return true;
+  if (PRINT_UPDATE_EVERY_PASS)
+    if (hit_new_pass) return true;
   return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
@@ -2217,8 +2217,8 @@ void  train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mul
   }
 
   // if we're not training, then we're done!
-  if ((!is_learn) || is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training))
-    return;
+  if (!is_learn) return;
+  if (is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training)) return;
 
   // SPEEDUP: if the oracle was never called, we can skip this!
 

@@ -675,7 +675,10 @@ sub run_tests() {
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
-            exit $full_status if ($opt_e);
+            if ($opt_e) {
+                printf STDERR "exiting with full status $full_status\n";
+                exit 1;
+            }
             next;
         }
 
@@ -1838,26 +1841,99 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/slates_simple.stderr
     pred-sets/ref/slates_simple.predict
 
-# Test 213: Regression test for crash on unlabelled data
+# Test 213: offset_tree, 2 actions
+{VW} --ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.pred -P 1
+    test-sets/ref/offset_tree_000.stderr
+    pred-sets/ref/offset_tree_000.pred
+
+# Test 214: offset_tree, 3 actions
+{VW} --ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.pred -P 1
+    test-sets/ref/offset_tree_001.stderr
+    pred-sets/ref/offset_tree_001.pred
+
+# Test 215: offset_tree, 4 actions
+{VW} --ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.pred -P 1
+    test-sets/ref/offset_tree_002.stderr
+    pred-sets/ref/offset_tree_002.pred
+
+# Test 216: Regression test for crash on unlabelled data
 {VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
     train-sets/ref/slates_simple_unlabeled.stderr
 
-# Test 214: check plt training
+# Test 217: check plt training
 {VW} -d train-sets/multilabel -f plt.model --plt 10 --sgd
     train-sets/ref/plt_multilabel.stderr
 
-# Test 215: check default plt prediction
+# Test 218: check default plt prediction
 {VW} -t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict
     train-sets/ref/plt_multilabel_predict.stderr
     pred-sets/ref/plt_multilabel.predict
 
-# Test 216: check plt top-1 prediction
+# Test 219: check plt top-1 prediction
 {VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
     train-sets/ref/plt_top1_multilabel_predict.stderr
     pred-sets/ref/plt_top1_multilabel.predict
 
-# Test 217: daemon test with json
+# Test 220: daemon test with json
 ./daemon-test.sh --json
     test-sets/ref/vw-daemon.stdout
+
+# Test 221: cbify adf, squarecb
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --gamma_scale 500 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb.stderr
+
+# Test 222: cbify adf, squarecb-elim
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb_elim.stderr
+
+# Test 223: cbify ldf, squarecb
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --gamma_scale 500
+    train-sets/ref/cbify_ldf_squarecb.stderr
+
+# Test 224: cbify ldf, squarecb-elim
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001
+    train-sets/ref/cbify_ldf_squarecb_elim.stderr
+
+# Test 225: cbify regression dataset.  Use it with cats.
+{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
+    train-sets/ref/cbify-reg-cats.stderr
+
+# Test 226: cats train
+{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
+    train-sets/ref/cats-train.stderr
+
+# Test 227: cats predict
+{VW} -d train-sets/cats.acpx -i cats.model -p cats.predict
+    train-sets/ref/cats-predict.stderr
+    pred-sets/ref/cats.predict
+
+# Test 228: cats-pdf train
+{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
+    train-sets/ref/cats-pdf-train.stderr
+
+# Test 229: cats-pdf predict
+{VW} -d train-sets/cats.acpx -i cats-pdf.model -p cats-pdf.predict
+    train-sets/ref/cats-pdf-predict.stderr
+    pred-sets/ref/cats-pdf.predict
+
+# Test 230: cbify-reg
+{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 4  -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg.stderr
+
+# Test 231: cbify-reg cb_discrete
+{VW} --cbify 2048 --cbify_reg --cb_discrete --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg_discrete.stderr
+
+# Test 232: cbify-reg discrete cats_tree
+{VW} --cbify 2048 --cbify_reg --cb_discrete --cats_tree 2048 --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg_discrete_cats.stderr
+
+# Test 233: CCB first slot loss
+{VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips
+    train-sets/ref/ccb_1slot_loss.stderr
+
+# Test 234: CCB all slots loss
+{VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips --all_slots_loss
+    train-sets/ref/ccb_allslots_loss.stderr
 
 # Do not delete this line or the empty line above it

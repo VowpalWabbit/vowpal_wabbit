@@ -19,8 +19,9 @@ using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
 using std::endl;
-
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
+
+VW_DEBUG_ENABLE(false)
 
 namespace CB_EXPLORE
 {
@@ -60,8 +61,8 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore tau times, then act according to optimal.
   action_scores probs = ec.pred.a_s;
-
-  if (is_learn && ec.l.cb.costs[0].probability < 1)
+  bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
+  if (learn)
     base.learn(ec);
   else
     base.predict(ec);
@@ -120,7 +121,8 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   for (size_t i = 0; i < data.bag_size; i++)
   {
     uint32_t count = BS::weight_gen(data._random_state);
-    if (is_learn && count > 0)
+    bool learn = is_learn && count > 0;
+    if (learn)
       base.learn(ec, i);
     else
       base.predict(ec, i);
@@ -240,7 +242,10 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
     if (is_test)
       label_string << " unknown";
     else
-      label_string << ec.l.cb.costs[0].action;
+    {
+      const auto& cost = ec.l.cb.costs[0];
+      label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
+    }
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
         all.progress_add, all.progress_arg);
   }
@@ -306,8 +311,11 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
-  if (!options.was_supplied("cb"))
+  // If neither cb nor cats_tree are present on the reduction stack then
+  // add cb to the reduction stack as the default reduction for cb_explore.
+  if (!options.was_supplied("cats_tree") && !options.was_supplied("cb"))
   {
+    // none of the relevant options are set, default to cb
     std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());

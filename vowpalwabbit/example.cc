@@ -394,10 +394,7 @@ std::string a_s_pred_to_string(const example& ec)
   std::stringstream strstream;
   strstream << "ec.pred.a_s[";
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  {
-    strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")";
-  }
-  strstream << "]";
+  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; } strstream << "]";
   return strstream.str();
 }
 
@@ -405,6 +402,19 @@ std::string multiclass_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
+  return strstream.str();
+}
+
+std::string prob_dist_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.prob_dist[";
+  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
+  {
+    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
+              << ec.pred.pdf[i].pdf_value << ")";
+  }
+  strstream << "]";
   return strstream.str();
 }
 
@@ -418,8 +428,6 @@ example* alloc_examples(size_t, size_t count = 1)
   for (size_t i = 0; i < count; i++)
   {
     ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
-    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
   return ec;
 }
@@ -446,4 +454,9 @@ void return_multiple_example(vw& all, v_array<example*>& examples)
   }
   examples.clear();
 }
+
+restore_prediction::restore_prediction(example& ec) : _prediction(ec.pred), _ec(ec) {}
+
+restore_prediction::~restore_prediction() { _ec.pred = _prediction; }
+
 }  // namespace VW

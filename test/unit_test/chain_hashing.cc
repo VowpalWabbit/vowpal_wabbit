@@ -24,10 +24,13 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
 
   auto vw = VW::initialize("--quiet --chain_hash", nullptr, false, nullptr, nullptr);
   {
-    auto example = &VW::get_unused_example(vw);
+    multi_ex examples;
+    examples.push_back(&VW::get_unused_example(vw));
+    auto example = examples[0];
     VW::read_line(*vw, example, const_cast<char*>(text.c_str()));
     auto& indices = example->feature_space['f'].indicies;
     txt_idx = indices[0];
+    VW::finish_example(*vw, examples);
   }
   {
     auto examples = parse_json(*vw, json_text);
@@ -35,6 +38,8 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
 
     auto& indices = example->feature_space['f'].indicies;
     json_idx = indices[0];
+    VW::finish_example(*vw, examples);
   }
   BOOST_CHECK_EQUAL(txt_idx, json_idx);
+  VW::finish(*vw);
 }

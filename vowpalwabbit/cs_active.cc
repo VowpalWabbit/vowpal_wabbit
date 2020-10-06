@@ -65,7 +65,11 @@ struct cs_active
   float distance_to_range;
   float range;
 
-  ~cs_active() { examples_by_queries.delete_v(); }
+  ~cs_active()
+  {
+    examples_by_queries.delete_v();
+    query_data.delete_v();
+  }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)

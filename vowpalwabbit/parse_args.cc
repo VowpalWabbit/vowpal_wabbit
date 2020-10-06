@@ -37,6 +37,7 @@
 #include "cb_explore_adf_first.h"
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_squarecb.h"
 #include "cb_explore_adf_rnd.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
@@ -86,9 +87,17 @@
 #include "shared_feature_merger.h"
 // #include "cntk.h"
 
+#include "cats.h"
+#include "cats_pdf.h"
+#include "cb_explore_pdf.h"
 #include "options.h"
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
+#include "offset_tree.h"
+#include "cats_tree.h"
+#include "get_pmf.h"
+#include "pmf_to_pdf.h"
+#include "sample_pdf.h"
 #include "named_labels.h"
 #include "kskip_ngram_transformer.h"
 
@@ -1327,11 +1336,13 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(cb_algs_setup);
   all.reduction_stack.push(cb_adf_setup);
   all.reduction_stack.push(mwt_setup);
+  all.reduction_stack.push(VW::cats_tree::setup);
   all.reduction_stack.push(cb_explore_setup);
   all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
   all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
   all.reduction_stack.push(VW::cb_explore_adf::rnd::setup);
   all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
+  all.reduction_stack.push(VW::cb_explore_adf::squarecb::setup);
   all.reduction_stack.push(VW::cb_explore_adf::first::setup);
   all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
   all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
@@ -1342,8 +1353,15 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push(VW::slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
   all.reduction_stack.push(warm_cb_setup);
+  all.reduction_stack.push(VW::continuous_action::get_pmf_setup);
+  all.reduction_stack.push(VW::pmf_to_pdf::setup);
+  all.reduction_stack.push(VW::continuous_action::cb_explore_pdf_setup);
+  all.reduction_stack.push(VW::continuous_action::cats_pdf::setup);
+  all.reduction_stack.push(VW::continuous_action::sample_pdf_setup);
+  all.reduction_stack.push(VW::continuous_action::cats::setup);
   all.reduction_stack.push(cbify_setup);
   all.reduction_stack.push(cbifyldf_setup);
+  all.reduction_stack.push(VW::offset_tree::setup);
   all.reduction_stack.push(explore_eval_setup);
   all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push(Search::setup);

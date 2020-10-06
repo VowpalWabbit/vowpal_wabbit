@@ -17,3 +17,5 @@ steps:
   displayName: Build C++ VW binary
 - bash: ./.scripts/linux/test-valgrind.sh
   displayName: Run test suite with Valgrind
+- bash: ./.scripts/linux/unit-tests-valgrind.sh
+  displayName: Run unit tests with Valgrind

@@ -33,7 +33,6 @@ test/*.cmp
 *.a
 t_*
 bin
-vw
 .*
 !.pipelines
 vw.1
@@ -64,6 +63,7 @@ test/RunTests.last.times
 *.pyc
 .DS_Store
 logs/**
+results/**
 
 # build folders
 **/x64
@@ -115,6 +115,7 @@ python/src/**
 python/vowpalwabbit.egg-info/**
 python/.coverage
 python/docs/build
+env/**
 
 /COPYING
 /README

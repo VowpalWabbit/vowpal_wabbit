@@ -9,106 +9,13 @@
 #include "parse_primitives.h"
 #include "vw.h"
 #include "vw_exception.h"
+#include "cb_label_parser.h"
 #include "vw_string_view.h"
 
 using namespace VW::LEARNER;
 
 namespace CB
 {
-char* bufread_label(CB::label* ld, char* c, io_buf& cache)
-{
-  size_t num = *(size_t*)c;
-  ld->costs.clear();
-  c += sizeof(size_t);
-  size_t total = sizeof(cb_class) * num + sizeof(ld->weight);
-  if (cache.buf_read(c, total) < total)
-  {
-    std::cout << "error in demarshal of cost data" << std::endl;
-    return c;
-  }
-  for (size_t i = 0; i < num; i++)
-  {
-    cb_class temp = *(cb_class*)c;
-    c += sizeof(cb_class);
-    ld->costs.push_back(temp);
-  }
-  memcpy(&ld->weight, c, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  return c;
-}
-
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
-{
-  CB::label* ld = (CB::label*)v;
-  ld->costs.clear();
-  char* c;
-  size_t total = sizeof(size_t);
-  if (cache.buf_read(c, total) < total)
-    return 0;
-  bufread_label(ld, c, cache);
-
-  return total;
-}
-
-float weight(void* v)
-{
-  CB::label* ld = (CB::label*)v;
-  return ld->weight;
-}
-
-char* bufcache_label(CB::label* ld, char* c)
-{
-  *(size_t*)c = ld->costs.size();
-  c += sizeof(size_t);
-  for (auto const& cost : ld->costs)
-  {
-    *(cb_class*)c = cost;
-    c += sizeof(cb_class);
-  }
-  memcpy(c, &ld->weight, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  return c;
-}
-
-void cache_label(void* v, io_buf& cache)
-{
-  char* c;
-  CB::label* ld = (CB::label*)v;
-  cache.buf_write(c, sizeof(size_t) + sizeof(cb_class) * ld->costs.size() + sizeof(ld->weight));
-  bufcache_label(ld, c);
-}
-
-void default_label(void* v)
-{
-  CB::label* ld = (CB::label*)v;
-  ld->costs.clear();
-  ld->weight = 1;
-}
-
-bool test_label(void* v)
-{
-  CB::label* ld = (CB::label*)v;
-  if (ld->costs.empty())
-    return true;
-  for (auto const& cost : ld->costs)
-    if (FLT_MAX != cost.cost && cost.probability > 0.)
-      return false;
-  return true;
-}
-
-void delete_label(void* v)
-{
-  CB::label* ld = (CB::label*)v;
-  ld->costs.delete_v();
-}
-
-void copy_label(void* dst, void* src)
-{
-  CB::label* ldD = (CB::label*)dst;
-  CB::label* ldS = (CB::label*)src;
-  copy_array(ldD->costs, ldS->costs);
-  ldD->weight = ldS->weight;
-}
 
 void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
@@ -171,8 +78,10 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
   }
 }
 
+float weight(void*) { return 1.; }
+
 label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
-    test_label, sizeof(label), nullptr};
+    is_test_label, sizeof(label), nullptr};
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
@@ -263,7 +172,7 @@ void default_label(void* v)
 bool test_label(void* v)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
-  return CB::test_label(&ld->event);
+  return CB::is_test_label(&ld->event);
 }
 
 void delete_label(void* v)
