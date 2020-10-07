@@ -576,10 +576,10 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 // base learner/predictor
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, const std::string& name)
+    size_t params_per_weight, const std::string& name, bool predict_before_learn = true)
 {
   auto ret = &learner<T, E>::init_learner(
-      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar, name);
+      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar, name, predict_before_learn);
 
   dat.release();
   return *ret;
@@ -595,9 +595,9 @@ learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weigh
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type_t pred_type, const std::string& name)
+    size_t params_per_weight, prediction_type_t pred_type, const std::string& name, bool predict_before_learn = true)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name);
+  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name, predict_before_learn);
   dat.release();
   return *ret;
 }

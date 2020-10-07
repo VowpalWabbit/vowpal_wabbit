@@ -934,14 +934,11 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->read_example_this_loop = 0;
   single_learner* pbase = as_singleline(setup_base(*all.options, all));
   learner<ldf, multi_ex>* pl = nullptr;
-  // FIXME: @rajan-chari - the is_probabilities branch was missing
+
   if (ld->rank)
     pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, "csoaa_ldf_rank");
   else if (ld->is_probabilities)
-  {
-    // FIXME: What are the correct predict/learn funcs
-    // pl = &init_learner(ld, pbase, nullptr, nullptr, 1, prediction_type_t::prob, "csoaa_ldf_prob");
-  }
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::prob, "csoaa_ldf_prob");
   else
     pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, "csoaa_ldf");
 

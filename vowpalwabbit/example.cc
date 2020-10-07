@@ -205,6 +205,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->interactions = src->interactions;
+  dst->stack_depth = src->stack_depth;
 }
 
 void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
@@ -361,7 +362,7 @@ std::string simple_label_to_string(const example& ec)
   return strstream.str();
 }
 
-std::string depth_indent_string(const uint32_t depth)
+std::string depth_indent_string(const int32_t depth)
 {
   constexpr const char* indent_str = "- ";
   constexpr const char* space_str = "  ";
@@ -370,7 +371,7 @@ std::string depth_indent_string(const uint32_t depth)
     return indent_str;
 
   std::stringstream str_stream;
-  for (uint32_t i = 0; i < depth - 1; i++)
+  for (int32_t i = 0; i < depth - 1; i++)
   {
     str_stream << space_str;
   }

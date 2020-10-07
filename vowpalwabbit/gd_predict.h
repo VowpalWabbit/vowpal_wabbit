@@ -5,6 +5,7 @@
 
 #include "interactions_predict.h"
 #include "v_array.h"
+#include "debug_log.h"
 
 namespace GD
 {
