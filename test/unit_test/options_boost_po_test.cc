@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(check_missing_necessary)
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 }
 
-BOOST_AUTO_TEST_CASE(check_multiple_necessary)
+BOOST_AUTO_TEST_CASE(check_multiple_necessary_and_short_name)
 {
   int int_opt;
   std::string str_opt;
@@ -432,17 +432,42 @@ BOOST_AUTO_TEST_CASE(check_multiple_necessary)
   BOOST_CHECK_EQUAL(result, true);
   BOOST_CHECK_EQUAL(int_opt, 3);
   BOOST_CHECK_EQUAL(str_opt, "test");
+  BOOST_CHECK_EQUAL(options->was_supplied("int_opt"), true);
+  BOOST_CHECK_EQUAL(options->was_supplied("str_opt"), true);
   BOOST_CHECK_EQUAL(bool_opt, false);
   BOOST_CHECK_EQUAL(other_bool_opt, true);
+}
 
-  char command_line_not_all_present[] = "exe --int_opt 3 --other_bool_opt --char_opt_option a c --char_opt_option d";
-  argv = convert_to_command_args(command_line_not_all_present, argc);
+BOOST_AUTO_TEST_CASE(check_multiple_necessary_one_missing)
+{
+  int int_opt;
+  std::string str_opt;
+  bool bool_opt;
+  bool other_bool_opt;
+  std::vector<char> char_opt_option;
 
+  char command_line[] = "exe --int_opt 3 --other_bool_opt --char_opt_option a c --char_opt_option d";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  auto argv = convert_to_command_args(command_line, argc);
+
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(new options_boost_po(argc, argv.data()));
+
+  option_group_definition arg_group("group1");
+  arg_group.add(make_option("int_opt", int_opt).necessary().short_name("i"));
+  arg_group.add(make_option("str_opt", str_opt).keep().necessary());
+  arg_group.add(make_option("bool_opt", bool_opt).keep());
+  arg_group.add(make_option("other_bool_opt", other_bool_opt).keep());
+  arg_group.add(make_option("char_opt_option", char_opt_option).keep());
+
+  bool result;
   options = std::unique_ptr<options_boost_po>(new options_boost_po(argc, argv.data()));
   BOOST_CHECK_NO_THROW(result = options->add_parse_and_check_necessary(arg_group));
   // should be false since str_opt is missing (even if int_opt is present and necessary!)
   BOOST_CHECK_EQUAL(result, false);
   BOOST_CHECK_EQUAL(int_opt, 3);
+  BOOST_CHECK_EQUAL(options->was_supplied("int_opt"), true);
+  BOOST_CHECK_EQUAL(options->was_supplied("str_opt"), false);
   BOOST_CHECK_EQUAL(bool_opt, false);
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 }
