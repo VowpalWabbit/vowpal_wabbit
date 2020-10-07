@@ -1277,7 +1277,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   all.reduction_stack.pop();
   auto base = std::get<1>(setup_func)(options, all);
 
-  // this mean that setup_func did not do any setup since it didnt add itself to the chain of learners
+  // this means that the current (base) reduction was not enabled (didn't do any setup) since it didn't add itself to the chain of learners
   if (base == nullptr) { return setup_base(options, all); }
   else
   {
