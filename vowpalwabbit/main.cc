@@ -44,10 +44,7 @@ vw* setup(options_i& options)
 
   auto skip_driver = options.get_typed_option<bool>("dry_run").value();
 
-  /*
-  right now we are abusing the api, to generate the options but in theory we should seperate to
-  re-use same options and same vw without a delete could be added as experimental as a debugging tool
-  */
+  // output list of enabled reductions
   if (!all->logger.quiet && !options.was_supplied("audit_regressor") && !all->enabled_reductions.empty())
   {
     const char* const delim = ", ";

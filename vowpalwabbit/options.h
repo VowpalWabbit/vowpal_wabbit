@@ -199,8 +199,6 @@ struct option_group_definition
   option_group_definition& add(typed_option<T>& op)
   {
     m_options.push_back(std::make_shared<typename std::decay<typed_option<T>>::type>(op));
-
-    // TODO do we need to insert also the short_name ?
     if (op.m_necessary) { m_necessary_flags.insert(op.m_name); }
 
     return *this;

@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(check_multiple_necessary)
   bool other_bool_opt;
   std::vector<char> char_opt_option;
 
-  char command_line[] = "exe --int_opt 3 --str_opt test --other_bool_opt --char_opt_option a c --char_opt_option d";
+  char command_line[] = "exe -i 3 --str_opt test --other_bool_opt --char_opt_option a c --char_opt_option d";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   auto argv = convert_to_command_args(command_line, argc);
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(check_multiple_necessary)
   std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(new options_boost_po(argc, argv.data()));
 
   option_group_definition arg_group("group1");
-  arg_group.add(make_option("int_opt", int_opt).necessary());
+  arg_group.add(make_option("int_opt", int_opt).necessary().short_name("i"));
   arg_group.add(make_option("str_opt", str_opt).keep().necessary());
   arg_group.add(make_option("bool_opt", bool_opt).keep());
   arg_group.add(make_option("other_bool_opt", other_bool_opt).keep());
