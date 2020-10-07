@@ -309,7 +309,7 @@ void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
 {
   _trace_stream = vw_ostream;
   _quiet = quiet;
-  }
+}
 
 cats_tree::~cats_tree()
 {
