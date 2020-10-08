@@ -425,7 +425,6 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 
     // Prepare examples for learning
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
-    ec->weight = old_weight;
     const polyprediction saved_pred = ec->pred;  // save
 
     // Guard example state restore against throws
