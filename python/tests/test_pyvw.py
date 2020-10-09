@@ -403,27 +403,16 @@ def test_feature_column_renaming_and_tag():
     assert first_line == "1 id_1| col_x:2"
 
 
-def test_constant_feature_value_with_empty_name():
+def test_feature_value_with_empty_name():
     df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
     conv = DFtoVW(
         label=SimpleLabel("y"),
         tag="idx",
-        features=Feature(name="", value=2, value_from_df=False),
+        features=Feature(value="x", name=""),
         df=df,
     )
     first_line = conv.convert_df()[0]
     assert first_line == "1 id_1| :2"
-
-
-def test_variable_feature_name():
-    df = pd.DataFrame({"y": [1], "x": [2], "a": ["col_x"]})
-    conv = DFtoVW(
-        label=SimpleLabel("y"),
-        features=Feature(name="a", value="x", name_from_df=True),
-        df=df,
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 | col_x:2"
 
 
 def test_multiple_lines():
@@ -533,30 +522,6 @@ def test_multiclasslabel_negative_weight_error():
         )
     expected = "In argument 'weight' of 'MulticlassLabel', column 'w' must be >= 0."
     assert expected == str(value_error.value)
-
-
-def test_multiclasslabel_non_positive_constant_label_error():
-    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
-    with pytest.raises(ValueError) as value_error:
-        DFtoVW(
-            df=df,
-            label=MulticlassLabel(name=-1, weight="b", name_from_df=False),
-            features=Feature("c"),
-        )
-    expected = "In 'MulticlassLabel', argument 'name' must be >= 1."
-    assert expected == str(value_error.value)
-
-
-def test_multiclasslabel_constant_label_type_error():
-    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
-    with pytest.raises(TypeError) as type_error:
-        DFtoVW(
-            df=df,
-            label=MulticlassLabel(name="a", weight="b", weight_from_df=False),
-            features=Feature("c"),
-        )
-    expected = "In 'MulticlassLabel', when weight_from_df=False, argument 'weight' should be either of the following type(s): 'int', 'float'."
-    assert expected == str(type_error.value)
 
 
 def test_multilabel_non_positive_name_error():
