@@ -1441,7 +1441,7 @@ class _Col:
 
         Parameters
         ----------
-        colname: str/int/float
+        colname: any hashable type (str/int/float/tuple/etc.)
             The column name.
         expected_type: tuple
             The expected type of the column.
@@ -1453,12 +1453,12 @@ class _Col:
         self.min_value = min_value
 
     def get_col(self, df):
-        """Returns the column 'colname' from the dataframe 'df'.
+        """Returns the column defined in attribute 'colname' from the dataframe 'df'.
 
         Parameters
         ----------
         df : pandas.DataFrame
-            The dataframe from which to pull the column 'colname'.
+            The dataframe from which to select the column.
 
         Raises
         ------
@@ -1468,7 +1468,7 @@ class _Col:
         Returns
         -------
         out : pandas.Series
-            The column 'colname' from the dataframe 'df'.
+            The column defined in attribute 'colname' from the dataframe 'df'.
         """
         try:
             out = df[self.colname]
@@ -1535,13 +1535,10 @@ class _Col:
 
 
 class AttributeDescriptor(object):
-    """This descriptor class enforces type checking and value checking for the
-    attributes of the (managed) classes SimpleLabel, MulticlassLabel, Feature, etc.
-
-    If the attribute represents a column, no type or value checking are
-    performed (since the dataframe and the subsequent column is not known yet)
-    but the type and value requirements are passed to the _Col instance for
-    future usage in the DFtoVW constructor.
+    """This descriptor class add type and value checking informations to the _Col 
+    instance for future usage in the DFtoVW class. Indeed, the type and value checking
+    can only be done once the dataframe is known (i.e in DFtoVW class). This descriptor
+    class is used in the following managed class: SimpleLabel, MulticlassLabel, Feature, etc.
     """
 
     def __init__(self, attribute_name, expected_type, min_value=None):
@@ -1750,9 +1747,7 @@ class Feature(object):
     """The feature type for the constructor of DFtoVW"""
     value = AttributeDescriptor("value", expected_type=(str, int, float))
 
-    def __init__(
-        self, value, name=None, value_from_df=True, name_from_df=False
-    ):
+    def __init__(self, value, name=None):
         """
         Initialize a Feature instance.
 
