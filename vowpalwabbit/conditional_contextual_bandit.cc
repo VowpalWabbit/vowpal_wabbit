@@ -485,8 +485,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
     delete_cb_labels(data);
   }
-  catch (...)
-  {
+  catch (const std::exception& ex) {
+    std::cerr << "CCB is crashed! " << ex.what() << std::endl;
+    throw;
+  }
+  catch (...) {
     std::cerr << "CCB is crashed!" << std::endl;
     throw;
   }
