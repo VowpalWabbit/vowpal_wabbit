@@ -102,7 +102,7 @@ template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normali
 inline void update_feature(float& update, float x, float& fw)
 {
   weight* w = &fw;
-  bool modify = feature_mask_off || fw != 0.;
+  bool modify = x < FLT_MAX && x > -FLT_MAX && (feature_mask_off || fw != 0.);
   if (modify)
   {
     if
@@ -496,7 +496,10 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       x2 = x2_min;
     }
     if (x2 > x2_max)
-      THROW("your features have too much magnitude");
+      {
+        x2 = x2_max;
+        std::cerr << "your features have too much magnitude" << std:: endl;
+      }
     if (stateless)  // we must not modify the parameter state so introduce a shadow version.
     {
       nd.extra_state[0] = w[0];
