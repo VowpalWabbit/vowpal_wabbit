@@ -339,7 +339,6 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   options.add_and_parse(new_options);
 
-  // TODO custom any necessary instead of all
   if (!ftrl_option && !pistol && !coin)
   {
     return nullptr;
