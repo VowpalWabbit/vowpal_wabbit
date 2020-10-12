@@ -495,11 +495,6 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       x = (x > 0) ? x_min : -x_min;
       x2 = x2_min;
     }
-    if (x2 > x2_max)
-      {
-        x2 = x2_max;
-        std::cerr << "your features have too much magnitude" << std:: endl;
-      }
     if (stateless)  // we must not modify the parameter state so introduce a shadow version.
     {
       nd.extra_state[0] = w[0];
@@ -531,7 +526,13 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
           }
           w[normalized] = x_abs;
         }
-        nd.norm_x += x2 / (w[normalized] * w[normalized]);
+        float norm_x2 = x2 / (w[normalized] * w[normalized]);
+        if (x2 > x2_max)
+          {
+            norm_x2 = 1;
+            std::cerr << "your features have too much magnitude" << std:: endl;
+          }
+        nd.norm_x += norm_x2;
       }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, w[0]);
     nd.pred_per_update += x2 * w[spare];
@@ -647,6 +648,12 @@ float compute_update(gd& g, example& ec)
 
   if (sparse_l2)
     update -= g.sparse_l2 * ec.pred.scalar;
+
+  if (std::isnan(update))
+    {
+      std::cout << "update is NAN, replacing with 0" << std::endl;
+      update = 0.;
+    }
 
   return update;
 }
