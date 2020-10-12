@@ -10,9 +10,11 @@ average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 NAN prediction in example 1, forcing 0
 your features have too much magnitude
+update is NAN, replacing with 0
 1.000000 1.000000            1            1.0   1.0000   0.0000        2
 NAN prediction in example 2, forcing 0.000000
 your features have too much magnitude
+update is NAN, replacing with 0
 1.000000 1.000000            2            2.0   1.0000   0.0000        2
 
 finished run

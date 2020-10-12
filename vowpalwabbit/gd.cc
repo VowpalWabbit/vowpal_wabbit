@@ -651,7 +651,7 @@ float compute_update(gd& g, example& ec)
 
   if (std::isnan(update))
     {
-      std::cout << "update is NAN, replacing with 0" << std::endl;
+      std::cerr << "update is NAN, replacing with 0" << std::endl;
       update = 0.;
     }
 
