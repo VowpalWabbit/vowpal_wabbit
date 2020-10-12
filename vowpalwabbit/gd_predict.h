@@ -7,6 +7,9 @@
 #include "v_array.h"
 #include "debug_log.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::gd_predict
+
 namespace GD
 {
 // forward declare

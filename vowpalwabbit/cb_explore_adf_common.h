@@ -117,6 +117,10 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
   }
+  else
+  {
+    predict(data, base, examples);
+  }
 }
 
 template <typename ExploreType>

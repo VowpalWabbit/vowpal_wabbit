@@ -7,6 +7,9 @@
 #include "reductions.h"
 #include "vw_exception.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::scorer
+
 using namespace VW::config;
 
 struct scorer
@@ -31,6 +34,9 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
     ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   ec.pred.scalar = link(ec.pred.scalar);
+  VW_DBG(ec)  << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset
+              << ", lbl=" << ec.l.simple.label << ", pred= " << ec.pred.scalar
+              << ", wt=" << ec.weight << std::endl;
 }
 
 template <float (*link)(float in)>

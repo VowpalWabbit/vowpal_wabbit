@@ -397,6 +397,24 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   std::swap(data.shared->tag, slot->tag);
 }
 
+std::string ccb_decision_to_string(const ccb& data)
+{
+  std::ostringstream outstrm;
+  auto& pred = data.shared->pred.a_s;
+  // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
+  outstrm << "a_s [";
+  for (const auto& action_score : pred)
+    outstrm << action_score.action << ":" << action_score.score << ", ";
+  outstrm << "] ";
+
+  outstrm << "excl [";
+  for(const auto& excl : data.exclude_list)
+    outstrm <<  excl << ",";
+  outstrm << "] ";
+
+  return outstrm.str();
+}
+
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
@@ -454,19 +472,13 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // the cb example contains at least 1 action
     if (has_action(data.cb_ex))
     {
-      if (is_learn)
-      {
-          multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
-//        // Call learn if only if there is a label
-//        if(data.cb_ex[0]->l.cb.costs.size() > 0)
-          multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset);
-      }
-      else
-        multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
-
+      multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
       save_action_scores(data, decision_scores);
+      VW_DBG(examples) << "ccb " << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
       clear_pred_and_label(data);
     }
+
+
     else
     {
       // the cb example contains no action => cannot decide

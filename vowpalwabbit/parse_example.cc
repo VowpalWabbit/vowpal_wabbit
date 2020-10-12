@@ -68,7 +68,6 @@ class TC_parser
   uint32_t _hash_seed;
   uint64_t _parse_mask;
   bool _chain_hash;
-
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
 
   ~TC_parser() {}

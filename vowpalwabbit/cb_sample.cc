@@ -10,6 +10,9 @@
 #include "vw_string_view.h"
 #include "tag_utils.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_sample
+
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
@@ -79,10 +82,31 @@ struct cb_sample_data
         _random_state->get_and_update_random();
       }
 
-      result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
-      assert(result == S_EXPLORATION_OK);
-      _UNUSED(result);
     }
+
+    auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
+    assert(result == S_EXPLORATION_OK);
+
+    VW_DBG(examples) << "cb " << cb_decision_to_string(examples[0]->pred.a_s) <<
+                    " rnd:" << _random_state->get_current_state() << std::endl;
+
+    _UNUSED(result);
+  }
+
+  std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
+  {
+    std::ostringstream ostrm;
+    bool first = true;
+    for(const auto& a_s : action_scores)
+    {
+      if(first)
+      {
+        ostrm << "chosen[" << a_s.action << "," << a_s.score << "] [ ";
+        first = !first;
+      }
+      ostrm << "(" << a_s.action << "," << a_s.score << "), ";
+    }
+    return ostrm.str();
   }
 
  private:

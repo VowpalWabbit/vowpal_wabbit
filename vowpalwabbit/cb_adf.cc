@@ -15,6 +15,9 @@
 #include "vw_versions.h"
 #include "explore.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_adf
+
 using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
@@ -22,9 +25,6 @@ using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
 using namespace exploration;
-
-#undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_adf
 
 namespace CB_ADF
 {
@@ -244,9 +244,16 @@ void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
   call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
 }
 
-template <bool predict>
+template <bool PREDICT>
 void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 {
+  if (PREDICT)  // first get the prediction to return
+  {
+    gen_cs_example_ips(examples, _cs_labels);
+    call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+    std::swap(examples[0]->pred.a_s, _a_s);
+  }
+
   // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
