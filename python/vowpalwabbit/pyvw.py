@@ -1755,15 +1755,15 @@ class Feature(object):
         ----------
         value : str
             The column name with the value of the feature.
-        name : str
-            The column name with the name of the feature.
+        rename_feature : str, optional
+            The name to use instead of the default (which is the column name defined in the value argument).
 
         Returns
         -------
         self : Feature
         """
         self.value = value
-        self.name = name
+        self.rename_feature = rename_feature
 
     def process(self, df):
         """Returns the Feature string representation.
@@ -1779,10 +1779,10 @@ class Feature(object):
             The Feature string representation.
         """
         value_col = self.value.get_col(df)
-        if self.name is None:
+        if self.rename_feature is None:
             out = value_col
         else:
-            name_col = self.name
+            name_col = self.rename_feature
             out = name_col + ":" + value_col
         return out
 
@@ -1971,7 +1971,7 @@ class DFtoVW:
                            label=SimpleLabel("y"),
                            namespaces=Namespace(
                                    name="DoubleIt", value=2,
-                                   features=Feature(value="a", name="feat_a")))
+                                   features=Feature(value="a", rename_feature="feat_a")))
         >>> conv3.convert_df()
 
         >>> conv4 = DFtoVW(df=df,
