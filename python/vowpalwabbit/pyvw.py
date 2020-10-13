@@ -1535,7 +1535,7 @@ class _Col:
 
 
 class AttributeDescriptor(object):
-    """This descriptor class add type and value checking informations to the _Col 
+    """This descriptor class add type and value checking informations to the _Col
     instance for future usage in the DFtoVW class. Indeed, the type and value checking
     can only be done once the dataframe is known (i.e in DFtoVW class). This descriptor
     class is used in the following managed class: SimpleLabel, MulticlassLabel, Feature, etc.
@@ -1577,7 +1577,7 @@ class AttributeDescriptor(object):
         arg: str
             The argument to set.
         """
-        # initialize empty set that register the column names (for _Col arg)
+        # initialize empty set that register the column names
         if "columns" not in instance.__dict__:
             instance.__dict__["columns"] = set()
 
@@ -1618,21 +1618,21 @@ class AttributeDescriptor(object):
 class SimpleLabel(object):
     """The simple label type for the constructor of DFtoVW."""
 
-    name = AttributeDescriptor("name", expected_type=(int, float))
+    label = AttributeDescriptor("label", expected_type=(int, float))
 
-    def __init__(self, name):
+    def __init__(self, label):
         """Initialize a SimpleLabel instance.
 
         Parameters
         ----------
-        name : str
-            The column name with the name of the label.
+        label : str
+            The column name with the label.
 
         Returns
         -------
         self : SimpleLabel
         """
-        self.name = name
+        self.label = label
 
     def process(self, df):
         """Returns the SimpleLabel string representation.
@@ -1647,34 +1647,32 @@ class SimpleLabel(object):
         str or pandas.Series
             The SimpleLabel string representation.
         """
-        return self.name.get_col(df)
+        return self.label.get_col(df)
 
 
 class MulticlassLabel(object):
     """The multiclass label type for the constructor of DFtoVW."""
 
-    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
+    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
     weight = AttributeDescriptor(
         "weight", expected_type=(int, float), min_value=0
     )
 
-    def __init__(
-        self, name, weight=None
-    ):
+    def __init__(self, label, weight=None):
         """Initialize a MulticlassLabel instance.
 
         Parameters
         ----------
-        name : str
-            The column name with the name of the multi class.
+        label : str
+            The column name with the multi class label.
         weight: str, optional
-            The column name with the (importance) weight of the multi class.
+            The column name with the (importance) weight of the multi class label.
 
         Returns
         -------
         self : MulticlassLabel
         """
-        self.name = name
+        self.label = label
         self.weight = weight
 
     def process(self, df):
@@ -1690,35 +1688,33 @@ class MulticlassLabel(object):
         str or pandas.Series
             The MulticlassLabel string representation.
         """
-        name_col = self.name.get_col(df)
+        label_col = self.label.get_col(df)
         if self.weight is not None:
             weight_col = self.weight.get_col(df)
-            out = name_col + " " + weight_col
+            out = label_col + " " + weight_col
         else:
-            out = name_col
+            out = label_col
         return out
 
 
 class MultiLabel(object):
     """The multi labels type for the constructor of DFtoVW."""
 
-    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
+    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
 
-    def __init__(
-        self, name
-    ):
+    def __init__(self, label):
         """Initialize a MultiLabel instance.
 
         Parameters
         ----------
-        name : str or list of str
+        label : str or list of str
             The (list of) column name(s) of the multi label(s).
 
         Returns
         -------
         self : MulticlassLabel
         """
-        self.name = name
+        self.label = label
 
     def process(self, df):
         """Returns the MultiLabel string representation.
@@ -1733,13 +1729,13 @@ class MultiLabel(object):
         str or pandas.Series
             The MultiLabel string representation.
         """
-        names = self.name if isinstance(self.name, list) else [self.name]
-        for (i, name) in enumerate(names):
-            name_col = name.get_col(df)
+        labels = self.label if isinstance(self.label, list) else [self.label]
+        for (i, label) in enumerate(labels):
+            label_col = label.get_col(df)
             if i == 0:
-                out = name_col
+                out = label_col
             else:
-                out += "," + name_col
+                out += "," + label_col
         return out
 
 

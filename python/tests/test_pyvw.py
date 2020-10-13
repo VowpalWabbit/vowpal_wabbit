@@ -446,7 +446,7 @@ def test_without_target_multiple_features():
 def test_multiclasslabel():
     df = pd.DataFrame({"a": [1], "b": [0.5], "c": ["x"]})
     conv = DFtoVW(
-        df=df, label=MulticlassLabel(name="a", weight="b"), features=Feature("c")
+        df=df, label=MulticlassLabel(label="a", weight="b"), features=Feature("c")
     )
     first_line = conv.convert_df()[0]
     assert first_line == "1 0.5 | x"
@@ -487,8 +487,8 @@ def test_absent_col_error():
 def test_non_numerical_simplelabel_error():
     df = pd.DataFrame({"y": ["a"], "x": ["featX"]})
     with pytest.raises(TypeError) as type_error:
-        DFtoVW(df=df, label=SimpleLabel(name="y"), features=Feature("x"))
-    expected = "In argument 'name' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float', 'int64'."
+        DFtoVW(df=df, label=SimpleLabel(label="y"), features=Feature("x"))
+    expected = "In argument 'label' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float', 'int64'."
     assert expected == str(type_error.value)
 
 
@@ -500,15 +500,15 @@ def test_wrong_feature_type_error():
     assert expected == str(type_error.value)
 
 
-def test_multiclasslabel_non_positive_name_error():
+def test_multiclasslabel_non_positive_label_error():
     df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=MulticlassLabel(name="a", weight="b"),
+            label=MulticlassLabel(label="a", weight="b"),
             features=Feature("c"),
         )
-    expected = "In argument 'name' of 'MulticlassLabel', column 'a' must be >= 1."
+    expected = "In argument 'label' of 'MulticlassLabel', column 'a' must be >= 1."
     assert expected == str(value_error.value)
 
 
@@ -517,20 +517,20 @@ def test_multiclasslabel_negative_weight_error():
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=MulticlassLabel(name="y", weight="w"),
+            label=MulticlassLabel(label="y", weight="w"),
             features=Feature("x"),
         )
     expected = "In argument 'weight' of 'MulticlassLabel', column 'w' must be >= 0."
     assert expected == str(value_error.value)
 
 
-def test_multilabel_non_positive_name_error():
+def test_multilabel_non_positive_label_error():
     df = pd.DataFrame({"y": [0], "b": [1]})
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=MultiLabel(name="y"),
+            label=MultiLabel(label="y"),
             features=Feature("b"),
         )
-    expected = "In argument 'name' of 'MultiLabel', column 'y' must be >= 1."
+    expected = "In argument 'label' of 'MultiLabel', column 'y' must be >= 1."
     assert expected == str(value_error.value)
