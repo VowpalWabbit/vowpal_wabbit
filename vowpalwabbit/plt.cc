@@ -367,10 +367,10 @@ base_learner* plt_setup(options_i& options, vw& all)
   learner<plt, example>* l;
   if (tree->top_k > 0)
     l = &init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict<false>, tree->t, prediction_type_t::multilabels, "plt");
+        tree, as_singleline(setup_base(options, all)), learn, predict<false>, tree->t, prediction_type_t::multilabels, "plt", false);
   else
     l = &init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t, prediction_type_t::multilabels, "plt");
+        tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t, prediction_type_t::multilabels, "plt", false);
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
   all.label_type = label_type_t::multi;

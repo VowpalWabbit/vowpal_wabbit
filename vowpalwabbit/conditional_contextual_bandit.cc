@@ -472,13 +472,25 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // the cb example contains at least 1 action
     if (has_action(data.cb_ex))
     {
-      multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
+      // Notes:  Prediction is needed for output purposes. i.e.  save_action_scores needs it.
+      // This is will be used to a) display prediction, b) output to a predict file c) progressive loss calcs
+      //
+      // Strictly speaking, predict is not needed to learn.  The only reason for doing this here
+      // instead of letting the framework call predict before learn is to avoid extra work in example manipulation.
+      //
+      // The right thing to do here is to detect library mode and not have to call predict if prediction is
+      // not needed for learn.  This will be part of a future PR
+      multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
+
+      if(is_learn)
+      {
+        multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset);
+      }
+
       save_action_scores(data, decision_scores);
       VW_DBG(examples) << "ccb " << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
       clear_pred_and_label(data);
     }
-
-
     else
     {
       // the cb example contains no action => cannot decide

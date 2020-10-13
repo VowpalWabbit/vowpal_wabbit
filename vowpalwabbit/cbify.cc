@@ -795,14 +795,14 @@ base_learner* cbify_setup(options_i& options, vw& all)
       {
         l = &init_learner(
               data, base, predict_or_learn_regression_discrete<true>,
-              predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar, "cbify-reg-discrete");
+              predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar, "cbify-reg-discrete", false);
         l->set_finish_example(finish_example_cb_reg_discrete);
       }
       else
       {
         l = &init_learner(
             data, base, predict_or_learn_regression<true>,
-            predict_or_learn_regression<false>, 1, prediction_type_t::scalar, "cbify-reg");
+            predict_or_learn_regression<false>, 1, prediction_type_t::scalar, "cbify-reg", false);
         l->set_finish_example(finish_example_cb_reg_continous);
       }
     }
