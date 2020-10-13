@@ -396,7 +396,7 @@ def test_feature_column_renaming_and_tag():
     conv = DFtoVW(
         label=SimpleLabel("y"),
         tag="idx",
-        features=Feature(name="col_x", value="x"),
+        features=Feature(value="x", rename_feature="col_x"),
         df=df,
     )
     first_line = conv.convert_df()[0]
@@ -408,7 +408,7 @@ def test_feature_value_with_empty_name():
     conv = DFtoVW(
         label=SimpleLabel("y"),
         tag="idx",
-        features=Feature(value="x", name=""),
+        features=Feature(value="x", rename_feature=""),
         df=df,
     )
     first_line = conv.convert_df()[0]
