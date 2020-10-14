@@ -50,23 +50,23 @@ class _Col:
             return out.fillna("").apply(str)
 
     def is_number(self, df):
-        """Check is the type of the column is a number
+        """Check if the column is of type number.
 
         Parameters
         ----------
         df : pandas.DataFrame
-            The dataframe from which to check the column.
+            The dataframe from which to check the column's type.
         """
         col_type = df[self.colname].dtype
         return np.issubsctype(col_type, np.number)
 
     def get_colname(self):
-        """Returns the vowpal wabbit compatible colname
+        """Returns a colname that is compatible with VW (no ':' nor ' ').
 
         Returns
         -------
         colname : str
-            A valid colname
+            A valid colname.
         """
         colname = str(self.colname)
         colname = colname.replace(":", " ")
