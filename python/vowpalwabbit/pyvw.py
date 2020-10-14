@@ -1433,23 +1433,6 @@ class example(pylibvw.example):
         return label_class(self)
 
 
-def _get_col_or_value(x, df):
-    """If x is of type _Col returns the column to which x refers to, else
-    returns the string value of x.
-
-    Parameters
-    ----------
-    x: object
-        The value.
-    df: pandas.DataFrame
-        The dataframe from which to select the column (if x is of type _Col).
-    """
-    if isinstance(x, _Col):
-        return x.get_col(df)
-    else:
-        return str(x)
-
-
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
 
@@ -1458,7 +1441,7 @@ class _Col:
 
         Parameters
         ----------
-        colname: str/int/float
+        colname: any hashable type (str/int/float/tuple/etc.)
             The column name.
         expected_type: tuple
             The expected type of the column.
@@ -1470,12 +1453,12 @@ class _Col:
         self.min_value = min_value
 
     def get_col(self, df):
-        """Returns the column 'colname' from the dataframe 'df'.
+        """Returns the column defined in attribute 'colname' from the dataframe 'df'.
 
         Parameters
         ----------
         df : pandas.DataFrame
-            The dataframe from which to pull the column 'colname'.
+            The dataframe from which to select the column.
 
         Raises
         ------
@@ -1485,7 +1468,7 @@ class _Col:
         Returns
         -------
         out : pandas.Series
-            The column 'colname' from the dataframe 'df'.
+            The column defined in attribute 'colname' from the dataframe 'df'.
         """
         try:
             out = df[self.colname]
@@ -1552,17 +1535,10 @@ class _Col:
 
 
 class AttributeDescriptor(object):
-    """This descriptor class enforces type checking and value checking for the
-    attributes of the (managed) classes SimpleLabel, MulticlassLabel, Feature, etc.
-
-    If the attribute represents a column, no type or value checking are
-    performed (since the dataframe and the subsequent column is not known yet)
-    but the type and value requirements are passed to the _Col instance for
-    future usage in the DFtoVW constructor.
-
-    In the managed class, the optional presence of a column for an attribute is
-    indicated using *_from_df attribute. The *_from_df attribute should be set
-    before the actual attribute to take effect.
+    """This descriptor class add type and value checking informations to the _Col
+    instance for future usage in the DFtoVW class. Indeed, the type and value checking
+    can only be done once the dataframe is known (i.e in DFtoVW class). This descriptor
+    class is used in the following managed class: SimpleLabel, MulticlassLabel, Feature, etc.
     """
 
     def __init__(self, attribute_name, expected_type, min_value=None):
@@ -1598,10 +1574,10 @@ class AttributeDescriptor(object):
         ----------
         instance: object
             The managed instance.
-        arg: str/int/float
-            The argument to set (if the checks are passed).
+        arg: str
+            The argument to set.
         """
-        # initialize empty set that register the column names (for _Col arg)
+        # initialize empty set that register the column names
         if "columns" not in instance.__dict__:
             instance.__dict__["columns"] = set()
 
@@ -1609,74 +1585,7 @@ class AttributeDescriptor(object):
         if arg is None:
             instance.__dict__[self.attribute_name] = arg
         else:
-            # get the *_from_df argument value if it exists in the instance
-            try:
-                from_df = getattr(
-                    instance, "{}_from_df".format(self.attribute_name)
-                )
-            except AttributeError:
-                from_df = False
-
-            # If instance has *_from_df attribute, store in instance as _Col type
-            if from_df:
-                self.initialize_col_type(instance, arg)
-            # else process to type and value range checking
-            else:
-                # validate type
-                valid_type = self.validate_type(arg)
-
-                # validate value
-                if self.min_value is not None and valid_type:
-                    valid_value = self.validate_value(arg)
-                else:
-                    valid_value = True
-
-                # store in instance if type and value are valid
-                if valid_type and valid_value:
-                    instance.__dict__[self.attribute_name] = arg
-                else:
-                    self.generate_error(instance, valid_type, valid_value)
-
-    def validate_value(self, arg):
-        """Validate value for literals (not for _Col).
-
-        Parameters
-        ----------
-        arg: int/float
-            The argument which value range has to be checked
-
-        Returns
-        -------
-        valid_type: bool
-            True if value is of valid type, False otherwise
-        """
-        if isinstance(arg, list):
-            valid_value = all([x >= self.min_value for x in arg])
-        else:
-            valid_value = arg >= self.min_value
-        return valid_value
-
-    def validate_type(self, arg):
-        """Validate type for literals (not for _Col).
-
-        Parameters
-        ----------
-        arg: int/float
-            The argument which value type has to be checked
-
-        Returns
-        -------
-        valid_type: bool
-            True if value is of valid type, False otherwise
-        """
-        if isinstance(arg, list):
-            valid_type = all([
-                    isinstance(x, self.expected_type)
-                    for x in arg
-                    ])
-        else:
-            valid_type = isinstance(arg, self.expected_type)
-        return valid_type
+            self.initialize_col_type(instance, arg)
 
     def initialize_col_type(self, instance, colname):
         """Initialize the attribute as a _Col type
@@ -1705,72 +1614,25 @@ class AttributeDescriptor(object):
                 min_value=self.min_value,
             )
 
-    def generate_error(self, instance, valid_type, valid_value):
-        """Generate message error for the attribute
-
-        Parameters
-        ----------
-        instance: object
-            The managed class.
-        valid_type: bool
-            True if the type if valid, False otherwise.
-        valid_value: bool
-            True if the value range if valid, False otherwise.
-
-        Raises
-        ------
-        TypeError
-            If the type is not valid.
-        ValueRange
-            If the value range is not valid.
-        """
-        class_name = type(instance).__name__
-
-        if not valid_type:
-            raise TypeError(
-                "In '{class_name}', when {from_df_false}, argument '{attribute_name}' should be either of the following type(s): {type_name_msg}.".format(
-                    class_name=class_name,
-                    from_df_false=self.attribute_name + "_from_df=False",
-                    attribute_name=self.attribute_name,
-                    type_name_msg=str(
-                        [x.__name__ for x in self.expected_type]
-                    )[1:-1],
-                )
-            )
-
-        if not valid_value:
-            raise ValueError(
-                "In '{class_name}', argument '{attribute_name}' must be >= {min_value}.".format(
-                    class_name=class_name,
-                    attribute_name=self.attribute_name,
-                    min_value=self.min_value,
-                )
-            )
-
 
 class SimpleLabel(object):
     """The simple label type for the constructor of DFtoVW."""
 
-    name = AttributeDescriptor("name", expected_type=(int, float))
+    label = AttributeDescriptor("label", expected_type=(int, float))
 
-    def __init__(self, name, name_from_df=True):
+    def __init__(self, label):
         """Initialize a SimpleLabel instance.
 
         Parameters
         ----------
-        name : str/int/float
-            The name of the column. If name_from_df=False, it should be of type
-            int or float.
-        name_from_df: bool (default: True)
-            True if the name refers to a column in the dataframe and False if
-            the name is a constant.
+        label : str
+            The column name with the label.
 
         Returns
         -------
         self : SimpleLabel
         """
-        self.name_from_df = name_from_df
-        self.name = name
+        self.label = label
 
     def process(self, df):
         """Returns the SimpleLabel string representation.
@@ -1785,44 +1647,32 @@ class SimpleLabel(object):
         str or pandas.Series
             The SimpleLabel string representation.
         """
-        return _get_col_or_value(self.name, df)
+        return self.label.get_col(df)
 
 
 class MulticlassLabel(object):
     """The multiclass label type for the constructor of DFtoVW."""
 
-    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
+    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
     weight = AttributeDescriptor(
         "weight", expected_type=(int, float), min_value=0
     )
 
-    def __init__(
-        self, name, weight=None, name_from_df=True, weight_from_df=True
-    ):
+    def __init__(self, label, weight=None):
         """Initialize a MulticlassLabel instance.
 
         Parameters
         ----------
-        name : str/int
-            The name of the multi class. If name_from_df=False, it should be of
-            type int.
-        weight: str/int/float, optional
-            The (importance) weight of the multi class. If name_from_df=False,
-            it should be of type int or float.
-        name_from_df: bool (default: True)
-            True if the name refers to a column in the dataframe and False if
-            the name is a constant.
-        weight_from_df: bool (default: True)
-            True if the weight refers to a column in the dataframe and False if
-            the weight is a constant.
+        label : str
+            The column name with the multi class label.
+        weight: str, optional
+            The column name with the (importance) weight of the multi class label.
 
         Returns
         -------
         self : MulticlassLabel
         """
-        self.name_from_df = name_from_df
-        self.weight_from_df = weight_from_df
-        self.name = name
+        self.label = label
         self.weight = weight
 
     def process(self, df):
@@ -1838,40 +1688,33 @@ class MulticlassLabel(object):
         str or pandas.Series
             The MulticlassLabel string representation.
         """
-        name_col = _get_col_or_value(self.name, df)
+        label_col = self.label.get_col(df)
         if self.weight is not None:
-            weight_col = _get_col_or_value(self.weight, df)
-            out = name_col + " " + weight_col
+            weight_col = self.weight.get_col(df)
+            out = label_col + " " + weight_col
         else:
-            out = name_col
+            out = label_col
         return out
 
 
 class MultiLabel(object):
     """The multi labels type for the constructor of DFtoVW."""
 
-    name = AttributeDescriptor("name", expected_type=(int,), min_value=1)
+    label = AttributeDescriptor("label", expected_type=(int,), min_value=1)
 
-    def __init__(
-        self, name, name_from_df=True
-    ):
+    def __init__(self, label):
         """Initialize a MultiLabel instance.
 
         Parameters
         ----------
-        name : str/int or list of str/int
-            The name of the multi labels. If name_from_df=False, it should be of
-            type (list of) int.
-        name_from_df: bool (default: True)
-            True if the name refers to a column in the dataframe and False if
-            the name is a constant.
+        label : str or list of str
+            The (list of) column name(s) of the multi label(s).
 
         Returns
         -------
         self : MulticlassLabel
         """
-        self.name_from_df = name_from_df
-        self.name = name
+        self.label = label
 
     def process(self, df):
         """Returns the MultiLabel string representation.
@@ -1886,49 +1729,37 @@ class MultiLabel(object):
         str or pandas.Series
             The MultiLabel string representation.
         """
-        names = self.name if isinstance(self.name, list) else [self.name]
-        for (i, name) in enumerate(names):
-            name_col = _get_col_or_value(name, df)
+        labels = self.label if isinstance(self.label, list) else [self.label]
+        for (i, label) in enumerate(labels):
+            label_col = label.get_col(df)
             if i == 0:
-                out = name_col
+                out = label_col
             else:
-                out += "," + name_col
+                out += "," + label_col
         return out
 
 
 class Feature(object):
     """The feature type for the constructor of DFtoVW"""
-
-    name = AttributeDescriptor("name", expected_type=(str, int, float))
     value = AttributeDescriptor("value", expected_type=(str, int, float))
 
-    def __init__(
-        self, value, name=None, value_from_df=True, name_from_df=False
-    ):
+    def __init__(self, value, rename_feature=None):
         """
         Initialize a Feature instance.
 
         Parameters
         ----------
-        value : str/float/int
-            The value of the feature.
-        name : str/float/int, optional
-            The name of the feature.
-        value_from_df: bool (default: True)
-            True if the value refers to a column in the dataframe and False if
-            the value is a constant.
-        name_from_df: bool (default: False)
-            True if the name refers to a column in the dataframe and False if
-            the name is a constant.
+        value : str
+            The column name with the value of the feature.
+        rename_feature : str, optional
+            The name to use instead of the default (which is the column name defined in the value argument).
 
         Returns
         -------
         self : Feature
         """
-        self.value_from_df = value_from_df
-        self.name_from_df = name_from_df
         self.value = value
-        self.name = name
+        self.rename_feature = rename_feature
 
     def process(self, df):
         """Returns the Feature string representation.
@@ -1943,11 +1774,11 @@ class Feature(object):
         out : str or pandas.Series
             The Feature string representation.
         """
-        value_col = _get_col_or_value(self.value, df)
-        if self.name is None:
+        value_col = self.value.get_col(df)
+        if self.rename_feature is None:
             out = value_col
         else:
-            name_col = _get_col_or_value(self.name, df)
+            name_col = self.rename_feature
             out = name_col + ":" + value_col
         return out
 
@@ -1957,23 +1788,19 @@ class _Tag(object):
 
     tag = AttributeDescriptor("tag", expected_type=(str, int, float))
 
-    def __init__(self, tag, tag_from_df=True):
+    def __init__(self, tag):
         """
         Initialize a Tag instance.
 
         Parameters
         ----------
-        tag : str/float/int
-            The value of the tag.
-        tag_from_df: bool (default: True)
-            True if the tag refers to a column in the dataframe and False if
-            the tag is a constant.
+        tag : str
+            The column name with the tag.
 
         Returns
         -------
         self : _Tag
         """
-        self.tag_from_df = tag_from_df
         self.tag = tag
 
     def process(self, df):
@@ -1989,7 +1816,7 @@ class _Tag(object):
         out : str or pandas.Series
             The Tag string representation.
         """
-        return _get_col_or_value(self.tag, df)
+        return self.tag.get_col(df)
 
 
 class Namespace(object):
@@ -2103,7 +1930,6 @@ class DFtoVW:
         namespaces=None,
         label=None,
         tag=None,
-        tag_from_df=True,
     ):
         """Initialize a DFtoVW instance.
 
@@ -2120,9 +1946,6 @@ class DFtoVW:
             The label.
         tag :  str/int/float
             The tag (used as identifiers for examples).
-        tag_from_df: bool (default: True)
-            True if the tag should refers to a column in the dataframe and
-            False if the tag should be constant.
 
         Examples
         --------
@@ -2144,7 +1967,7 @@ class DFtoVW:
                            label=SimpleLabel("y"),
                            namespaces=Namespace(
                                    name="DoubleIt", value=2,
-                                   features=Feature(value="a", name="feat_a")))
+                                   features=Feature(value="a", rename_feature="feat_a")))
         >>> conv3.convert_df()
 
         >>> conv4 = DFtoVW(df=df,
@@ -2160,7 +1983,7 @@ class DFtoVW:
         self.df = df
         self.n_rows = df.shape[0]
         self.label = label
-        self.tag = _Tag(tag, tag_from_df) if tag else None
+        self.tag = _Tag(tag) if tag else None
 
         if features is not None:
             self.check_features_type(features)
