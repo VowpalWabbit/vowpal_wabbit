@@ -466,52 +466,46 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   bool isTest = test_ldf_sequence(data, ec_seq);
 
-    auto restore_guard = VW::scope_exit(
-    [&data, &ec_seq, &K, &predicted_K]
+  auto restore_guard = VW::scope_exit([&data, &ec_seq, &K, &predicted_K] {
+    if (data.rank)
     {
-      if (data.rank)
+      data.stored_preds[0].clear();
+      for (size_t k = 0; k < K; k++)
       {
-        data.stored_preds[0].clear();
-        for (size_t k = 0; k < K; k++)
-        {
-          ec_seq[k]->pred.a_s = data.stored_preds[k];
-          ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
-        }
-      }
-      else
-      {
-        // Mark the predicted subexample with its class_index, all other with 0
-        for (size_t k = 0; k < K; k++)
-        {
-          if (k == predicted_K)
-            ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
-          else
-            ec_seq[k]->pred.multiclass = 0;
-        }
-      }
-
-      ////////////////////// compute probabilities
-      if (data.is_probabilities)
-      {
-        float sum_prob = 0;
-        for (const auto& example : ec_seq)
-        {
-          // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
-          // but partial_prediction is lower for better classes (we are predicting the cost),
-          // so we need to take score = -partial_prediction,
-          // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-          float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
-          example->pred.prob = prob;
-          sum_prob += prob;
-        }
-        // make sure that the probabilities sum up (exactly) to one
-        for (const auto& example : ec_seq)
-        {
-          example->pred.prob /= sum_prob;
-        }
+        ec_seq[k]->pred.a_s = data.stored_preds[k];
+        ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
       }
     }
-  );
+    else
+    {
+      // Mark the predicted subexample with its class_index, all other with 0
+      for (size_t k = 0; k < K; k++)
+      {
+        if (k == predicted_K)
+          ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
+        else
+          ec_seq[k]->pred.multiclass = 0;
+      }
+    }
+
+    ////////////////////// compute probabilities
+    if (data.is_probabilities)
+    {
+      float sum_prob = 0;
+      for (const auto& example : ec_seq)
+      {
+        // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
+        // but partial_prediction is lower for better classes (we are predicting the cost),
+        // so we need to take score = -partial_prediction,
+        // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
+        float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
+        example->pred.prob = prob;
+        sum_prob += prob;
+      }
+      // make sure that the probabilities sum up (exactly) to one
+      for (const auto& example : ec_seq) { example->pred.prob /= sum_prob; }
+    }
+  });
 
   /////////////////////// do prediction
   if (data.rank)
