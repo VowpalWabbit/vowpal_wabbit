@@ -366,7 +366,6 @@ def test_ccb_single_slot_and_cb_equivalence():
     ccb_model_file_name = "model_file_ccb.txt"
     ccb_workspace = pyvw.vw(quiet=True,
                             ccb_explore_adf=True,
-                            sparse_weights=True,
                             readable_model=ccb_model_file_name)
 
     ccb_ex = """
@@ -388,7 +387,6 @@ def test_ccb_single_slot_and_cb_equivalence():
     cb_model_file_name = "model_file_cb.txt"
     cb_workspace = pyvw.vw(quiet=True,
                            cb_explore_adf=True,
-                           sparse_weights=True,
                            readable_model=cb_model_file_name)
 
     cb_ex = """
