@@ -16,4 +16,5 @@
   "8.0.2"  // first version with header's chained hash used for more reliably validating model content
 #define VERSION_FILE_WITH_HEADER_ID "8.0.3"    // first version with user supplied header
 #define VERSION_FILE_WITH_CB_ADF_SAVE "8.3.2"  // first version with user supplied header
-#define VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG "8.9.0"  // CCB optimization for models with only single slot used introduced in this version.
+#define VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG \
+  "8.9.0"  // CCB optimization for models with only single slot used introduced in this version.
