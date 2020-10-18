@@ -258,18 +258,20 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   label_data simple_lbl;
   simple_lbl.initial = 0.;
   simple_lbl.label = FLT_MAX;
+  uint64_t old_offset = ec.ft_offset;
 
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
+  auto restore_guard = VW::scope_exit([&data, &ld, old_offset, &ec] {
+    ec.ft_offset = old_offset;
+    ld.costs[0].partial_prediction = ec.partial_prediction;
+    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
+    ec.l.cs = ld;
+  });
+
   ec.l.simple = simple_lbl;
-  uint64_t old_offset = ec.ft_offset;
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
-  ec.ft_offset = old_offset;
-  ld.costs[0].partial_prediction = ec.partial_prediction;
-
-  LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-  ec.l.cs = ld;
 }
 
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
@@ -466,7 +468,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   bool isTest = test_ldf_sequence(data, ec_seq);
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq, &K, &predicted_K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq, K, &predicted_K] {
     if (data.rank)
     {
       data.stored_preds[0].clear();
