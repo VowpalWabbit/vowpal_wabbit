@@ -1288,9 +1288,9 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   }
 }
 
-void register_reductions(vw& all, std::vector<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)>& reductions)
+void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
 {
-  std::map<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&), std::string> allowlist = {{GD::setup, "gd"},
+  std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"},
       {ftrl_setup, "ftrl"}, {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
@@ -1316,7 +1316,7 @@ void register_reductions(vw& all, std::vector<VW::LEARNER::base_learner* (*)(VW:
 
 void parse_reductions(options_i& options, vw& all)
 {
-  std::vector<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reductions;
+  std::vector<reduction_setup_fn> reductions;
 
   // Base algorithms
   reductions.push_back(GD::setup);

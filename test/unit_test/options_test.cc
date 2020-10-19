@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(name_extraction_from_option_group)
 
   auto name_extractor = options_name_extractor();
   // result should always be false
-  auto result = name_extractor.add_parse_and_check_necessary(ag);
+  bool result = name_extractor.add_parse_and_check_necessary(ag);
 
   BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary");
   BOOST_CHECK_EQUAL(result, false);
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(name_extraction_multi_necessary)
 
   auto name_extractor = options_name_extractor();
   // result should always be false
-  auto result = name_extractor.add_parse_and_check_necessary(ag);
+  bool result = name_extractor.add_parse_and_check_necessary(ag);
 
   BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary_opt2");
   BOOST_CHECK_EQUAL(result, false);
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(name_extraction_recycle)
 
   auto name_extractor = options_name_extractor();
   // result should always be false
-  auto result = name_extractor.add_parse_and_check_necessary(ag);
+  bool result = name_extractor.add_parse_and_check_necessary(ag);
 
   BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary_opt2");
   BOOST_CHECK_EQUAL(result, false);
