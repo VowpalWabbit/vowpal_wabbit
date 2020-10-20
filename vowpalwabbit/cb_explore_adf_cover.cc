@@ -133,18 +133,12 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
         _cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
 
-      // Notes: predict() has to be called here because code below relies
-      // on old behavior where learn() used to call predict() first.
-      if (_cs_ldf_learner->predict_before_learn)
-        GEN_CS::call_cs_ldf<false>(
-            *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
-
-      GEN_CS::call_cs_ldf<true>(
-          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
+      GEN_CS::cs_ldf_learn_or_predict<true>(
+          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, true, examples[0]->ft_offset, i + 1);
     }
     else
-      GEN_CS::call_cs_ldf<false>(
-          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
+      GEN_CS::cs_ldf_learn_or_predict<false>(
+          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, false, examples[0]->ft_offset, i + 1);
 
     for (uint32_t j = 0; j < num_actions; j++) _scores[j] += preds[j].score;
     if (!_first_only)

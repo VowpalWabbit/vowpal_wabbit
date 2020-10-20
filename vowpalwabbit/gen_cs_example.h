@@ -249,38 +249,25 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
   }
 }
 
+void cs_prep_labels(multi_ex& examples, v_array<CB::label>& cb_labels,
+    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset);
+
 template <bool is_learn>
-void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
-    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
+void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
+    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, bool predict_first, uint64_t offset, size_t id = 0)
 {
-  VW_DBG(*examples[0]) << "call_cs_ldf: ex=" << examples[0]->example_counter << ", learn=" << is_learn << ", offset=" << offset << ", id=" << id << std::endl;
-  cb_labels.clear();
-  if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)
-  {
-    prepped_cs_labels.resize(cs_labels.costs.size() + 1);
-    prepped_cs_labels.end() = prepped_cs_labels.end_array;
-  }
+  VW_DBG(*examples[0]) << "cs_ldf_learn: ex=" << examples[0]->example_counter << ", offset=" << offset << ", id=" << id << std::endl;
+
+  cs_prep_labels(examples, cb_labels, cs_labels, prepped_cs_labels, offset);
 
   // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
   // also save offsets
   uint64_t saved_offset = examples[0]->ft_offset;
-  size_t index = 0;
-  for (auto ec : examples)
-  {
-    cb_labels.push_back(ec->l.cb);
-    prepped_cs_labels[index].costs.clear();
-    prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.cs = prepped_cs_labels[index++];
-    ec->ft_offset = offset;
-  }
 
   // Guard example state restore against throws
   auto restore_guard = VW::scope_exit(
     [&cb_labels, saved_offset, &examples]
     {
-      // 3rd: restore cb_label for each example
-      // (**ec).l.cb = array.element.
-      // and restore offsets
       for (size_t i = 0; i < examples.size(); ++i)
       {
         examples[i]->l.cb = cb_labels[i];
@@ -288,77 +275,14 @@ void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<C
       }
     });
 
-  // 2nd: predict for each ex
-  // // call base.predict for all examples
-  if (is_learn)
+  if(is_learn)
+  {
+    if(predict_first)
+      base.predict(examples, (int32_t)id);
     base.learn(examples, (int32_t)id);
+  }
   else
     base.predict(examples, (int32_t)id);
 }
 
-// Notes: Have to roll this back since some predicts() need label
-//
-//COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
-//{
-//  VW_DBG(*examples[0]) << "call_cs_ldf_learn()" << std::endl;
-//  cb_labels.clear();
-//  if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)
-//  {
-//    prepped_cs_labels.resize(cs_labels.costs.size() + 1);
-//    prepped_cs_labels.end() = prepped_cs_labels.end_array;
-//  }
-//
-//  // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
-//  // also save offsets
-//  uint64_t saved_offset = examples[0]->ft_offset;
-//  size_t index = 0;
-//  for (auto ec : examples)
-//  {
-//    cb_labels.push_back(ec->l.cb);
-//    prepped_cs_labels[index].costs.clear();
-//    prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-//    ec->l.cs = prepped_cs_labels[index++];
-//    ec->ft_offset = offset;
-//  }
-//
-//  // 2nd: learn for each example
-//  base.learn(examples, (int32_t)id);
-//
-//  // 3rd: restore cb_label for each example
-//  // (**ec).l.cb = array.element.
-//  // and restore offsets
-//  for (size_t i = 0; i < examples.size(); ++i)
-//  {
-//    examples[i]->l.cb = cb_labels[i];
-//    examples[i]->ft_offset = saved_offset;
-//  }
-//}
-//
-//inline void call_cs_ldf_predict(LEARNER::multi_learner& base, multi_ex& examples, uint64_t offset, size_t id = 0)
-//{
-//  VW_DBG(*examples[0]) << "call_cs_ldf_predict" << std::endl;
-//
-//  // 1st: save offsets 
-//  const uint64_t saved_offset = examples[0]->ft_offset;
-//  for (auto ec : examples)
-//    ec->ft_offset = offset;
-//
-//  // 2nd: predict for each example
-//  base.predict(examples, (int32_t)id);
-//
-//  // 3rd: restore offsets
-//  for (auto ec : examples)
-//    ec->ft_offset = saved_offset;
-//}
-  
-  
-//template <bool is_learn>
-//void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
-//    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
-//{
-//  if (is_learn)
-//    call_cs_ldf_learn()
-//  else
-//    base.predict(examples, (int32_t)id);
-//}
 }  // namespace GEN_CS

@@ -133,13 +133,13 @@ CB::cb_class get_observed_cost(multi_ex& examples)
 void cb_adf::learn_IPS(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_ips(examples, _cs_labels, _clip_p);
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 {
   gen_cs_test_example(examples, _cs_labels);  // create test labels.
-  call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 
   // Can probably do this more efficiently than 6 loops over the examples...
   //[1: initialize temporary storage;
@@ -215,7 +215,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   }
 
   // Do actual training
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false,_offset);
 
   // Restore example weights and numFeatures
   for (size_t i = 0; i < _prob_s.size(); i++)
@@ -235,13 +235,13 @@ void cb_adf::restore_prediction(action_scores& a_s)
 void cb_adf::learn_DR(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dm(examples, _cs_labels);
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 template <bool PREDICT>
@@ -250,7 +250,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   if (PREDICT)  // first get the prediction to return
   {
     gen_cs_example_ips(examples, _cs_labels);
-    call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+    cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
     std::swap(examples[0]->pred.a_s, _a_s);
   }
 
@@ -265,8 +265,8 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
-  GEN_CS::call_cs_ldf<true>(
-    base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(
+    base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
@@ -338,7 +338,8 @@ void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
   _offset = ec_seq[0]->ft_offset;
   _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
   gen_cs_test_example(ec_seq, _cs_labels);  // create test labels.
-  call_cs_ldf<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<false>(
+    base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
   save_prediction(ec_seq[0]->pred.a_s);
 }
 
