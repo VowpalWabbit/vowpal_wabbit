@@ -42,27 +42,21 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
   fi &= mask;
   uint64_t top = fi + (uint64_t)((mp.count - 1) * mp.step);
   uint64_t i = 0;
-  VW_DBG(get_stack_depth()) << "vec_add_multipredict::";
   if (top <= mask)
   {
     i += fi;
     for (; i <= top; i += mp.step, ++p)
     {
-      VW_DBG_0 << p->scalar << "+" << fx << "*" << mp.weights[i] << "->";
       p->scalar +=
           fx * mp.weights[i];  // TODO: figure out how to use weight_parameters::iterator (not using change_begin())
-      VW_DBG_0 << p->scalar << ", ";
     }
   }
   else  // TODO: this could be faster by unrolling into two loops
     for (size_t c = 0; c < mp.count; ++c, fi += (uint64_t)mp.step, ++p)
     {
       fi &= mask;
-      VW_DBG_0 << p->scalar << "+" << fx << "*" << mp.weights[fi] << "->";
       p->scalar += fx * mp.weights[fi];
-      VW_DBG_0 << p->scalar << ", ";
     }
-  VW_DBG_0 << std::endl;
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)

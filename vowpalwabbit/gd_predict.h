@@ -12,38 +12,11 @@
 
 namespace GD
 {
-// forward declare
-uint32_t get_stack_depth();
-
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t), class W>
 void foreach_feature(W& /*weights*/, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
 {
   for (features::iterator& f : fs) T(dat, mult * f.value(), f.index() + offset);
-}
-
-template <typename W, typename D>
-inline void debug_weight_update_pre(W&, D&, float, features::iterator&, uint64_t)
-{ /* Do nothing for most template parameters.  Specialized below for the type we care about*/ }
-
-template <>
-inline void debug_weight_update_pre<float, float>(float& w, float& dat, float mult, features::iterator& f, uint64_t offset)
-{
-  VW_DBG(get_stack_depth()) << "gd: update_feature: {pre_w=" << w << ", update=" << dat << ", mult=" << mult
-              << ", f.v=" << f.value() << ", w[spare]=" << ((float*)&w)[3] << " (f.idx=" << f.index() << ", offset=" << offset
-              << ")} ";
-}
-
-template <typename W, typename D>
-inline void debug_weight_update_post(W&, D&)
-{ /* Do nothing for most template parameters.  Specialized below for the type we care about*/ }
-
-template <>
-inline void debug_weight_update_post<float, float>(
-    float& w, float&)
-{
-  VW_DBG_0 << "{w=" << w << "}"
-                << "w[0] += update * mult * f.v * w[spare] " << std::endl;
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
@@ -53,9 +26,7 @@ inline void foreach_feature(W& weights, features& fs, R& dat, uint64_t offset = 
   for (features::iterator& f : fs)
   {
     weight& w = weights[(f.index() + offset)];
-    debug_weight_update_pre(w, dat, mult, f, offset);
     T(dat, mult * f.value(), w);
-    debug_weight_update_post(w, dat);
   }
 }
 
@@ -66,9 +37,6 @@ inline void foreach_feature(const W& weights, features& fs, R& dat, uint64_t off
   for (features::iterator& f : fs)
   {
     const weight& w = weights[(f.index() + offset)];
-    VW_DBG(get_stack_depth()) << "gd: vec_add: {pre_acc=" << dat << ", mult=" << mult << ", v=" << f.value()
-                << ", w=" << w << " (f.idx=" << f.index() << ", offset=" << offset << ")} acc += mult * v * w"
-                << std::endl;
     T(dat, mult * f.value(), w);
   }
 }

@@ -11,6 +11,7 @@ typedef unsigned char namespace_index;
 #include "future_compat.h"
 #include <vector>
 #include <array>
+#include <sstream>
 
 struct example_predict
 {
@@ -63,3 +64,7 @@ class VW_DEPRECATED("example_predict is now RAII based. That class can be used i
 
   void clear();
 };
+
+std::string features_to_string(const example_predict& ec);
+std::string depth_indent_string(const example_predict& ec);
+std::string depth_indent_string(int32_t stack_depth);

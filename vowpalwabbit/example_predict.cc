@@ -81,3 +81,39 @@ void safe_example_predict::clear()
   for (auto ns : indices) feature_space[ns].clear();
   indices.clear();
 }
+
+std::string features_to_string(const example_predict& ec)
+{
+  std::stringstream strstream;
+  strstream << "[off=" << ec.ft_offset << "]";
+  for (auto& f : ec.feature_space)
+  {
+    auto ind_iter = f.indicies.cbegin();
+    auto val_iter = f.values.cbegin();
+    for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
+    {
+      strstream << "[h=" << *ind_iter << ","
+        << "v=" << *val_iter << "]";
+    }
+  }
+  return strstream.str();
+}
+
+std::string depth_indent_string(const int32_t depth)
+{
+  constexpr const char* indent_str = "- ";
+  constexpr const char* space_str = "  ";
+
+  if (depth == 0)
+    return indent_str;
+
+  std::stringstream str_stream;
+  for (int32_t i = 0; i < depth - 1; i++)
+  {
+    str_stream << space_str;
+  }
+  str_stream << indent_str;
+  return str_stream.str();
+}
+
+std::string depth_indent_string(const example_predict& ec) { return depth_indent_string(ec.stack_depth); }
