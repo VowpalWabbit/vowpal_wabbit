@@ -104,7 +104,7 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
 label_parser* get_label_parser(vw*all, size_t labelType)
 { switch (labelType)
   { case lDEFAULT:           return all ? &all->example_parser->lbl_parser : NULL;
-    case lBINARY:            return &simple_label;
+    case lBINARY:            return &simple_label_parser;
     case lMULTICLASS:        return &MULTICLASS::mc_label;
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT: return &CB::cb_label;
@@ -116,7 +116,7 @@ label_parser* get_label_parser(vw*all, size_t labelType)
 
 size_t my_get_label_type(vw*all)
 { label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label.parse_label)
+  if (lp->parse_label == simple_label_parser.parse_label)
   { return lBINARY;
   }
   else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
