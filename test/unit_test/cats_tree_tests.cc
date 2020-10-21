@@ -31,6 +31,7 @@ struct reduction_test_harness
   {
     _labels.emplace_back(ec.l.simple);
     _labels.back().serialized_weight = ec.weight;
+    _labels.back().serialized_initial = ec.initial;
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
