@@ -30,7 +30,7 @@ struct reduction_test_harness
   void test_learn(single_learner& base, example& ec)
   {
     _labels.emplace_back(ec.l.simple);
-    _labels.back().weight = ec.weight;
+    _labels.back().serialized_weight = ec.weight;
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
@@ -75,7 +75,8 @@ learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduct
       init_learner(test_harness,  // Data structure passed by vw_framework into test_harness predict/learn calls
           T::learn,               // test_harness learn
           T::predict,             // test_harness predict
-          1                       // Number of regressors in test_harness (not used)
+          1,                      // Number of regressors in test_harness (not used)
+          "test_learner"
       );                          // Create a learner using the base reduction.
   return &test_learner;
 }
@@ -86,12 +87,12 @@ using namespace VW::cats_tree;
 
 bool operator!=(const label_data& lhs, const label_data& rhs)
 {
-  return !(lhs.label == rhs.label && lhs.weight == rhs.weight && lhs.initial == rhs.initial);
+  return !(lhs.label == rhs.label && lhs.serialized_weight == rhs.serialized_weight && lhs.serialized_initial == rhs.serialized_initial);
 }
 
 std::ostream& operator<<(std::ostream& o, label_data const& lbl)
 {
-  o << "{l=" << lbl.label << ", w=" << lbl.weight << ", i=" << lbl.initial << "}";
+  o << "{l=" << lbl.label << ", w=" << lbl.serialized_weight << ", i=" << lbl.serialized_initial << "}";
   return o;
 }
 
