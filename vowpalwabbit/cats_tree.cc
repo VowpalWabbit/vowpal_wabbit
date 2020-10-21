@@ -306,11 +306,15 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
   ec.pred = saved_pred;
 }
 
-void cats_tree::set_trace_message(std::ostream* vw_ostream) { _trace_stream = vw_ostream; }
+void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
+{
+  _trace_stream = vw_ostream;
+  _quiet = quiet;
+}
 
 cats_tree::~cats_tree()
 {
-  if (_trace_stream != nullptr) (*_trace_stream) << tree_stats_to_string() << std::endl;
+  if (_trace_stream != nullptr && !_quiet) (*_trace_stream) << tree_stats_to_string() << std::endl;
 }
 
 std::string cats_tree::tree_stats_to_string() { return _binary_tree.tree_stats_to_string(); }
@@ -359,7 +363,7 @@ base_learner* setup(options_i& options, vw& all)
 
   auto tree = scoped_calloc_or_throw<cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(&all.trace_message);
+  tree->set_trace_message(&all.trace_message, all.logger.quiet);
 
   base_learner* base = setup_base(options, all);
 
