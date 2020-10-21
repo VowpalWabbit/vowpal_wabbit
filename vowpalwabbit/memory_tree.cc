@@ -674,11 +674,6 @@ float F1_score_for_two_examples(example& ec1, example& ec2)
 }
 void predict(memory_tree& b, single_learner& base, example& ec)
 {
-  // measure predict performance if test mode is set (i.e.  we lead memory tree model from file)
-  clock_t begin;
-  if (b.test_mode == false)
-    begin = clock();
-
   MULTICLASS::label_t mc{0,0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
@@ -744,10 +739,6 @@ void predict(memory_tree& b, single_learner& base, example& ec)
     ec.loss = (float)compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs);
     b.hamming_loss += ec.loss;
   }
-
-  // Need to measure perf only when test mode is on
-  if (b.test_mode == false)
-    b.test_time += float(clock() - begin) / CLOCKS_PER_SEC;
 }
 
 float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, example& ec, float weight = 1.f)
