@@ -864,14 +864,19 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     INTERACTIONS::sort_and_filter_duplicate_interactions(
         expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
-    if (removed_cnt > 0)
+    if (removed_cnt > 0 && !all.logger.quiet)
+    {
       all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
                         << endl
                         << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
-    if (sorted_cnt > 0)
+    }
+
+    if (sorted_cnt > 0 && !all.logger.quiet)
+    {
       all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has "
                            "been changed. Interactions affected: "
                         << sorted_cnt << '.' << endl;
+    }
 
     if (all.interactions.size() > 0)
     {

@@ -414,7 +414,22 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
+  auto restore_guard = VW::scope_exit(
+    [&data, &examples]
+    {
+      delete_cb_labels(data);
 
+      // Restore ccb labels to the example objects.
+      for (size_t i = 0; i < examples.size(); i++)
+      {
+        examples[i]->l.conditional_contextual_bandit = {
+            data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
+      }
+    }
+  );
+
+  //this is temporary only so we can get some logging of what's going on
+  try {
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
@@ -481,18 +496,14 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     slot_id++;
     data.cb_ex.clear();
   }
-
-  delete_cb_labels(data);
-
-  // Restore ccb labels to the example objects.
-  for (size_t i = 0; i < examples.size(); i++)
-  {
-    examples[i]->l.conditional_contextual_bandit = {
-        data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
-  }
-
   // Save the predictions
   examples[0]->pred.decision_scores = decision_scores;
+
+  } catch(std::exception &e) {
+    data.all->trace_message << "CCB got exception from base reductions: " << e.what() << std::endl;
+    throw;
+  }
+
 }
 
 std::string generate_ccb_label_printout(const std::vector<example*>& slots)
