@@ -293,6 +293,41 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
+void vw::prediction_destruct(polyprediction& pred, prediction_type_t pred_type)
+{
+  switch(pred_type)
+  {
+  case prediction_type_t::action_probs:
+    pred.a_s.delete_v();
+    break;
+  case prediction_type_t::action_scores:
+    pred.a_s.delete_v();
+    break;
+  case prediction_type_t::decision_probs:
+    pred.decision_scores.delete_v();
+    break;
+  case prediction_type_t::multilabels:
+    pred.multilabels.label_v.delete_v();
+    break;
+  case prediction_type_t::pdf:
+    pred.pdf.delete_v();
+    break;
+  case prediction_type_t::scalars:
+    pred.scalars.delete_v();
+    break;
+  case prediction_type_t::multiclass:
+    break;
+  case prediction_type_t::action_pdf_value:
+    break;
+  case prediction_type_t::prob:
+    break;
+  case prediction_type_t::scalar:
+    break;
+  default:
+      THROW("Unhandled prediction type");
+  }
+}
+
 vw::vw()
 {
   sd = &calloc_or_throw<shared_data>();
@@ -415,6 +450,7 @@ vw::~vw()
 {
   if (l != nullptr)
   {
+    prediction_destruct(_predict_buffer, l->pred_type);
     l->finish();
     free(l);
   }

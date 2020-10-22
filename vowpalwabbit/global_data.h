@@ -498,6 +498,7 @@ struct vw
   label_type_t label_type;
 
   polyprediction _predict_buffer;
+  void prediction_destruct(polyprediction& polyprediction, prediction_type_t pred_type);
 
   vw();
   ~vw();
