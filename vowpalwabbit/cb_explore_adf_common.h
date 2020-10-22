@@ -122,19 +122,26 @@ inline void cb_explore_adf_base<ExploreType>::learn(
   example* label_example = CB_ADF::test_adf_sequence(examples);
   if (label_example != nullptr)
   {
-    auto& saved_pred = data._saved_pred;
-    saved_pred.clear();
-    for (const auto& score : examples[0]->pred.a_s)
-      saved_pred.push_back(score);
+    // Have to roll this back.  TODO remove this once there is a better
+    // solution.
+    //
+    // Need to only save and restore
+    // predictions if cb_adf_explore is (logically) top of the
+    // stack and predict() is called before learn.
+
+    // auto& saved_pred = data._saved_pred;
+    // saved_pred.clear();
+    // for (const auto& score : examples[0]->pred.a_s)
+    //   saved_pred.push_back(score);
 
     // Notes:  Label exists so call learn()
     data._known_cost = CB_ADF::get_observed_cost(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
-    
-    examples[0]->pred.a_s.clear();
-    for (const auto& score : saved_pred)
-      examples[0]->pred.a_s.push_back(score);
+
+    // examples[0]->pred.a_s.clear();
+    // for (const auto& score : saved_pred)
+    //   examples[0]->pred.a_s.push_back(score);
   }
   else
   {
