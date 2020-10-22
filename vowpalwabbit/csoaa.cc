@@ -123,11 +123,10 @@ base_learner* csoaa_setup(options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
-  new_options.add(make_option("csoaa", c->num_classes).keep().help("One-against-all multiclass with <k> costs"));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
 
-  if (!options.was_supplied("csoaa"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
@@ -823,6 +822,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   option_group_definition csldf_outer_options("Cost Sensitive One Against All with Label Dependent Features");
   csldf_outer_options.add(make_option("csoaa_ldf", csoaa_ldf)
                               .keep()
+                              .necessary()
                               .help("Use one-against-all multiclass learning with label dependent features."));
   csldf_outer_options.add(
       make_option("ldf_override", ldf_override)
@@ -834,17 +834,13 @@ base_learner* csldf_setup(options_i& options, vw& all)
   option_group_definition csldf_inner_options("Cost Sensitive One Against All with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
+                              .necessary()
                               .help("Use weighted all-pairs multiclass learning with label dependent features.  "
                                     "Specify singleline or multiline."));
 
-  options.add_and_parse(csldf_outer_options);
-  if (!options.was_supplied("csoaa_ldf"))
+  if (!options.add_parse_and_check_necessary(csldf_outer_options))
   {
-    options.add_and_parse(csldf_inner_options);
-    if (!options.was_supplied("wap_ldf"))
-    {
-      return nullptr;
-    }
+    if (!options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
   }
 
   ld->all = &all;

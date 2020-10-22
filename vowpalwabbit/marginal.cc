@@ -358,7 +358,8 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   std::string marginal;
 
   option_group_definition marginal_options("VW options");
-  marginal_options.add(make_option("marginal", marginal).keep().help("substitute marginal label estimates for ids"));
+  marginal_options.add(
+      make_option("marginal", marginal).keep().necessary().help("substitute marginal label estimates for ids"));
   marginal_options.add(
       make_option("initial_denominator", d->initial_denominator).default_value(1.f).help("initial denominator"));
   marginal_options.add(
@@ -370,12 +371,8 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
                            .help("ignore importance weights when computing marginals"));
   marginal_options.add(
       make_option("decay", d->decay).default_value(0.f).help("decay multiplier per event (1e-3 for example)"));
-  options.add_and_parse(marginal_options);
 
-  if (!options.was_supplied("marginal"))
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(marginal_options)) { return nullptr; }
 
   d->all = &all;
 

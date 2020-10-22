@@ -296,16 +296,19 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore", data->cbcs.num_actions)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a <k> action contextual bandit problem"))
       .add(make_option("first", data->tau).keep().help("tau-first exploration"))
-      .add(make_option("epsilon", data->epsilon).keep().allow_override().default_value(0.05f).help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon)
+               .keep()
+               .allow_override()
+               .default_value(0.05f)
+               .help("epsilon-greedy exploration"))
       .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("cb_explore"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
