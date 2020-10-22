@@ -188,8 +188,17 @@ void vw::learn(multi_ex& ec)
     if (l->predict_before_learn)
     {
       VW::LEARNER::as_multiline(l)->predict(ec);
+      std::swap(_predict_buffer, ec[0]->pred);
+      auto restore_guard = VW::scope_exit([&ec, this]
+      {
+        std::swap(ec[0]->pred, _predict_buffer);
+      });
+      VW::LEARNER::as_multiline(l)->learn(ec);
     }
-    VW::LEARNER::as_multiline(l)->learn(ec);
+    else
+    {
+      VW::LEARNER::as_multiline(l)->learn(ec);
+    }
   }
 }
 
@@ -398,6 +407,7 @@ vw::vw()
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
+  std::memset(&_predict_buffer,0,sizeof(_predict_buffer));
 }
 VW_WARNING_STATE_POP
 

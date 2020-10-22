@@ -497,6 +497,8 @@ struct vw
 
   label_type_t label_type;
 
+  polyprediction _predict_buffer;
+
   vw();
   ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
