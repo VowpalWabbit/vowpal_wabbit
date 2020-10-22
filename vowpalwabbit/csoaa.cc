@@ -164,6 +164,7 @@ struct  ldf
 
   bool rank;
   action_scores a_s;
+  uint64_t ft_offset;
 
   v_array<action_scores> saved_preds;
 
@@ -260,26 +261,27 @@ void unsubtract_example(example* ec)
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
   COST_SENSITIVE::label ld = ec.l.cs;
-
+  uint64_t old_offset = ec.ft_offset;
   // WARNING: Access of label information when making prediction is problematic.
   // What should be done here about ld.costs[0].class_index?
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-
   // WARNING: Access of label information when making prediction is problematic.
   // What should be done here about ec.l.simple?
   const label_data simple_label{FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
   ec.l.simple = simple_label;
+  ec.ft_offset = data.ft_offset;
+  auto restore_guard = VW::scope_exit([&data, &ld, old_offset, &ec] {
+    ec.ft_offset = old_offset;
+    // WARNING: Access of label information when making prediction is problematic.
+    // What should be done here about ld.costs[0].partial_prediction?
+    ld.costs[0].partial_prediction = ec.partial_prediction;
+    // WARNING: Access of label information when making prediction is problematic.
+    // @What should be done here about ld.costs[0].class_index?
+    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
+    ec.l.cs = ld;
+  });
+
   base.predict(ec);  // make a prediction
-
-  // WARNING: Access of label information when making prediction is problematic.
-  // What should be done here about ld.costs[0].partial_prediction?
-  ld.costs[0].partial_prediction = ec.partial_prediction;
-
-  // WARNING: Access of label information when making prediction is problematic.
-  // @What should be done here about ld.costs[0].class_index?
-  LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-
-  ec.l.cs = ld;
 }
 
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
@@ -353,20 +355,21 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
 
       // learn
       float old_weight = ec1->weight;
+      uint64_t old_offset = ec1->ft_offset;
       ec1->initial = 0.;
       simple_lbl.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
-
-      // TODO: @rajan-chari it looks like ft_offset is not handled here.
-      const polyprediction saved_pred = ec1->pred;  // save
+      ec1->ft_offset = data.ft_offset;
+      const polyprediction saved_pred = ec1->pred;
 
       // Guard inner example state restore against throws
       auto restore_guard_inner = VW::scope_exit(
-        [&data, old_weight, &costs2, &ec2, &ec1, &saved_pred]
+        [&data, old_offset, old_weight, &costs2, &ec2, &ec1, &saved_pred]
         {
-          ec1->pred = saved_pred;  // restore
+          ec1->ft_offset = old_offset;
+          ec1->pred = saved_pred;
           ec1->weight = old_weight;
           unsubtract_example(ec1);
 
@@ -425,15 +428,18 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
 
     // Prepare examples for learning
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
-    const polyprediction saved_pred = ec->pred;  // save
+    uint64_t old_offset = ec->ft_offset;
+    ec->ft_offset = data.ft_offset;
+    const polyprediction saved_pred = ec->pred;
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit(
-      [&save_cs_label, &data, &costs, old_weight, &ec, &saved_pred]
+      [&save_cs_label, &data, &costs, old_offset, old_weight, &ec, &saved_pred]
       {
+        ec->ft_offset = old_offset;
         LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
         ec->weight = old_weight;
-        ec->pred = saved_pred;  // restore
+        ec->pred = saved_pred;
 
         // restore original cost-sensitive label, sum of importance weights and partial_prediction
         ec->l.cs = save_cs_label;
@@ -457,6 +463,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
  */
 void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
+  data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
   if (ec_seq.empty())
@@ -499,16 +506,31 @@ void convert_to_probabilities(multi_ex ec_seq)
  */
 void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
+  data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
   if (ec_seq.empty())
     return;  // nothing more to do
 
-  /////////////////////// add headers
   uint32_t K = (uint32_t)ec_seq.size();
+  uint32_t predicted_K = 0;
+
+  auto restore_guard = VW::scope_exit([&data, &ec_seq, K, &predicted_K] {
+    // Mark the predicted sub-example with its class_index, all other with 0
+    for (size_t k = 0; k < K; k++)
+    {
+      if (k == predicted_K)
+        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
+      else
+        ec_seq[k]->pred.multiclass = 0;
+    }
+
+    ////////////////////// compute probabilities
+    if (data.is_probabilities)
+      convert_to_probabilities(ec_seq);
+  });
 
   /////////////////////// do prediction
-  uint32_t predicted_K = 0;
   float min_score = FLT_MAX;
   for (uint32_t k = 0; k < K; k++)
   {
@@ -520,19 +542,6 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
       predicted_K = k;
     }
   }
-
-  // Mark the predicted sub-example with its class_index, all other with 0
-  for (size_t k = 0; k < K; k++)
-  {
-    if (k == predicted_K)
-      ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
-    else
-      ec_seq[k]->pred.multiclass = 0;
-  }
-
-  ////////////////////// compute probabilities
-  if (data.is_probabilities)
-    convert_to_probabilities(ec_seq);
 }
 
 /*
@@ -542,6 +551,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
  */
 void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
+  data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
   if (ec_seq.empty())
@@ -552,6 +562,22 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   /////////////////////// do prediction
   data.a_s.clear();
   data.saved_preds.clear();
+
+  auto restore_guard = VW::scope_exit([&data, &ec_seq, K] {
+    qsort((void*)data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
+
+    data.saved_preds[0].clear();
+    for (size_t k = 0; k < K; k++)
+    {
+      ec_seq[k]->pred.a_s = data.saved_preds[k];
+      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
+    }
+
+    ////////////////////// compute probabilities
+    if (data.is_probabilities)
+      convert_to_probabilities(ec_seq);
+  });
+
   for (uint32_t k = 0; k < K; k++)
   {
     example* ec = ec_seq[k];
@@ -562,19 +588,6 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
     s.action = k;
     data.a_s.push_back(s);
   }
-
-  qsort((void*)data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
-
-  data.saved_preds[0].clear();
-  for (size_t k = 0; k < K; k++)
-  {
-    ec_seq[k]->pred.a_s = data.saved_preds[k];
-    ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
-  }
-
-  ////////////////////// compute probabilities
-  if (data.is_probabilities)
-    convert_to_probabilities(ec_seq);
 }
 
 void global_print_newline(vw& all)
