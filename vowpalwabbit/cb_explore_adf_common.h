@@ -67,9 +67,19 @@ struct cb_explore_adf_base
   // used in output_example
   CB::label _action_label;
   CB::label _empty_label;
+  ACTION_SCORE::action_scores _saved_pred;
 public:
   template <typename... Args >
-  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...){}
+  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...)
+  {
+    _saved_pred = v_init<ACTION_SCORE::action_score>();
+  }
+
+  ~cb_explore_adf_base()
+  {
+    _saved_pred.delete_v();
+  }
+
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
@@ -112,10 +122,19 @@ inline void cb_explore_adf_base<ExploreType>::learn(
   example* label_example = CB_ADF::test_adf_sequence(examples);
   if (label_example != nullptr)
   {
+    auto& saved_pred = data._saved_pred;
+    saved_pred.clear();
+    for (const auto& score : examples[0]->pred.a_s)
+      saved_pred.push_back(score);
+
     // Notes:  Label exists so call learn()
     data._known_cost = CB_ADF::get_observed_cost(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
+    
+    examples[0]->pred.a_s.clear();
+    for (const auto& score : saved_pred)
+      examples[0]->pred.a_s.push_back(score);
   }
   else
   {

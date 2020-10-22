@@ -152,8 +152,6 @@ struct example : public example_predict  // core example datatype.
       "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
       "Standalone examples are by definition always in use.")
   bool in_use = true;
-
-  bool predict_called_before_learn; // If the driver calls predict before learn, this flag will be set
 };
 VW_WARNING_STATE_POP
 
