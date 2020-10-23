@@ -465,7 +465,7 @@ struct vw
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
   void (*print_text)(VW::io::writer*, std::string, v_array<char>);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
-  loss_function* loss;
+  std::unique_ptr<loss_function> loss;
 
   VW_DEPRECATED("This is unused and will be removed")
   char* program_name;

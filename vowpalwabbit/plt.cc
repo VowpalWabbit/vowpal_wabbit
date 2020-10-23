@@ -377,7 +377,6 @@ base_learner* plt_setup(options_i& options, vw& all)
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
   // force logistic loss for base classifiers
-  delete (all.loss);
   all.loss = getLossFunction(all, "logistic");
 
   l->set_finish_example(finish_example);
