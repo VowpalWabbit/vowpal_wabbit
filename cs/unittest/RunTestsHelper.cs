@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -13,7 +13,7 @@ namespace cs_unittest
 {
     public static class RunTestsHelper
     {
-        private static StreamReader Open(string input)
+        public static StreamReader Open(string input)
         {
             if (input.EndsWith(".gz"))
                 return new StreamReader(new GZipStream(new FileStream(input, FileMode.Open), CompressionMode.Decompress));

@@ -253,10 +253,9 @@ base_learner* setup(VW::config::options_i& options, vw& all)
 {
   option_group_definition new_options("Offset tree Options");
   uint32_t num_actions;
-  new_options.add(make_option("ot", num_actions).keep().help("Offset tree with <k> labels"));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("ot", num_actions).keep().necessary().help("Offset tree with <k> labels"));
 
-  if (!options.was_supplied("ot")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure that cb_explore will be the base reduction
   if (!options.was_supplied("cb_explore")) { options.insert("cb_explore", "2"); }

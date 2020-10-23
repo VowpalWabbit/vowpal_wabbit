@@ -339,16 +339,14 @@ base_learner* setup(options_i& options, vw& all)
   uint32_t num_actions;  // = K = 2^D
   uint32_t bandwidth;    // = 2^h#
   std::string link;
-  new_options.add(make_option("cats_tree", num_actions).keep().help("CATS Tree with <k> labels"))
+  new_options.add(make_option("cats_tree", num_actions).keep().necessary().help("CATS Tree with <k> labels"))
       .add(make_option("bandwidth", bandwidth)
                .default_value(0)
                .keep()
                .help("bandwidth for continuous actions in terms of #actions"))
       .add(make_option("link", link).keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
 
-  options.add_and_parse(new_options);
-
-  if (!options.was_supplied("cats_tree")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // default behaviour uses binary
   if (!options.was_supplied("link")) { options.insert("binary", ""); }
