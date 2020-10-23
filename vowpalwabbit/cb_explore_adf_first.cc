@@ -81,13 +81,12 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("first", tau).keep().help("tau-first exploration"))
+      .add(make_option("first", tau).keep().necessary().help("tau-first exploration"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"));
-  options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !options.was_supplied("first"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))

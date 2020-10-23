@@ -195,6 +195,7 @@ base_learner* setup(options_i& options, vw& all)
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)
+               .necessary()
                .keep()
                .help("Convert discrete PDF into continuous PDF."))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
@@ -203,10 +204,10 @@ base_learner* setup(options_i& options, vw& all)
                .default_value(1)
                .keep()
                .help("Bandwidth (radius) of randomization around discrete actions in number of actions."));
-  options.add_and_parse(new_options);
+
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (data->num_actions == 0) return nullptr;
-  if (!options.was_supplied("pmf_to_pdf")) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   { THROW("error: min and max values must be supplied with cb_continuous"); } if (data->bandwidth <= 0)
   { THROW("error: Bandwidth must be >= 1"); } auto p_base = as_singleline(setup_base(options, all));

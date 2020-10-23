@@ -239,11 +239,11 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   option_group_definition new_options("Audit Regressor");
   new_options.add(make_option("audit_regressor", out_file)
                       .keep()
+                      .necessary()
                       .help("stores feature names and their regressor values. Same dataset must be used for both "
                             "regressor training and this mode."));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("audit_regressor")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (out_file.empty()) THROW("audit_regressor argument (output filename) is missing.");
 

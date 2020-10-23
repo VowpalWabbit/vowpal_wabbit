@@ -663,7 +663,8 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   auto poly = scoped_calloc_or_throw<stagewise_poly>();
   bool stage_poly = false;
   option_group_definition new_options("Stagewise polynomial options");
-  new_options.add(make_option("stage_poly", stage_poly).keep().help("use stagewise polynomial feature learning"))
+  new_options
+      .add(make_option("stage_poly", stage_poly).keep().necessary().help("use stagewise polynomial feature learning"))
       .add(make_option("sched_exponent", poly->sched_exponent)
                .default_value(1.f)
                .help("exponent controlling quantity of included features"))
@@ -675,10 +676,8 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   new_options.add(
       make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
 #endif  // MAGIC_ARGUMENT
-  options.add_and_parse(new_options);
 
-  if (!stage_poly)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   poly->all = &all;
   depthsbits_create(*poly.get());

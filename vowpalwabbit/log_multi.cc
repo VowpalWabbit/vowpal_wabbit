@@ -492,13 +492,11 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
-  new_options.add(make_option("log_multi", data->k).keep().help("Use online tree for multiclass"))
+  new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("disable progressive validation"))
       .add(make_option("swap_resistance", data->swap_resist).default_value(4).help("higher = more resistance to swap, default=4"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("log_multi"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->progress = !data->progress;
 

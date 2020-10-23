@@ -542,7 +542,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
   std::string normalize = "true";
   std::string random_init = "true";
   option_group_definition new_options("OjaNewton options");
-  new_options.add(make_option("OjaNewton", oja_newton).keep().help("Online Newton with Oja's Sketch"))
+  new_options.add(make_option("OjaNewton", oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
       .add(make_option("sketch_size", ON->m).default_value(10).help("size of sketch"))
       .add(make_option("epoch_size", ON->epoch_size).default_value(1).help("size of epoch"))
       .add(make_option("alpha", ON->alpha).default_value(1.f).help("mutiplicative constant for indentiy"))
@@ -552,10 +552,8 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
                .help("constant for the learning rate 1/t"))
       .add(make_option("normalize", normalize).help("normalize the features or not"))
       .add(make_option("random_init", random_init).help("randomize initialization of Oja or not"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("OjaNewton"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   ON->all = &all;
   ON->_random_state = all.get_random_state();

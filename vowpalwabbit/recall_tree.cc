@@ -510,7 +510,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<recall_tree>();
   option_group_definition new_options("Recall Tree");
-  new_options.add(make_option("recall_tree", tree->k).keep().help("Use online tree for multiclass"))
+  new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
                .keep()
                .help("maximum number of labels per leaf in the tree"))
@@ -518,10 +518,8 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
       .add(make_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"))
       .add(make_option("node_only", tree->node_only).keep().help("only use node features, not full path features"))
       .add(make_option("randomized_routing", tree->randomized_routing).keep().help("randomized routing"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("recall_tree"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   tree->all = &all;
   tree->_random_state = all.get_random_state();

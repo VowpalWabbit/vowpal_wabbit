@@ -160,15 +160,14 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous action tree with smoothing");
   int num_actions = 0, pdf_num_actions = 0, cats_tree_actions = 0;
-  new_options.add(make_option("cats_pdf", num_actions).keep().help("Continuous action tree with smoothing (pdf)"))
+  new_options
+      .add(make_option("cats_pdf", num_actions).keep().necessary().help("Continuous action tree with smoothing (pdf)"))
       .add(make_option("pmf_to_pdf", pdf_num_actions).keep().help("Convert pmf to pdf"))
       .add(make_option("cats_tree", cats_tree_actions).keep().help("Continuous action tree"));
 
-  options.add_and_parse(new_options);
-
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.was_supplied("cats_pdf")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (num_actions <= 0) THROW(error_code::num_actions_gt_zero_s);
 

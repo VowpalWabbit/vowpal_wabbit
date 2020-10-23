@@ -10,6 +10,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cats.acpx
 num sources = 1
+Enabled reductions: ftrl, scorer, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.657567 0.657567            1            1.0 {185.121,0.657567,6.20426e-05} 185-8109.67:2.10314e-06,8109.67-23959:6.20426e-05       10

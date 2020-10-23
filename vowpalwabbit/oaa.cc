@@ -231,15 +231,13 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   bool probabilities = false;
   bool scores = false;
   option_group_definition new_options("One Against All Options");
-  new_options.add(make_option("oaa", data->k).keep().help("One-against-all multiclass with <k> labels"))
+  new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
       .add(make_option("oaa_subsample", data->num_subsample)
                .help("subsample this number of negative examples when learning"))
       .add(make_option("probabilities", probabilities).help("predict probabilites of all classes"))
       .add(make_option("scores", scores).help("output raw scores per class"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("oaa"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")

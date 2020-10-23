@@ -64,14 +64,13 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
-      .add(make_option("softmax", softmax).keep().help("softmax exploration"))
+      .add(make_option("softmax", softmax).keep().necessary().help("softmax exploration"))
       .add(make_option("lambda", lambda).keep().allow_override().default_value(1.f).help("parameter for softmax"));
-  options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !softmax)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (lambda < 0)  // Lambda should always be positive because we are using a cost basis.
     lambda = -lambda;

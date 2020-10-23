@@ -83,7 +83,10 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
   float min;
   float max;
   new_options
-      .add(make_option("cb_explore_pdf", invoked).keep().help("Sample a pdf and pick a continuous valued action"))
+      .add(make_option("cb_explore_pdf", invoked)
+               .keep()
+               .necessary()
+               .help("Sample a pdf and pick a continuous valued action"))
       .add(make_option("epsilon", epsilon)
                .keep()
                .allow_override()
@@ -92,11 +95,9 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
       .add(make_option("min_value", min).keep().default_value(0.0f).help("min value for continuous range"))
       .add(make_option("max_value", max).keep().default_value(1.0f).help("max value for continuous range"));
 
-  options.add_and_parse(new_options);
-
   // If reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.was_supplied("cb_explore_pdf")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     THROW("error: min and max values must be supplied with cb_explore_pdf");

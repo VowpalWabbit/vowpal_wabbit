@@ -140,11 +140,10 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
 {
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
-  new_options.add(make_option("lrqfa", lrqfa).keep().help("use low rank quadratic features with field aware weights"));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("lrqfa", lrqfa).keep().necessary().help("use low rank quadratic features with field aware weights"));
 
-  if (!options.was_supplied("lrqfa"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   auto lrq = scoped_calloc_or_throw<LRQFAstate>();
   lrq->all = &all;

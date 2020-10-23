@@ -497,6 +497,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cb_adf", cb_adf_option)
                .keep()
+               .necessary()
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
@@ -507,10 +508,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
-  options.add_and_parse(new_options);
 
-  if (!cb_adf_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))

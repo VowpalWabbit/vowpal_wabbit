@@ -101,15 +101,15 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
   bool cb_dro_option = false;
 
   option_group_definition new_options("CB Distributionally Robust Optimization");
-  new_options.add(make_option("cb_dro", cb_dro_option).keep().help("Use DRO for cb learning"))
+  new_options.add(make_option("cb_dro", cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
       .add(make_option("cb_dro_alpha", alpha).default_value(0.05).keep().help("Confidence level for cb dro"))
       .add(make_option("cb_dro_tau", tau).default_value(0.999).keep().help("Time constant for count decay for cb dro"))
-      .add(make_option("cb_dro_wmax", wmax).default_value(std::numeric_limits<double>::infinity()).keep().help("maximum importance weight for cb_dro"));
+      .add(make_option("cb_dro_wmax", wmax)
+               .default_value(std::numeric_limits<double>::infinity())
+               .keep()
+               .help("maximum importance weight for cb_dro"));
 
-  options.add_and_parse(new_options);
-
-  if (!cb_dro_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (options.was_supplied("no_predict"))
   {

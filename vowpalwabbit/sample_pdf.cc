@@ -103,13 +103,12 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous actions");
   bool invoked = false;
-  new_options.add(make_option("sample_pdf", invoked).keep().help("Sample a pdf and pick a continuous valued action"));
-
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("sample_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));
 
   // If sample_pdf reduction was not invoked, don't add anything
   // to the reduction stack;
-  if (!options.was_supplied("sample_pdf")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   LEARNER::base_learner* p_base = setup_base(options, all);
   auto p_reduction = scoped_calloc_or_throw<sample_pdf>();

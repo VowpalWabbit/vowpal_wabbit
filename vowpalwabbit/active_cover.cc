@@ -237,7 +237,9 @@ base_learner* active_cover_setup(options_i& options, vw& all)
   option_group_definition new_options("Active Learning with Cover");
 
   bool active_cover_option = false;
-  new_options.add(make_option("active_cover", active_cover_option).keep().help("enable active learning with cover"))
+  new_options
+      .add(
+          make_option("active_cover", active_cover_option).keep().necessary().help("enable active learning with cover"))
       .add(make_option("mellowness", data->active_c0)
                .default_value(8.f)
                .help("active learning mellowness parameter c_0. Default 8."))
@@ -249,10 +251,8 @@ base_learner* active_cover_setup(options_i& options, vw& all)
                .help("active learning variance upper bound parameter beta_scale. Default std::sqrt(10)."))
       .add(make_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false."));
-  options.add_and_parse(new_options);
 
-  if (!active_cover_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->all = &all;
   data->_random_state = all.get_random_state();
