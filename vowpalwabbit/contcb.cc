@@ -191,7 +191,7 @@ std::string get_pred_repr(example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    all.print_text_by_ref(all.stdout_fileno, get_pred_repr(ec), ec.tag);
+    all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
   fflush(stdout);
   // TODO: Favor duplication instead of sharing code?
   // Note: print_features() declaration was brought to gd.h so it can be used here. If it's
@@ -234,15 +234,15 @@ void save_load(contcb& data, io_buf& model_file, bool read, bool text)
     if (data.all->initial_constant != 0.0f)
       set_weight(all, constant, 0, data.all->initial_constant);
   }
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
     save_load_regressor(all, model_file, read, text);
 }
 
 void output_prediction(vw& all, example& ec)
 {
   std::string pred_repr = get_pred_repr(ec);
-  for (int sink : all.final_prediction_sink)
-    all.print_text_by_ref(sink, pred_repr, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+    all.print_text_by_ref(sink.get(), pred_repr, ec.tag);
 }
 
 void finish_example(vw& all, contcb&, example& ec)

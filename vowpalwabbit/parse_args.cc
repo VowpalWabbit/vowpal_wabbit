@@ -1336,7 +1336,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(lda_setup);
   reductions.push_back(bfgs_setup);
   reductions.push_back(OjaNewton_setup);
-  all.reduction_stack.push(VW::continuous_cb::setup);
+  reductions.push_back(VW::continuous_cb::setup);
   // reductions.push_back(VW_CNTK::setup);
 
   // Score Users

@@ -16,7 +16,7 @@ void default_label(void* v)
   ld.cost = FLT_MAX;
 }
 
-void parse_label(parser* p, shared_data*, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
   label& ld = static_cast<polylabel*>(v)->contcb;
 
