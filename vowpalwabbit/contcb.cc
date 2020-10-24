@@ -49,35 +49,30 @@ inline void set_weight(vw& all, uint64_t index, uint32_t offset, float value)
 
 // Checks if dir is a unit scalar with some tolerance. If yes, returns
 // true and optionally fixes that tol difference.
-inline bool check_fix_unit(float& dir, float tol=0.01f, bool fix=true)
+inline bool check_fix_unit(float& dir, float tol = 0.01f, bool fix = true)
 {
-  if (!(VW::math::are_same(dir, 1.0f, tol) || VW::math::are_same(dir, -1.0f, tol)))
-    return false;
-  if (fix)
-    dir = dir >= 0 ? 1.0f : -1.0f;
+  if (!(VW::math::are_same(dir, 1.0f, tol) || VW::math::are_same(dir, -1.0f, tol))) return false;
+  if (fix) dir = dir >= 0 ? 1.0f : -1.0f;
   return true;
 }
 
-float l1_grad(vw& all, uint64_t fi) {
-  if (all.no_bias && fi == constant)
-    return 0.0f;
+float l1_grad(vw& all, uint64_t fi)
+{
+  if (all.no_bias && fi == constant) return 0.0f;
 
   float fw = get_weight(all, fi, 0);
   return fw >= 0.0f ? all.l1_lambda : -all.l1_lambda;
 }
 
-float l2_grad(vw& all, uint64_t fi) {
-  if (all.no_bias && fi == constant)
-    return 0.0f;
+float l2_grad(vw& all, uint64_t fi)
+{
+  if (all.no_bias && fi == constant) return 0.0f;
 
   float fw = get_weight(all, fi, 0);
   return all.l2_lambda * fw;
 }
 
-inline void accumulate_dotprod(float& dotprod, float x, float& fw)
-{
-  dotprod += x * fw;
-}
+inline void accumulate_dotprod(float& dotprod, float x, float& fw) { dotprod += x * fw; }
 
 inline float constant_inference(vw& all)
 {
@@ -165,7 +160,8 @@ void linear_update(contcb& data, example& ec)
   upd_data.part_grad = part_grad;
   upd_data.all = data.all;
 
-  GD::foreach_feature<linear_update_data, uint64_t, linear_per_feature_update<feature_mask_off>>(*data.all, ec, upd_data);
+  GD::foreach_feature<linear_update_data, uint64_t, linear_per_feature_update<feature_mask_off>>(
+      *data.all, ec, upd_data);
 }
 
 template <uint8_t tmodel, bool feature_mask_off>
@@ -184,14 +180,13 @@ void update_weights(contcb& data, example& ec)
 std::string get_pred_repr(example& ec)
 {
   std::stringstream ss;
-  ss << ec.pred.scalars[0] << "," << ec.pred.scalars[1]; // <action_centroid>,<radius>
+  ss << ec.pred.scalars[0] << "," << ec.pred.scalars[1];  // <action_centroid>,<radius>
   return ss.str();
 }
 
 void print_audit_features(vw& all, example& ec)
 {
-  if (all.audit)
-    all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
+  if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
   fflush(stdout);
   // TODO: Favor duplication instead of sharing code?
   // Note: print_features() declaration was brought to gd.h so it can be used here. If it's
@@ -206,8 +201,7 @@ void predict(contcb& data, base_learner&, example& ec)
   ec.pred.scalars.push_back(inference<tmodel>(*data.all, ec));
   ec.pred.scalars.push_back(data.radius);
 
-  if (audit_or_hash_inv)
-    print_audit_features(*data.all, ec);
+  if (audit_or_hash_inv) print_audit_features(*data.all, ec);
 }
 
 template <uint8_t tmodel, bool feature_mask_off, bool audit_or_hash_inv>
@@ -231,18 +225,15 @@ void save_load(contcb& data, io_buf& model_file, bool read, bool text)
   if (read)
   {
     initialize_regressor(all);
-    if (data.all->initial_constant != 0.0f)
-      set_weight(all, constant, 0, data.all->initial_constant);
+    if (data.all->initial_constant != 0.0f) set_weight(all, constant, 0, data.all->initial_constant);
   }
-  if (model_file.num_files() > 0)
-    save_load_regressor(all, model_file, read, text);
+  if (model_file.num_files() > 0) save_load_regressor(all, model_file, read, text);
 }
 
 void output_prediction(vw& all, example& ec)
 {
   std::string pred_repr = get_pred_repr(ec);
-  for (auto& sink : all.final_prediction_sink)
-    all.print_text_by_ref(sink.get(), pred_repr, ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag);
 }
 
 void finish_example(vw& all, contcb&, example& ec)
@@ -260,11 +251,10 @@ void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(contcb&, base_
       else
         return learn<tmodel_const, true, false>;
 
+    else if (all.audit || all.hash_inv)
+      return learn<tmodel_const, false, true>;
     else
-      if (all.audit || all.hash_inv)
-        return learn<tmodel_const, false, true>;
-      else
-        return learn<tmodel_const, false, false>;
+      return learn<tmodel_const, false, false>;
 
   else if (tmodel == tmodel_lin)
     if (feature_mask_off)
@@ -273,11 +263,10 @@ void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(contcb&, base_
       else
         return learn<tmodel_lin, true, false>;
 
+    else if (all.audit || all.hash_inv)
+      return learn<tmodel_lin, false, true>;
     else
-      if (all.audit || all.hash_inv)
-        return learn<tmodel_lin, false, true>;
-      else
-        return learn<tmodel_lin, false, false>;
+      return learn<tmodel_lin, false, false>;
 
   else
     THROW("Unknown template model encountered: " << tmodel)
@@ -286,16 +275,16 @@ void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(contcb&, base_
 void (*get_predict(vw& all, uint8_t tmodel))(contcb&, base_learner&, example&)
 {
   if (tmodel == tmodel_const)
-     if (all.audit || all.hash_inv)
-        return predict<tmodel_const, true>;
-      else
-        return predict<tmodel_const, false>;
+    if (all.audit || all.hash_inv)
+      return predict<tmodel_const, true>;
+    else
+      return predict<tmodel_const, false>;
 
   else if (tmodel == tmodel_lin)
-     if (all.audit || all.hash_inv)
-        return predict<tmodel_lin, true>;
-      else
-        return predict<tmodel_lin, false>;
+    if (all.audit || all.hash_inv)
+      return predict<tmodel_lin, true>;
+    else
+      return predict<tmodel_lin, false>;
 
   else
     THROW("Unknown template model encountered: " << tmodel)
@@ -309,15 +298,18 @@ base_learner* setup(options_i& options, vw& all)
   bool contcb_option = false;
 
   option_group_definition new_options("Continuous Contextual Bandit Options");
-  new_options.add(make_option("contcb", contcb_option).keep().necessary().help("Solve 1-slot Continuous Action Contextual Bandit"))
-    .add(make_option("template_model", tmodel_str).default_value("linear").keep().help("Template Model to Learn"))
-    .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
+  new_options
+      .add(make_option("contcb", contcb_option)
+               .keep()
+               .necessary()
+               .help("Solve 1-slot Continuous Action Contextual Bandit"))
+      .add(make_option("template_model", tmodel_str).default_value("linear").keep().help("Template Model to Learn"))
+      .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   bool feature_mask_off = true;
-  if (options.was_supplied("feature_mask"))
-    feature_mask_off = false;
+  if (options.was_supplied("feature_mask")) feature_mask_off = false;
 
   uint8_t tmodel;
   if (tmodel_str.compare("constant") == 0)
@@ -329,11 +321,12 @@ base_learner* setup(options_i& options, vw& all)
 
   if (tmodel == tmodel_const)
   {
-    if (options.was_supplied("noconstant"))
-      THROW("constant template model can't be learnt when --noconstant is used")
+    if (options.was_supplied("noconstant")) THROW("constant template model can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-      all.trace_message << "warning: feature_mask used with constant template model (where there is only one weight to learn)." << std::endl;
+      all.trace_message
+          << "warning: feature_mask used with constant template model (where there is only one weight to learn)."
+          << std::endl;
   }
 
   all.p->lp = contcb_label;
@@ -341,8 +334,8 @@ base_learner* setup(options_i& options, vw& all)
   all.delete_prediction = delete_scalars;
   data->all = &all;
 
-  learner<contcb, example>& l =
-    init_learner(data, get_learn(all, tmodel, feature_mask_off), get_predict(all, tmodel), 0, prediction_type_t::scalars);
+  learner<contcb, example>& l = init_learner(
+      data, get_learn(all, tmodel, feature_mask_off), get_predict(all, tmodel), 0, prediction_type_t::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
@@ -351,4 +344,4 @@ base_learner* setup(options_i& options, vw& all)
 }
 
 }  // namespace continuous_cb
-}
+}  // namespace VW

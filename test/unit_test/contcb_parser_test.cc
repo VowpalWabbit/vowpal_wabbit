@@ -18,7 +18,7 @@ void parse_label(label_parser& lp, parser* p, VW::string_view label, VW::continu
 BOOST_AUTO_TEST_CASE(contcb_parse_label)
 {
   auto lp = VW::continuous_cb::contcb_label;
-  parser p{ 8 /*ring_size*/, false /*strict parse*/ };
+  parser p{8 /*ring_size*/, false /*strict parse*/};
 
   // standard case
   {
@@ -42,7 +42,6 @@ BOOST_AUTO_TEST_CASE(contcb_parse_label)
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "-25.82912", *label.get()), VW::vw_exception);
     lp.delete_label(label.get());
   }
-
 }
 
 BOOST_AUTO_TEST_CASE(contcb_cache_label)
@@ -51,7 +50,7 @@ BOOST_AUTO_TEST_CASE(contcb_cache_label)
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
-  parser p{ 8 /*ring_size*/, false /*strict parse*/ };
+  parser p{8 /*ring_size*/, false /*strict parse*/};
 
   auto lp = VW::continuous_cb::contcb_label;
   auto label = scoped_calloc_or_throw<VW::continuous_cb::label>();

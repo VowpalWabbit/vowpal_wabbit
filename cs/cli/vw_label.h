@@ -378,71 +378,61 @@ public:
   }
 };
 
-public ref class ContCBLabel sealed : ILabel
+public
+ref class ContCBLabel sealed : ILabel
 {
 private:
   float m_action;
   float m_cost;
 
 public:
-  ContCBLabel()
-    : m_action(0), m_cost(0)
-  { }
+  ContCBLabel() : m_action(0), m_cost(0) {}
 
   ContCBLabel(float action, float cost)
-    : m_action(action), m_cost(cost)
-  { }
+      : m_action(action)
+      , m_cost(cost){}
 
-  [JsonProperty]
-  property float Action
-  { float get()
-  {
-    return m_action;
-  }
+            [JsonProperty] property float Action{float get(){return m_action;
+}
 
   void set(float value)
-  {
-    m_action = value;
-  }
-  }
+{
+  m_action = value;
+}
+}
 
-  [JsonProperty]
-  property float Cost
-  { float get()
-  {
-    return m_cost;
-  }
+[JsonProperty] property float Cost {
+  float get() { return m_cost; }
 
-  void set(float value)
-  {
-    m_cost = value;
-  }
-  }
+  void set(float value) { m_cost = value; }
+}
 
-  virtual void UpdateExample(vw* vw, example* ex)
-  {
-    VW::continuous_cb::label* ld = (VW::continuous_cb::label*)&ex->l;
-    ld->action = m_action;
-    ld->cost = m_cost;
-  }
+virtual void
+UpdateExample(vw* vw, example* ex)
+{
+  VW::continuous_cb::label* ld = (VW::continuous_cb::label*)&ex->l;
+  ld->action = m_action;
+  ld->cost = m_cost;
+}
 
-  virtual void ReadFromExample(example* ex)
-  {
-    VW::continuous_cb::label* ld = (VW::continuous_cb::label*)&ex->l;
-    m_action = ld->action;
-    m_cost = ld->cost;
-  }
+virtual void ReadFromExample(example* ex)
+{
+  VW::continuous_cb::label* ld = (VW::continuous_cb::label*)&ex->l;
+  m_action = ld->action;
+  m_cost = ld->cost;
+}
 
-  virtual String^ ToString() override
-  {
-    auto sb = gcnew StringBuilder;
+virtual String ^ ToString() override
+{
+  auto sb = gcnew StringBuilder;
 
-    sb->Append(m_action.ToString(CultureInfo::InvariantCulture));
-    sb->Append(L':');
-    sb->Append(m_cost.ToString(CultureInfo::InvariantCulture));
+  sb->Append(m_action.ToString(CultureInfo::InvariantCulture));
+  sb->Append(L':');
+  sb->Append(m_cost.ToString(CultureInfo::InvariantCulture));
 
-    return sb->ToString();
-  }
-};
+  return sb->ToString();
+}
+}
+;
 }
 }
