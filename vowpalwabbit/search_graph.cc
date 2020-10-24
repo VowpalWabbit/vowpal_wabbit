@@ -340,8 +340,10 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (auto& i : all.pairs)
+  for (auto& i : all.interactions)
   {
+    if(i.size() != 2)
+      continue;
     int i0 = (int)i[0];
     int i1 = (int)i[1];
     if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace))
@@ -420,16 +422,6 @@ void run(Search::search& sch, multi_ex& ec)
         add_edge_features(sch, D, n, ec);
       Search::predictor P = Search::predictor(sch, n + 1);
       P.set_input(*ec[n]);
-      if (false && (k > 0))
-      {
-        float min_count = 1e12f;
-        for (size_t k2 = 1; k2 <= D.K; k2++) min_count = std::min(min_count, D.true_counts[k2]);
-        float w = min_count / D.true_counts[k];
-        // float w = D.true_counts_total / D.true_counts[k] / (float)(D.K);
-        P.set_weight(w);
-        // std::cerr << "w = " << D.true_counts_total / D.true_counts[k] / (float)(D.K) << std::endl;
-        // P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
-      }
       if (D.separate_learners)
         P.set_learner_id(loop);
       if (k > 0)  // for test examples

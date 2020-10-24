@@ -5,8 +5,10 @@ from __future__ import division
 import pylibvw
 import warnings
 
-class SearchTask():
+
+class SearchTask:
     """Search task class"""
+
     def __init__(self, vw, sch, num_actions):
         """
         Parameters
@@ -39,10 +41,9 @@ class SearchTask():
     def _run(self, your_own_input_example):
         pass
 
-    def _call_vw(self,
-                 my_example,
-                 isTest,
-                 useOracle=False):  # run_fn, setup_fn, takedown_fn, isTest):
+    def _call_vw(
+        self, my_example, isTest, useOracle=False
+    ):  # run_fn, setup_fn, takedown_fn, isTest):
         self._output = None
         self.bogus_example[0].set_test_only(isTest)
 
@@ -58,7 +59,8 @@ class SearchTask():
         self.sch.set_structured_predict_hook(run, setup, takedown)
         self.sch.set_force_oracle(useOracle)
         self.vw.learn(
-            self.bogus_example)  # this will cause our ._run hook to get called
+            self.bogus_example
+        )  # this will cause our ._run hook to get called
 
     def learn(self, data_iterator):
         """Train search task by providing an iterator of examples.
@@ -173,7 +175,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
         pylibvw.vw.pPROB: ec.get_prob,
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
-        pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores
+        pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
     }
     return switch_prediction_type[prediction_type]()
 
@@ -182,6 +184,7 @@ class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
+
     def __init__(self, arg_str=None, **kw):
         """Initialize the vw object.
 
@@ -208,20 +211,23 @@ class vw(pylibvw.vw):
 
         self : vw
         """
+
         def format_input_pair(key, val):
             if type(val) is bool and not val:
-                s = ''
+                s = ""
             else:
-                prefix = '-' if len(key) == 1 else '--'
-                value = '' if type(val) is bool else ' {}'.format(val)
-                s = '{p}{k}{v}'.format(p=prefix, k=key, v=value)
+                prefix = "-" if len(key) == 1 else "--"
+                value = "" if type(val) is bool else " {}".format(val)
+                s = "{p}{k}{v}".format(p=prefix, k=key, v=value)
             return s
 
         def format_input(key, val):
             if isinstance(val, list):
-                # if a list is passed as a parameter value - create a key for each list element
-                return ' '.join(
-                    [format_input_pair(key, value) for value in val])
+                # if a list is passed as a parameter value - create a key for
+                # each list element
+                return " ".join(
+                    [format_input_pair(key, value) for value in val]
+                )
             else:
                 return format_input_pair(key, val)
 
@@ -229,18 +235,18 @@ class vw(pylibvw.vw):
         if arg_str is not None:
             l = [arg_str] + l
 
-        pylibvw.vw.__init__(self, ' '.join(l))
+        pylibvw.vw.__init__(self, " ".join(l))
 
         # check to see if native parser needs to run
-        ext_file_args = ['d', 'data', 'passes']
+        ext_file_args = ["d", "data", "passes"]
         if any(x in kw for x in ext_file_args):
             pylibvw.vw.run_parser(self)
 
         self.finished = False
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
-        """Returns a collection of examples for a multiline example learner or a single
-        example for a single example learner.
+        """Returns a collection of examples for a multiline example learner or
+        a single example for a single example learner.
 
         Parameters
         ----------
@@ -280,21 +286,22 @@ class vw(pylibvw.vw):
             list of examples parsed
         """
 
-        #check if already parsed
-        if isinstance(str_ex, example) and getattr(str_ex, 'setup_done', None):
+        # check if already parsed
+        if isinstance(str_ex, example) and getattr(str_ex, "setup_done", None):
             return str_ex
 
         elif isinstance(str_ex, list):
-            if all([getattr(ex, 'setup_done', None) for ex in str_ex]):
+            if all([getattr(ex, "setup_done", None) for ex in str_ex]):
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
             raise TypeError(
-                'Unsupported type. List or string object must be passed.')
+                "Unsupported type. List or string object must be passed."
+            )
 
         if isinstance(str_ex, list):
             str_ex = "\n".join(str_ex)
-        str_ex = str_ex.replace('\r', '')
+        str_ex = str_ex.replace("\r", "")
         str_ex = str_ex.strip()
         ec = self._parse(str_ex)
         ec = [example(self, x, labelType) for x in ec]
@@ -305,8 +312,9 @@ class vw(pylibvw.vw):
                 ec = ec[0]
             else:
                 raise TypeError(
-                    'expecting single line example, got multi_ex of len %i' %
-                    len(ec))
+                    "expecting single line example, got multi_ex of len %i"
+                    % len(ec)
+                )
         return ec
 
     def finish_example(self, ex):
@@ -322,7 +330,8 @@ class vw(pylibvw.vw):
         if isinstance(ex, example):
             if self._is_multiline():
                 raise ValueError(
-                    'Learner is multiline but single example was passed to finish_example. Use the list of examples instead?'
+                    "Learner is multiline but single example was passed to "
+                    "finish_example. Use the list of examples instead?"
                 )
             if not ex.finished:
                 pylibvw.vw._finish_example(self, ex)
@@ -330,7 +339,8 @@ class vw(pylibvw.vw):
         elif isinstance(ex, list):
             if not self._is_multiline():
                 raise ValueError(
-                    'Learner is singleline but multi example was passed to finish_example. Use a single example instead?'
+                    "Learner is singleline but multi example was passed to "
+                    "finish_example. Use a single example instead?"
                 )
             if all(x.finished == False for x in ex):
                 pylibvw.vw._finish_example_multi_ex(self, ex)
@@ -342,7 +352,8 @@ class vw(pylibvw.vw):
         return pylibvw.vw.num_weights(self)
 
     def get_weight(self, index, offset=0):
-        """Get the weight at a particular position in the (learned) weight vector.
+        """Get the weight at a particular position in the (learned) weight
+        vector.
 
         Parameters
         ----------
@@ -383,7 +394,7 @@ class vw(pylibvw.vw):
             new_example = True
 
         if isinstance(ec, example):
-            if not getattr(ec, 'setup_done', None):
+            if not getattr(ec, "setup_done", None):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
 
@@ -392,8 +403,9 @@ class vw(pylibvw.vw):
 
         else:
             raise TypeError(
-                'expecting string or example object as ec argument for learn, got %s'
-                % type(ec))
+                "expecting string or example object as ec argument for learn,"
+                " got %s" % type(ec)
+            )
 
         if new_example:
             self.finish_example(ec)
@@ -436,17 +448,17 @@ class vw(pylibvw.vw):
 
         if not isinstance(ec, example) and not isinstance(ec, list):
             raise TypeError(
-                'expecting string, example object, or list of example objects as ec argument for predict, got %s'
-                % type(ec))
+                "expecting string, example object, or list of example objects"
+                " as ec argument for predict, got %s" % type(ec)
+            )
 
-        if isinstance(ec, example) and not getattr(ec, 'setup_done', True):
+        if isinstance(ec, example) and not getattr(ec, "setup_done", True):
             ec.setup_example()
 
         if isinstance(ec, example):
             pylibvw.vw.predict(self, ec)
         else:
             pylibvw.vw.predict_multi(self, ec)
-
 
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
@@ -506,12 +518,14 @@ class vw(pylibvw.vw):
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()
 
-        def predict(examples,
-                    my_tag,
-                    oracle,
-                    condition=None,
-                    allowed=None,
-                    learner_id=0):
+        def predict(
+            examples,
+            my_tag,
+            oracle,
+            condition=None,
+            allowed=None,
+            learner_id=0,
+        ):
             """The basic (via-reduction) prediction mechanism
 
             Parameters
@@ -560,41 +574,46 @@ class vw(pylibvw.vw):
             """
             P = sch.get_predictor(my_tag)
             if sch.is_ldf():
-                # we need to know how many actions there are, even if we don't know their identities
-                while hasattr(examples, '__call__'):
+                # we need to know how many actions there are, even if we don't
+                # know their identities
+                while hasattr(examples, "__call__"):
                     examples = examples()
                 if not isinstance(examples, list):
                     raise TypeError(
-                        'expected example _list_ in LDF mode for SearchTask.predict()'
+                        "expected example _list_ in LDF mode for SearchTask.predict()"
                     )
                 P.set_input_length(len(examples))
                 if sch.predict_needs_example():
                     for n in range(len(examples)):
                         ec = examples[n]
-                        while hasattr(ec, '__call__'):
+                        while hasattr(ec, "__call__"):
                             ec = ec()  # unfold the lambdas
                         if not isinstance(ec, example) and not isinstance(
-                                ec, pylibvw.example):
+                            ec, pylibvw.example
+                        ):
                             raise TypeError(
-                                'non-example in LDF example list in SearchTask.predict()'
+                                "non-example in LDF example list in SearchTask.predict()"
                             )
-                        if hasattr(ec, 'setup_done') and not ec.setup_done:
+                        if hasattr(ec, "setup_done") and not ec.setup_done:
                             ec.setup_example()
                         P.set_input_at(n, ec)
                 else:
                     pass  # TODO: do we need to set the examples even though they're not used?
             else:
                 if sch.predict_needs_example():
-                    while hasattr(examples, '__call__'):
+                    while hasattr(examples, "__call__"):
                         examples = examples()
-                    if hasattr(examples,
-                               'setup_done') and not examples.setup_done:
+                    if (
+                        hasattr(examples, "setup_done")
+                        and not examples.setup_done
+                    ):
                         examples.setup_example()
                     P.set_input(examples)
                 else:
                     pass  # TODO: do we need to set the examples even though they're not used?
 
-            # if (isinstance(examples, list) and all([isinstance(ex, example) or isinstance(ex, pylibvw.example) for ex in examples])) or \
+            # if (isinstance(examples, list) and all([isinstance(ex, example) or
+            #       isinstance(ex, pylibvw.example) for ex in examples])) or \
             #    isinstance(examples, example) or isinstance(examples, pylibvw.example):
             #     if isinstance(examples, list): # LDF
             #         P.set_input_length(len(examples))
@@ -602,58 +621,80 @@ class vw(pylibvw.vw):
             #             P.set_input_at(n, examples[n])
             #     else: # non-LDF
             #         P.set_input(examples)
-            if oracle is None: pass
+            if oracle is None:
+                pass
             elif isinstance(oracle, list):
-                assert 0 not in oracle, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                assert 0 not in oracle, "multiclass labels are from 1..., "
+                "please do not use zero or bad things will happen!"
                 if len(oracle) > 0:
                     P.set_oracles(oracle)
             elif isinstance(oracle, int):
-                assert oracle > 0, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                assert oracle > 0, "multiclass labels are from 1...,"
+                " please do not use zero or bad things will happen!"
                 P.set_oracle(oracle)
             else:
-                raise TypeError('expecting oracle to be a list or an integer')
+                raise TypeError("expecting oracle to be a list or an integer")
 
             if condition is not None:
-                if not isinstance(condition, list): condition = [condition]
+                if not isinstance(condition, list):
+                    condition = [condition]
                 for c in condition:
                     if not isinstance(c, tuple):
-                        raise TypeError('item ' + str(c) +
-                                        ' in condition list is malformed')
-                    if len(c) == 2 and isinstance(c[0], int) and isinstance(
-                            c[1], str) and len(c[1]) == 1:
+                        raise TypeError(
+                            "item "
+                            + str(c)
+                            + " in condition list is malformed"
+                        )
+                    if (
+                        len(c) == 2
+                        and isinstance(c[0], int)
+                        and isinstance(c[1], str)
+                        and len(c[1]) == 1
+                    ):
                         P.add_condition(max(0, c[0]), c[1])
-                    elif len(c) == 3 and isinstance(c[0], int) and isinstance(
-                            c[1], int) and isinstance(c[2], str) and len(
-                                c[2]) == 1:
+                    elif (
+                        len(c) == 3
+                        and isinstance(c[0], int)
+                        and isinstance(c[1], int)
+                        and isinstance(c[2], str)
+                        and len(c[2]) == 1
+                    ):
                         P.add_condition_range(max(0, c[0]), max(0, c[1]), c[2])
                     else:
-                        raise TypeError('item ' + str(c) +
-                                        ' in condition list malformed')
+                        raise TypeError(
+                            "item " + str(c) + " in condition list malformed"
+                        )
 
-            if allowed is None: pass
+            if allowed is None:
+                pass
             elif isinstance(allowed, list):
-                assert 0 not in allowed, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                assert 0 not in allowed, "multiclass labels are from 1...,"
+                "please do not use zero or bad things will happen!"
                 P.set_alloweds(allowed)
             else:
-                raise TypeError('allowed argument wrong type')
+                raise TypeError("allowed argument wrong type")
 
-            if learner_id != 0: P.set_learner_id(learner_id)
+            if learner_id != 0:
+                P.set_learner_id(learner_id)
 
             p = P.predict()
             return p
 
         sch.predict = predict
         num_actions = sch.get_num_actions()
-        return search_task(self, sch,
-                           num_actions) if task_data is None else search_task(
-                               self, sch, num_actions, task_data)
+        return (
+            search_task(self, sch, num_actions)
+            if task_data is None
+            else search_task(self, sch, num_actions, task_data)
+        )
 
 
-class namespace_id():
+class namespace_id:
     """The namespace_id class is simply a wrapper to convert between
     hash spaces referred to by character (eg 'x') versus their index
     in a particular example. Mostly used internally, you shouldn't
     really need to touch this."""
+
     def __init__(self, ex, id):
         """Given an example and an id, construct a namespace_id.
 
@@ -674,28 +715,30 @@ class namespace_id():
         """
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
-                raise Exception('namespace ' + str(id) + ' out of bounds')
+                raise Exception("namespace " + str(id) + " out of bounds")
             self.id = id
             self.ord_ns = ex.namespace(id)
             self.ns = chr(self.ord_ns)
         elif isinstance(id, str):  # you've specified a namespace by string
             if len(id) == 0:
-                id = ' '
-            self.id = None  # we don't know and we don't want to do the linear search requered to find it
+                id = " "
+            self.id = None  # we don't know and we don't want to do the linear search required to find it
             self.ns = id[0]
             self.ord_ns = ord(self.ns)
         else:
             raise Exception(
-                "ns_to_characterord failed because id type is unknown: " +
-                str(type(id)))
+                "ns_to_characterord failed because id type is unknown: "
+                + str(type(id))
+            )
 
 
-class example_namespace():
+class example_namespace:
     """The example_namespace class is a helper class that allows you
     to extract namespaces from examples and operate at a namespace
     level rather than an example level. Mainly this is done to enable
     indexing like ex['x'][0] to get the 0th feature in namespace 'x'
     in example ex."""
+
     def __init__(self, ex, ns, ns_hash=None):
         """Construct an example_namespace
 
@@ -736,7 +779,7 @@ class example_namespace():
         for i in range(self.num_features_in()):
             yield self[i]
 
-    def push_feature(self, feature, v=1.):
+    def push_feature(self, feature, v=1.0):
         """Add an unhashed feature to the current namespace (fails if
         setup has already run on this example).
 
@@ -778,6 +821,7 @@ class example_namespace():
 
 class abstract_label:
     """An abstract class for a VW label."""
+
     def __init__(self):
         pass
 
@@ -788,9 +832,10 @@ class abstract_label:
 
 class simple_label(abstract_label):
     """Class for simple VW label"""
-    def __init__(self, label=0., weight=1., initial=0., prediction=0.):
+
+    def __init__(self, label=0.0, weight=1.0, initial=0.0, prediction=0.0):
         if not isinstance(label, (example, float)):
-            raise TypeError('Label should be float or an example.')
+            raise TypeError("Label should be float or an example.")
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
@@ -808,16 +853,17 @@ class simple_label(abstract_label):
 
     def __str__(self):
         s = str(self.label)
-        if self.weight != 1.:
-            s += ':' + str(self.weight)
+        if self.weight != 1.0:
+            s += ":" + str(self.weight)
         return s
 
 
 class multiclass_label(abstract_label):
     """Class for multiclass VW label with prediction"""
-    def __init__(self, label=1, weight=1., prediction=1):
+
+    def __init__(self, label=1, weight=1.0, prediction=1):
         if not isinstance(label, (example, int)):
-            raise TypeError('Label should be integer or an example.')
+            raise TypeError("Label should be integer or an example.")
         abstract_label.__init__(self)
         if isinstance(label, example):
             self.from_example(label)
@@ -833,13 +879,14 @@ class multiclass_label(abstract_label):
 
     def __str__(self):
         s = str(self.label)
-        if self.weight != 1.:
-            s += ':' + str(self.weight)
+        if self.weight != 1.0:
+            s += ":" + str(self.weight)
         return s
 
 
 class multiclass_probabilities_label(abstract_label):
     """Class for multiclass VW label with probabilities"""
+
     def __init__(self, label, prediction=None):
         abstract_label.__init__(self)
         if isinstance(label, example):
@@ -853,12 +900,13 @@ class multiclass_probabilities_label(abstract_label):
     def __str__(self):
         s = []
         for label, prediction in enumerate(self.prediction):
-            s.append('{l}:{p}'.format(l=label + 1, p=prediction))
-        return ' '.join(s)
+            s.append("{l}:{p}".format(l=label + 1, p=prediction))
+        return " ".join(s)
 
 
 class cost_sensitive_label(abstract_label):
     """Class for cost sensative VW label"""
+
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
         if isinstance(costs, example):
@@ -869,11 +917,9 @@ class cost_sensitive_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self,
-                         label,
-                         cost=0.,
-                         partial_prediction=0.,
-                         wap_value=0.):
+            def __init__(
+                self, label, cost=0.0, partial_prediction=0.0, wap_value=0.0
+            ):
                 self.label = label
                 self.cost = cost
                 self.partial_prediction = partial_prediction
@@ -882,18 +928,21 @@ class cost_sensitive_label(abstract_label):
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
         for i in range(ex.get_costsensitive_num_costs()):
-            wc = wclass(ex.get_costsensitive_class(i),
-                        ex.get_costsensitive_cost(i),
-                        ex.get_costsensitive_partial_prediction(i),
-                        ex.get_costsensitive_wap_value(i))
+            wc = wclass(
+                ex.get_costsensitive_class(i),
+                ex.get_costsensitive_cost(i),
+                ex.get_costsensitive_partial_prediction(i),
+                ex.get_costsensitive_wap_value(i),
+            )
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join(["{}:{}".format(c.label, c.cost) for c in self.costs])
+        return " ".join(["{}:{}".format(c.label, c.cost) for c in self.costs])
 
 
 class cbandits_label(abstract_label):
     """Class for contextual bandits VW label"""
+
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
         if isinstance(costs, example):
@@ -904,17 +953,20 @@ class cbandits_label(abstract_label):
 
     def from_example(self, ex):
         class wclass:
-            def __init__(self,
-                         action=None,
-                         cost=0.,
-                         partial_prediction=0.,
-                         probability=0.,
-                         **kwargs):
-                if kwargs.get('label', False):
-                    action = kwargs['label']
+            def __init__(
+                self,
+                action=None,
+                cost=0.0,
+                partial_prediction=0.0,
+                probability=0.0,
+                **kwargs
+            ):
+                if kwargs.get("label", False):
+                    action = kwargs["label"]
                     warnings.warn(
-                    "label has been deprecated. Please use 'action' instead.",
-                    DeprecationWarning)
+                        "label has been deprecated. Please use 'action' instead.",
+                        DeprecationWarning,
+                    )
                 self.label = action
                 self.action = action
                 self.cost = cost
@@ -924,14 +976,21 @@ class cbandits_label(abstract_label):
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
         for i in range(ex.get_cbandits_num_costs()):
-            wc = wclass(ex.get_cbandits_class(i), ex.get_cbandits_cost(i),
-                        ex.get_cbandits_partial_prediction(i),
-                        ex.get_cbandits_probability(i))
+            wc = wclass(
+                ex.get_cbandits_class(i),
+                ex.get_cbandits_cost(i),
+                ex.get_cbandits_partial_prediction(i),
+                ex.get_cbandits_probability(i),
+            )
             self.costs.append(wc)
 
     def __str__(self):
-        return ' '.join(["{}:{}:{}".format(c.action, c.cost, c.probability)
-                for c in self.costs])
+        return " ".join(
+            [
+                "{}:{}:{}".format(c.action, c.cost, c.probability)
+                for c in self.costs
+            ]
+        )
 
 
 class example(pylibvw.example):
@@ -939,10 +998,13 @@ class example(pylibvw.example):
     pylibvw.example. Most of the wrapping is to make the interface
     easier to use (by making the types safer via namespace_id) and
     also with added python-specific functionality."""
-    def __init__(self,
-                 vw,
-                 initStringOrDictOrRawExample=None,
-                 labelType=pylibvw.vw.lDefault):
+
+    def __init__(
+        self,
+        vw,
+        initStringOrDictOrRawExample=None,
+        labelType=pylibvw.vw.lDefault,
+    ):
         """Construct a new example from vw.
 
         Parameters
@@ -982,19 +1044,21 @@ class example(pylibvw.example):
 
         """
 
-        while hasattr(initStringOrDictOrRawExample, '__call__'):
+        while hasattr(initStringOrDictOrRawExample, "__call__"):
             initStringOrDictOrRawExample = initStringOrDictOrRawExample()
 
         if initStringOrDictOrRawExample is None:
             pylibvw.example.__init__(self, vw, labelType)
             self.setup_done = False
         elif isinstance(initStringOrDictOrRawExample, str):
-            pylibvw.example.__init__(self, vw, labelType,
-                                     initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, labelType, initStringOrDictOrRawExample
+            )
             self.setup_done = True
         elif isinstance(initStringOrDictOrRawExample, pylibvw.example):
-            pylibvw.example.__init__(self, vw, labelType,
-                                     initStringOrDictOrRawExample)
+            pylibvw.example.__init__(
+                self, vw, labelType, initStringOrDictOrRawExample
+            )
         elif isinstance(initStringOrDictOrRawExample, dict):
             pylibvw.example.__init__(self, vw, labelType)
             self.vw = vw
@@ -1004,7 +1068,7 @@ class example(pylibvw.example):
             self.setup_done = False
         else:
             raise TypeError(
-                'expecting string or dict as argument for example construction'
+                "expecting string or dict as argument for example construction"
             )
 
         self.vw = vw
@@ -1099,7 +1163,8 @@ class example(pylibvw.example):
         features constructed, etc.), do so."""
         if self.setup_done:
             raise Exception(
-                'Trying to setup_example on an example that is already setup')
+                "Trying to setup_example on an example that is already setup"
+            )
         self.vw.setup_example(self)
         self.setup_done = True
 
@@ -1108,7 +1173,8 @@ class example(pylibvw.example):
          continue editing the examples."""
         if not self.setup_done:
             raise Exception(
-                'Trying to unsetup_example that has not yet been setup')
+                "Trying to unsetup_example that has not yet been setup"
+            )
         self.vw.unsetup_example(self)
         self.setup_done = False
 
@@ -1186,10 +1252,11 @@ class example(pylibvw.example):
             if ns_hash is None:
                 ns_hash = self.vw.hash_space(self.get_ns(ns).ns)
             return self.vw.hash_feature(feature, ns_hash)
-        raise Exception("cannot extract feature of type: " +
-                        str(type(feature)))
+        raise Exception(
+            "cannot extract feature of type: " + str(type(feature))
+        )
 
-    def push_hashed_feature(self, ns, f, v=1.):
+    def push_hashed_feature(self, ns, f, v=1.0):
         """Add a hashed feature to a given namespace.
 
         Parameters
@@ -1202,10 +1269,11 @@ class example(pylibvw.example):
         v : float
             The value of the feature, be default is 1.0
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         pylibvw.example.push_hashed_feature(self, self.get_ns(ns).ord_ns, f, v)
 
-    def push_feature(self, ns, feature, v=1., ns_hash=None):
+    def push_feature(self, ns, feature, v=1.0, ns_hash=None):
         """Add an unhashed feature to a given namespace
 
         Parameters
@@ -1239,7 +1307,8 @@ class example(pylibvw.example):
             True if feature was removed else False as no feature was there to
             pop
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         return pylibvw.example.pop_feature(self, self.get_ns(ns).ord_ns)
 
     def push_namespace(self, ns):
@@ -1254,7 +1323,8 @@ class example(pylibvw.example):
             namespace which is to be pushed onto example
 
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         pylibvw.example.push_namespace(self, self.get_ns(ns).ord_ns)
 
     def pop_namespace(self):
@@ -1267,7 +1337,8 @@ class example(pylibvw.example):
             True if namespace was removed else False as no namespace was there
             to pop
         """
-        if self.setup_done: self.unsetup_example()
+        if self.setup_done:
+            self.unsetup_example()
         return pylibvw.example.pop_namespace(self)
 
     def ensure_namespace_exists(self, ns):
@@ -1279,9 +1350,11 @@ class example(pylibvw.example):
         ns : namespace
             If namespace exists does, do nothing. If it doesn't, add it.
         """
-        if self.setup_done: self.unsetup_example()
-        return pylibvw.example.ensure_namespace_exists(self,
-                                                       self.get_ns(ns).ord_ns)
+        if self.setup_done:
+            self.unsetup_example()
+        return pylibvw.example.ensure_namespace_exists(
+            self, self.get_ns(ns).ord_ns
+        )
 
     def push_features(self, ns, featureList):
         """Push a list of features to a given namespace.
@@ -1314,8 +1387,9 @@ class example(pylibvw.example):
         """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
-        self.push_feature_list(self.vw, ns.ord_ns,
-                               featureList)  # much faster just to do it in C++
+        self.push_feature_list(
+            self.vw, ns.ord_ns, featureList
+        )  # much faster just to do it in C++
         # ns_hash = self.vw.hash_space( ns.ns )
         # for feature in featureList:
         #     if isinstance(feature, int) or isinstance(feature, str):
@@ -1335,7 +1409,8 @@ class example(pylibvw.example):
         """Iterate over all feature/value pairs in this example (all
         namespace included)."""
         for ns_id in range(
-                self.num_namespaces()):  # iterate over every namespace
+            self.num_namespaces()
+        ):  # iterate over every namespace
             ns = self.get_ns(ns_id)
             for i in range(self.num_features_in(ns)):
                 f = self.feature(ns, i)
@@ -1354,3 +1429,4 @@ class example(pylibvw.example):
             simple_label
         """
         return label_class(self)
+

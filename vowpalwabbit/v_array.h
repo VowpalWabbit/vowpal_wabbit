@@ -36,6 +36,8 @@ struct v_array
   T* end_array;
   size_t erase_count;
 
+  using iterator = T*;
+
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }

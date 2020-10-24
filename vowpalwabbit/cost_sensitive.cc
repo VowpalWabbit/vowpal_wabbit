@@ -11,7 +11,7 @@
 
 namespace COST_SENSITIVE
 {
-void name_value(VW::string_view& s, v_array<VW::string_view>& name, float& v)
+void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -121,7 +121,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -266,16 +266,20 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, ec.weight, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
+  {
     if (!all.sd->ldict)
-      all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
+    {
+      all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
+    }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text_by_ref(sink, sv_pred.to_string(), ec.tag);
+      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag);
     }
+  }
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -285,7 +289,7 @@ void output_example(vw& all, example& ec)
         outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   print_update(all, test_label(&ec.l.cs), ec, nullptr, false, ec.pred.multiclass);

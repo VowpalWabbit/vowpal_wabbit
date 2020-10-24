@@ -18,8 +18,14 @@
 #pragma managed(push, off)
 #endif
 
+// RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
+// polluted by it.
+// https://github.com/Tencent/rapidjson/issues/1700
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
+VW_WARNING_STATE_POP
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #pragma managed(pop)
@@ -27,6 +33,7 @@
 
 #include "cb.h"
 #include "conditional_contextual_bandit.h"
+#include "cb_continuous_label.h"
 
 #include "best_constant.h"
 #include "json_utils.h"
@@ -128,8 +135,10 @@ class LabelObjectState : public BaseState<audit>
 
  public:
   CB::cb_class cb_label;
+  VW::cb_continuous::continuous_label_elm cont_label_element;
   bool found;
   bool found_cb;
+  bool found_cb_continuous;
   std::vector<unsigned int> actions;
   std::vector<float> probs;
   std::vector<unsigned int> inc;
@@ -138,9 +147,10 @@ class LabelObjectState : public BaseState<audit>
 
   void init(vw* /* all */)
   {
-    found = found_cb = false;
+    found = found_cb = found_cb_continuous = false;
 
     cb_label = {0., 0, 0., 0.};
+    cont_label_element = {0., 0., 0.};
   }
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
@@ -191,16 +201,25 @@ class LabelObjectState : public BaseState<audit>
       ctx.ex->l.simple.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
-    // CB
+    // CB/CA
     else if (!_stricmp(ctx.key, "Cost"))
     {
-      cb_label.cost = std::numeric_limits<float>::quiet_NaN();
-      found_cb = true;
+      if (found_cb_continuous) { cont_label_element.cost = std::numeric_limits<float>::quiet_NaN(); }
+      else
+      {
+        cb_label.cost = std::numeric_limits<float>::quiet_NaN();
+        found_cb = true;
+      }
     }
     else if (!_stricmp(ctx.key, "Probability"))
     {
       cb_label.probability = std::numeric_limits<float>::quiet_NaN();
       found_cb = true;
+    }
+    // CA
+    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
+    {
+      cont_label_element.pdf_value = std::numeric_limits<float>::quiet_NaN();
     }
     else
     {
@@ -229,21 +248,34 @@ class LabelObjectState : public BaseState<audit>
       ctx.ex->l.simple.weight = v;
       found = true;
     }
-    // CB
+    // CB/CA
     else if (!_stricmp(ctx.key, "Action"))
     {
-      cb_label.action = (uint32_t)v;
-      found_cb = true;
+      if (found_cb_continuous) { cont_label_element.action = v; }
+      else
+      {
+        cb_label.action = (uint32_t)v;
+        found_cb = true;
+      }
     }
     else if (!_stricmp(ctx.key, "Cost"))
     {
-      cb_label.cost = v;
-      found_cb = true;
+      if (found_cb_continuous) { cont_label_element.cost = v; }
+      else
+      {
+        cb_label.cost = v;
+        found_cb = true;
+      }
     }
     else if (!_stricmp(ctx.key, "Probability"))
     {
       cb_label.probability = v;
       found_cb = true;
+    }
+    // CA
+    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
+    {
+      cont_label_element.pdf_value = v;
     }
     else
     {
@@ -316,6 +348,14 @@ class LabelObjectState : public BaseState<audit>
       found_cb = false;
       cb_label = {0., 0, 0., 0.};
     }
+    else if (found_cb_continuous)
+    {
+      auto* ld = (VW::cb_continuous::continuous_label*)&ctx.ex->l;
+      ld->costs.push_back(cont_label_element);
+
+      found_cb_continuous = false;
+      cont_label_element = {0., 0., 0.};
+    }
     else if (found)
     {
       count_label(ctx.all->sd, ctx.ex->l.simple.label);
@@ -332,6 +372,8 @@ template <bool audit>
 struct LabelSinglePropertyState : BaseState<audit>
 {
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
+
+  BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
 
   // forward _label
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
@@ -766,7 +808,10 @@ class DefaultState : public BaseState<audit>
       if (ctx.key_length >= 6 && !strncmp(ctx.key, "_label", 6))
       {
         if (ctx.key_length >= 7 && ctx.key[6] == '_')
+        {
+          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
+        }
         else if (ctx.key_length == 6)
           return &ctx.label_state;
         else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex"))
@@ -807,6 +852,9 @@ class DefaultState : public BaseState<audit>
 
       if (ctx.key_length == 2 && ctx.key[1] == 'p')
       {
+        // Ignore "_p" when it is inside the "c" key in decision service state.
+        if (ctx.root_state == &ctx.decision_service_state) { Ignore(ctx, length); }
+
         ctx.array_float_state.output_array = &ctx.label_object_state.probs;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
@@ -1225,6 +1273,7 @@ class DecisionServiceState : public BaseState<audit>
           ctx.array_uint_state.return_state = this;
           return &ctx.array_uint_state;
         case 'p':
+          data->probabilities.clear();
           ctx.array_float_state.output_array = &data->probabilities;
           ctx.array_float_state.return_state = this;
           return &ctx.array_float_state;
@@ -1254,7 +1303,10 @@ class DecisionServiceState : public BaseState<audit>
         ctx.key = str;
         ctx.key_length = length;
         if (length >= 7 && ctx.key[6] == '_')
+        {
+          if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
+        }
         else if (length == 6)
           return &ctx.label_state;
         else if (length == 11 && !_stricmp(str, "_labelIndex"))
@@ -1270,6 +1322,13 @@ class DecisionServiceState : public BaseState<audit>
       {
         ctx.slot_outcome_list_state.interactions = data;
         return &ctx.slot_outcome_list_state;
+      }
+      else if (length == 2 && !strncmp(str, "_p", 2))
+      {
+        data->probabilities.clear();
+        ctx.array_float_state.output_array = &data->probabilities;
+        ctx.array_float_state.return_state = this;
+        return &ctx.array_float_state;
       }
     }
 
@@ -1471,6 +1530,12 @@ template <bool audit>
 void read_line_json(
     vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
 {
+  if (all.label_type == label_type_t::slates)
+  {
+    parse_slates_example_json<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context);
+    return;
+  }
+
   // string line_copy(line);
   // destructive parsing
   InsituStringStream ss(line);
@@ -1523,7 +1588,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   if(all.label_type == label_type_t::slates)
   {
-    parse_slates_example<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
+    parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
     apply_pdrop(all, data->probabilityOfDrop, examples);
     return;
   }
@@ -1586,10 +1651,10 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     }
 
     // let's ask to continue reading data until we find a line with actions provided
-    if (interaction.actions.size() == 0)
+    if (interaction.actions.size() == 0 && all->l->is_multiline)
     {
-      // VW::return_multiple_example(*all, examples);
-      // examples.push_back(&VW::get_unused_example(all));
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
       return false;
     }
   }
@@ -1600,7 +1665,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
   return true;
 }
 
-inline void prepare_for_learner(vw* all, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1630,8 +1695,6 @@ void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<exampl
     examples.push_back(&VW::get_unused_example(all));
     return;
   }
-
-  prepare_for_learner(all, examples);
 }
 
 template <bool audit>
@@ -1655,7 +1718,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
     reread = !parse_line_json<audit>(all, line, num_chars, examples);
   } while (reread);
 
-  prepare_for_learner(all, examples);
+  append_empty_newline_example_for_driver(all, examples);
 
   return 1;
 }

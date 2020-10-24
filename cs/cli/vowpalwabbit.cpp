@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw_allreduce.h"
 #include "vw_clr.h"
 #include "vowpalwabbit.h"
 #include "best_constant.h"
 #include "parser.h"
 #include "hash.h"
 #include "vw_example.h"
-#include "vw_allreduce.h"
 #include "vw_builder.h"
 #include "clr_io.h"
 #include "lda_core.h"

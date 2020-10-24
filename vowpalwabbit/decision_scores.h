@@ -6,6 +6,7 @@
 #pragma once
 
 #include "v_array.h"
+#include "io/io_adapter.h"
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -25,7 +26,7 @@ namespace VW
 // of CB for that call.
 using decision_scores_t = v_array<ACTION_SCORE::action_scores>;
 
-void print_decision_scores(int f, const VW::decision_scores_t& decision_scores);
+void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores);
 void delete_decision_scores(void* polypred);
 
 void print_update_ccb(vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);

@@ -12,6 +12,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_ClusterSpanningTree_create(
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    return 0;
   }
 }
 
@@ -68,5 +69,6 @@ JNIEXPORT jint JNICALL Java_org_vowpalwabbit_spark_ClusterSpanningTree_getPort(J
   catch (...)
   {
     rethrow_cpp_exception_as_java_exception(env);
+    return 0;
   }
 }

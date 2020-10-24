@@ -21,6 +21,7 @@ Implementation by Miro Dudik.
 #include "gd.h"
 #include "vw_exception.h"
 #include <exception>
+#include <chrono>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -67,10 +68,9 @@ struct bfgs
   double wolfe1_bound;
 
   size_t final_pass;
-  struct timeb t_start, t_end;
-  double net_comm_time;
 
-  struct timeb t_start_global, t_end_global;
+  std::chrono::time_point<std::chrono::system_clock> t_start_global;
+  std::chrono::time_point<std::chrono::system_clock> t_end_global;
   double net_time;
 
   v_array<float> predictions;
@@ -269,7 +269,6 @@ template <class T>
 void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin, T& weights)
 {
   float* mem0 = mem;
-  uint32_t length = 1 << all.num_bits;
   // implement conjugate gradient
   if (b.m == 0)
   {
@@ -303,8 +302,6 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     if (!all.logger.quiet)
       fprintf(stderr, "%f\t", beta);
     return;
-
-    mem = mem0 + (length - 1) * b.mem_stride;
   }
   else
   {
@@ -676,9 +673,8 @@ int process_pass(vw& all, bfgs& b)
     {
       b.step_size = 0.5;
       float d_mag = direction_magnitude(all);
-      ftime(&b.t_end_global);
-      b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-          (b.t_end_global.millitm - b.t_start_global.millitm));
+      b.t_end_global = std::chrono::system_clock::now();
+      b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
       if (!all.logger.quiet)
         fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
       b.predictions.clear();
@@ -735,9 +731,8 @@ int process_pass(vw& all, bfgs& b)
     else if (b.backstep_on && (wolfe1 < b.wolfe1_bound || b.loss_sum > b.previous_loss_sum))
     {
       // curvature violated, or we stepped too far last time: step back
-      ftime(&b.t_end_global);
-      b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-          (b.t_end_global.millitm - b.t_start_global.millitm));
+      b.t_end_global = std::chrono::system_clock::now();
+      b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
       float ratio = (b.step_size == 0.f) ? 0.f : (float)new_step / (float)b.step_size;
       if (!all.logger.quiet)
         fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
@@ -787,9 +782,8 @@ int process_pass(vw& all, bfgs& b)
       else
       {
         float d_mag = direction_magnitude(all);
-        ftime(&b.t_end_global);
-        b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-            (b.t_end_global.millitm - b.t_start_global.millitm));
+        b.t_end_global = std::chrono::system_clock::now();
+        b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
         if (!all.logger.quiet)
           fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
         b.predictions.clear();
@@ -830,9 +824,8 @@ int process_pass(vw& all, bfgs& b)
 
     b.predictions.clear();
     update_weight(all, b.step_size);
-    ftime(&b.t_end_global);
-    b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-        (b.t_end_global.millitm - b.t_start_global.millitm));
+    b.t_end_global = std::chrono::system_clock::now();
+    b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
     if (!all.logger.quiet)
       fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
@@ -848,9 +841,8 @@ int process_pass(vw& all, bfgs& b)
       accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     // preconditioner_to_regularizer(all, b, all.l2_lambda);
   }
-  ftime(&b.t_end_global);
-  b.net_time = (int)(1000.0 * (b.t_end_global.time - b.t_start_global.time) +
-      (b.t_end_global.millitm - b.t_start_global.millitm));
+  b.t_end_global = std::chrono::system_clock::now();
+  b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
   if (all.save_per_pass)
     save_predictor(all, all.final_regressor_name, b.current_pass);
@@ -1054,7 +1046,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
                 << "M for weights and mem" << std::endl;
 
     b.net_time = 0.0;
-    ftime(&b.t_start_global);
+    b.t_start_global = std::chrono::system_clock::now();
 
     if (!all->logger.quiet)
     {
@@ -1073,7 +1065,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   // bool reg_vector = b.output_regularizer || all->per_feature_regularizer_input.length() > 0;
   bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     msg << ":" << reg_vector << "\n";
@@ -1094,25 +1086,21 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   bool conjugate_gradient = false;
   bool bfgs_option = false;
   option_group_definition bfgs_outer_options("LBFGS and Conjugate Gradient options");
-  bfgs_outer_options.add(
-      make_option("conjugate_gradient", conjugate_gradient).keep().help("use conjugate gradient based optimization"));
+  bfgs_outer_options.add(make_option("conjugate_gradient", conjugate_gradient)
+                             .keep()
+                             .necessary()
+                             .help("use conjugate gradient based optimization"));
 
   option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient options");
-  bfgs_inner_options.add(make_option("bfgs", bfgs_option).keep().help("use conjugate gradient based optimization"));
+  bfgs_inner_options.add(
+      make_option("bfgs", bfgs_option).keep().necessary().help("use conjugate gradient based optimization"));
   bfgs_inner_options.add(make_option("hessian_on", all.hessian_on).help("use second derivative in line search"));
   bfgs_inner_options.add(make_option("mem", b->m).default_value(15).help("memory in bfgs"));
   bfgs_inner_options.add(
       make_option("termination", b->rel_threshold).default_value(0.001f).help("Termination threshold"));
 
-  options.add_and_parse(bfgs_outer_options);
-  if (!conjugate_gradient)
-  {
-    options.add_and_parse(bfgs_inner_options);
-    if (!bfgs_option)
-    {
-      return nullptr;
-    }
-  }
+  if (!options.add_parse_and_check_necessary(bfgs_outer_options))
+    if (!options.add_parse_and_check_necessary(bfgs_inner_options)) return nullptr;
 
   b->all = &all;
   b->wolfe1_bound = 0.01;

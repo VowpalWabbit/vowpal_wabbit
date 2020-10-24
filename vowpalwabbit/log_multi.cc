@@ -21,22 +21,19 @@ class node_pred
   uint32_t label;
   uint32_t label_count;
 
-  bool operator==(node_pred v) { return (label == v.label); }
+  bool operator==(node_pred v) const { return (label == v.label); }
 
-  bool operator>(node_pred v)
+  bool operator>(node_pred v) const
   {
-    if (label > v.label)
-      return true;
-    return false;
+    return label > v.label;
   }
 
-  bool operator<(node_pred v)
+  bool operator<(node_pred v) const
   {
-    if (label < v.label)
-      return true;
-    return false;
+    return label < v.label;
   }
 
+  node_pred() = default;
   node_pred(uint32_t l)
   {
     label = l;
@@ -47,7 +44,9 @@ class node_pred
   }
 };
 
-typedef struct
+static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
+
+struct node
 {
   // everyone has
   uint32_t parent;           // the parent node
@@ -68,7 +67,7 @@ typedef struct
   // leaf has
   uint32_t max_count;        // the number of samples of the most common label
   uint32_t max_count_label;  // the most common label
-} node;
+};
 
 struct log_multi
 {
@@ -353,7 +352,7 @@ void save_node_stats(log_multi& d)
   uint32_t total;
   log_multi* b = &d;
 
-  fp = fopen("atxm_debug.csv", "wt");
+  VW::file_open(&fp, "atxm_debug.csv", "wt");
 
   for (i = 0; i < b->nodes.size(); i++)
   {
@@ -395,7 +394,7 @@ void save_node_stats(log_multi& d)
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
     msg << "k = " << b.k;
@@ -427,7 +426,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
       msg << " parent = " << n.parent;
       bin_text_read_write_fixed(model_file, (char*)&n.parent, sizeof(n.parent), "", read, msg, text);
 
-      uint32_t temp = (uint32_t)n.preds.size();
+      temp = (uint32_t)n.preds.size();
 
       msg << " preds = " << temp;
       bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
@@ -496,16 +495,13 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
-  new_options.add(make_option("log_multi", data->k).keep().help("Use online tree for multiclass"))
+  new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("disable progressive validation"))
-      .add(make_option("swap_resistance", data->swap_resist).default_value(4).help("disable progressive validation"))
       .add(make_option("swap_resistance", data->swap_resist)
                .default_value(4)
                .help("higher = more resistance to swap, default=4"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("log_multi"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->progress = !data->progress;
 

@@ -8,6 +8,7 @@
 
 #include "rand48.h"
 #include "vw_string_view.h"
+#include "tag_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW;
@@ -40,7 +41,8 @@ struct cb_sample_data
 
     // If we are learning and have a label, then take that action as the chosen action. Otherwise sample the
     // distribution.
-    if (is_learn && maybe_labelled_action >= 0)
+    bool learn = is_learn && maybe_labelled_action >= 0;
+    if (learn)
     {
       // Find where the labelled action is in the final prediction to determine if swapping needs to occur.
       // This only matters if the prediction decided to explore, but the same output should happen for the learn case.
@@ -56,18 +58,13 @@ struct cb_sample_data
     }
     else
     {
-      bool tag_provided_seed = false;
       uint64_t seed = _random_state->get_current_state();
-      if (!examples[0]->tag.empty())
+
+      VW::string_view tag_seed;
+      const bool tag_provided_seed = try_extract_random_seed(*examples[0], tag_seed);
+      if (tag_provided_seed)
       {
-        const std::string SEED_IDENTIFIER = "seed=";
-        if (strncmp(examples[0]->tag.begin(), SEED_IDENTIFIER.c_str(), SEED_IDENTIFIER.size()) == 0 &&
-            examples[0]->tag.size() > SEED_IDENTIFIER.size())
-        {
-          VW::string_view tag_seed(examples[0]->tag.begin() + 5, examples[0]->tag.size());
-          seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
-          tag_provided_seed = true;
-        }
+        seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
       }
 
       // Sampling is done after the base learner has generated a pdf.
@@ -105,11 +102,10 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   bool cb_sample_option = false;
 
   option_group_definition new_options("CB Sample");
-  new_options.add(make_option("cb_sample", cb_sample_option).keep().help("Sample from CB pdf and swap top action."));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action."));
 
-  if (!cb_sample_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (options.was_supplied("no_predict"))
   {

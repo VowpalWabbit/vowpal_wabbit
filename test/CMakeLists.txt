@@ -46,9 +46,3 @@ if(NOT WIN32)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 endif()
-
-# This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
-add_custom_target(test_with_output
-  COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-  DEPENDS spanning_tree vw-unit-test.out vw-bin
-)

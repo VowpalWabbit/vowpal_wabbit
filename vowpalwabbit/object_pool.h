@@ -30,7 +30,13 @@ struct default_cleanup
   void operator()(T*) {}
 };
 
-template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
+template <typename T>
+struct default_initializer
+{
+  T* operator()(T* obj) { return obj; }
+};
+
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct no_lock_object_pool
 {
   no_lock_object_pool() = default;
@@ -42,6 +48,7 @@ struct no_lock_object_pool
 
   ~no_lock_object_pool()
   {
+    assert(m_pool.size() == size());
     while (!m_pool.empty())
     {
       auto front = m_pool.front();
@@ -112,8 +119,6 @@ struct no_lock_object_pool
 
     for (size_t i = 0; i < size; i++)
     {
-      memset(&chunk[i], 0, sizeof(T));
-      new (&chunk[i]) T{};
       m_pool.push(m_initializer(&chunk[i]));
     }
   }
@@ -167,7 +172,7 @@ struct value_object_pool
   TDeleter m_deleter;
 };
 
-template <typename T, typename TInitializer, typename TCleanup = default_cleanup<T>>
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct object_pool
 {
   object_pool() = default;

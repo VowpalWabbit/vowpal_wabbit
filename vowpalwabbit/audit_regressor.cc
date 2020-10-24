@@ -248,12 +248,11 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   option_group_definition new_options("Audit Regressor");
   new_options.add(make_option("audit_regressor", out_file)
                       .keep()
+                      .necessary()
                       .help("stores feature names and their regressor values. Same dataset must be used for both "
                             "regressor training and this mode."));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("audit_regressor"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (out_file.empty())
     THROW("audit_regressor argument (output filename) is missing.");
@@ -267,7 +266,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->all = &all;
   dat->ns_pre = new std::vector<std::string>();  // explicitly invoking std::vector's constructor
   dat->out_file = new io_buf();
-  dat->out_file->open_file(out_file.c_str(), all.stdin_off, io_buf::WRITE);
+  dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
   VW::LEARNER::learner<audit_regressor_data, example>& ret =
       VW::LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);

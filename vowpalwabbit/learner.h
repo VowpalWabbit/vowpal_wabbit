@@ -3,26 +3,32 @@
 // license as described in the file LICENSE.
 #pragma once
 // This is the interface for a learning algorithm
+
 #include <iostream>
+#include <memory>
+
 #include "memory.h"
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
 #include "future_compat.h"
+#include "example.h"
 #include <memory>
-
+#include "scope_exit.h"
 
 enum class prediction_type_t
 {
   scalar,
   scalars,
   action_scores,
+  pdf,
   action_probs,
   multiclass,
   multilabels,
   prob,
   multiclassprobs,
-  decision_probs
+  decision_probs,
+  action_pdf_value
 };
 
 const char* to_string(prediction_type_t prediction_type);
@@ -118,22 +124,26 @@ float recur_sensitivity(void*, base_learner&, example&);
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 {
+  ++ex._current_reduction_depth;
   ex.ft_offset += static_cast<uint32_t>(increment * i);
 }
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  for (auto ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
+  if (ec_seq.size() > 0) ++ec_seq[0]->_current_reduction_depth;
+  for (auto& ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
 {
+  --ex._current_reduction_depth;
   assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
 }
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
+  if (ec_seq.size() > 0) --ec_seq[0]->_current_reduction_depth;
   for (auto ec : ec_seq)
   {
     assert(ec->ft_offset >= increment * i);
@@ -254,17 +264,26 @@ struct learner
   template <class L>
   inline void set_predict(void (*u)(T&, L&, E&))
   {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.predict_f = (learn_data::fn)u;
+VW_WARNING_STATE_POP
   }
   template <class L>
   inline void set_learn(void (*u)(T&, L&, E&))
   {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.learn_f = (learn_data::fn)u;
+VW_WARNING_STATE_POP
   }
   template <class L>
   inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
   {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.multipredict_f = (learn_data::multi_fn)u;
+VW_WARNING_STATE_POP
   }
 
   inline void update(E& ec, size_t i = 0)
@@ -278,14 +297,20 @@ struct learner
   template <class L>
   inline void set_update(void (*u)(T& data, L& base, E&))
   {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.update_f = (learn_data::fn)u;
+VW_WARNING_STATE_POP
   }
 
   // used for active learning and confidence to determine how easily predictions are changed
   inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
   {
     sensitivity_fd.data = learn_fd.data;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
+VW_WARNING_STATE_POP
   }
   inline float sensitivity(example& ec, size_t i = 0)
   {
@@ -304,13 +329,23 @@ struct learner
   }
   inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
   {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     save_load_fd.save_load_f = (save_load_data::fn)sl;
+VW_WARNING_STATE_POP
     save_load_fd.data = learn_fd.data;
     save_load_fd.base = learn_fd.base;
   }
 
   // called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(T&)) { finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f)); }
+  void set_finish(void (*f)(T&))
+  {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f));
+VW_WARNING_STATE_POP
+  }
+
   inline void finish()
   {
     if (finisher_fd.data)
@@ -331,7 +366,14 @@ struct learner
     if (end_pass_fd.base)
       end_pass_fd.base->end_pass();
   }  // autorecursive
-  void set_end_pass(void (*f)(T&)) { end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+
+  void set_end_pass(void (*f)(T&))
+  {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
+VW_WARNING_STATE_POP
+  }
 
   // called after parsing of examples is complete.  Autorecursive.
   void end_examples()
@@ -340,11 +382,23 @@ struct learner
     if (end_examples_fd.base)
       end_examples_fd.base->end_examples();
   }
-  void set_end_examples(void (*f)(T&)) { end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+  void set_end_examples(void (*f)(T&))
+  {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
+VW_WARNING_STATE_POP
+  }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data); }
-  void set_init_driver(void (*f)(T&)) { init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+  void set_init_driver(void (*f)(T&))
+  {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
+VW_WARNING_STATE_POP
+  }
 
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
@@ -355,7 +409,10 @@ struct learner
   void set_finish_example(void (*f)(vw& all, T&, E&))
   {
     finish_example_fd.data = learn_fd.data;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
     finish_example_fd.finish_example_f = (end_fptr_type)(f);
+VW_WARNING_STATE_POP
   }
 
   template <class L>
@@ -393,7 +450,10 @@ struct learner
       ret.finisher_fd.func = (func_data::fn)noop;
       ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
       ret.finish_example_fd.data = dat;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
       ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
+VW_WARNING_STATE_POP
     }
 
     ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
@@ -402,9 +462,12 @@ struct learner
     });
 
     ret.learn_fd.data = dat;
-    ret.learn_fd.learn_f = (learn_data::fn)learn;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    ret.learn_fd.learn_f = reinterpret_cast<learn_data::fn>(learn);
     ret.learn_fd.update_f = (learn_data::fn)learn;
     ret.learn_fd.predict_f = (learn_data::fn)predict;
+VW_WARNING_STATE_POP
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
@@ -539,12 +602,21 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
     ec->ft_offset = offset;
   }
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&saved_offsets, &examples]
+    {
+      for (size_t i = 0; i < examples.size(); i++)
+      {
+        examples[i]->ft_offset = saved_offsets[i];
+      }
+    });
+
   if (is_learn)
     base.learn(examples, id);
   else
     base.predict(examples, id);
 
-  for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
 }  // namespace LEARNER
 }  // namespace VW

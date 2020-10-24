@@ -4,7 +4,6 @@ set(JAVA_JVM_LIBRARY NotNeeded)
 
 find_package(JNI REQUIRED)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(src_base src/main/c++)
 set(vw_jni_headers
   ${src_base}/jni_base_learner.h
@@ -19,7 +18,6 @@ set(vw_jni_headers
   ${src_base}/vowpalWabbit_VW.h
   ${src_base}/jni_spark_vw.h
   ${src_base}/jni_spark_vw_generated.h
-  ${src_base}/vector_io_buf.h
   ${src_base}/util.h
 )
 
@@ -35,7 +33,6 @@ set(vw_jni_sources
   ${src_base}/vowpalWabbit_learner_VWScalarsLearner.cc
   ${src_base}/vowpalWabbit_VW.cc
   ${src_base}/jni_spark_vw.cc
-  ${src_base}/vector_io_buf.cc
   ${src_base}/jni_spark_cluster.cc
   ${src_base}/util.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../vowpalwabbit/spanning_tree.cc
@@ -43,6 +40,7 @@ set(vw_jni_sources
 
 add_library(vw_jni SHARED ${vw_jni_headers} ${vw_jni_sources})
 target_link_libraries(vw_jni PUBLIC vw)
+set_property(TARGET vw_jni PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(vw_jni PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${JNI_INCLUDE_DIRS})
@@ -54,10 +52,10 @@ add_custom_command(TARGET vw_jni POST_BUILD
 )
 
 if(STATIC_LINK_VW_JAVA)
-  target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC vw)
+  target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC)
 else()
   # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-  target_link_libraries(vw_jni PUBLIC -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+  target_link_libraries(vw_jni PUBLIC -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\")
 endif()
 
 # Replace version number in POM
@@ -106,7 +104,7 @@ if(NOT WIN32)
   add_custom_command(TARGET vw_jni POST_BUILD
       COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
       COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
-      # -B is batch mode and avoids the massive download progress print out       
+      # -B is batch mode and avoids the massive download progress print out
       COMMAND mvn -B verify
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Copying shared libary dependencies to output directory")

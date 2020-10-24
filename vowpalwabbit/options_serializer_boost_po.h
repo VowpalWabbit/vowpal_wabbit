@@ -20,9 +20,9 @@ struct options_serializer_boost_po : options_serializer_i
 {
   options_serializer_boost_po() { m_output_stream.precision(15); }
 
-  virtual void add(base_option& option) override;
-  virtual std::string str() override;
-  virtual size_t size() override;
+  void add(base_option& option) override;
+  std::string str() const override;
+  size_t size() const override;
 
  private:
   template <typename T>

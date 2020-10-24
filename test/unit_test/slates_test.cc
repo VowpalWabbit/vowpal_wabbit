@@ -1,4 +1,6 @@
+#ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -21,11 +23,11 @@ struct test_base
   PredictFunc test_predict_func;
 
   test_base(LearnFunc learn, PredictFunc predict) : test_learn_func(learn), test_predict_func(predict) {}
-  static void invoke_learn(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+  static void invoke_learn(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& /*base*/, multi_ex& examples)
   {
       data.test_learn_func(examples);
   }
-  static void invoke_predict(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+  static void invoke_predict(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& /*base*/, multi_ex& examples)
   {
       data.test_predict_func(examples);
   }

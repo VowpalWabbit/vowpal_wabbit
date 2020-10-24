@@ -15,6 +15,7 @@
 #include "rand48.h"
 #include "vw.h"
 #include "v_array.h"
+#include "future_compat.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -24,24 +25,15 @@ namespace memory_tree_ns
 ///////////////////////Helper//////////////////////////////
 //////////////////////////////////////////////////////////
 template <typename T>
-void remove_at_index(v_array<T>& array, uint32_t index)
+void remove_at_index(std::vector<T>& array, uint32_t index)
 {
   if (index >= array.size())
   {
     std::cout << "ERROR: index is larger than the size" << std::endl;
     return;
   }
-  if (index == array.size() - 1)
-  {
-    array.pop();
-    return;
-  }
-  for (size_t i = index + 1; i < array.size(); i++)
-  {
-    array[i - 1] = array[i];
-  }
-  array.pop();
-  return;
+
+  array.erase(array.begin() + index);
 }
 
 void copy_example_data(example* dst, example* src, bool oas = false)  // copy example data.
@@ -154,7 +146,7 @@ struct node
   double nl;  // number of examples routed to left.
   double nr;  // number of examples routed to right.
 
-  v_array<uint32_t> examples_index;
+  std::vector<uint32_t> examples_index;
 
   node()  // construct:
   {
@@ -167,7 +159,12 @@ struct node
     right = 0;
     nl = 0.001;  // initilze to 1, as we need to do nl/nr.
     nr = 0.001;
-    examples_index = v_init<uint32_t>();
+    // examples_index = v_init<uint32_t>();
+  }
+
+  ~node()
+  {
+    // examples_index.delete_v();
   }
 };
 
@@ -177,7 +174,8 @@ struct memory_tree
   vw* all;
   std::shared_ptr<rand_state> _random_state;
 
-  v_array<node> nodes;         // array of nodes.
+  std::vector<node> nodes;         // array of nodes.
+  // v_array<node> nodes;         // array of nodes.
   v_array<example*> examples;  // array of example points
 
   size_t max_leaf_examples;
@@ -219,7 +217,7 @@ struct memory_tree
 
   memory_tree()
   {
-    nodes = v_init<node>();
+    // nodes = v_init<node>();
     examples = v_init<example*>();
     alpha = 0.5;
     routers_used = 0;
@@ -235,8 +233,7 @@ struct memory_tree
 
   ~memory_tree()
   {
-    for (auto& node : nodes) node.examples_index.delete_v();
-    nodes.delete_v();
+    // nodes.delete_v();
     for (auto ex : examples) free_example(ex);
     examples.delete_v();
     if (kprod_ec)
@@ -384,10 +381,12 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
 {
   // predict, learn and predict
   // note: here we first train the router and then predict.
-  MULTICLASS::label_t mc;
+  MULTICLASS::label_t mc{0,0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
+  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
+  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -416,7 +415,6 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
 
   base.predict(ec, b.nodes[cn].base_router);
   float save_binary_scalar = ec.pred.scalar;
-
   if (b.oas == false)
   {
     ec.l.multi = mc;
@@ -427,6 +425,7 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
     ec.pred.multilabels = preds;
     ec.l.multilabels = multilabels;
   }
+
   ec.weight = ec_input_weight;
 
   return save_binary_scalar;
@@ -467,10 +466,12 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
   for (size_t ec_id = 0; ec_id < b.nodes[cn].examples_index.size(); ec_id++)  // scan all examples stored in the cn
   {
     uint32_t ec_pos = b.nodes[cn].examples_index[ec_id];
-    MULTICLASS::label_t mc;
+    MULTICLASS::label_t mc{0,0};
     uint32_t save_multi_pred = 0;
     MULTILABEL::labels multilabels;
+    multilabels.label_v = v_init<uint32_t>();
     MULTILABEL::labels preds;
+    preds.label_v = v_init<uint32_t>();
     if (b.oas == false)
     {
       mc = b.examples[ec_pos]->l.multi;
@@ -509,14 +510,13 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       b.examples[ec_pos]->l.multilabels = multilabels;
     }
   }
-  b.nodes[cn].examples_index.delete_v();                                                 // empty the cn's example list
+  b.nodes[cn].examples_index.clear();                                                    // empty the cn's example list
   b.nodes[cn].nl = std::max(double(b.nodes[left_child].examples_index.size()), 0.001);   // avoid to set nl to zero
   b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
   {
     b.max_ex_in_leaf = (size_t)std::max(b.nodes[cn].nl, b.nodes[cn].nr);
-    // std::cout<<b.max_ex_in_leaf<< std::endl;
   }
 }
 
@@ -668,13 +668,14 @@ float F1_score_for_two_examples(example& ec1, example& ec2)
     // return v2; //only precision
     return 2.f * (v1 * v2 / (v1 + v2));
 }
-
 void predict(memory_tree& b, single_learner& base, example& ec)
 {
-  MULTICLASS::label_t mc;
+  MULTICLASS::label_t mc{0,0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
+  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
+  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -738,11 +739,12 @@ void predict(memory_tree& b, single_learner& base, example& ec)
 
 float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, example& ec, float weight = 1.f)
 {
-  // example& ec = *b.examples[ec_array_index];
-  MULTICLASS::label_t mc;
+  MULTICLASS::label_t mc{0,0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
+  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
+  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -832,10 +834,12 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 {
   example& ec = *b.examples[ec_array_index];
 
-  MULTICLASS::label_t mc;
+  MULTICLASS::label_t mc{0,0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
+  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
+  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -872,7 +876,6 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
     ec.l.multilabels = multilabels;
   }
 
-  // std::cout<<"at route to leaf: "<<path.size()<< std::endl;
   if (insertion == true)
   {
     b.nodes[cn].examples_index.push_back(ec_array_index);
@@ -914,9 +917,11 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 
       float ec_input_weight = ec.weight;
 
-      MULTICLASS::label_t mc;
+      MULTICLASS::label_t mc{0,0};
       MULTILABEL::labels multilabels;
+      multilabels.label_v = v_init<uint32_t>();
       MULTILABEL::labels preds;
+      preds.label_v = v_init<uint32_t>();
       if (b.oas == false)
         mc = ec.l.multi;
       else
@@ -1173,7 +1178,7 @@ void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::s
 void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     if (read)
       b.test_mode = true;
@@ -1235,6 +1240,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   new_options
       .add(make_option("memory_tree", tree->max_nodes)
                .keep()
+               .necessary()
                .default_value(0)
                .help("Make a memory tree with at most <n> nodes"))
       .add(make_option("max_number_of_labels", tree->max_num_labels)
@@ -1254,11 +1260,8 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .default_value(0)
                .help("turn on dream operations at reward based update as well"))
       .add(make_option("online", tree->online).help("turn on dream operations at reward based update as well"));
-  options.add_and_parse(new_options);
-  if (!tree->max_nodes)
-  {
-    return nullptr;
-  }
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   tree->all = &all;
   tree->_random_state = all.get_random_state();

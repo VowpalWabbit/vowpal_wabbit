@@ -131,18 +131,23 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
-void print_result(int f, float res, v_array<char> tag, float lb, float ub)
+void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float lb, float ub)
 {
-  if (f >= 0)
+  if (f == nullptr)
   {
-    std::stringstream ss;
-    ss << std::fixed << res;
-    print_tag_by_ref(ss, tag);
-    ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+    return;
+  }
+
+  std::stringstream ss;
+  ss << std::fixed << res;
+  print_tag_by_ref(ss, tag);
+  ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
+  const auto ss_str = ss.str();
+  ssize_t len = ss_str.size();
+  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -167,7 +172,7 @@ void output_example(vw& all, bs& d, example& ec)
     }
   }
 
-  for (int sink : all.final_prediction_sink) print_result(sink, ec.pred.scalar, ec.tag, d.lb, d.ub);
+  for (auto& sink : all.final_prediction_sink) print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub);
 
   print_update(all, ec);
 }
@@ -176,7 +181,7 @@ template <bool is_learn>
 void predict_or_learn(bs& d, single_learner& base, example& ec)
 {
   vw& all = *d.all;
-  bool shouldOutput = all.raw_prediction > 0;
+  bool shouldOutput = all.raw_prediction != nullptr;
 
   float weight_temp = ec.weight;
 
@@ -217,7 +222,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
   }
 
   if (shouldOutput)
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
 }
 
 void finish_example(vw& all, bs& d, example& ec)
@@ -231,12 +236,11 @@ base_learner* bs_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");
   option_group_definition new_options("Bootstrap");
-  new_options.add(make_option("bootstrap", data->B).keep().help("k-way bootstrap by online importance resampling"))
+  new_options
+      .add(make_option("bootstrap", data->B).keep().necessary().help("k-way bootstrap by online importance resampling"))
       .add(make_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("bootstrap"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;

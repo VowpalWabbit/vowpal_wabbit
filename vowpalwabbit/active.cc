@@ -89,21 +89,31 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   }
 }
 
-void active_print_result(int f, float res, float weight, v_array<char> tag)
+void active_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag)
 {
-  if (f >= 0)
+  if (f == nullptr)
   {
-    std::stringstream ss;
-    ss << std::fixed << res;
-    if (!print_tag_by_ref(ss, tag))
-      ss << ' ';
-    if (weight >= 0)
-      ss << " " << std::fixed << weight;
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+    return;
+  }
+
+  std::stringstream ss;
+  ss << std::fixed << res;
+  if (!print_tag_by_ref(ss, tag))
+  {
+    ss << ' ';
+  }
+
+  if (weight >= 0)
+  {
+    ss << " " << std::fixed << weight;
+  }
+  ss << '\n';
+  const auto ss_str = ss.str();
+  ssize_t len = ss_str.size();
+  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  if (t != len)
+  {
+    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -120,10 +130,10 @@ void output_and_account_example(vw& all, active& a, example& ec)
   if (ld.label == FLT_MAX)
     ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
-  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (auto i : all.final_prediction_sink)
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
+  for (auto& i : all.final_prediction_sink)
   {
-    active_print_result(i, ec.pred.scalar, ai, ec.tag);
+    active_print_result(i.get(), ec.pred.scalar, ai, ec.tag);
   }
 
   print_update(all, ec);
@@ -142,15 +152,13 @@ base_learner* active_setup(options_i& options, vw& all)
   bool active_option = false;
   bool simulation = false;
   option_group_definition new_options("Active Learning");
-  new_options.add(make_option("active", active_option).keep().help("enable active learning"))
+  new_options.add(make_option("active", active_option).keep().necessary().help("enable active learning"))
       .add(make_option("simulation", simulation).help("active learning simulation mode"))
       .add(make_option("mellowness", data->active_c0)
                .default_value(8.f)
                .help("active learning mellowness parameter c_0. Default 8"));
-  options.add_and_parse(new_options);
 
-  if (!active_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->all = &all;
   data->_random_state = all.get_random_state();

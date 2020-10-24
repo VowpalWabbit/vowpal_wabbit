@@ -78,8 +78,8 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     // avoid updates to the random num generator
     // for greedify, always update first policy once
     uint32_t count = is_learn ? ((_greedify && i == 0) ? 1 : BS::weight_gen(_random_state)) : 0;
-
-    if (is_learn && count > 0)
+    bool learn = is_learn && count > 0;
+    if (learn)
       VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
     else
       VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset, i);
@@ -90,7 +90,7 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     if (!_first_only)
     {
       size_t tied_actions = fill_tied(preds);
-      for (size_t i = 0; i < tied_actions; ++i) _top_actions[preds[i].action] += 1.f / tied_actions;
+      for (size_t j = 0; j < tied_actions; ++j) _top_actions[preds[j].action] += 1.f / tied_actions;
     }
     else
       _top_actions[preds[0].action] += 1.f;
@@ -127,15 +127,14 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
-      .add(make_option("bag", bag_size).keep().help("bagging-based exploration"))
+      .add(make_option("bag", bag_size).keep().necessary().help("bagging-based exploration"))
       .add(make_option("greedify", greedify).keep().help("always update first policy once in bagging"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
-  options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !options.was_supplied("bag"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))

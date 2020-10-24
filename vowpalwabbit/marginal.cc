@@ -244,7 +244,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
 {
   uint64_t stride_shift = sm.all->weights.stride_shift();
 
-  if (io.files.size() == 0)
+  if (io.num_files() == 0)
     return;
   std::stringstream msg;
   uint64_t total_size;
@@ -304,7 +304,12 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         msg << index << ":";
       }
       bin_text_read_write_fixed(io, (char*)&index, sizeof(index), "", read, msg, text);
-      float r1, c1, w1, r2, c2, w2;
+      float r1 = 0;
+      float c1 = 0;
+      float w1 = 0;
+      float r2 = 0;
+      float c2 = 0;
+      float w2 = 0;
       if (!read)
       {
         r1 = exp_iter->second.first.regret;
@@ -353,7 +358,8 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   std::string marginal;
 
   option_group_definition marginal_options("VW options");
-  marginal_options.add(make_option("marginal", marginal).keep().help("substitute marginal label estimates for ids"));
+  marginal_options.add(
+      make_option("marginal", marginal).keep().necessary().help("substitute marginal label estimates for ids"));
   marginal_options.add(
       make_option("initial_denominator", d->initial_denominator).default_value(1.f).help("initial denominator"));
   marginal_options.add(
@@ -365,12 +371,8 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
                            .help("ignore importance weights when computing marginals"));
   marginal_options.add(
       make_option("decay", d->decay).default_value(0.f).help("decay multiplier per event (1e-3 for example)"));
-  options.add_and_parse(marginal_options);
 
-  if (!options.was_supplied("marginal"))
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(marginal_options)) { return nullptr; }
 
   d->all = &all;
 

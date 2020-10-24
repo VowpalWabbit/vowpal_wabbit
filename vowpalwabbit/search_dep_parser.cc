@@ -27,7 +27,7 @@ struct task_data
   uint32_t num_label;
   v_array<uint32_t> valid_actions, action_loss, gold_heads, gold_tags, stack, heads, tags, temp, valid_action_temp;
   v_array<action> gold_actions, gold_action_temp;
-  v_array<std::pair<action, float>> gold_action_losses;
+  std::vector<std::pair<action, float>> gold_action_losses;
   v_array<uint32_t> children[6];  // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc,
                                   // [4]:rightmost_arc, [5]: second_rightmost_arc
   example *ec_buf[13];
@@ -88,12 +88,10 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   std::vector<std::vector<namespace_index>> newpairs {
       {'B','C'}, {'B','E'}, {'B','B'}, {'C','C'}, {'D','D'}, {'E','E'}, {'F','F'}, {'G','G'}, {'E','F'}, {'B','H'}, {'B','J'}, {'E','L'}, {'d','B'}, {'d','C'}, {'d','D'}, {'d','E'}, {'d','F'}, {'d','G'}, {'d','d'}};
   std::vector<std::vector<namespace_index>> newtriples {{'E','F','G'}, {'B','E','F'}, {'B','C','E'}, {'B','C','D'}, {'B','E','L'}, {'E','L','M'}, {'B','H','I'}, {'B','C','C'}, {'B','E','J'}, {'B','E','H'}, {'B','J','K'}, {'B','E','N'}};
-  all.pairs.swap(newpairs);
-  all.triples.swap(newtriples);
 
   all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
-  all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
+  all.interactions.insert(std::end(all.interactions), std::begin(newpairs), std::end(newpairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(newtriples), std::end(newtriples));
 
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
@@ -116,7 +114,6 @@ void finish(Search::search &sch)
   data->temp.delete_v();
   data->action_loss.delete_v();
   data->gold_actions.delete_v();
-  data->gold_action_losses.delete_v();
   data->gold_action_temp.delete_v();
   VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
   free(data->ex);
@@ -453,7 +450,7 @@ void get_hybrid_action_cost(Search::search& sch, size_t idx, uint64_t n)
       action_loss[REDUCE_RIGHT] += 1;
 }
 
-void get_cost_to_go_losses(Search::search &sch, v_array<std::pair<action, float>> &gold_action_losses,
+void get_cost_to_go_losses(Search::search &sch, std::vector<std::pair<action, float>>& gold_action_losses,
     uint32_t left_label, uint32_t right_label)
 {
   task_data *data = sch.get_task_data<task_data>();
@@ -605,7 +602,7 @@ void run(Search::search &sch, multi_ex &ec)
                     &heads = data->heads, &gold_tags = data->gold_tags, &tags = data->tags,
                     &valid_action_temp = data->valid_action_temp;
   v_array<uint32_t> &gold_action_temp = data->gold_action_temp;
-  v_array<std::pair<action, float>> &gold_action_losses = data->gold_action_losses;
+  std::vector<std::pair<action, float>> &gold_action_losses = data->gold_action_losses;
   v_array<action> &gold_actions = data->gold_actions;
   bool& cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
   uint32_t& num_label = data->num_label;

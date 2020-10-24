@@ -21,8 +21,11 @@ struct node_pred
   uint32_t label;
   double label_count;
 
+  node_pred() = default;
   node_pred(uint32_t a) : label(a), label_count(0) {}
 };
+
+static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
 
 struct node
 {
@@ -55,6 +58,11 @@ struct node
       , preds(v_init<node_pred>())
   {
   }
+
+  ~node()
+  {
+    preds.delete_v();
+  }
 };
 
 struct recall_tree
@@ -64,7 +72,7 @@ struct recall_tree
   uint32_t k;
   bool node_only;
 
-  v_array<node> nodes;
+  std::vector<node> nodes;
 
   size_t max_candidates;
   size_t max_routers;
@@ -72,12 +80,6 @@ struct recall_tree
   float bern_hyper;
 
   bool randomized_routing;
-
-  ~recall_tree()
-  {
-    for (auto& node : nodes) node.preds.delete_v();
-    nodes.delete_v();
-  }
 };
 
 float to_prob(float x)
@@ -430,7 +432,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
 
 void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     std::stringstream msg;
 
@@ -501,7 +503,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<recall_tree>();
   option_group_definition new_options("Recall Tree");
-  new_options.add(make_option("recall_tree", tree->k).keep().help("Use online tree for multiclass"))
+  new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
                .keep()
                .help("maximum number of labels per leaf in the tree"))
@@ -509,10 +511,8 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
       .add(make_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"))
       .add(make_option("node_only", tree->node_only).keep().help("only use node features, not full path features"))
       .add(make_option("randomized_routing", tree->randomized_routing).keep().help("randomized routing"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("recall_tree"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   tree->all = &all;
   tree->_random_state = all.get_random_state();

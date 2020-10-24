@@ -8,6 +8,7 @@
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 namespace GEN_CS
 {
@@ -269,20 +270,25 @@ void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<C
     ec->ft_offset = offset;
   }
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&cb_labels, saved_offset, &examples]
+    {
+      // 3rd: restore cb_label for each example
+      // (**ec).l.cb = array.element.
+      // and restore offsets
+      for (size_t i = 0; i < examples.size(); ++i)
+      {
+        examples[i]->l.cb = cb_labels[i];
+        examples[i]->ft_offset = saved_offset;
+      }
+    });
+
   // 2nd: predict for each ex
   // // call base.predict for all examples
   if (is_learn)
     base.learn(examples, (int32_t)id);
   else
     base.predict(examples, (int32_t)id);
-
-  // 3rd: restore cb_label for each example
-  // (**ec).l.cb = array.element.
-  // and restore offsets
-  for (size_t i = 0; i < examples.size(); ++i)
-  {
-    examples[i]->l.cb = cb_labels[i];
-    examples[i]->ft_offset = saved_offset;
-  }
 }
 }  // namespace GEN_CS

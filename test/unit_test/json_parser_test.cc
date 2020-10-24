@@ -1,4 +1,6 @@
+#ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -7,23 +9,7 @@
 
 #include <vector>
 #include "conditional_contextual_bandit.h"
-#include "parse_example_json.h"
-
-multi_ex parse_json(vw& all, std::string line)
-{
-  auto examples = v_init<example*>();
-  examples.push_back(&VW::get_unused_example(&all));
-  VW::read_line_json<true>(
-      all, examples, (char*)line.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
-
-  multi_ex result;
-  for (size_t i = 0; i < examples.size(); ++i) {
-	  result.push_back(examples[i]);
-  }
-  examples.delete_v();
-  return result;
-}
-
+#include "vw.h"
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_json_simple)
 {
@@ -93,6 +79,77 @@ BOOST_AUTO_TEST_CASE(parse_json_cb)
   BOOST_CHECK_CLOSE(examples[1]->l.cb.costs[0].probability, 0.5, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[1]->l.cb.costs[0].cost, 1.0, FLOAT_TOL);
   BOOST_CHECK_EQUAL(examples[1]->l.cb.costs[0].action, 1);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(parse_json_cats)
+{
+  std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
+  std::string json_text = R"(
+{
+  "_label_ca":
+  {
+    "cost": 0.657567,
+    "pdf_value": 6.20426e-05,
+    "action": 185.121
+  },
+  "18-25":1,
+  "4":1,
+  "C":1,
+  "0":1,
+  "1":1,
+  "2":1,
+  "15":1,
+  "M":1
+}
+)";
+
+  auto vw = VW::initialize("--json --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
+  auto examples = parse_json(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 1);
+
+  BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 1);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].action, 185.121, FLOAT_TOL);
+
+  auto& space_names = examples[0]->feature_space[' '].space_names;
+  BOOST_CHECK_EQUAL(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
+{
+  std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
+  std::string json_text = R"(
+{
+  "18-25":1,
+  "4":1,
+  "C":1,
+  "0":1,
+  "1":1,
+  "2":1,
+  "15":1,
+  "M":1
+}
+)";
+  auto vw = VW::initialize("--json -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
+  auto examples = parse_json(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 1);
+  BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 0);
+
+  auto& space_names = examples[0]->feature_space[' '].space_names;
+  BOOST_CHECK_EQUAL(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -236,4 +293,87 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
   BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .5f, .0001f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
+}
+
+
+BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
+{
+  std::string json_text = R"(
+{
+    "GUser": {
+        "id": "mk",
+        "major": "psychology",
+        "hobby": "kids",
+        "favorite_character": "7of9"
+    },
+    "_multi": [
+        {
+            "_slot_id": 0,
+            "TAction": {
+                "topic": "SkiConditions-VT"
+            }
+        },
+        {
+            "_slot_id": 0,
+            "TAction": {
+                "topic": "HerbGarden"
+            }
+        },
+        {
+            "_slot_id": 1,
+            "TAction": {
+                "topic": "BeyBlades"
+            }
+        },
+        {
+            "_slot_id": 1,
+            "TAction": {
+                "topic": "NYCLiving"
+            }
+        },
+        {
+            "_slot_id": 1,
+            "TAction": {
+                "topic": "MachineLearning"
+            }
+        }
+    ],
+    "_slots": [
+        {
+            "slot_id": "__0"
+        },
+        {
+            "slot_id": "__2"
+        }
+    ]
+}
+)";
+
+  // Assert parsed values against what they should be
+  auto slates_vw = VW::initialize("--slates --dsjson --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto examples = parse_json(*slates_vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 8);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::action);
+  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::slot);
+
+  const auto& label0 = examples[0]->l.slates;
+  BOOST_CHECK_EQUAL(label0.labeled, false);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.slot_id, 0);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.slot_id, 0);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.slot_id, 1);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.slot_id, 1);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
+
+  check_collections_exact(examples[0]->indices, std::vector<namespace_index>{'G'});
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].indicies.size(), 4);
+
+  VW::finish_example(*slates_vw, examples);
+  VW::finish(*slates_vw);
 }

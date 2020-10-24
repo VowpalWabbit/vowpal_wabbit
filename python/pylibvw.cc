@@ -59,7 +59,7 @@ vw_ptr my_initialize(std::string args)
 { if (args.find_first_of("--no_stdin") == std::string::npos)
     args += " --no_stdin";
   vw*foo = VW::initialize(args);
-  return boost::shared_ptr<vw>(foo, dont_delete_me);
+  return boost::shared_ptr<vw>(foo);
 }
 
 void my_run_parser(vw_ptr all)
@@ -395,7 +395,7 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   if (ec->feature_space[ns].indicies.size()> 0)
     ec->feature_space[ns].indicies.pop();
   if (ec->feature_space[ns].space_names.size()> 0)
-    ec->feature_space[ns].space_names.pop();
+    ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
   ec->total_sum_feat_sq -= val * val;
@@ -432,7 +432,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     THROW("error: cannot unsetup example when some namespaces are ignored!");
   }
 
-  if(all.ngram_strings.size() > 0)
+  if(all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
   {
     THROW("error: cannot unsetup example when ngrams are in use!");
   }

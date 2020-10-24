@@ -63,8 +63,10 @@ class dense_parameters
 
   bool not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
-  dense_parameters(const dense_parameters& other) { shallow_copy(other); }
-  dense_parameters(dense_parameters&&) = delete;
+  dense_parameters(const dense_parameters& other) = delete;
+  dense_parameters& operator=(const dense_parameters& other) = delete;
+  dense_parameters& operator=(dense_parameters&&) noexcept = delete;
+  dense_parameters(dense_parameters&&) noexcept = delete;
 
   weight* first()
   {
@@ -78,7 +80,9 @@ class dense_parameters
   const_iterator cbegin() { return const_iterator(_begin, _begin, stride()); }
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
-  inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
+  inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
+  inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
+
   void shallow_copy(const dense_parameters& input)
   {
     if (!_seeded)
@@ -91,18 +95,15 @@ class dense_parameters
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
 
-  template <class R, class T>
-  void set_default(R& info)
+  template<typename Lambda>
+  void set_default(Lambda&& default_func)
   {
-    iterator iter = begin();
-    for (size_t i = 0; iter != end(); ++iter, i += stride()) T::func(*iter, info, iter.index());
-  }
-
-  template <class T>
-  void set_default()
-  {
-    iterator iter = begin();
-    for (size_t i = 0; iter != end(); ++iter, i += stride()) T::func(*iter, iter.index());
+    auto iter = begin();
+    for (size_t i = 0; iter != end(); ++iter, i += stride())
+    {
+      // Types are required to be weight* and uint64_t.
+      default_func(&(*iter), iter.index());
+    }
   }
 
   void set_zero(size_t offset)

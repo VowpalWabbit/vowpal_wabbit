@@ -44,7 +44,8 @@ my $ErrorCount = 0;
 # word by word:
 # NOTE: -W 160 is sufficient for most outputs.
 #       --bfgs prints widest (134 chars-per-line)
-my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
+# 160 used to sufficient but there are new tests with VERY wide outputs - so it needs to be huge...
+my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 1500';
 $WordSplit = "[ \t:,@]+";
 
 # These diff options are used for the diff we want to show the user
@@ -674,7 +675,10 @@ sub run_tests() {
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
-            exit $full_status if ($opt_e);
+            if ($opt_e) {
+                printf STDERR "exiting with full status $full_status\n";
+                exit 1;
+            }
             next;
         }
 
@@ -1832,49 +1836,159 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_rnd.stderr
     pred-sets/ref/cbe_adf_rnd.predict
 
-# Test 212: contcb: learn and save constant template model
+# Test 212: Slates sanity check
+{VW} --slates -d train-sets/slates_simple.txt -p slates_simple.predict
+    train-sets/ref/slates_simple.stderr
+    pred-sets/ref/slates_simple.predict
+
+# Test 213: offset_tree, 2 actions
+{VW} --ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.pred -P 1
+    test-sets/ref/offset_tree_000.stderr
+    pred-sets/ref/offset_tree_000.pred
+
+# Test 214: offset_tree, 3 actions
+{VW} --ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.pred -P 1
+    test-sets/ref/offset_tree_001.stderr
+    pred-sets/ref/offset_tree_001.pred
+
+# Test 215: offset_tree, 4 actions
+{VW} --ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.pred -P 1
+    test-sets/ref/offset_tree_002.stderr
+    pred-sets/ref/offset_tree_002.pred
+
+# Test 216: Regression test for crash on unlabelled data
+{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
+    train-sets/ref/slates_simple_unlabeled.stderr
+
+# Test 217: check plt training
+{VW} -d train-sets/multilabel -f plt.model --plt 10 --sgd
+    train-sets/ref/plt_multilabel.stderr
+
+# Test 218: check default plt prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict
+    train-sets/ref/plt_multilabel_predict.stderr
+    pred-sets/ref/plt_multilabel.predict
+
+# Test 219: check plt top-1 prediction
+{VW} -t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1
+    train-sets/ref/plt_top1_multilabel_predict.stderr
+    pred-sets/ref/plt_top1_multilabel.predict
+
+# Test 220: daemon test with json
+./daemon-test.sh --json
+    test-sets/ref/vw-daemon.stdout
+
+# Test 221: cbify adf, squarecb
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --gamma_scale 500 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb.stderr
+
+# Test 222: cbify adf, squarecb-elim
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001 -d train-sets/multiclass
+    train-sets/ref/cbify_squarecb_elim.stderr
+
+# Test 223: cbify ldf, squarecb
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --gamma_scale 500
+    train-sets/ref/cbify_ldf_squarecb.stderr
+
+# Test 224: cbify ldf, squarecb-elim
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001
+    train-sets/ref/cbify_ldf_squarecb_elim.stderr
+
+# Test 225: cbify regression dataset.  Use it with cats.
+{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
+    train-sets/ref/cbify-reg-cats.stderr
+
+# Test 226: cats train
+{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
+    train-sets/ref/cats-train.stderr
+
+# Test 227: cats predict
+{VW} -d train-sets/cats.acpx -i cats.model -p cats.predict
+    train-sets/ref/cats-predict.stderr
+    pred-sets/ref/cats.predict
+
+# Test 228: cats-pdf train
+{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
+    train-sets/ref/cats-pdf-train.stderr
+
+# Test 229: cats-pdf predict
+{VW} -d train-sets/cats.acpx -i cats-pdf.model -p cats-pdf.predict
+    train-sets/ref/cats-pdf-predict.stderr
+    pred-sets/ref/cats-pdf.predict
+
+# Test 230: cbify-reg
+{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 4  -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg.stderr
+
+# Test 231: cbify-reg cb_discrete
+{VW} --cbify 2048 --cbify_reg --cb_discrete --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg_discrete.stderr
+
+# Test 232: cbify-reg discrete cats_tree
+{VW} --cbify 2048 --cbify_reg --cb_discrete --cats_tree 2048 --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+    train-sets/ref/cbify_reg_discrete_cats.stderr
+
+# Test 233: CCB first slot loss
+{VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips
+    train-sets/ref/ccb_1slot_loss.stderr
+
+# Test 234: CCB all slots loss
+{VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips --all_slots_loss
+    train-sets/ref/ccb_allslots_loss.stderr
+
+# Test 235: big feature poison test 1
+{VW} -d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant
+    train-sets/ref/big_feature_poison.stderr
+    train-sets/ref/big_feature_poison.stdout
+
+# Test 236: big feature poison test 2
+{VW} -d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant --power_t 0
+    train-sets/ref/big_feature_poison_2.stderr
+    train-sets/ref/big_feature_poison_2.stdout
+
+# Test 237: contcb: learn and save constant template model
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -f models/contcb_constant.model
     train-sets/ref/contcb_constant.stderr
     train-sets/ref/contcb_constant.stdout
 
-# Test 213: contcb: verify predictions of Test 212 model.
+# Test 238: contcb: verify predictions of Test 237 model.
 # Also ends up testing if important cmd-line options (--contcb, --template_model) are saved with the model.
 {VW} -d train-sets/contcb_constant.dat --holdout_off -t --radius 0.1 -i models/contcb_constant.model -p contcb_constant.preds
     pred-sets/ref/contcb_constant.preds
 
-# Test 214: contcb: verify predictions without the intervention of model saving
+# Test 239: contcb: verify predictions without the intervention of model saving
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -p contcb_constant_online.preds
     pred-sets/ref/contcb_constant_online.preds
 
-# Test 215: contcb: verify --readable_model file contents
+# Test 240: contcb: verify --readable_model file contents
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 --readable_model contcb_constant_readable_model.txt
     train-sets/ref/contcb_constant_readable_model.txt
 
-# Test 216: contcb: verify --invert_hash file contents
+# Test 241: contcb: verify --invert_hash file contents
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 --invert_hash contcb_constant_invert_hash.txt
     train-sets/ref/contcb_constant_invert_hash.txt
 
-# Test 217: contcb: learn and save linear template model
+# Test 242: contcb: learn and save linear template model
 # Note: Changing hyperparameters (-l, --l1 etc.) will require preparing the dataset again. Simply giving any dataset to
 # learn from will not work as this algorithm is meant for library mode style operation.
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -f models/contcb_linear.model
     train-sets/ref/contcb_linear.stderr
     train-sets/ref/contcb_linear.stdout
 
-# Test 218: contcb: verify predictions of Test 217 model.
+# Test 243: contcb: verify predictions of Test 242 model.
 # Also ends up testing if important cmd-line options (--contcb, --template_model) are saved with the model.
 {VW} -d train-sets/contcb_linear.dat --holdout_off -t --radius 1 -i models/contcb_linear.model -p contcb_linear.preds
     pred-sets/ref/contcb_linear.preds
 
-# Test 219: contcb: verify predictions without the intervention of model saving
+# Test 244: contcb: verify predictions without the intervention of model saving
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -p contcb_linear_online.preds
     pred-sets/ref/contcb_linear_online.preds
 
-# Test 220: contcb: verify --readable_model file contents
+# Test 245: contcb: verify --readable_model file contents
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization --readable_model contcb_linear_readable_model.txt
     train-sets/ref/contcb_linear_readable_model.txt
 
-# Test 221: contcb: verify --invert_hash file contents
+# Test 246: contcb: verify --invert_hash file contents
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization --invert_hash contcb_linear_invert_hash.txt
     train-sets/ref/contcb_linear_invert_hash.txt
 

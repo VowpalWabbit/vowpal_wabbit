@@ -11,6 +11,7 @@
 #include "hash.h"
 #include "explore.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 #include <vector>
 #include <memory>
@@ -423,14 +424,23 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+    [&old_weights, &data]
+    {
+      for (size_t a = 0; a < data.num_actions; ++a) 
+      {
+        data.ecs[a]->weight = old_weights[a];
+      }
+    }
+  );
+
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
     for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a] * weight_multiplier;
     base.learn(data.ecs, i);
   }
-
-  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 }
 
 template <bool use_cs>
@@ -564,6 +574,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   new_options
       .add(make_option("warm_cb", num_actions)
                .keep()
+               .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("warm_cb_cs", use_cs)
                .help("consume cost-sensitive classification examples instead of multiclass"))
@@ -601,17 +612,10 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("sim_bandit", data->sim_bandit)
                .help("simulate contextual bandit updates on warm start examples"));
 
-  options.add_and_parse(new_options);
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
-  {
-    THROW("label corruption on cost-sensitive examples not currently supported");
-  }
-
-  if (!options.was_supplied("warm_cb"))
-  {
-    return nullptr;
-  }
+  { THROW("label corruption on cost-sensitive examples not currently supported"); }
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();

@@ -96,15 +96,17 @@ static inline float InvSqrt(float x)
 
   return x;
 }
-
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_CPP_17_LANG_EXT
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 inline void update_feature(float& update, float x, float& fw)
 {
   weight* w = &fw;
-  if (feature_mask_off || fw != 0.)
+  bool modify = x < FLT_MAX && x > -FLT_MAX && (feature_mask_off || fw != 0.);
+  if (modify)
   {
-    if (spare != 0)
-      x *= w[spare];
+    if
+      VW_STD17_CONSTEXPR(spare != 0) { x *= w[spare]; }
     w[0] += update * x;
   }
 }
@@ -113,27 +115,28 @@ inline void update_feature(float& update, float x, float& fw)
 template <bool sqrt_rate, size_t adaptive, size_t normalized>
 float average_update(float total_weight, float normalized_sum_norm_x, float neg_norm_power)
 {
-  if (normalized)
-  {
-    if (sqrt_rate)
+  if
+    VW_STD17_CONSTEXPR(normalized != 0)
     {
-      float avg_norm = (float)(total_weight / normalized_sum_norm_x);
-      if (adaptive)
-        return std::sqrt(avg_norm);
+      if (sqrt_rate)
+      {
+        float avg_norm = (float)(total_weight / normalized_sum_norm_x);
+        if (adaptive)
+          return std::sqrt(avg_norm);
+        else
+          return avg_norm;
+      }
       else
-        return avg_norm;
+        return powf((float)(normalized_sum_norm_x / total_weight), neg_norm_power);
     }
-    else
-      return powf((float)(normalized_sum_norm_x / total_weight), neg_norm_power);
-  }
   return 1.f;
 }
 
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void train(gd& g, example& ec, float update)
 {
-  if (normalized)
-    update *= g.update_multiplier;
+  if
+    VW_STD17_CONSTEXPR(normalized != 0) { update *= g.update_multiplier; }
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 
@@ -323,7 +326,7 @@ void print_features(vw& all, example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit)
-    print_result_by_ref(all.stdout_fileno, ec.pred.scalar, -1, ec.tag);
+    print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -449,19 +452,20 @@ inline float compute_rate_decay(power_data& s, float& fw)
     else
       rate_decay = powf(w[adaptive], s.minus_power_t);
   }
-  if (normalized)
-  {
-    if (sqrt_rate)
+  if
+    VW_STD17_CONSTEXPR(normalized != 0)
     {
-      float inv_norm = 1.f / w[normalized];
-      if (adaptive)
-        rate_decay *= inv_norm;
+      if (sqrt_rate)
+      {
+        float inv_norm = 1.f / w[normalized];
+        if (adaptive)
+          rate_decay *= inv_norm;
+        else
+          rate_decay *= inv_norm * inv_norm;
+      }
       else
-        rate_decay *= inv_norm * inv_norm;
+        rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
     }
-    else
-      rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
-  }
   return rate_decay;
 }
 
@@ -481,7 +485,8 @@ constexpr float x2_max = FLT_MAX;
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
 {
-  if (feature_mask_off || fw != 0.)
+  bool modify = feature_mask_off || fw != 0.;
+  if (modify)
   {
     weight* w = &fw;
     float x2 = x * x;
@@ -490,8 +495,6 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       x = (x > 0) ? x_min : -x_min;
       x2 = x2_min;
     }
-    if (x2 > x2_max)
-      THROW("your features have too much magnitude");
     if (stateless)  // we must not modify the parameter state so introduce a shadow version.
     {
       nd.extra_state[0] = w[0];
@@ -501,29 +504,36 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
     }
     if (adaptive)
       w[adaptive] += nd.grad_squared * x2;
-    if (normalized)
-    {
-      float x_abs = fabsf(x);
-      if (x_abs > w[normalized])  // new scale discovered
+    if
+      VW_STD17_CONSTEXPR(normalized != 0)
       {
-        if (w[normalized] >
-            0.)  // If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+        float x_abs = fabsf(x);
+        if (x_abs > w[normalized])  // new scale discovered
         {
-          if (sqrt_rate)
+          if (w[normalized] >
+              0.)  // If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
           {
-            float rescale = w[normalized] / x_abs;
-            w[0] *= (adaptive ? rescale : rescale * rescale);
+            if (sqrt_rate)
+            {
+              float rescale = w[normalized] / x_abs;
+              w[0] *= (adaptive ? rescale : rescale * rescale);
+            }
+            else
+            {
+              float rescale = x_abs / w[normalized];
+              w[0] *= powf(rescale * rescale, nd.pd.neg_norm_power);
+            }
           }
-          else
-          {
-            float rescale = x_abs / w[normalized];
-            w[0] *= powf(rescale * rescale, nd.pd.neg_norm_power);
-          }
+          w[normalized] = x_abs;
         }
-        w[normalized] = x_abs;
+        float norm_x2 = x2 / (w[normalized] * w[normalized]);
+        if (x2 > x2_max)
+          {
+            norm_x2 = 1;
+            std::cerr << "your features have too much magnitude" << std:: endl;
+          }
+        nd.norm_x += norm_x2;
       }
-      nd.norm_x += x2 / (w[normalized] * w[normalized]);
-    }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, w[0]);
     nd.pred_per_update += x2 * w[spare];
   }
@@ -548,23 +558,24 @@ float get_pred_per_update(gd& g, example& ec)
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}};
   foreach_feature<norm_data,
       pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
-  if (normalized)
-  {
-    if (!stateless)
+  if
+    VW_STD17_CONSTEXPR(normalized != 0)
     {
-      g.all->normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
-      g.total_weight += ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-          (float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
+      if (!stateless)
+      {
+        g.all->normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
+        g.total_weight += ec.weight;
+        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
+            (float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
+      }
+      else
+      {
+        float nsnx = ((float)g.all->normalized_sum_norm_x) + ec.weight * nd.norm_x;
+        float tw = (float)g.total_weight + ec.weight;
+        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
+      }
+      nd.pred_per_update *= g.update_multiplier;
     }
-    else
-    {
-      float nsnx = ((float)g.all->normalized_sum_norm_x) + ec.weight * nd.norm_x;
-      float tw = (float)g.total_weight + ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
-    }
-    nd.pred_per_update *= g.update_multiplier;
-  }
   return nd.pred_per_update;
 }
 
@@ -572,11 +583,16 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
     bool stateless>
 float sensitivity(gd& g, example& ec)
 {
-  if (adaptive || normalized)
-    return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
+  if
+    VW_STD17_CONSTEXPR(adaptive || normalized)
+  return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
   else
+  {
+    _UNUSED(g);
     return ec.total_sum_feat_sq;
+  }
 }
+VW_WARNING_STATE_POP
 
 template <size_t adaptive>
 float get_scale(gd& g, example& /* ec */, float weight)
@@ -632,6 +648,12 @@ float compute_update(gd& g, example& ec)
 
   if (sparse_l2)
     update -= g.sparse_l2 * ec.pred.scalar;
+
+  if (std::isnan(update))
+    {
+      std::cerr << "update is NAN, replacing with 0" << std::endl;
+      update = 0.;
+    }
 
   return update;
 }
@@ -807,7 +829,7 @@ void save_load_online_state(
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 3, "");
         uint32_t stride = 1 << weights.stride_shift();
         weight* v = &weights.strided_index(i);
-        for (size_t i = 0; i < stride; i++) v[i] = buff[i];
+        for (size_t j = 0; j < stride; j++) v[j] = buff[j];
       }
     } while (brw > 0);
   else  // write binary or text
@@ -976,17 +998,6 @@ void save_load_online_state(
     save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
 }
 
-template <class T>
-class set_initial_gd_wrapper
-{
- public:
-  static void func(weight& w, std::pair<float, float>& initial, uint64_t /* index */)
-  {
-    w = initial.first;
-    (&w)[1] = initial.second;
-  }
-};
-
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 {
   vw& all = *g.all;
@@ -997,11 +1008,14 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (all.weights.adaptive && all.initial_t > 0)
     {
       float init_weight = all.initial_weight;
-      std::pair<float, float> p = std::make_pair(init_weight, all.initial_t);
-      if (all.weights.sparse)
-        all.weights.sparse_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<sparse_parameters> >(p);
-      else
-        all.weights.dense_weights.set_default<std::pair<float, float>, set_initial_gd_wrapper<dense_parameters> >(p);
+      float init_t = all.initial_t;
+      auto initial_gd_weight_initializer = [init_weight, init_t](weight* weights, uint64_t /*index*/) {
+        weights[0] = init_weight;
+        weights[1] = init_t;
+      };
+
+      all.weights.set_default(initial_gd_weight_initializer);
+
       // for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared
       // gradient=1 NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since
       // scaling the data scales the gradient, this should ideally be feature_range*initial_t, or something like that.
@@ -1013,7 +1027,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       VW::set_weight(all, constant, 0, g.initial_constant);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = all.save_resume;
     std::stringstream msg;

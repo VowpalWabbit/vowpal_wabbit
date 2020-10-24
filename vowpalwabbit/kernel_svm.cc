@@ -331,7 +331,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   // TODO: check about initialization
 
   // params.all->opts_n_args.trace_message<<"Save load svm "<<read<<" "<<text<< endl;
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   std::stringstream msg;
   bin_text_read_write_fixed(model_file, (char*)&(model->num_support), sizeof(model->num_support), "", read, msg, text);
@@ -629,7 +629,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   }
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
-  sizes[all.all_reduce->node] = b->head - b->space.begin();
+  sizes[all.all_reduce->node] = b->unflushed_bytes_count();
   // params.all->opts_n_args.trace_message<<"Sizes = "<<sizes[all.node]<<" ";
   all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
@@ -645,13 +645,12 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
   if (total_sum > 0)
   {
     queries = calloc_or_throw<char>(total_sum);
-    memcpy(queries + prev_sum, b->space.begin(), b->head - b->space.begin());
-    b->space.delete_v();
-    all_reduce<char, copy_char>(all, queries, total_sum);
+    size_t bytes_copied = b->copy_to(queries + prev_sum, total_sum - prev_sum);
+    if(bytes_copied < b->unflushed_bytes_count())
+      THROW("kernel_svm: Failed to alloc enough space.");
 
-    b->space.begin() = queries;
-    b->head = b->space.begin();
-    b->space.end() = &queries[total_sum * sizeof(char)];
+    all_reduce<char, copy_char>(all, queries, total_sum);
+    b->replace_buffer(queries, total_sum);
 
     size_t num_read = 0;
     params.pool_pos = 0;
@@ -674,7 +673,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
       else
         break;
 
-      num_read += b->head - b->space.begin();
+      num_read += b->unflushed_bytes_count();
       if (num_read == prev_sum)
         params.local_begin = i + 1;
       if (num_read == prev_sum + sizes[all.all_reduce->node])
@@ -868,7 +867,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   bool ksvm = false;
 
   option_group_definition new_options("Kernel SVM");
-  new_options.add(make_option("ksvm", ksvm).keep().help("kernel svm"))
+  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("kernel svm"))
       .add(make_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
       .add(make_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
       .add(make_option("para_active", params->para_active).help("do parallel active learning"))
@@ -882,12 +881,8 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
                .help("type of kernel (rbf or linear (default))"))
       .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
       .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
-  options.add_and_parse(new_options);
 
-  if (!ksvm)
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;

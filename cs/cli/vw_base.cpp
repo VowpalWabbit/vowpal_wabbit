@@ -11,7 +11,8 @@ license as described in the file LICENSE.
 #include "vw_example.h"
 
 #include "clr_io.h"
-#include "clr_io_memory.h"
+#include "io_buf.h"
+#include "io/io_adapter.h"
 #include "vw_exception.h"
 #include "parse_args.h"
 #include "parse_regressor.h"
@@ -69,10 +70,12 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
           m_vw = VW::initialize(string, nullptr, false, trace_listener, trace_context);
         }
         else
-        { clr_io_buf model(settings->ModelStream);
+        {
+          io_buf model;
+          auto* stream = new clr_stream_adapter(settings->ModelStream);
+          model.add_file(std::unique_ptr<VW::io::reader>(stream));
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
-          delete settings->ModelStream;
-		  settings->ModelStream = nullptr;
+          settings->ModelStream = nullptr;
         }
       }
 
@@ -176,8 +179,6 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
   { throw gcnew NotSupportedException("Cannot reload model if AllReduce is enabled.");
   }
 
-  clr_io_memory_buf mem_buf;
-
   if (args == nullptr)
     args = String::Empty;
 
@@ -186,8 +187,12 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
   try
   { reset_source(*m_vw, m_vw->num_bits);
 
-    VW::save_predictor(*m_vw, mem_buf);
-    mem_buf.flush();
+    auto buffer = std::make_shared<std::vector<char>>();
+    {
+      io_buf write_buffer;
+      write_buffer.add_file(VW::io::create_vector_writer(buffer));
+      VW::save_predictor(*m_vw, write_buffer);
+    }
 
     // make sure don't try to free m_vw twice in case VW::finish throws.
     vw* vw_tmp = m_vw;
@@ -196,8 +201,9 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
 
     // reload from model
     // seek to beginning
-    mem_buf.reset_file(0);
-    m_vw = VW::initialize(stringArgs.c_str(), &mem_buf);
+    io_buf reader_view_of_buffer;
+    reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
+    m_vw = VW::initialize(stringArgs.c_str(), &reader_view_of_buffer);
   }
   CATCHRETHROW
 }
@@ -249,10 +255,12 @@ void VowpalWabbitBase::SaveModel(Stream^ stream)
     throw gcnew ArgumentException("stream");
 
   try
-  { VW::clr_io_buf buf(stream);
-
+  {
+    io_buf buf;
+    auto* stream_adapter = new clr_stream_adapter(stream);
+    buf.add_file(std::unique_ptr<VW::io::writer>(stream_adapter));
     VW::save_predictor(*m_vw, buf);
   }
   CATCHRETHROW
 }
-}
+}  // namespace VW

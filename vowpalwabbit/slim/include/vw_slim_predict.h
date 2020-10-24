@@ -100,6 +100,9 @@ class collection_pair_iterator
   // must support: *a = t;
   Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
 
+  // VS library 14.25.28610 requires operator[] (since it's a random access iterator)
+  Ref operator[](size_t n) { return Ref(_ptr1 + n, _ptr2 + n); }
+
   // must support: ++a; a++; *a++;
   Iter& operator++()
   {
@@ -564,8 +567,7 @@ class vw_predict
     const size_t pdf_size = pdf_last - pdf_first;
     const size_t ranking_size = ranking_last - ranking_begin;
 
-    if (pdf_size != ranking_size)
-      return E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH;
+    if (pdf_size != ranking_size) return E_EXPLORATION_PMF_RANKING_SIZE_MISMATCH;
 
     // Initialize ranking with actions 0,1,2,3 ...
     std::iota(ranking_begin, ranking_last, 0);

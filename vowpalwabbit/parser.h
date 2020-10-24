@@ -29,12 +29,6 @@
 
 struct vw;
 struct input_options;
-
-struct example_initializer
-{
-  example* operator()(example* ex);
-};
-
 struct parser
 {
   parser(size_t ring_size, bool strict_parse_)
@@ -51,9 +45,6 @@ struct parser
     this->lp = simple_label;
 
     // Free parser must still be used for the following fields.
-    this->words = v_init<VW::string_view>();
-    this->parse_name = v_init<VW::string_view>();
-    this->gram_mask = v_init<size_t>();
     this->ids = v_init<size_t>();
     this->counts = v_init<size_t>();
   }
@@ -62,6 +53,8 @@ struct parser
   {
     delete input;
     delete output;
+    ids.delete_v();
+    counts.delete_v();
   }
 
   //delete copy constructor
@@ -69,13 +62,15 @@ struct parser
   parser& operator=(const parser&) = delete;
 
   // helper(s) for text parsing
-  v_array<VW::string_view> words;
+  std::vector<VW::string_view> words;
 
-  VW::object_pool<example, example_initializer> example_pool;
+  VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
   io_buf* input = nullptr;  // Input source(s)
+  /// reader consumes the input io_buf in the vw object and is generally for file based parsing
   int (*reader)(vw*, v_array<example*>& examples);
+  /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
 
   shared_data* _shared_data = nullptr;
@@ -83,6 +78,9 @@ struct parser
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
   io_buf* output = nullptr;  // Where to output the cache.
+  std::string currentname;
+  std::string finalname;
+
   bool write_cache = false;
   bool sort_features = false;
   bool sorted_cache = false;
@@ -99,16 +97,13 @@ struct parser
   std::condition_variable output_done;
 
   bool done = false;
-  v_array<size_t> gram_mask;
 
   v_array<size_t> ids;     // unique ids for sources
   v_array<size_t> counts;  // partial examples received from sources
   size_t finished_count;   // the number of finished examples;
-  int label_sock = 0;
   int bound_sock = 0;
-  int max_fd = 0;
 
-  v_array<VW::string_view> parse_name;
+  std::vector<VW::string_view> parse_name;
 
   label_parser lp;  // moved from vw
 
@@ -130,6 +125,8 @@ void set_done(vw& all);
 
 // source control functions
 void reset_source(vw& all, size_t numbits);
+VW_DEPRECATED("Function is no longer used")
 void finalize_source(parser* source);
+VW_DEPRECATED("Function is no longer used")
 void set_compressed(parser* par);
 void free_parser(vw& all);

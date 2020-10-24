@@ -1,4 +1,6 @@
+#ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -9,14 +11,19 @@
 #include "conditional_contextual_bandit.h"
 #include "parse_example_json.h"
 
-multi_ex parse_dsjson(vw& all, std::string line)
+multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* interaction = nullptr)
 {
   auto examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(&all));
-  DecisionServiceInteraction interaction;
+
+  DecisionServiceInteraction local_interaction;
+  if (interaction == nullptr)
+  {
+    interaction = &local_interaction;
+  }
 
   VW::read_line_decision_service_json<true>(all, examples, (char*)line.c_str(), line.size(), false,
-      (VW::example_factory_t)&VW::get_unused_example, (void*)&all, &interaction);
+      (VW::example_factory_t)&VW::get_unused_example, (void*)&all, interaction);
 
   multi_ex result;
   for (const auto& ex : examples)
@@ -25,6 +32,83 @@ multi_ex parse_dsjson(vw& all, std::string line)
   }
   examples.delete_v();
   return result;
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
+{
+  const std::string json_text = R"(
+{
+  "_p": [0.4, 0.6]
+}
+  )";
+  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
+  const size_t num_probabilities = interaction.probabilities.size();
+  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  for (size_t i = 0; i < num_probabilities; ++i)
+  {
+    // Check that probabilities are as expected.
+    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_p)
+{
+  const std::string json_text = R"(
+{
+  "p": [0.4, 0.6]
+}
+  )";
+  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
+  const size_t num_probabilities = interaction.probabilities.size();
+  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  for (size_t i = 0; i < num_probabilities; ++i)
+  {
+    // Check that probabilities are as expected.
+    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
+{
+  const std::string json_text = R"(
+{
+  "c": {
+    "_p": [0.4, 0.6]
+  },
+  "p": [0.4, 0.3, 0.3],
+  "_p": [0.5, 0.5]
+}
+  )";
+  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  // Use the latest "p" or "_p" field provided. The "_p" is ignored when it's inside "c".
+  constexpr float EXPECTED_PDF[2] = {0.5f, 0.5f};
+  const size_t num_probabilities = interaction.probabilities.size();
+  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  for (size_t i = 0; i < num_probabilities; ++i)
+  {
+    // Check that probabilities are as expected.
+    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+  }
 }
 
 // TODO: Make unit test dig out and verify features.
@@ -113,6 +197,90 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
   VW::finish(*vw);
 }
 
+BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
+{
+  std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
+  std::string json_text = R"(
+{
+  "_label_ca":
+  {
+    "cost": 0.657567,
+    "pdf_value": 6.20426e-05,
+    "action": 185.121
+  },
+  "Version": "1",
+  "EventId": "event_id",
+  "c": {
+    "18-25":1,
+    "4":1,
+    "C":1,
+    "0":1,
+    "1":1,
+    "2":1,
+    "15":1,
+    "M":1
+  },
+  "VWState": {
+    "m": "N/A"
+  }
+}
+)";
+  auto vw = VW::initialize("--dsjson --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
+  auto examples = parse_dsjson(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 1);
+
+  BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 1);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].action, 185.121, FLOAT_TOL);
+
+  auto& space_names = examples[0]->feature_space[' '].space_names;
+  BOOST_CHECK_EQUAL(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
+{
+  std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
+  std::string json_text = R"(
+{
+  "Version": "1",
+  "EventId": "event_id",
+  "c": {
+    "18-25":1,
+    "4":1,
+    "C":1,
+    "0":1,
+    "1":1,
+    "2":1,
+    "15":1,
+    "M":1
+  },
+  "VWState": {
+    "m": "N/A"
+  }
+}
+)";
+  auto vw = VW::initialize("--dsjson -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+      nullptr, false, nullptr, nullptr);
+  auto examples = parse_dsjson(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 1);
+  BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 0);
+
+  auto& space_names = examples[0]->feature_space[' '].space_names;
+  BOOST_CHECK_EQUAL(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}
+
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
 {
@@ -120,6 +288,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
 {
   "Timestamp":"timestamp_utc",
   "Version": "1",
+  "EventId": "test_id",
   "c":{
       "_multi": [
         {
@@ -356,10 +525,13 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
             "_p": 0.8
         },
         {
-            "_a": 0,
-            "_p": 0.6
+            "_a": [0, 1],
+            "_p": [0.6, 0.4]
         }
     ],
+    "EventId":"test_id",
+    "pdrop":0.1,
+    "_skipLearn":true,
     "c": {
         "shared_feature": 1.0,
         "_multi": [
@@ -413,7 +585,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
 })";
 
   auto vw = VW::initialize("--slates --dsjson --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  DecisionServiceInteraction ds_interaction;
+  auto examples = parse_dsjson(*vw, json_text, &ds_interaction);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
   BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
@@ -440,7 +613,14 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
       label6.probabilities, std::vector<ACTION_SCORE::action_score>{{1, 0.8f}}, FLOAT_TOL);
   const auto& label7 = examples[7]->l.slates;
   check_collections_with_float_tolerance(
-      label7.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.6f}}, FLOAT_TOL);
+      label7.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.6f}, {1, 0.4f}}, FLOAT_TOL);
+
+  // Check values in DecisionServiceInteraction
+  BOOST_CHECK_EQUAL(ds_interaction.eventId, "test_id");
+  BOOST_CHECK_CLOSE(ds_interaction.probabilityOfDrop, 0.1, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(ds_interaction.skipLearn, true);
+  check_collections_exact(ds_interaction.actions, std::vector<unsigned int>{1,0});
+  check_collections_with_float_tolerance(ds_interaction.probabilities, std::vector<float>{0.8f, 0.6f}, FLOAT_TOL);
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
