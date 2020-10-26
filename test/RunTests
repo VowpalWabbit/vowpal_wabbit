@@ -1947,6 +1947,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/big_feature_poison_2.stdout
 
 # Test 237: contcb: learn and save constant template model
+# Note: Changing hyperparameters (-l, --radius etc.) or any options affecting the learning algorithm will require
+# preparing the dataset again
 {VW} -d train-sets/contcb_constant.dat --holdout_off --contcb --template_model constant -l 0.001 --radius 0.1 -f models/contcb_constant.model
     train-sets/ref/contcb_constant.stderr
     train-sets/ref/contcb_constant.stdout
@@ -1969,8 +1971,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/contcb_constant_invert_hash.txt
 
 # Test 242: contcb: learn and save linear template model
-# Note: Changing hyperparameters (-l, --l1 etc.) will require preparing the dataset again. Simply giving any dataset to
-# learn from will not work as this algorithm is meant for library mode style operation.
+# Note: Changing hyperparameters (-l, --l1, --radius etc.) or any options affecting the learning algorithm will require
+# preparing the dataset again
 {VW} -d train-sets/contcb_linear.dat --holdout_off --contcb --template_model linear -l 0.0005 --radius 1 --l1 0.5 --l2 0.5 --no_bias_regularization -f models/contcb_linear.model
     train-sets/ref/contcb_linear.stderr
     train-sets/ref/contcb_linear.stdout
