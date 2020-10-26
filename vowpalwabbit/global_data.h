@@ -499,9 +499,6 @@ struct vw
 
   label_type_t label_type;
 
-  polyprediction _predict_buffer;
-  void cleanup_prediction();
-  void copy_prediction(const polyprediction& from_pred);
 
   vw();
   ~vw();
@@ -514,6 +511,12 @@ struct vw
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+
+  private:
+    polyprediction _predict_buffer;
+
+    void cleanup_prediction();
+    void copy_prediction(const polyprediction& from_pred);
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")
