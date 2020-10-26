@@ -9,10 +9,19 @@ num sources = 1
 Enabled reductions: contcb
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
+26.010000 26.010000            1            1.0 {-0.1,26.01,1}    0,0.1        5
+23.769336 21.528671            2            2.0 {0.3601,21.5287,1} 0.2601,0.1        5
+24.776321 25.783307            4            4.0 {-0.290915,27.9938,1} -0.190915,0.1        5
+25.854688 26.933055            8            8.0 {-0.577243,31.1056,1} -0.677243,0.1        5
+33.883718 41.912748           16           16.0 {-1.20891,38.5505,1} -1.10891,0.1        5
+30.373089 26.862460           32           32.0 {-0.707853,32.5796,1} -0.607853,0.1        5
+36.569348 42.765607           64           64.0 {-2.87096,61.952,1} -2.77096,0.1        5
+33.087920 29.606492          128          128.0 {0.298846,22.1008,1} 0.198846,0.1        5
+23.082039 13.076158          256          256.0 {2.80389,4.8229,1} 2.70389,0.1        5
 
 finished run
-number of examples = 0
-weighted example sum = 0.000000
-weighted label sum = 0.000000
-average loss = n.a.
-total feature number = 0
+number of examples = 500
+weighted example sum = 500.000000
+weighted label sum = 500.000000
+average loss = 14.947871
+total feature number = 2500
