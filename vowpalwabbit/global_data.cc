@@ -171,8 +171,15 @@ void vw::learn(example& ec)
     if (l->predict_before_learn)
     {
       VW::LEARNER::as_singleline(l)->predict(ec);
+      copy_prediction(ec.pred);
+      auto restore_guard = VW::scope_exit([&ec, this]
+      {
+        std::swap(ec.pred, _predict_buffer);
+        VW::LEARNER::as_singleline(l)->learn(ec);
+      });
     }
-    VW::LEARNER::as_singleline(l)->learn(ec);
+    else
+      VW::LEARNER::as_singleline(l)->learn(ec);
   }
 }
 
@@ -188,7 +195,7 @@ void vw::learn(multi_ex& ec)
     if (l->predict_before_learn)
     {
       VW::LEARNER::as_multiline(l)->predict(ec);
-      std::swap(_predict_buffer, ec[0]->pred);
+      copy_prediction(ec[0]->pred);
       auto restore_guard = VW::scope_exit([&ec, this]
       {
         std::swap(ec[0]->pred, _predict_buffer);
@@ -293,38 +300,83 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
-void vw::prediction_destruct(polyprediction& pred, prediction_type_t pred_type)
+void vw::copy_prediction(const polyprediction& from_pred)
 {
-  switch(pred_type)
+  if(l == nullptr)
+    return;
+
+  switch(l->pred_type)
   {
-  case prediction_type_t::action_probs:
-    pred.a_s.delete_v();
-    break;
-  case prediction_type_t::action_scores:
-    pred.a_s.delete_v();
-    break;
-  case prediction_type_t::decision_probs:
-    pred.decision_scores.delete_v();
-    break;
-  case prediction_type_t::multilabels:
-    pred.multilabels.label_v.delete_v();
-    break;
-  case prediction_type_t::pdf:
-    pred.pdf.delete_v();
-    break;
-  case prediction_type_t::scalars:
-    pred.scalars.delete_v();
-    break;
-  case prediction_type_t::multiclass:
-    break;
-  case prediction_type_t::action_pdf_value:
-    break;
-  case prediction_type_t::prob:
-    break;
-  case prediction_type_t::scalar:
-    break;
-  default:
-      THROW("Unhandled prediction type");
+    case prediction_type_t::action_probs:
+      copy_array(_predict_buffer.a_s, from_pred.a_s);
+      break;
+    case prediction_type_t::action_scores:
+      copy_array(_predict_buffer.a_s, from_pred.a_s);
+      break;
+    case prediction_type_t::decision_probs:
+      copy_array(_predict_buffer.decision_scores, from_pred.decision_scores);
+      break;
+    case prediction_type_t::multilabels:
+      copy_array(_predict_buffer.multilabels.label_v, from_pred.multilabels.label_v);
+      break;
+    case prediction_type_t::pdf:
+      copy_array(_predict_buffer.pdf, from_pred.pdf);
+      break;
+    case prediction_type_t::scalars:
+      copy_array(_predict_buffer.scalars, from_pred.scalars);
+      break;
+    case prediction_type_t::multiclass:
+      _predict_buffer = from_pred;
+      break;
+    case prediction_type_t::action_pdf_value:
+      _predict_buffer = from_pred;
+      break;
+    case prediction_type_t::prob:
+      _predict_buffer = from_pred;
+      break;
+    case prediction_type_t::scalar:
+      _predict_buffer = from_pred;
+      break;
+    default:
+        THROW("Unhandled prediction type");
+  }
+}
+
+void vw::cleanup_prediction()
+{
+  if(l == nullptr)
+    return;
+
+  switch(l->pred_type)
+  {
+    case prediction_type_t::action_probs:
+      _predict_buffer.a_s.delete_v();
+      break;
+    case prediction_type_t::action_scores:
+      _predict_buffer.a_s.delete_v();
+      break;
+    case prediction_type_t::decision_probs:
+      _predict_buffer.decision_scores.delete_v();
+      break;
+    case prediction_type_t::multilabels:
+      _predict_buffer.multilabels.label_v.delete_v();
+      break;
+    case prediction_type_t::pdf:
+      _predict_buffer.pdf.delete_v();
+      break;
+    case prediction_type_t::scalars:
+      _predict_buffer.scalars.delete_v();
+      break;
+    case prediction_type_t::multiclass:
+      break;
+    case prediction_type_t::action_pdf_value:
+      break;
+    case prediction_type_t::prob:
+      break;
+    case prediction_type_t::scalar:
+      break;
+    default:
+        THROW("Unhandled prediction type");
   }
 }
 
@@ -448,9 +500,10 @@ VW_WARNING_STATE_POP
 
 vw::~vw()
 {
+  cleanup_prediction();
+
   if (l != nullptr)
   {
-    prediction_destruct(_predict_buffer, l->pred_type);
     l->finish();
     free(l);
   }
