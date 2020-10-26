@@ -240,10 +240,7 @@ void save_load(contcb& data, io_buf& model_file, bool read, bool text)
   if (model_file.num_files() > 0) save_load_regressor(all, model_file, read, text);
 }
 
-bool is_labeled(example& ec)
-{
-  return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
-}
+bool is_labeled(example& ec) { return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX); }
 
 void report_progress(vw& all, example& ec)
 {
@@ -253,9 +250,8 @@ void report_progress(vw& all, example& ec)
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass,
-      ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec),
-      ec.num_features, all.progress_add, all.progress_arg);
+    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.test_only ? "unknown" : to_string(costs[0]),
+        get_pred_repr(ec), ec.num_features, all.progress_add, all.progress_arg);
   }
 }
 
