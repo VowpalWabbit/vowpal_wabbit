@@ -350,9 +350,8 @@ base_learner* setup(options_i& options, vw& all)
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-      all.trace_message
-          << "warning: feature_mask used with constant policy (where there is only one weight to learn)."
-          << std::endl;
+      all.trace_message << "warning: feature_mask used with constant policy (where there is only one weight to learn)."
+                        << std::endl;
   }
 
   all.p->lp = cb_continuous::the_label_parser;
