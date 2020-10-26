@@ -125,7 +125,7 @@ struct example : public example_predict  // core example datatype.
   //      a) All reductions depending on gd had to initialize example.l to sane values before base.predict()
   //      b) All reductions had to save label state before calling base.predict()
   // Making it impossible to remove dependence of predict on label
-  float initial;
+  float initial = 0.f;
 
   // output prediction
   polyprediction pred;
