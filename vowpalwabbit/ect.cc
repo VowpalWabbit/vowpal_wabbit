@@ -340,17 +340,15 @@ base_learner* ect_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ect>();
   std::string link;
   option_group_definition new_options("Error Correcting Tournament Options");
-  new_options.add(make_option("ect", data->k).keep().help("Error correcting tournament with <k> labels"))
+  new_options.add(make_option("ect", data->k).keep().necessary().help("Error correcting tournament with <k> labels"))
       .add(make_option("error", data->errors).keep().default_value(0).help("errors allowed by ECT"))
       // Used to check value. TODO replace
       .add(make_option("link", link)
                .default_value("identity")
                .keep()
                .help("Specify the link function: identity, logistic, glf1 or poisson"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("ect"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 

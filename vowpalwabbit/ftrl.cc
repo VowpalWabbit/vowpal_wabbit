@@ -336,6 +336,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
       .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
+
   options.add_and_parse(new_options);
 
   if (!ftrl_option && !pistol && !coin)
