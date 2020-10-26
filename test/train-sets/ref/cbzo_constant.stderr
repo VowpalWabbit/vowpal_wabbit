@@ -1,12 +1,12 @@
-final_regressor = models/contcb_constant.model
+final_regressor = models/cbzo_constant.model
 Num weight bits = 18
 learning rate = 0.001
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = train-sets/contcb_constant.dat
+Reading datafile = train-sets/cbzo_constant.dat
 num sources = 1
-Enabled reductions: contcb
+Enabled reductions: cbzo
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 26.010000 26.010000            1            1.0 {-0.1,26.01,1}    0,0.1        5

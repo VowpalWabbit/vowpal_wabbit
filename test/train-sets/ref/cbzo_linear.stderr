@@ -1,14 +1,14 @@
 using l1 regularization = 0.5
 using l2 regularization = 0.5
-final_regressor = models/contcb_linear.model
+final_regressor = models/cbzo_linear.model
 Num weight bits = 18
 learning rate = 0.0005
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = train-sets/contcb_linear.dat
+Reading datafile = train-sets/cbzo_linear.dat
 num sources = 1
-Enabled reductions: contcb
+Enabled reductions: cbzo
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 4.668577 4.668577            1            1.0 {-1,4.66858,1}      0,1        5

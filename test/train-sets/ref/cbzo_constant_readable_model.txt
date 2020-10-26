@@ -6,6 +6,6 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --contcb --template_model constant
+options: --cbzo --template_model constant
 Checksum: 2272765660
-Constant:116060:2.84215
+116060:2.84215

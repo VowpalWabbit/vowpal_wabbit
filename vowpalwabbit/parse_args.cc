@@ -85,7 +85,7 @@
 #include "cb_sample.h"
 #include "warm_cb.h"
 #include "shared_feature_merger.h"
-#include "contcb.h"
+#include "cbzo.h"
 // #include "cntk.h"
 
 #include "cats.h"
@@ -1352,7 +1352,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(lrqfa_setup);
   reductions.push_back(stagewise_poly_setup);
   reductions.push_back(scorer_setup);
-  reductions.push_back(VW::continuous_cb::setup);
+  reductions.push_back(VW::cbzo::setup);
 
   // Reductions
   reductions.push_back(bs_setup);

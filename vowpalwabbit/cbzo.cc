@@ -7,7 +7,7 @@
 #include "gd.h"
 #include "io_buf.h"
 #include "parse_regressor.h"
-#include "contcb.h"
+#include "cbzo.h"
 #include "vw.h"
 #include "vw_math.h"
 
@@ -17,12 +17,12 @@ using namespace VW::config;
 
 namespace VW
 {
-namespace continuous_cb
+namespace cbzo
 {
 constexpr uint8_t tmodel_const = 0;
 constexpr uint8_t tmodel_lin = 1;
 
-struct contcb
+struct cbzo
 {
   float radius;
   vw* all;
@@ -102,13 +102,13 @@ float inference(vw& all, example& ec)
 }
 
 template <uint8_t tmodel>
-inline float compute_explore_dir(contcb& data, example& ec)
+inline float compute_explore_dir(cbzo& data, example& ec)
 {
   return (ec.l.cb_cont.costs[0].action - inference<tmodel>(*data.all, ec)) / data.radius;
 }
 
 template <bool feature_mask_off>
-void constant_update(contcb& data, example& ec)
+void constant_update(cbzo& data, example& ec)
 {
   float dir = compute_explore_dir<tmodel_const>(data, ec);
   if (!check_fix_unit(dir))
@@ -142,7 +142,7 @@ void linear_per_feature_update(linear_update_data& upd_data, float x, uint64_t f
 }
 
 template <bool feature_mask_off>
-void linear_update(contcb& data, example& ec)
+void linear_update(cbzo& data, example& ec)
 {
   float dir = compute_explore_dir<tmodel_lin>(data, ec);
   if (!check_fix_unit(dir))
@@ -166,7 +166,7 @@ void linear_update(contcb& data, example& ec)
 }
 
 template <uint8_t tmodel, bool feature_mask_off>
-void update_weights(contcb& data, example& ec)
+void update_weights(cbzo& data, example& ec)
 {
   if (tmodel == tmodel_const)
     constant_update<feature_mask_off>(data, ec);
@@ -201,7 +201,7 @@ void print_audit_features(vw& all, example& ec)
 }
 
 template <uint8_t tmodel, bool audit_or_hash_inv>
-void predict(contcb& data, base_learner&, example& ec)
+void predict(cbzo& data, base_learner&, example& ec)
 {
   ec.pred.scalars.clear();
 
@@ -216,7 +216,7 @@ void predict(contcb& data, base_learner&, example& ec)
 }
 
 template <uint8_t tmodel, bool feature_mask_off, bool audit_or_hash_inv>
-void learn(contcb& data, base_learner& base, example& ec)
+void learn(cbzo& data, base_learner& base, example& ec)
 {
   // update_weights() doesn't require predict() to be called. It is called
   // to respect --audit, --invert_hash, --predictions for train examples
@@ -229,7 +229,7 @@ inline void save_load_regressor(vw& all, io_buf& model_file, bool read, bool tex
   GD::save_load_regressor(all, model_file, read, text);
 }
 
-void save_load(contcb& data, io_buf& model_file, bool read, bool text)
+void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
 {
   vw& all = *data.all;
   if (read)
@@ -261,14 +261,14 @@ void output_prediction(vw& all, example& ec)
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), pred_repr, ec.tag);
 }
 
-void finish_example(vw& all, contcb&, example& ec)
+void finish_example(vw& all, cbzo&, example& ec)
 {
   report_progress(all, ec);
   output_prediction(all, ec);
   VW::finish_example(all, ec);
 }
 
-void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(contcb&, base_learner&, example&)
+void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(cbzo&, base_learner&, example&)
 {
   if (tmodel == tmodel_const)
     if (feature_mask_off)
@@ -298,7 +298,7 @@ void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(contcb&, base_
     THROW("Unknown template model encountered: " << tmodel)
 }
 
-void (*get_predict(vw& all, uint8_t tmodel))(contcb&, base_learner&, example&)
+void (*get_predict(vw& all, uint8_t tmodel))(cbzo&, base_learner&, example&)
 {
   if (tmodel == tmodel_const)
     if (all.audit || all.hash_inv)
@@ -318,17 +318,17 @@ void (*get_predict(vw& all, uint8_t tmodel))(contcb&, base_learner&, example&)
 
 base_learner* setup(options_i& options, vw& all)
 {
-  auto data = scoped_calloc_or_throw<contcb>();
+  auto data = scoped_calloc_or_throw<cbzo>();
 
   std::string tmodel_str;
-  bool contcb_option = false;
+  bool cbzo_option = false;
 
-  option_group_definition new_options("Continuous Contextual Bandit Options");
+  option_group_definition new_options("Continuous Action Contextual Bandit using Zeroth-Order Optimization");
   new_options
-      .add(make_option("contcb", contcb_option)
+      .add(make_option("cbzo", cbzo_option)
                .keep()
                .necessary()
-               .help("Solve 1-slot Continuous Action Contextual Bandit"))
+               .help("Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order Optimization"))
       .add(make_option("template_model", tmodel_str).default_value("linear").keep().help("Template Model to Learn"))
       .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
 
@@ -361,7 +361,7 @@ base_learner* setup(options_i& options, vw& all)
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  learner<contcb, example>& l = init_learner(
+  learner<cbzo, example>& l = init_learner(
       data, get_learn(all, tmodel, feature_mask_off), get_predict(all, tmodel), 0, prediction_type_t::scalars);
 
   l.set_save_load(save_load);
@@ -370,5 +370,5 @@ base_learner* setup(options_i& options, vw& all)
   return make_base(l);
 }
 
-}  // namespace continuous_cb
+}  // namespace cbzo
 }  // namespace VW

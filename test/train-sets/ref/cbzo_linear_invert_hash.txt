@@ -6,7 +6,7 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --contcb --template_model linear
+options: --cbzo --template_model linear
 Checksum: 4122619272
 ns^b:50664:-0.179567
 Constant:116060:-0.0380903
