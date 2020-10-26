@@ -178,7 +178,7 @@ void update_weights(contcb& data, example& ec)
     THROW("Unknown template model encountered: " << tmodel)
 }
 
-void set_minmax(shared_data *sd, float label, bool min_fixed, bool max_fixed)
+void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
 {
   if (!min_fixed) sd->min_label = std::min(label, sd->min_label);
   if (!max_fixed) sd->max_label = std::max(label, sd->max_label);
