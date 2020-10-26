@@ -199,6 +199,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
   new_options
       .add(make_option("baseline", baseline_option)
                .keep()
+               .necessary()
                .help("Learn an additive baseline (from constant features) and a residual separately in regression."))
       .add(make_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"))
       .add(make_option("global_only", data->global_only)
@@ -207,10 +208,8 @@ base_learner* baseline_setup(options_i& options, vw& all)
       .add(make_option("check_enabled", data->check_enabled)
                .keep()
                .help("only use baseline when the example contains enabled flag"));
-  options.add_and_parse(new_options);
 
-  if (!baseline_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // initialize baseline example
   data->ec = VW::alloc_examples(simple_label.label_size, 1);

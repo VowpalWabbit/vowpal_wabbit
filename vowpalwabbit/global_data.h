@@ -56,6 +56,7 @@
 typedef float weight;
 
 typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
+typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
 
 struct dictionary_info
 {
@@ -453,7 +454,8 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::string> enabled_reductions;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.

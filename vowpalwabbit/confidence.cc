@@ -91,12 +91,11 @@ base_learner* confidence_setup(options_i& options, vw& all)
   bool confidence_arg = false;
   bool confidence_after_training = false;
   option_group_definition new_options("Confidence");
-  new_options.add(make_option("confidence", confidence_arg).keep().help("Get confidence for binary predictions"))
+  new_options
+      .add(make_option("confidence", confidence_arg).keep().necessary().help("Get confidence for binary predictions"))
       .add(make_option("confidence_after_training", confidence_after_training).help("Confidence after training"));
-  options.add_and_parse(new_options);
 
-  if (!confidence_arg)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (!all.training)
   {

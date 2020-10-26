@@ -123,11 +123,10 @@ base_learner* csoaa_setup(options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
-  new_options.add(make_option("csoaa", c->num_classes).keep().help("One-against-all multiclass with <k> costs"));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
 
-  if (!options.was_supplied("csoaa"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
@@ -258,18 +257,20 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   label_data simple_lbl;
   simple_lbl.initial = 0.;
   simple_lbl.label = FLT_MAX;
+  uint64_t old_offset = ec.ft_offset;
 
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
+  auto restore_guard = VW::scope_exit([&data, &ld, old_offset, &ec] {
+    ec.ft_offset = old_offset;
+    ld.costs[0].partial_prediction = ec.partial_prediction;
+    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
+    ec.l.cs = ld;
+  });
+
   ec.l.simple = simple_lbl;
-  uint64_t old_offset = ec.ft_offset;
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
-  ec.ft_offset = old_offset;
-  ld.costs[0].partial_prediction = ec.partial_prediction;
-
-  LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-  ec.l.cs = ld;
 }
 
 bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
@@ -462,10 +463,52 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   /////////////////////// add headers
   uint32_t K = (uint32_t)ec_seq.size();
+  uint32_t predicted_K = 0;
 
   bool isTest = test_ldf_sequence(data, ec_seq);
+
+  auto restore_guard = VW::scope_exit([&data, &ec_seq, K, &predicted_K] {
+    if (data.rank)
+    {
+      data.stored_preds[0].clear();
+      for (size_t k = 0; k < K; k++)
+      {
+        ec_seq[k]->pred.a_s = data.stored_preds[k];
+        ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
+      }
+    }
+    else
+    {
+      // Mark the predicted subexample with its class_index, all other with 0
+      for (size_t k = 0; k < K; k++)
+      {
+        if (k == predicted_K)
+          ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
+        else
+          ec_seq[k]->pred.multiclass = 0;
+      }
+    }
+
+    ////////////////////// compute probabilities
+    if (data.is_probabilities)
+    {
+      float sum_prob = 0;
+      for (const auto& example : ec_seq)
+      {
+        // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
+        // but partial_prediction is lower for better classes (we are predicting the cost),
+        // so we need to take score = -partial_prediction,
+        // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
+        float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
+        example->pred.prob = prob;
+        sum_prob += prob;
+      }
+      // make sure that the probabilities sum up (exactly) to one
+      for (const auto& example : ec_seq) { example->pred.prob /= sum_prob; }
+    }
+  });
+
   /////////////////////// do prediction
-  uint32_t predicted_K = 0;
   if (data.rank)
   {
     data.a_s.clear();
@@ -507,48 +550,6 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
         do_actual_learning_wap(data, base, ec_seq);
       else
         do_actual_learning_oaa(data, base, ec_seq);
-    }
-  }
-
-  if (data.rank)
-  {
-    data.stored_preds[0].clear();
-    for (size_t k = 0; k < K; k++)
-    {
-      ec_seq[k]->pred.a_s = data.stored_preds[k];
-      ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
-    }
-  }
-  else
-  {
-    // Mark the predicted subexample with its class_index, all other with 0
-    for (size_t k = 0; k < K; k++)
-    {
-      if (k == predicted_K)
-        ec_seq[k]->pred.multiclass = ec_seq[k]->l.cs.costs[0].class_index;
-      else
-        ec_seq[k]->pred.multiclass = 0;
-    }
-  }
-
-  ////////////////////// compute probabilities
-  if (data.is_probabilities)
-  {
-    float sum_prob = 0;
-    for (const auto& example : ec_seq)
-    {
-      // probability(correct_class) = 1 / (1+exp(-score)), where score is higher for better classes,
-      // but partial_prediction is lower for better classes (we are predicting the cost),
-      // so we need to take score = -partial_prediction,
-      // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-      float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
-      example->pred.prob = prob;
-      sum_prob += prob;
-    }
-    // make sure that the probabilities sum up (exactly) to one
-    for (const auto& example : ec_seq)
-    {
-      example->pred.prob /= sum_prob;
     }
   }
 }
@@ -821,6 +822,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   option_group_definition csldf_outer_options("Cost Sensitive One Against All with Label Dependent Features");
   csldf_outer_options.add(make_option("csoaa_ldf", csoaa_ldf)
                               .keep()
+                              .necessary()
                               .help("Use one-against-all multiclass learning with label dependent features."));
   csldf_outer_options.add(
       make_option("ldf_override", ldf_override)
@@ -832,17 +834,13 @@ base_learner* csldf_setup(options_i& options, vw& all)
   option_group_definition csldf_inner_options("Cost Sensitive One Against All with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
+                              .necessary()
                               .help("Use weighted all-pairs multiclass learning with label dependent features.  "
                                     "Specify singleline or multiline."));
 
-  options.add_and_parse(csldf_outer_options);
-  if (!options.was_supplied("csoaa_ldf"))
+  if (!options.add_parse_and_check_necessary(csldf_outer_options))
   {
-    options.add_and_parse(csldf_inner_options);
-    if (!options.was_supplied("wap_ldf"))
-    {
-      return nullptr;
-    }
+    if (!options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
   }
 
   ld->all = &all;

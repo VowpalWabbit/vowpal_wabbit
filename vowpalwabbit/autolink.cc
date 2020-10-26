@@ -90,11 +90,9 @@ VW::LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 {
   uint32_t d;
   option_group_definition new_options("Autolink");
-  new_options.add(make_option("autolink", d).keep().help("create link function with polynomial d"));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("autolink", d).keep().necessary().help("create link function with polynomial d"));
 
-  if (!options.was_supplied("autolink"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   auto autolink_reduction = scoped_calloc_or_throw<VW::autolink>(d, all.weights.stride_shift());
   return make_base(init_learner(
