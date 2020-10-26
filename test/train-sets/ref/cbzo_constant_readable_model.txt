@@ -6,6 +6,6 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --cbzo --template_model constant
+options: --cbzo --policy constant
 Checksum: 2272765660
 116060:2.84215

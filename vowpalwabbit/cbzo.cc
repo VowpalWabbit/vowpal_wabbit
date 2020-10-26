@@ -19,8 +19,8 @@ namespace VW
 {
 namespace cbzo
 {
-constexpr uint8_t tmodel_const = 0;
-constexpr uint8_t tmodel_lin = 1;
+constexpr uint8_t constant_policy = 0;
+constexpr uint8_t linear_policy = 1;
 
 struct cbzo
 {
@@ -88,29 +88,29 @@ float linear_inference(vw& all, example& ec)
   return dotprod;
 }
 
-template <uint8_t tmodel>
+template <uint8_t policy>
 float inference(vw& all, example& ec)
 {
-  if (tmodel == tmodel_const)
+  if (policy == constant_policy)
     return constant_inference(all);
 
-  else if (tmodel == tmodel_lin)
+  else if (policy == linear_policy)
     return linear_inference(all, ec);
 
   else
-    THROW("Unknown template model encountered: " << tmodel);
+    THROW("Unknown policy encountered: " << policy);
 }
 
-template <uint8_t tmodel>
+template <uint8_t policy>
 inline float compute_explore_dir(cbzo& data, example& ec)
 {
-  return (ec.l.cb_cont.costs[0].action - inference<tmodel>(*data.all, ec)) / data.radius;
+  return (ec.l.cb_cont.costs[0].action - inference<policy>(*data.all, ec)) / data.radius;
 }
 
 template <bool feature_mask_off>
 void constant_update(cbzo& data, example& ec)
 {
-  float dir = compute_explore_dir<tmodel_const>(data, ec);
+  float dir = compute_explore_dir<constant_policy>(data, ec);
   if (!check_fix_unit(dir))
   {
     // The action is not part of the set of actions that was suggested to be explored by the
@@ -144,7 +144,7 @@ void linear_per_feature_update(linear_update_data& upd_data, float x, uint64_t f
 template <bool feature_mask_off>
 void linear_update(cbzo& data, example& ec)
 {
-  float dir = compute_explore_dir<tmodel_lin>(data, ec);
+  float dir = compute_explore_dir<linear_policy>(data, ec);
   if (!check_fix_unit(dir))
   {
     // The action is not part of the set of actions that was suggested - to be explored - by the
@@ -165,17 +165,17 @@ void linear_update(cbzo& data, example& ec)
       *data.all, ec, upd_data);
 }
 
-template <uint8_t tmodel, bool feature_mask_off>
+template <uint8_t policy, bool feature_mask_off>
 void update_weights(cbzo& data, example& ec)
 {
-  if (tmodel == tmodel_const)
+  if (policy == constant_policy)
     constant_update<feature_mask_off>(data, ec);
 
-  else if (tmodel == tmodel_lin)
+  else if (policy == linear_policy)
     linear_update<feature_mask_off>(data, ec);
 
   else
-    THROW("Unknown template model encountered: " << tmodel)
+    THROW("Unknown policy encountered: " << policy)
 }
 
 void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
@@ -200,12 +200,12 @@ void print_audit_features(vw& all, example& ec)
   GD::print_features(all, ec);
 }
 
-template <uint8_t tmodel, bool audit_or_hash_inv>
+template <uint8_t policy, bool audit_or_hash_inv>
 void predict(cbzo& data, base_learner&, example& ec)
 {
   ec.pred.scalars.clear();
 
-  float action_centroid = inference<tmodel>(*data.all, ec);
+  float action_centroid = inference<policy>(*data.all, ec);
   set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
   float clipped_action_centroid = std::min(std::max(action_centroid, data.all->sd->min_label), data.all->sd->max_label);
 
@@ -215,13 +215,13 @@ void predict(cbzo& data, base_learner&, example& ec)
   if (audit_or_hash_inv) print_audit_features(*data.all, ec);
 }
 
-template <uint8_t tmodel, bool feature_mask_off, bool audit_or_hash_inv>
+template <uint8_t policy, bool feature_mask_off, bool audit_or_hash_inv>
 void learn(cbzo& data, base_learner& base, example& ec)
 {
   // update_weights() doesn't require predict() to be called. It is called
   // to respect --audit, --invert_hash, --predictions for train examples
-  predict<tmodel, audit_or_hash_inv>(data, base, ec);
-  update_weights<tmodel, feature_mask_off>(data, ec);
+  predict<policy, audit_or_hash_inv>(data, base, ec);
+  update_weights<policy, feature_mask_off>(data, ec);
 }
 
 inline void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
@@ -268,59 +268,59 @@ void finish_example(vw& all, cbzo&, example& ec)
   VW::finish_example(all, ec);
 }
 
-void (*get_learn(vw& all, uint8_t tmodel, bool feature_mask_off))(cbzo&, base_learner&, example&)
+void (*get_learn(vw& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_learner&, example&)
 {
-  if (tmodel == tmodel_const)
+  if (policy == constant_policy)
     if (feature_mask_off)
       if (all.audit || all.hash_inv)
-        return learn<tmodel_const, true, true>;
+        return learn<constant_policy, true, true>;
       else
-        return learn<tmodel_const, true, false>;
+        return learn<constant_policy, true, false>;
 
     else if (all.audit || all.hash_inv)
-      return learn<tmodel_const, false, true>;
+      return learn<constant_policy, false, true>;
     else
-      return learn<tmodel_const, false, false>;
+      return learn<constant_policy, false, false>;
 
-  else if (tmodel == tmodel_lin)
+  else if (policy == linear_policy)
     if (feature_mask_off)
       if (all.audit || all.hash_inv)
-        return learn<tmodel_lin, true, true>;
+        return learn<linear_policy, true, true>;
       else
-        return learn<tmodel_lin, true, false>;
+        return learn<linear_policy, true, false>;
 
     else if (all.audit || all.hash_inv)
-      return learn<tmodel_lin, false, true>;
+      return learn<linear_policy, false, true>;
     else
-      return learn<tmodel_lin, false, false>;
+      return learn<linear_policy, false, false>;
 
   else
-    THROW("Unknown template model encountered: " << tmodel)
+    THROW("Unknown policy encountered: " << policy)
 }
 
-void (*get_predict(vw& all, uint8_t tmodel))(cbzo&, base_learner&, example&)
+void (*get_predict(vw& all, uint8_t policy))(cbzo&, base_learner&, example&)
 {
-  if (tmodel == tmodel_const)
+  if (policy == constant_policy)
     if (all.audit || all.hash_inv)
-      return predict<tmodel_const, true>;
+      return predict<constant_policy, true>;
     else
-      return predict<tmodel_const, false>;
+      return predict<constant_policy, false>;
 
-  else if (tmodel == tmodel_lin)
+  else if (policy == linear_policy)
     if (all.audit || all.hash_inv)
-      return predict<tmodel_lin, true>;
+      return predict<linear_policy, true>;
     else
-      return predict<tmodel_lin, false>;
+      return predict<linear_policy, false>;
 
   else
-    THROW("Unknown template model encountered: " << tmodel)
+    THROW("Unknown policy encountered: " << policy)
 }
 
 base_learner* setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cbzo>();
 
-  std::string tmodel_str;
+  std::string policy_str;
   bool cbzo_option = false;
 
   option_group_definition new_options("Continuous Action Contextual Bandit using Zeroth-Order Optimization");
@@ -329,7 +329,7 @@ base_learner* setup(options_i& options, vw& all)
                .keep()
                .necessary()
                .help("Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order Optimization"))
-      .add(make_option("template_model", tmodel_str).default_value("linear").keep().help("Template Model to Learn"))
+      .add(make_option("policy", policy_str).default_value("linear").keep().help("Policy/Model to Learn"))
       .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -337,21 +337,21 @@ base_learner* setup(options_i& options, vw& all)
   bool feature_mask_off = true;
   if (options.was_supplied("feature_mask")) feature_mask_off = false;
 
-  uint8_t tmodel;
-  if (tmodel_str.compare("constant") == 0)
-    tmodel = tmodel_const;
-  else if (tmodel_str.compare("linear") == 0)
-    tmodel = tmodel_lin;
+  uint8_t policy;
+  if (policy_str.compare("constant") == 0)
+    policy = constant_policy;
+  else if (policy_str.compare("linear") == 0)
+    policy = linear_policy;
   else
-    THROW("template_model must be in {'constant', 'linear'}");
+    THROW("policy must be in {'constant', 'linear'}");
 
-  if (tmodel == tmodel_const)
+  if (policy == constant_policy)
   {
-    if (options.was_supplied("noconstant")) THROW("constant template model can't be learnt when --noconstant is used")
+    if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
       all.trace_message
-          << "warning: feature_mask used with constant template model (where there is only one weight to learn)."
+          << "warning: feature_mask used with constant policy (where there is only one weight to learn)."
           << std::endl;
   }
 
@@ -362,7 +362,7 @@ base_learner* setup(options_i& options, vw& all)
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   learner<cbzo, example>& l = init_learner(
-      data, get_learn(all, tmodel, feature_mask_off), get_predict(all, tmodel), 0, prediction_type_t::scalars);
+      data, get_learn(all, policy, feature_mask_off), get_predict(all, policy), 0, prediction_type_t::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
