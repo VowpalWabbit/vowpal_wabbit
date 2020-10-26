@@ -1,11 +1,11 @@
 Version 8.8.1
-Id 
-Min label:-3.40848
-Max label:3.05908
+Id
+Min label:-3.30848
+Max label:2.95908
 bits:18
 lda:0
 0 ngram:
 0 skip:
 options: --contcb --template_model constant
-Checksum: 3799216287
+Checksum: 2272765660
 116060:2.84215

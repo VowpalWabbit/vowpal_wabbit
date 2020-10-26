@@ -26,6 +26,7 @@ struct contcb
 {
   float radius;
   vw* all;
+  bool min_prediction_supplied, max_prediction_supplied;
 };
 
 struct linear_update_data
@@ -103,7 +104,7 @@ float inference(vw& all, example& ec)
 template <uint8_t tmodel>
 inline float compute_explore_dir(contcb& data, example& ec)
 {
-  return (ec.l.contcb.action - inference<tmodel>(*data.all, ec)) / data.radius;
+  return (ec.l.cb_cont.costs[0].action - inference<tmodel>(*data.all, ec)) / data.radius;
 }
 
 template <bool feature_mask_off>
@@ -121,7 +122,7 @@ void constant_update(contcb& data, example& ec)
   float fw = get_weight(*data.all, constant, 0);
   if (feature_mask_off || fw != 0.0f)
   {
-    float grad = (1 / data.radius) * ec.l.contcb.cost * dir;
+    float grad = (1 / data.radius) * ec.l.cb_cont.costs[0].cost * dir;
     float update = -data.all->eta * (grad + l1_grad(*data.all, constant) + l2_grad(*data.all, constant));
 
     set_weight(*data.all, constant, 0, fw + update);
@@ -153,7 +154,7 @@ void linear_update(contcb& data, example& ec)
   }
 
   float mult = -data.all->eta;
-  float part_grad = (1 / data.radius) * ec.l.contcb.cost * dir;
+  float part_grad = (1 / data.radius) * ec.l.cb_cont.costs[0].cost * dir;
 
   linear_update_data upd_data;
   upd_data.mult = mult;
@@ -177,6 +178,12 @@ void update_weights(contcb& data, example& ec)
     THROW("Unknown template model encountered: " << tmodel)
 }
 
+void set_minmax(shared_data *sd, float label, bool min_fixed, bool max_fixed)
+{
+  if (!min_fixed) sd->min_label = std::min(label, sd->min_label);
+  if (!max_fixed) sd->max_label = std::max(label, sd->max_label);
+}
+
 std::string get_pred_repr(example& ec)
 {
   std::stringstream ss;
@@ -188,7 +195,6 @@ void print_audit_features(vw& all, example& ec)
 {
   if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
   fflush(stdout);
-  // TODO: Favor duplication instead of sharing code?
   // Note: print_features() declaration was brought to gd.h so it can be used here. If it's
   // no longer used here, consider removing the declaration from gd.h.
   GD::print_features(all, ec);
@@ -198,7 +204,12 @@ template <uint8_t tmodel, bool audit_or_hash_inv>
 void predict(contcb& data, base_learner&, example& ec)
 {
   ec.pred.scalars.clear();
-  ec.pred.scalars.push_back(inference<tmodel>(*data.all, ec));
+
+  float action_centroid = inference<tmodel>(*data.all, ec);
+  set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
+  float clipped_action_centroid = std::min(std::max(action_centroid, data.all->sd->min_label), data.all->sd->max_label);
+
+  ec.pred.scalars.push_back(clipped_action_centroid);
   ec.pred.scalars.push_back(data.radius);
 
   if (audit_or_hash_inv) print_audit_features(*data.all, ec);
@@ -207,15 +218,14 @@ void predict(contcb& data, base_learner&, example& ec)
 template <uint8_t tmodel, bool feature_mask_off, bool audit_or_hash_inv>
 void learn(contcb& data, base_learner& base, example& ec)
 {
-  // TODO: predict() is only needed in some cases, for instance when
-  // --predictions is supplied. If costly, then call only in those cases.
+  // update_weights() doesn't require predict() to be called. It is called
+  // to respect --audit, --invert_hash, --predictions for train examples
   predict<tmodel, audit_or_hash_inv>(data, base, ec);
   update_weights<tmodel, feature_mask_off>(data, ec);
 }
 
 inline void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {
-  // TODO: Favor duplication instead of sharing code?
   GD::save_load_regressor(all, model_file, read, text);
 }
 
@@ -329,10 +339,11 @@ base_learner* setup(options_i& options, vw& all)
           << std::endl;
   }
 
-  all.p->lp = contcb_label;
-  all.label_type = label_type_t::contcb;
+  all.p->lp = cb_continuous::the_label_parser;
   all.delete_prediction = delete_scalars;
   data->all = &all;
+  data->min_prediction_supplied = options.was_supplied("min_prediction");
+  data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   learner<contcb, example>& l = init_learner(
       data, get_learn(all, tmodel, feature_mask_off), get_predict(all, tmodel), 0, prediction_type_t::scalars);

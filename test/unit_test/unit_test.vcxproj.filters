@@ -102,9 +102,6 @@
     <ClCompile Include="prediction_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="contcb_parser_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="scope_exit_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

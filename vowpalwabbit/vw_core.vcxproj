@@ -154,7 +154,6 @@
     <ClInclude Include="classweight.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
-    <ClInclude Include="contcb_label.h" />
     <ClInclude Include="contcb.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="cost_sensitive.h" />
@@ -299,7 +298,6 @@
     <ClCompile Include="classweight.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
-    <ClCompile Include="contcb_label.cc" />
     <ClCompile Include="contcb.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
