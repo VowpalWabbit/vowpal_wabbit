@@ -74,7 +74,7 @@ struct v_array
       T* temp = (T*)realloc(_begin, sizeof(T) * length);
       if ((temp == nullptr) && ((sizeof(T) * length) > 0))
       {
-        THROW_OR_RETURN_VOID("realloc of " << length << " failed in resize().  out of memory?");
+        THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?");
       }
       else
         _begin = temp;

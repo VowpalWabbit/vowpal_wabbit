@@ -94,9 +94,6 @@ struct cb_adf
   void learn_SM(multi_learner& base, multi_ex& examples);
   template <bool predict>
   void learn_MTR(multi_learner& base, multi_ex& examples);
-
-  void save_prediction(const action_scores& a_s);
-  void restore_prediction(action_scores& a_s);
 };
 
 CB::cb_class get_observed_cost(multi_ex& examples)
@@ -226,12 +223,6 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   }
 }
 
-void cb_adf::save_prediction(const action_scores& a_s)
-{ copy_array(_a_s, a_s); }
-
-void cb_adf::restore_prediction(action_scores& a_s)
-{ copy_array(a_s, _a_s); }
-
 void cb_adf::learn_DR(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
@@ -306,7 +297,6 @@ void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
   _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
   if (test_adf_sequence(ec_seq) != nullptr)
   {
-    restore_prediction(ec_seq[0]->pred.a_s);
     switch (_gen_cs.cb_type)
     {
       case CB_TYPE_IPS:
@@ -340,7 +330,6 @@ void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
   gen_cs_test_example(ec_seq, _cs_labels);  // create test labels.
   cs_ldf_learn_or_predict<false>(
     base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
-  save_prediction(ec_seq[0]->pred.a_s);
 }
 
 void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
