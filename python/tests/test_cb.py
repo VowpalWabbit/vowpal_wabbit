@@ -42,7 +42,6 @@ def test_getting_started_example():
         learn_example = str(action) + ":" + str(cost) + ":" + str(probability) + " | " + str(feature1) + " " + str(feature2) + " " + str(feature3)
         vw.learn(learn_example)
 
-    print(vw.get_prediction_type())
     assert vw.get_prediction_type() == vw.pMULTICLASS, "prediction_type should be multiclass"
 
     for j in test_df.index:
