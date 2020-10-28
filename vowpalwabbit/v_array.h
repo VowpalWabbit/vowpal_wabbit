@@ -3,6 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
@@ -18,8 +22,6 @@
 
 #ifndef VW_NOEXCEPT
 #include "vw_exception.h"
-#else
-#define NOMINMAX
 #endif
 
 #include "memory.h"
