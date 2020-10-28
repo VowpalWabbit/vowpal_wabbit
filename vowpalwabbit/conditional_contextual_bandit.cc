@@ -420,6 +420,17 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 #endif
 
   data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
+
+  // If we have not seen more than one slot, we need to check if the user has supplied slot features.
+  // In that case we will turn on CCB slot id/interactions.
+  if (!data.has_seen_multi_slot_example)
+  {
+    // We decide that user defined features exist if there is at least one feature space which is not the constant
+    // namespace.
+    const bool user_defined_slot_features_exist =
+        !data.slots[0]->indices.empty() && data.slots[0]->indices[0] != constant_namespace;
+    data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || user_defined_slot_features_exist;
+  }
   const bool should_augment_with_slot_info = data.has_seen_multi_slot_example;
 
   // This will overwrite the labels with CB.
