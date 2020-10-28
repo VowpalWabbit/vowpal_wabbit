@@ -41,7 +41,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
-  far_end.sin_port = (USHORT)port;
+  far_end.sin_port = (u_short)port;
 
   far_end.sin_addr = *(in_addr*)&ip;
   memset(&far_end.sin_zero, '\0', 8);
@@ -56,8 +56,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
     if (getnameinfo((sockaddr*)&far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
-    if (!quiet)
-      cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs((u_short)port) << endl;
+    if (!quiet) cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs((u_short)port) << endl;
   }
 
   size_t count = 0;

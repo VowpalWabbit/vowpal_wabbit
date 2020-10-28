@@ -4,7 +4,7 @@
 
 #pragma once
 #ifndef NOMINMAX
-#define NOMINMAX
+#  define NOMINMAX
 #endif
 
 #include <iostream>
