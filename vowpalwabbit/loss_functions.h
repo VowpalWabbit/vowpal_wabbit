@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <string>
+#include <memory>
 #include "parse_primitives.h"
 
 struct shared_data;
@@ -36,7 +37,7 @@ class loss_function
   virtual float getSquareGrad(float prediction, float label) = 0;
   virtual float first_derivative(shared_data*, float prediction, float label) = 0;
   virtual float second_derivative(shared_data*, float prediction, float label) = 0;
-  virtual ~loss_function(){};
+  virtual ~loss_function() = default;
 };
 
-loss_function* getLossFunction(vw&, std::string funcName, float function_parameter = 0);
+std::unique_ptr<loss_function> getLossFunction(vw&, const std::string& funcName, float function_parameter = 0);
