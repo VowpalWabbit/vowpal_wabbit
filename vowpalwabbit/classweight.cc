@@ -25,10 +25,7 @@ struct classweights
       std::getline(inner_ss, klass, ':');
       std::getline(inner_ss, weight, ':');
 
-      if (!klass.size() || !weight.size())
-      {
-        THROW("error: while parsing --classweight " << item);
-      }
+      if (!klass.size() || !weight.size()) { THROW("error: while parsing --classweight " << item); }
 
       int klass_int = std::stoi(klass);
       float weight_double = std::stof(weight);
@@ -70,12 +67,13 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base,
   // Notes: Update example weight either in predict() or learn() but not in both
   // If base.predict_before_learn is set, predict() will be called before learn()
 
-  if (is_learn){
-    if(!base.predict_before_learn)
-      update_example_weight<pred_type>(cweights, ec);
+  if (is_learn)
+  {
+    if (!base.predict_before_learn) update_example_weight<pred_type>(cweights, ec);
     base.learn(ec);
   }
-  else{
+  else
+  {
     update_example_weight<pred_type>(cweights, ec);
     base.predict(ec);
   }
@@ -96,8 +94,7 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 
   for (auto& s : classweight_array) cweights->load_string(s);
 
-  if (!all.logger.quiet)
-    all.trace_message << "parsed " << cweights->weights.size() << " class weights" << std::endl;
+  if (!all.logger.quiet) all.trace_message << "parsed " << cweights->weights.size() << " class weights" << std::endl;
 
   VW::LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
@@ -106,8 +103,9 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
     ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::scalar>,
         &predict_or_learn<false, prediction_type_t::scalar>, "classweight-scalar", base->predict_before_learn);
   else if (base->pred_type == prediction_type_t::multiclass)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::multiclass>,
-        &predict_or_learn<false, prediction_type_t::multiclass>,"classweight-multi", base->predict_before_learn);
+    ret =
+        &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::multiclass>,
+            &predict_or_learn<false, prediction_type_t::multiclass>, "classweight-multi", base->predict_before_learn);
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);

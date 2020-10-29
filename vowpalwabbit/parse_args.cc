@@ -219,7 +219,6 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   {
     fd = VW::io::open_file_reader(fname);
   }
-
   catch (...)
   {
     THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");

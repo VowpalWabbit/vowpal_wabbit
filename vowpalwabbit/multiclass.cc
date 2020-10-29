@@ -25,8 +25,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   label_t* ld = (label_t*)v;
   char* c;
   size_t total = sizeof(ld->label) + sizeof(ld->weight);
-  if (cache.buf_read(c, total) < total)
-    return 0;
+  if (cache.buf_read(c, total) < total) return 0;
   bufread_label(ld, c);
 
   return total;
@@ -85,9 +84,7 @@ void parse_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>
         char* char_after_int = nullptr;
         ld->label = int_of_string(words[0], char_after_int);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-        {
-          THROW("malformed example: label has trailing character(s): " << *char_after_int);
-        }
+        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
       }
       ld->weight = 1.0;
       break;
@@ -98,9 +95,7 @@ void parse_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>
         char* char_after_int = nullptr;
         ld->label = int_of_string(words[0], char_after_int);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-        {
-          THROW("malformed example: label has trailing character(s): " << *char_after_int);
-        }
+        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
       }
       ld->weight = float_of_string(words[1]);
       break;
@@ -119,10 +114,8 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
-  all.sd->print_update(all.holdout_set_off, all.current_pass,
-      sv_label.empty() ? "unknown" : sv_label.to_string(),
-      sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features,
-      all.progress_add, all.progress_arg);
+  all.sd->print_update(all.holdout_set_off, all.current_pass, sv_label.empty() ? "unknown" : sv_label.to_string(),
+      sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features, all.progress_add, all.progress_arg);
 }
 
 void print_probability(vw& all, example& ec, uint32_t prediction)
@@ -177,8 +170,7 @@ void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update
 void finish_example(vw& all, example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1)
-    loss = ec.weight;
+  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1) loss = ec.weight;
 
   all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.num_features);
 
