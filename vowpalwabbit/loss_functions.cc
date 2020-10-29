@@ -358,35 +358,38 @@ class poisson_loss : public loss_function
   }
 };
 
-loss_function* getLossFunction(vw& all, std::string funcName, float function_parameter)
+std::unique_ptr<loss_function> getLossFunction(vw& all, const std::string& funcName, float function_parameter)
 {
-  if (funcName.compare("squared") == 0 || funcName.compare("Huber") == 0)
-    return new squaredloss();
-  else if (funcName.compare("classic") == 0)
-    return new classic_squaredloss();
-  else if (funcName.compare("hinge") == 0)
-    return new hingeloss();
-  else if (funcName.compare("logistic") == 0)
+  if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
+  else if (funcName == "classic")
+  {
+    return VW::make_unique<classic_squaredloss>();
+  }
+  else if (funcName == "hinge")
+  {
+    return VW::make_unique<hingeloss>();
+  }
+  else if (funcName == "logistic")
   {
     if (all.set_minmax != noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return new logloss();
+    return VW::make_unique<logloss>();
   }
-  else if (funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0)
+  else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
-    return new quantileloss(function_parameter);
+    return VW::make_unique<quantileloss>(function_parameter);
   }
-  else if (funcName.compare("poisson") == 0)
+  else if (funcName == "poisson")
   {
     if (all.set_minmax != noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return new poisson_loss();
+    return VW::make_unique<poisson_loss>();
   }
   else
     THROW("Invalid loss function name: \'" << funcName << "\' Bailing!");

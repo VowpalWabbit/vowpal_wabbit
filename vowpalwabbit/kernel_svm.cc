@@ -880,7 +880,6 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;
-  delete all.loss;
   all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   params->model = &calloc_or_throw<svm_model>();

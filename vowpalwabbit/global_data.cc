@@ -530,6 +530,5 @@ vw::~vw()
     free(sd);
   }
 
-  delete loss;
   delete all_reduce;
 }
