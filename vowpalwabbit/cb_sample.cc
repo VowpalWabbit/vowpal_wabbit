@@ -96,16 +96,8 @@ struct cb_sample_data
   std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
   {
     std::ostringstream ostrm;
-    bool first = true;
-    for(const auto& a_s : action_scores)
-    {
-      if(first)
-      {
-        ostrm << "chosen[" << a_s.action << "," << a_s.score << "] [ ";
-        first = !first;
-      }
-      ostrm << "(" << a_s.action << "," << a_s.score << "), ";
-    }
+    if(action_scores.empty()) return "";
+    ostrm << "chosen" << action_scores[0] << action_scores;
     return ostrm.str();
   }
 
