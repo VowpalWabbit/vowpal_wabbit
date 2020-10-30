@@ -41,6 +41,7 @@ namespace cs_unittest
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--interact ud"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_ldf multiline"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_rank"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_type mtr"));
             }
         }
 
