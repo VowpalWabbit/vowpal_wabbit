@@ -23,7 +23,7 @@ constexpr uint64_t nn_constant = 533357803;
 struct nn
 {
   uint32_t k;
-  loss_function* squared_loss;
+  std::unique_ptr<loss_function> squared_loss;
   example output_layer;
   example hiddenbias;
   example outputweight;
@@ -47,7 +47,6 @@ struct nn
 
   ~nn()
   {
-    delete squared_loss;
     free(hidden_units);
     free(dropped_out);
     free(hidden_units_pred);
@@ -158,7 +157,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
-    loss_function* save_loss = n.all->loss;
+    auto loss_function_swap_guard = VW::swap_guard(n.all->loss, n.squared_loss);
 
     polyprediction* hidden_units = n.hidden_units_pred;
     polyprediction* hiddenbias_pred = n.hiddenbias_pred;
@@ -167,7 +166,6 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     std::ostringstream outputStringStream;
 
     n.all->set_minmax = noop_mm;
-    n.all->loss = n.squared_loss;
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = hidden_min_activation;
     save_max_label = n.all->sd->max_label;
@@ -214,7 +212,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
                            << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
       }
 
-    n.all->loss = save_loss;
+    loss_function_swap_guard.do_swap();
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
     n.all->sd->max_label = save_max_label;
@@ -233,7 +231,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     n.outputweight.ft_offset = ec.ft_offset;
 
     n.all->set_minmax = noop_mm;
-    n.all->loss = n.squared_loss;
+    auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
     save_max_label = n.all->sd->max_label;
@@ -262,7 +260,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
       }
     }
 
-    n.all->loss = save_loss;
+    loss_function_swap_guard_converse_block.do_swap();
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
     n.all->sd->max_label = save_max_label;
@@ -328,7 +326,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
 
         if (fabs(gradient) > 0)
         {
-          n.all->loss = n.squared_loss;
+          auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
           n.all->set_minmax = noop_mm;
           save_min_label = n.all->sd->min_label;
           n.all->sd->min_label = hidden_min_activation;
@@ -356,7 +354,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
             }
           }
 
-          n.all->loss = save_loss;
+          loss_function_swap_guard_learn_block.do_swap();
           n.all->set_minmax = save_set_minmax;
           n.all->sd->min_label = save_min_label;
           n.all->sd->max_label = save_max_label;
