@@ -45,7 +45,6 @@ struct parser
     this->lp = simple_label;
 
     // Free parser must still be used for the following fields.
-    this->gram_mask = v_init<size_t>();
     this->ids = v_init<size_t>();
     this->counts = v_init<size_t>();
   }
@@ -54,7 +53,6 @@ struct parser
   {
     delete input;
     delete output;
-    gram_mask.delete_v();
     ids.delete_v();
     counts.delete_v();
   }
@@ -99,7 +97,6 @@ struct parser
   std::condition_variable output_done;
 
   bool done = false;
-  v_array<size_t> gram_mask;
 
   v_array<size_t> ids;     // unique ids for sources
   v_array<size_t> counts;  // partial examples received from sources

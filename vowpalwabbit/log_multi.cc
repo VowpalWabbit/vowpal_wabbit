@@ -352,7 +352,7 @@ void save_node_stats(log_multi& d)
   uint32_t total;
   log_multi* b = &d;
 
-  fp = fopen("atxm_debug.csv", "wt");
+  VW::file_open(&fp, "atxm_debug.csv", "wt");
 
   for (i = 0; i < b->nodes.size(); i++)
   {
@@ -426,7 +426,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
       msg << " parent = " << n.parent;
       bin_text_read_write_fixed(model_file, (char*)&n.parent, sizeof(n.parent), "", read, msg, text);
 
-      uint32_t temp = (uint32_t)n.preds.size();
+      temp = (uint32_t)n.preds.size();
 
       msg << " preds = " << temp;
       bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
@@ -495,22 +495,18 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
-  new_options.add(make_option("log_multi", data->k).keep().help("Use online tree for multiclass"))
+  new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("disable progressive validation"))
-      .add(make_option("swap_resistance", data->swap_resist).default_value(4).help("disable progressive validation"))
       .add(make_option("swap_resistance", data->swap_resist)
                .default_value(4)
                .help("higher = more resistance to swap, default=4"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("log_multi"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->progress = !data->progress;
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
-  delete (all.loss);
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;

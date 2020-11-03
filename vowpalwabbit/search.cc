@@ -463,8 +463,8 @@ bool should_print_update(vw& all, bool hit_new_pass = false)
 
   if (PRINT_UPDATE_EVERY_EXAMPLE)
     return true;
-  if (PRINT_UPDATE_EVERY_PASS && hit_new_pass)
-    return true;
+  if (PRINT_UPDATE_EVERY_PASS)
+    if (hit_new_pass) return true;
   return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
@@ -1459,9 +1459,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   memset(here, 0, sz);
   *here = (unsigned char)sz;
   here += sizeof(size_t);
-  *here = mytag;
+  *here = static_cast<uint8_t>(mytag);
   here += sizeof(ptag);
-  *here = policy;
+  *here = static_cast<uint8_t>(policy);
   here += sizeof(int);
   *here = (unsigned char)learner_id;
   here += sizeof(size_t);
@@ -1469,9 +1469,9 @@ bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* c
   here += sizeof(size_t);
   for (size_t i = 0; i < condition_on_cnt; i++)
   {
-    *here = condition_on[i];
+    *here = static_cast<uint8_t>(condition_on[i]);
     here += sizeof(ptag);
-    *here = condition_on_actions[i].a;
+    *here = static_cast<uint8_t>(condition_on_actions[i].a);
     here += sizeof(action);
     *here = condition_on_names[i];
     here += sizeof(char);  // SPEEDUP: should we align this at 4?
@@ -1760,7 +1760,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         else
         {
           ensure_size(priv.learn_condition_on_names, strlen(condition_on_names) + 1);
-          strcpy(priv.learn_condition_on_names.begin(), condition_on_names);
+          VW::string_cpy(priv.learn_condition_on_names.begin(), (strlen(condition_on_names) + 1), condition_on_names);
         }
       }
 
@@ -2217,8 +2217,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   }
 
   // if we're not training, then we're done!
-  if ((!is_learn) || is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training))
-    return;
+  if (!is_learn) return;
+  if (is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training)) return;
 
   // SPEEDUP: if the oracle was never called, we can skip this!
 
@@ -2586,14 +2586,14 @@ void search_finish(search& sch)
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
-  FILE* f = fopen(filename, "r");
-  if (f == nullptr)
+  FILE* f;
+  if (VW::file_open(&f, filename, "r") != 0)
     THROW("error: could not read file " << filename << " (" << VW::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
   bool* bg = calloc_or_throw<bool>(((size_t)(A + 1)) * (A + 1));
   int rd, from, to, count = 0;
-  while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0)
+  while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > (int)A))
     {
@@ -2611,14 +2611,16 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 
   v_array<CS::label> allowed = v_init<CS::label>();
 
-  for (size_t from = 0; from < A; from++)
+  // from
+  for (size_t i = 0; i < A; i++)
   {
     v_array<CS::wclass> costs = v_init<CS::wclass>();
 
-    for (size_t to = 0; to < A; to++)
-      if (bg[from * (A + 1) + to])
+    // to
+    for (size_t j = 0; j < A; j++)
+      if (bg[i * (A + 1) + j])
       {
-        CS::wclass c = {FLT_MAX, (action)to, 0., 0.};
+        CS::wclass c = {FLT_MAX, (action)j, 0., 0.};
         costs.push_back(c);
       }
 
@@ -2691,6 +2693,7 @@ base_learner* setup(options_i& options, vw& all)
       make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
   new_options.add(make_option("search_task", task_string)
                       .keep()
+                      .necessary()
                       .help("the search task (use \"--search_task list\" to get a list of available tasks)"));
   new_options.add(
       make_option("search_metatask", metatask_string)
@@ -2748,10 +2751,8 @@ base_learner* setup(options_i& options, vw& all)
                       .help("verify that active learning is doing the right thing (arg = multiplier, should be = "
                             "cost_range * range_c)"));
   new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("search_task"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   search_initialize(&all, *sch.get());
 
@@ -3018,7 +3019,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   // action "1" is at index 0. Map action to its appropriate index. In particular, this fixes an
   // issue where the predicted action is the last, and there is no example header, causing an index
   // beyond the end of the array (usually resulting in a segfault at some point.)
-  size_t action_index = a - COST_SENSITIVE::ec_is_example_header(ecs[0]) ? 0 : 1;
+  size_t action_index = (a - COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 0 : 1;
 
   if ((mytag != 0) && ecs[action_index].l.cs.costs.size() > 0)
   {
@@ -3409,11 +3410,14 @@ predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
 }
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
 {
   erase_alloweds();
   return add_allowed(a);
 }
+VW_WARNING_STATE_POP
 predictor& predictor::set_allowed(std::vector<std::pair<action, float>>& a)
 {
   erase_alloweds();
@@ -3441,7 +3445,7 @@ predictor& predictor::add_condition_range(ptag hi, ptag count, char name0)
   {
     if (i > hi)
       break;
-    char name = name0 + i;
+    char name = name0 + static_cast<char>(i);
     condition_on_tags.push_back(hi - i);
     condition_on_names.push_back(name);
   }

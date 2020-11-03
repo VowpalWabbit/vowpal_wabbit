@@ -250,7 +250,7 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
   {
     const auto& outcomes = document["_outcomes"].GetArray();
     assert(outcomes.Size() == slot_examples.size());
-    for (size_t i = 0; i < outcomes.Size(); i++)
+    for (rapidjson::SizeType i = 0; i < outcomes.Size(); i++)
     {
       auto& current_obj = outcomes[i];
       auto& destination = slot_examples[i]->l.slates.probabilities;
@@ -281,9 +281,9 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       {
         assert(probs.Size() == destination.size());
         const auto& probs_array = probs.GetArray();
-        for (size_t i = 0; i < probs_array.Size(); i++)
+        for (rapidjson::SizeType j = 0; j < probs_array.Size(); j++)
         {
-          destination[i].score = probs_array[i].GetFloat();
+          destination[j].score = probs_array[j].GetFloat();
         }
       }
       else

@@ -16,10 +16,11 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <stdlib.h>
 #ifdef _WIN32
 #define NOMINMAX
-#include <WinSock2.h>
-#include <Windows.h>
-#include <WS2tcpip.h>
-#include <io.h>
+#  define _WINSOCK_DEPRECATED_NO_WARNINGS
+#  include <WinSock2.h>
+#  include <Windows.h>
+#  include <WS2tcpip.h>
+#  include <io.h>
 #else
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -40,7 +41,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
-  far_end.sin_port = port;
+  far_end.sin_port = (u_short)port;
 
   far_end.sin_addr = *(in_addr*)&ip;
   memset(&far_end.sin_zero, '\0', 8);
@@ -55,8 +56,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
     if (getnameinfo((sockaddr*)&far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
-    if (!quiet)
-      cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
+    if (!quiet) cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs((u_short)port) << endl;
   }
 
   size_t count = 0;
@@ -84,7 +84,11 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 socket_t AllReduceSockets::getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
+#ifdef _WIN32
+  if (sock == INVALID_SOCKET)
+#else
   if (sock < 0)
+#endif
     THROWERRNO("socket");
 
     // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
@@ -127,7 +131,7 @@ void AllReduceSockets::all_reduce_init()
 
   uint32_t master_ip = *((uint32_t*)master->h_addr);
 
-  socket_t master_sock = sock_connect(master_ip, htons(port));
+  socket_t master_sock = sock_connect(master_ip, htons((u_short)port));
   if (send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
   {
     THROW("write unique_id=" << unique_id << " to span server failed");
@@ -182,7 +186,7 @@ void AllReduceSockets::all_reduce_init()
       cerr << "read kid_count=" << kid_count << endl;
   }
 
-  socket_t sock = -1;
+  auto sock = static_cast<socket_t>(-1);
   short unsigned int netport = htons(26544);
   if (kid_count > 0)
   {
@@ -264,16 +268,20 @@ void AllReduceSockets::all_reduce_init()
     socks.parent = sock_connect(parent_ip, parent_port);
   }
   else
-    socks.parent = -1;
+    socks.parent = static_cast<socket_t>(-1);
 
-  socks.children[0] = -1;
-  socks.children[1] = -1;
+  socks.children[0] = static_cast<socket_t>(-1);
+  socks.children[1] = static_cast<socket_t>(-1);
   for (int i = 0; i < kid_count; i++)
   {
     sockaddr_in child_address;
     socklen_t size = sizeof(child_address);
     socket_t f = accept(sock, (sockaddr*)&child_address, &size);
+#ifdef _WIN32
+    if (f == INVALID_SOCKET)
+#else
     if (f < 0)
+#endif
       THROWERRNO("accept");
 
     // char hostname[NI_MAXHOST];

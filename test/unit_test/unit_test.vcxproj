@@ -19,9 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cats_tree_tests.cc" />
     <ClCompile Include="cb_explore_adf_test.cc" />
     <ClCompile Include="ccb_test.cc" />
     <ClCompile Include="ccb_parser_test.cc" />
+    <ClCompile Include="continuous_actions_parser_test.cc" />
+    <ClCompile Include="object_pool_test.cc" />
+    <ClCompile Include="offset_tree_tests.cc" />
+    <ClCompile Include="options_boost_po_test.cc" />
+    <ClCompile Include="options_test.cc" />
+    <ClCompile Include="pmf_to_pdf_test.cc" />
     <ClCompile Include="distributionally_robust_test.cc" />
     <ClCompile Include="dsjson_parser_test.cc" />
     <ClCompile Include="error_test.cc" />
@@ -32,9 +39,7 @@
     <ClCompile Include="io_adapter_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
-    <ClCompile Include="object_pool_test.cc" />
-    <ClCompile Include="options_boost_po_test.cc" />
-    <ClCompile Include="options_test.cc" />
+    <ClCompile Include="random_test.cc" />
     <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
@@ -44,6 +49,7 @@
     <ClCompile Include="tag_utils_test.cc" />
     <ClCompile Include="test_common.cc" />
     <ClCompile Include="vwdll_test.cc" />
+    <ClCompile Include="weights_test.cc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)libvw.vcxproj">
@@ -154,12 +160,13 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

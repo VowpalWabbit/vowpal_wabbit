@@ -91,7 +91,11 @@ SpanningTree::SpanningTree(uint16_t port, bool quiet) : m_stop(false), m_port(po
   char addr_buf[INET_ADDRSTRLEN]; 
 
   sock = socket(PF_INET, SOCK_STREAM, 0);
+#ifdef _WIN32
+  if (sock == INVALID_SOCKET)
+#else
   if (sock < 0)
+#endif
     THROWERRNO("socket: ");
 
   int on = 1;
@@ -301,7 +305,7 @@ void SpanningTree::Run()
         else
         {
           int bogus = -1;
-          uint32_t bogus2 = -1;
+          uint32_t bogus2 = static_cast<uint32_t>(-1);
           fail_send(partial_nodeset.nodes[i].socket, &bogus2, sizeof(bogus2));
           fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
         }

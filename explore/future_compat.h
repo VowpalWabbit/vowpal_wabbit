@@ -39,12 +39,12 @@
     #define DO_PRAGMA(X) _Pragma(#X)
     #define VW_WARNING_STATE_PUSH           DO_PRAGMA(GCC diagnostic push)
     #define VW_WARNING_STATE_POP            DO_PRAGMA(GCC diagnostic pop)
-    #define VW_WARNING_DISABLE(warningName)   DO_PRAGMA(GCC diagnostic ignored #warningName)
+#  define VW_WARNING_DISABLE(warningName) DO_PRAGMA(GCC diagnostic ignored warningName)
 #elif defined(__clang__)
     #define DO_PRAGMA(X) _Pragma(#X)
     #define VW_WARNING_STATE_PUSH           DO_PRAGMA(clang diagnostic push)
     #define VW_WARNING_STATE_POP            DO_PRAGMA(clang diagnostic pop)
-    #define VW_WARNING_DISABLE(warningName)   DO_PRAGMA(clang diagnostic ignored #warningName)
+#  define VW_WARNING_DISABLE(warningName) DO_PRAGMA(clang diagnostic ignored warningName)
 #else
     #define VW_WARNING_STATE_PUSH
     #define VW_WARNING_STATE_POP
@@ -56,18 +56,21 @@
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE    VW_WARNING_DISABLE(4996)
     #define VW_WARNING_DISABLE_CLASS_MEMACCESS
     #define VW_WARNING_DISABLE_CAST_FUNC_TYPE
+#  define VW_WARNING_DISABLE_CPP_17_LANG_EXT VW_WARNING_DISABLE(4984)
 #elif defined(__GNUC__) || defined(__clang__)
-    #define VW_WARNING_DISABLE_DEPRECATED_USAGE   VW_WARNING_DISABLE(-Wdeprecated-declarations)
+#  define VW_WARNING_DISABLE_DEPRECATED_USAGE VW_WARNING_DISABLE("-Wdeprecated-declarations")
+#  define VW_WARNING_DISABLE_CPP_17_LANG_EXT
 
     // This warning was added in GCC 8
-    #if __GNUC__ >= 8
-        #define VW_WARNING_DISABLE_CLASS_MEMACCESS    VW_WARNING_DISABLE(-Wclass-memaccess)
-        #define VW_WARNING_DISABLE_CAST_FUNC_TYPE    VW_WARNING_DISABLE(-Wcast-function-type)
-    #else
-        #define VW_WARNING_DISABLE_CLASS_MEMACCESS
-        #define VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    #endif
+#  if __GNUC__ >= 8
+#    define VW_WARNING_DISABLE_CLASS_MEMACCESS VW_WARNING_DISABLE("-Wclass-memaccess")
+#    define VW_WARNING_DISABLE_CAST_FUNC_TYPE VW_WARNING_DISABLE("-Wcast-function-type")
+#  else
+#    define VW_WARNING_DISABLE_CLASS_MEMACCESS
+#    define VW_WARNING_DISABLE_CAST_FUNC_TYPE
+#  endif
 #else
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE
     #define VW_WARNING_DISABLE_CLASS_MEMACCESS
+#  define VW_WARNING_DISABLE_CPP_17_LANG_EXT
 #endif

@@ -52,6 +52,7 @@ struct ccb
   std::string id_namespace_str;
 
   size_t base_learner_stride_shift;
+  bool all_slots_loss_report;
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -293,7 +294,7 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
   for (size_t i = 0; i < original_size; i++)
   {
     auto interaction_copy = generated_interactions[i];
-    interaction_copy.push_back((char)ccb_id_namespace);
+    interaction_copy.push_back(static_cast<namespace_index>(ccb_id_namespace));
     generated_interactions.push_back(interaction_copy);
   }
 
@@ -373,11 +374,14 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
     data.origin_index[index++] = (uint32_t)i;
 
     // Remember the index of the chosen action
-    if (is_learn && slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+    if (is_learn)
     {
-      // This is used to remove the label later.
-      data.action_with_label = (uint32_t)i;
-      attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
+      if (slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+      {
+        // This is used to remove the label later.
+        data.action_with_label = (uint32_t)i;
+        attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
+      }
     }
   }
 
@@ -410,7 +414,22 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
+  auto restore_guard = VW::scope_exit(
+    [&data, &examples]
+    {
+      delete_cb_labels(data);
 
+      // Restore ccb labels to the example objects.
+      for (size_t i = 0; i < examples.size(); i++)
+      {
+        examples[i]->l.conditional_contextual_bandit = {
+            data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
+      }
+    }
+  );
+
+  //this is temporary only so we can get some logging of what's going on
+  try {
   // Reset exclusion list for this example.
   data.exclude_list.assign(data.actions.size(), false);
 
@@ -477,18 +496,14 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     slot_id++;
     data.cb_ex.clear();
   }
-
-  delete_cb_labels(data);
-
-  // Restore ccb labels to the example objects.
-  for (size_t i = 0; i < examples.size(); i++)
-  {
-    examples[i]->l.conditional_contextual_bandit = {
-        data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
-  }
-
   // Save the predictions
   examples[0]->pred.decision_scores = decision_scores;
+
+  } catch(std::exception &e) {
+    data.all->trace_message << "CCB got exception from base reductions: " << e.what() << std::endl;
+    throw;
+  }
+
 }
 
 std::string generate_ccb_label_printout(const std::vector<example*>& slots)
@@ -522,7 +537,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
   return label_ss.str();
 }
 
-void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
+void output_example(vw& all, ccb& c, multi_ex& ec_seq)
 {
   if (ec_seq.empty())
   {
@@ -553,9 +568,12 @@ void output_example(vw& all, ccb& /*c*/, multi_ex& ec_seq)
     if (outcome != nullptr)
     {
       num_labelled++;
-      float l = CB_ALGS::get_cost_estimate(
-          outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
-      loss += l * preds[i][TOP_ACTION_INDEX].score;
+      if (i == 0 || c.all_slots_loss_report)
+      {
+        float l = CB_ALGS::get_cost_estimate(
+            outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
+        loss += l * preds[i][TOP_ACTION_INDEX].score;
+      }
     }
   }
 
@@ -602,19 +620,19 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
+  bool all_slots_loss_report = false;
   option_group_definition new_options(
       "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
-  new_options.add(
-      make_option("ccb_explore_adf", ccb_explore_adf_option)
-          .keep()
-          .help("EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."));
-  options.add_and_parse(new_options);
+  new_options
+      .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
+               .keep()
+               .necessary()
+               .help(
+                   "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
 
-  if (!ccb_explore_adf_option)
-  {
-    return nullptr;
-  }
-
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  data->all_slots_loss_report = all_slots_loss_report;
   if (!options.was_supplied("cb_explore_adf"))
   {
     options.insert("cb_explore_adf", "");

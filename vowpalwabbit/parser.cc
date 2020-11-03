@@ -26,7 +26,6 @@ typedef int socklen_t;
 int daemon(int /*a*/, int /*b*/)
 {
   exit(0);
-  return 0;
 }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
@@ -122,6 +121,62 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   return cache_numbits;
 }
 
+void set_cache_reader(vw& all)
+{
+  all.p->reader = read_cached_features;
+}
+
+void set_string_reader(vw& all)
+{
+  all.p->reader = read_features_string;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+    all.print = print_result;
+VW_WARNING_STATE_POP
+    all.print_by_ref = print_result_by_ref;
+}
+
+void set_json_reader(vw& all, bool dsjson = false)
+{
+  // TODO: change to class with virtual method
+  // --invert_hash requires the audit parser version to save the extra information.
+  if (all.audit || all.hash_inv)
+  {
+    all.p->reader = &read_features_json<true>;
+    all.p->text_reader = &line_to_examples_json<true>;
+    all.p->audit = true;
+  }
+  else
+  {
+    all.p->reader = &read_features_json<false>;
+    all.p->text_reader = &line_to_examples_json<false>;
+    all.p->audit = false;
+  }
+
+  all.p->decision_service_json = dsjson;
+}
+
+void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
+{
+  if (all.p->input->isbinary())
+  {
+    all.p->reader = read_cached_features;
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+    all.print = binary_print_result;
+VW_WARNING_STATE_POP
+    all.print_by_ref = binary_print_result_by_ref;
+  }
+  else if (json || dsjson)
+  {
+    set_json_reader(all, dsjson);
+  }
+  else
+  {
+    set_string_reader(all);
+  }
+}
+
 void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.p->input;
@@ -144,8 +199,8 @@ void reset_source(vw& all, size_t numbits)
                                                                           << all.p->finalname);
     input->close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file_reader(all.p->finalname));    all.p->reader = read_cached_features;
-    all.p->reader = read_cached_features;
+    input->add_file(VW::io::open_file_reader(all.p->finalname));
+    set_cache_reader(all);
   }
 
   if (all.p->resettable == true)
@@ -177,24 +232,7 @@ void reset_source(vw& all, size_t numbits)
       all.final_prediction_sink.push_back(socket->get_writer());
       all.p->input->add_file(socket->get_reader());
 
-      if (all.p->input->isbinary())
-      {
-        all.p->reader = read_cached_features;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-        all.print = binary_print_result;
-VW_WARNING_STATE_POP
-        all.print_by_ref = binary_print_result_by_ref;
-      }
-      else
-      {
-        all.p->reader = read_features_string;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-        all.print = print_result;
-VW_WARNING_STATE_POP
-        all.print_by_ref = print_result_by_ref;
-      }
+      set_daemon_reader(all);
     }
     else
     {
@@ -278,7 +316,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       {
         if (!quiet)
           all.trace_message << "using cache_file = " << file.c_str() << endl;
-        all.p->reader = read_cached_features;
+        set_cache_reader(all);
         if (c == all.num_bits)
           all.p->sorted_cache = true;
         else
@@ -482,12 +520,6 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int one = 1;
     setsockopt(f_a, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&one), sizeof(one));
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-    all.print = print_result;
-VW_WARNING_STATE_POP
-    all.print_by_ref = print_result_by_ref;
-
     auto socket = VW::io::wrap_socket_descriptor(f_a);
 
     all.final_prediction_sink.push_back(socket->get_writer());
@@ -497,22 +529,13 @@ VW_WARNING_STATE_POP
       all.trace_message << "reading data from port " << port << endl;
 
     if (all.active)
-      all.p->reader = read_features_string;
+    {
+      set_string_reader(all);
+    }
     else
     {
-      if (all.p->input->isbinary())
-      {
-        all.p->reader = read_cached_features;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-        all.print = binary_print_result;
-VW_WARNING_STATE_POP
-        all.print_by_ref = binary_print_result_by_ref;
-      }
-      else
-      {
-        all.p->reader = read_features_string;
-      }
+      all.p->sorted_cache = true;
+      set_daemon_reader(all, input_options.json, input_options.dsjson);
       all.p->sorted_cache = true;
     }
     all.p->resettable = all.p->write_cache || all.daemon;
@@ -573,27 +596,11 @@ VW_WARNING_STATE_POP
 
       if (input_options.json || input_options.dsjson)
       {
-        // TODO: change to class with virtual method
-        // --invert_hash requires the audit parser version to save the extra information.
-        if (all.audit || all.hash_inv)
-        {
-          all.p->reader = &read_features_json<true>;
-          all.p->text_reader = &line_to_examples_json<true>;
-          all.p->audit = true;
-        }
-        else
-        {
-          all.p->reader = &read_features_json<false>;
-          all.p->text_reader = &line_to_examples_json<false>;
-          all.p->audit = false;
-        }
-
-        all.p->decision_service_json = input_options.dsjson;
+        set_json_reader(all, input_options.dsjson);
       }
       else
       {
-        all.p->reader = read_features_string;
-        all.p->text_reader = VW::read_lines;
+        set_string_reader(all);
       }
 
       all.p->resettable = all.p->write_cache;
@@ -619,66 +626,6 @@ void set_done(vw& all)
 {
   all.early_terminate = true;
   lock_done(*all.p);
-}
-
-void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t initial_length, v_array<size_t>& gram_mask,
-    size_t skips)
-{
-  if (ngram == 0 && gram_mask.last() < initial_length)
-  {
-    size_t last = initial_length - gram_mask.last();
-    for (size_t i = 0; i < last; i++)
-    {
-      uint64_t new_index = fs.indicies[i];
-      for (size_t n = 1; n < gram_mask.size(); n++)
-        new_index = new_index * quadratic_constant + fs.indicies[i + gram_mask[n]];
-
-      fs.push_back(1., new_index);
-      if (fs.space_names.size() > 0)
-      {
-        std::string feature_name(fs.space_names[i].get()->second);
-        for (size_t n = 1; n < gram_mask.size(); n++)
-        {
-          feature_name += std::string("^");
-          feature_name += std::string(fs.space_names[i + gram_mask[n]].get()->second);
-        }
-        fs.space_names.push_back(audit_strings_ptr(new audit_strings(fs.space_names[i].get()->first, feature_name)));
-      }
-    }
-  }
-  if (ngram > 0)
-  {
-    gram_mask.push_back(gram_mask.last() + 1 + skips);
-    addgrams(all, ngram - 1, skip_gram, fs, initial_length, gram_mask, 0);
-    gram_mask.pop();
-  }
-  if (skip_gram > 0 && ngram > 0)
-    addgrams(all, ngram, skip_gram - 1, fs, initial_length, gram_mask, skips + 1);
-}
-
-/**
- * This function adds k-skip-n-grams to the feature vector.
- * Definition of k-skip-n-grams:
- * Consider a feature vector - a, b, c, d, e, f
- * 2-skip-2-grams would be - ab, ac, ad, bc, bd, be, cd, ce, cf, de, df, ef
- * 1-skip-3-grams would be - abc, abd, acd, ace, bcd, bce, bde, bdf, cde, cdf, cef, def
- * Note that for a n-gram, (n-1)-grams, (n-2)-grams... 2-grams are also appended
- * The k-skip-n-grams are appended to the feature vector.
- * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
- * 32 random nos. are maintained in an array and are used in the hashing.
- */
-void generateGrams(vw& all, example*& ex)
-{
-  for (namespace_index index : ex->indices)
-  {
-    size_t length = ex->feature_space[index].size();
-    for (size_t n = 1; n < all.ngram[index]; n++)
-    {
-      all.p->gram_mask.clear();
-      all.p->gram_mask.push_back((size_t)0);
-      addgrams(all, n, all.skips[index], ex->feature_space[index], length, all.p->gram_mask, 0);
-    }
-  }
 }
 
 void end_pass_example(vw& all, example* ae)
@@ -760,8 +707,10 @@ void setup_example(vw& all, example* ae)
         i--;
       }
 
-  if (!all.ngram_strings.empty())
-    generateGrams(all, ae);
+  if(all.skip_gram_transformer != nullptr)
+  {
+    all.skip_gram_transformer->generate_grams(ae);
+  }
 
   if (all.add_constant)  // add constant feature
     VW::add_constant_feature(all, ae);
@@ -859,7 +808,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   len = ec->indices.size();
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
-  int fs_count = 0;
+  size_t fs_count = 0;
 
   for (size_t idx = 0; idx < len; ++idx)
   {
@@ -869,13 +818,13 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
     uint32_t stride_shift = all.weights.stride_shift();
-    int f_count = 0;
-    for (features::iterator& f : ec->feature_space[i])
+
+    auto& f = ec->feature_space[i];
+    for (size_t f_count = 0; f_count < fs_ptr[fs_count].len; f_count++)
     {
-      feature t = {f.value(), f.index()};
+      feature t = {f.values[f_count], f.indicies[f_count]};
       t.weight_index >>= stride_shift;
       fs_ptr[fs_count].fs[f_count] = t;
-      f_count++;
     }
     fs_count++;
   }

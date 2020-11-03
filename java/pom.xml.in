@@ -4,7 +4,7 @@
 
     <groupId>com.github.vowpalwabbit</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>@PACKAGE_VERSION@.3</version>
+    <version>@PACKAGE_VERSION@</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>

@@ -23,7 +23,7 @@ constexpr uint64_t nn_constant = 533357803;
 struct nn
 {
   uint32_t k;
-  loss_function* squared_loss;
+  std::unique_ptr<loss_function> squared_loss;
   example output_layer;
   example hiddenbias;
   example outputweight;
@@ -47,7 +47,6 @@ struct nn
 
   ~nn()
   {
-    delete squared_loss;
     free(hidden_units);
     free(dropped_out);
     free(hidden_units_pred);
@@ -158,7 +157,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
-    loss_function* save_loss = n.all->loss;
+    auto loss_function_swap_guard = VW::swap_guard(n.all->loss, n.squared_loss);
 
     polyprediction* hidden_units = n.hidden_units_pred;
     polyprediction* hiddenbias_pred = n.hiddenbias_pred;
@@ -167,7 +166,6 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     std::ostringstream outputStringStream;
 
     n.all->set_minmax = noop_mm;
-    n.all->loss = n.squared_loss;
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = hidden_min_activation;
     save_max_label = n.all->sd->max_label;
@@ -214,7 +212,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
                            << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
       }
 
-    n.all->loss = save_loss;
+    loss_function_swap_guard.do_swap();
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
     n.all->sd->max_label = save_max_label;
@@ -233,7 +231,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     n.outputweight.ft_offset = ec.ft_offset;
 
     n.all->set_minmax = noop_mm;
-    n.all->loss = n.squared_loss;
+    auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
     save_max_label = n.all->sd->max_label;
@@ -262,7 +260,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
       }
     }
 
-    n.all->loss = save_loss;
+    loss_function_swap_guard_converse_block.do_swap();
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
     n.all->sd->max_label = save_max_label;
@@ -320,47 +318,48 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
       n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
     }
 
-    if (is_learn && n.all->training && ld.label != FLT_MAX)
+    if (is_learn)
     {
-      float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
-
-      if (fabs(gradient) > 0)
+      if (n.all->training && ld.label != FLT_MAX)
       {
-        n.all->loss = n.squared_loss;
-        n.all->set_minmax = noop_mm;
-        save_min_label = n.all->sd->min_label;
-        n.all->sd->min_label = hidden_min_activation;
-        save_max_label = n.all->sd->max_label;
-        n.all->sd->max_label = hidden_max_activation;
-        save_ft_offset = ec.ft_offset;
+        float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
 
-        if (n.multitask)
-          ec.ft_offset = 0;
-
-        for (unsigned int i = 0; i < n.k; ++i)
+        if (fabs(gradient) > 0)
         {
-          if (!dropped_out[i])
+          auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
+          n.all->set_minmax = noop_mm;
+          save_min_label = n.all->sd->min_label;
+          n.all->sd->min_label = hidden_min_activation;
+          save_max_label = n.all->sd->max_label;
+          n.all->sd->max_label = hidden_max_activation;
+          save_ft_offset = ec.ft_offset;
+
+          if (n.multitask) ec.ft_offset = 0;
+
+          for (unsigned int i = 0; i < n.k; ++i)
           {
-            float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
-            float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            n.outputweight.feature_space[nn_output_namespace].indicies[0] =
-                n.output_layer.feature_space[nn_output_namespace].indicies[i];
-            base.predict(n.outputweight, n.k);
-            float nu = n.outputweight.pred.scalar;
-            float gradhw = 0.5f * nu * gradient * sigmahprime;
+            if (!dropped_out[i])
+            {
+              float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
+              float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
+              n.outputweight.feature_space[nn_output_namespace].indicies[0] =
+                  n.output_layer.feature_space[nn_output_namespace].indicies[i];
+              base.predict(n.outputweight, n.k);
+              float nu = n.outputweight.pred.scalar;
+              float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
-            ec.pred.scalar = hidden_units[i].scalar;
-            if (ec.l.simple.label != hidden_units[i].scalar)
-              base.update(ec, i);
+              ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
+              ec.pred.scalar = hidden_units[i].scalar;
+              if (ec.l.simple.label != hidden_units[i].scalar) base.update(ec, i);
+            }
           }
-        }
 
-        n.all->loss = save_loss;
-        n.all->set_minmax = save_set_minmax;
-        n.all->sd->min_label = save_min_label;
-        n.all->sd->max_label = save_max_label;
-        ec.ft_offset = save_ft_offset;
+          loss_function_swap_guard_learn_block.do_swap();
+          n.all->set_minmax = save_set_minmax;
+          n.all->sd->min_label = save_min_label;
+          n.all->sd->max_label = save_max_label;
+          ec.ft_offset = save_ft_offset;
+        }
       }
     }
 
@@ -422,17 +421,16 @@ base_learner* nn_setup(options_i& options, vw& all)
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
-  new_options.add(make_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"))
+  new_options
+      .add(make_option("nn", n->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
       .add(make_option("inpass", n->inpass)
                .keep()
                .help("Train or test sigmoidal feedforward network with input passthrough."))
       .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
       .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
       .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("nn"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   n->all = &all;
   n->_random_state = all.get_random_state();

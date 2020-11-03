@@ -867,7 +867,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   bool ksvm = false;
 
   option_group_definition new_options("Kernel SVM");
-  new_options.add(make_option("ksvm", ksvm).keep().help("kernel svm"))
+  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("kernel svm"))
       .add(make_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
       .add(make_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
       .add(make_option("para_active", params->para_active).help("do parallel active learning"))
@@ -881,16 +881,11 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
                .help("type of kernel (rbf or linear (default))"))
       .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
       .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
-  options.add_and_parse(new_options);
 
-  if (!ksvm)
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;
-  delete all.loss;
   all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   params->model = &calloc_or_throw<svm_model>();

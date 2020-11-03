@@ -395,7 +395,7 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 {
   free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
   option_group_definition new_options("Boosting");
-  new_options.add(make_option("boosting", data->N).keep().help("Online boosting with <N> weak learners"))
+  new_options.add(make_option("boosting", data->N).keep().necessary().help("Online boosting with <N> weak learners"))
       .add(make_option("gamma", data->gamma)
                .default_value(0.1f)
                .help("weak learner's edge (=0.1), used only by online BBM"))
@@ -404,10 +404,8 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
               .keep()
               .default_value("BBM")
               .help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("boosting"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)

@@ -68,7 +68,7 @@ struct cb_explore_adf_rnd
   void base_learn_or_predict(VW::LEARNER::multi_learner&, multi_ex&, uint32_t);
 
  public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, size_t _numrnd, size_t _increment, vw* _all)
+  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, vw* _all)
       : epsilon(_epsilon)
       , alpha(_alpha)
       , sqrtinvlambda(std::sqrt(_invlambda))
@@ -106,7 +106,7 @@ void cb_explore_adf_rnd::finish_bonuses()
 
 void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, float max_bonus)
 {
-  constexpr float eulergamma = 0.57721566490153286;
+  constexpr float eulergamma = 0.57721566490153286f;
   for (auto& p : preds)
   {
     p.score -= eulergamma * (bonuses[p.action] - max_bonus);
@@ -264,7 +264,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   float max_bonus = std::max(1e-3f, *std::max_element(bonuses.begin(), bonuses.end()));
   compute_ci(preds, max_bonus);
   exploration::generate_softmax(
-      -1.0 / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+      -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
@@ -280,9 +280,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
-      .add(make_option("rnd", numrnd).keep().help("rnd based exploration"))
+      .add(make_option("rnd", numrnd).keep().necessary().help("rnd based exploration"))
       .add(make_option("rnd_alpha", alpha)
                .keep()
                .allow_override()
@@ -293,10 +294,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .allow_override()
                .default_value(0.1f)
                .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
-  options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !options.was_supplied("rnd"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (alpha <= 0)
   {

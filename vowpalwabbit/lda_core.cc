@@ -593,18 +593,18 @@ float lda::powf(float x, float p)
   }
 }
 
-void lda::expdigammify(vw &all, float *gamma)
+void lda::expdigammify(vw &all_, float *gamma)
 {
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify<float, USE_FAST_APPROX>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_FAST_APPROX>(all_, gamma, underflow_threshold, 0.0f);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify<float, USE_PRECISE>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_PRECISE>(all_, gamma, underflow_threshold, 0.0f);
       break;
     case USE_SIMD:
-      ldamath::expdigammify<float, USE_SIMD>(all, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
       break;
     default:
       std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
@@ -612,18 +612,18 @@ void lda::expdigammify(vw &all, float *gamma)
   }
 }
 
-void lda::expdigammify_2(vw &all, float *gamma, float *norm)
+void lda::expdigammify_2(vw &all_, float *gamma, float *norm)
 {
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all_, gamma, norm, underflow_threshold);
       break;
     case USE_PRECISE:
-      ldamath::expdigammify_2<float, USE_PRECISE>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_PRECISE>(all_, gamma, norm, underflow_threshold);
       break;
     case USE_SIMD:
-      ldamath::expdigammify_2<float, USE_SIMD>(all, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, USE_SIMD>(all_, gamma, norm, underflow_threshold);
       break;
     default:
       std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -762,42 +762,32 @@ struct initial_weights
   bool _random;
   uint32_t _lda;
   uint32_t _stride;
-  initial_weights(weight initial, weight initial_random, bool random, uint32_t lda, uint32_t stride)
-      : _initial(initial), _initial_random(initial_random), _random(random), _lda(lda), _stride(stride)
-  {
-  }
-};
-
-template <class T>
-class set_initial_lda_wrapper
-{
- public:
-  static void func(weight &w, initial_weights &iw, uint64_t index)
-  {
-    uint32_t lda = iw._lda;
-    weight initial_random = iw._initial_random;
-    if (iw._random)
-    {
-      weight *pw = &w;
-      for (size_t i = 0; i != lda; ++i, ++index) pw[i] = (float)(-log(merand48(index) + 1e-6) + 1.0f) * initial_random;
-    }
-    (&w)[lda] = iw._initial;
-  }
 };
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 {
-  vw &all = *(l.all);
+  vw& all = *(l.all);
   uint64_t length = (uint64_t)1 << all.num_bits;
   if (read)
   {
     initialize_regressor(all);
-    initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda,
-        all.weights.stride());
-    if (all.weights.sparse)
-      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda_wrapper<sparse_parameters>>(init);
-    else
-      all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters>>(init);
+    initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f), all.random_weights, all.lda,
+        all.weights.stride()};
+
+    auto initial_lda_weight_initializer = [init](weight* weights, uint64_t index) {
+      uint32_t lda = init._lda;
+      weight initial_random = init._initial_random;
+      if (init._random)
+      {
+        for (size_t i = 0; i != lda; ++i, ++index)
+        {
+          weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random;
+        }
+      }
+      weights[lda] = init._initial;
+    };
+
+    all.weights.set_default(initial_lda_weight_initializer);
   }
   if (model_file.num_files() != 0)
   {
@@ -923,7 +913,7 @@ void learn_batch(lda &l)
   float additional = (float)(l.all->length()) * l.lda_rho;
   for (size_t i = 0; i < l.all->lda; i++) l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
 
-  uint64_t last_weight_index = -1;
+  auto last_weight_index = std::numeric_limits<uint64_t>::max();
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
   {
     if (last_weight_index == s->f.weight_index)
@@ -1175,9 +1165,8 @@ void compute_coherence_metrics(lda &l, T &weights)
       }
       else
       {
-        std::vector<word_doc_frequency> vec = {{f2, 0}};
-        coWordsDFSet.insert(std::make_pair(f1, vec));
-        // printf(" insert %d %d\n", f1, f2);
+        std::vector<word_doc_frequency> tmp_vec = {{f2, 0}};
+        coWordsDFSet.insert(std::make_pair(f1, tmp_vec));
       }
     }
   }
@@ -1329,7 +1318,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   auto ld = scoped_calloc_or_throw<lda>();
   option_group_definition new_options("Latent Dirichlet Allocation");
   int math_mode;
-  new_options.add(make_option("lda", ld->topics).keep().help("Run lda with <int> topics"))
+  new_options.add(make_option("lda", ld->topics).keep().necessary().help("Run lda with <int> topics"))
       .add(make_option("lda_alpha", ld->lda_alpha)
                .keep()
                .default_value(0.1f)
@@ -1343,15 +1332,13 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
       .add(make_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"))
       .add(make_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"))
       .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
-  options.add_and_parse(new_options);
+
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Convert from int to corresponding enum value.
   ld->mmode = static_cast<lda_math_mode>(math_mode);
 
   ld->finish_example_count = 0;
-
-  if (!options.was_supplied("lda"))
-    return nullptr;
 
   all.lda = (uint32_t)ld->topics;
   all.delete_prediction = delete_scalars;

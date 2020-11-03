@@ -119,7 +119,7 @@ class ezexample
     if (current_ns != 0)
     {
       str[0] = current_ns;
-      current_seed = VW::hash_space(*vw_ref, str);
+      current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
     }
   }
 
@@ -154,7 +154,7 @@ class ezexample
     past_seeds.push_back(current_seed);
     current_ns = c;
     str[0] = c;
-    current_seed = VW::hash_space(*vw_ref, str);
+    current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
   }
 
   void remns()
@@ -317,17 +317,17 @@ class ezexample
 
   // HELPER FUNCTIONALITY
 
-  inline fid hash(std::string fstr) { return VW::hash_feature(*vw_ref, fstr, current_seed); }
-  inline fid hash(char* fstr) { return VW::hash_feature_cstr(*vw_ref, fstr, current_seed); }
+  inline fid hash(std::string fstr) { return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, current_seed)); }
+  inline fid hash(char* fstr) { return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, current_seed)); }
   inline fid hash(char c, std::string fstr)
   {
     str[0] = c;
-    return VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
   inline fid hash(char c, char* fstr)
   {
     str[0] = c;
-    return VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
 
   inline fid addf(fid fint) { return addf(fint, 1.0); }

@@ -237,16 +237,14 @@ void mf_train(gdmf& d, example& ec)
     mf_train(d, ec, d.all->weights.dense_weights);
 }
 
-template <class T>
-class set_rand_wrapper
+void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
 {
- public:
-  static void func(weight& w, uint32_t& stride, uint64_t index)
+  for (size_t i = 0; i != stride; ++i, ++index)
   {
-    weight* pw = &w;
-    for (size_t i = 0; i != stride; ++i, ++index) pw[i] = (float)(0.1 * merand48(index));
+    float initial_value = 0.1f * merand48(index);
+    weights[i] = initial_value;
   }
-};
+}
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
@@ -258,10 +256,10 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      if (all.weights.sparse)
-        all.weights.sparse_weights.set_default<uint32_t, set_rand_wrapper<sparse_parameters> >(stride);
-      else
-        all.weights.dense_weights.set_default<uint32_t, set_rand_wrapper<dense_parameters> >(stride);
+      auto weight_initializer = [stride](
+                                    weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
+
+      all.weights.set_default(weight_initializer);
     }
   }
 
@@ -334,16 +332,14 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   bool bfgs = false;
   bool conjugate_gradient = false;
   option_group_definition gf_md_options("Gradient Descent Matrix Factorization");
-  gf_md_options.add(make_option("rank", data->rank).keep().help("rank for matrix factorization."));
+  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("rank for matrix factorization."));
 
   // Not supported, need to be checked to be false.
   gf_md_options.add(make_option("bfgs", bfgs).help("Option not supported by this reduction"));
   gf_md_options.add(
       make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
-  options.add_and_parse(gf_md_options);
 
-  if (!options.was_supplied("rank"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(gf_md_options)) return nullptr;
 
   if (options.was_supplied("adaptive"))
     THROW("adaptive is not implemented for matrix factorization");

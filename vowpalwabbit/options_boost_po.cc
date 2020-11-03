@@ -11,6 +11,9 @@
 #include <iterator>
 #include <utility>
 
+#include <boost/exception/exception.hpp>
+#include <boost/throw_exception.hpp>
+
 using namespace VW::config;
 
 bool is_number(const VW::string_view& s)
@@ -111,6 +114,13 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
     po::store(parsed_options, vm);
     po::notify(vm);
   }
+// It seems as though boost::wrapexcept was introduced in 1.69 and it later started to be thrown out of Boost PO.
+#if BOOST_VERSION >= 106900
+  catch (boost::wrapexcept<boost::program_options::invalid_option_value>& ex)
+  {
+    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+  }
+#endif
   catch (boost::exception_detail::clone_impl<
       boost::exception_detail::error_info_injector<boost::program_options::invalid_option_value>>& ex)
   {
@@ -129,6 +139,12 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   {
     THROW(ex.what());
   }
+}
+
+bool options_boost_po::add_parse_and_check_necessary(const option_group_definition& group)
+{
+  this->add_and_parse(group);
+  return group.check_necessary_enabled(*this);
 }
 
 bool options_boost_po::was_supplied(const std::string& key) const

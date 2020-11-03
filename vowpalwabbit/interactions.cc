@@ -315,7 +315,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
             if (!PROCESS_SELF_INTERACTIONS(fs.values[i]))
             {
-              for (size_t i = order_of_inter - 1; i > 0; --i) results[i] += results[i - 1] * x;
+              for (size_t j = order_of_inter - 1; j > 0; --j) results[j] += results[j - 1] * x;
 
               results[0] += x;
             }
@@ -323,7 +323,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
             {
               results[0] += x;
 
-              for (size_t i = 1; i < order_of_inter; ++i) results[i] += results[i - 1] * x;
+              for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
 
               ++cnt_ft_value_non_1;
             }

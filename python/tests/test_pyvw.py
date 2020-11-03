@@ -2,18 +2,9 @@ import os
 
 from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import vw
-from vowpalwabbit.pyvw import (
-    DFtoVW,
-    SimpleLabel,
-    MulticlassLabel,
-    Feature,
-    Namespace,
-)
 import pytest
-import pandas as pd
 
 BIT_SIZE = 18
-
 
 class TestVW:
 
@@ -238,8 +229,8 @@ def test_parse():
 def test_learn_predict_multiline():
     model = vw(quiet=True, cb_adf=True)
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
-    finish = model.finish_example(ex)
     assert model.predict(ex) == [0.0, 0.0]
+    model.finish_example(ex)
     ex = ["| a", "| b"]
     model.learn(ex)
     assert model.predict(ex) == [0.0, 0.0]
@@ -380,159 +371,3 @@ def check_error_raises(type, argument):
     """
     with pytest.raises(type) as error:
         argument()
-
-
-def test_from_colnames_constructor():
-    df = pd.DataFrame({"y": [1], "x": [2]})
-    conv = DFtoVW.from_colnames(y="y", x=["x"], df=df)
-    lines_list = conv.convert_df()
-    first_line = lines_list[0]
-    assert first_line == "1 | 2"
-
-
-def test_feature_column_renaming_and_tag():
-    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
-    conv = DFtoVW(
-        label=SimpleLabel("y"),
-        tag="idx",
-        features=Feature(name="col_x", value="x"),
-        df=df,
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 id_1| col_x:2"
-
-
-def test_constant_feature_value_with_empty_name():
-    df = pd.DataFrame({"idx": ["id_1"], "y": [1], "x": [2]})
-    conv = DFtoVW(
-        label=SimpleLabel("y"),
-        tag="idx",
-        features=Feature(name="", value=2, value_from_df=False),
-        df=df,
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 id_1| :2"
-
-
-def test_variable_feature_name():
-    df = pd.DataFrame({"y": [1], "x": [2], "a": ["col_x"]})
-    conv = DFtoVW(
-        label=SimpleLabel("y"),
-        features=Feature(name="a", value="x", name_from_df=True),
-        df=df,
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 | col_x:2"
-
-
-def test_multiple_lines():
-    df = pd.DataFrame({"y": [1, -1], "x": [1, 2]})
-    conv = DFtoVW(label=SimpleLabel("y"), features=Feature(value="x"), df=df,)
-    lines_list = conv.convert_df()
-    assert lines_list == ["1 | 1", "-1 | 2"]
-
-
-def test_multiple_named_namespaces():
-    df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
-    conv = DFtoVW(
-        df=df,
-        label=SimpleLabel("y"),
-        namespaces=[
-            Namespace(name="FirstNameSpace", features=Feature("a")),
-            Namespace(name="DoubleIt", value=2, features=Feature("b")),
-        ],
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 |FirstNameSpace 2 |DoubleIt:2 3"
-
-
-def test_without_target_multiple_features():
-    df = pd.DataFrame({"a": [2], "b": [3]})
-    conv = DFtoVW(df=df, features=[Feature(col) for col in ["a", "b"]])
-    first_line = conv.convert_df()[0]
-    assert first_line == "| 2 3"
-
-
-def test_multiclasslabel():
-    df = pd.DataFrame({"a": [1], "b": [0.5], "c": ["x"]})
-    conv = DFtoVW(
-        df=df, label=MulticlassLabel(name="a", weight="b"), features=Feature("c")
-    )
-    first_line = conv.convert_df()[0]
-    assert first_line == "1 0.5 | x"
-
-
-def test_absent_col_error():
-    with pytest.raises(ValueError) as value_error:
-        df = pd.DataFrame({"a": [1]})
-        DFtoVW(
-            df=df,
-            label=SimpleLabel("a"),
-            features=[Feature(col) for col in ["a", "c", "d"]],
-        )
-    expected = "In 'Feature': column(s) 'c', 'd' not found in dataframe."
-    assert expected == str(value_error.value)
-
-
-def test_non_numerical_simplelabel_error():
-    df = pd.DataFrame({"y": ["a"], "x": ["featX"]})
-    with pytest.raises(TypeError) as type_error:
-        DFtoVW(df=df, label=SimpleLabel(name="y"), features=Feature("x"))
-    expected = "In argument 'name' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float'."
-    assert expected == str(type_error.value)
-
-
-def test_wrong_feature_type_error():
-    df = pd.DataFrame({"y": [1], "x": [2]})
-    with pytest.raises(TypeError) as type_error:
-        DFtoVW(df=df, label=SimpleLabel("y"), features="x")
-    expected = "Argument 'features' should be a Feature or a list of Feature."
-    assert expected == str(type_error.value)
-
-
-def test_multiclasslabel_non_positive_name_error():
-    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
-    with pytest.raises(ValueError) as value_error:
-        DFtoVW(
-            df=df,
-            label=MulticlassLabel(name="a", weight="b"),
-            features=Feature("c"),
-        )
-    expected = "In argument 'name' of 'MulticlassLabel', column 'a' must be >= 1."
-    assert expected == str(value_error.value)
-
-
-def test_multiclasslabel_negative_weight_error():
-    df = pd.DataFrame({"y": [1], "w": [-0.5], "x": [2]})
-    with pytest.raises(ValueError) as value_error:
-        DFtoVW(
-            df=df,
-            label=MulticlassLabel(name="y", weight="w"),
-            features=Feature("x"),
-        )
-    expected = "In argument 'weight' of 'MulticlassLabel', column 'w' must be >= 0."
-    assert expected == str(value_error.value)
-
-
-def test_multiclasslabel_non_positive_constant_label_error():
-    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
-    with pytest.raises(ValueError) as value_error:
-        DFtoVW(
-            df=df,
-            label=MulticlassLabel(name=-1, weight="b", name_from_df=False),
-            features=Feature("c"),
-        )
-    expected = "In 'MulticlassLabel', argument 'name' must be >= 1."
-    assert expected == str(value_error.value)
-
-
-def test_multiclasslabel_constant_label_type_error():
-    df = pd.DataFrame({"a": [0], "b": [0.5], "c": ["x"]})
-    with pytest.raises(TypeError) as type_error:
-        DFtoVW(
-            df=df,
-            label=MulticlassLabel(name="a", weight="b", weight_from_df=False),
-            features=Feature("c"),
-        )
-    expected = "In 'MulticlassLabel', when weight_from_df=False, argument 'weight' should be either of the following type(s): 'int', 'float'."
-    assert expected == str(type_error.value)

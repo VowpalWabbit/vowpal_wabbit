@@ -15,6 +15,7 @@
 #include "vw_exception.h"
 #include "future_compat.h"
 #include "vw_allreduce.h"
+#include "named_labels.h"
 
 struct global_prediction
 {
@@ -188,7 +189,6 @@ void vw::predict(example& ec)
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   ec.test_only = true;
-
   VW::LEARNER::as_singleline(l)->predict(ec);
 }
 
@@ -221,31 +221,6 @@ void vw::finish_example(multi_ex& ec)
     THROW("This reduction does not support multi-line example.");
 
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
-}
-
-void compile_gram(
-    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet)
-{
-  for (size_t i = 0; i < grams.size(); i++)
-  {
-    std::string ngram = grams[i];
-    if (isdigit(ngram[0]))
-    {
-      int n = atoi(ngram.c_str());
-      if (!quiet)
-        std::cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << std::endl;
-      for (size_t j = 0; j < 256; j++) dest[j] = n;
-    }
-    else if (ngram.size() == 1)
-      std::cout << "You must specify the namespace index before the n" << std::endl;
-    else
-    {
-      int n = atoi(ngram.c_str() + 1);
-      dest[(uint32_t)(unsigned char)*ngram.c_str()] = n;
-      if (!quiet)
-        std::cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << std::endl;
-    }
-  }
 }
 
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
@@ -370,10 +345,8 @@ vw::vw()
 
   all_reduce = nullptr;
 
-  for (size_t i = 0; i < 256; i++)
+  for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
-    ngram[i] = 0;
-    skips[i] = 0;
     limit[i] = INT_MAX;
     affix_features[i] = 0;
     spelling_features[i] = 0;
@@ -440,12 +413,11 @@ vw::~vw()
   {
     if (sd->ldict)
     {
-      sd->ldict->~namedlabels();
+      sd->ldict->~named_labels();
       free(sd->ldict);
     }
     free(sd);
   }
 
-  delete loss;
   delete all_reduce;
 }

@@ -65,6 +65,8 @@ example_predict& example_predict::operator=(example_predict&& other) noexcept
 example_predict::iterator example_predict::begin() { return {feature_space.data(), indices.begin()}; }
 example_predict::iterator example_predict::end() { return {feature_space.data(), indices.end()}; }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 safe_example_predict::safe_example_predict()
 {
   indices = v_init<namespace_index>();
@@ -73,7 +75,7 @@ safe_example_predict::safe_example_predict()
 }
 
 safe_example_predict::~safe_example_predict() { indices.delete_v(); }
-
+VW_WARNING_STATE_POP
 void safe_example_predict::clear()
 {
   for (auto ns : indices) feature_space[ns].clear();

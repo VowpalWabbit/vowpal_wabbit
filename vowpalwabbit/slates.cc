@@ -244,6 +244,11 @@ void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
   {
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
+    for(auto& action_scores : ec_seq[0]->pred.decision_scores)
+    {
+      action_scores.delete_v();
+    }
+    ec_seq[0]->pred.decision_scores.clear();
   }
 
   VW::finish_example(all, ec_seq);
@@ -267,13 +272,9 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("Slates");
-  new_options.add(make_option("slates", slates_option).keep().help("EXPERIMENTAL"));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("slates", slates_option).keep().necessary().help("EXPERIMENTAL"));
 
-  if (!slates_option)
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (!options.was_supplied("ccb_explore_adf"))
   {

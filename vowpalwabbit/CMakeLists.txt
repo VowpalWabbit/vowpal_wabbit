@@ -19,6 +19,7 @@ endif()
 
 add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
+add_library(VowpalWabbit::io ALIAS vw_io)
 
 set(vw_all_headers
   accumulate.h
@@ -26,6 +27,7 @@ set(vw_all_headers
   active_cover.h
   active.h
   allreduce.h
+  api_status.h
   array_parameters_dense.h
   array_parameters.h
   audit_regressor.h
@@ -38,8 +40,12 @@ set(vw_all_headers
   boosting.h
   bs.h
   cache.h
+  cats_pdf.h
+  cats_tree.h
+  cats.h
   cb_adf.h
   cb_algs.h
+  cb_continuous_label.h
   cb_dro.h
   cb_explore_adf_bag.h
   cb_explore_adf_common.h
@@ -47,9 +53,12 @@ set(vw_all_headers
   cb_explore_adf_first.h
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
+  cb_explore_adf_squarecb.h
   cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
+  cb_explore_pdf.h
   cb_explore.h
+  cb_label_parser.h
   cb.h
   cbify.h
   ccb_label.h
@@ -68,7 +77,10 @@ set(vw_all_headers
   decision_scores.h
   distributionally_robust.h
   ect.h
+  error_constants.h
+  error_data.h
   error_reporting.h
+  errors_data.h
   example_predict.h
   example.h
   explore_eval.h
@@ -80,6 +92,7 @@ set(vw_all_headers
   gd_predict.h
   gd.h
   gen_cs_example.h
+  get_pmf.h
   global_data.h
   guard.h
   hashstring.h
@@ -104,12 +117,15 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  named_labels.h
   network.h
+  kskip_ngram_transformer.h
   nn.h
   no_label.h
   noop.h
   oaa.h
   object_pool.h
+  offset_tree.h
   OjaNewton.h
   options_boost_po.h
   options_serializer_boost_po.h
@@ -123,12 +139,15 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
+  pmf_to_pdf.h
   plt.h
   print.h
+  prob_dist_cont.h
   queue.h
   rand48.h
   recall_tree.h
   reductions.h
+  sample_pdf.h
   scope_exit.h
   scorer.h
   search_dep_parser.h
@@ -170,6 +189,7 @@ set(vw_all_sources
   action_score.cc
   active_cover.cc
   active.cc
+  api_status.cc
   audit_regressor.cc
   autolink.cc
   baseline.cc
@@ -179,16 +199,22 @@ set(vw_all_sources
   boosting.cc
   bs.cc
   cache.cc
+  cats_pdf.cc
+  cats_tree.cc
+  cats.cc
   cb_adf.cc
   cb_algs.cc
+  cb_continuous_label.cc
   cb_dro.cc
   cb_explore_adf_bag.cc
   cb_explore_adf_cover.cc
   cb_explore_adf_first.cc
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
+  cb_explore_adf_squarecb.cc
   cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
+  cb_explore_pdf.cc
   cb_explore.cc
   cb_sample.cc
   cb.cc
@@ -211,6 +237,7 @@ set(vw_all_sources
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
+  get_pmf.cc
   global_data.cc
   interact.cc
   interactions.cc
@@ -230,11 +257,14 @@ set(vw_all_sources
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
+  named_labels.cc
   network.cc
+  kskip_ngram_transformer.cc
   nn.cc
   no_label.cc
   noop.cc
   oaa.cc
+  offset_tree.cc
   OjaNewton.cc
   options_boost_po.cc
   options_serializer_boost_po.cc
@@ -243,10 +273,13 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
+  pmf_to_pdf.cc
   plt.cc
   print.cc
+  prob_dist_cont.cc
   rand48.cc
   recall_tree.cc
+  sample_pdf.cc
   scorer.cc
   search_dep_parser.cc
   search_entityrelationtask.cc
@@ -328,6 +361,15 @@ if(WARNINGS)
     target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic)
   endif(MSVC)
 endif(WARNINGS)
+
+# Turn on warnings as errors
+if(WARNING_AS_ERROR)
+  if(MSVC)
+    target_compile_options(vw PRIVATE /WX)
+  else(MSVC)
+    target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  endif(MSVC)
+endif(WARNING_AS_ERROR)
 
 if(NOT WIN32)
   add_executable(active_interactor active_interactor.cc)
