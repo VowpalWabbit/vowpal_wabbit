@@ -60,43 +60,6 @@ typedef union
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 } polyprediction;
 
-class gd_prediction_cache
-{
-  std::vector<polyprediction> _cache;
-
- public:
-  bool inline get_value(uint64_t ft_offset, polyprediction& pred)
-  {
-    if (_cache.size() > ft_offset)
-    {
-      pred = _cache[ft_offset];
-      return true;
-    }
-    return false;
-  }
-
-  void inline set_value(uint64_t ft_offset, const polyprediction& pred)
-  {
-    if (_cache.size() <= ft_offset)
-    {
-      _cache.resize(ft_offset + 1);
-    }
-    _cache[ft_offset] = pred;
-  }
-
-  void inline clear() { _cache.clear(); }
-};
-
-class gd_prediction_cache_noop
-{
- public:
-  bool inline get_value(uint64_t, polyprediction&) { return false; }
-
-  void inline set_value(uint64_t, const polyprediction&) {}
-
-  void inline clear() {}
-};
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
