@@ -58,7 +58,7 @@ messy.
 
 # Reporting Security Issues
 
-Security issues and bugs should be reported privately, via email, to `vowpalwabbit-security@hunch.net`
+Security issues and bugs should be reported privately, via email, to `vowpalwabbit-security [a t] hunch.net`
 # Contact us
 
 Ways to get in contact can be found [here](https://github.com/VowpalWabbit/vowpal_wabbit/issues/new/choose).
