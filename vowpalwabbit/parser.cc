@@ -448,7 +448,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;
-      all.p->_shared_data = sd;
+      all.example_parser->_shared_data = sd;
 
       // create children
       size_t num_children = all.num_children;

@@ -43,7 +43,7 @@ class ezexample
   example* get_new_example()
   {
     example* new_ec = VW::new_unused_example(*vw_par_ref);
-    vw_par_ref->p->lp.default_label(&new_ec->l);
+    vw_par_ref->example_parser->lbl_parser.default_label(&new_ec->l);
     new_ec->tag.clear();
     new_ec->indices.clear();
     for (auto& i : new_ec->feature_space) i.clear();
@@ -230,7 +230,7 @@ class ezexample
   void mini_setup_example()
   {
     ec->partial_prediction = 0.;
-    ec->weight = vw_par_ref->p->lp.get_weight(&ec->l);
+    ec->weight = vw_par_ref->example_parser->lbl_parser.get_weight(&ec->l);
 
     ec->num_features -= quadratic_features_num;
     ec->total_sum_feat_sq -= quadratic_features_sqr;
@@ -287,7 +287,7 @@ class ezexample
     else  // is multiline
     {     // we need to make a copy
       example* copy = get_new_example();
-      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
+      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->example_parser->lbl_parser.label_size, vw_par_ref->example_parser->lbl_parser.copy_label);
       vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }
