@@ -678,7 +678,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  auto base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
   all.label_type = label_type_t::ccb;
 

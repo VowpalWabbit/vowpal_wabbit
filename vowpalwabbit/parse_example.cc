@@ -14,7 +14,6 @@
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
-
   size_t num_chars_initial = all->example_parser->input->readto(line, '\n');
   if (num_chars_initial < 1)
     return num_chars_initial;
