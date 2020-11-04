@@ -494,7 +494,9 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
   new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("disable progressive validation"))
-      .add(make_option("swap_resistance", data->swap_resist).default_value(4).help("higher = more resistance to swap, default=4"));
+      .add(make_option("swap_resistance", data->swap_resist)
+               .default_value(4)
+               .help("higher = more resistance to swap, default=4"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -507,8 +509,8 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example>& l = init_multiclass_learner(
-      data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors, "log_multi");
+  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(setup_base(options, all)), learn,
+      predict, all.example_parser, data->max_predictors, "log_multi");
   l.set_save_load(save_load_tree);
 
   return make_base(l);

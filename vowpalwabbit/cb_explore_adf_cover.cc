@@ -133,12 +133,12 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
         _cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
 
-      GEN_CS::cs_ldf_learn_or_predict<true>(
-          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, true, examples[0]->ft_offset, i + 1);
+      GEN_CS::cs_ldf_learn_or_predict<true>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels,
+          true, examples[0]->ft_offset, i + 1);
     }
     else
-      GEN_CS::cs_ldf_learn_or_predict<false>(
-          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, false, examples[0]->ft_offset, i + 1);
+      GEN_CS::cs_ldf_learn_or_predict<false>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels,
+          false, examples[0]->ft_offset, i + 1);
 
     for (uint32_t j = 0; j < num_actions; j++) _scores[j] += preds[j].score;
     if (!_first_only)
@@ -269,9 +269,8 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
-
-  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-cover", false);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
+      problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-cover", false);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

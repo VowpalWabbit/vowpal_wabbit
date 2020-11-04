@@ -36,7 +36,6 @@ using namespace VW::config;
 // 4. Factor various state out of vw&
 namespace GD
 {
-
 struct gd
 {
   //  double normalized_sum_norm_x;
@@ -141,7 +140,7 @@ void train(gd& g, example& ec, float update)
 {
   if
     VW_STD17_CONSTEXPR(normalized != 0) { update *= g.update_multiplier; }
-  VW_DBG(ec)<< "gd: train() spare=" << spare << std::endl;
+  VW_DBG(ec) << "gd: train() spare=" << spare << std::endl;
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 
@@ -409,7 +408,6 @@ template <bool l1, bool audit>
 void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
-
   vw& all = *g.all;
   for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
   if (g.all->weights.sparse)
@@ -1269,7 +1267,7 @@ base_learner* setup(options_i& options, vw& all)
 
   gd* bare = g.get();
   learner<gd, example>& ret =
-      init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()),"gd", false);
+      init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), "gd", false);
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

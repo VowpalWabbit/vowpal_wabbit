@@ -403,13 +403,11 @@ std::string ccb_decision_to_string(const ccb& data)
   auto& pred = data.shared->pred.a_s;
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   outstrm << "a_s [";
-  for (const auto& action_score : pred)
-    outstrm << action_score.action << ":" << action_score.score << ", ";
+  for (const auto& action_score : pred) outstrm << action_score.action << ":" << action_score.score << ", ";
   outstrm << "] ";
 
   outstrm << "excl [";
-  for(const auto& excl : data.exclude_list)
-    outstrm <<  excl << ",";
+  for (const auto& excl : data.exclude_list) outstrm << excl << ",";
   outstrm << "] ";
 
   return outstrm.str();
@@ -495,16 +493,13 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       //
       // The right thing to do here is to detect library mode and not have to call predict if prediction is
       // not needed for learn.  This will be part of a future PR
-      if(!is_learn)
-        multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
+      if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
 
-      if(is_learn)
-      {
-        multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset);
-      }
+      if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
 
       save_action_scores(data, decision_scores);
-      VW_DBG(examples) << "ccb " << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
+      VW_DBG(examples) << "ccb "
+                       << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
       clear_pred_and_label(data);
     }
     else
@@ -700,8 +695,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  learner<ccb, multi_ex>& l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs,"ccb_explore_adf", false);
+  learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
+      prediction_type_t::decision_probs, "ccb_explore_adf", false);
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

@@ -85,4 +85,3 @@ void delete_action_scores(void* v);
 
 std::ostream& operator<<(std::ostream& os, action_score& a_s);
 }  // namespace ACTION_SCORE
-

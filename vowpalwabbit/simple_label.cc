@@ -110,24 +110,20 @@ void parse_simple_label(parser*, shared_data* sd, void* v, std::vector<VW::strin
   count_label(sd, ld->label);
 }
 
-void post_parse_setup(example* ec)
-{
-  ec->initial = ec->l.simple.serialized_initial;
-}
+void post_parse_setup(example* ec) { ec->initial = ec->l.simple.serialized_initial; }
 
 label_parser simple_label_parser = {
-  default_simple_label,     // label_data default constructor
-  parse_simple_label,       // parse input stream of words into label_data
-  cache_simple_label,       // write label to cache
-  read_cached_simple_label, // read label from cache
-  delete_simple_label,
-  get_weight,
-  nullptr,                  // deep copy of label
-  test_label,               // is ths a test label?
-  sizeof(label_data),
-  post_parse_setup          // called after example is completely parsed so that
-                            // label specific fixups can happen
-                            // (for example serialized_initial used by gd)
+    default_simple_label,      // label_data default constructor
+    parse_simple_label,        // parse input stream of words into label_data
+    cache_simple_label,        // write label to cache
+    read_cached_simple_label,  // read label from cache
+    delete_simple_label, get_weight,
+    nullptr,     // deep copy of label
+    test_label,  // is ths a test label?
+    sizeof(label_data),
+    post_parse_setup  // called after example is completely parsed so that
+                      // label specific fixups can happen
+                      // (for example serialized_initial used by gd)
 };
 
 void print_update(vw& all, example& ec)

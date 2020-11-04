@@ -279,8 +279,8 @@ base_learner* active_cover_setup(options_i& options, vw& all)
   }
 
   // Create new learner
-  learner<active_cover, example>& l = init_learner(
-      data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1, "active_cover");
+  learner<active_cover, example>& l = init_learner(data, base, predict_or_learn_active_cover<true>,
+      predict_or_learn_active_cover<false>, data->cover_size + 1, "active_cover");
 
   return make_base(l);
 }

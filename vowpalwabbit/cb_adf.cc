@@ -53,15 +53,15 @@ struct cb_adf
   const float _clip_p;
 
  public:
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-  bool update_statistics(example& ec, multi_ex* ec_seq);
+   void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+   void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+   bool update_statistics(example& ec, multi_ex* ec_seq);
 
-  cb_adf(
-      shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
-      : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
-  {
-    _gen_cs.cb_type = cb_type;
+   cb_adf(shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
+       bool no_predict)
+       : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
+   {
+     _gen_cs.cb_type = cb_type;
   }
 
   void set_scorer(VW::LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
@@ -212,7 +212,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   }
 
   // Do actual training
-  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false,_offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 
   // Restore example weights and numFeatures
   for (size_t i = 0; i < _prob_s.size(); i++)
@@ -256,8 +256,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
-  cs_ldf_learn_or_predict<true>(
-    base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  cs_ldf_learn_or_predict<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
@@ -327,9 +326,8 @@ void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
   _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
-  gen_cs_test_example(ec_seq, _cs_labels);  // create test labels.
-  cs_ldf_learn_or_predict<false>(
-    base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  gen_cs_test_example(ec_seq, _cs_labels);         // create test labels.
+  cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 
 void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
@@ -565,8 +563,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   all.label_type = label_type_t::cb;
 
   cb_adf* bare = ld.get();
-  learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn,
-      predict, problem_multiplier, prediction_type_t::action_scores, "cb_adf");
+  learner<cb_adf, multi_ex>& l =
+      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores, "cb_adf");
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

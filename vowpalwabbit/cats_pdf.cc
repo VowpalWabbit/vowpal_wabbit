@@ -190,8 +190,8 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   bool always_predict = all.final_prediction_sink.size() > 0;
   auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base), always_predict);
 
-  LEARNER::learner<cats_pdf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf, "cats_pdf", false);
+  LEARNER::learner<cats_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, 1, prediction_type_t::pdf, "cats_pdf", false);
 
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

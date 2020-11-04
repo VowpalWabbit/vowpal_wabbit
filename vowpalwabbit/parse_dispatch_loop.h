@@ -42,8 +42,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           all.pass_length = all.pass_length * 2 + 1;
         }
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
-        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
-          lock_done(*all.example_parser);
+        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number) lock_done(*all.example_parser);
         example_number = 0;
       }
 

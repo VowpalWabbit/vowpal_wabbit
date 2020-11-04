@@ -159,8 +159,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
-  if (ec.l.simple.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  if (ec.l.simple.label != FLT_MAX) ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   if (all.audit)
     mf_print_audit_features(d, ec, 0);
@@ -375,7 +374,8 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), "gd_mf", false);
+  learner<gdmf, example>& l =
+      init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), "gd_mf", false);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   l.name = "gd_mf";

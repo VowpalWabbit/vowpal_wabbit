@@ -21,8 +21,7 @@ template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
   // Predict does not need set_minmax
-  if (is_learn)
-    s.all->set_minmax(s.all->sd, ec.l.simple.label);
+  if (is_learn) s.all->set_minmax(s.all->sd, ec.l.simple.label);
 
   bool learn = is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0;
   if (learn)
@@ -34,9 +33,8 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
     ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   ec.pred.scalar = link(ec.pred.scalar);
-  VW_DBG(ec)  << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset
-              << ", lbl=" << ec.l.simple.label << ", pred= " << ec.pred.scalar
-              << ", wt=" << ec.weight << std::endl;
+  VW_DBG(ec) << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset << ", lbl=" << ec.l.simple.label
+             << ", pred= " << ec.pred.scalar << ", wt=" << ec.weight << std::endl;
 }
 
 template <float (*link)(float in)>
@@ -85,21 +83,24 @@ VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
       multipredict<id>;
 
   if (link == "identity")
-    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>, "scorer-identity", base->predict_before_learn);
+    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>, "scorer-identity",
+        base->predict_before_learn);
   else if (link == "logistic")
   {
-    l = &init_learner(
-        s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>, "scorer-logistic", base->predict_before_learn);
+    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>, "scorer-logistic",
+        base->predict_before_learn);
     multipredict_f = multipredict<logistic>;
   }
   else if (link == "glf1")
   {
-    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>, "scorer-glf1", base->predict_before_learn);
+    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>, "scorer-glf1",
+        base->predict_before_learn);
     multipredict_f = multipredict<glf1>;
   }
   else if (link == "poisson")
   {
-    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>, "scorer-poisson", base->predict_before_learn);
+    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>, "scorer-poisson",
+        base->predict_before_learn);
     multipredict_f = multipredict<expf>;
   }
   else

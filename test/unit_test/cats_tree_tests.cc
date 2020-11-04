@@ -77,8 +77,7 @@ learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduct
           T::learn,               // test_harness learn
           T::predict,             // test_harness predict
           1,                      // Number of regressors in test_harness (not used)
-          "test_learner"
-      );                          // Create a learner using the base reduction.
+          "test_learner");        // Create a learner using the base reduction.
   return &test_learner;
 }
 }  // namespace cats_tree
@@ -88,7 +87,8 @@ using namespace VW::cats_tree;
 
 bool operator!=(const label_data& lhs, const label_data& rhs)
 {
-  return !(lhs.label == rhs.label && lhs.serialized_weight == rhs.serialized_weight && lhs.serialized_initial == rhs.serialized_initial);
+  return !(lhs.label == rhs.label && lhs.serialized_weight == rhs.serialized_weight &&
+      lhs.serialized_initial == rhs.serialized_initial);
 }
 
 std::ostream& operator<<(std::ostream& o, label_data const& lbl)

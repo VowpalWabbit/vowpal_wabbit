@@ -129,32 +129,27 @@ float recur_sensitivity(void*, base_learner&, example&);
 
 inline void increment_depth(example& ex)
 {
-  if(vw_dbg::track_stack)
-    ++ex.stack_depth;
+  if (vw_dbg::track_stack) ++ex.stack_depth;
 }
 
 inline void increment_depth(multi_ex& ec_seq)
 {
-  if(vw_dbg::track_stack){
-    for (auto& ec : ec_seq)
-    {
-      ++ec->stack_depth;
-    }
+  if (vw_dbg::track_stack)
+  {
+    for (auto& ec : ec_seq) { ++ec->stack_depth; }
   }
 }
 
-inline void decrement_depth(example& ex) {
-  if(vw_dbg::track_stack)
-    --ex.stack_depth;
+inline void decrement_depth(example& ex)
+{
+  if (vw_dbg::track_stack) --ex.stack_depth;
 }
 
 inline void decrement_depth(multi_ex& ec_seq)
 {
-  if(vw_dbg::track_stack){
-    for (auto& ec : ec_seq)
-    {
-      --ec->stack_depth;
-    }
+  if (vw_dbg::track_stack)
+  {
+    for (auto& ec : ec_seq) { --ec->stack_depth; }
   }
 }
 
@@ -168,10 +163,7 @@ inline void increment_offset(example& ex, const size_t increment, const size_t i
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
   if (ec_seq.size() > 0) increment_depth(ec_seq);
-  for (auto& ec : ec_seq)
-  {
-    ec->ft_offset += static_cast<uint32_t>(increment * i);
-  }
+  for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
@@ -239,8 +231,8 @@ struct learner
   bool is_multiline;  // Is this a single-line or multi-line reduction?
   std::string name;   // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
   bool predict_before_learn;  // Most reductions need to call predict() before learn().  The prediction
-                                      //   is used for progressive validation.  Some reductions do not
-                                      //   need to call predict() before learn().  For example active.cc
+                              //   is used for progressive validation.  Some reductions do not
+                              //   need to call predict() before learn().  For example active.cc
 
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
@@ -597,7 +589,8 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
     size_t params_per_weight, prediction_type_t pred_type, const std::string& name, bool predict_before_learn = true)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name, predict_before_learn);
+  auto ret = &learner<T, E>::init_learner(
+      dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name, predict_before_learn);
   dat.release();
   return *ret;
 }
@@ -638,10 +631,10 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type_t pred_type = prediction_type_t::multiclass,
-    bool predict_before_learn = true)
+    prediction_type_t pred_type = prediction_type_t::multiclass, bool predict_before_learn = true)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
+  learner<T, E>& l =
+      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
 
   dat.release();
   l.set_finish_example(MULTICLASS::finish_example<T>);
@@ -652,10 +645,10 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type_t pred_type = prediction_type_t::multiclass,
-    bool predict_before_learn = true)
+    prediction_type_t pred_type = prediction_type_t::multiclass, bool predict_before_learn = true)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
+  learner<T, E>& l =
+      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, predict_before_learn);
   dat.release();
   l.set_finish_example(COST_SENSITIVE::finish_example);
   p->lbl_parser = COST_SENSITIVE::cs_label;

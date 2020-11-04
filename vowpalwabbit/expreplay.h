@@ -39,8 +39,7 @@ template <label_parser& lp>
 void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
 {
   // Cannot learn if the example weight is 0.
-  if (lp.get_weight(&ec.l) == 0.)
-    return;
+  if (lp.get_weight(&ec.l) == 0.) return;
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {
@@ -125,8 +124,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
               << std::endl;
 
   er->base = VW::LEARNER::as_singleline(setup_base(options, all));
-  VW::LEARNER::learner<expreplay<lp>, example>* l =
-      &init_learner(er, er->base, learn<lp>, predict<lp>, replay_string);
+  VW::LEARNER::learner<expreplay<lp>, example>* l = &init_learner(er, er->base, learn<lp>, predict<lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);

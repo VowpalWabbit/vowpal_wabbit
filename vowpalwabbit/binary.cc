@@ -19,16 +19,14 @@ namespace binary
 template <bool is_learn>
 void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
 {
-  if (is_learn)
-  {
-    base.learn(ec);
-  }
+  if (is_learn) { base.learn(ec); }
   else
   {
     base.predict(ec);
   }
 
-  if (ec.pred.scalar > 0) ec.pred.scalar = 1;
+  if (ec.pred.scalar > 0)
+    ec.pred.scalar = 1;
   else
     ec.pred.scalar = -1;
 

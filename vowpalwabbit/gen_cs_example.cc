@@ -184,8 +184,8 @@ void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset, ACT
   }
 }
 
-void cs_prep_labels(multi_ex& examples, v_array<CB::label>& cb_labels,
-    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset)
+void cs_prep_labels(multi_ex& examples, v_array<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels,
+    v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset)
 {
   cb_labels.clear();
   if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)

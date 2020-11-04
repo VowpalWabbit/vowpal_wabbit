@@ -280,24 +280,24 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
         all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
 
-      l = &LEARNER::init_multiclass_learner(data, base, learn<false, true, true>,
-          predict<false, true, true>, all.example_parser, data->k, "oaa-prob", prediction_type_t::scalars);
+      l = &LEARNER::init_multiclass_learner(data, base, learn<false, true, true>, predict<false, true, true>,
+          all.example_parser, data->k, "oaa-prob", prediction_type_t::scalars);
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
-      l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, true, false>,
-          predict<false, true, false>, all.example_parser, data->k, "oaa-scores", prediction_type_t::scalars);
+      l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, true, false>, predict<false, true, false>,
+          all.example_parser, data->k, "oaa-scores", prediction_type_t::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (all.raw_prediction != nullptr)
-    l = &VW::LEARNER::init_multiclass_learner(data, base, learn<true, false, false>,
-        predict<true, false, false>, all.example_parser, data->k, "oaa-raw", prediction_type_t::multiclass);
+    l = &VW::LEARNER::init_multiclass_learner(data, base, learn<true, false, false>, predict<true, false, false>,
+        all.example_parser, data->k, "oaa-raw", prediction_type_t::multiclass);
   else
-    l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, false, false>,
-        predict<false, false, false>, all.example_parser, data->k, "oaa", prediction_type_t::multiclass);
+    l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, false, false>, predict<false, false, false>,
+        all.example_parser, data->k, "oaa", prediction_type_t::multiclass);
 
   if (data_ptr->num_subsample > 0)
   {

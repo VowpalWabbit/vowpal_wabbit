@@ -425,15 +425,9 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit(
-    [&old_weights, &data]
-    {
-      for (size_t a = 0; a < data.num_actions; ++a)
-      {
-        data.ecs[a]->weight = old_weights[a];
-      }
-    }
-  );
+  auto restore_guard = VW::scope_exit([&old_weights, &data] {
+    for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a]; }
+  });
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
@@ -649,11 +643,11 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   }
 
   if (use_cs)
-    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>, all.example_parser,
-        data->choices_lambda, "warm_cb-cs", prediction_type_t::multiclass, false);
+    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
+        all.example_parser, data->choices_lambda, "warm_cb-cs", prediction_type_t::multiclass, false);
   else
-    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>, all.example_parser,
-        data->choices_lambda, "warm_cb-multi", prediction_type_t::multiclass, false);
+    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
+        all.example_parser, data->choices_lambda, "warm_cb-multi", prediction_type_t::multiclass, false);
 
   l->set_finish(finish);
   all.delete_prediction = nullptr;

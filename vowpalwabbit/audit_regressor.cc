@@ -48,7 +48,8 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
 inline void audit_regressor_feature(audit_regressor_data& dat, const float, const uint64_t ft_idx)
 {
   parameters& weights = dat.all->weights;
-  if (weights[ft_idx] != 0) ++dat.values_audited;
+  if (weights[ft_idx] != 0)
+    ++dat.values_audited;
   else
     return;
 
@@ -100,7 +101,8 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
 {
   vw& all = *rd.all;
 
-  if (all.lda > 0) audit_regressor_lda(rd, base, ec);
+  if (all.lda > 0)
+    audit_regressor_lda(rd, base, ec);
   else
   {
     rd.cur_class = 0;
@@ -214,7 +216,8 @@ void init_driver(audit_regressor_data& dat)
   }
 
   // count non-null feature values in regressor
-  if (dat.all->weights.sparse) regressor_values(dat, dat.all->weights.sparse_weights);
+  if (dat.all->weights.sparse)
+    regressor_values(dat, dat.all->weights.sparse_weights);
   else
     regressor_values(dat, dat.all->weights.dense_weights);
 

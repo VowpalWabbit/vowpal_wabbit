@@ -164,7 +164,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
     max_pred = cs_a.cost_max;
     is_range_large = true;
     VW_DBG(ec) << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
-           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
+               << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
   }
   else
   {
@@ -175,7 +175,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
         std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     VW_DBG(ec) << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
-           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
+               << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
   }
 }
 
@@ -260,10 +260,10 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
         ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
 
       VW_DBG(ec) << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x << " prediction=" << prediction
-             << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label
-             << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " ["
-             << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped
-             << " is_baseline=" << cs_a.is_baseline << endl;
+                 << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label
+                 << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large
+                 << " [" << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta
+                 << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
     }
 
     // Need to pop metadata

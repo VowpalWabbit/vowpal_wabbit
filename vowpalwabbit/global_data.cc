@@ -172,8 +172,7 @@ void vw::learn(example& ec)
     {
       VW::LEARNER::as_singleline(l)->predict(ec);
       copy_prediction(ec.pred);
-      auto restore_guard = VW::scope_exit([&ec, this]
-      {
+      auto restore_guard = VW::scope_exit([&ec, this] {
         std::swap(ec.pred, _predict_buffer);
         VW::LEARNER::as_singleline(l)->learn(ec);
       });
@@ -196,10 +195,7 @@ void vw::learn(multi_ex& ec)
     {
       VW::LEARNER::as_multiline(l)->predict(ec);
       copy_prediction(ec[0]->pred);
-      auto restore_guard = VW::scope_exit([&ec, this]
-      {
-        std::swap(ec[0]->pred, _predict_buffer);
-      });
+      auto restore_guard = VW::scope_exit([&ec, this] { std::swap(ec[0]->pred, _predict_buffer); });
       VW::LEARNER::as_multiline(l)->learn(ec);
     }
     else
@@ -302,10 +298,9 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 void vw::copy_prediction(const polyprediction& from_pred)
 {
-  if(l == nullptr)
-    return;
+  if (l == nullptr) return;
 
-  switch(l->pred_type)
+  switch (l->pred_type)
   {
     case prediction_type_t::action_probs:
       copy_array(_predict_buffer.a_s, from_pred.a_s);
@@ -338,16 +333,15 @@ void vw::copy_prediction(const polyprediction& from_pred)
       _predict_buffer = from_pred;
       break;
     default:
-        THROW("Unhandled prediction type");
+      THROW("Unhandled prediction type");
   }
 }
 
 void vw::cleanup_prediction()
 {
-  if(l == nullptr)
-    return;
+  if (l == nullptr) return;
 
-  switch(l->pred_type)
+  switch (l->pred_type)
   {
     case prediction_type_t::action_probs:
       _predict_buffer.a_s.delete_v();
@@ -376,7 +370,7 @@ void vw::cleanup_prediction()
     case prediction_type_t::scalar:
       break;
     default:
-        THROW("Unhandled prediction type");
+      THROW("Unhandled prediction type");
   }
 }
 
@@ -494,7 +488,7 @@ vw::vw()
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
-  std::memset(&_predict_buffer,0,sizeof(_predict_buffer));
+  std::memset(&_predict_buffer, 0, sizeof(_predict_buffer));
 }
 VW_WARNING_STATE_POP
 

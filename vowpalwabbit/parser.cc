@@ -121,19 +121,16 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   return cache_numbits;
 }
 
-void set_cache_reader(vw& all)
-{
-  all.example_parser->reader = read_cached_features;
-}
+void set_cache_reader(vw& all) { all.example_parser->reader = read_cached_features; }
 
 void set_string_reader(vw& all)
 {
   all.example_parser->reader = read_features_string;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-    all.print = print_result;
-VW_WARNING_STATE_POP
-    all.print_by_ref = print_result_by_ref;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
+  all.print = print_result;
+  VW_WARNING_STATE_POP
+  all.print_by_ref = print_result_by_ref;
 }
 
 void set_json_reader(vw& all, bool dsjson = false)
@@ -161,8 +158,8 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
   if (all.example_parser->input->isbinary())
   {
     all.example_parser->reader = read_cached_features;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     all.print = binary_print_result;
 VW_WARNING_STATE_POP
     all.print_by_ref = binary_print_result_by_ref;
@@ -210,7 +207,10 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.example_parser->output_lock);
-        all.example_parser->output_done.wait(lock, [&] { return all.example_parser->finished_examples == all.example_parser->end_parsed_examples && all.example_parser->ready_parsed_examples.size() == 0; });
+        all.example_parser->output_done.wait(lock, [&] {
+          return all.example_parser->finished_examples == all.example_parser->end_parsed_examples &&
+              all.example_parser->ready_parsed_examples.size() == 0;
+        });
       }
 
       all.final_prediction_sink.clear();
@@ -382,12 +382,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     address.sin_port = htons(port);
 
     // attempt to bind to socket
-    if (::bind(all.example_parser->bound_sock, (sockaddr*)&address, sizeof(address)) < 0)
-      THROWERRNO("bind");
+    if (::bind(all.example_parser->bound_sock, (sockaddr*)&address, sizeof(address)) < 0) THROWERRNO("bind");
 
     // listen on socket
-    if (listen(all.example_parser->bound_sock, 1) < 0)
-      THROWERRNO("listen");
+    if (listen(all.example_parser->bound_sock, 1) < 0) THROWERRNO("listen");
 
     // write port file
     if (all.options->was_supplied("port_file"))
@@ -576,10 +574,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           }
         }
 
-        if (adapter)
-        {
-          all.example_parser->input->add_file(std::move(adapter));
-        }
+        if (adapter) { all.example_parser->input->add_file(std::move(adapter)); }
       }
       catch (std::exception const&)
       {
@@ -611,8 +606,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.example_parser->input->num_files() << endl;
+  if (!quiet && !all.daemon) all.trace_message << "num sources = " << all.example_parser->input->num_files() << endl;
 }
 
 void lock_done(parser& p)
@@ -667,8 +661,7 @@ void setup_examples(vw& all, v_array<example*>& examples)
 
 void setup_example(vw& all, example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false)
-    unique_sort_features(all.parse_mask, ae);
+  if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
   {
@@ -683,12 +676,11 @@ void setup_example(vw& all, example* ae)
   ae->initial = 0.;
 
   ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
-  if (!all.example_parser->emptylines_separate_examples)
-    all.example_parser->in_pass_counter++;
+  if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
 
   // Determine if this example is part of the holdout set.
-  ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off,
-      all.example_parser->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
+  ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after,
+      all.holdout_set_off, all.example_parser->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
 
@@ -744,8 +736,7 @@ void setup_example(vw& all, example* ae)
   // Notes: Allows the label parser to update the example after parsing is done.
   // For example we set the initial value used in gd during predict() (if set)
   // simple_label_parser is defined with this post parse setup step.
-  if (all.example_parser->lbl_parser.post_parse_setup != nullptr)
-    all.example_parser->lbl_parser.post_parse_setup(ae);
+  if (all.example_parser->lbl_parser.post_parse_setup != nullptr) all.example_parser->lbl_parser.post_parse_setup(ae);
 }
 }  // namespace VW
 
@@ -875,7 +866,7 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
   ec.in_use = false;
 VW_WARNING_STATE_POP
-  all.example_parser->example_pool.return_object(&ec);
+all.example_parser->example_pool.return_object(&ec);
 }
 
 void finish_example(vw& all, example& ec)
@@ -897,10 +888,7 @@ void finish_example(vw& all, example& ec)
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
   all.example_parser->end_parsed_examples += examples.size();
-  for (auto example : examples)
-  {
-    all.example_parser->ready_parsed_examples.push(example);
-  }
+  for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }
 
 void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
@@ -969,9 +957,9 @@ void free_parser(vw& all)
 {
   // It is possible to exit early when the queue is not yet empty.
 
-  while(all.example_parser->ready_parsed_examples.size() > 0)
+  while (all.example_parser->ready_parsed_examples.size() > 0)
   {
-    auto* current  = all.example_parser->ready_parsed_examples.pop();
+    auto* current = all.example_parser->ready_parsed_examples.pop();
     // this function also handles examples that were not from the pool.
     VW::finish_example(all, *current);
   }
@@ -987,10 +975,7 @@ void free_parser(vw& all)
     temp->delete_unions(all.example_parser->lbl_parser.delete_label, all.delete_prediction);
     drain_pool.push_back(temp);
   }
-  for(auto* example_ptr : drain_pool)
-  {
-    all.example_parser->example_pool.return_object(example_ptr);
-  }
+  for (auto* example_ptr : drain_pool) { all.example_parser->example_pool.return_object(example_ptr); }
 }
 
 namespace VW

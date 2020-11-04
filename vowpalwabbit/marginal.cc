@@ -380,8 +380,8 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
     if (marginal.find((char)u) != std::string::npos)
       d->id_features[u] = true;
 
-  VW::LEARNER::learner<MARGINAL::data, example>& ret =
-      init_learner(d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, "marginal");
+  VW::LEARNER::learner<MARGINAL::data, example>& ret = init_learner(
+      d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, "marginal");
   ret.set_save_load(save_load);
 
   return make_base(ret);

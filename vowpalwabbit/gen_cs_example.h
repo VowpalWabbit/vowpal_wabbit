@@ -249,14 +249,16 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
   }
 }
 
-void cs_prep_labels(multi_ex& examples, v_array<CB::label>& cb_labels,
-    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset);
+void cs_prep_labels(multi_ex& examples, v_array<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels,
+    v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset);
 
 template <bool is_learn>
 void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
-    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, bool predict_first, uint64_t offset, size_t id = 0)
+    COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, bool predict_first,
+    uint64_t offset, size_t id = 0)
 {
-  VW_DBG(*examples[0]) << "cs_ldf_learn: ex=" << examples[0]->example_counter << ", offset=" << offset << ", id=" << id << std::endl;
+  VW_DBG(*examples[0]) << "cs_ldf_learn: ex=" << examples[0]->example_counter << ", offset=" << offset << ", id=" << id
+                       << std::endl;
 
   cs_prep_labels(examples, cb_labels, cs_labels, prepped_cs_labels, offset);
 
@@ -275,10 +277,9 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& example
       }
     });
 
-  if(is_learn)
+  if (is_learn)
   {
-    if(predict_first)
-      base.predict(examples, (int32_t)id);
+    if (predict_first) base.predict(examples, (int32_t)id);
     base.learn(examples, (int32_t)id);
   }
   else

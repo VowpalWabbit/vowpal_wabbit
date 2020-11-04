@@ -82,8 +82,7 @@ void receive_result(sender& s)
 
 void learn(sender& s, VW::LEARNER::single_learner&, example& ec)
 {
-  if (s.received_index + s.all->example_parser->ring_size / 2 - 1 == s.sent_index)
-    receive_result(s);
+  if (s.received_index + s.all->example_parser->ring_size / 2 - 1 == s.sent_index) receive_result(s);
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->example_parser->lbl_parser.cache_label(&ec.l, *s.buf);  // send label information.

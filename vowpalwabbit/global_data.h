@@ -499,7 +499,6 @@ struct vw
 
   label_type_t label_type;
 
-
   vw();
   ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
@@ -512,11 +511,11 @@ struct vw
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
 
-  private:
-    polyprediction _predict_buffer;
+private:
+  polyprediction _predict_buffer;
 
-    void cleanup_prediction();
-    void copy_prediction(const polyprediction& from_pred);
+  void cleanup_prediction();
+  void copy_prediction(const polyprediction& from_pred);
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

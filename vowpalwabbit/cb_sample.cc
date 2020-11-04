@@ -81,22 +81,21 @@ struct cb_sample_data
       {
         _random_state->get_and_update_random();
       }
-
     }
 
     auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
     assert(result == S_EXPLORATION_OK);
 
-    VW_DBG(examples) << "cb " << cb_decision_to_string(examples[0]->pred.a_s) <<
-                    " rnd:" << _random_state->get_current_state() << std::endl;
+    VW_DBG(examples) << "cb " << cb_decision_to_string(examples[0]->pred.a_s)
+                     << " rnd:" << _random_state->get_current_state() << std::endl;
 
     _UNUSED(result);
   }
 
-  std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
+  std::string cb_decision_to_string(const ACTION_SCORE::action_scores &action_scores)
   {
     std::ostringstream ostrm;
-    if(action_scores.empty()) return "";
+    if (action_scores.empty()) return "";
     ostrm << "chosen" << action_scores[0] << action_scores;
     return ostrm.str();
   }

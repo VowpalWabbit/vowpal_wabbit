@@ -126,8 +126,8 @@ base_learner* confidence_setup(options_i& options, vw& all)
   auto base = as_singleline(setup_base(options, all));
 
   // Create new learner
-  learner<confidence, example>& l = init_learner(data, base,
-      learn_with_confidence_ptr, predict_with_confidence_ptr, "confidence", false);
+  learner<confidence, example>& l =
+      init_learner(data, base, learn_with_confidence_ptr, predict_with_confidence_ptr, "confidence", false);
 
   l.set_finish_example(return_confidence_example);
 

@@ -791,25 +791,23 @@ base_learner* cbify_setup(options_i& options, vw& all)
       all.example_parser->lbl_parser = simple_label_parser;
       if (use_discrete)
       {
-        l = &init_learner(
-              data, base, predict_or_learn_regression_discrete<true>,
-              predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar, "cbify-reg-discrete", false);
+        l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
+            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar, "cbify-reg-discrete", false);
         l->set_finish_example(finish_example_cb_reg_discrete);
       }
       else
       {
-        l = &init_learner(
-            data, base, predict_or_learn_regression<true>,
-            predict_or_learn_regression<false>, 1, prediction_type_t::scalar, "cbify-reg", false);
+        l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
+            prediction_type_t::scalar, "cbify-reg", false);
         l->set_finish_example(finish_example_cb_reg_continous);
       }
     }
     else if (use_cs)
-      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser,
-            1, "cbify-cs", prediction_type_t::multiclass, false);
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>,
+          all.example_parser, 1, "cbify-cs", prediction_type_t::multiclass, false);
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1,
-          "cbify", prediction_type_t::multiclass, false);
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>,
+          all.example_parser, 1, "cbify", prediction_type_t::multiclass, false);
   }
   all.delete_prediction = nullptr;
 

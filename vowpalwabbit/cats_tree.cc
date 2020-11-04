@@ -365,8 +365,8 @@ base_learner* setup(options_i& options, vw& all)
 
   base_learner* base = setup_base(options, all);
 
-  learner<cats_tree, example>& l =
-      init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(), prediction_type_t::multiclass, "cats_tree");
+  learner<cats_tree, example>& l = init_learner(
+      tree, as_singleline(base), learn, predict, tree->learner_count(), prediction_type_t::multiclass, "cats_tree");
 
   return make_base(l);
 }

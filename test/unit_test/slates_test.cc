@@ -40,8 +40,9 @@ VW::LEARNER::base_learner* make_test_learner(const LearnFunc& learn, const Predi
   using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::multi_learner&, multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
-  auto& l = VW::LEARNER::init_learner(test_base_data, (VW::LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
-      static_cast<func>(predict_fptr), 0, prediction_type_t::decision_probs, "mock_reduction");
+  auto& l =
+      VW::LEARNER::init_learner(test_base_data, (VW::LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
+          static_cast<func>(predict_fptr), 0, prediction_type_t::decision_probs, "mock_reduction");
   return VW::LEARNER::make_base(l);
 }
 

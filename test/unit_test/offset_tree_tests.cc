@@ -155,8 +155,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
           reduction_test_harness::learn,  // test_harness learn
           reduction_test_harness::predict,  // test_harness predict
           1,                                // Number of regressors in test_harness (not used)
-          "test_learner"
-      );                                    // Create a learner using the base reduction.
+          "test_learner");                  // Create a learner using the base reduction.
   return &test_learner;
 }
 

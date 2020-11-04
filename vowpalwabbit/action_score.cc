@@ -46,4 +46,3 @@ std::ostream& operator<<(std::ostream& os, action_score& a_s)
   return os;
 }
 }  // namespace ACTION_SCORE
-

@@ -205,6 +205,6 @@ void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_vie
   words.insert(words.begin(), std::move(stashed_first_token));
 }
 
-label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
-    copy_label, test_label, sizeof(CB_EVAL::label), nullptr};
+label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
+    test_label, sizeof(CB_EVAL::label), nullptr};
 }  // namespace CB_EVAL

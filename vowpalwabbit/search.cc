@@ -2174,7 +2174,7 @@ void advance_from_known_actions(search_private& priv)
 }
 
 template <bool is_learn>
-void  train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, multi_ex& ec_seq)
+void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, multi_ex& ec_seq)
 {
   search_private& priv = *sch.priv;
   vw& all = *priv.all;

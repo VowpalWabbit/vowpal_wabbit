@@ -359,9 +359,8 @@ std::string a_s_pred_to_string(const example& ec)
   std::stringstream strstream;
   strstream << "ec.pred.a_s[";
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  {
-    strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")";
-  } strstream << "]";
+  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; }
+  strstream << "]";
   return strstream.str();
 }
 
@@ -379,7 +378,7 @@ std::string prob_dist_pred_to_string(const example& ec)
   for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
   {
     strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
-      << ec.pred.pdf[i].pdf_value << ")";
+              << ec.pred.pdf[i].pdf_value << ")";
   }
   strstream << "]";
   return strstream.str();

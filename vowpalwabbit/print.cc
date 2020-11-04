@@ -30,8 +30,7 @@ void learn(print& p, VW::LEARNER::base_learner&, example& ec)
     if (ec.weight != 1 || ec.initial != 0)
     {
       cout << ec.weight << " ";
-      if (ec.initial != 0)
-        cout << ec.initial << " ";
+      if (ec.initial != 0) cout << ec.initial << " ";
     }
   }
   if (!ec.tag.empty())
