@@ -455,6 +455,7 @@ VW_WARNING_STATE_POP
       prediction_type_t pred_type, const std::string& name)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
+    new (&ret) learner<T, E>();
 
     if (base != nullptr)
     {  // a reduction
@@ -491,8 +492,8 @@ VW_WARNING_DISABLE_CAST_FUNC_TYPE
 VW_WARNING_STATE_POP
     }
 
-    new (&ret.name) std::basic_string<char>(name);
-    new (&ret.learner_data) std::shared_ptr<T>(dat, [](T* ptr) {
+    ret.name = name;
+    ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
       ptr->~T();
       free(ptr);
     });
