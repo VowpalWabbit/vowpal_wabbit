@@ -748,11 +748,11 @@ base_learner* cbify_setup(options_i& options, vw& all)
   {
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
-      l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1, "cbify-adf-cs");
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
+          all.example_parser, 1, "cbify-adf-cs");
     else
-      l = &init_multiclass_learner(
-          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1, "cbify-adf");
+      l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>,
+          all.example_parser, 1, "cbify-adf");
   }
   else
   {

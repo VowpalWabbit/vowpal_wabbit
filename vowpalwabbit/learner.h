@@ -127,20 +127,14 @@ inline float noop_sensitivity(void*, base_learner&, example&)
 }
 float recur_sensitivity(void*, base_learner&, example&);
 
-inline void increment_depth(example& ex)
-{
-  ++ex._current_reduction_depth;
-}
+inline void increment_depth(example& ex) { ++ex._current_reduction_depth; }
 
 inline void increment_depth(multi_ex& ec_seq)
 {
   for (auto& ec : ec_seq) { ++ec->_current_reduction_depth; }
 }
 
-inline void decrement_depth(example& ex)
-{
-  --ex._current_reduction_depth;
-}
+inline void decrement_depth(example& ex) { --ex._current_reduction_depth; }
 
 inline void decrement_depth(multi_ex& ec_seq)
 {
@@ -224,10 +218,7 @@ struct learner
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
-  void log_message(example& ec, const std::string& msg)
-  {
-    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
-  }
+  void log_message(example& ec, const std::string& msg) { VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl; }
 
   void log_message(multi_ex& ec, const std::string& msg)
   {
@@ -557,8 +548,7 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
     size_t params_per_weight, prediction_type_t pred_type, const std::string& name)
 {
-  auto ret = &learner<T, E>::init_learner(
-      dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name);
+  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name);
   dat.release();
   return *ret;
 }
@@ -568,8 +558,7 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
     size_t ws, const std::string& name)
 {
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name);
+  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name);
 
   dat.release();
   return *ret;
@@ -577,11 +566,10 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 
 // reduction with default num_params
 template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    const std::string& name)
+learner<T, E>& init_learner(
+    free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name)
 {
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name);
+  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name);
 
   dat.release();
   return *ret;
@@ -600,8 +588,7 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
     prediction_type_t pred_type = prediction_type_t::multiclass)
 {
-  learner<T, E>& l =
-      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
+  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
 
   dat.release();
   l.set_finish_example(MULTICLASS::finish_example<T>);
@@ -614,8 +601,7 @@ learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*lea
     void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
     prediction_type_t pred_type = prediction_type_t::multiclass)
 {
-  learner<T, E>& l =
-      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
+  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name);
   dat.release();
   l.set_finish_example(COST_SENSITIVE::finish_example);
   p->lbl_parser = COST_SENSITIVE::cs_label;

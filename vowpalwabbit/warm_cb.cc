@@ -425,15 +425,9 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit(
-    [&old_weights, &data]
-    {
-      for (size_t a = 0; a < data.num_actions; ++a)
-      {
-        data.ecs[a]->weight = old_weights[a];
-      }
-    }
-  );
+  auto restore_guard = VW::scope_exit([&old_weights, &data] {
+    for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a]; }
+  });
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
