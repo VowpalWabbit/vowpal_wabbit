@@ -70,7 +70,8 @@ void reduction::transform_prediction(example& ec)
   for (uint32_t i = 0; i < m - 1; i++)
   {
     float p = 0;
-    if (l < n && ((temp_pred_a_s[l].action < bandwidth && pdf_lim[i] == 0 )|| pdf_lim[i] == temp_pred_a_s[l].action - bandwidth))
+    if (l < n &&
+        ((temp_pred_a_s[l].action < bandwidth && pdf_lim[i] == 0) || pdf_lim[i] == temp_pred_a_s[l].action - bandwidth))
     {
       // default: 'action - bandwidth' to 'action + bandwidth'
       uint32_t actual_bandwidth = 2 * bandwidth;
@@ -81,7 +82,7 @@ void reduction::transform_prediction(example& ec)
         // need to adjust bandwidth used in generating the pdf
         actual_bandwidth -= (bandwidth - temp_pred_a_s[l].action);
       }
-      if (temp_pred_a_s[l].action + bandwidth > num_actions- 1)
+      if (temp_pred_a_s[l].action + bandwidth > num_actions - 1)
       {
         // 'action + bandwidth' gets cur off by upper limit which is 'num_actions - 1'
         // need to adjust bandwidth used in generating the pdf

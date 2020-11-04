@@ -42,7 +42,8 @@ struct reduction_test_harness
     // cout << "ec.l.cb.costs after:" << endl;
     // for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
     // {
-    //   cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " << ec.l.cb.costs[i].probability
+    //   cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " <<
+    //   ec.l.cb.costs[i].probability
     //        << " , " << ec.l.cb.costs[i].partial_prediction << "), " << endl;
     // }
   }
@@ -104,7 +105,7 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
     if (pdf[i].left <= action && action <= pdf[i].right)
     {
       // for 'action' prediced left limit will be 'action - bandwidth', or zero for edge cases where action < bandwidth
-      // for 'action' predicted right limit will be 'action + bandwidth',  or 'num_actions - 1' for edge cases 
+      // for 'action' predicted right limit will be 'action + bandwidth',  or 'num_actions - 1' for edge cases
       // where action + bandwidth > num_actions - 1
       // resulting in a span of max 2 * bandwidth
       BOOST_CHECK_LE(right_unit - left_unit, 2 * bandwidth);
@@ -163,8 +164,8 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 {
   example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  uint32_t k = 4; // num_actions
-  uint32_t h = 2; // bandwidth
+  uint32_t k = 4;  // num_actions
+  uint32_t h = 2;  // bandwidth
   float min_val = 1000;
   float max_val = 1400;
 
@@ -200,9 +201,9 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
 {
   example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  
-  uint32_t k = 16; // num_actions
-  uint32_t h = 3; // bandwidth
+
+  uint32_t k = 16;  // num_actions
+  uint32_t h = 3;   // bandwidth
   float min_val = 1000;
   float max_val = 1400;
 
