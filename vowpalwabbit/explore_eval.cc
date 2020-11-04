@@ -216,7 +216,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   all.delete_prediction = nullptr;
 
   multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
   learner<explore_eval, multi_ex>& l =

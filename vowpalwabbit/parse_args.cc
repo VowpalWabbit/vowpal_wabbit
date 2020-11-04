@@ -227,7 +227,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
+  example* ec = VW::alloc_examples(all.example_parser->lbl_parser.label_size, 1);
 
   size_t def = (size_t)' ';
 
@@ -249,7 +249,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          VW::dealloc_example(all.p->lp.delete_label, *ec);
+          VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
           free(ec);
           THROW("error: memory allocation failed in reading dictionary");
         }
@@ -294,7 +294,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  VW::dealloc_example(all.p->lp.delete_label, *ec);
+  VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
   free(ec);
 
   if (!all.logger.quiet)
@@ -507,7 +507,7 @@ namespace VW
 {
 const char* are_features_compatible(vw& vw1, vw& vw2)
 {
-  if (vw1.p->hasher != vw2.p->hasher)
+  if (vw1.example_parser->hasher != vw2.example_parser->hasher)
     return "hasher";
 
 
@@ -709,7 +709,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.p->hasher = getHasher(hash_function);
+  all.example_parser->hasher = getHasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -1096,7 +1096,7 @@ void parse_example_tweaks(options_i& options, vw& all)
       .add(make_option("examples", all.max_examples).help("number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
-      .add(make_option("sort_features", all.p->sort_features)
+      .add(make_option("sort_features", all.example_parser->sort_features)
                .help("turn this on to disregard order in which features have been defined. This will lead to smaller "
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
@@ -1339,7 +1339,7 @@ void parse_reductions(options_i& options, vw& all)
 
   // Score Users
   reductions.push_back(baseline_setup);
-  reductions.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
+  reductions.push_back(ExpReplay::expreplay_setup<'b', simple_label_parser>);
   reductions.push_back(active_setup);
   reductions.push_back(active_cover_setup);
   reductions.push_back(confidence_setup);
@@ -1437,8 +1437,8 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     }
     size_t ring_size = static_cast<size_t>(ring_size_tmp);
 
-    all.p = new parser{ring_size, strict_parse};
-    all.p->_shared_data = all.sd;
+    all.example_parser = new parser{ring_size, strict_parse};
+    all.example_parser->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1903,7 +1903,7 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->p->_shared_data = new_model->sd;
+  new_model->example_parser->_shared_data = new_model->sd;
 
   return new_model;
 }

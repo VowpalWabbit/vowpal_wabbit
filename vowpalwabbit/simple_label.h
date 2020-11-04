@@ -16,7 +16,7 @@ struct label_data
 
 void return_simple_example(vw& all, void*, example& ec);
 
-extern label_parser simple_label;
+extern label_parser simple_label_parser;
 
 bool summarize_holdout_set(vw& all, size_t& no_win_counter);
 void print_update(vw& all, example& ec);

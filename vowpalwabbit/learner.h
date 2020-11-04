@@ -553,7 +553,7 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 
   dat.release();
   l.set_finish_example(MULTICLASS::finish_example<T>);
-  p->lp = MULTICLASS::mc_label;
+  p->lbl_parser = MULTICLASS::mc_label;
   return l;
 }
 
@@ -565,7 +565,7 @@ learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*lea
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
   dat.release();
   l.set_finish_example(COST_SENSITIVE::finish_example);
-  p->lp = COST_SENSITIVE::cs_label;
+  p->lbl_parser = COST_SENSITIVE::cs_label;
   return l;
 }
 

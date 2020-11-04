@@ -72,7 +72,7 @@ struct baseline
   ~baseline()
   {
     if (ec)
-      VW::dealloc_example(simple_label.delete_label, *ec);
+      VW::dealloc_example(simple_label_parser.delete_label, *ec);
     free(ec);
   }
 };
@@ -212,7 +212,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // initialize baseline example
-  data->ec = VW::alloc_examples(simple_label.label_size, 1);
+  data->ec = VW::alloc_examples(simple_label_parser.label_size, 1);
   data->ec->interactions = &all.interactions;
 
   data->all = &all;

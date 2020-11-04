@@ -15,11 +15,11 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 
   try
   {
-    while (!all.p->done)
+    while (!all.example_parser->done)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.p->reader(&all, examples) > 0)
+          all.example_parser->reader(&all, examples) > 0)
       {
         VW::setup_examples(all, examples);
         example_number += examples.size();
@@ -32,9 +32,9 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.passes_complete++;
 
         // setup an end_pass example
-        all.p->lp.default_label(&examples[0]->l);
+        all.example_parser->lbl_parser.default_label(&examples[0]->l);
         examples[0]->end_pass = true;
-        all.p->in_pass_counter = 0;
+        all.example_parser->in_pass_counter = 0;
 
         if (all.passes_complete == all.numpasses && example_number == all.pass_length)
         {
@@ -43,7 +43,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         }
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
-          lock_done(*all.p);
+          lock_done(*all.example_parser);
         example_number = 0;
       }
 
@@ -56,15 +56,15 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
               << std::endl;
 
     // Stash the exception so it can be thrown on the main thread.
-    all.p->exc_ptr = std::current_exception();
+    all.example_parser->exc_ptr = std::current_exception();
   }
   catch (std::exception& e)
   {
     std::cerr << "vw: example #" << example_number << e.what() << std::endl;
 
     // Stash the exception so it can be thrown on the main thread.
-    all.p->exc_ptr = std::current_exception();
+    all.example_parser->exc_ptr = std::current_exception();
   }
-  lock_done(*all.p);
+  lock_done(*all.example_parser);
   examples.delete_v();
 }

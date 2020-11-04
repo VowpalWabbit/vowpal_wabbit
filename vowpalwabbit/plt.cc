@@ -371,7 +371,7 @@ base_learner* plt_setup(options_i& options, vw& all)
     l = &init_learner(
         tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t, prediction_type_t::multilabels);
 
-  all.p->lp = MULTILABEL::multilabel;
+  all.example_parser->lbl_parser = MULTILABEL::multilabel;
   all.label_type = label_type_t::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 

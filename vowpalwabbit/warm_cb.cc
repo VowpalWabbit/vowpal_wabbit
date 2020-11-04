@@ -650,10 +650,10 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (use_cs)
     l = &init_cost_sensitive_learner(
-        data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, data->choices_lambda);
+        data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, data->choices_lambda);
   else
     l = &init_multiclass_learner(
-        data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
+        data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, data->choices_lambda);
 
   l->set_finish(finish);
   all.delete_prediction = nullptr;

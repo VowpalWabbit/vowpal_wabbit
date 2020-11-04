@@ -152,9 +152,9 @@ int main(int argc, char* argv[])
 
     for (vw* v : alls)
     {
-      if (v->p->exc_ptr)
+      if (v->example_parser->exc_ptr)
       {
-        std::rethrow_exception(v->p->exc_ptr);
+        std::rethrow_exception(v->example_parser->exc_ptr);
       }
 
       VW::sync_stats(*v);

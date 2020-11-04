@@ -566,7 +566,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   auto ld = scoped_calloc_or_throw<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
 
   auto base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
   cb_adf* bare = ld.get();

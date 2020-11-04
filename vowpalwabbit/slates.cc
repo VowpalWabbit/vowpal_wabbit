@@ -283,7 +283,7 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   }
 
   auto *base = as_multiline(setup_base(options, all));
-  all.p->lp = slates_label_parser;
+  all.example_parser->lbl_parser = slates_label_parser;
   all.label_type = label_type_t::slates;
   all.delete_prediction = VW::delete_decision_scores;
   auto& l = VW::LEARNER::init_learner(

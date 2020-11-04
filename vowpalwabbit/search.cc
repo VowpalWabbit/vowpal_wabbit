@@ -2891,7 +2891,7 @@ base_learner* setup(options_i& options, vw& all)
       sch->metatask_name = (*mytask)->metatask_name;
       break;
     }
-  all.p->emptylines_separate_examples = true;
+  all.example_parser->emptylines_separate_examples = true;
 
   if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
       !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
@@ -2910,7 +2910,7 @@ base_learner* setup(options_i& options, vw& all)
   base_learner* base = setup_base(*all.options, all);
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
-  all.p->lp = MC::mc_label;
+  all.example_parser->lbl_parser = MC::mc_label;
   all.label_type = label_type_t::mc;
   if (priv.task && priv.task->initialize)
     priv.task->initialize(*sch.get(), priv.A, options);
@@ -3084,8 +3084,8 @@ void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
-  this->priv->all->p->lp = lp;
-  this->priv->all->p->lp.test_label = (bool (*)(void*))is_test;
+  this->priv->all->example_parser->lbl_parser = lp;
+  this->priv->all->example_parser->lbl_parser.test_label = (bool (*)(void*))is_test;
   this->priv->label_is_test = is_test;
 }
 

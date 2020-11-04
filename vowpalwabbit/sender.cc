@@ -71,7 +71,7 @@ void receive_result(sender& s)
   float res, weight;
 
   get_prediction(s._socket_reader.get(), res, weight);
-  example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
+  example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->ring_size];
   ec.pred.scalar = res;
 
   label_data& ld = ec.l.simple;
@@ -82,13 +82,13 @@ void receive_result(sender& s)
 
 void learn(sender& s, VW::LEARNER::single_learner&, example& ec)
 {
-  if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index) receive_result(s);
+  if (s.received_index + s.all->example_parser->ring_size / 2 - 1 == s.sent_index) receive_result(s);
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  s.all->p->lp.cache_label(&ec.l, *s.buf);  // send label information.
+  s.all->example_parser->lbl_parser.cache_label(&ec.l, *s.buf);  // send label information.
   cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, (uint32_t)s.all->parse_mask);
-  s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
+  s.delay_ring[s.sent_index++ % s.all->example_parser->ring_size] = &ec;
 }
 
 void finish_example(vw&, sender&, example&) {}
@@ -113,7 +113,7 @@ VW::LEARNER::base_learner* sender_setup(options_i& options, vw& all)
   open_sockets(*s.get(), host);
 
   s->all = &all;
-  s->delay_ring = calloc_or_throw<example*>(all.p->ring_size);
+  s->delay_ring = calloc_or_throw<example*>(all.example_parser->ring_size);
 
   VW::LEARNER::learner<sender, example>& l = init_learner(s, learn, learn, 1);
   l.set_finish_example(finish_example);

@@ -95,7 +95,7 @@ void drain_examples(vw& all)
   if (all.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
-    while ((ec = VW::get_example(all.p)) != nullptr) VW::finish_example(all, *ec);
+    while ((ec = VW::get_example(all.example_parser)) != nullptr) VW::finish_example(all, *ec);
   }
   all.l->end_examples();
 }
@@ -169,7 +169,7 @@ class multi_example_handler
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.p->lp.test_label(&ec->l);
+    const bool is_test_ec = master.example_parser->lbl_parser.test_label(&ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
     if (!is_newline)
     {
@@ -227,7 +227,7 @@ class ready_examples_queue
  public:
   ready_examples_queue(vw& master) : _master(master) {}
 
-  example* pop() { return !_master.early_terminate ? VW::get_example(_master.p) : nullptr; }
+  example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
 
  private:
   vw& _master;
@@ -291,7 +291,7 @@ void generic_driver_onethread(vw& all)
   single_instance_context context(all);
   handler_type handler(context);
   auto multi_ex_fptr = [&handler](vw& all, v_array<example*> examples) {
-    all.p->end_parsed_examples += examples.size();  // divergence: lock & signal
+    all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
     custom_examples_queue examples_queue(examples);
     process_examples(examples_queue, handler);
   };
