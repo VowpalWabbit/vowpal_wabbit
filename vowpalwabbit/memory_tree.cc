@@ -1287,8 +1287,8 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   if (tree->oas == false)
   {
     num_learners = tree->max_nodes + 1;
-    learner<memory_tree, example>& l =
-        init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, num_learners);
+    learner<memory_tree, example>& l = init_multiclass_learner(
+        tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, num_learners);
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
     l.set_end_pass(end_pass);

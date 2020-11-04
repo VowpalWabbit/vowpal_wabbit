@@ -108,8 +108,8 @@ void parse_simple_label(parser*, shared_data* sd, void* v, std::vector<VW::strin
   count_label(sd, ld->label);
 }
 
-label_parser simple_label_parser = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
-    delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
+label_parser simple_label_parser = {default_simple_label, parse_simple_label, cache_simple_label,
+    read_cached_simple_label, delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
 
 void print_update(vw& all, example& ec)
 {

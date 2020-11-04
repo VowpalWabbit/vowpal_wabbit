@@ -779,7 +779,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1);
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
+      l = &init_multiclass_learner(
+          data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
   }
   all.delete_prediction = nullptr;
 

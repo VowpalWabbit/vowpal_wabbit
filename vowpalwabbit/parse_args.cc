@@ -507,9 +507,7 @@ namespace VW
 {
 const char* are_features_compatible(vw& vw1, vw& vw2)
 {
-  if (vw1.example_parser->hasher != vw2.example_parser->hasher)
-    return "hasher";
-
+  if (vw1.example_parser->hasher != vw2.example_parser->hasher) return "hasher";
 
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
     return "spelling_features";

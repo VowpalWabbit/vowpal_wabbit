@@ -229,7 +229,7 @@ class ready_examples_queue
 
   example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
 
- private:
+private:
   vw& _master;
 };
 

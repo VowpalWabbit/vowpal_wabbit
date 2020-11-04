@@ -504,7 +504,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
     tokenize(' ', label_space, all->example_parser->words);
     if (all->example_parser->words.size() > 0 &&
         (all->example_parser->words.back().end() == label_space.end() ||
-        all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
+            all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
       VW::string_view tag = all->example_parser->words.back();
       all->example_parser->words.pop_back();
@@ -515,7 +515,8 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   }
 
   if (!all->example_parser->words.empty())
-    all->example_parser->lbl_parser.parse_label(all->example_parser, all->example_parser->_shared_data, &ae->l, all->example_parser->words);
+    all->example_parser->lbl_parser.parse_label(
+        all->example_parser, all->example_parser->_shared_data, &ae->l, all->example_parser->words);
 
   if (bar_idx != VW::string_view::npos)
   {
