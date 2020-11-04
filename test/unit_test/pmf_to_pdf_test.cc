@@ -163,7 +163,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 {
   example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-
   uint32_t k = 4; // num_actions
   uint32_t h = 2; // bandwidth
   float min_val = 1000;
@@ -172,29 +171,29 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
   // continuous_range = max_value - min_value;
   // unit_range = continuous_range / (k - 1);
 
-  for (uint32_t action = 1; action < k; action++)
+  data->num_actions = k;
+  data->bandwidth = h;
+  data->min_value = min_val;
+  data->max_value = max_val;
+
+  for (uint32_t action = 0; action < k; action++)
   {
     const VW::pmf_to_pdf::predictions_t prediction_scores{{action, 1.f}};
 
     const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
-
-    data->num_actions = k;
-    data->bandwidth = h;
-    data->min_value = min_val;
-    data->max_value = max_val;
     data->_p_base = as_singleline(test_harness);
-
     ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
 
     predict(*data, *data->_p_base, ec);
+
     check_pdf_sums_to_one(ec.pred.pdf);
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
+    delete_probability_density_function(&ec.pred.pdf);
+    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
   }
-  delete_probability_density_function(&ec.pred.pdf);
-  CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
 }
 
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
@@ -207,33 +206,32 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
   float min_val = 1000;
   float max_val = 1400;
 
+  data->num_actions = k;
+  data->bandwidth = h;
+  data->min_value = min_val;
+  data->max_value = max_val;
+
   // continuous_range = max_value - min_value;
   // unit_range = continuous_range / (k - 1);
 
-  for (uint32_t action = 1; action < k; action++)
+  for (uint32_t action = 0; action < k; action++)
   {
     const VW::pmf_to_pdf::predictions_t prediction_scores{{action, 1.f}};
 
     const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
-
-    data->num_actions = k;
-    data->bandwidth = h;
-    data->min_value = min_val;
-    data->max_value = max_val;
     data->_p_base = as_singleline(test_harness);
-
     ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
 
     predict(*data, *data->_p_base, ec);
+
     check_pdf_sums_to_one(ec.pred.pdf);
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
+    delete_probability_density_function(&ec.pred.pdf);
+    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
   }
-
-  delete_probability_density_function(&ec.pred.pdf);
-  CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
 }
 
 namespace VW
