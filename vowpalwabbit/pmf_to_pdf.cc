@@ -59,8 +59,7 @@ void reduction::transform_prediction(example& ec)
     }
   }
 
-  auto max_val = std::min(num_actions - 1, temp_pred_a_s[n - 1].action + bandwidth);
-  if (max_val != num_actions - 1) pdf_lim.push_back(num_actions - 1);
+  if (pdf_lim.back() != num_actions - 1) pdf_lim.push_back(num_actions - 1);
 
   auto& p_dist = ec.pred.pdf;
   p_dist.clear();
@@ -73,15 +72,19 @@ void reduction::transform_prediction(example& ec)
     float p = 0;
     if (l < n && ((temp_pred_a_s[l].action < bandwidth && pdf_lim[i] == 0 )|| pdf_lim[i] == temp_pred_a_s[l].action - bandwidth))
     {
-      // how many bandwidth units between [[0|(action - bandwidth)], action]
-      // how many bandwidth units between [action, [(action + bandwidth)|(num_actions - 1)]]
+      // default: 'action - bandwidth' to 'action + bandwidth'
       uint32_t actual_bandwidth = 2 * bandwidth;
+
       if (temp_pred_a_s[l].action < bandwidth && pdf_lim[i] == 0)
       {
+        // 'action - bandwidth' gets cut off by lower limit which is zero
+        // need to adjust bandwidth used in generating the pdf
         actual_bandwidth -= (bandwidth - temp_pred_a_s[l].action);
       }
       if (temp_pred_a_s[l].action + bandwidth > num_actions- 1)
       {
+        // 'action + bandwidth' gets cur off by upper limit which is 'num_actions - 1'
+        // need to adjust bandwidth used in generating the pdf
         actual_bandwidth -= (bandwidth - (num_actions - 1 - temp_pred_a_s[l].action));
       }
       p += temp_pred_a_s[l++].score / (actual_bandwidth * unit_range);
