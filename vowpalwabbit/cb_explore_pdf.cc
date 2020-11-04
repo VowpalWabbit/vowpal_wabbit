@@ -15,9 +15,6 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
-// Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
-
 namespace VW
 {
 namespace continuous_action
@@ -108,8 +105,8 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
   p_reduction->min_value = min;
   p_reduction->max_value = max;
 
-  LEARNER::learner<cb_explore_pdf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
+  LEARNER::learner<cb_explore_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base),
+      predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf, "cb_explore_pdf");
 
   return make_base(l);
 }

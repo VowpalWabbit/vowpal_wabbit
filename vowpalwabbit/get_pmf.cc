@@ -17,9 +17,6 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
-// Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
-
 namespace VW
 {
 namespace continuous_action
@@ -100,8 +97,8 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
   auto p_reduction = scoped_calloc_or_throw<get_pmf>();
   p_reduction->init(as_singleline(p_base), epsilon);
 
-  LEARNER::learner<get_pmf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
+  LEARNER::learner<get_pmf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, 1, prediction_type_t::pdf, "get_pmf");
 
   return make_base(l);
 }

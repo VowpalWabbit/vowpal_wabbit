@@ -934,7 +934,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params, example>& l = init_learner(params, learn, predict, 1);
+  learner<svm_params, example>& l = init_learner(params, learn, predict, 1, "ksvm");
   l.set_save_load(save_load);
   return make_base(l);
 }

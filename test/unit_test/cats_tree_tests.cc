@@ -75,8 +75,8 @@ learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduct
       init_learner(test_harness,  // Data structure passed by vw_framework into test_harness predict/learn calls
           T::learn,               // test_harness learn
           T::predict,             // test_harness predict
-          1                       // Number of regressors in test_harness (not used)
-      );                          // Create a learner using the base reduction.
+          1,                      // Number of regressors in test_harness (not used)
+          "test_learner");        // Create a learner using the base reduction.
   return &test_learner;
 }
 }  // namespace cats_tree

@@ -210,7 +210,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate, example>& l = init_learner(
-      lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, 1 + maxk);
+      lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, 1 + maxk, "lrq");
   l.set_end_pass(reset_seed);
 
   // TODO: leaks memory ?

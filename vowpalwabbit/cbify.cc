@@ -24,8 +24,6 @@ using VW::cb_continuous::continuous_label_elm;
 
 struct cbify;
 
-VW_DEBUG_ENABLE(false)
-
 struct cbify_adf_data
 {
   multi_ex ecs;
@@ -751,10 +749,10 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
+          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1, "cbify-adf-cs");
     else
       l = &init_multiclass_learner(
-          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
+          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1, "cbify-adf");
   }
   else
   {
@@ -765,22 +763,22 @@ base_learner* cbify_setup(options_i& options, vw& all)
       if (use_discrete)
       {
         l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
-            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar);
-        l->set_finish_example(finish_example_cb_reg_discrete);  // todo: check
+            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar, "cbify-reg-discrete");
+        l->set_finish_example(finish_example_cb_reg_discrete);
       }
       else
       {
         l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-            prediction_type_t::scalar);
+            prediction_type_t::scalar, "cbify-reg");
         l->set_finish_example(finish_example_cb_reg_continous);
       }
     }
     else if (use_cs)
-      l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1);
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>,
+          all.example_parser, 1, "cbify-cs", prediction_type_t::multiclass);
     else
-      l = &init_multiclass_learner(
-          data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>,
+          all.example_parser, 1, "cbify", prediction_type_t::multiclass);
   }
   all.delete_prediction = nullptr;
 
@@ -822,8 +820,8 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));
-  learner<cbify, multi_ex>& l = init_learner(
-      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type_t::multiclass);
+  learner<cbify, multi_ex>& l = init_learner(data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1,
+      prediction_type_t::multiclass, "cbify-ldf");
 
   l.set_finish_example(finish_multiline_example);
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;

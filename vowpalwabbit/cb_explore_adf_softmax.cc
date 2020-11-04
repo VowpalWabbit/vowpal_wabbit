@@ -98,9 +98,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     THROW("The value of epsilon must be in [0,1]");
   }
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
-
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
+      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-softmax");
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);
 }

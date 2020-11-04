@@ -95,6 +95,6 @@ VW::LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   auto autolink_reduction = scoped_calloc_or_throw<VW::autolink>(d, all.weights.stride_shift());
-  return make_base(init_learner(
-      autolink_reduction, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>));
+  return make_base(init_learner(autolink_reduction, as_singleline(setup_base(options, all)), predict_or_learn<true>,
+      predict_or_learn<false>, "autolink"));
 }

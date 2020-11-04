@@ -673,6 +673,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
+  ae->_current_reduction_depth = 0;
 
   ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;

@@ -247,8 +247,8 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
+      problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-cover");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

@@ -697,7 +697,8 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly, example> &l = init_learner(poly, as_singleline(setup_base(options, all)), learn, predict);
+  learner<stagewise_poly, example> &l =
+      init_learner(poly, as_singleline(setup_base(options, all)), learn, predict, "stage_poly");
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

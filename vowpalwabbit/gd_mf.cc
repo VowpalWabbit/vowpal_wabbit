@@ -376,7 +376,8 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
+  learner<gdmf, example>& l =
+      init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), "gd_mf");
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
 

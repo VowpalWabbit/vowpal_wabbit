@@ -222,7 +222,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
 
   auto base = as_singleline(setup_base(options, all));
 
-  learner<baseline, example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
+  learner<baseline, example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, "baseline");
 
   l.set_sensitivity(sensitivity);
 

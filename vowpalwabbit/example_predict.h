@@ -48,7 +48,8 @@ struct example_predict
   // and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions;
 
-  uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level
+  // Used for debugging reductions.  Keeps track of current reduction level.
+  uint32_t _current_reduction_depth;
 };
 
 // make sure we have an exception safe version of example_predict
@@ -62,3 +63,7 @@ class VW_DEPRECATED("example_predict is now RAII based. That class can be used i
 
   void clear();
 };
+
+std::string features_to_string(const example_predict& ec);
+std::string depth_indent_string(const example_predict& ec);
+std::string depth_indent_string(int32_t stack_depth);

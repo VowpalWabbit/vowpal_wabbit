@@ -205,6 +205,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->interactions = src->interactions;
+  dst->_current_reduction_depth = src->_current_reduction_depth;
 }
 
 void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
@@ -323,22 +324,7 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-std::string features_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[off=" << ec.ft_offset << "]";
-  for (auto& f : ec.feature_space)
-  {
-    auto ind_iter = f.indicies.cbegin();
-    auto val_iter = f.values.cbegin();
-    for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
-    {
-      strstream << "[h=" << *ind_iter << ","
-                << "v=" << *val_iter << "]";
-    }
-  }
-  return strstream.str();
-}
+std::string depth_indent_string(const multi_ex& ec) { return depth_indent_string(*ec[0]); }
 
 std::string cb_label_to_string(const example& ec)
 {
@@ -357,17 +343,7 @@ std::string cb_label_to_string(const example& ec)
 std::string simple_label_to_string(const example& ec)
 {
   std::stringstream strstream;
-  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.l.simple.weight << "]";
-  return strstream.str();
-}
-
-std::string depth_indent_string(const example& ec) { return depth_indent_string(ec._current_reduction_depth); }
-
-std::string depth_indent_string(int32_t stack_depth)
-{
-  std::stringstream strstream;
-  for (auto i = 0; i < stack_depth - 1; i++) { strstream << "| "; }
-  strstream << "+ ";
+  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
   return strstream.str();
 }
 
@@ -383,7 +359,8 @@ std::string a_s_pred_to_string(const example& ec)
   std::stringstream strstream;
   strstream << "ec.pred.a_s[";
   for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; } strstream << "]";
+  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; }
+  strstream << "]";
   return strstream.str();
 }
 
