@@ -319,7 +319,7 @@ struct vw
  public:
   shared_data* sd;
 
-  parser* p;
+  parser* example_parser;
   std::thread parse_thread;
 
   AllReduceType all_reduce_type;

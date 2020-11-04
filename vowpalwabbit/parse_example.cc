@@ -14,7 +14,7 @@
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
-  size_t num_chars_initial = all->p->input->readto(line, '\n');
+  size_t num_chars_initial = all->example_parser->input->readto(line, '\n');
   if (num_chars_initial < 1)
     return num_chars_initial;
   num_chars = num_chars_initial;
@@ -464,7 +464,7 @@ class TC_parser
     if (!_line.empty())
     {
       this->_read_idx = 0;
-      this->_p = all.p;
+      this->_p = all.example_parser;
       this->_redefine_some = all.redefine_some;
       this->_redefine = &all.redefine;
       this->_ae = ae;
@@ -481,11 +481,11 @@ class TC_parser
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
-  all->p->lp.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
 
-  all->p->words.clear();
+  all->example_parser->words.clear();
   if (bar_idx != 0)
   {
     VW::string_view label_space(example);
@@ -501,21 +501,22 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
       label_space.remove_prefix(tab_idx + 1);
     }
 
-    tokenize(' ', label_space, all->p->words);
-    if (all->p->words.size() > 0 &&
-        (all->p->words.back().end() == label_space.end() ||
-        all->p->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
+    tokenize(' ', label_space, all->example_parser->words);
+    if (all->example_parser->words.size() > 0 &&
+        (all->example_parser->words.back().end() == label_space.end() ||
+            all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->p->words.back();
-      all->p->words.pop_back();
+      VW::string_view tag = all->example_parser->words.back();
+      all->example_parser->words.pop_back();
       if (tag.front() == '\'')
         tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());
     }
   }
 
-  if (!all->p->words.empty())
-    all->p->lp.parse_label(all->p, all->p->_shared_data, &ae->l, all->p->words);
+  if (!all->example_parser->words.empty())
+    all->example_parser->lbl_parser.parse_label(
+        all->example_parser, all->example_parser->_shared_data, &ae->l, all->example_parser->words);
 
   if (bar_idx != VW::string_view::npos)
   {

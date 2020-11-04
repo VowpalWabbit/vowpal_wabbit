@@ -1365,19 +1365,19 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);
-  if (minibatch2 > all.p->ring_size)
+  if (minibatch2 > all.example_parser->ring_size)
   {
-    bool previous_strict_parse = all.p->strict_parse;
-    delete all.p;
-    all.p = new parser{minibatch2, previous_strict_parse};
-    all.p->_shared_data = all.sd;
+    bool previous_strict_parse = all.example_parser->strict_parse;
+    delete all.example_parser;
+    all.example_parser = new parser{minibatch2, previous_strict_parse};
+    all.example_parser->_shared_data = all.sd;
   }
 
   ld->v.resize(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 
-  all.p->lp = no_label::no_label_parser;
+  all.example_parser->lbl_parser = no_label::no_label_parser;
 
   VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),

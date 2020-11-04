@@ -342,7 +342,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
       VW::read_line(*all, ex, &empty);
     }
     else
-      all->p->lp.default_label(&ex->l);
+      all->example_parser->lbl_parser.default_label(&ex->l);
 
     return reinterpret_cast<jlong>(new VowpalWabbitExampleWrapper(all, ex));
   }
@@ -359,7 +359,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JN
 
   try
   {
-    VW::dealloc_example(all->p->lp.delete_label, *ex);
+    VW::dealloc_example(all->example_parser->lbl_parser.delete_label, *ex);
     ::free_it(ex);
   }
   catch (...)
@@ -375,7 +375,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   try
   {
     VW::empty_example(*all, *ex);
-    all->p->lp.default_label(&ex->l);
+    all->example_parser->lbl_parser.default_label(&ex->l);
   }
   catch (...)
   {
@@ -498,7 +498,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
 
   try
   {
-    all->p->lp.default_label(&ex->l);
+    all->example_parser->lbl_parser.default_label(&ex->l);
   }
   catch (...)
   {
@@ -608,9 +608,9 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     std::ostringstream ostr;
 
     ostr << "VowpalWabbitExample(label=";
-    auto lp = all->p->lp;
+    auto lp = all->example_parser->lbl_parser;
 
-    if (!memcmp(&lp, &simple_label, sizeof(lp)))
+    if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
     {
       label_data* ld = (label_data*)&ex->l;
       ostr << "simple " << ld->label << ":" << ld->weight << ":" << ld->initial;

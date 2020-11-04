@@ -532,7 +532,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
                       << std::endl;
 
   learner<recall_tree, example>& l = init_multiclass_learner(
-      tree, as_singleline(setup_base(options, all)), learn, predict, all.p, tree->max_routers + tree->k);
+      tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, tree->max_routers + tree->k);
   l.set_save_load(save_load_tree);
 
   return make_base(l);

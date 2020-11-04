@@ -646,7 +646,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   }
 
   auto* base = as_multiline(setup_base(options, all));
-  all.p->lp = CCB::ccb_label_parser;
+  all.example_parser->lbl_parser = CCB::ccb_label_parser;
   all.label_type = label_type_t::ccb;
 
   // Stash the base learners stride_shift so we can properly add a feature later.

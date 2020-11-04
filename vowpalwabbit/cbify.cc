@@ -751,17 +751,17 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1);
+          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
     else
       l = &init_multiclass_learner(
-          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, 1);
+          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
   }
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_reg)
     {
-      all.p->lp = simple_label;
+      all.example_parser->lbl_parser = simple_label_parser;
       if (use_discrete)
       {
         l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
@@ -777,9 +777,10 @@ base_learner* cbify_setup(options_i& options, vw& all)
     }
     else if (use_cs)
       l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
+          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1);
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
+      l = &init_multiclass_learner(
+          data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
   }
   all.delete_prediction = nullptr;
 
@@ -825,7 +826,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
       data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type_t::multiclass);
 
   l.set_finish_example(finish_multiline_example);
-  all.p->lp = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
   all.delete_prediction = nullptr;
 
   return make_base(l);

@@ -152,7 +152,7 @@ void save_predictor(vw& all, io_buf& buf);
 // First create the hash of a namespace.
 inline uint64_t hash_space(vw& all, const std::string& s)
 {
-  return all.p->hasher(s.data(), s.length(), all.hash_seed);
+  return all.example_parser->hasher(s.data(), s.length(), all.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
@@ -160,12 +160,12 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 }
 inline uint64_t hash_space_cstr(vw& all, const char* fstr)
 {
-  return all.p->hasher(fstr, strlen(fstr), all.hash_seed);
+  return all.example_parser->hasher(fstr, strlen(fstr), all.hash_seed);
 }
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {
-  return all.p->hasher(s.data(), s.length(), u) & all.parse_mask;
+  return all.example_parser->hasher(s.data(), s.length(), u) & all.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
@@ -175,13 +175,15 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
 
 inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
-  return all.p->hasher(fstr, strlen(fstr), u) & all.parse_mask;
+  return all.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
 }
 
 inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& value, uint64_t u)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-  return all.p->hasher(value.data(), value.length(), all.p->hasher(name.data(), name.length(), u)) & all.parse_mask;
+  return all.example_parser->hasher(
+             value.data(), value.length(), all.example_parser->hasher(name.data(), name.length(), u)) &
+      all.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

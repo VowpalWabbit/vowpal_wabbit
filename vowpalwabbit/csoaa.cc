@@ -132,7 +132,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
       predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
-  all.p->lp = cs_label;
+  all.example_parser->lbl_parser = cs_label;
   all.label_type = label_type_t::cs;
 
   l.set_finish_example(finish_example);
@@ -860,7 +860,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   if (ld->rank)
     all.delete_prediction = delete_action_scores;
 
-  all.p->lp = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
   all.label_type = label_type_t::cs;
 
   ld->treat_as_classifier = false;
@@ -888,7 +888,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
       all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << std::endl;
   }
 
-  all.p->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
+  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);

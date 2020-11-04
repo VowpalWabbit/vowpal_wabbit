@@ -103,8 +103,11 @@ predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
 
 label_parser* get_label_parser(vw*all, size_t labelType)
 { switch (labelType)
-  { case lDEFAULT:           return all ? &all->p->lp : NULL;
-    case lBINARY:            return &simple_label;
+  {
+    case lDEFAULT:
+      return all ? &all->example_parser->lbl_parser : NULL;
+    case lBINARY:
+      return &simple_label_parser;
     case lMULTICLASS:        return &MULTICLASS::mc_label;
     case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT: return &CB::cb_label;
@@ -115,10 +118,9 @@ label_parser* get_label_parser(vw*all, size_t labelType)
 }
 
 size_t my_get_label_type(vw*all)
-{ label_parser* lp = &all->p->lp;
-  if (lp->parse_label == simple_label.parse_label)
-  { return lBINARY;
-  }
+{
+  label_parser* lp = &all->example_parser->lbl_parser;
+  if (lp->parse_label == simple_label_parser.parse_label) { return lBINARY; }
   else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
   { return lMULTICLASS;
   }
@@ -250,7 +252,7 @@ py::list my_parse(vw_ptr& all, char* str)
 {
   v_array<example*> examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->p->text_reader(all.get(), str, strlen(str), examples);
+  all->example_parser->text_reader(all.get(), str, strlen(str), examples);
 
   py::list example_collection;
   for (auto *ex : examples)
@@ -470,10 +472,10 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 { // SPEEDUP: if it's already set properly, don't modify
-  label_parser& old_lp = vw->p->lp;
-  vw->p->lp = *get_label_parser(&*vw, labelType);
+  label_parser& old_lp = vw->example_parser->lbl_parser;
+  vw->example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
-  vw->p->lp = old_lp;
+  vw->example_parser->lbl_parser = old_lp;
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
