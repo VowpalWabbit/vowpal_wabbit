@@ -33,6 +33,9 @@ typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
+class OptionManager ;
+typedef boost::shared_ptr<OptionManager> op_manager_ptr;
+
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
 const size_t lMULTICLASS = 2;
@@ -53,6 +56,128 @@ const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 
 void dont_delete_me(void* arg) {}
+
+class OptionManager
+{
+  std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
+  py::object m_cla;
+  VW::config::options_i& m_opt;
+
+  public:
+  OptionManager(VW::config::options_i& options, py::object cla) : m_opt(options),m_option_group_dic(options.get_collection_of_options()),m_cla(cla) {}
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
+  {
+    return new py::object(m_cla(opt.m_name
+                                , opt.m_help
+                                , opt.m_short_name
+                                , opt.m_keep
+                                , opt.m_necessary
+                                , opt.m_allow_override
+                                , opt.value()
+                                , m_opt.was_supplied(opt.m_name) 
+                                , opt.default_value()
+                                , opt.default_value_supplied()));
+  }
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<std::vector<T>>& opt)
+  {
+    py::list values;
+
+    auto vec = opt.value();
+    if (vec.size() > 0)
+    {
+      for (auto const& opt : vec)
+      {
+        values.append(py::object(opt));
+      }
+    }
+
+    return new py::object(m_cla(opt.m_name
+                            , opt.m_help
+                            , opt.m_short_name
+                            , opt.m_keep
+                            , opt.m_necessary
+                            , opt.m_allow_override
+                            , values
+                            , m_opt.was_supplied(opt.m_name) 
+                            , py::list()
+                            , opt.default_value_supplied()));
+  }
+
+  template <typename T>
+  py::object* transform_if_t(VW::config::base_option& base_option)
+  {
+    if (base_option.m_type_hash == typeid(T).hash_code())
+    {
+      auto typed = dynamic_cast<VW::config::typed_option<T>&>(base_option);
+      return value_to_pyobject(typed);
+    }
+
+    return nullptr;
+  }
+
+  template <typename TTypes>
+  py::object do_also(VW::config::base_option& options)
+  {
+    py::object* temp = transform_if_t<typename TTypes::head>(options);
+    if (temp != nullptr)
+    {
+      auto repack = py::object(*temp);
+      delete temp;
+      return repack;
+    }
+
+    return do_also<typename TTypes::tail>(options);
+  }
+
+  py::object get_vw_option_pyobjects(vw_ptr all, bool enabled_only)
+  {
+    py::dict dres;
+    auto it = m_option_group_dic.begin();
+
+    auto enabled_reductions = all->enabled_reductions;
+
+    while (it != m_option_group_dic.end())
+    {
+      auto reduction_enabled = std::find(enabled_reductions.begin(), enabled_reductions.end(), it->first) != enabled_reductions.end();
+
+      if (((it->first).compare("general") != 0) && enabled_only && !reduction_enabled)
+      {
+        it++;
+        continue;
+      }
+
+      py::list option_groups;
+
+      for(auto options_group : it->second)
+      {
+        py::list options;
+        for(auto opt : options_group.m_options)
+        {
+          auto temp = do_also<VW::config::supported_options_types>(*opt.get());
+          options.append(temp);
+        }
+
+        option_groups.append(py::make_tuple(options_group.m_name, options));
+      }
+
+      dres[it->first] = option_groups;
+
+      it++;
+    }
+    return dres;
+  }
+};
+
+template <>
+py::object OptionManager::do_also<VW::config::typelist<>>(VW::config::base_option& options)
+{
+  return py::object();
+}
+
 
 vw_ptr my_initialize(std::string args)
 {
@@ -78,6 +203,11 @@ void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
 search_ptr get_search_ptr(vw_ptr all)
 {
   return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
+}
+
+op_manager_ptr get_op_manager_ptr(vw_ptr all, py::object cla)
+{ // remove dont_delete_me?, verify its sane
+  return op_manager_ptr(new OptionManager(*all->options, cla), dont_delete_me);
 }
 
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
@@ -903,6 +1033,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
+      .def("get_option_manager_ptr", &get_op_manager_ptr, "return a pointer to the option manager data structure")
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
@@ -1057,6 +1188,9 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
       .def("set_tag", &my_set_tag, "change the tag of this prediction")
       .def("predict", &Search::predictor::predict, "make a prediction");
+
+  py::class_<OptionManager, op_manager_ptr>("option_manager", py::no_init)
+      .def("get_options", &OptionManager::get_vw_option_pyobjects, py::return_value_policy<py::return_by_value>(), "do something");
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")

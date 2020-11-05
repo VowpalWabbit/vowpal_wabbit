@@ -46,8 +46,22 @@ void options_boost_po::add_to_description(
   add_to_description_impl<supported_options_types>(std::move(opt), options_description);
 }
 
+void options_boost_po::add_to_option_group_collection(const option_group_definition& group)
+{
+  if (m_option_group_dic.count(m_current_reduction_tint) > 0)
+  {
+    m_option_group_dic[m_current_reduction_tint].push_back(group);
+  }
+  else
+  {
+    m_option_group_dic.insert({m_current_reduction_tint, {group}});
+  }
+}
+
 void options_boost_po::add_and_parse(const option_group_definition& group)
 {
+  this->add_to_option_group_collection(group);
+
   po::options_description new_options(group.m_name);
 
   for (auto opt_ptr : group.m_options)

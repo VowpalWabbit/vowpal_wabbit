@@ -5,6 +5,81 @@ from __future__ import division
 import pylibvw
 import warnings
 
+# baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
+class VWOption:
+    def __init__(self, name, help_str, short_name, keep, necessary, allow_override, value, value_supplied, default_value, default_value_supplied):
+        self._name = name
+        self._help_str = help_str
+        self._short_name = short_name
+        self._keep = keep
+        self._necessary = necessary
+        self._allow_override = allow_override
+        self._value = value
+        self._value_supplied = value_supplied
+        self._default_value = default_value
+        self._default_value_supplied = default_value_supplied
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def help_str(self):
+        return self._help_str
+
+    @property
+    def short_name(self):
+        return self._short_name
+
+    @property
+    def keep(self):
+        return self._keep
+
+    @property
+    def necessary(self):
+        return self._necessary
+
+    @property
+    def allow_override(self):
+        return self._allow_override
+
+    @property
+    def value_supplied(self):
+        return self._value_supplied
+
+    @property
+    def default_value(self):
+        return self._default_value
+
+    @property
+    def default_value_supplied(self):
+        return self._default_value_supplied
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        self._value_supplied = True
+        self._value = val
+
+    def is_flag(self):
+        if type(self._default_value) == bool:
+            return True
+
+    def __str__(self):
+        if self.is_flag() and self.value:
+            return f'--{self.name}'
+        else:
+            # missing list case
+            if self.value_supplied:
+                if isinstance(self.value, list):
+                    return "**NOT_IMPL**"
+                else:
+                    return f'--{self.name} {self.value}'
+            else:
+                return ''
 
 class SearchTask:
     """Search task class"""
@@ -243,6 +318,9 @@ class vw(pylibvw.vw):
             pylibvw.vw.run_parser(self)
 
         self.finished = False
+    
+    def get_config(self, filtered_enabled_reductions_only=True):
+        return self.get_option_manager_ptr(VWOption).get_options(self, filtered_enabled_reductions_only)
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or
