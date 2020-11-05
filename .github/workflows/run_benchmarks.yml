@@ -7,7 +7,7 @@ on:
 jobs:
   Benchmarking:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1604-build:0.6.0
     runs-on: ubuntu-latest
     steps:
       - name: Try python version
