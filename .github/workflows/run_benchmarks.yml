@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Activate python36
         shell: bash
-        run: sudo conda init bash ; conda activate test-python36
+        run: conda init bash ; conda activate test-python36
       - run: python --version
       - uses: actions/checkout@v1
         with:
