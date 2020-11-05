@@ -1,5 +1,5 @@
 #ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_DYN_LINK
 #endif
 
 #include <benchmark/benchmark.h>
@@ -59,12 +59,10 @@ auto get_x_string_fts_multi_ex = [](int feature_size, size_t actions, bool share
   {
     ss << " | ";
     for (size_t j = start_index; j < start_index + feature_size; j++)
-    { ss << std::to_string(i) + "_" + std::to_string(j) << +" "; }
-    ss << std::endl;
+    { ss << std::to_string(i) + "_" + std::to_string(j) << +" "; } ss << std::endl;
   }
   return ss.str();
 };
-
 
 template <class... ExtraArgs>
 static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
@@ -158,8 +156,8 @@ static void bench_cache_io_buf_collections(benchmark::State& state, ExtraArgs&&.
   {
     for (size_t i = 0; i < examples_size; i++)
     { reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size())); }
-    while (read_cached_features(vw, examples)) { VW::empty_example(*vw, *examples[0]); }
-    benchmark::ClobberMemory();
+    while (read_cached_features(vw, examples))
+    { VW::empty_example(*vw, *examples[0]); } benchmark::ClobberMemory();
   }
   examples.delete_v();
 }
@@ -199,4 +197,4 @@ BENCHMARK_CAPTURE(bench_cache_io_buf, 120_num_fts, get_x_numerical_fts(120));
 BENCHMARK_CAPTURE(bench_text_io_buf, 120_num_fts, get_x_numerical_fts(120));
 
 // Run the benchmark
-BENCHMARK_MAIN(); 
+BENCHMARK_MAIN();
