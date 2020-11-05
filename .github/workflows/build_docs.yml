@@ -41,7 +41,6 @@ jobs:
       - name: Install Python package
         run: |
           /usr/local/miniconda/bin/activate test-python36
-          python --version
           python setup.py install --user
           /usr/local/miniconda/bin/deactivate
       - name: Build docs

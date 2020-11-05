@@ -7,15 +7,14 @@ on:
 jobs:
   Benchmarking:
     container:
-      image: vowpalwabbit/ubuntu1604-build:0.6.0
+      image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
-      - name: Try python version
-        run: |
-          /usr/local/miniconda/bin/activate test-python36
-          pip --version
-          python --version
-          /usr/local/miniconda/bin/deactivate
+      - name: Conda init
+        shell: bash
+        run: conda init bash ; source ~/.bashrc ; conda activate test-python36
+      - run: python --version
+      - run: pip --version
       - uses: actions/checkout@v1
         with:
           # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
@@ -29,6 +28,7 @@ jobs:
       - name: Benchmark master
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
+      - run: ls
       - run: rm -rf benchmark build
       - name: Upload master benchmark results
         uses: actions/upload-artifact@v2
@@ -52,13 +52,9 @@ jobs:
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
       - name: Install benchmark compare requirements
-        run: |
-          /usr/local/miniconda/bin/activate test-python36
-          pip install -r benchmark/tools/requirements.txt
-          /usr/local/miniconda/bin/deactivate
+        shell: bash
+        run: pip install -r benchmark/tools/requirements.txt
       - name: Compare benchmarks
-        run: |
-          /usr/local/miniconda/bin/activate test-python36
-          ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
-          /usr/local/miniconda/bin/deactivate
+        shell: bash
+        run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
       - run: ls
