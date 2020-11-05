@@ -1,4 +1,4 @@
-vowpalwabbit.sklearn
+vowpalwabbit.dftovw
 ====================
 
 .. automodule:: vowpalwabbit.dftovw
