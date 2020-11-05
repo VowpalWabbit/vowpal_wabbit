@@ -10,17 +10,7 @@ jobs:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
-      - name: Conda init
-        shell: bash
-        run: conda init bash
-      - name: Source bashrc
-        shell: bash
-        run: source ~/.bashrc
-      - name: Activate python3.6
-        shell: bash
-        run: conda activate test-python36
-      - run: python --version
-      - run: pip --version
+      - run: python3-pip --version
       - uses: actions/checkout@v1
         with:
           # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
