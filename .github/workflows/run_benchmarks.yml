@@ -11,8 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        # with: // master doesn't have benchmark scripts this right now, check diff between two branch runs
-        #   ref: master
+        with:
+          # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
+          submodules: true
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmark.sh # repo dir
@@ -24,6 +25,8 @@ jobs:
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
       - run: ls
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmark.sh
