@@ -5,7 +5,7 @@ on:
       - master
 
 jobs:
-  Coverage:
+  Benchmarking:
     container:
       image: vowpalwabbit/ubuntu1604-build:0.6.0
     runs-on: ubuntu-latest
