@@ -48,7 +48,7 @@ jobs:
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
       - name: Activate python36
         shell: bash
-        run: conda activate test-python36
+        run: conda init bash & conda activate test-python36
       - run: python --version
       - name: Install benchmark compare requirements
         shell: bash
