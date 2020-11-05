@@ -10,7 +10,7 @@ jobs:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
           submodules: true
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
       - run: ls
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           submodules: true
       - name: Install google benchmarks
