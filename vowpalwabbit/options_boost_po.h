@@ -57,10 +57,7 @@ struct options_boost_po : public options_i
   std::shared_ptr<base_option> get_option(const std::string& key) override;
   std::shared_ptr<const base_option> get_option(const std::string& key) const override;
 
-  void tint(const std::string& reduction_name) override
-  { 
-    m_current_reduction_tint = reduction_name;
-  }
+  void tint(const std::string& reduction_name) override { m_current_reduction_tint = reduction_name; }
 
   void insert(const std::string& key, const std::string& value) override
   {

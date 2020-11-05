@@ -33,7 +33,7 @@ typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
-class OptionManager ;
+class OptionManager;
 typedef boost::shared_ptr<OptionManager> op_manager_ptr;
 
 const size_t lDEFAULT = 0;
@@ -63,22 +63,18 @@ class OptionManager
   py::object m_cla;
   VW::config::options_i& m_opt;
 
-  public:
-  OptionManager(VW::config::options_i& options, py::object cla) : m_opt(options),m_option_group_dic(options.get_collection_of_options()),m_cla(cla) {}
+public:
+  OptionManager(VW::config::options_i& options, py::object cla)
+      : m_opt(options), m_option_group_dic(options.get_collection_of_options()), m_cla(cla)
+  {
+  }
 
   template <typename T>
   py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
   {
-    return new py::object(m_cla(opt.m_name
-                                , opt.m_help
-                                , opt.m_short_name
-                                , opt.m_keep
-                                , opt.m_necessary
-                                , opt.m_allow_override
-                                , opt.value()
-                                , m_opt.was_supplied(opt.m_name) 
-                                , opt.default_value()
-                                , opt.default_value_supplied()));
+    return new py::object(
+        m_cla(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary, opt.m_allow_override, opt.value(),
+            m_opt.was_supplied(opt.m_name), opt.default_value(), opt.default_value_supplied()));
   }
 
   template <typename T>
@@ -89,22 +85,11 @@ class OptionManager
     auto vec = opt.value();
     if (vec.size() > 0)
     {
-      for (auto const& opt : vec)
-      {
-        values.append(py::object(opt));
-      }
+      for (auto const& opt : vec) { values.append(py::object(opt)); }
     }
 
-    return new py::object(m_cla(opt.m_name
-                            , opt.m_help
-                            , opt.m_short_name
-                            , opt.m_keep
-                            , opt.m_necessary
-                            , opt.m_allow_override
-                            , values
-                            , m_opt.was_supplied(opt.m_name) 
-                            , py::list()
-                            , opt.default_value_supplied()));
+    return new py::object(m_cla(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+        opt.m_allow_override, values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied()));
   }
 
   template <typename T>
@@ -142,7 +127,8 @@ class OptionManager
 
     while (it != m_option_group_dic.end())
     {
-      auto reduction_enabled = std::find(enabled_reductions.begin(), enabled_reductions.end(), it->first) != enabled_reductions.end();
+      auto reduction_enabled =
+          std::find(enabled_reductions.begin(), enabled_reductions.end(), it->first) != enabled_reductions.end();
 
       if (((it->first).compare("general") != 0) && enabled_only && !reduction_enabled)
       {
@@ -152,10 +138,10 @@ class OptionManager
 
       py::list option_groups;
 
-      for(auto options_group : it->second)
+      for (auto options_group : it->second)
       {
         py::list options;
-        for(auto opt : options_group.m_options)
+        for (auto opt : options_group.m_options)
         {
           auto temp = do_also<VW::config::supported_options_types>(*opt.get());
           options.append(temp);
@@ -177,7 +163,6 @@ py::object OptionManager::do_also<VW::config::typelist<>>(VW::config::base_optio
 {
   return py::object();
 }
-
 
 vw_ptr my_initialize(std::string args)
 {
@@ -206,7 +191,7 @@ search_ptr get_search_ptr(vw_ptr all)
 }
 
 op_manager_ptr get_op_manager_ptr(vw_ptr all, py::object cla)
-{ // remove dont_delete_me?, verify its sane
+{  // remove dont_delete_me?, verify its sane
   return op_manager_ptr(new OptionManager(*all->options, cla), dont_delete_me);
 }
 
@@ -1190,7 +1175,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("predict", &Search::predictor::predict, "make a prediction");
 
   py::class_<OptionManager, op_manager_ptr>("option_manager", py::no_init)
-      .def("get_options", &OptionManager::get_vw_option_pyobjects, py::return_value_policy<py::return_by_value>(), "do something");
+      .def("get_options", &OptionManager::get_vw_option_pyobjects, py::return_value_policy<py::return_by_value>(),
+          "do something");
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
