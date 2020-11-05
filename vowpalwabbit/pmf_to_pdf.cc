@@ -66,7 +66,6 @@ void reduction::transform_prediction(example& ec)
 
   size_t m = pdf_lim.size();
   l = 0;
-  r = 0;
   for (uint32_t i = 0; i < m - 1; i++)
   {
     float p = 0;
@@ -84,7 +83,7 @@ void reduction::transform_prediction(example& ec)
       }
       if (temp_pred_a_s[l].action + bandwidth > num_actions - 1)
       {
-        // 'action + bandwidth' gets cur off by upper limit which is 'num_actions - 1'
+        // 'action + bandwidth' gets cut off by upper limit which is 'num_actions - 1'
         // need to adjust bandwidth used in generating the pdf
         actual_bandwidth -= (bandwidth - (num_actions - 1 - temp_pred_a_s[l].action));
       }
