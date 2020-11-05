@@ -15,8 +15,8 @@ namespace INTERACTIONS
 
 // expand namespace interactions if contain wildcards
 // recursive function used internally in this module
-void expand_namespaces_with_recursion(
-    std::vector<namespace_index> const& ns, std::vector<std::vector<namespace_index>>& res, std::vector<namespace_index>& val, size_t pos)
+void expand_namespaces_with_recursion(std::vector<namespace_index> const& ns,
+    std::vector<std::vector<namespace_index>>& res, std::vector<namespace_index>& val, size_t pos)
 {
   assert(pos <= ns.size());
 
@@ -90,8 +90,7 @@ std::vector<std::vector<namespace_index>> expand_interactions(
 
 inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 {
-  if (oi.size() <= 1)
-    return true;  // one letter in std::string - no need to sort
+  if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
 
   bool diff_ns_found = false;
   bool pair_found = false;
@@ -99,14 +98,12 @@ inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
   for (auto i = std::begin(oi); i != std::end(oi) - 1; ++i)
     if (*i == *(i + 1))  // pair found
     {
-      if (diff_ns_found)
-        return true;  // case 'abb'
+      if (diff_ns_found) return true;  // case 'abb'
       pair_found = true;
     }
     else
     {
-      if (pair_found)
-        return true;  // case 'aab'
+      if (pair_found) return true;  // case 'aab'
       diff_ns_found = true;
     }
 
@@ -137,13 +134,11 @@ void sort_and_filter_duplicate_interactions(
   {
     // remove duplicates
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
-          return a.first < b.first;
-        });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first < b.first; });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
-          return a.first == b.first;
-        });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first == b.first; });
     vec_sorted.erase(last, vec_sorted.end());
 
     // report number of removed interactions
@@ -151,9 +146,8 @@ void sort_and_filter_duplicate_interactions(
 
     // restore original order
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<namespace_index>, size_t> const& a, std::pair<std::vector<namespace_index>, size_t> const& b) {
-          return a.second < b.second;
-        });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.second < b.second; });
   }
 
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
@@ -217,10 +211,8 @@ constexpr size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_fac
 
 inline size_t factor(const size_t n, const size_t start_from = 1)
 {
-  if (n <= 0)
-    return 1;
-  if (start_from == 1 && n < size_fast_factorial)
-    return (size_t)fast_factorial[n];
+  if (n <= 0) return 1;
+  if (start_from == 1 && n < size_fast_factorial) return (size_t)fast_factorial[n];
 
   size_t res = 1;
   for (size_t i = start_from + 1; i <= n; ++i) res *= i;
@@ -248,12 +240,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
       {
         num_features_in_inter *= ec.feature_space[ns].size();
         sum_feat_sq_in_inter *= ec.feature_space[ns].sum_feat_sq;
-        if (num_features_in_inter == 0)
-          break;
+        if (num_features_in_inter == 0) break;
       }
 
-      if (num_features_in_inter == 0)
-        continue;
+      if (num_features_in_inter == 0) continue;
 
       new_features_cnt += num_features_in_inter;
       new_features_value += sum_feat_sq_in_inter;
@@ -281,8 +271,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           const int nsc = *ns;
           num_features_in_inter *= ec.feature_space[nsc].size();
           sum_feat_sq_in_inter *= ec.feature_space[nsc].sum_feat_sq;
-          if (num_features_in_inter == 0)
-            break;  // one of namespaces has no features - go to next interaction
+          if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
         }
         else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
         {
@@ -290,8 +279,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           size_t order_of_inter = 2;  // alredy compared ns == ns+1
 
           for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
-            if (*ns == *ns_end)
-              ++order_of_inter;
+            if (*ns == *ns_end) ++order_of_inter;
 
           // namespace is same for whole block
           features& fs = ec.feature_space[static_cast<int>(*ns)];
@@ -345,9 +333,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
           size_t n;
           if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-          {
-            n = (size_t)choose((int64_t)ft_size, (int64_t)order_of_inter);
-          }
+          { n = (size_t)choose((int64_t)ft_size, (int64_t)order_of_inter); }
           else
           {
             n = 0;
@@ -372,8 +358,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
         }
       }
 
-      if (num_features_in_inter == 0)
-        continue;  // signal that values should be ignored (as default value is 1)
+      if (num_features_in_inter == 0) continue;  // signal that values should be ignored (as default value is 1)
 
       new_features_cnt += num_features_in_inter;
       new_features_value += sum_feat_sq_in_inter;

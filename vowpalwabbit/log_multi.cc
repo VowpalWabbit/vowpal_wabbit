@@ -14,7 +14,7 @@ using namespace VW::config;
 
 class node_pred
 {
- public:
+public:
   double Ehk;
   float norm_Ehk;
   uint32_t nk;
@@ -23,15 +23,9 @@ class node_pred
 
   bool operator==(node_pred v) const { return (label == v.label); }
 
-  bool operator>(node_pred v) const
-  {
-    return label > v.label;
-  }
+  bool operator>(node_pred v) const { return label > v.label; }
 
-  bool operator<(node_pred v) const
-  {
-    return label < v.label;
-  }
+  bool operator<(node_pred v) const { return label < v.label; }
 
   node_pred() = default;
   node_pred(uint32_t l)
@@ -319,8 +313,7 @@ void predict(log_multi& b, single_learner& base, example& ec)
 void learn(log_multi& b, single_learner& base, example& ec)
 {
   //    verify_min_dfs(b, b.nodes[0]);
-  if (ec.l.multi.label == (uint32_t)-1 || b.progress)
-    predict(b, base, ec);
+  if (ec.l.multi.label == (uint32_t)-1 || b.progress) predict(b, base, ec);
 
   if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
   {
@@ -360,17 +353,12 @@ void save_node_stats(log_multi& d)
         b->nodes[i].Eh / b->nodes[i].n, b->nodes[i].n);
 
     fprintf(fp, "Label:, ");
-    for (j = 0; j < b->nodes[i].preds.size(); j++)
-    {
-      fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].label);
-    }
+    for (j = 0; j < b->nodes[i].preds.size(); j++) { fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].label); }
     fprintf(fp, "\n");
 
     fprintf(fp, "Ehk:, ");
     for (j = 0; j < b->nodes[i].preds.size(); j++)
-    {
-      fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk);
-    }
+    { fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk); }
     fprintf(fp, "\n");
 
     total = 0;

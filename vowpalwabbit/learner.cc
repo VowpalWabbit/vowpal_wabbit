@@ -61,8 +61,7 @@ void save(example& ec, vw& all)
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
-  if (!all.logger.quiet)
-    all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
+  if (!all.logger.quiet) all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
   save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
@@ -73,10 +72,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
   bool is_header = false;
-  if (all.label_type == label_type_t::ccb)
-  {
-    is_header = CCB::ec_is_example_header(ec);
-  }
+  if (all.label_type == label_type_t::ccb) { is_header = CCB::ec_is_example_header(ec); }
   else
   {
     is_header = CB::ec_is_example_header(ec);
@@ -105,7 +101,7 @@ void drain_examples(vw& all)
 // process<process_impl> - call process_impl for all vw instances
 class single_instance_context
 {
- public:
+public:
   single_instance_context(vw& all) : _all(all) {}
 
   vw& get_master() const { return _all; }
@@ -116,13 +112,13 @@ class single_instance_context
     process_impl(ec, _all);
   }
 
- private:
+private:
   vw& _all;
 };
 
 class multi_instance_context
 {
- public:
+public:
   multi_instance_context(const std::vector<vw*>& all) : _all(all) {}
 
   vw& get_master() const { return *_all.front(); }
@@ -134,7 +130,7 @@ class multi_instance_context
     for (auto it = _all.rbegin(); it != _all.rend(); ++it) process_impl(ec, **it);
   }
 
- private:
+private:
   std::vector<vw*> _all;
 };
 
@@ -143,7 +139,7 @@ class multi_instance_context
 template <typename context_type>
 class single_example_handler
 {
- public:
+public:
   single_example_handler(const context_type& context) : _context(context) {}
 
   void on_example(example* ec)
@@ -158,23 +154,20 @@ class single_example_handler
       _context.template process<example, learn_ex>(*ec);
   }
 
- private:
+private:
   context_type _context;
 };
 
 template <typename context_type>
 class multi_example_handler
 {
- private:
+private:
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
     const bool is_test_ec = master.example_parser->lbl_parser.test_label(&ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
-    if (!is_newline)
-    {
-      ec_seq.push_back(ec);
-    }
+    if (!is_newline) { ec_seq.push_back(ec); }
     else
     {
       VW::finish_example(master, *ec);
@@ -195,15 +188,12 @@ class multi_example_handler
     return false;
   }
 
- public:
+public:
   multi_example_handler(const context_type context) : _context(context) {}
 
   ~multi_example_handler()
   {
-    if (!ec_seq.empty())
-    {
-      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-    }
+    if (!ec_seq.empty()) { _context.template process<multi_ex, learn_multi_ex>(ec_seq); }
   }
 
   void on_example(example* ec)
@@ -215,7 +205,7 @@ class multi_example_handler
     }
   }
 
- private:
+private:
   context_type _context;
   multi_ex ec_seq;
 };
@@ -224,7 +214,7 @@ class multi_example_handler
 // for single- and multi-threaded scenarios
 class ready_examples_queue
 {
- public:
+public:
   ready_examples_queue(vw& master) : _master(master) {}
 
   example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
@@ -235,12 +225,12 @@ private:
 
 class custom_examples_queue
 {
- public:
+public:
   custom_examples_queue(v_array<example*> examples) : _examples(examples) {}
 
   example* pop() { return _index < _examples.size() ? _examples[_index++] : nullptr; }
 
- private:
+private:
   v_array<example*> _examples;
   size_t _index{0};
 };

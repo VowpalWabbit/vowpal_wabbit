@@ -46,8 +46,7 @@ inline void sort_action_probs(v_array<ACTION_SCORE::action_score>& probs, const 
 }
 inline size_t fill_tied(v_array<ACTION_SCORE::action_score>& preds)
 {
-  if (preds.size() == 0)
-    return 0;
+  if (preds.size() == 0) return 0;
   size_t ret = 1;
   for (size_t i = 1; i < preds.size(); ++i)
     if (preds[i].score == preds[0].score)
@@ -62,14 +61,14 @@ template <typename ExploreType>
 // data common to all cb_explore_adf reductions
 struct cb_explore_adf_base
 {
- private:
+private:
   CB::cb_class _known_cost;
   // used in output_example
   CB::label _action_label;
   CB::label _empty_label;
   ExploreType explore;
 
- public:
+public:
   template <typename... Args>
   cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...)
   {
@@ -78,7 +77,7 @@ struct cb_explore_adf_base
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
- private:
+private:
   void output_example_seq(vw& all, multi_ex& ec_seq);
   void output_example(vw& all, multi_ex& ec_seq);
 };
@@ -126,8 +125,7 @@ inline void cb_explore_adf_base<ExploreType>::learn(
 template <typename ExploreType>
 void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 {
-  if (ec_seq.size() <= 0)
-    return;
+  if (ec_seq.size() <= 0) return;
 
   size_t num_features = 0;
 
@@ -136,10 +134,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   auto& ec = *ec_seq[0];
   const auto& preds = ec.pred.a_s;
 
-  for (const auto& example : ec_seq)
-  {
-    num_features += example->num_features;
-  }
+  for (const auto& example : ec_seq) { num_features += example->num_features; }
 
   bool labeled_example = true;
   if (_known_cost.probability > 0)
@@ -168,8 +163,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
@@ -184,8 +178,7 @@ void cb_explore_adf_base<ExploreType>::output_example_seq(vw& all, multi_ex& ec_
   if (ec_seq.size() > 0)
   {
     output_example(all, ec_seq);
-    if (all.raw_prediction != nullptr)
-      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
   }
 }
 

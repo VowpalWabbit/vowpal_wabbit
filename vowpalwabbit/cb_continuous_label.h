@@ -14,10 +14,10 @@ namespace cb_continuous
 {
 struct continuous_label_elm
 {
-  float action;       // the continuous action
-  float cost;         // the cost of this class
-  float pdf_value;    // the pdf density of the chosen location, specifies the probability the data collection policy
-                      // chose this action
+  float action;     // the continuous action
+  float cost;       // the cost of this class
+  float pdf_value;  // the pdf density of the chosen location, specifies the probability the data collection policy
+                    // chose this action
 
   bool operator==(const continuous_label_elm&& j) const { return action == j.action; }
 };

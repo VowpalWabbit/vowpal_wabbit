@@ -31,8 +31,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
   }
 
   std::string ns_pre;
-  if (!dat.ns_pre->empty())
-    ns_pre += '*';
+  if (!dat.ns_pre->empty()) ns_pre += '*';
 
   if (f->first != "" && ((f->first) != " "))
   {
@@ -172,8 +171,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
   if (dd.values_audited == dd.loaded_regressor_values)
   {
     // all regressor values were audited
-    if (!printed)
-      print_ex(all, ec.example_counter + 1, dd.values_audited, 100);
+    if (!printed) print_ex(all, ec.example_counter + 1, dd.values_audited, 100);
     set_done(all);
   }
 
@@ -191,8 +189,7 @@ template <class T>
 void regressor_values(audit_regressor_data& dat, T& w)
 {
   for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
-    if (*iter != 0)
-      dat.loaded_regressor_values++;
+    if (*iter != 0) dat.loaded_regressor_values++;
 }
 
 void init_driver(audit_regressor_data& dat)
@@ -200,9 +197,7 @@ void init_driver(audit_regressor_data& dat)
   // checks a few settings that might be applied after audit_regressor_setup() is called
   if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache")) &&
       !dat.all->options->was_supplied("kill_cache"))
-  {
-    THROW("audit_regressor is incompatible with a cache file.  Use it in single pass mode only.");
-  }
+  { THROW("audit_regressor is incompatible with a cache file.  Use it in single pass mode only."); }
 
   dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved with --save_resume
   dat.all->sd->example_number = 0;
@@ -226,8 +221,7 @@ void init_driver(audit_regressor_data& dat)
   else
     regressor_values(dat, dat.all->weights.dense_weights);
 
-  if (dat.loaded_regressor_values == 0)
-    THROW("regressor has no non-zero weights. Nothing to audit.");
+  if (dat.loaded_regressor_values == 0) THROW("regressor has no non-zero weights. Nothing to audit.");
 
   if (!dat.all->logger.quiet)
   {
@@ -254,11 +248,9 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (out_file.empty())
-    THROW("audit_regressor argument (output filename) is missing.");
+  if (out_file.empty()) THROW("audit_regressor argument (output filename) is missing.");
 
-  if (all.numpasses > 1)
-    THROW("audit_regressor can't be used with --passes > 1.");
+  if (all.numpasses > 1) THROW("audit_regressor can't be used with --passes > 1.");
 
   all.audit = true;
 
