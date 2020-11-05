@@ -10,10 +10,7 @@ jobs:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
-      - name: Activate python36
-        shell: bash
-        run: conda init bash ; conda activate test-python36
-      - run: python --version
+      - run: /usr/local/miniconda/envs/test-python36/bin/pip --version
       - uses: actions/checkout@v1
         with:
           # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
@@ -27,7 +24,6 @@ jobs:
       - name: Benchmark master
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
-      - run: ls
       - run: rm -rf benchmark build
       - name: Upload master benchmark results
         uses: actions/upload-artifact@v2
@@ -52,7 +48,7 @@ jobs:
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
       - name: Install benchmark compare requirements
         shell: bash
-        run: pip install -r benchmark/tools/requirements.txt
+        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
       - name: Compare benchmarks
         shell: bash
         run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
