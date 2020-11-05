@@ -46,9 +46,13 @@ jobs:
       - name: Benchmark branch
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
+      - name: Activate python36
+        shell: bash
+        run: conda activate test-python36
+      - run: python --version
       - name: Install benchmark compare requirements
         shell: bash
-        run: pip3 install -r benchmark/tools/requirements.txt
+        run: pip install -r benchmark/tools/requirements.txt
       - name: Compare benchmarks
         shell: bash
         run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
