@@ -24,10 +24,19 @@ jobs:
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
       - run: ls
-      - run: rm -rf benchmarks build
+      - run: rm -rf benchmark build
+      - name: Upload master benchmark results
+        uses: actions/upload-artifact@v2
+        with:
+          name: master-benchmarks
+          path: master-benchmarks.json
       - uses: actions/checkout@v1
         with:
           submodules: true
+      - name: Download master benchmark results
+        uses: actions/download-artifact@v2
+        with:
+          name: master-benchmarks
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmark.sh
