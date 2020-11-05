@@ -1,7 +1,7 @@
-vowpalwabbit.dftovw
+vowpalwabbit.DFtoVW
 ====================
 
-.. automodule:: vowpalwabbit.dftovw
+.. automodule:: vowpalwabbit.DFtoVW
     :members:
     :undoc-members:
     :show-inheritance:
