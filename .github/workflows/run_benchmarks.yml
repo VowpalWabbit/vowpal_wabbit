@@ -10,6 +10,10 @@ jobs:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
+      - name: Activate python36
+        shell: bash
+        run: sudo conda init bash ; conda activate test-python36
+      - run: python --version
       - uses: actions/checkout@v1
         with:
           # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
@@ -46,10 +50,6 @@ jobs:
       - name: Benchmark branch
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
-      - name: Activate python36
-        shell: bash
-        run: sudo conda init bash ; conda activate test-python36
-      - run: python --version
       - name: Install benchmark compare requirements
         shell: bash
         run: pip install -r benchmark/tools/requirements.txt
