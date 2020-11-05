@@ -1,0 +1,29 @@
+shared | s_1 s_2
+|Action action_0
+|Action action_1
+|Action action_2
+3:1:0.1 |Action action_3
+
+shared | s_1 s_2
+|Action action_0
+|Action action_1
+2:1:0.1 |Action action_2
+|Action action_3
+
+shared | s_1 s_2
+|Action action_0
+|Action action_1
+2:1:0.1 |Action action_2
+|Action action_3
+
+shared | s_1 s_2
+0:-1:0.1 |Action action_0
+|Action action_1
+|Action action_2
+|Action action_3
+
+shared | s_1 s_2
+|Action action_0
+1:-1:0.1 |Action action_1
+|Action action_2
+|Action action_3

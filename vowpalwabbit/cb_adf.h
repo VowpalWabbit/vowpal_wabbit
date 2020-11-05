@@ -10,7 +10,7 @@ VW::LEARNER::base_learner* cb_adf_setup(VW::config::options_i& options, vw& all)
 
 namespace CB_ADF
 {
-CB::cb_class get_observed_cost(multi_ex& examples);
+CB::cb_class get_observed_cost(multi_ex& examples, bool skip_example_header = false);
 void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink);
 example* test_adf_sequence(multi_ex& ec_seq);
 }  // namespace CB_ADF
