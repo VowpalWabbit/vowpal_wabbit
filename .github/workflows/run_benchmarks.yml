@@ -10,7 +10,10 @@ jobs:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
-      - run: /usr/local/miniconda/envs/test-python36/bin/pip --version
+      - run: alias python3='/usr/local/miniconda/envs/test-python36/bin/python'
+      - run: python3 --version
+      - run: alias pip3='/usr/local/miniconda/envs/test-python36/bin/pip'
+      - run: pip3 --version
       - uses: actions/checkout@v1
         with:
           # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
@@ -48,7 +51,7 @@ jobs:
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
       - name: Install benchmark compare requirements
         shell: bash
-        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
+        run: /usr/local/miniconda/envs/test-python36/bin/pip3 install -r benchmark/tools/requirements.txt
       - name: Compare benchmarks
         shell: bash
         run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
