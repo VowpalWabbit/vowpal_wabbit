@@ -1,0 +1,39 @@
+name: Run Benchmarks
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  Coverage:
+    container:
+      image: vowpalwabbit/ubuntu1604-build:0.6.0
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Install google benchmarks
+        shell: bash
+        run: ./.scripts/linux/install-benchmark.sh # repo dir
+      - name: Build master
+        shell: bash
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Benchmark master
+        shell: bash
+        run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
+      - run: ls
+      - uses: actions/checkout@v2
+      - name: Install google benchmarks
+        shell: bash
+        run: ./.scripts/linux/install-benchmark.sh
+      - name: Build branch
+        shell: bash
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Benchmark branch
+        shell: bash
+        run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
+      - name: Compare benchmarks
+        shell: bash
+        run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
+      - run: ls
