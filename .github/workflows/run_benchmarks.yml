@@ -10,10 +10,8 @@ jobs:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
-      - run: alias python3='/usr/local/miniconda/envs/test-python36/bin/python'
-      - run: python3 --version
-      - run: alias pip3='/usr/local/miniconda/envs/test-python36/bin/pip'
-      - run: pip3 --version
+      - run: python --version
+      - run: pip --version
       - uses: actions/checkout@v1
         with:
           # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
