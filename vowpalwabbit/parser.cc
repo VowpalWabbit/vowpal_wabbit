@@ -4,10 +4,10 @@
 #include <sys/types.h>
 
 #ifndef _WIN32
-#include <sys/mman.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <netinet/tcp.h>
+#  include <sys/mman.h>
+#  include <sys/wait.h>
+#  include <unistd.h>
+#  include <netinet/tcp.h>
 #endif
 
 #include <csignal>
@@ -15,33 +15,30 @@
 #include <fstream>
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
-#include <Windows.h>
-#include <io.h>
+#  define NOMINMAX
+#  include <winsock2.h>
+#  include <Windows.h>
+#  include <io.h>
 typedef int socklen_t;
-//windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
-#define SOL_TCP IPPROTO_TCP
+// windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
+#  define SOL_TCP IPPROTO_TCP
 
-int daemon(int /*a*/, int /*b*/)
-{
-  exit(0);
-}
+int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
-#if _MSC_VER >= 1920
-#define getpid _getpid
-#else
+#  if _MSC_VER >= 1920
+#    define getpid _getpid
+#  else
 int getpid() { return (int)::GetCurrentProcessId(); }
-#endif
+#  endif
 
 #else
-#include <netdb.h>
+#  include <netdb.h>
 #endif
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
-#include <netinet/in.h>
+#  include <netinet/in.h>
 #endif
 
 #include <cerrno>
@@ -62,7 +59,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
-#define SOL_TCP IPPROTO_TCP
+#  define SOL_TCP IPPROTO_TCP
 #endif
 
 using std::endl;
@@ -76,8 +73,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate
                               // examples
 {
-  if (holdout_off)
-    return false;
+  if (holdout_off) return false;
   if (after == 0)  // hold out by period
     return (counter % period == target_modulus);
   else  // hold out by position
@@ -90,11 +86,9 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-  if (v_length > 61)
-    THROW("cache version too long, cache file is probably invalid");
+  if (v_length > 61) THROW("cache version too long, cache file is probably invalid");
 
-  if (v_length == 0)
-    THROW("cache version too short, cache file is probably invalid");
+  if (v_length == 0) THROW("cache version too short, cache file is probably invalid");
 
   std::vector<char> t(v_length);
   buf->read_file(filepointer, t.data(), v_length);
@@ -106,17 +100,12 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   }
 
   char temp;
-  if (buf->read_file(filepointer, &temp, 1) < 1)
-    THROW("failed to read");
+  if (buf->read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
 
-  if (temp != 'c')
-    THROW("data file is not a cache file");
+  if (temp != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
-  if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits))
-  {
-    return true;
-  }
+  if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits)) { return true; }
 
   return cache_numbits;
 }
@@ -161,7 +150,7 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
     VW_WARNING_STATE_PUSH
     VW_WARNING_DISABLE_DEPRECATED_USAGE
     all.print = binary_print_result;
-VW_WARNING_STATE_POP
+    VW_WARNING_STATE_POP
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson)
@@ -219,8 +208,7 @@ void reset_source(vw& all, size_t numbits)
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       int f = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
-      if (f < 0)
-        THROW("accept: " << VW::strerror_to_string(errno));
+      if (f < 0) THROW("accept: " << VW::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
       int one = 1;
@@ -239,8 +227,7 @@ void reset_source(vw& all, size_t numbits)
       for (auto& file : input->input_files)
       {
         input->reset_file(file.get());
-        if (cache_numbits(input, file.get()) < numbits)
-          THROW("argh, a bug in caching of some sort!");
+        if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
       }
     }
   }
@@ -278,8 +265,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
 
   all.example_parser->finalname = newname;
   all.example_parser->write_cache = true;
-  if (!quiet)
-    all.trace_message << "creating cache_file = " << newname << endl;
+  if (!quiet) all.trace_message << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -289,8 +275,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   for (auto& file : cache_files)
   {
     bool cache_file_opened = false;
-    if (!kill_cache)
-      try
+    if (!kill_cache) try
       {
         all.example_parser->input->add_file(VW::io::open_file_reader(file));
         cache_file_opened = true;
@@ -314,8 +299,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       }
       else
       {
-        if (!quiet)
-          all.trace_message << "using cache_file = " << file.c_str() << endl;
+        if (!quiet) all.trace_message << "using cache_file = " << file.c_str() << endl;
         set_cache_reader(all);
         if (c == all.num_bits)
           all.example_parser->sorted_cache = true;
@@ -329,14 +313,13 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
   if (cache_files.size() == 0)
   {
-    if (!quiet)
-      all.trace_message << "using no cache" << endl;
+    if (!quiet) all.trace_message << "using no cache" << endl;
   }
 }
 
 // For macs
 #ifndef MAP_ANONYMOUS
-#define MAP_ANONYMOUS MAP_ANON
+#  define MAP_ANONYMOUS MAP_ANON
 #endif
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
@@ -352,8 +335,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #ifdef _WIN32
     WSAData wsaData;
     int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (lastError != 0)
-      THROWERRNO("WSAStartup() returned error:" << lastError);
+    if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
     all.example_parser->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
     if (all.example_parser->bound_sock < 0)
@@ -377,8 +359,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     short unsigned int port = 26542;
-    if (all.options->was_supplied("port"))
-      port = (uint16_t)input_options.port;
+    if (all.options->was_supplied("port")) port = (uint16_t)input_options.port;
     address.sin_port = htons(port);
 
     // attempt to bind to socket
@@ -392,13 +373,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.example_parser->bound_sock, (sockaddr*)&address, &address_size) < 0)
-      {
-        all.trace_message << "getsockname: " << VW::strerror_to_string(errno) << endl;
-      }
+      { all.trace_message << "getsockname: " << VW::strerror_to_string(errno) << endl; }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
-      if (!port_file.is_open())
-        THROW("error writing port file: " << input_options.port_file);
+      if (!port_file.is_open()) THROW("error writing port file: " << input_options.port_file);
 
       port_file << ntohs(address.sin_port) << endl;
       port_file.close();
@@ -408,8 +386,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (!input_options.foreground)
     {
       // FIXME switch to posix_spawn
-      if (!all.active && daemon(1, 1))
-        THROWERRNO("daemon");
+      if (!all.active && daemon(1, 1)) THROWERRNO("daemon");
     }
 
     // write pid file
@@ -417,19 +394,19 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::ofstream pid_file;
       pid_file.open(input_options.pid_file.c_str());
-      if (!pid_file.is_open())
-        THROW("error writing pid file");
+      if (!pid_file.is_open()) THROW("error writing pid file");
 
 #ifdef _WIN32
-#pragma warning(push)          // This next line is inappropriately triggering the Windows-side warning about getpid()
-#pragma warning(disable: 4996) // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
+#  pragma warning(push)  // This next line is inappropriately triggering the Windows-side warning about getpid()
+#  pragma warning( \
+      disable : 4996)  // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
 #endif
 
       pid_file << getpid() << endl;
       pid_file.close();
 
 #ifdef _WIN32
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
     }
 
@@ -486,8 +463,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           VW::finish(all);
           exit(0);
         }
-        if (pid < 0)
-          continue;
+        if (pid < 0) continue;
         for (size_t i = 0; i < num_children; i++)
           if (pid == children[i])
           {
@@ -508,11 +484,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    if (!all.logger.quiet)
-      all.trace_message << "calling accept" << endl;
+    if (!all.logger.quiet) all.trace_message << "calling accept" << endl;
     auto f_a = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
-    if (f_a < 0)
-      THROWERRNO("accept");
+    if (f_a < 0) THROWERRNO("accept");
 
     // Disable Nagle delay algorithm due to daemon mode's interactive workload
     int one = 1;
@@ -523,13 +497,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.final_prediction_sink.push_back(socket->get_writer());
 
     all.example_parser->input->add_file(socket->get_reader());
-    if (!all.logger.quiet)
-      all.trace_message << "reading data from port " << port << endl;
+    if (!all.logger.quiet) all.trace_message << "reading data from port " << port << endl;
 
-    if (all.active)
-    {
-      set_string_reader(all);
-    }
+    if (all.active) { set_string_reader(all); }
     else
     {
       all.example_parser->sorted_cache = true;
@@ -542,14 +512,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   {
     if (all.example_parser->input->num_files() != 0)
     {
-      if (!quiet)
-        all.trace_message << "ignoring text input in favor of cache input" << endl;
+      if (!quiet) all.trace_message << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
       std::string temp = all.data_filename;
-      if (!quiet)
-        all.trace_message << "Reading datafile = " << temp << endl;
+      if (!quiet) all.trace_message << "Reading datafile = " << temp << endl;
 
       auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
 
@@ -558,16 +526,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         std::unique_ptr<VW::io::reader> adapter;
         if (temp != "")
         {
-          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp)
-                                          : VW::io::open_file_reader(temp);
+          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp) : VW::io::open_file_reader(temp);
         }
         else if (!all.stdin_off)
         {
           // Should try and use stdin
-          if (should_use_compressed)
-          {
-            adapter = VW::io::open_compressed_stdin();
-          }
+          if (should_use_compressed) { adapter = VW::io::open_compressed_stdin(); }
           else
           {
             adapter = VW::io::open_stdin();
@@ -579,20 +543,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
-        if (!temp.empty())
-        {
-          all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
-        }
+        if (!temp.empty()) { all.trace_message << "can't open '" << temp << "', sailing on!" << endl; }
         else
         {
           throw;
         }
       }
 
-      if (input_options.json || input_options.dsjson)
-      {
-        set_json_reader(all, input_options.dsjson);
-      }
+      if (input_options.json || input_options.dsjson) { set_json_reader(all, input_options.dsjson); }
       else
       {
         set_string_reader(all);
@@ -647,10 +605,10 @@ example& get_unused_example(vw* all)
   parser* p = all->example_parser;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   ex->in_use = true;
-VW_WARNING_STATE_POP
+  VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -699,16 +657,12 @@ void setup_example(vw& all, example* ae)
         i--;
       }
 
-  if(all.skip_gram_transformer != nullptr)
-  {
-    all.skip_gram_transformer->generate_grams(ae);
-  }
+  if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
 
   if (all.add_constant)  // add constant feature
     VW::add_constant_feature(all, ae);
 
-  if (!all.limit_strings.empty())
-    feature_limit(all, ae);
+  if (!all.limit_strings.empty()) feature_limit(all, ae);
 
   uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
 
@@ -779,8 +733,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   example* ret = &get_unused_example(&all);
   all.example_parser->lbl_parser.default_label(&ret->l);
 
-  if (label.length() > 0)
-    parse_example_label(all, *ret, label);
+  if (label.length() > 0) parse_example_label(all, *ret, label);
 
   for (size_t i = 0; i < len; i++)
   {
@@ -855,18 +808,17 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   ec.in_use = false;
-VW_WARNING_STATE_POP
-all.example_parser->example_pool.return_object(&ec);
+  VW_WARNING_STATE_POP
+  all.example_parser->example_pool.return_object(&ec);
 }
 
 void finish_example(vw& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
-  if (!is_ring_example(all, &ec))
-    return;
+  if (!is_ring_example(all, &ec)) return;
 
   clean_example(all, ec, false);
 
@@ -915,10 +867,7 @@ float get_action_score(example* ec, size_t i)
 {
   ACTION_SCORE::action_scores scores = ec->pred.a_s;
 
-  if (i < scores.size())
-  {
-    return scores[i].score;
-  }
+  if (i < scores.size()) { return scores[i].score; }
   else
   {
     return 0.0;
@@ -935,7 +884,6 @@ size_t get_feature_number(example* ec) { return ec->num_features; }
 
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
-
 
 void adjust_used_index(vw&)
 { /* no longer used */

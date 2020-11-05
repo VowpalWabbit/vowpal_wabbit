@@ -27,7 +27,7 @@ namespace bag
 {
 struct cb_explore_adf_bag
 {
- private:
+private:
   float _epsilon;
   size_t _bag_size;
   bool _greedify;
@@ -38,7 +38,7 @@ struct cb_explore_adf_bag
   std::vector<float> _scores;
   std::vector<float> _top_actions;
 
- public:
+public:
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
   ~cb_explore_adf_bag();
@@ -47,7 +47,7 @@ struct cb_explore_adf_bag
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
- private:
+private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
@@ -137,10 +137,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

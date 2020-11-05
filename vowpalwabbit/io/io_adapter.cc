@@ -1,13 +1,13 @@
 #include "io_adapter.h"
 
 #ifdef _WIN32
-#define NOMINMAX
-#define ssize_t int64_t
-#include <winsock2.h>
-#include <io.h>
+#  define NOMINMAX
+#  define ssize_t int64_t
+#  include <winsock2.h>
+#  include <io.h>
 #else
-#include <sys/socket.h>
-#include <unistd.h>
+#  include <sys/socket.h>
+#  include <unistd.h>
 #endif
 
 #include <sys/stat.h>
@@ -31,7 +31,7 @@ typedef struct gzFile_s* gzFile;
 #endif
 
 #ifndef O_LARGEFILE  // for OSX
-#define O_LARGEFILE 0
+#  define O_LARGEFILE 0
 #endif
 
 using namespace VW::io;
@@ -252,20 +252,14 @@ file_adapter::file_adapter(const char* filename, file_mode mode) : reader(true /
         &_file_descriptor, filename, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
   }
 #else
-  if (_mode == file_mode::read)
-  {
-    _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE);
-  }
+  if (_mode == file_mode::read) { _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE); }
   else
   {
     _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
   }
 #endif
 
-  if (_file_descriptor == -1 && *filename != '\0')
-  {
-    THROWERRNO("can't open: " << filename);
-  }
+  if (_file_descriptor == -1 && *filename != '\0') { THROWERRNO("can't open: " << filename); }
 }
 
 file_adapter::file_adapter(int file_descriptor, file_mode mode)
@@ -403,8 +397,7 @@ buffer_view::buffer_view(const char* data, size_t len) : reader(true), _data(dat
 ssize_t buffer_view::read(char* buffer, size_t num_bytes)
 {
   num_bytes = std::min((_data + _len) - _read_head, static_cast<std::ptrdiff_t>(num_bytes));
-  if (num_bytes == 0)
-    return 0;
+  if (num_bytes == 0) return 0;
 
   std::memcpy(buffer, _read_head, num_bytes);
   _read_head += num_bytes;

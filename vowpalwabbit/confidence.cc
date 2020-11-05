@@ -26,13 +26,11 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   {
     base.predict(ec);
     float opposite_label = 1.f;
-    if (ec.pred.scalar > 0)
-      opposite_label = -1.f;
+    if (ec.pred.scalar > 0) opposite_label = -1.f;
     ec.l.simple.label = opposite_label;
   }
 
-  if (!is_confidence_after_training)
-    sensitivity = base.sensitivity(ec);
+  if (!is_confidence_after_training) sensitivity = base.sensitivity(ec);
 
   ec.l.simple.label = existing_label;
   if (is_learn)
@@ -40,8 +38,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   else
     base.predict(ec);
 
-  if (is_confidence_after_training)
-    sensitivity = base.sensitivity(ec);
+  if (is_confidence_after_training) sensitivity = base.sensitivity(ec);
 
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
@@ -52,13 +49,11 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, v_a
   {
     std::stringstream ss;
     ss << std::fixed << res << " " << confidence;
-    if (!print_tag_by_ref(ss, tag))
-      ss << ' ';
+    if (!print_tag_by_ref(ss, tag)) ss << ' ';
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -67,15 +62,12 @@ void output_and_account_confidence_example(vw& all, example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
   for (const auto& sink : all.final_prediction_sink)
-  {
-    confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag);
-  }
+  { confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag); }
 
   print_update(all, ec);
 }
